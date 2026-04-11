@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:37.398Z original_path=[path]/tests/integration.rs
 //! Integration test. Requires UDPipe English model at /tmp/vaani-models/.
 //! Run with: cargo test --test integration -- --ignored
 
@@ -91,5 +90,3 @@ mod with_model {
         assert!(matches!(err, vaani::domain::Error::ModelNotFound(_)));
     }
 }
-
-[result-id: r9]

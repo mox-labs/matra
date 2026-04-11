@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:50.320Z original_path=[path]/src/source/directory.rs
 //! Directory source adapter. Reads all files in a directory.
 
 use std::path::Path;
@@ -57,5 +56,3 @@ mod tests {
         assert!(docs.is_empty());
     }
 }
-
-[result-id: r16]

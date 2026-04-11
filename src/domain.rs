@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:33.911Z original_path=[path]/src/domain.rs
 //! Domain types. The core model that everything else depends on.
 //! No external dependencies beyond serde and std.
 
@@ -735,5 +734,3 @@ mod tests {
         assert!(sent.subtree(1).is_empty());
     }
 }
-
-[result-id: r2]

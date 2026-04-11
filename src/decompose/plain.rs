@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:50.563Z original_path=[path]/src/decompose/plain.rs
 //! Plain text decomposer adapter. Splits on blank lines into paragraphs.
 
 use crate::domain::{Paragraph, Section};
@@ -56,5 +55,3 @@ mod tests {
         assert_eq!(sections[0].paragraphs.len(), 1);
     }
 }
-
-[result-id: r17]

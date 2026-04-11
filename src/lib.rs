@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:34.445Z original_path=[path]/src/lib.rs
 //! vaani -- prose metrics engine.
 //!
 //! Text in, structured analysis out. Readability, POS, dependency,
@@ -268,5 +267,3 @@ mod python {
         Ok(())
     }
 }
-
-[result-id: r4]

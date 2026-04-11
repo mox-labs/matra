@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:42.057Z original_path=[path]/src/extraction/rake.rs
 //! RAKE keyphrase extraction with POS filtering.
 //!
 //! Rapid Automatic Keyword Extraction. Splits text at stop words,
@@ -213,5 +212,3 @@ mod tests {
         assert_eq!(candidates.len(), 2);
     }
 }
-
-[result-id: r12]
