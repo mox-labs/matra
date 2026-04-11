@@ -1,0 +1,34 @@
+# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:49.095Z original_path=[path]/Cargo.toml
+[package]
+name = "vaani"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+authors = ["yzavyas <yza.vyas@gmail.com>"]
+license = "MIT"
+description = "Prose metrics engine. Text in, structured analysis out."
+repository = "https://github.com/mox-labs/vaani"
+keywords = ["nlp", "prose", "readability", "metrics", "analysis"]
+categories = ["text-processing"]
+
+[lib]
+name = "vaani"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.28", features = ["extension-module"], optional = true }
+pythonize = { version = "0.28", optional = true }
+udpipe-rs = { version = "0.2", optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+brotli = "7"
+
+[dev-dependencies]
+tempfile = "3"
+
+[features]
+default = ["udpipe"]
+udpipe = ["udpipe-rs"]
+python = ["pyo3", "pythonize"]
+
+[result-id: r14]
