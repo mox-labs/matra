@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:31.171Z original_path=[path]/python/vaani/cli.py
 """CLI for vaani. Wraps the Rust engine via PyO3."""
 
 import json
@@ -176,5 +175,3 @@ def analyze(path: Path, json_output: bool, sections: bool):
             )
         console.print()
         console.print(st)
-
-[result-id: r22]

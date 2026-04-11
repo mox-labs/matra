@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:34.782Z original_path=[path]/src/nlp/udpipe.rs
 //! UDPipe adapter. Implements NlpProvider using the udpipe-rs crate.
 //! This file is the ONLY place that imports udpipe_rs.
 
@@ -113,5 +112,3 @@ impl NlpProvider for Udpipe {
         Ok(sentences)
     }
 }
-
-[result-id: r6]

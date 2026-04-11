@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:50.107Z original_path=[path]/src/source/file.rs
 //! File source adapter. Reads a single file into a RawDocument.
 
 use std::path::Path;
@@ -66,5 +65,3 @@ mod tests {
         assert!(matches!(docs[0].format, Format::PlainText));
     }
 }
-
-[result-id: r15]

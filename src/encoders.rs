@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:33.372Z original_path=[path]/src/encoders.rs
 //! Encoder pipeline. Each encoder reads from NLP output and enriches the Analysis.
 //! Encoders run in order. Adding one = write a function (or closure), add to pipeline.
 
@@ -385,5 +384,3 @@ mod tests {
         assert_eq!(analysis.total_sentences(), 0, "blockquote paragraphs should be skipped");
     }
 }
-
-[result-id: r1]

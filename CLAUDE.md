@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:25.953Z original_path=[path]/CLAUDE.md
 # Vaani
 
 Prose metrics engine. Text in, structured analysis out. Readability, POS, dependency, lexical density, compression ratio.
@@ -106,5 +105,3 @@ maturin build                                  # Python wheel
 | `ripgrep-mastery.md` | CLI patterns, measurement-driven design |
 | `tauri-mastery.md` | Cross-platform desktop |
 | `uniffi-rs-mastery.md` | Mobile FFI |
-
-[result-id: r1]

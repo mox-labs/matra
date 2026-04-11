@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:27.722Z original_path=[path]/examples/basic.rs
 //! Basic usage: analyze a text string and print metrics.
 //!
 //! Run with: cargo run --example basic
@@ -41,5 +40,3 @@ contributors solving problems before you knew you needed them solved.
         println!("  {} — {} paragraphs, {} words", heading, section.paragraphs.len(), words);
     }
 }
-
-[result-id: r21]

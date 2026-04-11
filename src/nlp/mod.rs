@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:39.716Z original_path=[path]/src/nlp/mod.rs
 //! NLP port. Defines the boundary between vaani and NLP providers.
 //!
 //! This module contains ONLY the port trait. Domain types (Token, Sentence)
@@ -20,5 +19,3 @@ pub trait NlpProvider: Send {
     /// Parse text into sentences with POS tags and dependency labels.
     fn parse(&self, text: &str) -> domain::Result<Vec<domain::Sentence>>;
 }
-
-[result-id: r5]

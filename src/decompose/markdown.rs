@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:59.274Z original_path=[path]/src/decompose/markdown.rs
 //! Markdown decomposer adapter. Extracts sections, paragraphs, blockquotes.
 
 use crate::domain::{Paragraph, Section};
@@ -140,5 +139,3 @@ mod tests {
         assert_eq!(sections[0].heading.as_deref(), Some("Hello"));
     }
 }
-
-[result-id: r19]

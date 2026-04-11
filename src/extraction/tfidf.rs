@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:41.104Z original_path=[path]/src/extraction/tfidf.rs
 //! TF-IDF extractive summarization.
 //!
 //! Scores each sentence by the mean TF-IDF of its lemmatized terms.
@@ -187,5 +186,3 @@ mod tests {
         assert_eq!(result.len(), 2);
     }
 }
-
-[result-id: r10]

@@ -1,4 +1,3 @@
-# RECOVERED-FROM-READ source=[claude-project-path]/[session-id]/subagents/[agent-transcript].jsonl timestamp=2026-04-09T13:02:42.165Z original_path=[path]/src/extraction/yake.rs
 //! YAKE keyphrase extraction.
 //!
 //! Yet Another Keyword Extractor. Unsupervised statistical approach that
@@ -271,5 +270,3 @@ mod tests {
         );
     }
 }
-
-[result-id: r13]
