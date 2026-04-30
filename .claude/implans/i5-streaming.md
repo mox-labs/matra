@@ -5,14 +5,15 @@
 **Depends on:** I4 (workspace + `rumi-nlp` skeleton)
 **Branch:** `i5/streaming` off the I4 commit
 
-## Open decision: cut vs deprecate `analyze_directory`
+## Resolved 2026-04-30: deprecate-and-keep `analyze_directory`
 
-K (recovery 13-agent review, recovery-3.md:782) recommended **cutting `analyze_directory` from 0.1.0 entirely** rather than deprecating it. Argument: unvalidated error policy, forced on callers. Today's plan deprecates-but-keeps; reconsider before this iteration starts.
+K (recovery 13-agent review, recovery-3.md:782) recommended **cutting `analyze_directory` from 0.1.0 entirely**. Considered and rejected — `deprecate-and-keep` wins. Reasoning:
 
-- **Deprecate-and-keep** (current default): users who already wrote `analyze_directory` calls don't break. Migration path is explicit (`#[deprecated]` annotation guides them to `analyze_directory_iter`).
-- **Cut entirely:** smaller public surface at 0.1.0; consumers compose `DirectorySource::read_iter` + the per-doc analysis themselves; cleaner architecture.
+- pre-publish, vaani has zero crates.io consumers — but the 0.1.0 surface defines what 0.2 has to honor. A consumer who picks up `analyze_directory` between 0.1.0 release and 0.1.x would face a surface change at 0.2 if it's removed.
+- the `#[deprecated]` annotation gives migration guidance without breaking the call site. `cargo build` warns; `cargo build -- -D warnings` errors on it. That's enough signal.
+- the smaller-surface argument applies more cleanly to types and traits than to convenience functions. A deprecated function adds zero ongoing maintenance cost; consumers pay attention to the warning or live with it.
 
-**Default for this implan: deprecate-and-keep.** Confirm or redirect before starting Task C.
+Task C below implements deprecate-and-keep.
 
 ## Why this iteration exists
 
