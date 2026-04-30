@@ -33,3 +33,5 @@ Thumbs.db
 
 # Recovery and agent-mining artifacts (kept for archaeology, not source control)
 scratch/*.jsonl
+scratch/recov.md
+scratch/recovery-*.md
