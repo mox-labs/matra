@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  rust:
+    name: Rust ${{ matrix.features }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - features: default
+            flags: ""
+          - features: no-default-features
+            flags: "--no-default-features"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo fmt --check
+        if: matrix.features == 'default'
+        run: cargo fmt --all -- --check
+
+      - name: cargo check
+        run: cargo check --all-targets ${{ matrix.flags }}
+
+      - name: cargo clippy
+        run: cargo clippy --all-targets ${{ matrix.flags }} -- -D warnings
+
+      - name: cargo test (lib + doc)
+        run: cargo test ${{ matrix.flags }}
+
+  docs:
+    name: rustdoc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo doc
+        env:
+          RUSTDOCFLAGS: -Dwarnings
+        run: cargo doc --no-deps --all-features
+
+  python:
+    name: Python wheel (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Install maturin
+        run: pip install maturin
+      - name: Build wheel
+        run: maturin build --release --out dist
+      - name: Install and import
+        run: |
+          pip install dist/vaani-*.whl
+          python -c "from vaani import Vaani; print('ok')"

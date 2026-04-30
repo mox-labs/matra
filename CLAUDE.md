@@ -17,26 +17,32 @@ src/
   source/
     mod.rs                  # Source trait ONLY
     file.rs                 # FileSource adapter
-    directory.rs            # DirectorySource adapter
+    directory.rs            # DirectorySource adapter (skips symlinks)
   decompose/
     mod.rs                  # Decomposer trait ONLY
-    markdown.rs             # MarkdownDecomposer adapter
-    plain.rs                # PlainTextDecomposer adapter
+    markdown.rs              # MarkdownDecomposer adapter
+    plain.rs                 # PlainTextDecomposer adapter
   nlp/
     mod.rs                  # NlpProvider trait ONLY
     udpipe.rs               # UDPipe adapter (only file importing udpipe_rs)
-  encoders.rs               # encoder pipeline (domain + stopwords only)
+  metrics/
+    mod.rs                  # Metric alias, default_suite, attach_sentences
+    readability.rs          # Flesch-Kincaid
+    lexical.rs              # lexical density
+    compression.rs          # brotli compression ratio
+    document.rs             # vocabulary_ttr + nominalization_ratio
   extraction/
     mod.rs                  # re-exports
     tfidf.rs                # tfidf_summarize
-    textrank.rs             # textrank_summarize
+    textrank.rs             # textrank_summarize (capped at MAX_SENTENCES)
     rake.rs                 # rake_keyphrases
     yake.rs                 # yake_keyphrases
   stopwords.rs              # shared utility
-  markdown.rs               # legacy re-export (use decompose::markdown)
 python/vaani/
   __init__.py               # re-exports Vaani from _core
   cli.py                    # click + rich CLI, auto-downloads model
+scripts/
+  fetch-model-hash.sh       # refresh ENGLISH_MODEL_SHA256 when version changes
 tests/
   integration.rs            # full pipeline tests (require UDPipe model)
 examples/
@@ -49,7 +55,7 @@ examples/
 2. Port modules (source/mod.rs, decompose/mod.rs, nlp/mod.rs) import only from domain.
 3. No port module imports another port module.
 4. `nlp/udpipe.rs` is the ONLY file that imports `udpipe_rs`.
-5. `encoders.rs` and `extraction/` import only from domain and stopwords.
+5. `metrics/` and `extraction/` import only from domain and stopwords.
 6. `cargo check --no-default-features` must compile.
 7. Composition root (lib.rs) is the only place that knows all adapters and ports.
 

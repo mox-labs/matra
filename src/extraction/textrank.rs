@@ -3,20 +3,37 @@
 //! Builds a similarity graph over sentences using TF overlap,
 //! then runs iterative PageRank-style scoring. Returns top-N
 //! sentences in document order.
+//!
+//! Memory is O(n^2) in sentence count due to the dense similarity
+//! matrix. [`MAX_SENTENCES`] caps the input to keep worst-case memory
+//! bounded; inputs above the cap return [`Error::InputTooLarge`].
 
 use std::collections::HashMap;
 
-use crate::domain::{ScoredSentence, Sentence};
+use crate::domain::{Error, Result, ScoredSentence, Sentence};
 use crate::stopwords::is_stop_word;
+
+/// Maximum input size for [`textrank_summarize`]. At 2000 sentences the
+/// similarity matrix is ~32 MB of f64 — the ceiling for unattended use.
+pub const MAX_SENTENCES: usize = 2000;
 
 /// Extract top-N sentences by TextRank score, returned in document order.
 ///
 /// Similarity between sentences is computed as the count of shared
 /// content lemmas divided by the log of their lengths (to avoid
 /// favoring long sentences).
-pub fn textrank_summarize(sentences: &[Sentence], n: usize) -> Vec<ScoredSentence> {
+///
+/// Returns [`Error::InputTooLarge`] when `sentences.len() > MAX_SENTENCES`.
+pub fn textrank_summarize(sentences: &[Sentence], n: usize) -> Result<Vec<ScoredSentence>> {
     if sentences.is_empty() || n == 0 {
-        return Vec::new();
+        return Ok(Vec::new());
+    }
+    if sentences.len() > MAX_SENTENCES {
+        return Err(Error::InputTooLarge {
+            limit: MAX_SENTENCES,
+            actual: sentences.len(),
+            what: "textrank",
+        });
     }
 
     let term_sets: Vec<HashMap<&str, usize>> = sentences
@@ -86,14 +103,14 @@ pub fn textrank_summarize(sentences: &[Sentence], n: usize) -> Vec<ScoredSentenc
     indexed.truncate(n);
     indexed.sort_by_key(|&(idx, _)| idx);
 
-    indexed
+    Ok(indexed
         .into_iter()
         .map(|(idx, score)| ScoredSentence {
             text: sentences[idx].text.clone(),
             score,
             position: idx,
         })
-        .collect()
+        .collect())
 }
 
 /// Similarity between two sentences: shared terms / log normalization.
@@ -150,13 +167,29 @@ mod tests {
 
     #[test]
     fn empty_returns_empty() {
-        assert!(textrank_summarize(&[], 3).is_empty());
+        assert!(textrank_summarize(&[], 3).unwrap().is_empty());
     }
 
     #[test]
     fn n_zero_returns_empty() {
         let sentences = vec![sent("hello", vec![tok(1, "hello", "INTJ")])];
-        assert!(textrank_summarize(&sentences, 0).is_empty());
+        assert!(textrank_summarize(&sentences, 0).unwrap().is_empty());
+    }
+
+    #[test]
+    fn rejects_oversized_input() {
+        let toks = vec![tok(1, "word", "NOUN")];
+        let sentences: Vec<Sentence> = (0..MAX_SENTENCES + 1)
+            .map(|_| sent("word", toks.clone()))
+            .collect();
+        match textrank_summarize(&sentences, 3) {
+            Err(crate::domain::Error::InputTooLarge { limit, actual, what }) => {
+                assert_eq!(limit, MAX_SENTENCES);
+                assert_eq!(actual, MAX_SENTENCES + 1);
+                assert_eq!(what, "textrank");
+            }
+            other => panic!("expected InputTooLarge, got {other:?}"),
+        }
     }
 
     #[test]
@@ -191,7 +224,7 @@ mod tests {
             ),
         ];
 
-        let result = textrank_summarize(&sentences, 2);
+        let result = textrank_summarize(&sentences, 2).unwrap();
         assert_eq!(result.len(), 2);
         assert!(result[0].position < result[1].position);
     }
@@ -226,7 +259,7 @@ mod tests {
             ),
         ];
 
-        let result = textrank_summarize(&sentences, 2);
+        let result = textrank_summarize(&sentences, 2).unwrap();
         // The two ML sentences should be selected (higher mutual reinforcement).
         let positions: Vec<usize> = result.iter().map(|s| s.position).collect();
         assert!(positions.contains(&0));
@@ -236,7 +269,7 @@ mod tests {
     #[test]
     fn single_sentence() {
         let sentences = vec![sent("only one", vec![tok(1, "only", "ADV"), tok(2, "one", "NUM")])];
-        let result = textrank_summarize(&sentences, 5);
+        let result = textrank_summarize(&sentences, 5).unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].position, 0);
     }

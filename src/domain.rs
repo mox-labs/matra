@@ -20,6 +20,12 @@ pub enum Error {
     ModelInvalid(String),
     /// NLP parsing failed on the input text.
     ParseFailed(String),
+    /// Input exceeded a bounded limit (e.g. too many sentences for
+    /// an O(n^2) algorithm like TextRank).
+    InputTooLarge { limit: usize, actual: usize, what: &'static str },
+    /// The document format has no registered decomposer in this build.
+    /// Seen when analyzing a Pdf/Docx file without the relevant adapter.
+    UnsupportedFormat(Format),
     /// File I/O error.
     Io(std::io::Error),
 }
@@ -30,6 +36,10 @@ impl fmt::Display for Error {
             Error::ModelNotFound(p) => write!(f, "model not found: {}", p.display()),
             Error::ModelInvalid(msg) => write!(f, "invalid model: {msg}"),
             Error::ParseFailed(msg) => write!(f, "parse failed: {msg}"),
+            Error::InputTooLarge { limit, actual, what } => {
+                write!(f, "{what} input too large: {actual} > limit {limit}")
+            }
+            Error::UnsupportedFormat(fmt_) => write!(f, "unsupported format: {fmt_:?}"),
             Error::Io(e) => write!(f, "io error: {e}"),
         }
     }
