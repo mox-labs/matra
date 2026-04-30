@@ -4,10 +4,10 @@ Prose metrics engine. Text in, structured analysis out. A pure, performant, ACE-
 
 ## Read in this order
 
-1. **[architecture.md](architecture.md)** — the big picture: hex layout, composition root, boundary rules, cross-language story, the deferred-reactor decision.
+1. **[architecture.md](architecture.md)** — the big picture: workspace shape (`vaani-core` + `rumi-nlp`), hex layout inside `vaani-core`, composition root, boundary rules, cross-language story, the deferred-reactor decision.
 2. **[domain-model.md](domain-model.md)** — the data shapes everything else depends on. Read this if you are touching any type.
 3. **[ports.md](ports.md)** — the three boundary traits: `Source`, `Decomposer`, `NlpProvider`. Read this if you are adding a new format, NLP backend, or input shape.
-4. **[adapters.md](adapters.md)** — concrete implementations of the ports. Read this if you are extending an adapter or replacing one.
+4. **[adapters.md](adapters.md)** — concrete implementations of the ports. Plus a note on why `rumi-nlp` is a peer crate, not an adapter.
 5. **[evolution.md](evolution.md)** — how the architecture changes across iterations. Read this if you are planning the next iteration or want to know why something is the way it is.
 
 ## Pipeline at a glance

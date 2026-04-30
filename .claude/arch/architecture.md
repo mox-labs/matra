@@ -2,7 +2,7 @@
 
 ## The shape
 
-vaani is a hexagonal architecture. A pure domain core surrounded by ports (boundary traits), implemented by adapters (concrete I/O and infrastructure), wired together by a composition root (`lib.rs`).
+vaani is a Cargo workspace with two crates: `vaani-core` (the substrate) and `rumi-nlp` (the matcher bridge). `vaani-core` is a hexagonal architecture: a pure domain core surrounded by ports (boundary traits), implemented by adapters (concrete I/O and infrastructure), wired together by a composition root (`lib.rs`). `rumi-nlp` is a peer crate that depends on `vaani-core` for the domain types and on `rumi-core` for the matcher engine.
 
 ```mermaid
 flowchart TB
@@ -39,11 +39,32 @@ flowchart TB
 
 Read it as: dependencies point inward. Nothing in `domain` knows that adapters exist. Adapters know about `domain` and the port they implement; they do not know about each other or about the composition root. The composition root is the only thing that knows everything.
 
+## The workspace
+
+```mermaid
+flowchart LR
+    subgraph workspace["vaani workspace"]
+        core["<b>vaani-core</b><br/>(the substrate)<br/>parse / metrics / extraction"]
+        rumi["<b>rumi-nlp</b><br/>(matcher bridge)<br/>DataInput<Sentence> impls"]
+    end
+    rumicore[("<b>rumi-core</b><br/>(matcher engine)")]
+    rumi -->|depends on| core
+    rumi -->|depends on| rumicore
+```
+
+`vaani-core` has zero dependency on `rumi-nlp` or `rumi-core`. A consumer who wants only parsing, metrics, and extraction adds `vaani` and pays for nothing else. A consumer who wants matcher-driven rule evaluation over parsed sentences adds `vaani` plus `rumi-nlp`.
+
+**Why this shape.** Domain knowledge belongs colocated with the substrate that produces it. The matcher-engine bridge that exposes `Sentence` as a context for `DataInput`s is part of vaani's deliverable, not a separate downstream concern. Other matcher-engine extensions (`rumi-http`, `rumi-claude`) live with their respective domain owners; NLP is vaani's domain, so `rumi-nlp` lives with vaani.
+
+**What ships in `rumi-nlp` at 0.1.0.** A skeleton: the crate exists, the dependency wiring is verified, one trivial `DataInput<Sentence>` (e.g., `PosInput`) lands as a smoke test. Domain-specific patterns (SVO, copular, prepositional, passive, nominal modifier extraction; stance classification) are deferred to post-publish iterations driven by real consumer needs. The structure locks; the content fills.
+
+The rest of this document focuses on `vaani-core`'s internal architecture (the hex). The matcher-bridge pattern is documented in [evolution.md](evolution.md) and the I4 implan.
+
 ## Why hex for a substrate library
 
 Three forces pushed this shape.
 
-**Variable I/O needs.** A library wired into a CLI batch tool needs different ingestion than one embedded in an editor that streams documents as a user types, or one running headless against in-memory text. A single hard-coded pipeline serves at most one of these. Ports let each consumer wire what they need.
+**Variable I/O needs.** A library wired into a CLI batch tool needs different ingestion than one embedded in an editor that streams documents as a user types, or one running headless against in-memory text. A hard-coded pipeline serves at most one of these. Ports let each consumer wire what they need.
 
 **Cross-language reach.** Rust core + Python crust + WASM crust. The domain types travel across FFI; the adapters do not. Keeping the boundary explicit means the FFI surface is exactly the domain types and a thin wrapper, not the whole library.
 
@@ -51,7 +72,7 @@ Three forces pushed this shape.
 
 ## The composition root
 
-`src/lib.rs` is the only file that:
+`crates/vaani-core/src/lib.rs` is the only file that:
 - Imports adapters and ports together.
 - Wires the pipeline (`analyze`, `analyze_markdown`, `analyze_file`, `analyze_directory`, `analyze_directory_iter`, `parse`, `analyze_from`).
 - Exposes the PyO3 `Vaani` class.
@@ -97,14 +118,14 @@ Rule 8 is the precondition for the observability story. Without it, adding `trac
 A boundary check script (`scripts/check-boundaries.sh`) verifies these in CI:
 
 ```sh
-# Rule 4
-rg 'use udpipe_rs' src/ | grep -v '^src/nlp/udpipe.rs'
+# Rule 4 (post-I4 paths; pre-I4 paths drop the crates/vaani-core/ prefix)
+rg 'use udpipe_rs' crates/vaani-core/src/ | grep -v '^crates/vaani-core/src/nlp/udpipe.rs'
 
 # Rule 8
-rg '^use tracing|tracing::' src/domain.rs src/source/mod.rs src/decompose/mod.rs src/nlp/mod.rs
+rg '^use tracing|tracing::' crates/vaani-core/src/domain.rs crates/vaani-core/src/source/mod.rs crates/vaani-core/src/decompose/mod.rs crates/vaani-core/src/nlp/mod.rs
 
 # Rule 3
-rg 'use crate::source|use crate::decompose|use crate::nlp' src/source/mod.rs src/decompose/mod.rs src/nlp/mod.rs
+rg 'use crate::source|use crate::decompose|use crate::nlp' crates/vaani-core/src/source/mod.rs crates/vaani-core/src/decompose/mod.rs crates/vaani-core/src/nlp/mod.rs
 ```
 
 Each command must return empty.
@@ -127,15 +148,17 @@ Without `python`: vaani is a pure Rust library.
 
 ## Cross-language story
 
-The Rust core is the reference implementation. Two crusts wrap it.
+The Rust workspace is the reference. Two crusts wrap `vaani-core`.
 
 ```mermaid
 flowchart TB
-    rust[("vaani crate (Rust)")] --> py[(vaani PyPI wheel)]
+    rust[("vaani-core (Rust)")] --> py[(vaani PyPI wheel)]
     rust --> wasm[("vaani-wasm crate (post-0.1)")]
     py --> pyc[(Python consumers)]
     wasm --> ts[(TypeScript / JS consumers)]
 ```
+
+`rumi-nlp` is Rust-only at 0.1.0. Adding Python or WASM crusts for the matcher bridge happens post-publish and only when a consumer commits to needing it.
 
 Names cross all three. Every public field, type, error variant, and method becomes:
 

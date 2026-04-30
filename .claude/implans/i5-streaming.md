@@ -1,9 +1,18 @@
-# I4 — Streaming iterator + Engine + CorpusResult
+# I5 — Streaming iterator + Engine + CorpusResult
 
 **Status:** not-started
 **Boundary:** **MLP** — at the end of this iteration, vaani scales to corpus-sized work without OOM and ships a delightful Rust DX.
-**Depends on:** I3 (error restructure + tracing)
-**Branch:** `i4/streaming` off the I3 commit
+**Depends on:** I4 (workspace + `rumi-nlp` skeleton)
+**Branch:** `i5/streaming` off the I4 commit
+
+## Open decision: cut vs deprecate `analyze_directory`
+
+K (recovery 13-agent review, recovery-3.md:782) recommended **cutting `analyze_directory` from 0.1.0 entirely** rather than deprecating it. Argument: unvalidated error policy, forced on callers. Today's plan deprecates-but-keeps; reconsider before this iteration starts.
+
+- **Deprecate-and-keep** (current default): users who already wrote `analyze_directory` calls don't break. Migration path is explicit (`#[deprecated]` annotation guides them to `analyze_directory_iter`).
+- **Cut entirely:** smaller public surface at 0.1.0; consumers compose `DirectorySource::read_iter` + the per-doc analysis themselves; cleaner architecture.
+
+**Default for this implan: deprecate-and-keep.** Confirm or redirect before starting Task C.
 
 ## Why this iteration exists
 
@@ -19,7 +28,7 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 ### Task A: `DirectorySource::read_iter` inherent method
 
-**Files:** `src/source/directory.rs`.
+**Files:** `crates/vaani-core/src/source/directory.rs`.
 
 **Why (Burner, 2026-04-28):** "`Source::read_iter` on the trait forces every adapter (including `FileSource`, which yields exactly one doc) to implement an iterator with no benefit, and `impl Iterator` in trait return position constrains the trait object. Put `read_iter` as an *inherent* method on `DirectorySource`."
 
@@ -46,13 +55,13 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 **Acceptance:**
 - `read_iter` exists on `DirectorySource`. **Not on the `Source` trait.**
-- `rg 'fn read_iter' src/source/mod.rs` returns empty.
-- `rg 'fn read_iter' src/source/directory.rs` returns exactly one hit.
+- `rg 'fn read_iter' crates/vaani-core/src/source/mod.rs` returns empty.
+- `rg 'fn read_iter' crates/vaani-core/src/source/directory.rs` returns exactly one hit.
 - Lazy-read counter test passes.
 
 ### Task B: `analyze_directory_iter` in the composition root
 
-**Files:** `src/lib.rs`.
+**Files:** `crates/vaani-core/src/lib.rs`.
 
 **Why (Erlang):** "`analyze_directory_iter(path, nlp) -> impl Iterator<Item = Result<CorpusEntry, (PathBuf, Error)>>` — drops working set to one doc at a time. Survives the rename to `ingest` cleanly. If a reactor ever lands later, the iterator boundary is exactly where a channel slots in."
 
@@ -90,7 +99,7 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 ### Task C: `analyze_directory` deprecation shim returning `CorpusResult`
 
-**Files:** `src/lib.rs`, `src/domain.rs` (new `CorpusResult`).
+**Files:** `crates/vaani-core/src/lib.rs`, `crates/vaani-core/src/domain.rs` (new `CorpusResult`).
 
 **Why (Ace, 2026-04-28):** "The current return shape `Result<(Corpus, Vec<(PathBuf, Error)>)>` is awkward for Python — flatten to a `CorpusResult { corpus, errors }` struct so `pythonize` produces a clean dict instead of a tuple. `analyze_directory` carries `#[deprecated(since = "0.1.0", note = "use analyze_directory_iter")]` — but still compiles and passes its existing test."
 
@@ -123,7 +132,7 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 ### Task D: `pub struct Engine` for Rust DX parity
 
-**Files:** `src/lib.rs`.
+**Files:** `crates/vaani-core/src/lib.rs`.
 
 **Why (Ace):** "`analyze` takes `&dyn NlpProvider` while `Vaani` is the PyO3 class — Rust users have no top-level convenience type. Recommend a `pub struct Engine { nlp: Box<dyn NlpProvider> }` in Rust mirroring the Python `Vaani` shape, with `Engine::english(dir)` and `engine.analyze(text)`. This is the door handle."
 
@@ -170,7 +179,7 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 ### Task E: `pub mod prelude`
 
-**Files:** `src/lib.rs` (or a new `src/prelude.rs`).
+**Files:** `crates/vaani-core/src/lib.rs` (or a new `crates/vaani-core/src/prelude.rs`).
 
 **Why (Ace):** "Recommend a `pub mod prelude` re-exporting only `analyze`, `Vaani`/`NlpProvider`, `Error`. Document `analyze_from` as 'advanced: skip double-parse'."
 
