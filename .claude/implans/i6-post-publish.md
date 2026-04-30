@@ -1,26 +1,27 @@
-# I5 — Post-publish: OTel, PDF/DOCX, possibly the reactor
+# I6 — Post-publish: OTel, PDF/DOCX, `rumi-nlp` patterns, possibly the reactor
 
 **Status:** not-started
 **Boundary:** post-0.1.0
-**Depends on:** I4 (MLP shipped, 0.1.0 published)
+**Depends on:** I5 (MLP shipped, 0.1.0 published)
 
 ## Why this iteration exists
 
-I0 through I4 ship 0.1.0. Some work was deliberately deferred:
+I0 through I5 ship 0.1.0. Some work was deliberately deferred:
 
 - **OTel export** (Wolf PR2/PR3) — `tracing-opentelemetry` is heavy (~30 transitive crates). Substrate library doesn't bundle it; consumers opt in.
 - **PDF/DOCX adapters** — half-shipping a PDF adapter would lock a bad shape into the public surface (PDF is a format family). User originally said "any kind of file"; we deferred deliberately, documented the gap.
+- **`rumi-nlp` pattern content** — at 0.1.0 the bridge crate ships with primitives only (one `DataInput<Sentence>` smoke test). Domain-specific patterns (SVO, copular, prepositional, passive, nominal modifier; stance classification; relation extraction) land here, driven by real consumer needs rather than speculation.
 - **The reactor pattern** — Erlang and K converged on defer; the streaming iterator covers the load. Reactor returns only if named triggers fire.
 
 This implan is a holding pattern: each sub-iteration ships only when its specific trigger fires.
 
 ## Sub-iterations (each ships independently)
 
-### I5a — `otel` feature
+### I6a — `otel` feature
 
 **Trigger:** at least one downstream consumer requests OTel export, OR a 0.1.0 ship-readiness review identifies the OTel story as a publish blocker.
 
-**Files:** `Cargo.toml`, `src/lib.rs` or `src/obs.rs` (new), `examples/observability_otel.rs`.
+**Files:** workspace `Cargo.toml`, `crates/vaani-core/src/lib.rs` or `crates/vaani-core/src/obs.rs` (new), `examples/observability_otel.rs`.
 
 **Why (Wolf):** "`tracing-opentelemetry` together pulls ~30 crates. Never default. Consumers turn it on; library publishes to crates.io with default features only."
 
@@ -37,11 +38,11 @@ This implan is a holding pattern: each sub-iteration ships only when its specifi
 - README has an "OTel Export" subsection under Observability.
 - `cargo build` (default) does **not** pull `tracing-opentelemetry`. Verified by `cargo tree`.
 
-### I5b — Per-extractor and per-source spans (Wolf PR2)
+### I6b — Per-extractor and per-source spans (Wolf PR2)
 
 **Trigger:** a consumer reports they cannot debug an extraction issue from the I3 instrumentation.
 
-**Files:** `src/extraction/{tfidf,textrank,rake,yake}.rs`, `src/source/{file,directory}.rs`.
+**Files:** `crates/vaani-core/src/extraction/{tfidf,textrank,rake,yake}.rs`, `crates/vaani-core/src/source/{file,directory}.rs`.
 
 **Why (Wolf, deferred from I3):** finer-grained spans per extractor algorithm and per-file in directory processing.
 
@@ -53,11 +54,11 @@ This implan is a holding pattern: each sub-iteration ships only when its specifi
 
 **Acceptance:** TextRank trace at `RUST_LOG=vaani=trace` shows iteration deltas. Per-file debug event present.
 
-### I5c — `PdfDecomposer` adapter
+### I6c — `PdfDecomposer` adapter
 
 **Trigger:** at least one consumer commits to needing PDF support.
 
-**Files:** `src/decompose/pdf.rs` (new), `Cargo.toml` (new feature `pdf`).
+**Files:** `crates/vaani-core/src/decompose/pdf.rs` (new), `crates/vaani-core/Cargo.toml` (new feature `pdf`).
 
 **Why:** the library's `Format::Pdf` returns `UnsupportedFormat` today. PDF is a common input format and the gap closes once a consumer commits. Half-shipping was deferred deliberately (K, 2026-04-28: "PDF is a format family, not a format. Defer cleanly, don't half-ship.").
 
@@ -71,24 +72,43 @@ This implan is a holding pattern: each sub-iteration ships only when its specifi
 
 **Acceptance:** PDF feature opt-in, basic PDF fixture decomposed. CHANGELOG documents the support surface.
 
-### I5d — `DocxDecomposer` adapter
+### I6d — `DocxDecomposer` adapter
 
 **Trigger:** same as I5c but for DOCX.
 
-**Files:** `src/decompose/docx.rs` (new), `Cargo.toml` (new feature `docx`).
+**Files:** `crates/vaani-core/src/decompose/docx.rs` (new), `crates/vaani-core/Cargo.toml` (new feature `docx`).
 
 **Steps:** parallel to I5c but for DOCX. Likely candidate crate: `docx-rs` or `zip` + custom XML parsing.
 
 **Acceptance:** parallel to I5c.
 
-### I5e — The reactor (only if triggered)
+### I6e — `rumi-nlp` pattern content
+
+**Trigger:** at least one consumer commits to needing rule-based extraction over `Sentence` data, OR a clear pattern emerges across multiple consumer requests.
+
+**Files:** `crates/rumi-nlp/src/inputs/`, `crates/rumi-nlp/src/matchers/`, `crates/rumi-nlp/src/compile.rs` (new), conformance tests under `crates/rumi-nlp/spec/`.
+
+**Why:** vaani 0.1.0 ships `rumi-nlp` with a skeleton (one `DataInput<Sentence>` smoke test) so the architecture locks. Domain-specific content lands incrementally, driven by real consumer needs, not speculation. The barbell argument from the prior session: "Vaani ships a built-in extractor (safe side: five patterns, deterministic, ~300 lines, bounded precision)" was redirected — relation extraction belongs in domain extension crates, not in vaani-core. With `rumi-nlp` colocated in vaani's workspace, the patterns live there when they land.
+
+**Possible scope (each its own implan when triggered):**
+
+1. **Tree-walk DataInputs.** `PosInput`, `LemmaInput`, `DepInput`, `HeadInput`, `SubtreeInput`, `ChildByLabelInput`. Each navigates the dep tree internally and returns flat `MatchingData`.
+2. **The five extraction patterns.** SVO, copular, prepositional, passive, nominal modifier. As `Matcher<Sentence, Triplet>` configurations using the DataInputs above. Conformance test suite (YAML fixtures, like rumi-http's).
+3. **`compile_nlp_rules()` config compiler.** Takes user-friendly YAML/TOML rule configs and produces `Matcher<Sentence, A>` trees.
+4. **Stance classification.** Nine-rule epistemic cascade (potential / assertoric / directive) as a matcher list. Reads `Token.feats`, `dep`, `lemma`. **Note:** stance is at the boundary of vaani's substrate scope vs consumer's interpretive scope. May land in a separate downstream crate, not in `rumi-nlp`. Decide when triggered.
+
+Each sub-item is its own implan. None of them ship in 0.1.0.
+
+**Acceptance:** depends on the sub-item. Each lands with conformance fixtures.
+
+### I6f — The reactor (only if triggered)
 
 **Trigger:** **any one** of:
 1. A consumer needs incremental re-analysis on file change (push semantics).
 2. A corpus consumer reports more than 100k documents in regular use.
 3. A second `Source` arrives that is inherently push (websocket, filesystem watch, message queue).
 
-**Files:** depends on the trigger. Likely: `src/runtime.rs` (new), `Cargo.toml` (new feature `async`, new optional dep `tokio`).
+**Files:** depends on the trigger. Likely: `crates/vaani-core/src/runtime.rs` (new), workspace `Cargo.toml` (new feature `async`, new optional dep `tokio`).
 
 **Why (Erlang + K, deferred from 2026-04-28):** "A reactor without a parallel sink is a bigger queue, not more throughput. Hot path for all three downstream consumers is `analyze(doc)` on a single document. ~140 lines of glue do not justify an async dependency tree."
 

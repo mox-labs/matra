@@ -116,3 +116,16 @@ These are deliberate gaps, not oversights.
 - **`DocxDecomposer`** — same logic.
 - **WASM `NlpProvider`** — a pure-Rust tagger + parser for browser/Node use. Tracked for 0.3 once the PyO3 surface is stable.
 - **Streaming `Source` adapter** (websocket, filesystem watch) — only if reactor triggers fire (see [evolution.md](evolution.md)).
+
+## `rumi-nlp`: not an adapter
+
+`rumi-nlp` (sibling crate to `vaani-core` in the workspace) is sometimes mistaken for an `NlpProvider` adapter. It is not. The relationship:
+
+| Concept | Belongs to | Implements / Wraps |
+|---|---|---|
+| `NlpProvider` | port in `vaani-core` | implemented by `Udpipe` adapter (and any future NLP backend) |
+| `DataInput<Sentence>` | `rumi-core` trait | implemented in `rumi-nlp` for NLP-specific data extraction (POS, lemma, dep, subtree, etc.) |
+
+`rumi-nlp` consumes `vaani-core`'s output (`Sentence` and `Token` from `domain.rs`). It does not implement any of `vaani-core`'s ports. It is a peer in the workspace, sitting alongside `vaani-core`, depending on it for the parsed structure and on `rumi-core` for the matcher engine.
+
+In short: an adapter is something that plugs into a vaani port. `rumi-nlp` doesn't plug into vaani — it builds on top of vaani for a different purpose (rule-based pattern matching over parsed sentences).

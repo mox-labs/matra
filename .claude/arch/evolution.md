@@ -6,18 +6,31 @@ Architecture is a sequence of decisions across iterations. This file is the chan
 
 | Iteration | Boundary | What lands | Status |
 |---|---|---|---|
-| I0 | none | Stabilize the post-recovery baseline | planned |
+| I0 | none | Stabilize the post-recovery baseline | done (b6fa26e) |
 | I1 | none | Karman pipeline rename: `ingest → decompose → parse → measure` + peer `extract` | planned |
 | I2 | resilience floor | The 10 antifragile fixes (Taleb + Knuth + Vector + Lamport) | planned |
 | I3 | **MVP** | Error restructure (Dijkstra split) + tracing PR1 (Wolf) | planned |
-| I4 | **MLP** | Streaming iterator + Engine struct + CorpusResult wrapper | planned |
-| I5 | post-publish | OTel feature, PDF/DOCX adapters, possibly the reactor | post-0.1 |
+| I4 | structural | Workspace conversion + `rumi-nlp` skeleton | planned |
+| I5 | **MLP** | Streaming iterator + Engine struct + CorpusResult wrapper | planned |
+| I6 | post-publish | OTel feature, PDF/DOCX adapters, `rumi-nlp` patterns, possibly the reactor | post-0.1 |
 
 **MVP** = "is correct, is bounded, has a recovery contract." A consumer can use it and recover from errors. Not yet streaming.
 
 **MLP** = MVP plus "scales to corpus-sized work without OOM." The streaming iterator is what turns a working library into a deployable substrate.
 
 ## What got rejected and why
+
+### `rumi-nlp` in the matcher engine's workspace
+
+Tested in the prior session (recovery-2.md:652): "rumi-nlp is a separate crate in the matcher engine's workspace." Rejected on 2026-04-30. The project that owns the *domain* owns the matcher-bridge crate for that domain. the matcher engine's workspace owns HTTP and Claude-hooks; vaani owns NLP. Putting `rumi-nlp` in the matcher engine's workspace forces it to know about NLP terminology, which violates its "matcher engine, not policy engine" stance. `rumi-nlp` lives in vaani's workspace; it depends on `rumi-core` (published independently) and on `vaani-core` (the substrate it bridges).
+
+### Tree-traversal primitives in `rumi-core`
+
+Considered in the prior session (recovery-1.md:404–446) and rejected on first principles (recovery-1.md:448–465). `DataInput<Ctx>`'s type erasure handles tree walks without core needing tree primitives — the domain implementation walks the tree internally and returns flat `MatchingData`. Core stays flat. This decision binds: vaani's `rumi-nlp` does the tree walking inside its `DataInput<Sentence>` impls. `rumi-core` does not change to accommodate trees.
+
+### Built-in extractors for the five patterns in `vaani-core`
+
+Originally proposed (recovery-2.md:309) under the barbell argument: ship deterministic extractors for SVO, copular, prepositional, passive, and nominal modifier patterns, covering ~85–90% of structured technical text. Rejected by user (recovery-2.md:317): "we actually don't need to do SMRT/relation/stance etc. stuff in vaani." vaani-core stays substrate-only (parse + structure + metrics + summarization + keyphrases + tree-walk primitives). The five patterns become candidates for `rumi-nlp` content post-publish (I6e), driven by real consumer needs.
 
 ### `arrange / decompose / frame / compose` (the original Karman proposal)
 
@@ -57,17 +70,19 @@ The triggers are named here so a future iteration can check them without re-liti
 
 ## Public surface evolution
 
-| Surface element | I0 | I1 | I2 | I3 (MVP) | I4 (MLP) | I5+ |
-|---|---|---|---|---|---|---|
-| Pipeline verbs | old | renamed | renamed | renamed | renamed | renamed |
-| `Error` variants | `Io`, `ParseFailed(String)`, ... | same | same | split + structured | same | same |
-| `is_skip_doc` / `is_fatal` | absent | absent | absent | present | present | present |
-| `analyze_directory` | buffered | buffered | buffered | buffered | deprecated | deprecated |
-| `analyze_directory_iter` | absent | absent | absent | absent | present | present |
-| `Engine` struct | absent | absent | absent | absent | present | present |
-| `tracing` dep | absent | absent | absent | always-on | always-on | always-on |
-| `otel` feature | absent | absent | absent | absent | absent | available |
-| PDF/DOCX | `UnsupportedFormat` | same | same | same | same | gated feature |
+| Surface element | I0 | I1 | I2 | I3 (MVP) | I4 | I5 (MLP) | I6+ |
+|---|---|---|---|---|---|---|---|
+| Pipeline verbs | old | renamed | renamed | renamed | renamed | renamed | renamed |
+| `Error` variants | `Io`, `ParseFailed(String)`, ... | same | same | split + structured | same | same | same |
+| `is_skip_doc` / `is_fatal` | absent | absent | absent | present | present | present | present |
+| `analyze_directory` | buffered | buffered | buffered | buffered | buffered | deprecated | deprecated |
+| `analyze_directory_iter` | absent | absent | absent | absent | absent | present | present |
+| `Engine` struct | absent | absent | absent | absent | absent | present | present |
+| `tracing` dep | absent | absent | absent | always-on | workspace-dep | workspace-dep | workspace-dep |
+| `otel` feature | absent | absent | absent | absent | absent | absent | available |
+| PDF/DOCX | `UnsupportedFormat` | same | same | same | same | same | gated feature |
+| Workspace shape | single crate | single crate | single crate | single crate | **2 crates** | 2 crates | 2+ crates |
+| `rumi-nlp` crate | absent | absent | absent | absent | skeleton (1 DataInput) | skeleton | patterns land |
 
 `#[non_exhaustive]` on every public type is locked from I0 forward. This is the v2 commitment that survives every restructure (Chesterton fence 2).
 

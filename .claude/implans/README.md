@@ -9,9 +9,10 @@ Each iteration has one implan. The implans are agent-legible: every task names t
 | [i0-stabilize.md](i0-stabilize.md) | none | Commit the post-recovery baseline; capture N₀ and noise floor |
 | [i1-rename.md](i1-rename.md) | none | Karman pipeline rename |
 | [i2-resilience.md](i2-resilience.md) | resilience floor | Ten antifragile fixes |
-| [i3-error-tracing.md](i3-error-tracing.md) | **MVP** | Error restructure + tracing PR1 |
-| [i4-streaming.md](i4-streaming.md) | **MLP** | Streaming iterator + Engine + CorpusResult |
-| [i5-post-mlp.md](i5-post-mlp.md) | post-publish | OTel feature, PDF/DOCX, deferred reactor |
+| [i3-error-tracing.md](i3-error-tracing.md) | **MVP** | Error restructure + tracing PR1 + cdylib feature-gating |
+| [i4-workspace.md](i4-workspace.md) | structural | Workspace conversion + `rumi-nlp` skeleton |
+| [i5-streaming.md](i5-streaming.md) | **MLP** | Streaming iterator + Engine + CorpusResult |
+| [i6-post-publish.md](i6-post-publish.md) | post-publish | OTel feature, PDF/DOCX, `rumi-nlp` patterns, deferred reactor |
 
 **Strict ordering.** No iteration starts until the previous one has met its acceptance gate. K's strategic verdict on this is non-negotiable: rename a stable surface before structure moves; install the resilience floor before the error contract; ship the error contract before the streaming surface that consumes it.
 
@@ -33,7 +34,7 @@ If a task is ambiguous in the implan, the implan is the bug. Edit the implan fir
 
 ## The cross-iteration regression matrix
 
-At every iteration landing (I1, I2, I3, I4, I5), all of these must hold:
+At every iteration landing (I1, I2, I3, I4, I5, I6), all of these must hold:
 
 1. `cargo test` count `≥ N₀` (PR0 baseline). New iterations add tests; none silently delete.
 2. `cargo test --no-default-features` passes (CLAUDE.md rule 6).
@@ -54,7 +55,9 @@ If any matrix item fails at iteration landing, the iteration is rolled back, not
 
 vaani 0.1.0 is publishable if and only if **all** of the following are true at HEAD on the release commit:
 
-- [ ] Cross-iteration regression matrix items 1–9 pass.
+- [ ] Cross-iteration regression matrix items 1–9 pass for **both** workspace crates (`vaani` and `rumi-nlp`).
+- [ ] `cargo publish --dry-run -p vaani` and `cargo publish --dry-run -p rumi-nlp` both succeed.
+- [ ] `rumi-nlp` smoke test green (the bridge actually wires through to `rumi-core`).
 - [ ] Fault-injection corpus passes (see [i2-resilience.md](i2-resilience.md) Validation):
   - 25-depth and 1000-depth chains return correct depths.
   - oversized inputs to TF-IDF, RAKE, and YAKE each return three distinct `InputTooLarge` errors with three distinct `what:` labels.
