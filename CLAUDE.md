@@ -6,7 +6,9 @@ Prose metrics engine. Text in, structured analysis out. Readability, POS, depend
 
 Hex architecture. Rust core with PyO3 Python bindings. Single crate, dual publish: `vaani` on crates.io, `vaani` on PyPI via maturin.
 
-Pipeline: Source -> Decompose -> Annotate (NLP) -> Encode -> Extract
+Pipeline: ingest → decompose → parse → measure (+ peer extract)
+
+The five verbs are the public stage vocabulary. Trait names (`Source`, `Decomposer`, `NlpProvider`) keep their existing names; the renamed verbs appear in stage descriptions and composition-root function names.
 
 Domain depends on port traits (NlpProvider, Decomposer, Source), not on adapters directly. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
 

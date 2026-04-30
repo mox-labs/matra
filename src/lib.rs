@@ -23,7 +23,7 @@ pub fn analyze(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
 
 /// Analyze markdown text. Returns structured metrics with section awareness.
 pub fn analyze_markdown(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
-    let sections = decompose::markdown::parse(text);
+    let sections = decompose::markdown::MarkdownDecomposer.decompose(text);
     let prose: String = sections
         .iter()
         .flat_map(|s| s.paragraphs.iter())
@@ -110,9 +110,10 @@ pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Se
 /// Use with [`parse()`] for the no-double-parse pattern.
 ///
 /// ```no_run
+/// # use vaani::decompose::Decomposer;
 /// # use vaani::nlp::NlpProvider;
 /// # fn example(text: &str, nlp: &dyn NlpProvider) -> vaani::domain::Result<()> {
-/// let sections = vaani::decompose::markdown::parse(text);
+/// let sections = vaani::decompose::markdown::MarkdownDecomposer.decompose(text);
 /// let sentences = vaani::parse(text, nlp)?;
 /// let analysis = vaani::analyze_from(sections, &sentences);
 /// let summary = vaani::extraction::tfidf_summarize(&sentences, 3);
