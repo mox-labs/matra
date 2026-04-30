@@ -27,3 +27,9 @@ Thumbs.db
 # Env
 .env
 .env.local
+
+# Per-user Claude Code settings (the .claude/arch and .claude/implans directories ARE tracked)
+.claude/settings.local.json
+
+# Recovery and agent-mining artifacts (kept for archaeology, not source control)
+scratch/*.jsonl

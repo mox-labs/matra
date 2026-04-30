@@ -1,8 +1,3 @@
-//! Extraction algorithms. Each takes NLP parse output and returns scored results.
-//!
-//! These are standalone functions, not a pipeline. Consumers call
-//! the specific algorithm they need by name.
-
 //! Extraction algorithms. Each takes a slice of Sentences and returns
 //! scored results. Consumers call the specific algorithm by name.
 

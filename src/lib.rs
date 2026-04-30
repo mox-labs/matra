@@ -1,23 +1,9 @@
-//! vaani -- prose metrics engine.
-//!
-//! Text in, structured analysis out. Readability, POS, dependency,
-//! lexical density, compression ratio.
-//!
-//! # Example (Rust)
-//!
-//! ```no_run
-//! use vaani::{analyze_markdown, nlp::udpipe::Udpipe};
-//!
-//! let nlp = Udpipe::english("/tmp/models").unwrap();
-//! let analysis = analyze_markdown("## Hello\n\nSome text.", &nlp).unwrap();
-//! println!("{}", serde_json::to_string_pretty(&analysis).unwrap());
-//! ```
+#![doc = include_str!("../README.md")]
 
 pub mod decompose;
 pub mod domain;
-pub mod encoders;
 pub mod extraction;
-pub mod markdown;
+pub mod metrics;
 pub mod nlp;
 pub mod source;
 mod stopwords;
@@ -49,21 +35,41 @@ pub fn analyze_markdown(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Ana
     run_analysis(sections, &prose, nlp)
 }
 
-/// Analyze a file, detecting format by extension.
+/// Analyze a file, detecting format by extension. Returns
+/// [`domain::Error::UnsupportedFormat`] for `Pdf`/`Docx` until a
+/// decomposer is registered for those formats.
 pub fn analyze_file(path: impl AsRef<Path>, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
-    let mut docs = source::file::FileSource.read(path.as_ref())?;
-    // FileSource always returns exactly one document. pop() avoids a dead
-    // ok_or_else branch -- if the file doesn't exist, read() already errors.
-    let doc = docs.pop().expect("FileSource always returns one document");
-    match doc.format {
-        domain::Format::Markdown => analyze_markdown(&doc.text, nlp),
-        _ => analyze(&doc.text, nlp),
+    let docs = source::file::FileSource.read(path.as_ref())?;
+    let doc = docs.into_iter().next().ok_or_else(|| {
+        domain::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "source returned no documents",
+        ))
+    })?;
+    analyze_raw(&doc.text, doc.format, nlp)
+}
+
+fn analyze_raw(
+    text: &str,
+    format: domain::Format,
+    nlp: &dyn NlpProvider,
+) -> domain::Result<Analysis> {
+    match format {
+        domain::Format::Markdown => analyze_markdown(text, nlp),
+        domain::Format::PlainText => analyze(text, nlp),
+        other @ (domain::Format::Pdf | domain::Format::Docx) => {
+            Err(domain::Error::UnsupportedFormat(other))
+        }
     }
 }
 
-/// Analyze all files in a directory. Returns a Corpus of successfully analyzed
-/// documents and a list of per-file errors. Partial results survive individual
-/// file failures.
+/// Analyze all readable files in a directory. Returns a `Corpus` of
+/// successfully analyzed documents and a list of per-document errors
+/// (from analysis or unsupported formats).
+///
+/// Note: at the `Source` layer, `DirectorySource` still aborts on the
+/// first filesystem read error. Per-file I/O tolerance is tracked for
+/// 0.2. See [`source::directory::DirectorySource`].
 pub fn analyze_directory(
     path: impl AsRef<Path>,
     nlp: &dyn NlpProvider,
@@ -72,16 +78,13 @@ pub fn analyze_directory(
     let mut entries = Vec::new();
     let mut errors = Vec::new();
     for doc in docs {
-        let result = match doc.format {
-            domain::Format::Markdown => analyze_markdown(&doc.text, nlp),
-            _ => analyze(&doc.text, nlp),
-        };
-        match result {
+        let path = doc.path.clone();
+        match analyze_raw(&doc.text, doc.format, nlp) {
             Ok(analysis) => entries.push(domain::CorpusEntry {
-                path: doc.path,
+                path,
                 analysis,
             }),
-            Err(e) => errors.push((doc.path.unwrap_or_default(), e)),
+            Err(e) => errors.push((path.unwrap_or_default(), e)),
         }
     }
     Ok((domain::Corpus::new(entries), errors))
@@ -118,12 +121,12 @@ pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Se
 /// ```
 pub fn analyze_from(sections: Vec<Section>, sentences: &[domain::Sentence]) -> Analysis {
     let mut analysis = Analysis::new(sections);
-    let pipeline = encoders::default_pipeline();
-    encoders::run_pipeline(&mut analysis, sentences, &pipeline);
+    let suite = metrics::default_suite();
+    metrics::run_suite(&mut analysis, sentences, &suite);
     analysis
 }
 
-/// Shared analysis pipeline: parse NLP, run encoders.
+/// Shared analysis pipeline: parse NLP, run the default metric suite.
 fn run_analysis(
     sections: Vec<Section>,
     prose: &str,
@@ -131,8 +134,8 @@ fn run_analysis(
 ) -> domain::Result<Analysis> {
     let mut analysis = Analysis::new(sections);
     let sentences = nlp.parse(prose)?;
-    let pipeline = encoders::default_pipeline();
-    encoders::run_pipeline(&mut analysis, &sentences, &pipeline);
+    let suite = metrics::default_suite();
+    metrics::run_suite(&mut analysis, &sentences, &suite);
     Ok(analysis)
 }
 
@@ -226,7 +229,8 @@ mod python {
                 .nlp
                 .parse(text)
                 .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-            let result = crate::extraction::textrank_summarize(&sentences, n);
+            let result = crate::extraction::textrank_summarize(&sentences, n)
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
             to_dict(py, &result)
         }
 

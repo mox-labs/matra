@@ -16,7 +16,7 @@ pip install vaani
 
 ## Usage (Rust)
 
-```rust
+```rust,ignore
 use vaani::{analyze_markdown, nlp::udpipe::Udpipe};
 
 // Downloads the English model on first call (~16MB)
@@ -25,19 +25,22 @@ let nlp = Udpipe::english("./models").unwrap();
 let text = std::fs::read_to_string("essay.md").unwrap();
 let analysis = analyze_markdown(&text, &nlp).unwrap();
 
-println!("Sentences: {}", analysis.document.total_sentences);
-println!("FK Grade: {:.1}", analysis.document.readability_grade);
-println!("Passive: {:.1}%", analysis.document.passive_ratio * 100.0);
+println!("Sentences: {}", analysis.total_sentences());
+println!("Mean length: {:.1}", analysis.mean_sentence_length());
+println!("Passive: {:.1}%", analysis.passive_ratio() * 100.0);
 ```
 
 ## Usage (Python)
 
 ```python
+from pathlib import Path
 from vaani import Vaani
 
 # Downloads the English model on first call (~16MB)
-v = Vaani.english("~/.vaani/models")
-result = v.analyze_markdown(open("essay.md").read())
+model_dir = str(Path.home() / ".vaani" / "models")
+v = Vaani.english(model_dir)
+
+result = v.analyze_markdown(Path("essay.md").read_text())
 ```
 
 ## Usage (CLI)
@@ -59,16 +62,18 @@ vaani analyze essay.md -s    # section breakdown
 
 ## Architecture
 
-Hex architecture. Domain depends on the `NlpProvider` trait (port), not on UDPipe directly. UDPipe is the default adapter, behind a feature flag.
+Hex architecture. Domain depends on port traits (`Source`, `Decomposer`, `NlpProvider`), not on adapters directly. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
 
-```
+```text
 src/
-  domain.rs       # types (zero internal deps)
-  nlp/mod.rs      # NlpProvider trait (zero external deps)
-  nlp/udpipe.rs   # UDPipe adapter (only file importing udpipe_rs)
-  encoders.rs     # pipeline (depends on domain + port types)
-  markdown.rs     # markdown parser (returns domain types)
-  lib.rs          # public API + PyO3 bindings
+  domain.rs              # types (zero internal deps)
+  source/                # Source port + File/Directory adapters
+  decompose/             # Decomposer port + Markdown/Plain adapters
+  nlp/                   # NlpProvider port
+    udpipe.rs            # UDPipe adapter (only file importing udpipe_rs)
+  encoders.rs            # metric pipeline (domain + stopwords only)
+  extraction/            # TF-IDF, TextRank, RAKE, YAKE
+  lib.rs                 # composition root + PyO3 bindings
 ```
 
 ## License
