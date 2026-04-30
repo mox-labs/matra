@@ -187,7 +187,9 @@ After I4 lands:
 - **Risk:** `rumi-core 0.0.2` (the dependency) is itself early-stage and may have breaking changes before vaani 1.0.
   - **Mitigation:** pin `rumi-core` to a specific version in `rumi-nlp/Cargo.toml`. Track upstream changes and bump explicitly.
 
-- **Open decision (confirm with user):** is the crate name `rumi-nlp` or `vaani-matchers`? My default is `rumi-nlp` — matches the rumi-* extension convention, accurate to what the crate does. Alternative `vaani-matchers` keeps the brand cleaner but is less honest about the dependency.
+- **Resolved 2026-04-30:** crate name is **`rumi-nlp`**. Matches the rumi-* extension convention, accurate to the dependency. The brand-cleanliness argument for `vaani-matchers` was considered and dismissed; honesty about the dependency wins.
+
+- **Resolved 2026-04-30:** initial scope is **primitives + one smoke test** (Task C as drafted). The five extraction patterns and `compile_nlp_rules()` config compiler are deferred to I6e, triggered by real consumer needs. Don't ship speculative.
 
 - **Open decision (confirm with user):** does the cdylib feature-gating actually need a build script (Task B (a)/(b)) or is the documented workaround (Task B (c)) acceptable? My default is (c) for 0.1.0.
 
