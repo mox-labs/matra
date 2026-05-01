@@ -35,22 +35,14 @@ fn check_input_size(text: &str) -> domain::Result<()> {
 pub fn analyze(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
     check_input_size(text)?;
     let sections = decompose::plain::PlainTextDecomposer.decompose(text);
-    run_analysis(sections, text, nlp)
+    run_analysis(sections, nlp)
 }
 
 /// Analyze markdown text. Returns structured metrics with section awareness.
 pub fn analyze_markdown(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
     check_input_size(text)?;
     let sections = decompose::markdown::MarkdownDecomposer.decompose(text);
-    let prose: String = sections
-        .iter()
-        .flat_map(|s| s.paragraphs.iter())
-        .filter(|p| !p.in_blockquote)
-        .map(|p| p.text.as_str())
-        .collect::<Vec<_>>()
-        .join("\n\n");
-
-    run_analysis(sections, &prose, nlp)
+    run_analysis(sections, nlp)
 }
 
 /// Analyze a file, detecting format by extension. Returns
@@ -160,16 +152,34 @@ pub fn analyze_from(
     Ok(analysis)
 }
 
-/// Shared analysis pipeline: parse NLP, run the default metric suite.
-fn run_analysis(
-    sections: Vec<Section>,
-    prose: &str,
-    nlp: &dyn NlpProvider,
-) -> domain::Result<Analysis> {
+/// Shared analysis pipeline: parse each non-blockquote paragraph
+/// individually, attaching its sentences directly. Then run the default
+/// metric suite over the populated analysis.
+///
+/// Per-paragraph parse eliminates the prefix-match wiring step that the
+/// previous implementation needed (and the silent sentence-loss /
+/// inner-substring-theft defects that came with it). Each paragraph's
+/// sentences come straight from `nlp.parse(&paragraph.text)` — no
+/// document-level joining, no string-prefix recovery, no ambiguity.
+///
+/// The flat sentence slice fed to document-level metrics
+/// (`vocabulary_ttr`, `nominalization_ratio`) is concatenated from the
+/// per-paragraph parses in document order.
+fn run_analysis(sections: Vec<Section>, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
     let mut analysis = Analysis::new(sections);
-    let sentences = nlp.parse(prose)?;
+    let mut all_sentences: Vec<domain::Sentence> = Vec::new();
+
+    for para in analysis.paragraphs_mut() {
+        if para.in_blockquote {
+            continue;
+        }
+        let parsed = nlp.parse(&para.text)?;
+        all_sentences.extend(parsed.iter().cloned());
+        para.sentences = parsed;
+    }
+
     let suite = metrics::default_suite();
-    metrics::run_suite(&mut analysis, &sentences, &suite);
+    metrics::run_suite(&mut analysis, &all_sentences, &suite);
     Ok(analysis)
 }
 
@@ -320,6 +330,22 @@ mod tests {
         }
     }
 
+    /// Splits the input on `.` and returns one [`Sentence`] per non-empty
+    /// piece. Tokens are not constructed (the pipeline tests below only
+    /// look at sentence text and counts). Lets us assert the
+    /// per-paragraph parse contract without a real NLP backend.
+    struct DotSplitNlp;
+    impl NlpProvider for DotSplitNlp {
+        fn parse(&self, text: &str) -> domain::Result<Vec<domain::Sentence>> {
+            Ok(text
+                .split('.')
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(|s| domain::Sentence::new(s.to_string(), Vec::new()))
+                .collect())
+        }
+    }
+
     #[test]
     fn input_at_cap_is_accepted() {
         // "a" repeated MAX_INPUT_BYTES times = exactly the cap.
@@ -354,6 +380,76 @@ mod tests {
             }
             other => panic!("expected InputTooLarge from parse, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn parse_per_paragraph_scopes_sentences_to_originating_paragraph() {
+        // FM1 regression: two paragraphs with the same first 30 chars.
+        // Pre-fix, attach_sentences would prefix-match and could assign
+        // either paragraph's first sentence to the wrong paragraph
+        // (and silently drop the other). Per-paragraph parse makes the
+        // assignment unambiguous by construction.
+        let text = "The system processes input now. Tail one.\n\n\
+                    The system processes input now. Tail two.";
+        let analysis = analyze(text, &DotSplitNlp).unwrap();
+
+        let paras: Vec<_> = analysis.paragraphs().collect();
+        assert_eq!(paras.len(), 2);
+        assert_eq!(paras[0].sentences.len(), 2);
+        assert_eq!(paras[1].sentences.len(), 2);
+
+        // Each paragraph keeps its own tail; no leak.
+        assert!(paras[0].sentences.iter().any(|s| s.text.contains("one")));
+        assert!(paras[1].sentences.iter().any(|s| s.text.contains("two")));
+        assert!(!paras[0].sentences.iter().any(|s| s.text.contains("two")));
+        assert!(!paras[1].sentences.iter().any(|s| s.text.contains("one")));
+    }
+
+    #[test]
+    fn parse_per_paragraph_no_inner_substring_theft() {
+        // Inner-substring regression: paragraph A contains paragraph B's
+        // first-sentence prefix as a mid-text substring. Pre-fix, the
+        // greedy prefix-contains check could steal B's sentence into A.
+        // Per-paragraph parse makes the question moot.
+        let text = "Outer talks about the special phrase processes input now. End A.\n\n\
+                    The special phrase processes input now. End B.";
+        let analysis = analyze(text, &DotSplitNlp).unwrap();
+
+        let paras: Vec<_> = analysis.paragraphs().collect();
+        assert_eq!(paras.len(), 2);
+
+        // Paragraph A should have its own two sentences; paragraph B its own two.
+        // Critically: B's "End B" must be in B, not stolen by A.
+        assert!(paras[1].sentences.iter().any(|s| s.text.contains("End B")));
+        assert!(!paras[0].sentences.iter().any(|s| s.text.contains("End B")));
+    }
+
+    #[test]
+    fn empty_paragraph_followed_by_valid_paragraph() {
+        // Trailing whitespace on an empty paragraph used to confuse the
+        // prefix-match wiring; per-paragraph parse handles cleanly.
+        // (PlainTextDecomposer collapses runs of blank lines, so we
+        // construct sections manually for this test to keep an empty
+        // paragraph entry.)
+        let mut sections = decompose::plain::PlainTextDecomposer
+            .decompose("Real content sentence.\n\nAnother real one.");
+        // Inject an empty paragraph in front.
+        if let Some(section) = sections.first_mut() {
+            section
+                .paragraphs
+                .insert(0, domain::Paragraph::new(String::new(), false));
+        }
+        let analysis = run_analysis(sections, &DotSplitNlp).unwrap();
+
+        let paras: Vec<_> = analysis.paragraphs().collect();
+        assert_eq!(paras.len(), 3);
+        assert_eq!(
+            paras[0].sentences.len(),
+            0,
+            "empty paragraph has zero sentences"
+        );
+        assert!(paras[1].sentences.len() >= 1);
+        assert!(paras[2].sentences.len() >= 1);
     }
 
     #[test]
