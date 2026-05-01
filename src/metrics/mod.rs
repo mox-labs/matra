@@ -116,10 +116,8 @@ mod tests {
             ],
         )]);
 
-        let (mut analysis, sentences) = analysis_from_paragraphs(vec![(
-            Paragraph::new(para_text.to_string(), false),
-            sents,
-        )]);
+        let (mut analysis, sentences) =
+            analysis_from_paragraphs(vec![(Paragraph::new(para_text.to_string(), false), sents)]);
         let suite = default_suite();
         run_suite(&mut analysis, &sentences, &suite);
 
@@ -171,7 +169,10 @@ mod tests {
         )]);
 
         let (mut analysis, sentences) = analysis_from_paragraphs(vec![
-            (Paragraph::new("The system was built".to_string(), false), s1),
+            (
+                Paragraph::new("The system was built".to_string(), false),
+                s1,
+            ),
             (
                 Paragraph::new("The team shipped the product".to_string(), false),
                 s2,

@@ -7,6 +7,12 @@ use crate::domain::{self, Error, RawDocument};
 use super::Source;
 use super::file::FileSource;
 
+/// Successes plus per-file failures from a directory read. The outer
+/// `Result` of [`DirectorySource::read_collecting_errors`] is `Err` only
+/// for top-level (directory-listing) failures; per-file failures land
+/// here.
+pub type ReadOutcome = (Vec<RawDocument>, Vec<(PathBuf, Error)>);
+
 /// Reads all regular files in a directory (non-recursive, symlinks skipped).
 ///
 /// Behavior:
@@ -48,10 +54,7 @@ impl DirectorySource {
     /// separately. The outer `Result` is `Err` only for top-level directory
     /// failures (`read_dir` itself failing). Once the listing succeeds,
     /// every file is attempted; failures are collected with their path.
-    pub fn read_collecting_errors(
-        &self,
-        input: &Path,
-    ) -> domain::Result<(Vec<RawDocument>, Vec<(PathBuf, Error)>)> {
+    pub fn read_collecting_errors(&self, input: &Path) -> domain::Result<ReadOutcome> {
         let paths = self.candidate_paths(input)?;
         let file_source = FileSource;
         let mut docs = Vec::new();

@@ -378,7 +378,10 @@ mod tests {
 
         let _ = with_temp_subdir(parent.path(), |tmp| {
             assert!(tmp.exists(), "temp subdir should exist inside the closure");
-            assert!(tmp.starts_with(parent.path()), "temp subdir should be inside parent");
+            assert!(
+                tmp.starts_with(parent.path()),
+                "temp subdir should be inside parent"
+            );
             captured = Some(tmp.to_path_buf());
             Ok(())
         });

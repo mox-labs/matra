@@ -26,7 +26,7 @@ const MAX_TOKENS: usize = 200_000;
 /// the standard RAKE degree/frequency ratio from the co-occurrence matrix.
 ///
 /// Returns [`Error::InputTooLarge`] when the total token count across all
-/// input sentences exceeds [`MAX_TOKENS`].
+/// input sentences exceeds the per-extractor `MAX_TOKENS` cap.
 pub fn keyphrases(sentences: &[Sentence], max_phrases: usize) -> Result<Vec<Keyphrase>> {
     if max_phrases == 0 {
         return Ok(Vec::new());
