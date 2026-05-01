@@ -6,22 +6,43 @@
 
 use std::collections::HashMap;
 
-use crate::domain::{Keyphrase, Sentence};
+use crate::domain::{Error, Keyphrase, Result, Sentence};
 use crate::stopwords::is_stop_word;
+
+/// RAKE builds a co-occurrence map keyed on phrase strings. Worst-case
+/// unique-phrase cardinality is bounded by total token count times mean
+/// candidate-phrase length k (typically ~2–3 for NOUN/ADJ/PROPN runs).
+/// At 200k tokens the candidate map holds <= ~50k entries at ~64 bytes
+/// each = ~3 MiB resident; degree/frequency walks are O(unique tokens).
+/// Cap is on tokens (not sentences) per Knuth's correction (chat-log
+/// corpora can have 50k one-token sentences and still fit comfortably;
+/// a sentence-cap defeats the actual cost model).
+const MAX_TOKENS: usize = 200_000;
 
 /// Extract ranked keyphrases using RAKE with POS filtering.
 ///
 /// Only NOUN, ADJ, and PROPN tokens contribute to candidate phrases.
 /// Stop words and punctuation act as phrase boundaries. Scoring uses
 /// the standard RAKE degree/frequency ratio from the co-occurrence matrix.
-pub fn keyphrases(sentences: &[Sentence], max_phrases: usize) -> Vec<Keyphrase> {
+///
+/// Returns [`Error::InputTooLarge`] when the total token count across all
+/// input sentences exceeds [`MAX_TOKENS`].
+pub fn keyphrases(sentences: &[Sentence], max_phrases: usize) -> Result<Vec<Keyphrase>> {
     if max_phrases == 0 {
-        return Vec::new();
+        return Ok(Vec::new());
+    }
+    let total_tokens: usize = sentences.iter().map(|s| s.tokens.len()).sum();
+    if total_tokens > MAX_TOKENS {
+        return Err(Error::InputTooLarge {
+            limit: MAX_TOKENS,
+            actual: total_tokens,
+            what: "rake",
+        });
     }
 
     let candidates = extract_candidates(sentences);
     if candidates.is_empty() {
-        return Vec::new();
+        return Ok(Vec::new());
     }
 
     // Build word co-occurrence matrix from candidate phrases.
@@ -74,7 +95,7 @@ pub fn keyphrases(sentences: &[Sentence], max_phrases: usize) -> Vec<Keyphrase> 
             .unwrap_or(std::cmp::Ordering::Equal)
     });
     ranked.truncate(max_phrases);
-    ranked
+    Ok(ranked)
 }
 
 /// Extract candidate phrases: runs of NOUN/ADJ tokens between stop word boundaries.
@@ -137,13 +158,13 @@ mod tests {
 
     #[test]
     fn empty_input_returns_empty() {
-        assert!(keyphrases(&[], 5).is_empty());
+        assert!(keyphrases(&[], 5).unwrap().is_empty());
     }
 
     #[test]
     fn max_zero_returns_empty() {
         let sentences = vec![sent("hello", vec![tok(1, "hello", "NOUN")])];
-        assert!(keyphrases(&sentences, 0).is_empty());
+        assert!(keyphrases(&sentences, 0).unwrap().is_empty());
     }
 
     #[test]
@@ -163,7 +184,7 @@ mod tests {
             ],
         )];
 
-        let result = keyphrases(&sentences, 5);
+        let result = keyphrases(&sentences, 5).unwrap();
         assert!(!result.is_empty());
 
         let phrases: Vec<&str> = result.iter().map(|k| k.phrase.as_str()).collect();
@@ -185,9 +206,30 @@ mod tests {
             ],
         )];
 
-        let result = keyphrases(&sentences, 5);
+        let result = keyphrases(&sentences, 5).unwrap();
         assert!(result.len() >= 2);
         assert!(result[0].score >= result[1].score);
+    }
+
+    #[test]
+    fn rejects_oversized_input() {
+        // One sentence with MAX_TOKENS + 1 tokens (cheap to construct, exceeds cap).
+        let tokens: Vec<Token> = (0..MAX_TOKENS + 1)
+            .map(|i| tok(i + 1, "x", "NOUN"))
+            .collect();
+        let sentences = vec![sent("x".repeat(MAX_TOKENS + 1).as_str(), tokens)];
+        match keyphrases(&sentences, 5) {
+            Err(Error::InputTooLarge {
+                limit,
+                actual,
+                what,
+            }) => {
+                assert_eq!(limit, MAX_TOKENS);
+                assert_eq!(actual, MAX_TOKENS + 1);
+                assert_eq!(what, "rake");
+            }
+            other => panic!("expected InputTooLarge, got {other:?}"),
+        }
     }
 
     #[test]
