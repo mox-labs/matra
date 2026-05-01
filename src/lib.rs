@@ -11,18 +11,36 @@ mod stopwords;
 use std::path::Path;
 
 use decompose::Decomposer;
-use domain::{Analysis, Section};
+use domain::{Analysis, MAX_INPUT_BYTES, Section};
 use nlp::NlpProvider;
 use source::Source;
 
+/// Reject text whose byte length exceeds [`MAX_INPUT_BYTES`].
+///
+/// Returns `Error::InputTooLarge { what: "input", .. }` so consumers can
+/// distinguish the bound check from per-extractor caps (which use distinct
+/// `what` labels). All public entry points that take text run this gate.
+fn check_input_size(text: &str) -> domain::Result<()> {
+    if text.len() > MAX_INPUT_BYTES {
+        return Err(domain::Error::InputTooLarge {
+            limit: MAX_INPUT_BYTES,
+            actual: text.len(),
+            what: "input",
+        });
+    }
+    Ok(())
+}
+
 /// Analyze raw text. Returns structured metrics.
 pub fn analyze(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
+    check_input_size(text)?;
     let sections = decompose::plain::PlainTextDecomposer.decompose(text);
     run_analysis(sections, text, nlp)
 }
 
 /// Analyze markdown text. Returns structured metrics with section awareness.
 pub fn analyze_markdown(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
+    check_input_size(text)?;
     let sections = decompose::markdown::MarkdownDecomposer.decompose(text);
     let prose: String = sections
         .iter()
@@ -100,6 +118,7 @@ pub fn analyze_directory(
 /// # }
 /// ```
 pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Sentence>> {
+    check_input_size(text)?;
     nlp.parse(text)
 }
 
@@ -112,16 +131,31 @@ pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Se
 /// # fn example(text: &str, nlp: &dyn NlpProvider) -> vaani::domain::Result<()> {
 /// let sections = vaani::decompose::markdown::MarkdownDecomposer.decompose(text);
 /// let sentences = vaani::parse(text, nlp)?;
-/// let analysis = vaani::analyze_from(sections, &sentences);
+/// let analysis = vaani::analyze_from(sections, &sentences)?;
 /// let summary = vaani::extraction::tfidf_summarize(&sentences, 3);
 /// # Ok(())
 /// # }
 /// ```
-pub fn analyze_from(sections: Vec<Section>, sentences: &[domain::Sentence]) -> Analysis {
+pub fn analyze_from(
+    sections: Vec<Section>,
+    sentences: &[domain::Sentence],
+) -> domain::Result<Analysis> {
+    let total_bytes: usize = sections
+        .iter()
+        .flat_map(|s| s.paragraphs.iter())
+        .map(|p| p.text.len())
+        .sum();
+    if total_bytes > MAX_INPUT_BYTES {
+        return Err(domain::Error::InputTooLarge {
+            limit: MAX_INPUT_BYTES,
+            actual: total_bytes,
+            what: "input",
+        });
+    }
     let mut analysis = Analysis::new(sections);
     let suite = metrics::default_suite();
     metrics::run_suite(&mut analysis, sentences, &suite);
-    analysis
+    Ok(analysis)
 }
 
 /// Shared analysis pipeline: parse NLP, run the default metric suite.
@@ -264,5 +298,72 @@ mod python {
     pub fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_class::<Vaani>()?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::nlp::NlpProvider;
+
+    /// Minimal NlpProvider that returns no sentences. Lets us test composition-root
+    /// gates (input size, etc.) without requiring a real NLP backend.
+    struct EmptyNlp;
+    impl NlpProvider for EmptyNlp {
+        fn parse(&self, _text: &str) -> domain::Result<Vec<domain::Sentence>> {
+            Ok(Vec::new())
+        }
+    }
+
+    #[test]
+    fn input_at_cap_is_accepted() {
+        // "a" repeated MAX_INPUT_BYTES times = exactly the cap.
+        let text = "a".repeat(MAX_INPUT_BYTES);
+        let result = analyze(&text, &EmptyNlp);
+        assert!(result.is_ok(), "input exactly at cap should be accepted");
+    }
+
+    #[test]
+    fn input_one_byte_over_cap_is_rejected() {
+        let text = "a".repeat(MAX_INPUT_BYTES + 1);
+        match analyze(&text, &EmptyNlp) {
+            Err(domain::Error::InputTooLarge {
+                limit,
+                actual,
+                what,
+            }) => {
+                assert_eq!(limit, MAX_INPUT_BYTES);
+                assert_eq!(actual, MAX_INPUT_BYTES + 1);
+                assert_eq!(what, "input");
+            }
+            other => panic!("expected InputTooLarge, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_also_gates_input_size() {
+        let text = "a".repeat(MAX_INPUT_BYTES + 1);
+        match parse(&text, &EmptyNlp) {
+            Err(domain::Error::InputTooLarge { what, .. }) => {
+                assert_eq!(what, "input");
+            }
+            other => panic!("expected InputTooLarge from parse, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn analyze_from_gates_total_section_bytes() {
+        // Two sections each at half the cap + one byte = over.
+        let half = MAX_INPUT_BYTES / 2 + 1;
+        let p = domain::Paragraph::new("a".repeat(half), false);
+        let s = domain::Section::new(None, 0, vec![p]);
+        let sections = vec![s.clone(), s];
+        let result = analyze_from(sections, &[]);
+        match result {
+            Err(domain::Error::InputTooLarge { what, .. }) => {
+                assert_eq!(what, "input");
+            }
+            other => panic!("expected InputTooLarge from analyze_from, got {other:?}"),
+        }
     }
 }
