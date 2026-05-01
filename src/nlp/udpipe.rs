@@ -68,11 +68,11 @@ impl Udpipe {
     pub fn english(model_dir: impl AsRef<Path>) -> crate::domain::Result<Self> {
         let dir = model_dir.as_ref();
         std::fs::create_dir_all(dir)?;
-        let path = dir.join("english-ewt-ud-2.5-191206.udpipe");
+        let path = dir.join(ENGLISH_MODEL_FILENAME);
 
         // Fresh download if missing.
         if !path.exists() {
-            download_english(dir)?;
+            download_english(dir, &path)?;
         }
 
         // Try to verify-and-read the cached file. On mismatch, redownload
@@ -81,7 +81,7 @@ impl Udpipe {
             return Self::from_bytes(&bytes);
         }
         std::fs::remove_file(&path)?;
-        download_english(dir)?;
+        download_english(dir, &path)?;
         match read_and_verify(&path, ENGLISH_MODEL_SIZE, ENGLISH_MODEL_SHA256)? {
             Some(bytes) => Self::from_bytes(&bytes),
             None => Err(Error::ModelInvalid(format!(
@@ -92,13 +92,58 @@ impl Udpipe {
     }
 }
 
-fn download_english(dir: &Path) -> crate::domain::Result<()> {
-    let dir_str = dir
-        .to_str()
-        .ok_or_else(|| Error::ModelInvalid("model directory path is not valid UTF-8".into()))?;
-    udpipe_rs::download_model("english-ewt", dir_str)
-        .map_err(|e| Error::ModelInvalid(e.to_string()))?;
-    Ok(())
+/// Filename `udpipe_rs::download_model("english-ewt", ...)` writes inside
+/// the target directory. Hardcoded by the upstream crate.
+const ENGLISH_MODEL_FILENAME: &str = "english-ewt-ud-2.5-191206.udpipe";
+
+/// Run a closure with a temporary subdirectory inside `parent`, removing
+/// the subdirectory on scope exit (success or panic). The subdirectory
+/// name includes the current process id so concurrent calls in different
+/// processes do not collide.
+fn with_temp_subdir<F, T>(parent: &Path, f: F) -> crate::domain::Result<T>
+where
+    F: FnOnce(&Path) -> crate::domain::Result<T>,
+{
+    struct Cleanup<'a>(&'a Path);
+    impl Drop for Cleanup<'_> {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(self.0);
+        }
+    }
+
+    let tmp_name = format!(".tmp.download.{}", std::process::id());
+    let tmp_dir = parent.join(&tmp_name);
+    // remove any orphan from a previously-killed process with the same pid
+    let _ = std::fs::remove_dir_all(&tmp_dir);
+    std::fs::create_dir_all(&tmp_dir)?;
+    let _cleanup = Cleanup(&tmp_dir);
+    f(&tmp_dir)
+}
+
+/// Download the English model into `final_path` atomically.
+///
+/// Writes to a per-process temporary subdirectory of `dir`, then atomically
+/// renames the file to `final_path`. `std::fs::rename` is atomic on the
+/// same filesystem (POSIX `rename(2)`; Windows `MoveFileExW` with
+/// `MOVEFILE_REPLACE_EXISTING`). Concurrent processes calling
+/// `Udpipe::english(same_dir)` cannot corrupt each other's file: each
+/// downloads to its own `.tmp.download.<pid>` subdirectory and the
+/// rename is the only operation that touches `final_path`.
+///
+/// If a process is killed mid-download, its temp subdirectory is left on
+/// disk. The next call with the same pid removes it before re-downloading;
+/// other pids are independent.
+fn download_english(dir: &Path, final_path: &Path) -> crate::domain::Result<()> {
+    with_temp_subdir(dir, |tmp_dir| {
+        let tmp_str = tmp_dir.to_str().ok_or_else(|| {
+            Error::ModelInvalid("temp download directory path is not valid UTF-8".into())
+        })?;
+        udpipe_rs::download_model("english-ewt", tmp_str)
+            .map_err(|e| Error::ModelInvalid(e.to_string()))?;
+        let tmp_file = tmp_dir.join(ENGLISH_MODEL_FILENAME);
+        std::fs::rename(&tmp_file, final_path)?;
+        Ok(())
+    })
 }
 
 /// Read a file and verify its SHA-256 in a single read.
@@ -324,6 +369,42 @@ mod tests {
 
         let result = read_and_verify(&path, 5, HELLO_HASH).unwrap();
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn with_temp_subdir_creates_and_cleans_up_on_success() {
+        let parent = tempfile::tempdir().unwrap();
+        let mut captured: Option<std::path::PathBuf> = None;
+
+        let _ = with_temp_subdir(parent.path(), |tmp| {
+            assert!(tmp.exists(), "temp subdir should exist inside the closure");
+            assert!(tmp.starts_with(parent.path()), "temp subdir should be inside parent");
+            captured = Some(tmp.to_path_buf());
+            Ok(())
+        });
+
+        let tmp_path = captured.unwrap();
+        assert!(
+            !tmp_path.exists(),
+            "temp subdir should be removed after the closure returns"
+        );
+    }
+
+    #[test]
+    fn with_temp_subdir_cleans_up_on_error() {
+        let parent = tempfile::tempdir().unwrap();
+        let mut captured: Option<std::path::PathBuf> = None;
+
+        let _ = with_temp_subdir(parent.path(), |tmp| {
+            captured = Some(tmp.to_path_buf());
+            Err::<(), Error>(Error::ModelInvalid("synthetic".into()))
+        });
+
+        let tmp_path = captured.unwrap();
+        assert!(
+            !tmp_path.exists(),
+            "temp subdir should be removed even when the closure returns Err"
+        );
     }
 
     #[test]
