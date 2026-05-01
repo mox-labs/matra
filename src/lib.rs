@@ -112,8 +112,8 @@ pub fn analyze_directory(
 /// # use vaani::nlp::NlpProvider;
 /// # fn example(text: &str, nlp: &dyn NlpProvider) -> vaani::domain::Result<()> {
 /// let sentences = vaani::parse(text, nlp)?;
-/// let summary = vaani::extraction::tfidf_summarize(&sentences, 3);
-/// let phrases = vaani::extraction::rake_keyphrases(&sentences, 10);
+/// let summary = vaani::extraction::tfidf_summarize(&sentences, 3)?;
+/// let phrases = vaani::extraction::rake_keyphrases(&sentences, 10)?;
 /// # Ok(())
 /// # }
 /// ```
@@ -132,7 +132,7 @@ pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Se
 /// let sections = vaani::decompose::markdown::MarkdownDecomposer.decompose(text);
 /// let sentences = vaani::parse(text, nlp)?;
 /// let analysis = vaani::analyze_from(sections, &sentences)?;
-/// let summary = vaani::extraction::tfidf_summarize(&sentences, 3);
+/// let summary = vaani::extraction::tfidf_summarize(&sentences, 3)?;
 /// # Ok(())
 /// # }
 /// ```
@@ -243,7 +243,8 @@ mod python {
                 .nlp
                 .parse(text)
                 .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-            let result = crate::extraction::tfidf_summarize(&sentences, n);
+            let result = crate::extraction::tfidf_summarize(&sentences, n)
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
             to_dict(py, &result)
         }
 
@@ -274,7 +275,8 @@ mod python {
                 .nlp
                 .parse(text)
                 .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-            let result = crate::extraction::rake_keyphrases(&sentences, max_phrases);
+            let result = crate::extraction::rake_keyphrases(&sentences, max_phrases)
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
             to_dict(py, &result)
         }
 
@@ -289,7 +291,8 @@ mod python {
                 .nlp
                 .parse(text)
                 .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-            let result = crate::extraction::yake_keyphrases(&sentences, max_phrases);
+            let result = crate::extraction::yake_keyphrases(&sentences, max_phrases)
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
             to_dict(py, &result)
         }
     }

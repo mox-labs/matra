@@ -6,13 +6,33 @@
 
 use std::collections::HashMap;
 
-use crate::domain::{ScoredSentence, Sentence};
+use crate::domain::{Error, Result, ScoredSentence, Sentence};
 use crate::stopwords::is_stop_word;
 
+/// TF-IDF builds a sentence × term matrix and scores each sentence in linear
+/// time. The dominant cost is the per-sentence HashMap of term frequencies,
+/// bounded by total content tokens. At 2000 sentences with mean ~30 content
+/// tokens each, the working set is ~60k HashMap entries (~2 MiB resident)
+/// and wall time is well under a second on commodity hardware. The cap
+/// shares the value with TextRank but is intentionally a separate constant
+/// (Chesterton fence: TextRank's 2000 is computed for its 32 MiB similarity
+/// matrix, a different cost model — coupling them would mean a future TextRank
+/// tuning silently changes TF-IDF behavior).
+const MAX_SENTENCES: usize = 2000;
+
 /// Extract top-N sentences by TF-IDF score, returned in document order.
-pub fn summarize(sentences: &[Sentence], n: usize) -> Vec<ScoredSentence> {
+///
+/// Returns [`Error::InputTooLarge`] when `sentences.len() > MAX_SENTENCES`.
+pub fn summarize(sentences: &[Sentence], n: usize) -> Result<Vec<ScoredSentence>> {
     if sentences.is_empty() || n == 0 {
-        return Vec::new();
+        return Ok(Vec::new());
+    }
+    if sentences.len() > MAX_SENTENCES {
+        return Err(Error::InputTooLarge {
+            limit: MAX_SENTENCES,
+            actual: sentences.len(),
+            what: "tfidf",
+        });
     }
 
     let total_sentences = sentences.len();
@@ -78,14 +98,14 @@ pub fn summarize(sentences: &[Sentence], n: usize) -> Vec<ScoredSentence> {
     // Re-sort by document position.
     scored.sort_by_key(|&(idx, _)| idx);
 
-    scored
+    Ok(scored
         .into_iter()
         .map(|(idx, score)| ScoredSentence {
             text: sentences[idx].text.clone(),
             score,
             position: idx,
         })
-        .collect()
+        .collect())
 }
 
 #[cfg(test)]
@@ -118,7 +138,7 @@ mod tests {
 
     #[test]
     fn empty_input_returns_empty() {
-        assert!(summarize(&[], 3).is_empty());
+        assert!(summarize(&[], 3).unwrap().is_empty());
     }
 
     #[test]
@@ -127,7 +147,7 @@ mod tests {
             "hello world",
             vec![tok(1, "hello", "INTJ"), tok(2, "world", "NOUN")],
         )];
-        assert!(summarize(&sentences, 0).is_empty());
+        assert!(summarize(&sentences, 0).unwrap().is_empty());
     }
 
     #[test]
@@ -162,7 +182,7 @@ mod tests {
             ),
         ];
 
-        let result = summarize(&sentences, 2);
+        let result = summarize(&sentences, 2).unwrap();
         assert_eq!(result.len(), 2);
         assert!(result[0].position < result[1].position);
     }
@@ -188,7 +208,7 @@ mod tests {
             ),
         ];
 
-        let result = summarize(&sentences, 1);
+        let result = summarize(&sentences, 1).unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].position, 1);
     }
@@ -200,7 +220,25 @@ mod tests {
             sent("two", vec![tok(1, "two", "NUM")]),
         ];
 
-        let result = summarize(&sentences, 10);
+        let result = summarize(&sentences, 10).unwrap();
         assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    fn rejects_oversized_input() {
+        let sentence = sent("a", vec![tok(1, "a", "NOUN")]);
+        let sentences: Vec<Sentence> = (0..MAX_SENTENCES + 1).map(|_| sentence.clone()).collect();
+        match summarize(&sentences, 5) {
+            Err(Error::InputTooLarge {
+                limit,
+                actual,
+                what,
+            }) => {
+                assert_eq!(limit, MAX_SENTENCES);
+                assert_eq!(actual, MAX_SENTENCES + 1);
+                assert_eq!(what, "tfidf");
+            }
+            other => panic!("expected InputTooLarge, got {other:?}"),
+        }
     }
 }

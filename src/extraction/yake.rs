@@ -7,17 +7,37 @@
 
 use std::collections::HashMap;
 
-use crate::domain::{Keyphrase, Sentence};
+use crate::domain::{Error, Keyphrase, Result, Sentence};
 use crate::stopwords::is_stop_word;
+
+/// YAKE accumulates per-term position vectors, context-word sets, and
+/// 1-/2-/3-gram candidates keyed by phrase strings. The dominant cost is
+/// the n-gram windowing over content tokens: at 200k tokens the n-gram
+/// candidate map holds <= ~600k entries (3-grams strictly bounded by token
+/// count) at ~64 bytes each = ~40 MiB resident; per-term context sets are
+/// bounded by mean window size (~5 surrounding words). Cap is on tokens
+/// (not sentences) per Knuth's correction — same reasoning as RAKE.
+const MAX_TOKENS: usize = 200_000;
 
 /// Extract ranked keyphrases using YAKE.
 ///
 /// Scores individual terms by position, frequency, and context diversity,
 /// then combines into n-gram candidates (1-3 words). Returns top phrases
 /// sorted by relevance (highest score first).
-pub fn yake_keyphrases(sentences: &[Sentence], max: usize) -> Vec<Keyphrase> {
+///
+/// Returns [`Error::InputTooLarge`] when the total token count across all
+/// input sentences exceeds [`MAX_TOKENS`].
+pub fn yake_keyphrases(sentences: &[Sentence], max: usize) -> Result<Vec<Keyphrase>> {
     if sentences.is_empty() || max == 0 {
-        return Vec::new();
+        return Ok(Vec::new());
+    }
+    let total_tokens: usize = sentences.iter().map(|s| s.tokens.len()).sum();
+    if total_tokens > MAX_TOKENS {
+        return Err(Error::InputTooLarge {
+            limit: MAX_TOKENS,
+            actual: total_tokens,
+            what: "yake",
+        });
     }
 
     // Collect all content terms with position info.
@@ -64,7 +84,7 @@ pub fn yake_keyphrases(sentences: &[Sentence], max: usize) -> Vec<Keyphrase> {
     }
 
     if term_positions.is_empty() {
-        return Vec::new();
+        return Ok(Vec::new());
     }
 
     let total_positions = position.max(1) as f64;
@@ -142,7 +162,7 @@ pub fn yake_keyphrases(sentences: &[Sentence], max: usize) -> Vec<Keyphrase> {
             .unwrap_or(std::cmp::Ordering::Equal)
     });
     ranked.truncate(max);
-    ranked
+    Ok(ranked)
 }
 
 #[cfg(test)]
@@ -175,13 +195,13 @@ mod tests {
 
     #[test]
     fn empty_returns_empty() {
-        assert!(yake_keyphrases(&[], 5).is_empty());
+        assert!(yake_keyphrases(&[], 5).unwrap().is_empty());
     }
 
     #[test]
     fn max_zero_returns_empty() {
         let sentences = vec![sent("hello", vec![tok(1, "hello", "NOUN")])];
-        assert!(yake_keyphrases(&sentences, 0).is_empty());
+        assert!(yake_keyphrases(&sentences, 0).unwrap().is_empty());
     }
 
     #[test]
@@ -209,7 +229,7 @@ mod tests {
             ),
         ];
 
-        let result = yake_keyphrases(&sentences, 5);
+        let result = yake_keyphrases(&sentences, 5).unwrap();
         assert!(!result.is_empty());
         // "machine learning" should appear as a high-scoring phrase.
         let phrases: Vec<&str> = result.iter().map(|k| k.phrase.as_str()).collect();
@@ -233,7 +253,7 @@ mod tests {
             ],
         )];
 
-        let result = yake_keyphrases(&sentences, 5);
+        let result = yake_keyphrases(&sentences, 5).unwrap();
         for kp in &result {
             assert!(kp.score > 0.0, "score should be positive: {}", kp.score);
         }
@@ -268,7 +288,7 @@ mod tests {
             ),
         ];
 
-        let result = yake_keyphrases(&sentences, 3);
+        let result = yake_keyphrases(&sentences, 3).unwrap();
         // "system design" appears twice, should rank high.
         assert!(!result.is_empty());
         let top = &result[0];
@@ -277,5 +297,26 @@ mod tests {
             "expected repeated terms to rank high, got: {}",
             top.phrase
         );
+    }
+
+    #[test]
+    fn rejects_oversized_input() {
+        // One sentence with MAX_TOKENS + 1 tokens, exceeds cap.
+        let tokens: Vec<crate::domain::Token> = (0..MAX_TOKENS + 1)
+            .map(|i| tok(i + 1, "x", "NOUN"))
+            .collect();
+        let sentences = vec![sent("x".repeat(MAX_TOKENS + 1).as_str(), tokens)];
+        match yake_keyphrases(&sentences, 5) {
+            Err(Error::InputTooLarge {
+                limit,
+                actual,
+                what,
+            }) => {
+                assert_eq!(limit, MAX_TOKENS);
+                assert_eq!(actual, MAX_TOKENS + 1);
+                assert_eq!(what, "yake");
+            }
+            other => panic!("expected InputTooLarge, got {other:?}"),
+        }
     }
 }
