@@ -241,24 +241,85 @@ impl Sentence {
             .any(|t| t.dep == "nsubj:pass" || t.dep == "nsubjpass" || t.dep == "aux:pass")
     }
 
-    /// Maximum depth of the dependency tree.
+    /// Maximum depth of the dependency tree (longest path from any token
+    /// to root, where root is the token with `head = 0`).
+    ///
+    /// O(n) per sentence: builds a `HashMap<id, head>` once, then walks
+    /// each token's ancestor chain with depth memoization in a second
+    /// `HashMap<id, usize>`. Each token's depth is computed at most once;
+    /// the visited set inside each walk detects cycles and returns
+    /// `usize::MAX` for that token (and any token transitively rooted in
+    /// the cycle), surfacing the malformed parse loudly rather than
+    /// silently truncating.
+    ///
+    /// On a malformed parse where some tokens form a cycle, the depth
+    /// returned for the sentence is `usize::MAX` (the max over per-token
+    /// depths). On a well-formed tree of any depth (no artificial
+    /// ceiling), the depth is the true tree depth.
     pub fn tree_depth(&self) -> usize {
+        use std::collections::{HashMap, HashSet};
+
+        // Build id → head once. `0` head means root.
+        let head_by_id: HashMap<usize, usize> =
+            self.tokens.iter().map(|t| (t.id, t.head)).collect();
+
+        // Memoize depth per token id. usize::MAX is the cycle sentinel.
+        let mut depth_by_id: HashMap<usize, usize> = HashMap::new();
+
+        // Compute depth for one token. Walks up the head chain, using
+        // a visited set to detect cycles in this single chain. On hit,
+        // memoizes via the cache to amortize across tokens that share
+        // ancestors.
+        fn depth_of(
+            id: usize,
+            head_by_id: &HashMap<usize, usize>,
+            depth_by_id: &mut HashMap<usize, usize>,
+        ) -> usize {
+            if let Some(&d) = depth_by_id.get(&id) {
+                return d;
+            }
+            let mut visited: HashSet<usize> = HashSet::new();
+            let mut chain: Vec<usize> = Vec::new();
+            let mut cur = id;
+
+            // Walk to root or to a memoized ancestor or to a cycle.
+            let base_depth = loop {
+                if !visited.insert(cur) {
+                    // Cycle detected — every token in the chain is malformed.
+                    for &cid in &chain {
+                        depth_by_id.insert(cid, usize::MAX);
+                    }
+                    return usize::MAX;
+                }
+                let head = head_by_id.get(&cur).copied().unwrap_or(0);
+                if head == 0 {
+                    // cur is root or its head is missing: depth contribution from this point is 0.
+                    chain.push(cur);
+                    break 0usize;
+                }
+                if let Some(&d) = depth_by_id.get(&head) {
+                    chain.push(cur);
+                    break d.saturating_add(1);
+                }
+                chain.push(cur);
+                cur = head;
+            };
+
+            // Walk back down the chain, assigning depths in order.
+            // chain[last] is the closest-to-root token; chain[0] is the
+            // original `id`. Depth of chain[last] = base_depth; each step
+            // away from root adds 1.
+            let n = chain.len();
+            for (i, &cid) in chain.iter().enumerate() {
+                let d = base_depth.saturating_add(n - 1 - i);
+                depth_by_id.insert(cid, d);
+            }
+            depth_by_id[&id]
+        }
+
         self.tokens
             .iter()
-            .map(|t| {
-                let mut depth = 0;
-                let mut head = t.head;
-                while head != 0 && depth < 20 {
-                    head = self
-                        .tokens
-                        .iter()
-                        .find(|h| h.id == head)
-                        .map(|h| h.head)
-                        .unwrap_or(0);
-                    depth += 1;
-                }
-                depth
-            })
+            .map(|t| depth_of(t.id, &head_by_id, &mut depth_by_id))
             .max()
             .unwrap_or(0)
     }
@@ -764,5 +825,59 @@ mod tests {
         assert!(sent.children_of(1).is_empty());
         assert!(sent.head_of(1).is_none());
         assert!(sent.subtree(1).is_empty());
+    }
+
+    /// Build a straight head chain: token 1 is root (head=0), token 2's
+    /// head is 1, ..., token n's head is n-1. Depth from token n to root
+    /// is n-1.
+    fn straight_chain(n: usize) -> Sentence {
+        let tokens: Vec<Token> = (1..=n)
+            .map(|i| make_token(i, "x", "NOUN", "dep", if i == 1 { 0 } else { i - 1 }))
+            .collect();
+        Sentence {
+            text: "chain".to_string(),
+            tokens,
+        }
+    }
+
+    #[test]
+    fn tree_depth_25_chain_returns_24() {
+        // Verifies the previously-magic-< 20 ceiling is gone: a 25-token
+        // chain has true depth 24 (token 25 is 24 hops from root).
+        let sent = straight_chain(25);
+        assert_eq!(sent.tree_depth(), 24);
+    }
+
+    #[test]
+    fn tree_depth_1000_chain_returns_999_in_bounded_time() {
+        // Verifies O(n) complexity: a 1000-token chain returns 999, fast.
+        // The pre-fix O(n^2) impl would do ~10^6 inner finds; this is well
+        // under 50ms on commodity hardware.
+        let sent = straight_chain(1000);
+        let start = std::time::Instant::now();
+        let depth = sent.tree_depth();
+        let elapsed = start.elapsed();
+        assert_eq!(depth, 999);
+        assert!(
+            elapsed < std::time::Duration::from_millis(50),
+            "tree_depth on 1000-chain took {elapsed:?} (expected < 50ms; suggests non-linear complexity)"
+        );
+    }
+
+    #[test]
+    fn tree_depth_returns_max_on_cycle() {
+        // A -> B -> A is a cycle. The new impl returns usize::MAX for
+        // tokens transitively rooted in the cycle, surfacing the
+        // malformed parse loudly. The previous magic-< 20 ceiling
+        // silently truncated to 20 — protective by accident, not by
+        // design (and silently wrong on legitimate deep parses).
+        let sent = Sentence {
+            text: "cyclic".to_string(),
+            tokens: vec![
+                make_token(1, "A", "NOUN", "dep", 2),
+                make_token(2, "B", "NOUN", "dep", 1),
+            ],
+        };
+        assert_eq!(sent.tree_depth(), usize::MAX);
     }
 }
