@@ -7,6 +7,23 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
+// Resource bounds
+// ---------------------------------------------------------------------------
+
+/// Default upper bound on text input to public `analyze*` and `parse` functions.
+///
+/// 8 MiB accommodates book-length English (a typical novel is ~1.5 MiB / 200k
+/// words) with headroom for multilingual prose and structured documents. Beyond
+/// this bound, the underlying NLP provider's intermediate memory grows past
+/// safe limits on a typical workstation (UDPipe's per-token allocations cross
+/// ~1 GiB resident at this input size).
+///
+/// Public entry points enforce this and return [`Error::InputTooLarge`] with
+/// `what = "input"` when exceeded. Adapters may apply tighter bounds for their
+/// own constraints (e.g., `FileSource` checks file size before reading).
+pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;
+
+// ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
 
