@@ -31,7 +31,8 @@ Thumbs.db
 # Per-user Claude Code settings (the .claude/arch and .claude/implans directories ARE tracked)
 .claude/settings.local.json
 
-# Recovery and agent-mining artifacts (kept for archaeology, not source control)
-scratch/*.jsonl
-scratch/recov.md
-scratch/recovery-*.md
+# Local working notes, recovery artifacts, agent transcripts.
+# scratch/ is for in-flight thinking; nothing in it ships in the public crate
+# (Cargo.toml already excludes it via the `exclude` field) and nothing in it
+# belongs in git history either.
+scratch/
