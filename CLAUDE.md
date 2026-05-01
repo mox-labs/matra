@@ -111,5 +111,5 @@ maturin build                                  # Python wheel
 | `pyo3-mastery.md` | Python bindings (Bound<'py,T>, pyclass, GIL) |
 | `serde-mastery.md` | Serialization, error design, API stability |
 | `ripgrep-mastery.md` | CLI patterns, measurement-driven design |
-| `tauri-mastery.md` | Cross-platform desktop |
-| `uniffi-rs-mastery.md` | Mobile FFI |
+| `tauri-mastery.md` | Cross-platform desktop patterns |
+| `uniffi-rs-mastery.md` | Mobile FFI patterns |

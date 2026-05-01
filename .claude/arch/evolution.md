@@ -20,9 +20,9 @@ Architecture is a sequence of decisions across iterations. This file is the chan
 
 ## What got rejected and why
 
-### `rumi-nlp` in the matcher engine's workspace
+### `rumi-nlp` in the matcher-engine's workspace
 
-Tested in the prior session (recovery-2.md:652): "rumi-nlp is a separate crate in the matcher engine's workspace." Rejected on 2026-04-30. The project that owns the *domain* owns the matcher-bridge crate for that domain. the matcher engine's workspace owns HTTP and Claude-hooks; vaani owns NLP. Putting `rumi-nlp` in the matcher engine's workspace forces it to know about NLP terminology, which violates its "matcher engine, not policy engine" stance. `rumi-nlp` lives in vaani's workspace; it depends on `rumi-core` (published independently) and on `vaani-core` (the substrate it bridges).
+Tested in a prior session: "rumi-nlp is a separate crate in the matcher engine's workspace." Rejected on 2026-04-30. The project that owns the *domain* owns the matcher-bridge crate for that domain. The matcher-engine's workspace owns its own domain extensions (HTTP routing, hook policies); vaani owns NLP. Putting `rumi-nlp` in the matcher-engine's workspace forces it to know about NLP terminology, which violates its "matcher engine, not policy engine" stance. `rumi-nlp` lives in vaani's workspace; it depends on `rumi-core` (the matcher engine, published independently) and on `vaani-core` (the substrate it bridges).
 
 ### Tree-traversal primitives in `rumi-core`
 

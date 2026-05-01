@@ -2,7 +2,7 @@
 
 ## The shape
 
-vaani is a Cargo workspace with two crates: `vaani-core` (the substrate) and `rumi-nlp` (the matcher bridge). `vaani-core` is a hexagonal architecture: a pure domain core surrounded by ports (boundary traits), implemented by adapters (concrete I/O and infrastructure), wired together by a composition root (`lib.rs`). `rumi-nlp` is a peer crate that depends on `vaani-core` for the domain types and on `rumi-core` for the matcher engine.
+vaani is a Cargo workspace with two crates: `vaani-core` (the substrate) and `rumi-nlp` (the matcher bridge). `vaani-core` is a hexagonal architecture: a pure domain core surrounded by ports (boundary traits), implemented by adapters (concrete I/O and infrastructure), wired together by a composition root (`lib.rs`). `rumi-nlp` is a peer crate that depends on `vaani-core` for the domain types and on `rumi-core` (a generic structured-data matcher engine) for the rule-evaluation primitives.
 
 ```mermaid
 flowchart TB
