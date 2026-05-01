@@ -57,6 +57,12 @@ impl Udpipe {
     /// (once). A subsequent failure returns [`Error::ModelInvalid`] without
     /// loading the file — a mismatched model is treated as untrusted.
     ///
+    /// **No TOCTOU window.** The bytes that match the SHA-256 are the same
+    /// bytes loaded into the model — there is no second disk read between
+    /// verify and load. An attacker with write access to `model_dir` who
+    /// swaps the file between verify and a hypothetical second read cannot
+    /// affect the loaded model, because no second read happens.
+    ///
     /// To refresh the pinned hash when the model version changes, run
     /// `scripts/fetch-model-hash.sh` and paste the output into this file.
     pub fn english(model_dir: impl AsRef<Path>) -> crate::domain::Result<Self> {
@@ -64,22 +70,25 @@ impl Udpipe {
         std::fs::create_dir_all(dir)?;
         let path = dir.join("english-ewt-ud-2.5-191206.udpipe");
 
-        // Fresh download if missing; re-download once if cached file fails verify.
+        // Fresh download if missing.
         if !path.exists() {
             download_english(dir)?;
         }
-        if !verify_file(&path, ENGLISH_MODEL_SIZE, ENGLISH_MODEL_SHA256)? {
-            std::fs::remove_file(&path)?;
-            download_english(dir)?;
-            if !verify_file(&path, ENGLISH_MODEL_SIZE, ENGLISH_MODEL_SHA256)? {
-                return Err(Error::ModelInvalid(format!(
-                    "SHA-256 mismatch after re-download: {}",
-                    path.display()
-                )));
-            }
-        }
 
-        Self::from_path(&path)
+        // Try to verify-and-read the cached file. On mismatch, redownload
+        // once and try again. On second mismatch, give up.
+        if let Some(bytes) = read_and_verify(&path, ENGLISH_MODEL_SIZE, ENGLISH_MODEL_SHA256)? {
+            return Self::from_bytes(&bytes);
+        }
+        std::fs::remove_file(&path)?;
+        download_english(dir)?;
+        match read_and_verify(&path, ENGLISH_MODEL_SIZE, ENGLISH_MODEL_SHA256)? {
+            Some(bytes) => Self::from_bytes(&bytes),
+            None => Err(Error::ModelInvalid(format!(
+                "SHA-256 mismatch after re-download: {}",
+                path.display()
+            ))),
+        }
     }
 }
 
@@ -92,22 +101,38 @@ fn download_english(dir: &Path) -> crate::domain::Result<()> {
     Ok(())
 }
 
-/// Verify a file matches the expected size and SHA-256. Returns `Ok(true)`
-/// on match, `Ok(false)` on mismatch, and `Err` if the file cannot be read.
-fn verify_file(
+/// Read a file and verify its SHA-256 in a single read.
+///
+/// Returns:
+/// - `Ok(Some(bytes))` when size and hash both match — the returned bytes
+///   are the *exact* bytes that were hashed; the caller can pass them
+///   directly to a from-memory loader without a second disk read.
+/// - `Ok(None)` when size mismatches (fast-fail, no read of contents)
+///   or hash mismatches.
+/// - `Err` when the file cannot be read.
+///
+/// This shape closes the TOCTOU window the previous `verify_file` had:
+/// previously the caller hashed the file then re-read it via
+/// `Model::load(path)`, giving an attacker with directory write access
+/// a window to swap the file between verify and load.
+fn read_and_verify(
     path: &Path,
     expected_size: u64,
     expected_hash: &str,
-) -> crate::domain::Result<bool> {
+) -> crate::domain::Result<Option<Vec<u8>>> {
     let meta = std::fs::metadata(path)?;
     if meta.len() != expected_size {
-        return Ok(false);
+        return Ok(None);
     }
     let bytes = std::fs::read(path)?;
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
     let got = hex_encode(&hasher.finalize());
-    Ok(got.eq_ignore_ascii_case(expected_hash))
+    if got.eq_ignore_ascii_case(expected_hash) {
+        Ok(Some(bytes))
+    } else {
+        Ok(None)
+    }
 }
 
 fn hex_encode(bytes: &[u8]) -> String {
@@ -265,5 +290,59 @@ mod tests {
             Err(Error::ParseFailed(msg)) => assert_eq!(msg, "boring failure"),
             other => panic!("expected pass-through ParseFailed, got {other:?}"),
         }
+    }
+
+    /// SHA-256 of "hello" computed offline. Tied to the literal payload below.
+    const HELLO_HASH: &str = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+
+    #[test]
+    fn read_and_verify_returns_bytes_on_match() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("hello.bin");
+        std::fs::write(&path, b"hello").unwrap();
+
+        let result = read_and_verify(&path, 5, HELLO_HASH).unwrap();
+        assert_eq!(result.as_deref(), Some(b"hello".as_slice()));
+    }
+
+    #[test]
+    fn read_and_verify_returns_none_on_size_mismatch() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("hello.bin");
+        std::fs::write(&path, b"hello").unwrap();
+
+        // Wrong expected size — fast-fail before hashing.
+        let result = read_and_verify(&path, 6, HELLO_HASH).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn read_and_verify_returns_none_on_hash_mismatch() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("five.bin");
+        std::fs::write(&path, b"world").unwrap(); // size matches "hello" but bytes differ
+
+        let result = read_and_verify(&path, 5, HELLO_HASH).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn read_and_verify_returned_bytes_are_what_was_hashed() {
+        // The TOCTOU-closing property: callers can use the returned bytes
+        // directly. Even if an attacker swaps the file after this call,
+        // the in-memory bytes (which are what the loader uses) match the
+        // verified hash.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("hello.bin");
+        std::fs::write(&path, b"hello").unwrap();
+
+        let bytes = read_and_verify(&path, 5, HELLO_HASH).unwrap().unwrap();
+
+        // Simulate the attack: swap the file with different content.
+        std::fs::write(&path, b"WORLD").unwrap();
+
+        // The bytes we got are still the original "hello" — the verified ones.
+        // A loader using these bytes is unaffected by the on-disk swap.
+        assert_eq!(&bytes, b"hello");
     }
 }
