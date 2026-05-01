@@ -4,18 +4,15 @@
 
 /// Sorted stop word list. Use [`is_stop_word`] for lookups.
 pub(crate) const STOP_WORDS: &[&str] = &[
-    "a", "above", "after", "again", "all", "an", "and", "are", "as", "at",
-    "be", "been", "before", "being", "below", "between", "both", "but", "by",
-    "can", "could", "did", "do", "does", "during", "each", "few", "for",
-    "from", "had", "has", "have", "he", "her", "him", "his", "how", "i",
-    "if", "in", "into", "is", "it", "its", "just", "may", "me", "might",
-    "more", "most", "my", "no", "nor", "not", "now", "of", "off", "on",
-    "once", "only", "or", "other", "our", "out", "over", "own", "same",
-    "shall", "she", "should", "so", "some", "such", "than", "that", "the",
-    "their", "them", "then", "there", "these", "they", "this", "those",
-    "through", "to", "too", "under", "very", "was", "we", "were", "what",
-    "when", "where", "which", "while", "who", "whom", "why", "will",
-    "with", "would", "you", "your",
+    "a", "above", "after", "again", "all", "an", "and", "are", "as", "at", "be", "been", "before",
+    "being", "below", "between", "both", "but", "by", "can", "could", "did", "do", "does",
+    "during", "each", "few", "for", "from", "had", "has", "have", "he", "her", "him", "his", "how",
+    "i", "if", "in", "into", "is", "it", "its", "just", "may", "me", "might", "more", "most", "my",
+    "no", "nor", "not", "now", "of", "off", "on", "once", "only", "or", "other", "our", "out",
+    "over", "own", "same", "shall", "she", "should", "so", "some", "such", "than", "that", "the",
+    "their", "them", "then", "there", "these", "they", "this", "those", "through", "to", "too",
+    "under", "very", "was", "we", "were", "what", "when", "where", "which", "while", "who", "whom",
+    "why", "will", "with", "would", "you", "your",
 ];
 
 /// O(log n) stop word check via binary search on sorted slice.
@@ -30,7 +27,12 @@ mod tests {
     #[test]
     fn stop_words_are_sorted() {
         for pair in STOP_WORDS.windows(2) {
-            assert!(pair[0] < pair[1], "STOP_WORDS not sorted: {:?} >= {:?}", pair[0], pair[1]);
+            assert!(
+                pair[0] < pair[1],
+                "STOP_WORDS not sorted: {:?} >= {:?}",
+                pair[0],
+                pair[1]
+            );
         }
     }
 

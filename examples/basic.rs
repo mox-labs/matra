@@ -6,8 +6,7 @@
 use vaani::nlp::udpipe::Udpipe;
 
 fn main() {
-    let nlp = Udpipe::english("/tmp/vaani-models")
-        .expect("Failed to load English model");
+    let nlp = Udpipe::english("/tmp/vaani-models").expect("Failed to load English model");
 
     let text = r#"
 ## The Problem
@@ -30,13 +29,24 @@ contributors solving problems before you knew you needed them solved.
     println!("Sentences:      {}", analysis.total_sentences());
     println!("Words:          {}", analysis.total_words());
     println!("Passive ratio:  {:.1}%", analysis.passive_ratio() * 100.0);
-    println!("Vocabulary TTR: {:.2}", analysis.vocabulary_ttr.unwrap_or(0.0));
-    println!("Nominalization: {:.1}%", analysis.nominalization_ratio.unwrap_or(0.0) * 100.0);
+    println!(
+        "Vocabulary TTR: {:.2}",
+        analysis.vocabulary_ttr.unwrap_or(0.0)
+    );
+    println!(
+        "Nominalization: {:.1}%",
+        analysis.nominalization_ratio.unwrap_or(0.0) * 100.0
+    );
 
     println!("\nSections:");
     for section in &analysis.sections {
         let heading = section.heading.as_deref().unwrap_or("(intro)");
         let words: usize = section.paragraphs.iter().map(|p| p.word_count()).sum();
-        println!("  {} — {} paragraphs, {} words", heading, section.paragraphs.len(), words);
+        println!(
+            "  {} — {} paragraphs, {} words",
+            heading,
+            section.paragraphs.len(),
+            words
+        );
     }
 }

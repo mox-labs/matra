@@ -155,9 +155,7 @@ mod tests {
         let sections = vec![Section {
             heading: None,
             level: 0,
-            paragraphs: vec![
-                Paragraph::new("Some text here".to_string(), true),
-            ],
+            paragraphs: vec![Paragraph::new("Some text here".to_string(), true)],
         }];
         let mut analysis = Analysis::new(sections);
         attach_sentences(&mut analysis, &sentences);

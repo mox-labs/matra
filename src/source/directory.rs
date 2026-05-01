@@ -4,8 +4,8 @@ use std::path::Path;
 
 use crate::domain::{self, RawDocument};
 
-use super::file::FileSource;
 use super::Source;
+use super::file::FileSource;
 
 /// Reads all regular files in a directory (non-recursive, symlinks skipped).
 ///

@@ -6,8 +6,7 @@
 
 use crate::domain::{Analysis, Sentence};
 
-const NOMINALIZATION_SUFFIXES: &[&str] =
-    &["tion", "ment", "ness", "ity", "ence", "ance"];
+const NOMINALIZATION_SUFFIXES: &[&str] = &["tion", "ment", "ness", "ity", "ence", "ance"];
 
 /// Populate `Analysis::vocabulary_ttr` (type-token ratio over lemmas,
 /// excluding punctuation) and `Analysis::nominalization_ratio`

@@ -52,7 +52,10 @@ pub fn keyphrases(sentences: &[Sentence], max_phrases: usize) -> Vec<Keyphrase> 
     let mut phrase_scores: HashMap<String, f64> = HashMap::new();
     for phrase in &candidates {
         let key = phrase.join(" ");
-        let score: f64 = phrase.iter().map(|w| word_score.get(w.as_str()).copied().unwrap_or(0.0)).sum();
+        let score: f64 = phrase
+            .iter()
+            .map(|w| word_score.get(w.as_str()).copied().unwrap_or(0.0))
+            .sum();
         // Keep the highest score if the same phrase appears multiple times.
         let entry = phrase_scores.entry(key).or_insert(0.0);
         if score > *entry {
@@ -65,7 +68,11 @@ pub fn keyphrases(sentences: &[Sentence], max_phrases: usize) -> Vec<Keyphrase> 
         .into_iter()
         .map(|(phrase, score)| Keyphrase { phrase, score })
         .collect();
-    ranked.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+    ranked.sort_by(|a, b| {
+        b.score
+            .partial_cmp(&a.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     ranked.truncate(max_phrases);
     ranked
 }
@@ -79,10 +86,8 @@ fn extract_candidates(sentences: &[Sentence]) -> Vec<Vec<String>> {
 
         for token in &sentence.tokens {
             let lower = token.lemma.to_lowercase();
-            let is_boundary =
-                token.is_punct || is_stop_word(&lower);
-            let is_content = token.pos == "NOUN" || token.pos == "ADJ"
-                || token.pos == "PROPN";
+            let is_boundary = token.is_punct || is_stop_word(&lower);
+            let is_content = token.pos == "NOUN" || token.pos == "ADJ" || token.pos == "PROPN";
 
             if is_boundary || !is_content {
                 if !current.is_empty() {
@@ -124,7 +129,10 @@ mod tests {
     }
 
     fn sent(text: &str, tokens: Vec<Token>) -> Sentence {
-        Sentence { text: text.to_string(), tokens }
+        Sentence {
+            text: text.to_string(),
+            tokens,
+        }
     }
 
     #[test]
