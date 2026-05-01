@@ -1,9 +1,10 @@
 //! Metric suite. Each metric reads NLP output and enriches the [`Analysis`].
 //!
 //! Metrics are closures with a uniform signature — add one by writing a
-//! function and including it in [`default_suite`]. Order matters:
-//! [`attach_sentences`] must run first so downstream metrics can see the
-//! per-paragraph sentence assignments.
+//! function and including it in [`default_suite`]. Sentence-to-paragraph
+//! wiring is done by the composition root (one parse call per paragraph,
+//! sentences attached directly), so the metrics here see paragraphs
+//! already populated with their sentences.
 //!
 //! Submodules own the individual metrics:
 //! - [`readability`]  — Flesch-Kincaid grade per paragraph
@@ -24,13 +25,12 @@ pub type Metric = Box<dyn Fn(&mut Analysis, &[Sentence])>;
 
 /// Default metric suite. Returns metrics in dependency order.
 ///
-/// [`attach_sentences`] wires NLP sentences into paragraphs; downstream
-/// metrics (readability, lexical, compression) rely on that wiring for
-/// per-paragraph word counts. Document-level metrics run over the raw
-/// sentence slice, independent of paragraph assignment.
+/// Per-paragraph metrics (readability, lexical, compression) read from
+/// `paragraph.sentences` which the composition root populates by parsing
+/// each paragraph individually. Document-level metrics run over the
+/// flat sentence slice passed to [`run_suite`].
 pub fn default_suite() -> Vec<Metric> {
     vec![
-        Box::new(attach_sentences),
         Box::new(readability::compute),
         Box::new(lexical::compute),
         Box::new(document::compute),
@@ -42,40 +42,6 @@ pub fn default_suite() -> Vec<Metric> {
 pub fn run_suite(analysis: &mut Analysis, sentences: &[Sentence], suite: &[Metric]) {
     for metric in suite {
         metric(analysis, sentences);
-    }
-}
-
-/// Assign NLP sentences to paragraphs by prefix match against the
-/// original paragraph text. This is a pipeline *wiring* step, not a
-/// metric — it produces no scalar. Runs first in the default suite.
-pub fn attach_sentences(analysis: &mut Analysis, sentences: &[Sentence]) {
-    let mut assigned = vec![false; sentences.len()];
-    let mut assigned_count = 0usize;
-
-    for para in analysis.paragraphs_mut() {
-        if para.in_blockquote || assigned_count == sentences.len() {
-            continue;
-        }
-
-        for (sent_idx, sent) in sentences.iter().enumerate() {
-            if assigned[sent_idx] {
-                continue;
-            }
-            let prefix_end = sent
-                .text
-                .char_indices()
-                .nth(30)
-                .map(|(i, _)| i)
-                .unwrap_or(sent.text.len());
-            let sent_prefix = &sent.text[..prefix_end];
-            if !para.text.contains(sent_prefix) {
-                continue;
-            }
-
-            para.sentences.push(sent.clone());
-            assigned[sent_idx] = true;
-            assigned_count += 1;
-        }
     }
 }
 
@@ -110,10 +76,34 @@ mod tests {
             .collect()
     }
 
+    /// Build an analysis where each paragraph is pre-populated with its
+    /// own sentences (mimicking what the composition root does in the
+    /// per-paragraph parse pipeline). Returns the analysis plus a flat
+    /// sentence slice for document-level metrics.
+    fn analysis_from_paragraphs(
+        paragraphs: Vec<(Paragraph, Vec<Sentence>)>,
+    ) -> (Analysis, Vec<Sentence>) {
+        let mut all_sentences = Vec::new();
+        let mut paras = Vec::new();
+        for (mut para, sents) in paragraphs {
+            if !para.in_blockquote {
+                para.sentences = sents.clone();
+                all_sentences.extend(sents);
+            }
+            paras.push(para);
+        }
+        let sections = vec![Section {
+            heading: None,
+            level: 0,
+            paragraphs: paras,
+        }];
+        (Analysis::new(sections), all_sentences)
+    }
+
     #[test]
-    fn attach_sentences_detects_passive() {
+    fn passive_voice_propagates_through_suite() {
         let para_text = "The system was built by the team";
-        let sentences = make_sentences(vec![(
+        let sents = make_sentences(vec![(
             para_text,
             vec![
                 make_token("The", "DET", "det", 2),
@@ -126,13 +116,12 @@ mod tests {
             ],
         )]);
 
-        let sections = vec![Section {
-            heading: None,
-            level: 0,
-            paragraphs: vec![Paragraph::new(para_text.to_string(), false)],
-        }];
-        let mut analysis = Analysis::new(sections);
-        attach_sentences(&mut analysis, &sentences);
+        let (mut analysis, sentences) = analysis_from_paragraphs(vec![(
+            Paragraph::new(para_text.to_string(), false),
+            sents,
+        )]);
+        let suite = default_suite();
+        run_suite(&mut analysis, &sentences, &suite);
 
         assert_eq!(analysis.total_sentences(), 1);
         assert!(
@@ -142,65 +131,54 @@ mod tests {
     }
 
     #[test]
-    fn attach_sentences_skips_blockquotes() {
-        let sentences = make_sentences(vec![(
-            "Some text here",
-            vec![
-                make_token("Some", "DET", "det", 2),
-                make_token("text", "NOUN", "nsubj", 3),
-                make_token("here", "ADV", "root", 0),
-            ],
+    fn blockquote_paragraphs_have_no_sentences() {
+        // Blockquote paragraphs are skipped by the composition root, so
+        // they reach the suite with an empty sentences vec.
+        let (mut analysis, sentences) = analysis_from_paragraphs(vec![(
+            Paragraph::new("Some text here".to_string(), true),
+            vec![],
         )]);
-
-        let sections = vec![Section {
-            heading: None,
-            level: 0,
-            paragraphs: vec![Paragraph::new("Some text here".to_string(), true)],
-        }];
-        let mut analysis = Analysis::new(sections);
-        attach_sentences(&mut analysis, &sentences);
+        let suite = default_suite();
+        run_suite(&mut analysis, &sentences, &suite);
 
         assert_eq!(
             analysis.total_sentences(),
             0,
-            "blockquote paragraphs should be skipped"
+            "blockquote paragraphs should have no sentences"
         );
     }
 
     #[test]
     fn document_passive_ratio_via_suite() {
-        let sentences = make_sentences(vec![
+        let s1 = make_sentences(vec![(
+            "The system was built",
+            vec![
+                make_token("The", "DET", "det", 2),
+                make_token("system", "NOUN", "nsubj:pass", 3),
+                make_token("was", "AUX", "aux:pass", 3),
+                make_token("built", "VERB", "root", 0),
+            ],
+        )]);
+        let s2 = make_sentences(vec![(
+            "The team shipped the product",
+            vec![
+                make_token("The", "DET", "det", 2),
+                make_token("team", "NOUN", "nsubj", 3),
+                make_token("shipped", "VERB", "root", 0),
+                make_token("the", "DET", "det", 5),
+                make_token("product", "NOUN", "obj", 3),
+            ],
+        )]);
+
+        let (mut analysis, sentences) = analysis_from_paragraphs(vec![
+            (Paragraph::new("The system was built".to_string(), false), s1),
             (
-                "The system was built",
-                vec![
-                    make_token("The", "DET", "det", 2),
-                    make_token("system", "NOUN", "nsubj:pass", 3),
-                    make_token("was", "AUX", "aux:pass", 3),
-                    make_token("built", "VERB", "root", 0),
-                ],
-            ),
-            (
-                "The team shipped the product",
-                vec![
-                    make_token("The", "DET", "det", 2),
-                    make_token("team", "NOUN", "nsubj", 3),
-                    make_token("shipped", "VERB", "root", 0),
-                    make_token("the", "DET", "det", 5),
-                    make_token("product", "NOUN", "obj", 3),
-                ],
+                Paragraph::new("The team shipped the product".to_string(), false),
+                s2,
             ),
         ]);
-
-        let sections = vec![Section {
-            heading: None,
-            level: 0,
-            paragraphs: vec![
-                Paragraph::new("The system was built".to_string(), false),
-                Paragraph::new("The team shipped the product".to_string(), false),
-            ],
-        }];
-        let mut analysis = Analysis::new(sections);
-        attach_sentences(&mut analysis, &sentences);
+        let suite = default_suite();
+        run_suite(&mut analysis, &sentences, &suite);
 
         assert_eq!(analysis.total_sentences(), 2);
         assert!(
