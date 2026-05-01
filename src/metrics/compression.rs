@@ -34,10 +34,7 @@ const MAX_PARAGRAPH_BYTES: usize = 256 * 1024;
 /// the per-paragraph byte cap.
 pub fn compute(analysis: &mut Analysis, _sentences: &[Sentence]) {
     for para in analysis.paragraphs_mut() {
-        if para.word_count() > 50
-            && !para.in_blockquote
-            && para.text.len() <= MAX_PARAGRAPH_BYTES
-        {
+        if para.word_count() > 50 && !para.in_blockquote && para.text.len() <= MAX_PARAGRAPH_BYTES {
             para.compression_ratio = compression_ratio(&para.text);
         }
     }
@@ -104,9 +101,7 @@ mod tests {
 
         // Attach enough content tokens so word_count clears the >50 threshold.
         for para in analysis.paragraphs_mut() {
-            let tokens = (0..51)
-                .map(|j| content_token(&format!("w{j}")))
-                .collect();
+            let tokens = (0..51).map(|j| content_token(&format!("w{j}"))).collect();
             para.sentences.push(Sentence {
                 text: String::new(),
                 tokens,

@@ -448,8 +448,8 @@ mod tests {
             0,
             "empty paragraph has zero sentences"
         );
-        assert!(paras[1].sentences.len() >= 1);
-        assert!(paras[2].sentences.len() >= 1);
+        assert!(!paras[1].sentences.is_empty());
+        assert!(!paras[2].sentences.is_empty());
     }
 
     #[test]

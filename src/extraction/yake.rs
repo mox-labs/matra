@@ -26,7 +26,7 @@ const MAX_TOKENS: usize = 200_000;
 /// sorted by relevance (highest score first).
 ///
 /// Returns [`Error::InputTooLarge`] when the total token count across all
-/// input sentences exceeds [`MAX_TOKENS`].
+/// input sentences exceeds the per-extractor `MAX_TOKENS` cap.
 pub fn yake_keyphrases(sentences: &[Sentence], max: usize) -> Result<Vec<Keyphrase>> {
     if sentences.is_empty() || max == 0 {
         return Ok(Vec::new());
