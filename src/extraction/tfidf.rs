@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 
-use crate::domain::{Sentence, ScoredSentence};
+use crate::domain::{ScoredSentence, Sentence};
 use crate::stopwords::is_stop_word;
 
 /// Extract top-N sentences by TF-IDF score, returned in document order.
@@ -110,7 +110,10 @@ mod tests {
     }
 
     fn sent(text: &str, tokens: Vec<Token>) -> Sentence {
-        Sentence { text: text.to_string(), tokens }
+        Sentence {
+            text: text.to_string(),
+            tokens,
+        }
     }
 
     #[test]
@@ -120,34 +123,43 @@ mod tests {
 
     #[test]
     fn n_zero_returns_empty() {
-        let sentences = vec![sent("hello world", vec![
-            tok(1, "hello", "INTJ"),
-            tok(2, "world", "NOUN"),
-        ])];
+        let sentences = vec![sent(
+            "hello world",
+            vec![tok(1, "hello", "INTJ"), tok(2, "world", "NOUN")],
+        )];
         assert!(summarize(&sentences, 0).is_empty());
     }
 
     #[test]
     fn returns_in_document_order() {
         let sentences = vec![
-            sent("Rust handles memory safely", vec![
-                tok(1, "Rust", "PROPN"),
-                tok(2, "handles", "VERB"),
-                tok(3, "memory", "NOUN"),
-                tok(4, "safely", "ADV"),
-            ]),
-            sent("Python is popular", vec![
-                tok(1, "Python", "PROPN"),
-                tok(2, "is", "AUX"),
-                tok(3, "popular", "ADJ"),
-            ]),
-            sent("Rust memory safety prevents bugs", vec![
-                tok(1, "Rust", "PROPN"),
-                tok(2, "memory", "NOUN"),
-                tok(3, "safety", "NOUN"),
-                tok(4, "prevents", "VERB"),
-                tok(5, "bugs", "NOUN"),
-            ]),
+            sent(
+                "Rust handles memory safely",
+                vec![
+                    tok(1, "Rust", "PROPN"),
+                    tok(2, "handles", "VERB"),
+                    tok(3, "memory", "NOUN"),
+                    tok(4, "safely", "ADV"),
+                ],
+            ),
+            sent(
+                "Python is popular",
+                vec![
+                    tok(1, "Python", "PROPN"),
+                    tok(2, "is", "AUX"),
+                    tok(3, "popular", "ADJ"),
+                ],
+            ),
+            sent(
+                "Rust memory safety prevents bugs",
+                vec![
+                    tok(1, "Rust", "PROPN"),
+                    tok(2, "memory", "NOUN"),
+                    tok(3, "safety", "NOUN"),
+                    tok(4, "prevents", "VERB"),
+                    tok(5, "bugs", "NOUN"),
+                ],
+            ),
         ];
 
         let result = summarize(&sentences, 2);
@@ -158,16 +170,22 @@ mod tests {
     #[test]
     fn stop_words_excluded_from_scoring() {
         let sentences = vec![
-            sent("it is the", vec![
-                tok(1, "it", "PRON"),
-                tok(2, "is", "AUX"),
-                tok(3, "the", "DET"),
-            ]),
-            sent("architecture determines quality", vec![
-                tok(1, "architecture", "NOUN"),
-                tok(2, "determines", "VERB"),
-                tok(3, "quality", "NOUN"),
-            ]),
+            sent(
+                "it is the",
+                vec![
+                    tok(1, "it", "PRON"),
+                    tok(2, "is", "AUX"),
+                    tok(3, "the", "DET"),
+                ],
+            ),
+            sent(
+                "architecture determines quality",
+                vec![
+                    tok(1, "architecture", "NOUN"),
+                    tok(2, "determines", "VERB"),
+                    tok(3, "quality", "NOUN"),
+                ],
+            ),
         ];
 
         let result = summarize(&sentences, 1);

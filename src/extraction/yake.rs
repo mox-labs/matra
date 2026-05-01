@@ -40,7 +40,10 @@ pub fn yake_keyphrases(sentences: &[Sentence], max: usize) -> Vec<Keyphrase> {
                 continue;
             }
 
-            term_positions.entry(lower.clone()).or_default().push(position);
+            term_positions
+                .entry(lower.clone())
+                .or_default()
+                .push(position);
 
             // Context: adjacent terms.
             if i > 0 {
@@ -133,7 +136,11 @@ pub fn yake_keyphrases(sentences: &[Sentence], max: usize) -> Vec<Keyphrase> {
         })
         .collect();
 
-    ranked.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+    ranked.sort_by(|a, b| {
+        b.score
+            .partial_cmp(&a.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     ranked.truncate(max);
     ranked
 }
@@ -207,7 +214,9 @@ mod tests {
         // "machine learning" should appear as a high-scoring phrase.
         let phrases: Vec<&str> = result.iter().map(|k| k.phrase.as_str()).collect();
         assert!(
-            phrases.iter().any(|p| p.contains("machine") && p.contains("learning")),
+            phrases
+                .iter()
+                .any(|p| p.contains("machine") && p.contains("learning")),
             "expected 'machine learning' in {:?}",
             phrases
         );

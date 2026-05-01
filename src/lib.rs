@@ -80,10 +80,7 @@ pub fn analyze_directory(
     for doc in docs {
         let path = doc.path.clone();
         match analyze_raw(&doc.text, doc.format, nlp) {
-            Ok(analysis) => entries.push(domain::CorpusEntry {
-                path,
-                analysis,
-            }),
+            Ok(analysis) => entries.push(domain::CorpusEntry { path, analysis }),
             Err(e) => errors.push((path.unwrap_or_default(), e)),
         }
     }
@@ -151,10 +148,7 @@ mod python {
 
     use crate::nlp::NlpProvider;
 
-    fn to_dict<'py, T: serde::Serialize>(
-        py: Python<'py>,
-        val: &T,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn to_dict<'py, T: serde::Serialize>(py: Python<'py>, val: &T) -> PyResult<Bound<'py, PyAny>> {
         pythonize::pythonize(py, val)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
     }

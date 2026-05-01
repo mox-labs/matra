@@ -183,7 +183,11 @@ mod tests {
             .map(|_| sent("word", toks.clone()))
             .collect();
         match textrank_summarize(&sentences, 3) {
-            Err(crate::domain::Error::InputTooLarge { limit, actual, what }) => {
+            Err(crate::domain::Error::InputTooLarge {
+                limit,
+                actual,
+                what,
+            }) => {
                 assert_eq!(limit, MAX_SENTENCES);
                 assert_eq!(actual, MAX_SENTENCES + 1);
                 assert_eq!(what, "textrank");
@@ -268,7 +272,10 @@ mod tests {
 
     #[test]
     fn single_sentence() {
-        let sentences = vec![sent("only one", vec![tok(1, "only", "ADV"), tok(2, "one", "NUM")])];
+        let sentences = vec![sent(
+            "only one",
+            vec![tok(1, "only", "ADV"), tok(2, "one", "NUM")],
+        )];
         let result = textrank_summarize(&sentences, 5).unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].position, 0);

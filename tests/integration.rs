@@ -3,8 +3,8 @@
 
 #[cfg(feature = "udpipe")]
 mod with_model {
-    use vaani::nlp::udpipe::Udpipe;
     use vaani::nlp::NlpProvider;
+    use vaani::nlp::udpipe::Udpipe;
 
     fn model() -> Udpipe {
         Udpipe::from_path("/tmp/vaani-models/english-ewt-ud-2.5-191206.udpipe")
@@ -18,7 +18,8 @@ mod with_model {
         let analysis = vaani::analyze(
             "The cat sat on the mat. The dog chased the cat quickly.",
             &nlp,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(analysis.total_sentences() >= 2);
         assert!(analysis.total_words() > 0);
@@ -32,7 +33,10 @@ mod with_model {
         let analysis = vaani::analyze_markdown(md, &nlp).unwrap();
 
         assert_eq!(analysis.sections.len(), 2);
-        assert_eq!(analysis.sections[0].heading.as_deref(), Some("Introduction"));
+        assert_eq!(
+            analysis.sections[0].heading.as_deref(),
+            Some("Introduction")
+        );
 
         // Blockquote paragraph exists but is not enriched
         let bq_count = analysis.paragraphs().filter(|p| p.in_blockquote).count();
@@ -64,7 +68,8 @@ mod with_model {
         let analysis = vaani::analyze(
             "The system was built by the team. The team shipped the product.",
             &nlp,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(analysis.sentences().any(|s| s.is_passive()));
         assert!(analysis.sentences().any(|s| !s.is_passive()));

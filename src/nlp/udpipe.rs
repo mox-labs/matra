@@ -39,20 +39,19 @@ impl Udpipe {
         if !path.exists() {
             return Err(Error::ModelNotFound(path.to_path_buf()));
         }
-        let model = Model::load(path)
-            .map_err(|e| Error::ModelInvalid(e.to_string()))?;
+        let model = Model::load(path).map_err(|e| Error::ModelInvalid(e.to_string()))?;
         Ok(Self { model })
     }
 
     /// Load from bytes (e.g. embedded via include_bytes!).
     pub fn from_bytes(data: &[u8]) -> crate::domain::Result<Self> {
-        let model = Model::load_from_memory(data)
-            .map_err(|e| Error::ModelInvalid(e.to_string()))?;
+        let model =
+            Model::load_from_memory(data).map_err(|e| Error::ModelInvalid(e.to_string()))?;
         Ok(Self { model })
     }
 
     /// Download and load the English model, verifying its SHA-256 against
-    /// the pinned constant [`ENGLISH_MODEL_SHA256`].
+    /// a pinned constant in the source.
     ///
     /// If the cached file fails verification it is removed and re-downloaded
     /// (once). A subsequent failure returns [`Error::ModelInvalid`] without
@@ -95,7 +94,11 @@ fn download_english(dir: &Path) -> crate::domain::Result<()> {
 
 /// Verify a file matches the expected size and SHA-256. Returns `Ok(true)`
 /// on match, `Ok(false)` on mismatch, and `Err` if the file cannot be read.
-fn verify_file(path: &Path, expected_size: u64, expected_hash: &str) -> crate::domain::Result<bool> {
+fn verify_file(
+    path: &Path,
+    expected_size: u64,
+    expected_hash: &str,
+) -> crate::domain::Result<bool> {
     let meta = std::fs::metadata(path)?;
     if meta.len() != expected_size {
         return Ok(false);
@@ -117,7 +120,9 @@ fn hex_encode(bytes: &[u8]) -> String {
 
 impl NlpProvider for Udpipe {
     fn parse(&self, text: &str) -> crate::domain::Result<Vec<Sentence>> {
-        let words = self.model.parse(text)
+        let words = self
+            .model
+            .parse(text)
             .map_err(|e| Error::ParseFailed(e.to_string()))?;
 
         let mut by_sentence: HashMap<i32, Vec<&udpipe_rs::Word>> = HashMap::new();
@@ -167,9 +172,7 @@ impl NlpProvider for Udpipe {
                     let mut buf = String::new();
                     for (i, tok) in tokens.iter().enumerate() {
                         buf.push_str(&tok.text);
-                        if i + 1 < tokens.len()
-                            && !tok.misc.contains("SpaceAfter=No")
-                        {
+                        if i + 1 < tokens.len() && !tok.misc.contains("SpaceAfter=No") {
                             buf.push(' ');
                         }
                     }

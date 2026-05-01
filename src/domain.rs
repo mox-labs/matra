@@ -22,7 +22,11 @@ pub enum Error {
     ParseFailed(String),
     /// Input exceeded a bounded limit (e.g. too many sentences for
     /// an O(n^2) algorithm like TextRank).
-    InputTooLarge { limit: usize, actual: usize, what: &'static str },
+    InputTooLarge {
+        limit: usize,
+        actual: usize,
+        what: &'static str,
+    },
     /// The document format has no registered decomposer in this build.
     /// Seen when analyzing a Pdf/Docx file without the relevant adapter.
     UnsupportedFormat(Format),
@@ -36,7 +40,11 @@ impl fmt::Display for Error {
             Error::ModelNotFound(p) => write!(f, "model not found: {}", p.display()),
             Error::ModelInvalid(msg) => write!(f, "invalid model: {msg}"),
             Error::ParseFailed(msg) => write!(f, "parse failed: {msg}"),
-            Error::InputTooLarge { limit, actual, what } => {
+            Error::InputTooLarge {
+                limit,
+                actual,
+                what,
+            } => {
                 write!(f, "{what} input too large: {actual} > limit {limit}")
             }
             Error::UnsupportedFormat(fmt_) => write!(f, "unsupported format: {fmt_:?}"),
@@ -101,7 +109,7 @@ pub struct Token {
 
 impl Token {
     /// Preferred construction path for external crates (fields are pub but
-    /// #[non_exhaustive] prevents struct literal syntax outside the crate).
+    /// `#[non_exhaustive]` prevents struct literal syntax outside the crate).
     pub fn builder(
         id: usize,
         text: String,
@@ -211,9 +219,9 @@ impl Sentence {
 
     /// Whether this sentence contains passive voice constructions.
     pub fn is_passive(&self) -> bool {
-        self.tokens.iter().any(|t| {
-            t.dep == "nsubj:pass" || t.dep == "nsubjpass" || t.dep == "aux:pass"
-        })
+        self.tokens
+            .iter()
+            .any(|t| t.dep == "nsubj:pass" || t.dep == "nsubjpass" || t.dep == "aux:pass")
     }
 
     /// Maximum depth of the dependency tree.
@@ -250,16 +258,13 @@ impl Sentence {
 
     /// The head token of the token with the given id.
     pub fn head_of(&self, id: usize) -> Option<&Token> {
-        self.tokens
-            .iter()
-            .find(|t| t.id == id)
-            .and_then(|t| {
-                if t.head == 0 {
-                    None
-                } else {
-                    self.tokens.iter().find(|h| h.id == t.head)
-                }
-            })
+        self.tokens.iter().find(|t| t.id == id).and_then(|t| {
+            if t.head == 0 {
+                None
+            } else {
+                self.tokens.iter().find(|h| h.id == t.head)
+            }
+        })
     }
 
     /// All tokens in the subtree rooted at the given id (including the root).
@@ -429,8 +434,8 @@ impl Analysis {
             return 0.0;
         }
         let mean = lengths.iter().sum::<f64>() / lengths.len() as f64;
-        let var = lengths.iter().map(|l| (l - mean).powi(2)).sum::<f64>()
-            / (lengths.len() - 1) as f64;
+        let var =
+            lengths.iter().map(|l| (l - mean).powi(2)).sum::<f64>() / (lengths.len() - 1) as f64;
         var.sqrt()
     }
 }
