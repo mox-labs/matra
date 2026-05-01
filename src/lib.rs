@@ -83,18 +83,20 @@ fn analyze_raw(
 
 /// Analyze all readable files in a directory. Returns a `Corpus` of
 /// successfully analyzed documents and a list of per-document errors
-/// (from analysis or unsupported formats).
+/// (combining I/O failures during ingest with analysis failures during
+/// the per-document pipeline).
 ///
-/// Note: at the `Source` layer, `DirectorySource` still aborts on the
-/// first filesystem read error. Per-file I/O tolerance is tracked for
-/// 0.2. See [`source::directory::DirectorySource`].
+/// Per-file I/O failures and per-document analysis failures both flow
+/// into the returned error vector; the iteration never aborts on a
+/// single bad file. The outer `Result` is `Err` only for top-level
+/// failures (e.g., the directory itself does not exist).
 pub fn analyze_directory(
     path: impl AsRef<Path>,
     nlp: &dyn NlpProvider,
 ) -> domain::Result<(domain::Corpus, Vec<(std::path::PathBuf, domain::Error)>)> {
-    let docs = source::directory::DirectorySource.read(path.as_ref())?;
+    let (docs, mut errors) =
+        source::directory::DirectorySource.read_collecting_errors(path.as_ref())?;
     let mut entries = Vec::new();
-    let mut errors = Vec::new();
     for doc in docs {
         let path = doc.path.clone();
         match analyze_raw(&doc.text, doc.format, nlp) {
