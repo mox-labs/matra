@@ -118,12 +118,37 @@ fn hex_encode(bytes: &[u8]) -> String {
     s
 }
 
+/// Run a closure that may panic inside the `udpipe-rs` C/C++ boundary,
+/// catching any panic and converting it into [`Error::ParseFailed`]. This
+/// keeps a process-aborting C-side bug (Taleb #1: SPOF with no panic
+/// boundary) from taking down the host. Without this wrapper, a panic
+/// inside `Model::parse` aborts the host process; in Python it manifests
+/// as interpreter death, in WASM as a trap.
+fn catch_parse_panic<F, T>(f: F) -> crate::domain::Result<T>
+where
+    F: FnOnce() -> crate::domain::Result<T>,
+{
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+    match catch_unwind(AssertUnwindSafe(f)) {
+        Ok(result) => result,
+        Err(payload) => {
+            let message = payload
+                .downcast_ref::<&'static str>()
+                .map(|s| (*s).to_string())
+                .or_else(|| payload.downcast_ref::<String>().cloned())
+                .unwrap_or_else(|| "udpipe panic (no message captured)".to_string());
+            Err(Error::ParseFailed(format!("udpipe panicked: {message}")))
+        }
+    }
+}
+
 impl NlpProvider for Udpipe {
     fn parse(&self, text: &str) -> crate::domain::Result<Vec<Sentence>> {
-        let words = self
-            .model
-            .parse(text)
-            .map_err(|e| Error::ParseFailed(e.to_string()))?;
+        let words = catch_parse_panic(|| {
+            self.model
+                .parse(text)
+                .map_err(|e| Error::ParseFailed(e.to_string()))
+        })?;
 
         let mut by_sentence: HashMap<i32, Vec<&udpipe_rs::Word>> = HashMap::new();
         for word in &words {
@@ -182,5 +207,63 @@ impl NlpProvider for Udpipe {
                 Ok(Sentence { text, tokens })
             })
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Validates the catch_parse_panic technique against an arbitrary
+    /// panicking closure. We can't easily make the real `Model::parse`
+    /// panic in a unit test without an injected fault, so this test
+    /// covers the wrapper's contract: a panic inside the closure
+    /// becomes Err(ParseFailed) instead of aborting the test process.
+    #[test]
+    fn catch_parse_panic_converts_str_panic_to_parse_failed() {
+        let result: crate::domain::Result<()> = catch_parse_panic(|| {
+            panic!("simulated udpipe-rs panic");
+        });
+        match result {
+            Err(Error::ParseFailed(msg)) => {
+                assert!(
+                    msg.contains("udpipe panicked"),
+                    "expected wrapper prefix in: {msg}"
+                );
+                assert!(
+                    msg.contains("simulated udpipe-rs panic"),
+                    "expected payload in: {msg}"
+                );
+            }
+            other => panic!("expected ParseFailed, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn catch_parse_panic_converts_string_panic_to_parse_failed() {
+        let result: crate::domain::Result<()> =
+            catch_parse_panic(|| panic!("{}", "owned string panic"));
+        match result {
+            Err(Error::ParseFailed(msg)) => {
+                assert!(
+                    msg.contains("owned string panic"),
+                    "expected payload in: {msg}"
+                );
+            }
+            other => panic!("expected ParseFailed, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn catch_parse_panic_passes_through_non_panic_results() {
+        let ok: crate::domain::Result<i32> = catch_parse_panic(|| Ok(42));
+        assert_eq!(ok.unwrap(), 42);
+
+        let err: crate::domain::Result<i32> =
+            catch_parse_panic(|| Err(Error::ParseFailed("boring failure".into())));
+        match err {
+            Err(Error::ParseFailed(msg)) => assert_eq!(msg, "boring failure"),
+            other => panic!("expected pass-through ParseFailed, got {other:?}"),
+        }
     }
 }
