@@ -4,6 +4,8 @@ Prose metrics engine. Text in, structured analysis out.
 
 Readability scores, POS distributions, dependency structures, lexical density, compression ratios. Rust core with Python bindings.
 
+A pure, performant, ACE-aligned NLP library: **A**daptable, **C**omposable, **E**xtensible. Hex architecture, domain has zero internal dependencies, every public type is `#[non_exhaustive]`. The substrate is small and stable; opinions live in consumer code.
+
 ## Install
 
 ```bash
@@ -71,10 +73,30 @@ src/
   decompose/             # Decomposer port + Markdown/Plain adapters
   nlp/                   # NlpProvider port
     udpipe.rs            # UDPipe adapter (only file importing udpipe_rs)
-  encoders.rs            # metric pipeline (domain + stopwords only)
+  metrics/               # readability, lexical, compression, document
   extraction/            # TF-IDF, TextRank, RAKE, YAKE
   lib.rs                 # composition root + PyO3 bindings
 ```
+
+Deeper docs in `.claude/arch/`: ports, adapters, domain model, evolution.
+
+## How this project is run
+
+vaani is a **Claude-managed** open-source project. The maintainer
+collaborates with Claude (Anthropic's AI) to plan, implement, and
+review changes; humans approve every PR before merge. The working
+values are transparency (decisions are visible), auditability (every
+change has a trail), and reversibility (every change can be backed out
+cleanly).
+
+| Where to look | What's there |
+|---|---|
+| [`.claude/arch/`](.claude/arch/) | Architecture docs |
+| [`.claude/implans/`](.claude/implans/) | Iteration plans (current + future) |
+| [`docs/decisions/`](docs/decisions/) | Architecture Decision Records (ADRs) |
+| [`CHANGELOG.md`](CHANGELOG.md) | What changed and why, per release |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to participate, commit conventions, decision flow |
+| [`SECURITY.md`](SECURITY.md) | Vulnerability disclosure policy |
 
 ## License
 
