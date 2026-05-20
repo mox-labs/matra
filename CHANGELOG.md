@@ -32,6 +32,16 @@ at release time.
 
 ### Highlights
 
+#### Why supply-chain hardening lands now
+
+Vaani is a substrate. Downstream consumers inherit vaani's supply-chain posture transitively: if vaani publishes from a workflow with a long-lived crates.io API token, every consumer transitively depends on that token never leaking. If vaani's GitHub Actions are pinned to floating tags, a hostile force-push to one of those tags can be injected into every downstream build through vaani's CI cache. The substrate's trust posture is load-bearing across the dependency tree.
+
+The deep-research pass on 2026-05-20 surfaced `sbom-tool/gh-guard` — a Claude Code plugin codifying current best practices for Rust supply-chain hardening (OpenSSF Scorecard, CodeQL, action SHA-pinning, Trusted Publishing, SLSA L3 provenance, signed tags). i9 adopts the lower-friction, higher-signal half of that posture: SHA-pinned actions, persist-credentials false on every checkout, workflow-level `permissions: read-all`, weekly Scorecard + CodeQL analyses, and a tag-driven publish workflow gated by a GitHub `crates-io` environment with required-reviewer approval. SLSA L3 provenance ships alongside every release via `slsa-github-generator@v2.1.0`.
+
+The non-negotiable per-publish approval rule (memory: never publish without explicit approval) moves from "I ran cargo publish on my laptop" to "I approved deployment NNNN in the Actions UI". Same human intent, stronger enforcement, better audit trail. The workflow cannot fire `cargo publish` without the human click.
+
+ADR-0005 records the decision, the manual setup the maintainer performs once on GitHub.com and crates.io, and the items deliberately deferred (cargo-vet, fuzz testing, osv-scanner config, binary releases, CII badge). Each deferred item carries an explicit trigger to revisit.
+
 #### Why vaani's framing reset to "NLP library"
 
 The repository previously described itself as a "prose metrics engine." That framing is wrong. Vaani is an NLP library: UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics, summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE), with rule evaluation over parsed text structure as part of the intended scope (planned, not yet shipped). The package is intended as an exemplar for Claude-managed open-source repositories and human–AI collaborative intelligence; the public surface is a contract across Rust and Python (and TypeScript when the WASM crust lands), so identity precision matters.
@@ -86,6 +96,10 @@ The discipline this encodes: a cap is not a number. A cap is an arithmetic comme
 
 ### Added
 
+- `.github/workflows/scorecard.yml` — OpenSSF Scorecard analysis weekly + on push to main; SARIF uploaded to the Security tab and published publicly to scorecard.dev. Per-job permissions grant only `security-events: write` and `id-token: write`.
+- `.github/workflows/codeql.yml` — CodeQL static analysis for Rust + Python on push, PR, and weekly. `build-mode: none` for both. Manual prerequisite: disable the "default setup" in repo Settings → Code security → Code scanning before this workflow can run.
+- `.github/workflows/publish.yml` — tag-driven publish to crates.io. The `publish` job declares `environment: crates-io`, which pauses the workflow until the required reviewer (maintainer) approves in the Actions UI. Trusted Publishing (OIDC via `rust-lang/crates-io-auth-action`) mints a scoped token just-in-time, eliminating the long-lived `CARGO_REGISTRY_TOKEN` secret. Pre-publish verifications: tag/Cargo.toml version match, tag-on-main check, cargo test + cargo deny + cargo publish --dry-run. SLSA L3 provenance via `slsa-github-generator@v2.1.0` attached to the auto-generated GitHub Release.
+- ADR-0005 documenting the supply-chain hardening posture, the action SHA pin table, manual setup on GitHub.com and crates.io, deferred items with re-visit triggers, and validation criteria.
 - `From<domain::Error> for PyErr` at the PyO3 boundary routes per variant: `ModelNotFound` → `PyFileNotFoundError`; `InputTooLarge` / `UnsupportedFormat` → `PyValueError`; `Io(_)` → `PyOSError`; `ModelInvalid` / `ParseFailed` → `PyRuntimeError`. Exhaustive match so adding a new variant becomes a compile error at the routing site.
 - Practitioner agents (`.claude/agents/`): `maintainer`, `reviewer`, `portsmith`, `ffi-keeper`, `resilience`, `archivist`. Each agent's scope is vaani-tuned and grounded in specific Frames from the rust-mastery corpus.
 - Skills (`.claude/skills/`): `aces`, `rust-craft`, `testing`, `architecture`, `ffi-surface`, `resilience-floor`, `docs-lockstep`. Each skill codifies a discipline with citations to the corpus Frames it grounds in.
@@ -102,6 +116,9 @@ The discipline this encodes: a cap is not a number. A cap is an arithmetic comme
 
 ### Changed
 
+- All GitHub Actions in `.github/workflows/*.yml` pinned to 40-character commit SHAs with `# version` comments. Floating tags (`@v4`, `@stable`, etc.) are no longer allowed; Dependabot keeps the SHAs current via the weekly `github-actions` ecosystem update. Initial pin set follows `gh-guard v0.2.1`'s `templates/versions.json`.
+- Every `actions/checkout` step now sets `persist-credentials: false`, preventing a compromised workflow step from pushing back to the repo using the runner's `GITHUB_TOKEN`. Every workflow declares `permissions: read-all` at the workflow level; jobs escalate only what they need (`security-events: write` for SARIF upload, `id-token: write` for OIDC, `contents: write` for release artifacts).
+- `justfile`'s `release` recipe no longer prints the `cargo publish` command; the publish itself moves to `.github/workflows/publish.yml`'s `crates-io` environment gate. The recipe now prints the signed-tag (`git tag -s`) and tag-push commands.
 - `domain::Error` is now derived via `#[derive(thiserror::Error)]` with per-variant `#[error("…")]` annotations. The hand-rolled `Display`, `Error`, and `From<io::Error>` impls collapse into the derive output (~35 lines removed). Variant identity preserved; behavior unchanged. Boundary rule "only `serde`, `std` in `domain.rs`" is relaxed to admit `thiserror` per the rust-mastery corpus's M1.i6 ecosystem Frame (thiserror is multi-version safe via `__private<patch>` versioning and never appears in the public API).
 - `Cargo.toml` and `pyproject.toml` descriptions, README header, `CLAUDE.md` preamble, and `python/vaani/__init__.py` docstring reframed from "Prose metrics engine" to "NLP library" per user direction 2026-05-20. Keywords and categories on `Cargo.toml` updated accordingly (`udpipe`, `parsing`, `summarization` join `nlp`; `science` category added).
 - `.claude/arch/*.md` rewritten end-to-end to describe the actual single-crate shipping code. The previous aspirational documentation (two-crate workspace with `vaani-core` + sibling matcher-bridge crate, `Engine` struct, `analyze_directory_iter`, `VaaniError` with `kind`/`is_fatal`/`is_skip_doc`, `otel` feature, "tracing always on") is purged. All `rumi-*` references removed.
