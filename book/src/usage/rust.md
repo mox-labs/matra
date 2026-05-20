@@ -48,7 +48,7 @@ fn token_stream(text: &str, nlp: &dyn NlpProvider) -> vaani::domain::Result<()> 
 
 ## Parse once, use many
 
-The pattern when you want both `Analysis` and one or more extractions:
+`parse` is the single expensive step; `analyze_from`, `tfidf_summarize`, and `rake_keyphrases` are cheap consumers of the parsed sentences. When you want both an `Analysis` and one or more extractions, parse once and hand the sentences to each consumer:
 
 ```rust,ignore
 use vaani::{parse, analyze_from};
@@ -66,7 +66,7 @@ let summary = tfidf_summarize(&sentences, 3)?;
 let phrases = rake_keyphrases(&sentences, 10)?;
 ```
 
-`parse` is the single expensive step; the consumers are cheap.
+This is why `measure` and `extract` are both peers of `parse` in the pipeline, not nested under each other. See [The pipeline](../concepts/pipeline.md) for the architectural rationale.
 
 ## Custom NlpProvider
 

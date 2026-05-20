@@ -10,7 +10,7 @@ The recipe for adding a new adapter to an existing port.
 | `Decomposer` | You want to parse a new structural format (DocBook, AsciiDoc, RST, etc.). |
 | `NlpProvider` | You want a different NLP backend (Stanza, spaCy via FFI, a pure-Rust tagger, etc.). |
 
-If your need doesn't fit any of the three, you probably do not need a new adapter — you may need a function in `metrics/` or `extraction/`, or a layer above vaani. Adding a new port is a higher bar; see [Future direction](./future-direction.md).
+If your need doesn't fit any of the three, you probably do not need a new adapter. You may need a function in `metrics/` or `extraction/`, or a layer above vaani. Adding a new port is a higher bar; see [Future direction](./future-direction.md).
 
 ## 2. Create the file
 
@@ -49,7 +49,9 @@ impl Source for MyNewSource {
 
 ## 4. Don't import other adapters
 
-Your adapter file imports from `crate::domain` and `super::` (the port module). It does **not** import from sibling adapters. If your adapter needs functionality from another adapter, the composition root composes them — your file does not.
+Your adapter file imports from `crate::domain` and `super::` (the port module). It does **not** import from sibling adapters. If your adapter needs functionality from another adapter, the composition root composes them. Your file does not.
+
+This is [boundary rule 3](../architecture/boundary-rules.md): no port module imports another port module. The same principle applies to adapters within a port.
 
 ## 5. Translate external errors
 
@@ -59,17 +61,17 @@ Foreign errors (e.g., from a third-party crate) become `domain::Error` variants 
 
 If your adapter's behavior differs from the port's documented postconditions, document the override inline. Examples in the existing codebase:
 
-- `DirectorySource` sorts paths lexicographically — documented in `directory.rs`.
-- `Udpipe` wraps panics via `catch_unwind` — documented in `udpipe.rs`.
+- `DirectorySource` sorts paths lexicographically (documented in `directory.rs`).
+- `Udpipe` wraps panics via `catch_unwind` (documented in `udpipe.rs`).
 
 ## 7. Add unit tests
 
 Adapter tests live in `#[cfg(test)] mod tests` in the same file. Cover:
 
 - Happy path on a typical input.
-- Edge cases — empty input, oversized input, malformed input.
-- Failure modes — what variants of `domain::Error` your adapter can return, and when.
-- Contract preservation — verify the port's postconditions hold for your adapter's output.
+- Edge cases: empty input, oversized input, malformed input.
+- Failure modes: what variants of `domain::Error` your adapter can return, and when.
+- Contract preservation: verify the port's postconditions hold for your adapter's output.
 
 If your adapter touches I/O, follow the resilience-floor patterns:
 
@@ -81,7 +83,7 @@ If your adapter touches I/O, follow the resilience-floor patterns:
 
 ## 8. Wire it into the composition root (if applicable)
 
-If your adapter should be available via the convenience API (e.g., `analyze_file` should detect a new format), wire it in `lib.rs`. Otherwise leave it as a manually-composed building block — consumers can use it directly.
+If your adapter should be available via the convenience API (e.g., `analyze_file` should detect a new format), wire it in `lib.rs`. Otherwise leave it as a manually-composed building block; consumers can use it directly.
 
 ## 9. Update the docs
 

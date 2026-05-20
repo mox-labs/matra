@@ -1,7 +1,5 @@
 # Python usage
 
-The Python wheel ships with full type stubs (`py.typed` + `_core.pyi`), so `mypy --strict` and `pyright --strict` catch dict-access mistakes against the TypedDict shapes returned by every method.
-
 ## The Vaani class
 
 ```python
@@ -14,7 +12,7 @@ v = Vaani.from_path("/path/to/english-ewt.udpipe")
 v = Vaani.english("/path/to/model/dir")
 ```
 
-The instance is **not thread-safe** — UDPipe holds C-side state. The PyO3 binding is `#[pyclass(unsendable)]`, so cross-thread access panics at runtime. `ProcessPoolExecutor` is fine; `ThreadPoolExecutor` is not.
+The instance is **not thread-safe**. UDPipe holds C-side state that cannot safely be accessed from multiple threads simultaneously. PyO3 enforces this at runtime: if you pass a `Vaani` instance to a `ThreadPoolExecutor`, it will panic when the worker thread tries to call it. Use `ProcessPoolExecutor` instead -- each process gets its own model instance, so there is no sharing.
 
 ## Methods
 
@@ -99,34 +97,7 @@ for sec in analysis["sections"]:
 
 ## Exception classes
 
-Rust `Error` variants surface as specific Python exception classes (not always `RuntimeError`):
-
-| Rust variant | Python exception |
-|---|---|
-| `ModelNotFound` | `FileNotFoundError` |
-| `InputTooLarge` | `ValueError` |
-| `UnsupportedFormat` | `ValueError` |
-| `Io(_)` | `OSError` |
-| `ModelInvalid` | `RuntimeError` |
-| `ParseFailed` | `RuntimeError` |
-
-So you can write:
-
-```python
-try:
-    v = Vaani.english("/nonexistent/dir")
-except FileNotFoundError as e:
-    # FileNotFoundError, not the catch-all RuntimeError
-    handle_missing_model(e)
-
-try:
-    analysis = v.analyze(huge_text)
-except ValueError as e:
-    # ValueError because InputTooLarge is a value-class error
-    handle_oversized(e)
-```
-
-The mapping is exhaustive in Rust — a new variant added to `domain::Error` will fail to compile until the PyO3 boundary routes it to a specific Python class. New variants do not silently fall through to `RuntimeError`.
+Each Rust error variant surfaces as a specific Python exception class. See [Errors](../concepts/errors.md#handling-errors-in-python) for the full mapping and usage examples.
 
 ## Methods do not cross FFI
 
@@ -142,7 +113,11 @@ def total_sentences(analysis: Analysis) -> int:
     )
 ```
 
-## Working with the type stubs
+See [Cross-language story](../architecture/cross-language.md) for why methods don't cross FFI and what the full type-crossing rules are.
+
+## Type stubs
+
+The Python wheel ships with full type stubs (`py.typed` + `_core.pyi`), so `mypy --strict` and `pyright --strict` catch dict-access mistakes against the TypedDict shapes returned by every method.
 
 If you use `mypy`:
 

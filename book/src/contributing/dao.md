@@ -1,6 +1,6 @@
 # The DAO
 
-vaani's contributor surface is structured as a **diverse agent organization** (DAO): six practitioner agents that own specific responsibilities, plus seven skills that codify the disciplines. The DAO operationalizes the substrate's standards so any contributor — human or AI — can participate without re-deriving the substrate.
+vaani's contributor surface is structured as a **diverse agent organization** (DAO): six practitioner agents that own specific responsibilities, plus seven skills that codify the disciplines. The DAO operationalizes the substrate's standards so any contributor -- human or AI -- can participate without re-deriving the substrate.
 
 Find the agents at `.claude/agents/` and the skills at `.claude/skills/`.
 
@@ -40,18 +40,18 @@ When you make a change to vaani:
 3. The **reviewer** gates the merge with the ACES check and the boundary audit.
 4. The **archivist** updates CHANGELOG, ADRs, and arch docs in lockstep before the next release.
 
-The DAO is the project's working memory. The skills are how disciplines persist across contributors. The agents are how responsibility is distributed.
+The DAO is the project's working memory. The skills are how disciplines persist across contributors. The agents are how responsibility is distributed. The whole point is that the disciplines survive the contributors -- any person or model that joins later inherits the same standards, not a degraded version of them.
 
 ## Why "diverse"
 
-The agents are not duplicates. Each has a distinct lens — design (portsmith), gate (reviewer), execution (maintainer), resilience (resilience), boundary (ffi-keeper), stewardship (archivist). Diversity here is structural: each lens catches different failure modes.
+The agents are not duplicates. Each has a distinct lens: design (portsmith), gate (reviewer), execution (maintainer), resilience (resilience), boundary (ffi-keeper), stewardship (archivist). Diversity here is structural: each lens catches different failure modes.
 
-The same change might fly past one agent and fail another. The reviewer might see a clean PR; the resilience agent might see an unbounded input. The DAO works because the lenses don't fully overlap.
+A concrete example: suppose a PR adds a new `Source` adapter that reads from HTTP. The maintainer might approve it -- the new port implementation is structurally sound, cleanly bounded, and useful. The resilience agent would ask: what is the size cap? Is there a timeout? What happens if the server returns 10 GiB? Those questions are outside the maintainer's ACES lens and entirely inside the resilience lens. The reviewer sees the PR only after both have had their say. The lenses don't fully overlap, which is why all of them run.
 
-## Human–AI collaboration
+## Human--AI collaboration
 
 The DAO is designed to operate with both human and AI contributors. Humans direct; AI executes within the constraints. The skills exist so disciplines don't depend on which entity is reading them.
 
-When Claude opens a PR, Claude has invoked the relevant agents and skills as part of producing the change. The audit trail shows which agent made which decision; the reviewer (human) gates the merge. Substitution of either side is degenerative — the human brings the divergent cognition, the AI brings the convergent throughput, and the DAO is the structure that keeps both honest.
+When Claude opens a PR, Claude has invoked the relevant agents and skills as part of producing the change. The audit trail shows which agent made which decision; the reviewer (human) gates the merge. Substitution of either side is degenerative. The human brings the divergent cognition; the AI brings the convergent throughput; the DAO is the structure that keeps both honest.
 
 For more on the collaboration philosophy, see [ACES and antifragility](../philosophy.md).

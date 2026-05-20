@@ -1,6 +1,10 @@
 # Boundary rules
 
-vaani's hex architecture is enforced by seven boundary rules. Rules 2, 3, and 4 are checked mechanically by `scripts/check-boundaries.sh` in CI. The rest are enforced by the type system and `cargo check`.
+vaani's hex architecture is enforced by seven boundary rules.
+
+**Mechanically checked** (Rules 2, 3, 4): `scripts/check-boundaries.sh` runs in CI and as a pre-commit hook. Violations fail the build.
+
+**Enforced by the type system and `cargo check`** (Rules 1, 5, 6, 7): the compiler catches violations at build time.
 
 ## The seven rules
 
@@ -17,7 +21,7 @@ vaani's hex architecture is enforced by seven boundary rules. Rules 2, 3, and 4 
 Each rule prevents a specific failure mode:
 
 - Rules 1, 2, 5: keep the substrate independent. A domain that imports an adapter cannot be reused with a different adapter, defeating the hex layout.
-- Rule 3: prevents implicit ordering dependencies between ports. If `Source` could import from `Decomposer`, a `Source` could end up presupposing markdown structure, which is the wrong shape.
+- Rule 3: prevents hidden coupling between ports. For example, if `source/mod.rs` imported from `decompose/`, a `Source` implementation could start assuming that its output will be markdown-decomposed -- making it impossible to use that Source with a plain-text decomposer, even though the port contracts don't require that coupling. Cross-port imports smuggle assumptions that the port abstractions exist to prevent.
 - Rule 4: contains UDPipe's C-side fragility (and its non-`Send` model) to one file. Changing NLP backends never touches the rest of the codebase.
 - Rule 6: keeps optional features actually optional. A consumer who wants only the domain types and metrics should pay nothing for UDPipe.
 - Rule 7: keeps the wiring explicit. A new adapter doesn't surreptitiously get picked up by some other adapter; it's wired in `lib.rs` or it doesn't exist.
@@ -40,9 +44,13 @@ Each command must return empty. The script returns non-zero on violations, faili
 
 ## When you break a rule
 
-You're either:
-
-- **Fixing a bug in the rules** — write an ADR explaining why the rule should change.
-- **Making a structural mistake** — fix the structure, not the rule.
+```mermaid
+flowchart TD
+    V[CI reports a boundary violation] --> Q{Is the rule wrong?}
+    Q -->|Yes: the rule should change| ADR[Write an ADR explaining why]
+    Q -->|No: the structure is wrong| FIX[Fix the structure]
+    ADR --> PR[Update the rule, then open PR]
+    FIX --> PR
+```
 
 The rules exist to prevent decay. Bending them once produces a precedent that bends them twice.

@@ -1,22 +1,22 @@
 # ACES and antifragility
 
-Two non-negotiable disciplines underpin vaani. Both are stated in the project's working rules and enforced at the review gate.
+Two non-negotiable disciplines underpin vaani: **ACES** (the structural design philosophy) and **antifragility** (the operational discipline). ACES protects vaani from slow decay. Antifragility protects vaani from sudden death. A library missing either is a library that ages badly, or fails badly.
 
-## ACES — the structural design philosophy
+## ACES: the structural design philosophy
 
 Every long-lived system decays through three endogenous forces:
 
-- **Stasis** — the system stops evolving. Decisions harden. New requirements fight the architecture instead of fitting into it.
-- **Drag** — complexity accumulates. Dependencies tangle. Simple changes take weeks.
-- **Opacity** — understanding fades. Workarounds compound. Nobody knows why something works (or whether it does).
+- **Stasis:** the system stops evolving. Decisions harden. New requirements fight the architecture instead of fitting into it.
+- **Drag:** complexity accumulates. Dependencies tangle. Simple changes take weeks.
+- **Opacity:** understanding fades. Workarounds compound. Nobody knows why something works (or whether it does).
 
 **Opacity feeds stasis feeds drag.** A codebase nobody fully understands cannot evolve safely; an unevolving codebase forces workarounds that pile on as drag; the drag obscures what's still load-bearing, deepening the opacity. ACES is the discipline that resists the cycle.
 
 ```mermaid
 flowchart LR
-    A[Stasis] -->|fed by| B[Drag]
-    B -->|fed by| C[Opacity]
-    C -->|fed by| A
+    A[Stasis] -->|feeds| B[Drag]
+    B -->|feeds| C[Opacity]
+    C -->|feeds| A
     Adapt[Adaptable] -.->|counters| A
     Compose[Composable] -.->|counters| B
     Extend[Extensible] -.->|counters| C
@@ -24,11 +24,11 @@ flowchart LR
 
 ### Three counter-forces
 
-**Adaptable** — design for change. Counters stasis. Configuration over hardcoding. Feature flags additive and orthogonal. Public types `#[non_exhaustive]`. Boundary rules stated explicitly so future maintainers know what they can move and what they can't.
+**Adaptable:** design for change. Counters stasis. Configuration over hardcoding. Feature flags additive and orthogonal. Public types `#[non_exhaustive]`. Boundary rules stated explicitly so future maintainers know what they can move and what they can't.
 
-**Composable** — discrete components, clear boundaries, swappable parts. Counters drag. Three ports, multiple adapters per port, one composition root. Each piece has a single responsibility and a single boundary; replacing one piece does not require rewriting any other.
+**Composable:** discrete components, clear boundaries, swappable parts. Counters drag. Three ports, multiple adapters per port, one composition root. Each piece has a single responsibility and a single boundary; replacing one piece does not require rewriting any other.
 
-**Extensible** — clear interfaces that invite contribution without requiring full comprehension. Counters opacity. A new contributor should be able to add a new `Source`, `Decomposer`, or `NlpProvider` adapter by reading only the port trait and one existing adapter, not by reading the whole codebase.
+**Extensible:** clear interfaces that invite contribution without requiring full comprehension. Counters opacity. A new contributor should be able to add a new `Source`, `Decomposer`, or `NlpProvider` adapter by reading only the port trait and one existing adapter, not by reading the whole codebase. The rule is not a guideline -- the boundary check script in CI fails if an adapter imports from another adapter, making opacity structurally costly to introduce.
 
 ### The boundary test
 
@@ -42,7 +42,7 @@ For every structural change, ask three questions:
 
 A change that is good engineering but violates ACES is not good for vaani. The disciplines exist so that when scale arrives, the decay cycle never gets started.
 
-## Antifragility — the operational discipline
+## Antifragility: the operational discipline
 
 Where ACES designs the system to *evolve*, antifragility designs it to *fail well*. The Taleb principles applied at vaani's boundaries:
 
@@ -65,12 +65,12 @@ The full list lives in `.claude/skills/resilience-floor/SKILL.md`. In summary:
 
 ## Why both, why non-negotiable
 
-ACES protects vaani from slow decay. Antifragility protects vaani from sudden death. A library missing either is a library that ages badly (or fails badly).
-
 They are **non-negotiable** because vaani is a public OSS substrate intended as an exemplar. Every contributor (human or AI) is held to both. The PR review gate (`.claude/agents/reviewer.md`) checks ACES compliance as Gate 0 and the antifragility checklist as Gate 4. A PR that fails either does not merge until it grounds in an ADR justifying the trade.
+
+The reason to hold the line is not rigor for its own sake. A substrate is inherited. The contributor who weakens a boundary today is not the one who pays for it -- the consumer downstream, the future maintainer, the project that builds on vaani and trusts the contract, those are the ones who pay. ACES and antifragility are the disciplines that make the substrate worth inheriting.
 
 ## The collaborative-intelligence frame
 
-These two disciplines also frame how human–AI collaboration works on this project. The human brings the divergent cognition — the frame-break, the insight outside the current context. The machine brings the convergent architecture — synthesis, pattern recognition, throughput within a frame.
+These two disciplines also frame how human-AI collaboration works on this project. The human brings the divergent cognition, the frame-break, the insight outside the current context. The machine brings the convergent architecture, synthesis, pattern recognition, throughput within a frame.
 
-ACES is the structural language both parties speak. Antifragility is the operational checklist neither party gets to skip. Together they make the collaboration produce code that survives — not just code that compiles.
+ACES is the structural language both parties speak. Antifragility is the operational checklist neither party gets to skip. Together they make the collaboration produce code that survives, not just code that compiles.

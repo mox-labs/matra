@@ -28,9 +28,9 @@ pub enum Error {
 }
 ```
 
-Every variant has a `#[error("…")]` annotation, so `Display` and `to_string()` produce useful messages without manual `Display` impls. `Io(#[from] std::io::Error)` means `?` converts an I/O error at the boundary automatically.
+Every variant has a `#[error("...")]` annotation, so `Display` and `to_string()` produce useful messages without manual `Display` impls. `Io(#[from] std::io::Error)` means `?` converts an I/O error at the boundary automatically.
 
-The enum is `#[non_exhaustive]` — adding a variant later is a minor-version change for downstream pattern matches.
+The enum is `#[non_exhaustive]`. Adding a variant later is a minor-version change for downstream pattern matches.
 
 ## When each variant fires
 
@@ -77,16 +77,31 @@ match analyze(&text, &nlp) {
 
 ## Handling errors in Python
 
-The PyO3 boundary routes each Rust variant to a specific Python exception class:
+The PyO3 boundary routes each Rust variant to a specific Python exception class. The routing is exhaustive at compile time: adding a new Rust variant fails to compile until the boundary match arm is added.
 
-| Rust variant | Python exception |
-|---|---|
-| `ModelNotFound` | `FileNotFoundError` (`PyFileNotFoundError`) |
-| `InputTooLarge` | `ValueError` (`PyValueError`) |
-| `UnsupportedFormat` | `ValueError` (`PyValueError`) |
-| `Io(_)` | `OSError` (`PyOSError`) |
-| `ModelInvalid` | `RuntimeError` (`PyRuntimeError`) |
-| `ParseFailed` | `RuntimeError` (`PyRuntimeError`) |
+```mermaid
+flowchart LR
+    subgraph rust["Rust Error variants"]
+        MNF[ModelNotFound]
+        ITL[InputTooLarge]
+        USF[UnsupportedFormat]
+        IO[Io]
+        MI[ModelInvalid]
+        PF[ParseFailed]
+    end
+    subgraph python["Python exceptions"]
+        FNF[FileNotFoundError]
+        VE[ValueError]
+        OSE[OSError]
+        RE[RuntimeError]
+    end
+    MNF -->|PyFileNotFoundError| FNF
+    ITL -->|PyValueError| VE
+    USF -->|PyValueError| VE
+    IO -->|PyOSError| OSE
+    MI -->|PyRuntimeError| RE
+    PF -->|PyRuntimeError| RE
+```
 
 So Python code can write:
 
@@ -105,10 +120,10 @@ except ValueError as e:
     print(f"Input too large: {e}")
 ```
 
-The routing is exhaustive at compile time on the Rust side — adding a new error variant would fail to compile until the PyO3 boundary is updated to route the new variant. This is intentional: silent routing of new variants to `PyRuntimeError` would erase information at the boundary.
+The routing is exhaustive at compile time on the Rust side. Adding a new error variant fails to compile until the PyO3 boundary is updated to route it. Silent routing of new variants to `PyRuntimeError` would erase information at the boundary; that is why the routing is exhaustive.
 
 ## Why thiserror, not anyhow
 
-vaani is a substrate library. Its callers will match on specific variants — `ModelNotFound` triggers a download prompt, `InputTooLarge` triggers a chunk-and-retry, `Io(_)` triggers a filesystem-specific recovery. Type preservation is required.
+vaani is a substrate library. Its callers match on specific variants: `ModelNotFound` triggers a download prompt, `InputTooLarge` triggers a chunk-and-retry, `Io(_)` triggers a filesystem-specific recovery. Type preservation is required.
 
-`anyhow` is the right choice for **application-tier** code — your code that consumes vaani. There, `.context()` chains add useful diagnostic information for top-level error display. vaani itself stays on concrete enums via `thiserror`.
+`anyhow` is the right choice for **application-tier** code -- your code that consumes vaani. There, `.context()` chains add useful diagnostic information for top-level error display. vaani itself stays on concrete enums via `thiserror`.

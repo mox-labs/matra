@@ -25,8 +25,8 @@ vaani: essay.md
 
 Options:
 
-- `--json` (or `--json-output`) — emit the serialized `Analysis` dict instead of the table.
-- `-s` / `--sections` — show a per-section breakdown table after the document metrics.
+- `--json` (or `--json-output`): emit the serialized `Analysis` dict instead of the table.
+- `-s` / `--sections`: show a per-section breakdown table after the document metrics.
 
 ## `vaani summarize`
 
@@ -41,9 +41,9 @@ vaani summarize essay.md --json
 
 Options:
 
-- `-n N` — number of sentences (default 3).
-- `--method tfidf` / `--method textrank` — summarization algorithm (default `tfidf`).
-- `--json` — emit JSON instead of formatted output.
+- `-n N`: number of sentences (default 3).
+- `--method tfidf` / `--method textrank`: summarization algorithm (default `tfidf`).
+- `--json`: emit JSON instead of formatted output.
 
 ## `vaani keyphrases`
 
@@ -57,9 +57,9 @@ vaani keyphrases paper.md --json
 
 Options:
 
-- `-n N` — maximum number of keyphrases (default 10).
-- `--method rake` / `--method yake` — extraction algorithm (default `rake`).
-- `--json` — emit JSON instead of formatted output.
+- `-n N`: maximum number of keyphrases (default 10).
+- `--method rake` / `--method yake`: extraction algorithm (default `rake`).
+- `--json`: emit JSON instead of formatted output.
 
 ## Working with directories
 
@@ -81,6 +81,6 @@ Or use the Rust `analyze_directory` API directly.
 
 ## Exit codes
 
-- `0` — success.
-- `1` — model load failed (caught at startup and reported to stderr).
+- `0`: success.
+- `1`: model load failed (caught at startup and reported to stderr).
 - Non-zero on uncaught exceptions (per click's default behavior).
