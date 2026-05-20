@@ -5,10 +5,10 @@ edition = "2024"
 rust-version = "1.85"
 authors = ["yzavyas <yza.vyas@gmail.com>"]
 license = "MIT"
-description = "Prose metrics engine. Text in, structured analysis out."
+description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction. Rust core with Python bindings."
 repository = "https://github.com/mox-labs/vaani"
-keywords = ["nlp", "prose", "readability", "metrics", "analysis"]
-categories = ["text-processing"]
+keywords = ["nlp", "udpipe", "parsing", "summarization", "readability"]
+categories = ["text-processing", "science"]
 exclude = ["scratch/*", ".claude/*", "target/*", "*.udpipe"]
 
 [lib]
@@ -21,6 +21,7 @@ pythonize = { version = "0.28", optional = true }
 udpipe-rs = { version = "0.2", optional = true }
 sha2 = { version = "0.10", optional = true }
 serde = { version = "1", features = ["derive"] }
+thiserror = "2"
 brotli = "7"
 
 [dev-dependencies]

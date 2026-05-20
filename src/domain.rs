@@ -1,7 +1,6 @@
 //! Domain types. The core model that everything else depends on.
-//! No external dependencies beyond serde and std.
+//! Dependencies are bounded to serde, thiserror, and std.
 
-use std::fmt;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -28,17 +27,21 @@ pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;
 // ---------------------------------------------------------------------------
 
 /// All errors vaani can produce. Matchable, not opaque.
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
 pub enum Error {
     /// Model file does not exist at the given path.
+    #[error("model not found: {}", .0.display())]
     ModelNotFound(PathBuf),
     /// Model file exists but could not be loaded (corrupt, wrong format).
+    #[error("invalid model: {0}")]
     ModelInvalid(String),
     /// NLP parsing failed on the input text.
+    #[error("parse failed: {0}")]
     ParseFailed(String),
     /// Input exceeded a bounded limit (e.g. too many sentences for
     /// an O(n^2) algorithm like TextRank).
+    #[error("{what} input too large: {actual} > limit {limit}")]
     InputTooLarge {
         limit: usize,
         actual: usize,
@@ -46,43 +49,11 @@ pub enum Error {
     },
     /// The document format has no registered decomposer in this build.
     /// Seen when analyzing a Pdf/Docx file without the relevant adapter.
+    #[error("unsupported format: {0:?}")]
     UnsupportedFormat(Format),
     /// File I/O error.
-    Io(std::io::Error),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::ModelNotFound(p) => write!(f, "model not found: {}", p.display()),
-            Error::ModelInvalid(msg) => write!(f, "invalid model: {msg}"),
-            Error::ParseFailed(msg) => write!(f, "parse failed: {msg}"),
-            Error::InputTooLarge {
-                limit,
-                actual,
-                what,
-            } => {
-                write!(f, "{what} input too large: {actual} > limit {limit}")
-            }
-            Error::UnsupportedFormat(fmt_) => write!(f, "unsupported format: {fmt_:?}"),
-            Error::Io(e) => write!(f, "io error: {e}"),
-        }
-    }
-}
-
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::Io(e) => Some(e),
-            _ => None,
-        }
-    }
-}
-
-impl From<std::io::Error> for Error {
-    fn from(e: std::io::Error) -> Self {
-        Error::Io(e)
-    }
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 /// Result type for vaani operations.
