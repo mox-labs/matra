@@ -84,17 +84,22 @@ release-prep VERSION:
     @echo "  cargo publish --dry-run --features udpipe"
     @echo "  just release {{VERSION}}"
 
-# Publish the current commit as VERSION. Requires explicit per-publish
-# approval (see CONTRIBUTING.md). This recipe stops short of the actual
-# publish; it prints the command so the human runs it deliberately.
+# Tag and push for the current VERSION. The actual cargo publish runs
+# inside the `crates-io` GitHub environment via .github/workflows/publish.yml,
+# which pauses for a required-reviewer approval before invoking
+# `cargo publish` via Trusted Publishing (OIDC, no long-lived tokens).
+# That environment gate is the canonical per-publish approval point;
+# this recipe just creates and pushes the tag.
 release VERSION:
-    @echo "STOP. Publishing is a deliberate, per-call action."
-    @echo "Verify:"
+    @echo "Pre-release checks:"
     @echo "  - git log/diff matches what you expect"
     @echo "  - cargo publish --dry-run --features udpipe is clean"
     @echo "  - the [{{VERSION}}] section of CHANGELOG.md is correct"
+    @echo "  - Cargo.toml + pyproject.toml versions == {{VERSION}}"
     @echo ""
-    @echo "Then run yourself:"
-    @echo "  cargo publish --features udpipe"
-    @echo "  git tag v{{VERSION}}"
+    @echo "When ready, push the tag:"
+    @echo "  git tag -s v{{VERSION}} -m 'v{{VERSION}}'"
     @echo "  git push --follow-tags"
+    @echo ""
+    @echo "The publish workflow will then pause at the crates-io environment"
+    @echo "gate. Approve in the GitHub Actions UI to fire cargo publish."
