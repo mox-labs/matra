@@ -9,13 +9,10 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from vaani._core import Analysis, Keyphrase, ScoredSentence, Vaani
+from vaani._core import Vaani
+from vaani.types import Analysis, Keyphrase, ScoredSentence
 
 console = Console()
-
-
-class DocMetrics(click.types.ParamType):
-    """Marker type — replaced by the inline TypedDict below."""
 
 
 def _get_vaani() -> Vaani:
