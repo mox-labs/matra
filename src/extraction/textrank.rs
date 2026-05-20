@@ -14,8 +14,8 @@ use crate::domain::{Error, Result, ScoredSentence, Sentence};
 use crate::stopwords::is_stop_word;
 
 /// Maximum input size for [`textrank_summarize`]. At 2000 sentences the
-/// similarity matrix is ~32 MB of f64 — the ceiling for unattended use.
-pub const MAX_SENTENCES: usize = 2000;
+/// similarity matrix is ~32 MB of f64; the ceiling for unattended use.
+pub(crate) const MAX_SENTENCES: usize = 2000;
 
 /// Extract top-N sentences by TextRank score, returned in document order.
 ///

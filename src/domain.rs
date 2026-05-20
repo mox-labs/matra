@@ -43,8 +43,13 @@ pub enum Error {
     /// an O(n^2) algorithm like TextRank).
     #[error("{what} input too large: {actual} > limit {limit}")]
     InputTooLarge {
+        /// The size cap that was exceeded.
         limit: usize,
+        /// The actual size that exceeded the cap.
         actual: usize,
+        /// Discriminator naming which gate fired (e.g. `"input"`,
+        /// `"file_source"`, `"tfidf"`, `"textrank"`, `"rake"`, `"yake"`).
+        /// Lets consumers route differently per gate.
         what: &'static str,
     },
     /// The document format has no registered decomposer in this build.
@@ -141,26 +146,32 @@ pub struct TokenBuilder {
 }
 
 impl TokenBuilder {
+    /// Set the language-specific POS tag (CoNLL-U column 5).
     pub fn xpos(mut self, xpos: String) -> Self {
         self.xpos = xpos;
         self
     }
+    /// Set the morphological features string (CoNLL-U column 6).
     pub fn feats(mut self, feats: String) -> Self {
         self.feats = feats;
         self
     }
+    /// Set the enhanced dependency graph string (CoNLL-U column 9).
     pub fn deps(mut self, deps: String) -> Self {
         self.deps = deps;
         self
     }
+    /// Set the miscellaneous annotations string (CoNLL-U column 10).
     pub fn misc(mut self, misc: String) -> Self {
         self.misc = misc;
         self
     }
+    /// Set whether the token is punctuation.
     pub fn is_punct(mut self, is_punct: bool) -> Self {
         self.is_punct = is_punct;
         self
     }
+    /// Finalize the builder and return the constructed [`Token`].
     pub fn build(self) -> Token {
         Token {
             id: self.id,
@@ -178,14 +189,27 @@ impl TokenBuilder {
     }
 }
 
+/// One parsed sentence: a verbatim text string plus its ordered tokens.
+///
+/// Invariants downstream code relies on:
+/// - `tokens` are id-sorted ascending.
+/// - Exactly one token has `head == 0` (the syntactic root).
+/// - All `head` references point to another token in the same sentence
+///   or to `0`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Sentence {
+    /// Verbatim sentence text as produced by the NLP provider.
     pub text: String,
+    /// CoNLL-U tokens in id-sorted order.
     pub tokens: Vec<Token>,
 }
 
 impl Sentence {
+    /// Construct a `Sentence` from a text string and a token vector.
+    ///
+    /// The caller is responsible for upholding the invariants documented
+    /// on [`Sentence`]; this constructor does not validate them.
     pub fn new(text: String, tokens: Vec<Token>) -> Self {
         Self { text, tokens }
     }
@@ -345,18 +369,33 @@ impl Sentence {
 // Analysis output -- what encoders produce
 // ---------------------------------------------------------------------------
 
+/// One paragraph of prose with metric slots filled in during the
+/// pipeline's `measure` stage.
+///
+/// `in_blockquote = true` paragraphs are skipped during metric
+/// computation; their `Option<f64>` slots stay `None`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Paragraph {
+    /// Verbatim paragraph text.
     pub text: String,
+    /// Whether the paragraph is inside a blockquote (skipped by metrics).
     pub in_blockquote: bool,
+    /// Sentences produced by parsing this paragraph (populated by the
+    /// pipeline's `parse` stage).
     pub sentences: Vec<Sentence>,
+    /// Flesch-Kincaid grade level, if `measure` ran on this paragraph.
     pub readability_grade: Option<f64>,
+    /// Content-word ratio, if `measure` ran on this paragraph.
     pub lexical_density: Option<f64>,
+    /// Brotli compression ratio (a redundancy proxy), if `measure` ran.
     pub compression_ratio: Option<f64>,
 }
 
 impl Paragraph {
+    /// Construct a new `Paragraph` with empty sentences and `None`
+    /// metric slots. The pipeline's `parse` and `measure` stages fill
+    /// the slots in.
     pub fn new(text: String, in_blockquote: bool) -> Self {
         Self {
             text,
@@ -383,12 +422,18 @@ impl Paragraph {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Section {
+    /// Section heading, if any. `None` for the intro section of a
+    /// markdown document with no leading heading, and for plain-text
+    /// decomposition (which produces one heading-less section).
     pub heading: Option<String>,
+    /// Heading depth (0 for plain text, 1+ for markdown `#`/`##`/etc.).
     pub level: usize,
+    /// Paragraphs in document order.
     pub paragraphs: Vec<Paragraph>,
 }
 
 impl Section {
+    /// Construct a new section with the given heading, level, and paragraphs.
     pub fn new(heading: Option<String>, level: usize, paragraphs: Vec<Paragraph>) -> Self {
         Self {
             heading,
@@ -405,12 +450,17 @@ impl Section {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Analysis {
+    /// Section tree (the single source of truth for paragraph ownership).
     pub sections: Vec<Section>,
+    /// Document-level vocabulary type-token ratio, if `measure` ran.
     pub vocabulary_ttr: Option<f64>,
+    /// Document-level nominalization ratio, if `measure` ran.
     pub nominalization_ratio: Option<f64>,
 }
 
 impl Analysis {
+    /// Construct a new `Analysis` from a section tree with `None` for
+    /// the document-level metric slots; `measure` fills them in.
     pub fn new(sections: Vec<Section>) -> Self {
         Self {
             sections,
@@ -453,14 +503,18 @@ impl Analysis {
             .flat_map(|s| s.tokens.iter())
     }
 
+    /// Total sentence count across all paragraphs.
     pub fn total_sentences(&self) -> usize {
         self.paragraphs().map(|p| p.sentence_count()).sum()
     }
 
+    /// Total non-punctuation token count across all sentences.
     pub fn total_words(&self) -> usize {
         self.sentences().map(|s| s.word_count()).sum()
     }
 
+    /// Fraction of sentences containing a passive-voice construction.
+    /// Returns `0.0` when there are no sentences.
     pub fn passive_ratio(&self) -> f64 {
         let total = self.total_sentences();
         if total == 0 {
@@ -469,6 +523,8 @@ impl Analysis {
         self.sentences().filter(|s| s.is_passive()).count() as f64 / total as f64
     }
 
+    /// Mean sentence length in words. Returns `0.0` when there are no
+    /// sentences.
     pub fn mean_sentence_length(&self) -> f64 {
         let total = self.total_sentences();
         if total == 0 {
@@ -477,6 +533,8 @@ impl Analysis {
         self.total_words() as f64 / total as f64
     }
 
+    /// Sample standard deviation of sentence length in words. Returns
+    /// `0.0` when there is fewer than two sentences (no variance defined).
     pub fn sentence_length_std(&self) -> f64 {
         let lengths: Vec<f64> = self.sentences().map(|s| s.word_count() as f64).collect();
         if lengths.len() <= 1 {
@@ -494,15 +552,23 @@ impl Analysis {
 // ---------------------------------------------------------------------------
 
 /// A sentence ranked by relevance score with its original document position.
+///
+/// Output of [`extraction::tfidf_summarize`](crate::extraction::tfidf_summarize)
+/// and [`extraction::textrank_summarize`](crate::extraction::textrank_summarize).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct ScoredSentence {
+    /// Verbatim sentence text.
     pub text: String,
+    /// Relevance score, higher is more relevant.
     pub score: f64,
+    /// Original document position (sentence index), preserved so
+    /// consumers can re-anchor scored sentences in document order.
     pub position: usize,
 }
 
 impl ScoredSentence {
+    /// Construct a new `ScoredSentence`.
     pub fn new(text: String, score: f64, position: usize) -> Self {
         Self {
             text,
@@ -513,14 +579,20 @@ impl ScoredSentence {
 }
 
 /// A ranked keyphrase extracted from text.
+///
+/// Output of [`extraction::rake_keyphrases`](crate::extraction::rake_keyphrases)
+/// and [`extraction::yake_keyphrases`](crate::extraction::yake_keyphrases).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Keyphrase {
+    /// The keyphrase text.
     pub phrase: String,
+    /// Relevance score, higher is more relevant.
     pub score: f64,
 }
 
 impl Keyphrase {
+    /// Construct a new `Keyphrase`.
     pub fn new(phrase: String, score: f64) -> Self {
         Self { phrase, score }
     }
@@ -531,12 +603,19 @@ impl Keyphrase {
 // ---------------------------------------------------------------------------
 
 /// Document format, detected from file extension.
+///
+/// `Pdf` and `Docx` are reserved variants; the library returns
+/// [`Error::UnsupportedFormat`] for those today.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub enum Format {
+    /// Markdown source.
     Markdown,
+    /// Plain text.
     PlainText,
+    /// PDF (reserved; no decomposer ships today).
     Pdf,
+    /// DOCX (reserved; no decomposer ships today).
     Docx,
 }
 
@@ -544,12 +623,17 @@ pub enum Format {
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct RawDocument {
+    /// The document text.
     pub text: String,
+    /// Source path, if the document came from disk. `None` for
+    /// in-memory text.
     pub path: Option<PathBuf>,
+    /// Detected format.
     pub format: Format,
 }
 
 impl RawDocument {
+    /// Construct a new `RawDocument`.
     pub fn new(text: String, path: Option<PathBuf>, format: Format) -> Self {
         Self { text, path, format }
     }
@@ -559,11 +643,14 @@ impl RawDocument {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct CorpusEntry {
+    /// Source path, if the document came from disk.
     pub path: Option<PathBuf>,
+    /// The document's analysis output.
     pub analysis: Analysis,
 }
 
 impl CorpusEntry {
+    /// Construct a new `CorpusEntry`.
     pub fn new(path: Option<PathBuf>, analysis: Analysis) -> Self {
         Self { path, analysis }
     }
@@ -573,18 +660,24 @@ impl CorpusEntry {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Corpus {
+    /// One entry per successfully analyzed document.
     pub entries: Vec<CorpusEntry>,
 }
 
 impl Corpus {
+    /// Construct a new `Corpus` from a vector of entries.
     pub fn new(entries: Vec<CorpusEntry>) -> Self {
         Self { entries }
     }
 
+    /// Total non-punctuation token count across every entry's analysis.
     pub fn total_words(&self) -> usize {
         self.entries.iter().map(|e| e.analysis.total_words()).sum()
     }
 
+    /// Fraction of sentences across all entries containing a passive-
+    /// voice construction. Returns `0.0` when the corpus has no
+    /// sentences.
     pub fn passive_ratio(&self) -> f64 {
         let total: usize = self
             .entries
@@ -602,6 +695,9 @@ impl Corpus {
         passive as f64 / total as f64
     }
 
+    /// Mean readability grade across all paragraphs that carry a
+    /// `readability_grade` value. Returns `0.0` when no paragraphs have
+    /// been measured.
     pub fn mean_readability(&self) -> f64 {
         let grades: Vec<f64> = self
             .entries
