@@ -32,6 +32,28 @@ at release time.
 
 ### Highlights
 
+#### Why vaani's framing reset to "NLP library"
+
+The repository previously described itself as a "prose metrics engine." That framing is wrong. Vaani is an NLP library: UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics, summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE), with rule evaluation over parsed text structure as part of the intended scope (planned, not yet shipped). The package is intended as an exemplar for Claude-managed open-source repositories and human–AI collaborative intelligence; the public surface is a contract across Rust and Python (and TypeScript when the WASM crust lands), so identity precision matters.
+
+The reset sweeps `Cargo.toml` description and keywords, `pyproject.toml` description, README's elevator pitch, `CLAUDE.md`, the Python crust docstrings, and the entire `.claude/arch/` set. The aspirational two-crate workspace (`vaani-core` + a sibling matcher-bridge crate), an `Engine` struct, an `analyze_directory_iter` API, a `VaaniError` type with `kind`/`is_fatal`/`is_skip_doc` accessors, an `otel` feature, and "tracing always on" — none of which exist in `src/` — are all purged from the docs. Each `.claude/arch/*.md` now describes the actual single-crate shipping code; the rust-mastery audit at `.claude/arch/rust-mastery-audit.md` is the read-only gap analysis that informs which Frame prescriptions vaani follows and which are deferred.
+
+ADR-0003 (proposed workspace split) is superseded by ADR-0004 (stay single-crate). The decision is re-openable when Pattern 6 from the rust-mastery corpus fires — i.e., when a third-party `NlpProvider` implementor crate ships.
+
+#### Why the domain Error enum is now derived via thiserror
+
+The previous `domain::Error` was an enum with hand-rolled `impl Display`, `impl Error`, and `impl From<std::io::Error>` — roughly 35 lines of structural plumbing that `#[derive(thiserror::Error)]` would have emitted. The boundary rule "only `serde`, `std` in `domain.rs`" forbade thiserror, but per the rust-mastery corpus's M1.i6 ecosystem Frame, thiserror uses `__private<patch>` versioning (axis 1: internal helpers) so multi-version dep graphs are safe by design, and the derive output never appears in vaani's public API. Relax the rule, adopt the derive, delete the plumbing.
+
+At the PyO3 boundary, `From<VaaniError> for PyErr` now routes per variant: `ModelNotFound` → `PyFileNotFoundError`, `InputTooLarge` / `UnsupportedFormat` → `PyValueError`, `Io(_)` → `PyOSError`, `ModelInvalid` / `ParseFailed` → `PyRuntimeError`. The match is exhaustive (no wildcard) so a new variant added to `domain::Error` becomes a compile error at the routing site, surfacing the choice rather than silently routing everything to `PyRuntimeError`. Concrete variant identity now survives the FFI as the right Python exception class — Python consumers can write `try ... except FileNotFoundError` and have it work.
+
+#### Why vaani now has a DAO and a typed Python surface
+
+Vaani is a public OSS package and an intended exemplar. The standards need to be navigable, not implicit. Two structural changes land:
+
+A **diverse agent organization** under `.claude/agents/` (6 practitioner agents: maintainer, reviewer, portsmith, ffi-keeper, resilience, archivist) plus a **skill library** under `.claude/skills/` (7 skills: `aces`, `rust-craft`, `testing`, `architecture`, `ffi-surface`, `resilience-floor`, `docs-lockstep`). Each agent has a defined scope grounded in vaani's actual surface; each skill cites the specific Frames from the rust-mastery corpus that ground its disciplines. **ACES** (Adaptable, Composable, Extensible — resisting the stasis/drag/opacity decay cycle) and **antifragility** (size caps, panic boundaries, atomic operations, TOCTOU closure) are non-negotiable foundations, called out explicitly in the reviewer's check gates and the maintainer's discipline list.
+
+A **fully typed Python crust** with stubs at `python/vaani/_core.pyi` describing the PyO3 extension's TypedDict shapes (`Token`, `Sentence`, `Paragraph`, `Section`, `Analysis`, `ScoredSentence`, `Keyphrase`) mirroring the Rust domain types. The `Vaani` class has full method signatures with the Python exception classes the PyO3 boundary now raises per variant. `python/vaani/py.typed` declares the package typed per PEP 561; `pyproject.toml` configures `mypy --strict` over the `python/vaani` tree; `justfile` adds a `typecheck` recipe; CI runs `mypy` in a new `pytype` job after building the extension with `maturin develop`. Downstream Python consumers get full IDE autocomplete and type-checking on the public surface.
+
 #### Why model loads are now TOCTOU-safe
 
 The previous flow had two separate disk reads of the same file: `verify_file(path)` would read the bytes, hash them, and confirm the SHA-256 matched the pinned constant; then `Model::load(path)` would re-read the file from disk to build the model. The window between those reads is a Time-Of-Check to Time-Of-Use race. An attacker with write access to the model directory could let the verify pass on the legitimate bytes, then swap the file with a malicious model before the loader's read. The hash check would have done its job on bytes A, but the loaded model would be bytes B.
@@ -64,6 +86,15 @@ The discipline this encodes: a cap is not a number. A cap is an arithmetic comme
 
 ### Added
 
+- `From<domain::Error> for PyErr` at the PyO3 boundary routes per variant: `ModelNotFound` → `PyFileNotFoundError`; `InputTooLarge` / `UnsupportedFormat` → `PyValueError`; `Io(_)` → `PyOSError`; `ModelInvalid` / `ParseFailed` → `PyRuntimeError`. Exhaustive match so adding a new variant becomes a compile error at the routing site.
+- Practitioner agents (`.claude/agents/`): `maintainer`, `reviewer`, `portsmith`, `ffi-keeper`, `resilience`, `archivist`. Each agent's scope is vaani-tuned and grounded in specific Frames from the rust-mastery corpus.
+- Skills (`.claude/skills/`): `aces`, `rust-craft`, `testing`, `architecture`, `ffi-surface`, `resilience-floor`, `docs-lockstep`. Each skill codifies a discipline with citations to the corpus Frames it grounds in.
+- `.claude/arch/rust-mastery-audit.md` — read-only gap analysis against the rust-mastery corpus at `~/radix-workspaces/rust-mastery/`.
+- Python type stubs (`python/vaani/_core.pyi`) describing the PyO3 extension's surface with TypedDict shapes for the domain types.
+- `python/vaani/py.typed` PEP 561 marker; downstream type checkers honor the stubs.
+- `mypy` strict-mode configuration in `pyproject.toml`; `just typecheck` recipe; CI `pytype` job running `mypy` after `maturin develop`.
+- ADR-0004 documenting the single-crate decision and the conditions that would re-open the workspace-split question (Pattern 6 criterion: external `NlpProvider` implementor ecosystem).
+- `.mise.toml` pinning Rust 1.85 to match `Cargo.toml`'s `rust-version`.
 - `MAX_INPUT_BYTES = 8 MiB` constant in `domain.rs` and gates at every composition-root entry point (`analyze`, `analyze_markdown`, `parse`, `analyze_from`). Returns `Error::InputTooLarge { what: "input", .. }`.
 - Per-extractor input caps: `tfidf::MAX_SENTENCES = 2000`, `rake::MAX_TOKENS = 200_000`, `yake::MAX_TOKENS = 200_000`. Each with arithmetic comment and a distinct `what:` label on `InputTooLarge`.
 - `DirectorySource::read_collecting_errors` inherent method returns `(Vec<RawDocument>, Vec<(PathBuf, Error)>)` so per-file I/O failures can be surfaced without aborting the iteration. `analyze_directory` uses this to merge ingest failures with analysis failures.
@@ -71,6 +102,11 @@ The discipline this encodes: a cap is not a number. A cap is an arithmetic comme
 
 ### Changed
 
+- `domain::Error` is now derived via `#[derive(thiserror::Error)]` with per-variant `#[error("…")]` annotations. The hand-rolled `Display`, `Error`, and `From<io::Error>` impls collapse into the derive output (~35 lines removed). Variant identity preserved; behavior unchanged. Boundary rule "only `serde`, `std` in `domain.rs`" is relaxed to admit `thiserror` per the rust-mastery corpus's M1.i6 ecosystem Frame (thiserror is multi-version safe via `__private<patch>` versioning and never appears in the public API).
+- `Cargo.toml` and `pyproject.toml` descriptions, README header, `CLAUDE.md` preamble, and `python/vaani/__init__.py` docstring reframed from "Prose metrics engine" to "NLP library" per user direction 2026-05-20. Keywords and categories on `Cargo.toml` updated accordingly (`udpipe`, `parsing`, `summarization` join `nlp`; `science` category added).
+- `.claude/arch/*.md` rewritten end-to-end to describe the actual single-crate shipping code. The previous aspirational documentation (two-crate workspace with `vaani-core` + sibling matcher-bridge crate, `Engine` struct, `analyze_directory_iter`, `VaaniError` with `kind`/`is_fatal`/`is_skip_doc`, `otel` feature, "tracing always on") is purged. All `rumi-*` references removed.
+- `CLAUDE.md` "Mastery References" section repointed from non-existent `~/oss/research/` paths to the actual rust-mastery corpus at `~/radix-workspaces/rust-mastery/`, citing the specific cross-artifact Frames that ground vaani's architectural decisions.
+- ADR-0003 (proposed Cargo workspace with `vaani-core` + `rumi-nlp`) marked Superseded; ADR-0004 documents the single-crate decision and the Pattern 6 re-open condition.
 - Pipeline vocabulary settled at `ingest → decompose → parse → measure` with `extract` as a peer stage. The `Source`, `Decomposer`, and `NlpProvider` traits keep their existing names; the renamed verbs appear in stage descriptions and the composition-root surface.
 - Removed `decompose::markdown::parse` free function. Markdown decomposition now goes through `decompose::markdown::MarkdownDecomposer.decompose(text)` (the `Decomposer` trait method). This frees the verb `parse` for NLP-only use across the pipeline. Breaking change for callers using the free function.
 - `Sentence::tree_depth` is now O(n) per sentence via HashMap-indexed bottom-up DFS with depth memoization. The previous magic `< 20` ceiling is gone. On a malformed parse with a cycle, returns `usize::MAX` (sentinel) rather than silently truncating to 20.
