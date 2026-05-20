@@ -1,6 +1,7 @@
 """vaani — NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction."""
 
-from vaani._core import (
+from vaani._core import Vaani
+from vaani.types import (
     Analysis,
     Keyphrase,
     Paragraph,
@@ -8,7 +9,6 @@ from vaani._core import (
     Section,
     Sentence,
     Token,
-    Vaani,
 )
 
 __all__ = [
