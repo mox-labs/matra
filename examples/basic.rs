@@ -43,7 +43,7 @@ contributors solving problems before you knew you needed them solved.
         let heading = section.heading.as_deref().unwrap_or("(intro)");
         let words: usize = section.paragraphs.iter().map(|p| p.word_count()).sum();
         println!(
-            "  {} — {} paragraphs, {} words",
+            "  {}: {} paragraphs, {} words",
             heading,
             section.paragraphs.len(),
             words
