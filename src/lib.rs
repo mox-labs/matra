@@ -192,7 +192,41 @@ mod python {
     use pyo3::prelude::*;
     use pyo3::types::PyAny;
 
+    use crate::domain;
     use crate::nlp::NlpProvider;
+
+    /// Routes domain::Error variants to the appropriate Python exception
+    /// class, preserving variant identity across the FFI boundary.
+    ///
+    /// The mapping follows pyo3 conventions: file-not-found maps to
+    /// PyFileNotFoundError so Python `try ... except FileNotFoundError`
+    /// works as expected; oversized or unsupported inputs are PyValueError;
+    /// I/O errors are PyOSError; everything else is PyRuntimeError.
+    struct VaaniError(domain::Error);
+
+    impl From<domain::Error> for VaaniError {
+        fn from(e: domain::Error) -> Self {
+            VaaniError(e)
+        }
+    }
+
+    impl From<VaaniError> for PyErr {
+        fn from(e: VaaniError) -> PyErr {
+            use domain::Error::*;
+            use pyo3::exceptions::*;
+            let msg = e.0.to_string();
+            // domain::Error is #[non_exhaustive] from outside the crate but
+            // the compiler sees the full variant set in here, so this match
+            // is exhaustive without a wildcard. A new variant will become a
+            // compile error — exactly what we want for routing fidelity.
+            match e.0 {
+                ModelNotFound(_) => PyFileNotFoundError::new_err(msg),
+                InputTooLarge { .. } | UnsupportedFormat(_) => PyValueError::new_err(msg),
+                Io(_) => PyOSError::new_err(msg),
+                ModelInvalid(_) | ParseFailed(_) => PyRuntimeError::new_err(msg),
+            }
+        }
+    }
 
     fn to_dict<'py, T: serde::Serialize>(py: Python<'py>, val: &T) -> PyResult<Bound<'py, PyAny>> {
         pythonize::pythonize(py, val)
@@ -213,23 +247,20 @@ mod python {
         #[staticmethod]
         #[cfg(feature = "udpipe")]
         fn from_path(model_path: &str) -> PyResult<Self> {
-            let nlp = crate::nlp::udpipe::Udpipe::from_path(model_path)
-                .map_err(|e| pyo3::exceptions::PyFileNotFoundError::new_err(e.to_string()))?;
+            let nlp = crate::nlp::udpipe::Udpipe::from_path(model_path).map_err(VaaniError)?;
             Ok(Self { nlp: Box::new(nlp) })
         }
 
         #[staticmethod]
         #[cfg(feature = "udpipe")]
         fn english(model_dir: &str) -> PyResult<Self> {
-            let nlp = crate::nlp::udpipe::Udpipe::english(model_dir)
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            let nlp = crate::nlp::udpipe::Udpipe::english(model_dir).map_err(VaaniError)?;
             Ok(Self { nlp: Box::new(nlp) })
         }
 
         /// Analyze plain text. Returns a Python dict.
         fn analyze<'py>(&self, py: Python<'py>, text: &str) -> PyResult<Bound<'py, PyAny>> {
-            let analysis = crate::analyze(text, self.nlp.as_ref())
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            let analysis = crate::analyze(text, self.nlp.as_ref()).map_err(VaaniError)?;
             to_dict(py, &analysis)
         }
 
@@ -239,8 +270,7 @@ mod python {
             py: Python<'py>,
             text: &str,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let analysis = crate::analyze_markdown(text, self.nlp.as_ref())
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            let analysis = crate::analyze_markdown(text, self.nlp.as_ref()).map_err(VaaniError)?;
             to_dict(py, &analysis)
         }
 
@@ -251,12 +281,8 @@ mod python {
             text: &str,
             n: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self
-                .nlp
-                .parse(text)
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-            let result = crate::extraction::tfidf_summarize(&sentences, n)
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            let sentences = self.nlp.parse(text).map_err(VaaniError)?;
+            let result = crate::extraction::tfidf_summarize(&sentences, n).map_err(VaaniError)?;
             to_dict(py, &result)
         }
 
@@ -267,12 +293,9 @@ mod python {
             text: &str,
             n: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self
-                .nlp
-                .parse(text)
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-            let result = crate::extraction::textrank_summarize(&sentences, n)
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            let sentences = self.nlp.parse(text).map_err(VaaniError)?;
+            let result =
+                crate::extraction::textrank_summarize(&sentences, n).map_err(VaaniError)?;
             to_dict(py, &result)
         }
 
@@ -283,12 +306,9 @@ mod python {
             text: &str,
             max_phrases: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self
-                .nlp
-                .parse(text)
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-            let result = crate::extraction::rake_keyphrases(&sentences, max_phrases)
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            let sentences = self.nlp.parse(text).map_err(VaaniError)?;
+            let result =
+                crate::extraction::rake_keyphrases(&sentences, max_phrases).map_err(VaaniError)?;
             to_dict(py, &result)
         }
 
@@ -299,12 +319,9 @@ mod python {
             text: &str,
             max_phrases: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self
-                .nlp
-                .parse(text)
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-            let result = crate::extraction::yake_keyphrases(&sentences, max_phrases)
-                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            let sentences = self.nlp.parse(text).map_err(VaaniError)?;
+            let result =
+                crate::extraction::yake_keyphrases(&sentences, max_phrases).map_err(VaaniError)?;
             to_dict(py, &result)
         }
     }
