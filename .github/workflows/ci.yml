@@ -79,3 +79,20 @@ jobs:
         run: |
           pip install dist/vaani-*.whl
           python -c "from vaani import Vaani; print('ok')"
+
+  pytype:
+    name: Python type-check (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: Swatinem/rust-cache@v2
+      - name: Install maturin + mypy
+        run: pip install maturin "mypy>=1.10" click rich
+      - name: Build and install vaani (so the _core stub resolves)
+        run: maturin develop --features "python,udpipe"
+      - name: mypy
+        run: python -m mypy

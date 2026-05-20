@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "vaani"
 version = "0.1.0"
-description = "Prose metrics engine. Text in, structured analysis out."
+description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "yzavyas", email = "yza.vyas@gmail.com" }]
@@ -15,6 +15,11 @@ dependencies = [
     "rich>=13",
 ]
 
+[project.optional-dependencies]
+typecheck = [
+    "mypy>=1.10",
+]
+
 [project.scripts]
 vaani = "vaani.cli:main"
 
@@ -22,3 +27,28 @@ vaani = "vaani.cli:main"
 features = ["python", "udpipe"]
 python-source = "python"
 module-name = "vaani._core"
+include = [
+    { path = "python/vaani/py.typed", format = "wheel" },
+    { path = "python/vaani/_core.pyi", format = "wheel" },
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["python/vaani"]
+# The PyO3 extension is described by a stub file; mypy resolves it via
+# the package's own py.typed marker.
+mypy_path = "python"
+
+[[tool.mypy.overrides]]
+# rich and click ship their own stubs in newer versions; if a transitive
+# dep lacks them we still want strict mode on our code.
+module = ["rich.*", "click.*"]
+ignore_missing_imports = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "RUF"]
