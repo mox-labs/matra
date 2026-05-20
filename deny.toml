@@ -51,6 +51,9 @@ allow = [
     "Zlib",
     "CC0-1.0",
     "MPL-2.0",
+    # webpki-roots ships under Mozilla's CDLA-Permissive-2.0 (OSI-approved,
+    # permissive, no copyleft). Pulled in via udpipe-rs -> ureq -> rustls.
+    "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.93
 exceptions = []

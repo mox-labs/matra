@@ -1,84 +1,17 @@
 """Type stubs for the PyO3 extension module.
 
 These stubs describe the surface exposed by `_core` (built from `src/lib.rs`).
-The serialized return types are TypedDicts mirroring the Rust domain types
-in `src/domain.rs`. Field names cross the FFI verbatim via `pythonize`.
+The TypedDict return types are imported from `vaani.types`, where they are
+defined as runtime modules so they're available at runtime (not just at
+type-check time).
 
 Stubs are versioned alongside the Rust code; keep them in lockstep with
-`#[pyclass]`/`#[pymethods]` signatures.
+`#[pyclass]`/`#[pymethods]` signatures and with `vaani.types`.
 """
 
-from typing import TypedDict
+from __future__ import annotations
 
-
-class Token(TypedDict):
-    """One CoNLL-U token. Mirrors `vaani::domain::Token`."""
-
-    id: int
-    text: str
-    lemma: str
-    pos: str
-    xpos: str
-    feats: str
-    head: int
-    dep: str
-    deps: str
-    misc: str
-    is_punct: bool
-
-
-class Sentence(TypedDict):
-    """One parsed sentence. Mirrors `vaani::domain::Sentence`."""
-
-    text: str
-    tokens: list[Token]
-
-
-class Paragraph(TypedDict):
-    """One paragraph with optional metric slots. Mirrors `vaani::domain::Paragraph`."""
-
-    text: str
-    in_blockquote: bool
-    sentences: list[Sentence]
-    readability_grade: float | None
-    lexical_density: float | None
-    compression_ratio: float | None
-
-
-class Section(TypedDict):
-    """One section (heading + paragraphs). Mirrors `vaani::domain::Section`."""
-
-    heading: str | None
-    level: int
-    paragraphs: list[Paragraph]
-
-
-class Analysis(TypedDict):
-    """Top-level analysis output. Mirrors `vaani::domain::Analysis`.
-
-    Aggregate methods on the Rust `Analysis` (`passive_ratio`,
-    `mean_sentence_length`, etc.) do not cross the FFI boundary —
-    consumers compute them from `sections` if needed.
-    """
-
-    sections: list[Section]
-    vocabulary_ttr: float | None
-    nominalization_ratio: float | None
-
-
-class ScoredSentence(TypedDict):
-    """One ranked sentence. Output of TF-IDF and TextRank."""
-
-    text: str
-    score: float
-    position: int
-
-
-class Keyphrase(TypedDict):
-    """One ranked keyphrase. Output of RAKE and YAKE."""
-
-    phrase: str
-    score: float
+from vaani.types import Analysis, Keyphrase, ScoredSentence
 
 
 class Vaani:
