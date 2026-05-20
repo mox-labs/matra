@@ -1,6 +1,19 @@
 # Vaani
 
-Prose metrics engine. Text in, structured analysis out. Readability, POS, dependency, lexical density, compression ratio.
+NLP library. Text in, structured analysis out.
+
+UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression, vocab TTR, nominalization, passive ratio), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.
+
+Rule evaluation over parsed text structure is part of the intended scope and lands in a later iteration; document references describe it as planned, not present.
+
+## Posture
+
+vaani is a public OSS package intended as an exemplar for both Claude-managed repositories and human–AI collaborative intelligence. Two disciplines are non-negotiable:
+
+- **ACES** — Adaptable, Composable, Extensible. The structural design philosophy resisting the stasis/drag/opacity cycle. Every structural change is checked against the ACES boundary test. See `.claude/skills/aces/SKILL.md`.
+- **Antifragility** — the operational discipline. Size caps at entry, panic boundaries at C/C++ FFI, atomic file writes, TOCTOU closure, cycle-safe graph walks. See `.claude/skills/resilience-floor/SKILL.md`.
+
+The quality bar is high because the public surface is a contract across Rust, Python, and (when the WASM crust lands) TypeScript. Names are forever; the API surface, once published, locks downstream costs in.
 
 ## Architecture
 
@@ -15,17 +28,17 @@ Domain depends on port traits (NlpProvider, Decomposer, Source), not on adapters
 ```
 src/
   lib.rs                    # composition root + PyO3 module (feature-gated)
-  domain.rs                 # ALL domain types (zero internal deps, only serde)
+  domain.rs                 # all domain types (only serde, thiserror, std)
   source/
-    mod.rs                  # Source trait ONLY
-    file.rs                 # FileSource adapter
-    directory.rs            # DirectorySource adapter (skips symlinks)
+    mod.rs                  # Source trait
+    file.rs                 # FileSource adapter (symlink-rejecting, size-capped)
+    directory.rs            # DirectorySource adapter (skips symlinks, sorted, per-file error tolerance)
   decompose/
-    mod.rs                  # Decomposer trait ONLY
-    markdown.rs              # MarkdownDecomposer adapter
-    plain.rs                 # PlainTextDecomposer adapter
+    mod.rs                  # Decomposer trait
+    markdown.rs             # MarkdownDecomposer adapter
+    plain.rs                # PlainTextDecomposer adapter
   nlp/
-    mod.rs                  # NlpProvider trait ONLY
+    mod.rs                  # NlpProvider trait
     udpipe.rs               # UDPipe adapter (only file importing udpipe_rs)
   metrics/
     mod.rs                  # Metric alias, default_suite, attach_sentences
@@ -45,71 +58,91 @@ python/vaani/
   cli.py                    # click + rich CLI, auto-downloads model
 scripts/
   fetch-model-hash.sh       # refresh ENGLISH_MODEL_SHA256 when version changes
+  check-boundaries.sh       # enforces rules 3, 4, 2 in CI
+  install-hooks.sh          # installs the pre-commit hook
+  pre-commit-hook.sh        # local pre-commit gates
+  changelog-release.sh      # rolls CHANGELOG + bumps version for release
 tests/
   integration.rs            # full pipeline tests (require UDPipe model)
 examples/
   basic.rs                  # getting-started example
 ```
 
-## Boundary Rules
+## Boundary rules
 
-1. `domain.rs` has zero internal dependencies (only serde, std). Everything depends on it.
-2. Port modules (source/mod.rs, decompose/mod.rs, nlp/mod.rs) import only from domain.
+1. `domain.rs` depends only on `serde`, `thiserror`, and `std`. Adding any other dependency requires an ADR.
+2. Port modules (`source/mod.rs`, `decompose/mod.rs`, `nlp/mod.rs`) import only from `domain`.
 3. No port module imports another port module.
 4. `nlp/udpipe.rs` is the ONLY file that imports `udpipe_rs`.
-5. `metrics/` and `extraction/` import only from domain and stopwords.
+5. `metrics/` and `extraction/` import only from `domain` and `stopwords`.
 6. `cargo check --no-default-features` must compile.
-7. Composition root (lib.rs) is the only place that knows all adapters and ports.
+7. Composition root (`lib.rs`) is the only place that knows all adapters and ports.
+
+Rules 2, 3, 4 are enforced by `scripts/check-boundaries.sh` in CI. Rules 1, 5, 6, 7 are enforced by the type system and `cargo check`.
 
 ## Conventions
 
-- `domain::Result<T>` everywhere. No `Result<T, String>`. No panics in library code.
+- `domain::Result<T>` everywhere in the library. No `Result<T, String>`. No panics in library code (UDPipe panics are converted at the boundary via `catch_unwind`).
 - `impl AsRef<Path>` for file paths, not `&str`.
-- Feature flags are additive. Enabling `udpipe` adds UDPipe; disabling it removes only UDPipe.
-- Conventional commits.
+- Feature flags are additive. Enabling `udpipe` adds UDPipe; disabling removes only UDPipe.
+- Conventional commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`, `ci:`, `perf:`).
 - Tests: `#[cfg(test)]` for unit, `tests/` for integration, `examples/` for usage demos.
 - No em dashes in documentation prose.
+- Public types use `#[non_exhaustive]` for additive forward compatibility.
+- `cargo publish` and `maturin publish` always run with `--dry-run` first; explicit per-publish approval is required per the project memory.
 
 ## Build
 
 ```bash
+just check                                     # runs every CI gate locally
 cargo build                                    # default (with udpipe)
 cargo build --no-default-features              # without udpipe
-cargo test                                     # unit tests
+cargo test                                     # unit + doctests
 cargo test --test integration -- --ignored     # integration (needs model)
 maturin develop                                # Python local install
 maturin build                                  # Python wheel
 ```
 
-## Agents
+## DAO — practitioner agents
 
-| Agent | When to use |
-|-------|-------------|
-| `maintainer` | Architectural decisions, adding features, fixing bugs, long-term maintenance |
-| `reviewer` | PR reviews, boundary compliance audits, pre-release checks |
-| `benchmarker` | Performance measurement, bottleneck analysis, optimization decisions |
+| Agent | When to use | File |
+|-------|-------------|------|
+| `maintainer` | Architectural decisions, adding features, fixing bugs, long-term maintenance | `.claude/agents/maintainer.md` |
+| `reviewer` | PR reviews, boundary compliance audits, pre-release readiness checks | `.claude/agents/reviewer.md` |
+| `portsmith` | Port trait design, extension points, Pattern 6 evaluation | `.claude/agents/portsmith.md` |
+| `ffi-keeper` | PyO3 + future WASM/TS surface integrity, dual-publish discipline | `.claude/agents/ffi-keeper.md` |
+| `resilience` | Failure modes, bounds, panics, TOCTOU, security, atomic operations | `.claude/agents/resilience.md` |
+| `archivist` | CHANGELOG, ADRs, README, arch docs in lockstep with code | `.claude/agents/archivist.md` |
 
 ## Skills
 
-| Skill | When to use |
-|-------|-------------|
-| `rust-craft` | Any Rust design decision (trait design, error types, dependencies, feature flags) |
-| `testing` | Writing tests, reviewing coverage, debugging test failures |
-| `architecture` | Adding modules, creating adapters, extending encoders, boundary compliance |
+| Skill | When to use | File |
+|-------|-------------|------|
+| `aces` | **Non-negotiable.** ACES design philosophy: Adaptable, Composable, Extensible. The three counter-forces to stasis/drag/opacity. Run the boundary test on every structural change. | `.claude/skills/aces/SKILL.md` |
+| `rust-craft` | Rust design decisions: error tier, dep pin, trait shape, version pin | `.claude/skills/rust-craft/SKILL.md` |
+| `testing` | Test strategy: regression discipline, property tests, complexity benches | `.claude/skills/testing/SKILL.md` |
+| `architecture` | Hex boundary, port design, composition root, canonical pattern application | `.claude/skills/architecture/SKILL.md` |
+| `ffi-surface` | PyO3 dual-publish: unsendable/Bound/pythonize/maturin/pin discipline | `.claude/skills/ffi-surface/SKILL.md` |
+| `resilience-floor` | Taleb patterns: catch_unwind, atomic ops, TOCTOU closure, size caps | `.claude/skills/resilience-floor/SKILL.md` |
+| `docs-lockstep` | CHANGELOG, ADRs, arch docs in sync with shipping code | `.claude/skills/docs-lockstep/SKILL.md` |
 
-## Mastery References
+## Mastery references
 
-569 insights from 28 elite codebases at `~/oss/research/`:
+The rust-mastery corpus at `~/radix-workspaces/rust-mastery/` is the architectural decision substrate. It is closed (12 of 12 milestones complete as of 2026-05-14) with ~150 Frames at file / crate / cross-artifact / milestone scales across 50+ Rust codebases.
 
-| File | When |
+For vaani specifically, the load-bearing Frames are:
+
+| Frame | When to consult |
 |------|------|
-| `synthesis.md` | Any architectural decision (97 judgment patterns) |
-| `implementation.md` | How to build specific patterns (26 patterns) |
-| `verification.md` | Testing strategy: loom, miri, fuzzing, property (20 patterns) |
-| `performance.md` | Optimization (37 patterns, measure first) |
-| `extension-systems.md` | Plugin/encoder architecture (6 codebases) |
-| `pyo3-mastery.md` | Python bindings (Bound<'py,T>, pyclass, GIL) |
-| `serde-mastery.md` | Serialization, error design, API stability |
-| `ripgrep-mastery.md` | CLI patterns, measurement-driven design |
-| `tauri-mastery.md` | Cross-platform desktop patterns |
-| `uniffi-rs-mastery.md` | Mobile FFI patterns |
+| `frames/cross-artifact/frame__cross-artifact__vaani-readiness.json` | Integrating M1 Frame — the complete architectural prescription for vaani, grounded in 6 cross-artifact + 11 file-Frames |
+| `frames/cross-artifact/frame__cross-artifact__errors-tier-lib-vs-app.json` | Error tier discipline (thiserror at library tier, anyhow at app tier when applicable, `?` as the zero-cost seam) |
+| `frames/cross-artifact/frame__cross-artifact__rust-python-dual-publish.json` | PyO3 + pythonize + maturin layered disciplines; 0.20 → 0.28 migration archaeology |
+| `frames/cross-artifact/frame__cross-artifact__dtolnay-derive-style-ecosystem.json` | The 3-axis rule for `__private<patch>` versioning (internal-helpers / macro-rules / consumer-relationship) |
+| `frames/cross-artifact/frame__cross-artifact__cli-ergonomics-and-app-discipline.json` | clap + ripgrep WalkParallel + per-file tolerance + broken-pipe handling |
+| `frames/cross-artifact/frame__cross-artifact__typed-extension-config-trio.json` | inventory + typetag + serde for open-set polymorphic dispatch (deferred for vaani; relevant if extensibility surface ships) |
+| `frames/cross-artifact/frame__cross-artifact__m8-i3-search-tier-pattern6-substrate-stability.json` | Pattern 6 criterion (separately publish a minimal port crate iff an external implementor ecosystem exists) |
+| `frames/cross-artifact/frame__cross-artifact__cross-iteration-pattern-consolidation.json` | The four cross-iteration patterns: co-versioned-coupling, structural-rejection, vertical-layer-composition, isomorphic-dispatch |
+
+The `.claude/arch/rust-mastery-audit.md` document maps these Frames to vaani's actual code and surfaces the remaining gaps. Read it before architectural decisions.
+
+For workflow scaffolds (ci-scaffolds, problem-solving, crafting, collaborating), see the global skills under `~/.claude/`.

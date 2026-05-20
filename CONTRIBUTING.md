@@ -159,9 +159,17 @@ the existing `Option<f64> = None` semantics (Chesterton fence 7).
 
 ## Code style
 
+**ACES + antifragility:** non-negotiable. ACES (Adaptable, Composable,
+Extensible) is the structural design philosophy; antifragility is the
+operational discipline (size caps, panic boundaries, atomic ops, TOCTOU
+closure). See `.claude/skills/aces/SKILL.md` and
+`.claude/skills/resilience-floor/SKILL.md`. Every structural change is
+checked against the ACES boundary test; every new I/O or external-library
+boundary is checked against the antifragile checklist.
+
 **Boundary rules:** non-negotiable. See `CLAUDE.md` for the seven hex
-rules plus the tracing amendment. The boundary check script
-(`scripts/check-boundaries.sh`) runs in the pre-commit hook and CI.
+rules. The boundary check script (`scripts/check-boundaries.sh`) runs in
+the pre-commit hook and CI.
 
 **Formatting:** `cargo fmt`. Enforced.
 

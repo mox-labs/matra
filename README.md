@@ -1,8 +1,8 @@
 # vaani
 
-Prose metrics engine. Text in, structured analysis out.
+NLP library. Text in, structured analysis out.
 
-Readability scores, POS distributions, dependency structures, lexical density, compression ratios. Rust core with Python bindings.
+UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.
 
 A pure, performant, ACE-aligned NLP library: **A**daptable, **C**omposable, **E**xtensible. Hex architecture, domain has zero internal dependencies, every public type is `#[non_exhaustive]`. The substrate is small and stable; opinions live in consumer code.
 
@@ -82,12 +82,27 @@ Deeper docs in `.claude/arch/`: ports, adapters, domain model, evolution.
 
 ## How this project is run
 
-vaani is a **Claude-managed** open-source project. The maintainer
-collaborates with Claude (Anthropic's AI) to plan, implement, and
-review changes; humans approve every PR before merge. The working
-values are transparency (decisions are visible), auditability (every
-change has a trail), and reversibility (every change can be backed out
-cleanly).
+vaani is a **Claude-managed** open-source project, intended as an exemplar
+for both Claude-managed repositories and human–AI collaborative intelligence.
+The maintainer collaborates with Claude (Anthropic's AI) to plan, implement,
+and review changes; humans approve every PR before merge. The working values
+are transparency (decisions are visible), auditability (every change has a
+trail), and reversibility (every change can be backed out cleanly).
+
+The repository is built on two non-negotiable disciplines:
+
+- **ACES** — Adaptable, Composable, Extensible. The structural design
+  philosophy that resists the stasis/drag/opacity decay cycle every long-lived
+  library faces. See [`.claude/skills/aces/SKILL.md`](.claude/skills/aces/SKILL.md).
+- **Antifragility** — the operational discipline. Size caps at the gate,
+  panic boundaries at the C/C++ FFI, atomic file writes, TOCTOU-closed hash
+  verification, cycle-safe graph walks. See
+  [`.claude/skills/resilience-floor/SKILL.md`](.claude/skills/resilience-floor/SKILL.md).
+
+The agent organization in [`.claude/agents/`](.claude/agents/) (6 practitioner
+agents) and skill library in [`.claude/skills/`](.claude/skills/) (7 skills)
+operationalize these disciplines so any contributor — human or AI — can
+participate without re-deriving the substrate.
 
 | Where to look | What's there |
 |---|---|

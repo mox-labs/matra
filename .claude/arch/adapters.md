@@ -19,13 +19,13 @@ flowchart LR
 
 ## `FileSource` — `src/source/file.rs`
 
-Reads one file from disk. Detects format from extension (`.md` → Markdown, `.txt` → PlainText, `.pdf` → Pdf reserved, `.docx` → Docx reserved, anything else → PlainText).
+Reads one file from disk. Detects format from extension (`.md`/`.markdown` → Markdown, `.txt` → PlainText, `.pdf` → Pdf reserved, `.docx` → Docx reserved, anything else → PlainText).
 
-### Constraints (post-PR2)
+### Constraints
 
-- Refuses symlinks (rule of consistency with `DirectorySource`; pre-PR2 was a Vector HIGH finding).
-- Enforces a per-file size cap before reading; oversize files return `Error::InputTooLarge { what: "file_source", .. }` rather than OOM.
-- No path canonicalization. The library does not sandbox paths. A consumer that takes user-supplied paths must validate them before calling.
+- **Refuses symlinks.** Uses `symlink_metadata` (non-traversing) and rejects any path whose file type is a symlink. Prevents an attacker who controls a path passed to `FileSource` from redirecting the read to an arbitrary file via a symlink.
+- **Per-file size cap.** Files larger than `MAX_INPUT_BYTES` are rejected via `Error::InputTooLarge { what: "file_source", .. }` before reading into memory, so a 1 GB file does not OOM the host before the gate runs.
+- **No path canonicalization.** The library does not sandbox paths. A consumer that takes user-supplied paths must validate them before calling.
 
 ### What it is not
 
@@ -34,19 +34,18 @@ Reads one file from disk. Detects format from extension (`.md` → Markdown, `.t
 
 ## `DirectorySource` — `src/source/directory.rs`
 
-Walks a directory, returns one `RawDocument` per readable file.
+Walks a directory non-recursively, returns one `RawDocument` per readable file.
 
 ### Constraints
 
-- Skips symlinks (existing behavior, verified by test `skips_symlinks`).
-- Sorts paths lexicographically before yielding (existing behavior at `directory.rs:35`; promoted from implementation detail to documented contract by Lamport).
-- (Post-PR2) Per-file I/O tolerance. One unreadable file no longer aborts the batch; the error is collected and the iteration continues.
-- (Post-PR4) `read_iter` inherent method yields lazily, so peak memory stays at one document.
+- **Skips symlinks** (verified by test `skips_symlinks`).
+- **Lexicographic path sort** before yielding. Verified by code (`directory.rs` `candidate_paths`).
+- **Per-file I/O tolerance.** One unreadable file no longer aborts the batch; `read_collecting_errors` returns successes plus per-file failures as `(Vec<RawDocument>, Vec<(PathBuf, Error)>)`. `Source::read` (the trait method) returns only the successes; callers that care about which files failed should use `read_collecting_errors` directly.
 
 ### What it is not
 
-- Not recursive into subdirectories beyond depth 1. (Tracked for 0.2 if consumers ask.)
-- Not glob-aware. `*.md` filtering is the consumer's job.
+- Not recursive into subdirectories. Adding recursion is post-0.1; tracked if consumers ask.
+- Not glob-aware. Filtering like `*.md` is the consumer's job.
 
 ## `MarkdownDecomposer` — `src/decompose/markdown.rs`
 
@@ -54,7 +53,7 @@ Parses markdown into sections. Honors heading levels, tracks blockquote membersh
 
 ### Constraints
 
-- The function is named `decompose` (not `parse`). The pre-PR1 name was `parse`, which collided with NLP `parse` semantically (Ace verdict). The rename frees `parse` for the linguistic verb.
+- The function is named `decompose` (not `parse`). The pre-rename name was `parse`, which collided with NLP `parse` semantically. The rename freed `parse` for the linguistic verb.
 - Treats malformed markdown as plain text. No errors propagate.
 
 ### What it is not
@@ -77,20 +76,20 @@ The default `NlpProvider` adapter, gated behind the `udpipe` feature flag (defau
 ### Constructors
 
 - `Udpipe::from_path(model_path)` — load a UDPipe model from a local file.
+- `Udpipe::from_bytes(data)` — load from in-memory bytes.
 - `Udpipe::english(model_dir)` — download the English model if absent (verified against `ENGLISH_MODEL_SHA256`), then load.
 
-### Constraints (post-PR2)
+### Constraints
 
-- **Panic boundary.** `Model::parse` is wrapped in `std::panic::catch_unwind`. A C-level panic in `udpipe-rs` becomes `Err(ParseFailed { kind: ProviderInternal, .. })`, never a process abort. This is the Taleb #1 fix.
-- **Atomic download.** Concurrent processes calling `english(same_dir)` no longer race on `path.exists()` and corrupt each other's downloads (Lamport BLOCK fix). The download writes to `<path>.tmp.<pid>`, then atomically `rename`s after verify.
-- **No TOCTOU.** SHA-256 verify reads bytes; `Model::load` consumes the same in-memory bytes. The disk file is not re-read after verify (Vector MEDIUM fix).
-- **Debug-assert on token order.** Every `parse` call asserts (in debug builds) that returned tokens are id-sorted within each sentence (Lamport).
+- **Panic boundary.** `Model::parse` is wrapped in `std::panic::catch_unwind`. A C-level panic in `udpipe-rs` becomes `Err(ParseFailed(_))`, never a process abort. Without this wrapper, a panic inside `Model::parse` would abort the host process (interpreter death in Python, trap in WASM).
+- **Atomic download.** Concurrent processes calling `english(same_dir)` cannot corrupt each other's downloads. Each downloads to its own `.tmp.download.<pid>` subdirectory and `std::fs::rename`s the file into place. Rename is atomic on the same filesystem.
+- **No TOCTOU.** `read_and_verify` returns the verified bytes; `from_bytes` consumes the same in-memory bytes. The disk file is not re-read after verify. An attacker with write access to the model directory who swaps the file between verify and a hypothetical second read cannot affect the loaded model, because no second read happens.
 
 ### Threading
 
-`Udpipe` holds a loaded `Model` that is **not** `Send` due to internal C state. The PyO3 wrapper is `#[pyclass(unsendable)]`; Python users get a runtime error if they try to share an `Engine` across threads. Multi-process Python (e.g., `ProcessPoolExecutor`) is fine; multi-thread is not.
+`Udpipe` holds a loaded `Model` that is **not** `Send` due to internal C state. The PyO3 wrapper `Vaani` is `#[pyclass(unsendable)]`; Python users get a runtime error if they try to share an instance across threads. Multi-process Python (e.g., `ProcessPoolExecutor`) is fine; multi-thread is not.
 
-A future `NlpProvider` adapter without C state (e.g., a pure-Rust tokenizer + tagger) could lift this restriction. The composition root takes `&dyn NlpProvider` and does not assume `Send`.
+A future `NlpProvider` adapter without C state (e.g., a pure-Rust tokenizer + tagger) could lift this restriction. The composition root takes `&dyn NlpProvider` and assumes `Send` but not `Sync`.
 
 ### What it is not
 
@@ -101,31 +100,17 @@ A future `NlpProvider` adapter without C state (e.g., a pure-Rust tokenizer + ta
 
 Every adapter must:
 
-1. Implement exactly one port. (Or one inherent helper method like `DirectorySource::read_iter` that the composition root re-exposes.)
+1. Implement exactly one port. (Or one inherent helper method like `DirectorySource::read_collecting_errors` that the composition root re-exposes.)
 2. Import only from `domain` and the port module it implements. Never from another adapter.
 3. Live in the module that owns its port (`source/`, `decompose/`, `nlp/`).
-4. Emit `tracing` spans/events for I/O and external calls. Never silently swallow errors.
-5. Translate external errors into `domain::Error` variants. Never propagate `udpipe_rs` errors directly.
-6. Document its contract overrides (e.g., DirectorySource sort order, Udpipe panic boundary) inline at the impl site.
+4. Translate external errors into `domain::Error` variants. Never propagate `udpipe_rs` errors directly.
+5. Document its contract overrides (e.g., `DirectorySource` sort order, `Udpipe` panic boundary) inline at the impl site.
 
 ## Adapters that don't exist yet
 
 These are deliberate gaps, not oversights.
 
-- **`PdfDecomposer`** — `Format::Pdf` returns `Error::UnsupportedFormat`. Half-shipping a PDF adapter would lock a bad shape into the public surface (PDF is a format family, not a format). Tracked for 0.2 under a feature flag.
+- **`PdfDecomposer`** — `Format::Pdf` returns `Error::UnsupportedFormat`. Half-shipping a PDF adapter would lock a bad shape into the public surface (PDF is a format family, not a format). Tracked post-0.1 under a feature flag.
 - **`DocxDecomposer`** — same logic.
-- **WASM `NlpProvider`** — a pure-Rust tagger + parser for browser/Node use. Tracked for 0.3 once the PyO3 surface is stable.
-- **Streaming `Source` adapter** (websocket, filesystem watch) — only if reactor triggers fire (see [evolution.md](evolution.md)).
-
-## `rumi-nlp`: not an adapter
-
-`rumi-nlp` (sibling crate to `vaani-core` in the workspace) is sometimes mistaken for an `NlpProvider` adapter. It is not. The relationship:
-
-| Concept | Belongs to | Implements / Wraps |
-|---|---|---|
-| `NlpProvider` | port in `vaani-core` | implemented by `Udpipe` adapter (and any future NLP backend) |
-| `DataInput<Sentence>` | `rumi-core` trait | implemented in `rumi-nlp` for NLP-specific data extraction (POS, lemma, dep, subtree, etc.) |
-
-`rumi-nlp` consumes `vaani-core`'s output (`Sentence` and `Token` from `domain.rs`). It does not implement any of `vaani-core`'s ports. It is a peer in the workspace, sitting alongside `vaani-core`, depending on it for the parsed structure and on `rumi-core` for the matcher engine.
-
-In short: an adapter is something that plugs into a vaani port. `rumi-nlp` doesn't plug into vaani — it builds on top of vaani for a different purpose (rule-based pattern matching over parsed sentences).
+- **WASM `NlpProvider`** — a pure-Rust tagger + parser for browser/Node use. Tracked once the PyO3 surface is stable and a TypeScript consumer commits.
+- **Streaming `Source` adapter** (websocket, filesystem watch) — only if a consumer needs push semantics. See [evolution.md](evolution.md) for the trigger conditions.
