@@ -12,11 +12,12 @@ env:
 
 jobs:
   rust:
-    name: Rust ${{ matrix.features }}
-    runs-on: ubuntu-latest
+    name: Rust ${{ matrix.os }} / ${{ matrix.features }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-latest]
         include:
           - features: default
             flags: ""
@@ -33,7 +34,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: cargo fmt --check
-        if: matrix.features == 'default'
+        if: matrix.features == 'default' && matrix.os == 'ubuntu-latest'
         run: cargo fmt --all -- --check
 
       - name: cargo check
@@ -44,6 +45,41 @@ jobs:
 
       - name: cargo test (lib + doc)
         run: cargo test ${{ matrix.flags }}
+
+  msrv:
+    name: MSRV (Rust 1.85)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo check (MSRV, all features)
+        run: cargo check --all-targets --all-features
+      - name: cargo check (MSRV, no default features)
+        run: cargo check --all-targets --no-default-features
+
+  deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --all-features
+
+  semver:
+    name: cargo-semver-checks
+    runs-on: ubuntu-latest
+    # PR-only — we don't gate main on this (the baseline is the published version).
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          feature-group: all-features
 
   docs:
     name: rustdoc
@@ -58,11 +94,12 @@ jobs:
         run: cargo doc --no-deps --all-features
 
   python:
-    name: Python wheel (${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    name: Python wheel (${{ matrix.os }} / ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-latest]
         python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v4
@@ -76,6 +113,7 @@ jobs:
       - name: Build wheel
         run: maturin build --release --out dist
       - name: Install and import
+        shell: bash
         run: |
           pip install dist/vaani-*.whl
           python -c "from vaani import Vaani; print('ok')"
