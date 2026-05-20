@@ -1,0 +1,85 @@
+# cargo-deny configuration.
+#
+# Run locally:    cargo deny check
+# CI gate:        .github/workflows/ci.yml (deny job)
+#
+# Three checks: licenses, security advisories, sources, and bans.
+
+[graph]
+# Target triples to consider when resolving the dep graph. We care about
+# the platforms vaani actually ships on (linux, macos, windows) and the
+# WASM target the planned crust will use.
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "wasm32-unknown-unknown",
+]
+all-features = true
+
+[output]
+feature-depth = 1
+
+# ---------------------------------------------------------------------------
+# Advisories
+# ---------------------------------------------------------------------------
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = []
+
+# ---------------------------------------------------------------------------
+# Licenses
+# ---------------------------------------------------------------------------
+#
+# vaani is MIT-licensed; permissive licenses on deps are fine.
+# Strong-copyleft (GPL family) is denied.
+
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+    "CC0-1.0",
+    "MPL-2.0",
+]
+confidence-threshold = 0.93
+exceptions = []
+
+# ---------------------------------------------------------------------------
+# Bans
+# ---------------------------------------------------------------------------
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+
+allow = []
+deny = []
+
+skip = []
+skip-tree = []
+
+# ---------------------------------------------------------------------------
+# Sources
+# ---------------------------------------------------------------------------
+#
+# Restrict crate sources to crates.io. No git deps from arbitrary hosts.
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
