@@ -26,7 +26,7 @@ crate-type = ["rlib", "cdylib"]
 pyo3 = { version = "0.28", features = ["extension-module"], optional = true }
 pythonize = { version = "0.28", optional = true }
 udpipe-rs = { version = "0.2", optional = true }
-sha2 = { version = "0.10", optional = true }
+sha2 = { version = "0.11", optional = true }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 brotli = "7"
