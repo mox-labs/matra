@@ -13,8 +13,8 @@ pub trait Source: Send {
 
 Adapters:
 
-- **FileSource** — reads one file. Rejects symlinks (uses `symlink_metadata`, non-traversing). Enforces a per-file size cap (`MAX_INPUT_BYTES`) before reading.
-- **DirectorySource** — walks a directory non-recursively. Skips symlinks. Sorts paths lexicographically. Tolerates per-file failures via `read_collecting_errors`.
+- **FileSource:** reads one file. Rejects symlinks (uses `symlink_metadata`, non-traversing). Enforces a per-file size cap (`MAX_INPUT_BYTES`) before reading.
+- **DirectorySource:** walks a directory non-recursively. Skips symlinks. Sorts paths lexicographically. Tolerates per-file failures via `read_collecting_errors`.
 
 ## Decomposer
 
@@ -26,8 +26,8 @@ pub trait Decomposer {
 
 Adapters:
 
-- **MarkdownDecomposer** — honors heading hierarchy, tracks blockquote membership. Treats malformed markdown as plain text.
-- **PlainTextDecomposer** — one heading-less section, paragraphs split on blank lines.
+- **MarkdownDecomposer:** honors heading hierarchy, tracks blockquote membership. Treats malformed markdown as plain text.
+- **PlainTextDecomposer:** one heading-less section, paragraphs split on blank lines.
 
 Decomposers are infallible.
 
@@ -41,7 +41,7 @@ pub trait NlpProvider: Send {
 
 Adapter:
 
-- **Udpipe** — wraps the `udpipe-rs` C++ bindings. The only file in the codebase allowed to import `udpipe_rs`. C-side panics are caught via `catch_unwind` and converted to `Err(ParseFailed(_))`.
+- **Udpipe:** wraps the `udpipe-rs` C++ bindings. The only file in the codebase allowed to import `udpipe_rs`. C-side panics are caught via `catch_unwind` and converted to `Err(ParseFailed(_))`.
 
 Contracts on the returned `Vec<Sentence>`:
 
@@ -50,7 +50,7 @@ Contracts on the returned `Vec<Sentence>`:
 - Exactly one token per sentence has `head = 0`.
 - All `head` references are valid (point to another token in the same sentence, or 0).
 
-These are load-bearing — downstream metrics and extractors assume them.
+These are load-bearing. Downstream metrics and extractors assume them.
 
 ## Adapter rules
 

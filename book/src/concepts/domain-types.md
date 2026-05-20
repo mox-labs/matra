@@ -42,10 +42,10 @@ classDiagram
         +nominalization_ratio: Option~f64~
     }
 
-    Sentence "1..*" --o "1" Token
-    Paragraph "1..*" --o "1" Sentence
-    Section "1..*" --o "1" Paragraph
-    Analysis "1..*" --o "1" Section
+    Sentence "1" *-- "1..*" Token
+    Paragraph "1" *-- "1..*" Sentence
+    Section "1" *-- "1..*" Paragraph
+    Analysis "1" *-- "1..*" Section
 ```
 
 Read it as containment: a `Token` lives inside a `Sentence`, a `Sentence` inside a `Paragraph`, a `Paragraph` inside a `Section`, a `Section` inside an `Analysis`. Each level has its own metrics surface.
@@ -105,7 +105,7 @@ A heading + paragraphs. `level` is the heading depth (0 for plain text, 1+ for m
 
 The pipeline output. Contains the section tree plus document-level metric slots (`vocabulary_ttr`, `nominalization_ratio`).
 
-Aggregate methods (`total_sentences`, `total_words`, `passive_ratio`, `mean_sentence_length`, `sentence_length_std`) are Rust-only — they do not cross FFI. Python and (future) WASM consumers either recompute aggregates from the section tree or read the slot fields directly.
+Aggregate methods (`total_sentences`, `total_words`, `passive_ratio`, `mean_sentence_length`, `sentence_length_std`) are Rust-only. They do not cross FFI. Python and (future) WASM consumers either recompute aggregates from the section tree or read the slot fields directly.
 
 ## Corpus
 
@@ -117,8 +117,8 @@ Produced by `analyze_directory(...)` along with a parallel error vector recordin
 
 The extraction outputs.
 
-- `ScoredSentence { text: String, score: f64, position: usize }` — output of TF-IDF and TextRank.
-- `Keyphrase { phrase: String, score: f64 }` — output of RAKE and YAKE.
+- `ScoredSentence { text: String, score: f64, position: usize }`: output of TF-IDF and TextRank.
+- `Keyphrase { phrase: String, score: f64 }`: output of RAKE and YAKE.
 
 ## RawDocument, Format
 
@@ -134,8 +134,8 @@ This is the cost of being a substrate: every public name is a contract. The `#[n
 
 Every type in this section appears in two languages today, three when the WASM crust lands:
 
-- **Rust struct/enum** — the reference.
+- **Rust struct/enum:** the reference.
 - **Python dict** via `pythonize`. Field names become string keys; methods do not appear (only fields cross FFI).
 - **TypeScript interface** (planned, via `serde-wasm-bindgen`). Same field names, same methods-don't-cross rule.
 
-Names are picked to read clearly in three languages.
+Names are picked to read clearly in three languages. For the full story on how types cross, how errors route across the FFI boundary, and the dual-publish mechanics, see [Cross-language story](../architecture/cross-language.md).

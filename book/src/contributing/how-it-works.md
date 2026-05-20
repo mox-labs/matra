@@ -1,12 +1,12 @@
 # How this repo is run
 
-vaani is a public OSS package and an intended exemplar for both Claude-managed open-source repositories and human–AI collaborative intelligence. The standards exist to make the project sustainable; they apply to every contributor, human or AI.
+vaani is a public OSS package and an intended exemplar for both Claude-managed open-source repositories and human--AI collaborative intelligence. The standards exist to make the project sustainable; they apply to every contributor, human or AI.
 
 ## Working values
 
-- **Transparency** — decisions are visible. ADRs in `docs/decisions/`, iteration plans in `.claude/implans/`, the audit trail in CHANGELOG.md.
-- **Auditability** — every change has a trail. Conventional commits, Co-Authored-By trailers, signed-off review.
-- **Reversibility** — every change can be backed out cleanly. Atomic commits, ADR-supersede rather than ADR-edit, branches deleted after merge.
+- **Transparency:** decisions are visible. ADRs in `docs/decisions/`, iteration plans in `.claude/implans/`, the audit trail in CHANGELOG.md.
+- **Auditability:** every change has a trail. Conventional commits, Co-Authored-By trailers, signed-off review.
+- **Reversibility:** every change can be backed out cleanly. Atomic commits, ADR-supersede rather than ADR-edit, branches deleted after merge.
 
 ## The working model
 
@@ -21,8 +21,8 @@ The project's primary engineer is Claude (Anthropic's AI), working with human di
 | Location | What lives there |
 |---|---|
 | `.claude/arch/` | Architecture docs: ports, adapters, domain model, evolution. Internal substrate. |
-| `.claude/agents/` | The DAO — practitioner agents (maintainer, reviewer, portsmith, ffi-keeper, resilience, archivist). |
-| `.claude/skills/` | Skill library — ACES, rust-craft, testing, architecture, ffi-surface, resilience-floor, docs-lockstep. |
+| `.claude/agents/` | The DAO: practitioner agents (maintainer, reviewer, portsmith, ffi-keeper, resilience, archivist). |
+| `.claude/skills/` | Skill library: ACES, rust-craft, testing, architecture, ffi-surface, resilience-floor, docs-lockstep. |
 | `.claude/implans/` | Iteration plans: I0, I1, I2, etc. |
 | `book/src/` | User-facing documentation. **You are here.** |
 | `docs/decisions/` | Architecture Decision Records (ADRs). |
@@ -37,9 +37,9 @@ If something is unclear or contradictory across these surfaces, the order of aut
 
 Three surfaces depending on stakes:
 
-- **Open-ended exploration** → GitHub Discussions. RFCs, "should we consider X", retrospectives. No commitment.
-- **Architectural decisions that bind future work** → a `decision` issue, then an ADR in `docs/decisions/NNNN-short-name.md`.
-- **Concrete changes** → a regular issue plus a PR that closes it.
+- **Open-ended exploration** -> GitHub Discussions. RFCs, "should we consider X", retrospectives. No commitment.
+- **Architectural decisions that bind future work** -> a `decision` issue, then an ADR in `docs/decisions/NNNN-short-name.md`.
+- **Concrete changes** -> a regular issue plus a PR that closes it.
 
 ADRs are appended, not edited. Superseding an ADR is itself a new ADR.
 
@@ -51,7 +51,7 @@ ADRs are appended, not edited. Superseding an ADR is itself a new ADR.
 
 **Process:**
 
-1. Maintainer runs `just release-prep VERSION`. This rolls `[Unreleased]` → `[VERSION]` in CHANGELOG.md.
+1. Maintainer runs `just release-prep VERSION`. This rolls `[Unreleased]` -> `[VERSION]` in CHANGELOG.md.
 2. Maintainer reviews the diff, ensures the `[VERSION]` section has 2-4 Highlight paragraphs plus structured Keep-a-Changelog bullets.
 3. Bumps `Cargo.toml` and `pyproject.toml` versions, commits.
 4. `cargo publish --dry-run --features udpipe` for sanity check.
@@ -81,9 +81,9 @@ The manual gate is by policy, not because automation is hard. Publishing is irre
 
 The commit message is a teaching moment for the next reader, not just release-note material. State the *why*, the alternatives considered, and the trade-off you accepted. Long bodies are welcome when the change is load-bearing; short subjects are mandatory.
 
-## ACES + antifragility — non-negotiable
+## ACES + antifragility: non-negotiable
 
-Every structural change is checked against the ACES boundary test (see `.claude/skills/aces/SKILL.md`) and the antifragility checklist (see `.claude/skills/resilience-floor/SKILL.md`). Good engineering that violates ACES is not good for vaani.
+Every structural change is checked against the ACES boundary test and the antifragility checklist. Good engineering that violates ACES is not good for vaani. See [ACES and antifragility](../philosophy.md) for what both disciplines require and why they are non-negotiable.
 
 ## Working with Claude
 
