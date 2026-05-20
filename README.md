@@ -1,5 +1,13 @@
 # vaani
 
+[![crates.io](https://img.shields.io/crates/v/vaani.svg)](https://crates.io/crates/vaani)
+[![docs.rs](https://img.shields.io/docsrs/vaani)](https://docs.rs/vaani)
+[![PyPI](https://img.shields.io/pypi/v/vaani.svg)](https://pypi.org/project/vaani/)
+[![CI](https://github.com/mox-labs/vaani/actions/workflows/ci.yml/badge.svg)](https://github.com/mox-labs/vaani/actions/workflows/ci.yml)
+[![docs](https://github.com/mox-labs/vaani/actions/workflows/docs.yml/badge.svg)](https://mox-labs.github.io/vaani/)
+[![MSRV](https://img.shields.io/badge/MSRV-1.85-blue?logo=rust)](https://github.com/mox-labs/vaani/blob/main/Cargo.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mox-labs/vaani/blob/main/LICENSE)
+
 NLP library. Text in, structured analysis out.
 
 UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.

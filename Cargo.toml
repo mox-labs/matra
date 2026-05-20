@@ -7,9 +7,16 @@ authors = ["yzavyas <yza.vyas@gmail.com>"]
 license = "MIT"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction. Rust core with Python bindings."
 repository = "https://github.com/mox-labs/vaani"
+homepage = "https://mox-labs.github.io/vaani/"
+documentation = "https://docs.rs/vaani"
+readme = "README.md"
 keywords = ["nlp", "udpipe", "parsing", "summarization", "readability"]
 categories = ["text-processing", "science"]
-exclude = ["scratch/*", ".claude/*", "target/*", "*.udpipe"]
+exclude = ["scratch/*", ".claude/*", "target/*", "book/*", "*.udpipe"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [lib]
 name = "vaani"
@@ -33,6 +40,25 @@ default = ["udpipe"]
 udpipe = ["udpipe-rs", "sha2"]
 python = ["pyo3", "pythonize"]
 
+[lints.rust]
+missing_docs = "warn"
+unreachable_pub = "warn"
+unused_must_use = "warn"
+
+[lints.clippy]
+# Targeted pedantic lints that catch real issues without being noisy.
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+
 [[example]]
 name = "basic"
+required-features = ["udpipe"]
+
+[[example]]
+name = "parse_once_use_many"
+required-features = ["udpipe"]
+
+[[example]]
+name = "corpus"
 required-features = ["udpipe"]
