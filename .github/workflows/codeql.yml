@@ -1,0 +1,54 @@
+name: CodeQL
+
+# GitHub's static analysis for security issues. Custom workflow (vs. the
+# "default setup" UI option) lets us pin the action to a SHA and integrate
+# with Scorecard.
+#
+# IMPORTANT: before this workflow can run, the repo's CodeQL "default setup"
+# must be disabled in Settings -> Code security -> Code scanning. Otherwise
+# GitHub rejects the custom workflow with "default setup is already
+# enabled". See docs/decisions/0005-supply-chain-hardening.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "12 3 * * 2"   # Tuesdays 03:12 UTC
+
+permissions: read-all
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: rust
+            build-mode: none
+          - language: python
+            build-mode: none
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@0d579ffd059c29b07949a3cce3983f0780820c98  # v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@0d579ffd059c29b07949a3cce3983f0780820c98  # v4
+        with:
+          category: "/language:${{ matrix.language }}"
