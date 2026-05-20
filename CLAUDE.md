@@ -80,6 +80,21 @@ examples/
 
 Rules 2, 3, 4 are enforced by `scripts/check-boundaries.sh` in CI. Rules 1, 5, 6, 7 are enforced by the type system and `cargo check`.
 
+## Things that will bite you
+
+Non-obvious gotchas. Each is a behavior plus the failure mode if you violate it.
+
+- **Domain purity is hard-checked.** Adding `tokio` or `reqwest` (or anything beyond serde/thiserror/std) to `domain.rs` breaks `cargo check --no-default-features` and is caught at review. Adapters are where deps live; the domain stays pure.
+- **Single UDPipe importer.** `scripts/check-boundaries.sh` fails CI if anything outside `nlp/udpipe.rs` imports `udpipe_rs`. The wrap exists because UDPipe holds non-Send C-side state and a panic at the FFI boundary would otherwise abort the host process. The catch_unwind seam lives inside this file by design; reintroducing direct imports elsewhere puts the panic boundary back in user code.
+- **Per-paragraph parse, not whole-document.** The previous join-then-prefix-match approach silently reassigned sentences when two paragraphs shared their first 30 characters (FM1). Don't reintroduce "join paragraphs, parse once, wire sentences back to paragraphs by substring match." The pipeline parses each non-blockquote paragraph individually for a reason.
+- **TOCTOU closes in `read_and_verify`.** The function returns `Vec<u8>` and the loader consumes those bytes via `Model::load_from_memory`. Never re-read the disk between hash verify and load — that opens the window a swap attack lives in.
+- **Magic numbers in tree walks are forbidden.** `Sentence::tree_depth` returns `usize::MAX` on cycles; cycle detection uses a visited set, not `if depth > 20 { return }`. The previous magic-ceiling silently truncated malformed parses; the sentinel is the loud failure.
+- **No `Result<T, String>` anywhere in the library.** Library callers match on concrete `domain::Error` variants. `anyhow` belongs in caller code (a CLI, a service) where erasure is ergonomic; vaani itself stays on enums via `thiserror`.
+- **PyErr routing is exhaustive at compile time.** Adding a variant to `domain::Error` will fail to compile until you wire it into `From<VaaniError> for PyErr` with a specific Python exception class. The no-wildcard match exists so new variants do not silently route to `PyRuntimeError`.
+- **Methods do not cross FFI. Only fields do.** Aggregate Rust methods (`Analysis::passive_ratio()`, `Corpus::total_words()`) are invisible to Python and (future) WASM consumers. If a value needs to be visible cross-language, materialize it as a field on a summary type, not a method.
+- **Em dashes get rejected.** Project convention forbids them in documentation prose. The orwell voice pass catches them in book content; reviewers catch them elsewhere.
+- **Publishing is hand-gated.** `cargo publish` and `maturin publish` are always preceded by `--dry-run`. The publish step itself requires explicit per-publish approval per the project memory. Do not script away the gate; it exists because publishing is irreversible and visible to every downstream consumer.
+
 ## Conventions
 
 - `domain::Result<T>` everywhere in the library. No `Result<T, String>`. No panics in library code (UDPipe panics are converted at the boundary via `catch_unwind`).
