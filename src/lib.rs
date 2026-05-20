@@ -327,6 +327,7 @@ mod python {
     }
 
     #[pymodule]
+    #[allow(unreachable_pub)] // pyo3's #[pymodule] macro requires pub fn even when the module is private.
     pub fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_class::<Vaani>()?;
         Ok(())
