@@ -16,6 +16,11 @@ check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc t
     @echo ""
     @echo "all gates pass"
 
+# Run the Python type-check (mypy) over the Python sources + stubs.
+# Requires `pip install -e '.[typecheck]'` once.
+typecheck:
+    python -m mypy
+
 # Format check (read-only).
 fmt-check:
     cargo fmt --all -- --check
