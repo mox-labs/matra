@@ -1,8 +1,10 @@
 # 0003. Cargo workspace with `vaani-core` and `rumi-nlp`
 
-- **Status:** proposed
+- **Status:** Superseded by [0004](0004-stay-single-crate.md) on 2026-05-20
 - **Date:** 2026-05-01
 - **Decider(s):** project maintainer
+
+> **Superseded.** This proposal was never implemented; vaani stayed single-crate. The successor ADR ([0004](0004-stay-single-crate.md)) formalizes the single-crate decision and explains the conditions that would re-open the question. Read this ADR for historical context only.
 
 ## Context
 

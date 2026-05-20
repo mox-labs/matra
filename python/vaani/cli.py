@@ -1,5 +1,7 @@
 """CLI for vaani. Wraps the Rust engine via PyO3."""
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
 
@@ -7,38 +9,46 @@ import click
 from rich.console import Console
 from rich.table import Table
 
+from vaani._core import Analysis, Keyphrase, ScoredSentence, Vaani
+
 console = Console()
 
 
-def _get_vaani():
+class DocMetrics(click.types.ParamType):
+    """Marker type — replaced by the inline TypedDict below."""
+
+
+def _get_vaani() -> Vaani:
     """Create a Vaani instance. Auto-downloads model on first use."""
-    from vaani import Vaani
     model_dir = str(Path.home() / ".vaani" / "models")
     try:
         return Vaani.english(model_dir)
     except Exception as e:
         console.print(f"[red]Failed to load model: {e}[/red]")
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
 
-def _doc_metrics(result: dict) -> dict:
-    """Compute document-level metrics from serialized Analysis."""
-    sentences = []
-    for sec in result.get("sections", []):
-        for para in sec.get("paragraphs", []):
-            sentences.extend(para.get("sentences", []))
+def _doc_metrics(result: Analysis) -> dict[str, float | int | None]:
+    """Compute document-level metrics from a serialized Analysis."""
+    sentences = [
+        sent
+        for sec in result["sections"]
+        for para in sec["paragraphs"]
+        for sent in para["sentences"]
+    ]
 
     total = len(sentences)
     word_counts = [
-        sum(1 for t in s.get("tokens", []) if not t.get("is_punct", False))
+        sum(1 for t in s["tokens"] if not t["is_punct"])
         for s in sentences
     ]
     total_words = sum(word_counts)
     passive = sum(
-        1 for s in sentences
+        1
+        for s in sentences
         if any(
-            t.get("dep") in ("nsubj:pass", "nsubjpass", "aux:pass")
-            for t in s.get("tokens", [])
+            t["dep"] in ("nsubj:pass", "nsubjpass", "aux:pass")
+            for t in s["tokens"]
         )
     )
 
@@ -50,27 +60,33 @@ def _doc_metrics(result: dict) -> dict:
         "total_words": total_words,
         "passive_ratio": passive_ratio,
         "mean_sentence_length": mean_len,
-        "vocabulary_ttr": result.get("vocabulary_ttr"),
-        "nominalization_ratio": result.get("nominalization_ratio"),
+        "vocabulary_ttr": result["vocabulary_ttr"],
+        "nominalization_ratio": result["nominalization_ratio"],
     }
 
 
 @click.group()
-def main():
-    """vaani -- prose metrics engine."""
+def main() -> None:
+    """vaani -- NLP library: UDPipe parse, metrics, summarization, keyphrase extraction."""
 
 
 @main.command()
 @click.argument("path", type=click.Path(exists=True, path_type=Path))
 @click.option("-n", default=3, show_default=True, help="Number of sentences")
 @click.option("--json-output", "--json", is_flag=True, help="Output as JSON")
-@click.option("--method", type=click.Choice(["tfidf", "textrank"]), default="tfidf",
-              show_default=True, help="Summarization algorithm")
-def summarize(path: Path, n: int, json_output: bool, method: str):
+@click.option(
+    "--method",
+    type=click.Choice(["tfidf", "textrank"]),
+    default="tfidf",
+    show_default=True,
+    help="Summarization algorithm",
+)
+def summarize(path: Path, n: int, json_output: bool, method: str) -> None:
     """Extract top-N sentences as an extractive summary."""
     v = _get_vaani()
     text = path.read_text()
 
+    result: list[ScoredSentence]
     if method == "textrank":
         result = v.textrank_summarize(text, n)
     else:
@@ -82,20 +98,28 @@ def summarize(path: Path, n: int, json_output: bool, method: str):
 
     for i, sent in enumerate(result, 1):
         console.print(f"[cyan]{i}.[/cyan] {sent['text']}")
-        console.print(f"   [dim]score={sent['score']:.3f}  position={sent['position']}[/dim]")
+        console.print(
+            f"   [dim]score={sent['score']:.3f}  position={sent['position']}[/dim]"
+        )
 
 
 @main.command()
 @click.argument("path", type=click.Path(exists=True, path_type=Path))
 @click.option("-n", default=10, show_default=True, help="Max keyphrases")
 @click.option("--json-output", "--json", is_flag=True, help="Output as JSON")
-@click.option("--method", type=click.Choice(["rake", "yake"]), default="rake",
-              show_default=True, help="Keyphrase algorithm")
-def keyphrases(path: Path, n: int, json_output: bool, method: str):
+@click.option(
+    "--method",
+    type=click.Choice(["rake", "yake"]),
+    default="rake",
+    show_default=True,
+    help="Keyphrase algorithm",
+)
+def keyphrases(path: Path, n: int, json_output: bool, method: str) -> None:
     """Extract ranked keyphrases from text."""
     v = _get_vaani()
     text = path.read_text()
 
+    result: list[Keyphrase]
     if method == "yake":
         result = v.yake_keyphrases(text, n)
     else:
@@ -118,11 +142,12 @@ def keyphrases(path: Path, n: int, json_output: bool, method: str):
 @click.argument("path", type=click.Path(exists=True, path_type=Path))
 @click.option("--json-output", "--json", is_flag=True, help="Output as JSON")
 @click.option("--sections", "-s", is_flag=True, help="Show per-section breakdown")
-def analyze(path: Path, json_output: bool, sections: bool):
+def analyze(path: Path, json_output: bool, sections: bool) -> None:
     """Analyze a file. Metrics only, no judgments."""
     v = _get_vaani()
     text = path.read_text()
 
+    result: Analysis
     if path.suffix == ".md":
         result = v.analyze_markdown(text)
     else:
@@ -160,15 +185,15 @@ def analyze(path: Path, json_output: bool, sections: bool):
 
         for sec in result["sections"]:
             paras = sec["paragraphs"]
-            sents = sum(len(p.get("sentences", [])) for p in paras)
+            sents = sum(len(p["sentences"]) for p in paras)
             words = sum(
-                sum(1 for t in s.get("tokens", []) if not t.get("is_punct", False))
+                sum(1 for t in s["tokens"] if not t["is_punct"])
                 for p in paras
-                for s in p.get("sentences", [])
+                for s in p["sentences"]
             )
             st.add_row(
                 f"h{sec['level']}",
-                (sec.get("heading") or "(intro)")[:45],
+                ((sec["heading"] or "(intro)"))[:45],
                 str(len(paras)),
                 str(sents),
                 str(words),
