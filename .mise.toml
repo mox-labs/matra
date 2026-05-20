@@ -1,0 +1,7 @@
+# Mise tool versions for vaani.
+# Python is managed by uv (reads pyproject.toml requires-python); mise stays
+# out of its way. mise pins Rust so the rust-version field is materialized
+# on `cd`. direnv auto-activates.
+
+[tools]
+rust = "1.85"   # matches Cargo.toml: rust-version = "1.85"
