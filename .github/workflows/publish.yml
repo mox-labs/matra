@@ -74,7 +74,7 @@ jobs:
         with:
           toolchain: stable
 
-      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5  # v2
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2
 
       - name: Verify tag matches Cargo.toml version and the commit is on main
         env:
@@ -101,7 +101,7 @@ jobs:
         run: cargo test --locked
 
       - name: cargo deny check
-        uses: EmbarkStudios/cargo-deny-action@3fd3802e88374d3fe9159b834c7714ec57d6c979  # v2
+        uses: EmbarkStudios/cargo-deny-action@6c8f9facfa5047ec02d8485b6bf52b587b7777d1  # v2
         with:
           command: check
           arguments: --all-features
@@ -122,7 +122,7 @@ jobs:
 
       - name: Mint a crates.io scoped token via Trusted Publishing (OIDC)
         id: auth
-        uses: rust-lang/crates-io-auth-action@b7e9a28eded4986ec6b1fa40eeee8f8f165559ec  # v1
+        uses: rust-lang/crates-io-auth-action@bbd81622f20ce9e2dd9622e3218b975523e45bbe  # v1
 
       - name: cargo publish
         env:
