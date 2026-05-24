@@ -5,7 +5,7 @@ vaani is a Rust crate, a Python wheel, and a planned WASM/TypeScript crust. The 
 ```mermaid
 flowchart TB
     rust[("vaani Rust crate")] --> py[(vaani PyPI wheel)]
-    rust --> wasm[("WASM/TS crust — planned")]
+    rust --> wasm[("WASM/TS crust (planned)")]
     py --> pyc[(Python consumers)]
     wasm --> ts[(TypeScript / JS consumers)]
 ```

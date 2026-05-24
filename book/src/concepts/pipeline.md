@@ -42,7 +42,7 @@ Decomposers are infallible. Malformed markdown is treated as plain text; plain t
 
 `Udpipe` is the default adapter, behind the `udpipe` feature flag. UDPipe panics at the C++ boundary are caught and converted to `Err(ParseFailed(_))`. They never abort the host process.
 
-The composition root parses **per paragraph**, not per document. The reason is a concrete failure the whole-document approach produced: when two paragraphs shared the same opening words, the wiring that matched parsed sentences back to their source paragraphs (using a string-prefix search) could silently assign the first sentence of paragraph B to paragraph A, dropping B's sentences entirely. Per-paragraph parse removes the ambiguity -- each paragraph's sentences come straight out of parsing that paragraph's text, so no matching step is needed and no sentence can end up in the wrong paragraph. The secondary benefit is bounded peak memory: one paragraph at a time, not the whole document.
+The composition root parses **per paragraph**, not per document. The reason is a concrete failure the whole-document approach produced: when two paragraphs shared the same opening words, the wiring that matched parsed sentences back to their source paragraphs (using a string-prefix search) could silently assign the first sentence of paragraph B to paragraph A, dropping B's sentences entirely. Per-paragraph parse removes the ambiguity. Each paragraph's sentences come straight out of parsing that paragraph's text, so no matching step is needed and no sentence can end up in the wrong paragraph. The secondary benefit is bounded peak memory: one paragraph at a time, not the whole document.
 
 ## measure
 
@@ -84,7 +84,7 @@ ingest -> decompose -> parse -> measure
                       parse -> extract
 ```
 
-Parse is the expensive step -- UDPipe runs a full dependency analysis on every sentence, walking the dependency graph to produce the CoNLL-U annotations that metrics and extractors both depend on. Everything downstream is cheap by comparison. Putting parse at the fork, rather than inside each branch, means a document that needs both an `Analysis` and a keyphrase list pays for the NLP exactly once. See [Quickstart](../getting-started/quickstart.md) for the code.
+Parse is the expensive step. UDPipe runs a full dependency analysis on every sentence, walking the dependency graph to produce the CoNLL-U annotations that metrics and extractors both depend on. Everything downstream is cheap by comparison. Putting parse at the fork, rather than inside each branch, means a document that needs both an `Analysis` and a keyphrase list pays for the NLP exactly once. See [Quickstart](../getting-started/quickstart.md) for the code.
 
 ## The bound is at the entry
 

@@ -37,7 +37,7 @@ flowchart TB
 
 Read it as: **dependencies point inward**. Nothing in `domain` knows that adapters exist. Adapters know about `domain` and the port they implement; they do not know about each other or about the composition root. The composition root is the only thing that knows everything.
 
-Why does this matter? If `domain` imported an adapter -- say, `domain.rs` referenced `udpipe_rs` directly -- then swapping the NLP backend would require changing the domain types too. The domain would be coupled to one implementation of parsing, defeating the entire substrate role. The inward dependency rule is what keeps `cargo check --no-default-features` green: domain, metrics, and extraction compile without any NLP backend at all.
+Why does this matter? If `domain` imported an adapter (say, `domain.rs` referenced `udpipe_rs` directly), then swapping the NLP backend would require changing the domain types too. The domain would be coupled to one implementation of parsing, defeating the entire substrate role. The inward dependency rule is what keeps `cargo check --no-default-features` green: domain, metrics, and extraction compile without any NLP backend at all.
 
 ## Why hex for a substrate library
 
@@ -65,12 +65,12 @@ Everything else is replaceable. The composition root is not.
 ```
 src/
 ├── lib.rs              # composition root + PyO3 bindings
-├── domain.rs           # types — serde + thiserror + std only
+├── domain.rs           # types: serde + thiserror + std only
 ├── source/             # Source port + FileSource + DirectorySource
 ├── decompose/          # Decomposer port + MarkdownDecomposer + PlainTextDecomposer
 ├── nlp/                # NlpProvider port + Udpipe adapter
-├── metrics/            # metric functions — domain + stopwords only
-├── extraction/         # extractor functions — domain + stopwords only
+├── metrics/            # metric functions: domain + stopwords only
+├── extraction/         # extractor functions: domain + stopwords only
 └── stopwords.rs        # shared utility
 ```
 
