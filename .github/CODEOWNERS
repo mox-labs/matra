@@ -1,0 +1,64 @@
+# CODEOWNERS for vaani — change-gate protection on the load-bearing surfaces.
+#
+# GitHub uses this file to automatically request review from the listed
+# owner(s) when a PR touches a matching path. Today's role: ensure the
+# maintainer reviews any change to the docsite structure, CI workflows,
+# release scripts, ADRs, and the public manifest before merge. Future:
+# when contributors join, the path list stays the same but the owners
+# scale.
+#
+# Pattern syntax follows GitHub's CODEOWNERS spec.
+
+# Public manifest and version pins — every change here ripples through
+# crates.io, PyPI, and the supply chain.
+/Cargo.toml          @yzavyas
+/Cargo.lock          @yzavyas
+/pyproject.toml      @yzavyas
+
+# Docsite structure — SUMMARY.md is the navigation tree; book.toml owns
+# the build config; mermaid runtime is the bundled asset. Drift here is
+# silent and high-impact.
+/book/src/SUMMARY.md       @yzavyas
+/book/book.toml            @yzavyas
+/book/mermaid-init.js      @yzavyas
+/book/mermaid.min.js       @yzavyas
+
+# CI workflows — change to triggers, permissions, or pinned action SHAs
+# affects every subsequent PR.
+/.github/workflows/        @yzavyas
+
+# Release machinery — irreversible operations live here. Per the
+# durable per-publish approval rule (`memory/feedback_no_publish.md`),
+# every change to publish.yml, changelog-release.sh, the release recipe
+# in the justfile, or the supply-chain config gets explicit review.
+/justfile                              @yzavyas
+/scripts/changelog-release.sh          @yzavyas
+/scripts/check-boundaries.sh           @yzavyas
+/scripts/check-docsite-floor.sh        @yzavyas
+/scripts/install-hooks.sh              @yzavyas
+/scripts/pre-commit-hook.sh            @yzavyas
+/deny.toml                             @yzavyas
+
+# Architectural decisions — ADRs are the durable record. Anything in
+# docs/decisions/ should be reviewed for ADR-template compliance and
+# for ADR-supersede chain integrity.
+/docs/decisions/         @yzavyas
+
+# Hex boundary critical files — any change to domain.rs, the port
+# modules, or the composition root ripples through every adapter and
+# every consumer. The boundary-check script catches violations
+# mechanically; CODEOWNERS adds human review on top.
+/src/domain.rs           @yzavyas
+/src/lib.rs              @yzavyas
+/src/source/mod.rs       @yzavyas
+/src/decompose/mod.rs    @yzavyas
+/src/nlp/mod.rs          @yzavyas
+
+# The constitution. CLAUDE.md is loaded as agent context; CONTRIBUTING.md
+# is the human contributor's first stop; the collaboration model is the
+# exemplar document. None should drift without review.
+/CLAUDE.md                       @yzavyas
+/CONTRIBUTING.md                 @yzavyas
+/docs/collaboration-model.md     @yzavyas
+/README.md                       @yzavyas
+/CHANGELOG.md                    @yzavyas
