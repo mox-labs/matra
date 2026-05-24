@@ -55,10 +55,10 @@ class Section(TypedDict):
     paragraphs: list[Paragraph]
 
 
-class Analysis(TypedDict):
-    """Top-level analysis output. Mirrors `vaani::domain::Analysis`.
+class Document(TypedDict):
+    """Top-level analysis output. Mirrors `vaani::domain::Document`.
 
-    Aggregate methods on the Rust `Analysis` (`passive_ratio`,
+    Aggregate methods on the Rust `Document` (`passive_ratio`,
     `mean_sentence_length`, etc.) do not cross the FFI boundary —
     consumers compute them from `sections` if needed.
     """
@@ -88,7 +88,7 @@ __all__ = [
     "Sentence",
     "Paragraph",
     "Section",
-    "Analysis",
+    "Document",
     "ScoredSentence",
     "Keyphrase",
 ]

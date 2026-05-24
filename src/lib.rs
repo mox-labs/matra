@@ -11,7 +11,7 @@ mod stopwords;
 use std::path::Path;
 
 use decompose::Decomposer;
-use domain::{Analysis, MAX_INPUT_BYTES, Section};
+use domain::{Document, MAX_INPUT_BYTES, Section};
 use nlp::NlpProvider;
 use source::Source;
 
@@ -32,14 +32,14 @@ fn check_input_size(text: &str) -> domain::Result<()> {
 }
 
 /// Analyze raw text. Returns structured metrics.
-pub fn analyze(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
+pub fn analyze(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Document> {
     check_input_size(text)?;
     let sections = decompose::plain::PlainTextDecomposer.decompose(text);
     run_analysis(sections, nlp)
 }
 
 /// Analyze markdown text. Returns structured metrics with section awareness.
-pub fn analyze_markdown(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
+pub fn analyze_markdown(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Document> {
     check_input_size(text)?;
     let sections = decompose::markdown::MarkdownDecomposer.decompose(text);
     run_analysis(sections, nlp)
@@ -48,7 +48,7 @@ pub fn analyze_markdown(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Ana
 /// Analyze a file, detecting format by extension. Returns
 /// [`domain::Error::UnsupportedFormat`] for `Pdf`/`Docx` until a
 /// decomposer is registered for those formats.
-pub fn analyze_file(path: impl AsRef<Path>, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
+pub fn analyze_file(path: impl AsRef<Path>, nlp: &dyn NlpProvider) -> domain::Result<Document> {
     let docs = source::file::FileSource.read(path.as_ref())?;
     let doc = docs.into_iter().next().ok_or_else(|| {
         domain::Error::Io(std::io::Error::new(
@@ -63,7 +63,7 @@ fn analyze_raw(
     text: &str,
     format: domain::Format,
     nlp: &dyn NlpProvider,
-) -> domain::Result<Analysis> {
+) -> domain::Result<Document> {
     match format {
         domain::Format::Markdown => analyze_markdown(text, nlp),
         domain::Format::PlainText => analyze(text, nlp),
@@ -133,7 +133,7 @@ pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Se
 pub fn analyze_from(
     sections: Vec<Section>,
     sentences: &[domain::Sentence],
-) -> domain::Result<Analysis> {
+) -> domain::Result<Document> {
     let total_bytes: usize = sections
         .iter()
         .flat_map(|s| s.paragraphs.iter())
@@ -146,7 +146,7 @@ pub fn analyze_from(
             what: "input",
         });
     }
-    let mut analysis = Analysis::new(sections);
+    let mut analysis = Document::new(sections);
     let suite = metrics::default_suite();
     metrics::run_suite(&mut analysis, sentences, &suite);
     Ok(analysis)
@@ -165,8 +165,8 @@ pub fn analyze_from(
 /// The flat sentence slice fed to document-level metrics
 /// (`vocabulary_ttr`, `nominalization_ratio`) is concatenated from the
 /// per-paragraph parses in document order.
-fn run_analysis(sections: Vec<Section>, nlp: &dyn NlpProvider) -> domain::Result<Analysis> {
-    let mut analysis = Analysis::new(sections);
+fn run_analysis(sections: Vec<Section>, nlp: &dyn NlpProvider) -> domain::Result<Document> {
+    let mut analysis = Document::new(sections);
     let mut all_sentences: Vec<domain::Sentence> = Vec::new();
 
     for para in analysis.paragraphs_mut() {

@@ -17,7 +17,7 @@ Every public type, field, and enum variant name appears in at least two language
 This is why:
 
 - `Token::is_punct` (field) is visible in the Python dict; `Sentence::tree_depth()` (method) is not.
-- The Rust `Analysis::passive_ratio()` returns `f64`; the Python `result["sections"][...]` requires recomputing the ratio from the section tree if you want it Python-side.
+- The Rust `Document::passive_ratio()` returns `f64`; the Python `result["sections"][...]` requires recomputing the ratio from the section tree if you want it Python-side.
 - Adding a Rust method does not require a Python or WASM change; adding a Rust field does.
 
 The rule shapes the type system: if cross-language consumers need an aggregate, it is materialized as a field on a summary type, not as a method.

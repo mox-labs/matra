@@ -25,7 +25,7 @@ vaani: essay.md
 
 Options:
 
-- `--json` (or `--json-output`): emit the serialized `Analysis` dict instead of the table.
+- `--json` (or `--json-output`): emit the serialized `Document` dict instead of the table.
 - `-s` / `--sections`: show a per-section breakdown table after the document metrics.
 
 ## `vaani summarize`

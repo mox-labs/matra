@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from vaani._core import Vaani
-from vaani.types import Analysis, Keyphrase, ScoredSentence
+from vaani.types import Document, Keyphrase, ScoredSentence
 
 console = Console()
 
@@ -25,8 +25,8 @@ def _get_vaani() -> Vaani:
         raise SystemExit(1) from e
 
 
-def _doc_metrics(result: Analysis) -> dict[str, float | int | None]:
-    """Compute document-level metrics from a serialized Analysis."""
+def _doc_metrics(result: Document) -> dict[str, float | int | None]:
+    """Compute document-level metrics from a serialized Document."""
     sentences = [
         sent
         for sec in result["sections"]
@@ -144,7 +144,7 @@ def analyze(path: Path, json_output: bool, sections: bool) -> None:
     v = _get_vaani()
     text = path.read_text()
 
-    result: Analysis
+    result: Document
     if path.suffix == ".md":
         result = v.analyze_markdown(text)
     else:

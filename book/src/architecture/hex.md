@@ -23,7 +23,7 @@ flowchart TB
     end
 
     subgraph domain["Domain (only serde, thiserror, std)"]
-        types["Token / Sentence / Paragraph / Section / Analysis / Corpus / Error"]
+        types["Token / Sentence / Paragraph / Section / Document / Corpus / Error"]
         metrics[metrics/]
         extraction[extraction/]
     end

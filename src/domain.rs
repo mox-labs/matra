@@ -366,7 +366,7 @@ impl Sentence {
 }
 
 // ---------------------------------------------------------------------------
-// Analysis output -- what encoders produce
+// Document output -- what encoders produce
 // ---------------------------------------------------------------------------
 
 /// One paragraph of prose with metric slots filled in during the
@@ -380,6 +380,14 @@ pub struct Paragraph {
     /// Verbatim paragraph text.
     pub text: String,
     /// Whether the paragraph is inside a blockquote (skipped by metrics).
+    ///
+    /// **Deprecation notice (v0.2):** this boolean field is planned to be
+    /// replaced with `kind: ParagraphKind` once the variant inventory
+    /// (Body / Quote / Code / List / Caption) is justified by real
+    /// consumer semantics. The boolean stays in the 0.0.x and 0.1.x lines
+    /// because its job (gate measure or not) is binary today. See
+    /// [ADR-0006](https://github.com/mox-labs/vaani/blob/main/docs/decisions/0006-abstract-tier-vocabulary-lock.md)
+    /// for the abstract-tier vocabulary lock.
     pub in_blockquote: bool,
     /// Sentences produced by parsing this paragraph (populated by the
     /// pipeline's `parse` stage).
@@ -449,7 +457,7 @@ impl Section {
 /// compute document-level metrics on the fly from the section tree.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
-pub struct Analysis {
+pub struct Document {
     /// Section tree (the single source of truth for paragraph ownership).
     pub sections: Vec<Section>,
     /// Document-level vocabulary type-token ratio, if `measure` ran.
@@ -458,8 +466,19 @@ pub struct Analysis {
     pub nominalization_ratio: Option<f64>,
 }
 
-impl Analysis {
-    /// Construct a new `Analysis` from a section tree with `None` for
+/// Transitional alias from the prior name `Analysis`.
+///
+/// vaani renamed `Analysis` to `Document` in the 0.0.x alpha cycle (ADR-0006).
+/// This alias keeps in-flight branches and just-published downstream snippets
+/// compiling; it is scheduled for removal in the first 0.1.0 release.
+#[deprecated(
+    since = "0.0.1",
+    note = "renamed to `Document`; the alias will be removed in 0.1.0"
+)]
+pub type Analysis = Document;
+
+impl Document {
+    /// Construct a new `Document` from a section tree with `None` for
     /// the document-level metric slots; `measure` fills them in.
     pub fn new(sections: Vec<Section>) -> Self {
         Self {
@@ -646,12 +665,12 @@ pub struct CorpusEntry {
     /// Source path, if the document came from disk.
     pub path: Option<PathBuf>,
     /// The document's analysis output.
-    pub analysis: Analysis,
+    pub analysis: Document,
 }
 
 impl CorpusEntry {
     /// Construct a new `CorpusEntry`.
-    pub fn new(path: Option<PathBuf>, analysis: Analysis) -> Self {
+    pub fn new(path: Option<PathBuf>, analysis: Document) -> Self {
         Self { path, analysis }
     }
 }

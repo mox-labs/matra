@@ -10,7 +10,7 @@ flowchart LR
     decompose --> parse[parse]
     parse --> measure[measure]
     parse --> extract[extract]
-    measure --> analysis[("Analysis")]
+    measure --> analysis[("Document")]
     extract --> selections[("ScoredSentence / Keyphrase")]
 ```
 
@@ -46,8 +46,8 @@ The composition root parses **per paragraph**, not per document. The reason is a
 
 ## measure
 
-**Input:** `&mut Analysis` and `&[Sentence]`.
-**Output:** enriched `Analysis` with per-paragraph and per-document metric slots filled in.
+**Input:** `&mut Document` and `&[Sentence]`.
+**Output:** enriched `Document` with per-paragraph and per-document metric slots filled in.
 **Postcondition:** every paragraph has `Some(metric)` if its sentences were assigned, `None` otherwise (blockquote paragraphs are skipped).
 
 The default metric suite (`metrics::default_suite`) runs:
@@ -84,7 +84,7 @@ ingest -> decompose -> parse -> measure
                       parse -> extract
 ```
 
-Parse is the expensive step. UDPipe runs a full dependency analysis on every sentence, walking the dependency graph to produce the CoNLL-U annotations that metrics and extractors both depend on. Everything downstream is cheap by comparison. Putting parse at the fork, rather than inside each branch, means a document that needs both an `Analysis` and a keyphrase list pays for the NLP exactly once. See [Quickstart](../getting-started/quickstart.md) for the code.
+Parse is the expensive step. UDPipe runs a full dependency analysis on every sentence, walking the dependency graph to produce the CoNLL-U annotations that metrics and extractors both depend on. Everything downstream is cheap by comparison. Putting parse at the fork, rather than inside each branch, means a document that needs both an `Document` and a keyphrase list pays for the NLP exactly once. See [Quickstart](../getting-started/quickstart.md) for the code.
 
 ## The bound is at the entry
 

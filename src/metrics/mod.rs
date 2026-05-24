@@ -1,4 +1,4 @@
-//! Metric suite. Each metric reads NLP output and enriches the [`Analysis`].
+//! Metric suite. Each metric reads NLP output and enriches the [`Document`].
 //!
 //! Metrics are closures with a uniform signature — add one by writing a
 //! function and including it in [`default_suite`]. Sentence-to-paragraph
@@ -17,11 +17,11 @@ pub mod document;
 pub mod lexical;
 pub mod readability;
 
-use crate::domain::{Analysis, Sentence};
+use crate::domain::{Document, Sentence};
 
 /// A metric reads NLP output and enriches the analysis.
 /// `Box<dyn Fn>` allows closures with captured config/state.
-pub type Metric = Box<dyn Fn(&mut Analysis, &[Sentence])>;
+pub type Metric = Box<dyn Fn(&mut Document, &[Sentence])>;
 
 /// Default metric suite. Returns metrics in dependency order.
 ///
@@ -39,7 +39,7 @@ pub fn default_suite() -> Vec<Metric> {
 }
 
 /// Run every metric in the suite, in order.
-pub fn run_suite(analysis: &mut Analysis, sentences: &[Sentence], suite: &[Metric]) {
+pub fn run_suite(analysis: &mut Document, sentences: &[Sentence], suite: &[Metric]) {
     for metric in suite {
         metric(analysis, sentences);
     }
@@ -82,7 +82,7 @@ mod tests {
     /// sentence slice for document-level metrics.
     fn analysis_from_paragraphs(
         paragraphs: Vec<(Paragraph, Vec<Sentence>)>,
-    ) -> (Analysis, Vec<Sentence>) {
+    ) -> (Document, Vec<Sentence>) {
         let mut all_sentences = Vec::new();
         let mut paras = Vec::new();
         for (mut para, sents) in paragraphs {
@@ -97,7 +97,7 @@ mod tests {
             level: 0,
             paragraphs: paras,
         }];
-        (Analysis::new(sections), all_sentences)
+        (Document::new(sections), all_sentences)
     }
 
     #[test]

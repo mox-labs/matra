@@ -36,7 +36,7 @@ classDiagram
         +level: usize
         +paragraphs: Vec~Paragraph~
     }
-    class Analysis {
+    class Document {
         +sections: Vec~Section~
         +vocabulary_ttr: Option~f64~
         +nominalization_ratio: Option~f64~
@@ -45,10 +45,10 @@ classDiagram
     Sentence "1" *-- "1..*" Token
     Paragraph "1" *-- "1..*" Sentence
     Section "1" *-- "1..*" Paragraph
-    Analysis "1" *-- "1..*" Section
+    Document "1" *-- "1..*" Section
 ```
 
-Read it as containment: a `Token` lives inside a `Sentence`, a `Sentence` inside a `Paragraph`, a `Paragraph` inside a `Section`, a `Section` inside an `Analysis`. Each level has its own metrics surface.
+Read it as containment: a `Token` lives inside a `Sentence`, a `Sentence` inside a `Paragraph`, a `Paragraph` inside a `Section`, a `Section` inside an `Document`. Each level has its own metrics surface.
 
 ## Token
 
@@ -101,7 +101,7 @@ A paragraph of prose with metric slots.
 
 A heading + paragraphs. `level` is the heading depth (0 for plain text, 1+ for markdown `#`/`##`/etc.).
 
-## Analysis
+## Document
 
 The pipeline output. Contains the section tree plus document-level metric slots (`vocabulary_ttr`, `nominalization_ratio`).
 
@@ -109,7 +109,7 @@ Aggregate methods (`total_sentences`, `total_words`, `passive_ratio`, `mean_sent
 
 ## Corpus
 
-`Vec<CorpusEntry>` where each entry has a `path` and an `Analysis`. Aggregate methods: `total_words`, `passive_ratio`, `mean_readability`.
+`Vec<CorpusEntry>` where each entry has a `path` and an `Document`. Aggregate methods: `total_words`, `passive_ratio`, `mean_readability`.
 
 Produced by `analyze_directory(...)` along with a parallel error vector recording per-document analysis failures.
 

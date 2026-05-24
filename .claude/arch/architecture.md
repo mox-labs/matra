@@ -25,7 +25,7 @@ flowchart TB
     end
 
     subgraph domain["Domain (only serde, thiserror, std)"]
-        types["Token / Sentence / Paragraph / Section / Analysis / Corpus / Error"]
+        types["Token / Sentence / Paragraph / Section / Document / Corpus / Error"]
         metrics[metrics/]
         extraction[extraction/]
     end
@@ -79,7 +79,7 @@ Four sequential stages plus one peer. Each stage has a precondition and a postco
 | ingest | path or text | `RawDocument` | format detected; bytes resident; size `≤ MAX_INPUT_BYTES` |
 | decompose | `RawDocument` | `Vec<Section>` | paragraphs in document order; `in_blockquote` set |
 | parse | `&str` (per paragraph) | `Vec<Sentence>` | sentences in document order; tokens id-sorted; valid `head` references |
-| measure | `&mut Analysis, &[Sentence]` | enriched `Analysis` | every paragraph has `Some(metric)` if its sentences were assigned, `None` if not applicable |
+| measure | `&mut Document, &[Sentence]` | enriched `Document` | every paragraph has `Some(metric)` if its sentences were assigned, `None` if not applicable |
 | extract | `&[Sentence]` | `Vec<ScoredSentence>` or `Vec<Keyphrase>` | descending score; cap-bounded |
 
 The `parse` stage runs **per paragraph**, not per document. This is the correctness fix that resolves an earlier `attach_sentences` prefix-match defect: parsing per paragraph removes the need to wire sentences back to paragraphs by string match. The mapping is implicit in iteration order.
@@ -144,7 +144,7 @@ Names cross all crusts. Every public field, type, error variant, and method beco
 - A Python class/dict key (via `pythonize`).
 - A TypeScript interface (planned, via `wasm-bindgen` + `serde-wasm-bindgen`).
 
-**Methods do not cross FFI. Only fields do.** This is why aggregate methods (e.g., `Analysis::passive_ratio()`) need to be materialized as fields if Python or WASM consumers must see them in serialized output. For 0.1.0 the methods stay; consumers across FFI either recompute or read the section tree directly.
+**Methods do not cross FFI. Only fields do.** This is why aggregate methods (e.g., `Document::passive_ratio()`) need to be materialized as fields if Python or WASM consumers must see them in serialized output. For 0.1.0 the methods stay; consumers across FFI either recompute or read the section tree directly.
 
 ## Composition: how a request flows
 
@@ -154,7 +154,7 @@ A consumer calls `vaani::analyze(text, &nlp)`. What happens:
 2. **decompose** (`PlainTextDecomposer::decompose`): produces `Vec<Section>` with one section, paragraphs split on blank lines.
 3. **parse** (per-paragraph loop): each non-blockquote paragraph's text passed to `NlpProvider::parse`, returning `Vec<Sentence>`. UDPipe-specific panic boundary lives inside `Udpipe::parse` (via `catch_unwind`).
 4. **measure** (`metrics::run_suite`): runs the default metric suite over the sentences.
-5. **return**: `Analysis` populated.
+5. **return**: `Document` populated.
 
 Errors at any step propagate as `domain::Result<T>`. The `Error` enum's concrete variants survive the boundary so callers can match on them.
 
