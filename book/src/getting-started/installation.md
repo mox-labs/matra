@@ -4,14 +4,16 @@
 
 ```toml
 [dependencies]
-vaani = "0.1"
+vaani = "0.0"
 ```
+
+The current alpha line is `0.0.x` (pre-publication; expect breaking changes between releases). The first version that downstream code should consider taking a long-lived dependency on is `0.1.0`. Until then, pin the minor: `vaani = "0.0"` resolves to the latest 0.0.x and refuses to silently jump past the alpha cycle.
 
 The default feature set (`udpipe`) pulls in the UDPipe NLP backend. To use vaani without UDPipe (for example to plug in your own `NlpProvider` adapter):
 
 ```toml
 [dependencies]
-vaani = { version = "0.1", default-features = false }
+vaani = { version = "0.0", default-features = false }
 ```
 
 Vaani targets Rust **1.85** or later (the MSRV is pinned in `Cargo.toml`).
@@ -39,6 +41,12 @@ If you need non-English models, point `Udpipe::from_path` at the relevant UDPipe
 
 ```bash
 pip install vaani
+```
+
+The wheel tracks the same `0.0.x` line as the Rust crate. If your project needs to stay inside the alpha line explicitly, pin to it:
+
+```bash
+pip install "vaani>=0.0,<0.1"
 ```
 
 The Python wheel is built via `maturin` and ships with PyO3 bindings. Python **3.12** or later is required.
