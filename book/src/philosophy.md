@@ -28,7 +28,7 @@ flowchart LR
 
 **Composable:** discrete components, clear boundaries, swappable parts. Counters drag. Three ports, multiple adapters per port, one composition root. Each piece has a single responsibility and a single boundary; replacing one piece does not require rewriting any other.
 
-**Extensible:** clear interfaces that invite contribution without requiring full comprehension. Counters opacity. A new contributor should be able to add a new `Source`, `Decomposer`, or `NlpProvider` adapter by reading only the port trait and one existing adapter, not by reading the whole codebase. The rule is not a guideline -- the boundary check script in CI fails if an adapter imports from another adapter, making opacity structurally costly to introduce.
+**Extensible:** clear interfaces that invite contribution without requiring full comprehension. Counters opacity. A new contributor should be able to add a new `Source`, `Decomposer`, or `NlpProvider` adapter by reading only the port trait and one existing adapter, not by reading the whole codebase. The rule is not a guideline. The boundary check script in CI fails if an adapter imports from another adapter, making opacity structurally costly to introduce.
 
 ### The boundary test
 
@@ -67,7 +67,7 @@ The full list lives in `.claude/skills/resilience-floor/SKILL.md`. In summary:
 
 They are **non-negotiable** because vaani is a public OSS substrate intended as an exemplar. Every contributor (human or AI) is held to both. The PR review gate (`.claude/agents/reviewer.md`) checks ACES compliance as Gate 0 and the antifragility checklist as Gate 4. A PR that fails either does not merge until it grounds in an ADR justifying the trade.
 
-The reason to hold the line is not rigor for its own sake. A substrate is inherited. The contributor who weakens a boundary today is not the one who pays for it -- the consumer downstream, the future maintainer, the project that builds on vaani and trusts the contract, those are the ones who pay. ACES and antifragility are the disciplines that make the substrate worth inheriting.
+The reason to hold the line is not rigor for its own sake. A substrate is inherited. The contributor who weakens a boundary today is not the one who pays for it. The consumer downstream, the future maintainer, the project that builds on vaani and trusts the contract: those are the ones who pay. ACES and antifragility are the disciplines that make the substrate worth inheriting.
 
 ## The collaborative-intelligence frame
 
