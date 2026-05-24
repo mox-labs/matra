@@ -12,7 +12,7 @@ default:
 # ---------------------------------------------------------------------------
 
 # Run every CI gate locally. If this passes, CI will pass.
-check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-no-default boundary
+check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-no-default boundary docs-floor
     @echo ""
     @echo "all gates pass"
 
@@ -60,6 +60,13 @@ test-no-default:
 # Boundary check: hex-architecture rules from CLAUDE.md (3, 4, 8).
 boundary:
     bash scripts/check-boundaries.sh
+
+# Requires mdbook + mdbook-mermaid (install: `cargo install mdbook mdbook-mermaid`).
+# lychee is optional locally (skip-with-warning); CI installs it and sets
+# LYCHEE_REQUIRED=1 to escalate the skip into a hard failure.
+# Floor gates for the docsite: link integrity, orphan detect, type-name parity, mdbook clean build.
+docs-floor:
+    bash scripts/check-docsite-floor.sh
 
 # ---------------------------------------------------------------------------
 # Setup
