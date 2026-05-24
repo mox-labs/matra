@@ -12,7 +12,7 @@ v = Vaani.from_path("/path/to/english-ewt.udpipe")
 v = Vaani.english("/path/to/model/dir")
 ```
 
-The instance is **not thread-safe**. UDPipe holds C-side state that cannot safely be accessed from multiple threads simultaneously. PyO3 enforces this at runtime: if you pass a `Vaani` instance to a `ThreadPoolExecutor`, it will panic when the worker thread tries to call it. Use `ProcessPoolExecutor` instead -- each process gets its own model instance, so there is no sharing.
+The instance is **not thread-safe**. UDPipe holds C-side state that cannot safely be accessed from multiple threads simultaneously. PyO3 enforces this at runtime: if you pass a `Vaani` instance to a `ThreadPoolExecutor`, it will panic when the worker thread tries to call it. Use `ProcessPoolExecutor` instead: each process gets its own model instance, so there is no sharing.
 
 ## Methods
 
