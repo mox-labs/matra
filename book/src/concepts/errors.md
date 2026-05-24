@@ -126,4 +126,4 @@ The routing is exhaustive at compile time on the Rust side. Adding a new error v
 
 vaani is a substrate library. Its callers match on specific variants: `ModelNotFound` triggers a download prompt, `InputTooLarge` triggers a chunk-and-retry, `Io(_)` triggers a filesystem-specific recovery. Type preservation is required.
 
-`anyhow` is the right choice for **application-tier** code -- your code that consumes vaani. There, `.context()` chains add useful diagnostic information for top-level error display. vaani itself stays on concrete enums via `thiserror`.
+`anyhow` is the right choice for **application-tier** code: your code that consumes vaani. There, `.context()` chains add useful diagnostic information for top-level error display. vaani itself stays on concrete enums via `thiserror`.

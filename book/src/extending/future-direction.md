@@ -52,7 +52,7 @@ When this fires, the migration is mechanical: extract `vaani-nlp-api` (domain ty
 
 Each trigger is a falsifiable condition. If the trigger fires across the lifetime of the project, the capability lands. If it doesn't, the capability never ships and that is the correct answer.
 
-This discipline is named in `.claude/arch/evolution.md` and `.claude/skills/aces/SKILL.md`. The shorthand: build the dirt road first, the cobblestone when traffic justifies it, the tarmac when traffic demands it. For consumers, this means the capabilities listed here are commitments -- not marketing. Each one ships when the shape is clear and a real use case has pulled it into existence, not before.
+This discipline is named in `.claude/arch/evolution.md` and `.claude/skills/aces/SKILL.md`. The shorthand: build the dirt road first, the cobblestone when traffic justifies it, the tarmac when traffic demands it. For consumers, this means the capabilities listed here are commitments, not marketing. Each one ships when the shape is clear and a real use case has pulled it into existence, not before.
 
 ## What is explicitly not coming
 

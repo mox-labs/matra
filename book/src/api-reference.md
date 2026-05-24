@@ -1,6 +1,6 @@
 # API reference
 
-The full Rust API documentation is on [docs.rs](https://docs.rs/vaani) or — if you are reading this book from the project's GitHub Pages site — the [generated rustdoc](./api/vaani/index.html) at this site's `/api/` subpath.
+The full Rust API documentation is on [docs.rs](https://docs.rs/vaani). If you are reading this book from the project's GitHub Pages site, the [generated rustdoc](./api/vaani/index.html) is also available at this site's `/api/` subpath.
 
 ## docs.rs
 

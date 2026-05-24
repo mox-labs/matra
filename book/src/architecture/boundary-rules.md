@@ -21,7 +21,7 @@ vaani's hex architecture is enforced by seven boundary rules.
 Each rule prevents a specific failure mode:
 
 - Rules 1, 2, 5: keep the substrate independent. A domain that imports an adapter cannot be reused with a different adapter, defeating the hex layout.
-- Rule 3: prevents hidden coupling between ports. For example, if `source/mod.rs` imported from `decompose/`, a `Source` implementation could start assuming that its output will be markdown-decomposed -- making it impossible to use that Source with a plain-text decomposer, even though the port contracts don't require that coupling. Cross-port imports smuggle assumptions that the port abstractions exist to prevent.
+- Rule 3: prevents hidden coupling between ports. For example, if `source/mod.rs` imported from `decompose/`, a `Source` implementation could start assuming that its output will be markdown-decomposed. That makes it impossible to use that Source with a plain-text decomposer, even though the port contracts don't require that coupling. Cross-port imports smuggle assumptions that the port abstractions exist to prevent.
 - Rule 4: contains UDPipe's C-side fragility (and its non-`Send` model) to one file. Changing NLP backends never touches the rest of the codebase.
 - Rule 6: keeps optional features actually optional. A consumer who wants only the domain types and metrics should pay nothing for UDPipe.
 - Rule 7: keeps the wiring explicit. A new adapter doesn't surreptitiously get picked up by some other adapter; it's wired in `lib.rs` or it doesn't exist.
