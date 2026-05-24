@@ -15,6 +15,8 @@ vaani is a public OSS package intended as an exemplar for both Claude-managed re
 
 The quality bar is high because the public surface is a contract across Rust, Python, and (when the WASM crust lands) TypeScript. Names are forever; the API surface, once published, locks downstream costs in.
 
+For the working model that frames how humans and AI collaborate on this project (roles, discourse-to-docs-to-code discipline, audit trail), see `docs/collaboration-model.md`. For PR mechanics, see `CONTRIBUTING.md`.
+
 ## Architecture
 
 Hex architecture. Rust core with PyO3 Python bindings. Single crate, dual publish: `vaani` on crates.io, `vaani` on PyPI via maturin.
