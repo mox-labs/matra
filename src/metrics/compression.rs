@@ -5,7 +5,7 @@
 
 use std::io::Write;
 
-use crate::domain::{Analysis, Sentence};
+use crate::domain::{Document, Sentence};
 
 /// Brotli sliding-window size (log2 bytes). 18 = 256 KiB window.
 ///
@@ -32,7 +32,7 @@ const MAX_PARAGRAPH_BYTES: usize = 256 * 1024;
 /// Populate `Paragraph::compression_ratio` for every paragraph with
 /// more than 50 words that is not in a blockquote and is at or under
 /// the per-paragraph byte cap.
-pub fn compute(analysis: &mut Analysis, _sentences: &[Sentence]) {
+pub fn compute(analysis: &mut Document, _sentences: &[Sentence]) {
     for para in analysis.paragraphs_mut() {
         if para.word_count() > 50 && !para.in_blockquote && para.text.len() <= MAX_PARAGRAPH_BYTES {
             para.compression_ratio = compression_ratio(&para.text);
@@ -97,7 +97,7 @@ mod tests {
             level: 0,
             paragraphs: vec![Paragraph::new(big_text, false)],
         }];
-        let mut analysis = Analysis::new(sections);
+        let mut analysis = Document::new(sections);
 
         // Attach enough content tokens so word_count clears the >50 threshold.
         for para in analysis.paragraphs_mut() {
@@ -144,7 +144,7 @@ mod tests {
                 Paragraph::new(text_51, false),
             ],
         }];
-        let mut analysis = Analysis::new(sections);
+        let mut analysis = Document::new(sections);
 
         // Attach enough content tokens so word_count clears the thresholds.
         for (i, para) in analysis.paragraphs_mut().enumerate() {

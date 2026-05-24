@@ -1,6 +1,6 @@
 //! Parse once, use many: the no-double-parse pattern.
 //!
-//! When you want both an Analysis and one or more extractions over the
+//! When you want both an Document and one or more extractions over the
 //! same text, parse the text once and hand the sentences to the
 //! consumers. `parse` is the single expensive step (UDPipe runs a full
 //! dependency analysis on every sentence); the other consumers are

@@ -1,17 +1,17 @@
 //! Document-level metrics — vocabulary TTR and nominalization ratio.
 //!
 //! These aggregate over the raw sentence slice (independent of paragraph
-//! attachment) so `Analysis::vocabulary_ttr` and `Analysis::nominalization_ratio`
+//! attachment) so `Document::vocabulary_ttr` and `Document::nominalization_ratio`
 //! reflect the whole text, including blockquotes if the caller included them.
 
-use crate::domain::{Analysis, Sentence};
+use crate::domain::{Document, Sentence};
 
 const NOMINALIZATION_SUFFIXES: &[&str] = &["tion", "ment", "ness", "ity", "ence", "ance"];
 
-/// Populate `Analysis::vocabulary_ttr` (type-token ratio over lemmas,
-/// excluding punctuation) and `Analysis::nominalization_ratio`
+/// Populate `Document::vocabulary_ttr` (type-token ratio over lemmas,
+/// excluding punctuation) and `Document::nominalization_ratio`
 /// (share of NOUN tokens ending in a nominalizing suffix).
-pub fn compute(analysis: &mut Analysis, sentences: &[Sentence]) {
+pub fn compute(analysis: &mut Document, sentences: &[Sentence]) {
     let lemmas: Vec<&str> = sentences
         .iter()
         .flat_map(|s| s.tokens.iter())

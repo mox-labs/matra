@@ -23,7 +23,7 @@ The `--all-features` flag includes the PyO3 bindings (`vaani::python::Vaani` and
 The Python type stubs are at `python/vaani/_core.pyi`. Type checkers (`mypy`, `pyright`) pick them up automatically via the `py.typed` marker. The stub file documents:
 
 - The `Vaani` class methods.
-- The TypedDict shapes for `Token`, `Sentence`, `Paragraph`, `Section`, `Analysis`, `ScoredSentence`, `Keyphrase`.
+- The TypedDict shapes for `Token`, `Sentence`, `Paragraph`, `Section`, `Document`, `ScoredSentence`, `Keyphrase`.
 - Which Python exception classes each method can raise.
 
 ## CLI

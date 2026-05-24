@@ -47,7 +47,7 @@ classDiagram
         +paragraphs: Vec~Paragraph~
     }
 
-    class Analysis {
+    class Document {
         +sections: Vec~Section~
         +vocabulary_ttr: Option~f64~
         +nominalization_ratio: Option~f64~
@@ -60,10 +60,10 @@ classDiagram
     Sentence "1..*" --o "1" Token
     Paragraph "1..*" --o "1" Sentence
     Section "1..*" --o "1" Paragraph
-    Analysis "1..*" --o "1" Section
+    Document "1..*" --o "1" Section
 ```
 
-Read it as containment: a `Token` lives inside a `Sentence`, a `Sentence` inside a `Paragraph`, a `Paragraph` inside a `Section`, a `Section` inside an `Analysis`. Each level has its own metrics surface.
+Read it as containment: a `Token` lives inside a `Sentence`, a `Sentence` inside a `Paragraph`, a `Paragraph` inside a `Section`, a `Section` inside an `Document`. Each level has its own metrics surface.
 
 ## Type catalog
 
@@ -86,7 +86,7 @@ Invariants on `Sentence`:
 
 ### Output types
 
-**`Analysis`** is the final shape returned by `analyze*`. It contains the section tree (single source of truth for paragraph ownership) plus document-level metric slots (`vocabulary_ttr`, `nominalization_ratio`).
+**`Document`** is the final shape returned by `analyze*`. It contains the section tree (single source of truth for paragraph ownership) plus document-level metric slots (`vocabulary_ttr`, `nominalization_ratio`).
 
 Aggregates (`total_sentences`, `total_words`, `passive_ratio`, `mean_sentence_length`, `sentence_length_std`) are methods today. Cross-FFI consumers (Python via `pythonize`, WASM via `serde-wasm-bindgen` when that crust lands) see fields, not methods. If/when these aggregates need to be available cross-FFI, materialize them as fields on a new sealed summary type; do not expose methods through the FFI boundary.
 

@@ -21,7 +21,7 @@ flowchart LR
     decompose --> parse[parse]
     parse --> measure[measure]
     parse --> extract[extract]
-    measure --> analysis[("Analysis")]
+    measure --> analysis[("Document")]
     extract --> selections[("ScoredSentence / Keyphrase")]
 ```
 

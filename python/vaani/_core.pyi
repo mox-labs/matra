@@ -11,7 +11,7 @@ Stubs are versioned alongside the Rust code; keep them in lockstep with
 
 from __future__ import annotations
 
-from vaani.types import Analysis, Keyphrase, ScoredSentence
+from vaani.types import Document, Keyphrase, ScoredSentence
 
 
 class Vaani:
@@ -46,7 +46,7 @@ class Vaani:
         """
         ...
 
-    def analyze(self, text: str) -> Analysis:
+    def analyze(self, text: str) -> Document:
         """Analyze plain text.
 
         Raises:
@@ -55,7 +55,7 @@ class Vaani:
         """
         ...
 
-    def analyze_markdown(self, text: str) -> Analysis:
+    def analyze_markdown(self, text: str) -> Document:
         """Analyze markdown text with section awareness.
 
         Raises:

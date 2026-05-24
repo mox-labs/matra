@@ -32,6 +32,18 @@ at release time.
 
 ### Highlights
 
+#### Why `Analysis` became `Document`
+
+The type that holds parsed output (sections, paragraphs, sentences, tokens, metric slots) was named `Analysis`. That name reads as a verb, an analytical act. Vaani does not analyze. Vaani structures. The interpreter analyzes. Naming the substrate type after the act it does not perform collapses the line the conviction page argues most carefully.
+
+The rename ships across `src/`, `python/`, `book/`, `docs/`, `examples/`, `tests/`, `.claude/arch/`, and this changelog. A transitional `pub type Analysis = Document;` with a `#[deprecated]` annotation keeps in-flight branches and just-published downstream snippets compiling through the 0.0.x line. The alias removes in 0.1.0.
+
+ADR-0006 locks the abstract-tier vocabulary at the same time. Twelve names reserved: `Document` (live), `Finding`, `SourceSpan`, `Relation`, `Schema`, `Modality`, `SpeechAct`, `Stylometry`, `Rule`, `Predicate`, `Pattern`, `ParagraphKind`, `ParagraphRole`, `ParagraphMetrics`, `DocumentMetrics`. The umbrella for extraction outputs is `Finding`, NOT `Frame`; ADR-0002 reserved `Frame` for Fillmore semantic frames and this ADR preserves that reservation by routing the umbrella through `Finding`. Shape decisions (trait vs enum for `Finding`, enum for `ParagraphKind`, outer-vs-inner Option for metric grouping) are deferred to v0.2 when concrete consumer sites force them. Names settle now; shapes settle later.
+
+`Paragraph.in_blockquote` carries a rustdoc deprecation note pointing at the planned `ParagraphKind` enum. The boolean stays in 0.0.x and 0.1.x because its job (gate measure or not) is binary today. The migration ships when the variant inventory is justified by real consumer semantics.
+
+The M0 floor gate's type-name parity check (`scripts/check-docsite-floor.sh`) protects the rename mechanically: any stale `Analysis` reference in `book/src/` that did not flow through the rename becomes a CI failure. This is the rename's stress test against the floor gates established in M0.
+
 #### Why supply-chain hardening lands now
 
 Vaani is a substrate. Downstream consumers inherit vaani's supply-chain posture transitively: if vaani publishes from a workflow with a long-lived crates.io API token, every consumer transitively depends on that token never leaking. If vaani's GitHub Actions are pinned to floating tags, a hostile force-push to one of those tags can be injected into every downstream build through vaani's CI cache. The substrate's trust posture is load-bearing across the dependency tree.
@@ -62,7 +74,7 @@ Vaani is a public OSS package and an intended exemplar. The standards need to be
 
 A **diverse agent organization** under `.claude/agents/` (6 practitioner agents: maintainer, reviewer, portsmith, ffi-keeper, resilience, archivist) plus a **skill library** under `.claude/skills/` (7 skills: `aces`, `rust-craft`, `testing`, `architecture`, `ffi-surface`, `resilience-floor`, `docs-lockstep`). Each agent has a defined scope grounded in vaani's actual surface; each skill cites the specific Frames from the rust-mastery corpus that ground its disciplines. **ACES** (Adaptable, Composable, Extensible — resisting the stasis/drag/opacity decay cycle) and **antifragility** (size caps, panic boundaries, atomic operations, TOCTOU closure) are non-negotiable foundations, called out explicitly in the reviewer's check gates and the maintainer's discipline list.
 
-A **fully typed Python crust** with stubs at `python/vaani/_core.pyi` describing the PyO3 extension's TypedDict shapes (`Token`, `Sentence`, `Paragraph`, `Section`, `Analysis`, `ScoredSentence`, `Keyphrase`) mirroring the Rust domain types. The `Vaani` class has full method signatures with the Python exception classes the PyO3 boundary now raises per variant. `python/vaani/py.typed` declares the package typed per PEP 561; `pyproject.toml` configures `mypy --strict` over the `python/vaani` tree; `justfile` adds a `typecheck` recipe; CI runs `mypy` in a new `pytype` job after building the extension with `maturin develop`. Downstream Python consumers get full IDE autocomplete and type-checking on the public surface.
+A **fully typed Python crust** with stubs at `python/vaani/_core.pyi` describing the PyO3 extension's TypedDict shapes (`Token`, `Sentence`, `Paragraph`, `Section`, `Document`, `ScoredSentence`, `Keyphrase`) mirroring the Rust domain types. The `Vaani` class has full method signatures with the Python exception classes the PyO3 boundary now raises per variant. `python/vaani/py.typed` declares the package typed per PEP 561; `pyproject.toml` configures `mypy --strict` over the `python/vaani` tree; `justfile` adds a `typecheck` recipe; CI runs `mypy` in a new `pytype` job after building the extension with `maturin develop`. Downstream Python consumers get full IDE autocomplete and type-checking on the public surface.
 
 #### Why model loads are now TOCTOU-safe
 
@@ -96,6 +108,8 @@ The discipline this encodes: a cap is not a number. A cap is an arithmetic comme
 
 ### Added
 
+- ADR-0006 documenting the rename of `Analysis` to `Document` and locking the abstract-tier vocabulary (`Finding`, `SourceSpan`, `Relation`, `Schema`, `Modality`, `SpeechAct`, `Stylometry`, `Rule`, `Predicate`, `Pattern`, `ParagraphKind`, `ParagraphRole`, `ParagraphMetrics`, `DocumentMetrics`). Shape decisions deferred to v0.2; names reserved now to avoid SemVer-major cost later.
+- Transitional `pub type Analysis = Document;` alias in `src/domain.rs` with `#[deprecated(since = "0.0.1")]`. The alias removes in 0.1.0; the M0 floor gate's type-name parity check catches reintroductions of the old name in docs.
 - `.github/workflows/scorecard.yml` — OpenSSF Scorecard analysis weekly + on push to main; SARIF uploaded to the Security tab and published publicly to scorecard.dev. Per-job permissions grant only `security-events: write` and `id-token: write`.
 - `.github/workflows/codeql.yml` — CodeQL static analysis for Rust + Python on push, PR, and weekly. `build-mode: none` for both. Manual prerequisite: disable the "default setup" in repo Settings → Code security → Code scanning before this workflow can run.
 - `.github/workflows/publish.yml` — tag-driven publish to crates.io. The `publish` job declares `environment: crates-io`, which pauses the workflow until the required reviewer (maintainer) approves in the Actions UI. Trusted Publishing (OIDC via `rust-lang/crates-io-auth-action`) mints a scoped token just-in-time, eliminating the long-lived `CARGO_REGISTRY_TOKEN` secret. Pre-publish verifications: tag/Cargo.toml version match, tag-on-main check, cargo test + cargo deny + cargo publish --dry-run. SLSA L3 provenance via `slsa-github-generator@v2.1.0` attached to the auto-generated GitHub Release.
@@ -116,6 +130,7 @@ The discipline this encodes: a cap is not a number. A cap is an arithmetic comme
 
 ### Changed
 
+- `Analysis` type renamed to `Document` across `src/`, `python/`, `book/`, `docs/`, `examples/`, `tests/`, `.claude/arch/`. The Python TypedDict, the PyO3 `Vaani` class methods' return shapes, and every rustdoc + book reference all use the new name. The transitional `Analysis` alias (deprecated) preserves source compatibility through the 0.0.x line. Rustdoc note on `Paragraph.in_blockquote` flags the planned `ParagraphKind` enum migration.
 - All GitHub Actions in `.github/workflows/*.yml` pinned to 40-character commit SHAs with `# version` comments. Floating tags (`@v4`, `@stable`, etc.) are no longer allowed; Dependabot keeps the SHAs current via the weekly `github-actions` ecosystem update. Initial pin set follows `gh-guard v0.2.1`'s `templates/versions.json`.
 - Every `actions/checkout` step now sets `persist-credentials: false`, preventing a compromised workflow step from pushing back to the repo using the runner's `GITHUB_TOKEN`. Every workflow declares `permissions: read-all` at the workflow level; jobs escalate only what they need (`security-events: write` for SARIF upload, `id-token: write` for OIDC, `contents: write` for release artifacts).
 - `justfile`'s `release` recipe no longer prints the `cargo publish` command; the publish itself moves to `.github/workflows/publish.yml`'s `crates-io` environment gate. The recipe now prints the signed-tag (`git tag -s`) and tag-push commands.
@@ -128,7 +143,7 @@ The discipline this encodes: a cap is not a number. A cap is an arithmetic comme
 - Removed `decompose::markdown::parse` free function. Markdown decomposition now goes through `decompose::markdown::MarkdownDecomposer.decompose(text)` (the `Decomposer` trait method). This frees the verb `parse` for NLP-only use across the pipeline. Breaking change for callers using the free function.
 - `Sentence::tree_depth` is now O(n) per sentence via HashMap-indexed bottom-up DFS with depth memoization. The previous magic `< 20` ceiling is gone. On a malformed parse with a cycle, returns `usize::MAX` (sentinel) rather than silently truncating to 20.
 - `tfidf::summarize`, `rake::keyphrases`, `yake::yake_keyphrases` now return `Result<Vec<...>>` instead of `Vec<...>` (breaking). Required so they can return `Error::InputTooLarge` on cap exceedance.
-- `analyze_from` now returns `Result<Analysis>` instead of `Analysis` (breaking). Required so it can return `Error::InputTooLarge` on aggregate section bytes exceeding the cap.
+- `analyze_from` now returns `Result<Document>` instead of `Document` (breaking). Required so it can return `Error::InputTooLarge` on aggregate section bytes exceeding the cap.
 - The brotli compression metric uses `lgwin = 18` (256 KiB window, down from 4 MiB) and skips paragraphs exceeding `MAX_PARAGRAPH_BYTES = 256 KiB`.
 - The composition root parses each non-blockquote paragraph individually and assigns the returned sentences to that paragraph. The previous join-then-prefix-match wiring step is removed.
 

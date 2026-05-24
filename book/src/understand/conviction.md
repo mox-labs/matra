@@ -112,7 +112,7 @@ The consistent pattern: vaani measures and structures; the system you build judg
 - **Structural**: what forms text uses (section hierarchy, sentence length distribution, nominalization ratio)
 - **Stylistic**: how authorship signals (lexical density, TTR, compression ratio, keyphrase distribution)
 
-All four faces read from the same `Analysis`. The parse happens once; what you query from it depends on your application's purpose. [The four faces of voice](./four-faces.md) maps each face to its specific vaani capabilities, gives a concrete text example for each, and marks which capabilities ship today vs which arrive with the abstract tier.
+All four faces read from the same `Document`. The parse happens once; what you query from it depends on your application's purpose. [The four faces of voice](./four-faces.md) maps each face to its specific vaani capabilities, gives a concrete text example for each, and marks which capabilities ship today vs which arrive with the abstract tier.
 
 ---
 
@@ -120,7 +120,7 @@ All four faces read from the same `Analysis`. The parse happens once; what you q
 
 If you are building a system that needs to reason about text (not just retrieve from it, not just generate over it), vaani is the substrate layer. You bring the reasoning; vaani brings the ground.
 
-Concretely: after `analyze()` or `analyze_markdown()` returns an `Analysis`, you have tokens with dependency labels, sentences with word counts and passive flags, paragraphs with readability scores, a document-level TTR and nominalization ratio, ranked summaries, and ranked keyphrases. Every field is a handle. Every handle is queryable. The structure that was latent in the text is now explicit, typed, and bounded.
+Concretely: after `analyze()` or `analyze_markdown()` returns an `Document`, you have tokens with dependency labels, sentences with word counts and passive flags, paragraphs with readability scores, a document-level TTR and nominalization ratio, ranked summaries, and ranked keyphrases. Every field is a handle. Every handle is queryable. The structure that was latent in the text is now explicit, typed, and bounded.
 
 What your system does with those handles (the questions it asks, the rules it applies, the inferences it draws) is the higher-order reasoning. vaani's job ends when the structure is visible. Yours begins there.
 

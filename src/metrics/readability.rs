@@ -1,10 +1,10 @@
 //! Readability metric — Flesch-Kincaid grade level per paragraph.
 
-use crate::domain::{Analysis, Sentence};
+use crate::domain::{Document, Sentence};
 
 /// Populate `Paragraph::readability_grade` for every paragraph with
 /// more than 10 whitespace-counted words that is not in a blockquote.
-pub fn compute(analysis: &mut Analysis, _sentences: &[Sentence]) {
+pub fn compute(analysis: &mut Document, _sentences: &[Sentence]) {
     for para in analysis.paragraphs_mut() {
         if para.word_count() > 10 && !para.in_blockquote {
             para.readability_grade = Some(flesch_kincaid_grade(&para.text));

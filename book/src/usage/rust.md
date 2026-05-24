@@ -23,7 +23,7 @@ let (corpus, errors) = vaani::analyze_directory("./essays", &nlp)?;
 // 5. Just parse (for parse-once-use-many)
 let sentences = vaani::parse(&text, &nlp)?;
 
-// 6. Build the Analysis from pre-parsed sentences
+// 6. Build the Document from pre-parsed sentences
 let analysis = vaani::analyze_from(sections, &sentences)?;
 ```
 
@@ -48,7 +48,7 @@ fn token_stream(text: &str, nlp: &dyn NlpProvider) -> vaani::domain::Result<()> 
 
 ## Parse once, use many
 
-`parse` is the single expensive step; `analyze_from`, `tfidf_summarize`, and `rake_keyphrases` are cheap consumers of the parsed sentences. When you want both an `Analysis` and one or more extractions, parse once and hand the sentences to each consumer:
+`parse` is the single expensive step; `analyze_from`, `tfidf_summarize`, and `rake_keyphrases` are cheap consumers of the parsed sentences. When you want both an `Document` and one or more extractions, parse once and hand the sentences to each consumer:
 
 ```rust,ignore
 use vaani::{parse, analyze_from};
@@ -103,9 +103,9 @@ The composition root parses per-paragraph internally. If you want fine-grained c
 ```rust,ignore
 use vaani::decompose::{Decomposer, markdown::MarkdownDecomposer};
 use vaani::nlp::NlpProvider;
-use vaani::domain::{Analysis, Sentence};
+use vaani::domain::{Document, Sentence};
 
-let mut analysis = Analysis::new(MarkdownDecomposer.decompose(&text));
+let mut analysis = Document::new(MarkdownDecomposer.decompose(&text));
 let mut all_sentences: Vec<Sentence> = Vec::new();
 
 for para in analysis.paragraphs_mut() {
