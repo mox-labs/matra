@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "vaani"
-version = "0.1.0"
+version = "0.0.1"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction."
 readme = "README.md"
 license = { text = "MIT" }
