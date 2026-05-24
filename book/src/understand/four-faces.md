@@ -47,7 +47,7 @@ vaani's parse surfaces:
 | Token | POS | Dep label | Head |
 |---|---|---|---|
 | board | NOUN | nsubj | approved |
-| approved | VERB | root | — |
+| approved | VERB | root | (none) |
 | restructuring | NOUN | compound | plan |
 | plan | NOUN | obj | approved |
 | management | NOUN | nsubj | presented |

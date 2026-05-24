@@ -1,6 +1,6 @@
 # Playground
 
-🛠️ **Planned v0.0.x alpha — wires once the WASM crust ships.**
+🛠️ **Planned v0.0.x alpha. Wires once the WASM crust ships.**
 
 The playground is the visceral demonstration of vaani's conviction: paste text, see structure illuminate. No install. No setup. Just text in, parsed structure out, in your browser.
 
@@ -10,7 +10,7 @@ Five panels, all live in your browser:
 
 1. **Structured parse.** Collapsible Document → Section → Paragraph → Sentence → Token tree, plus the dependency-tree visualization per sentence. Hover a token for its CoNLL-U fields (lemma, POS, dep, head); click for the subtree it governs.
 
-2. **Document metrics dashboard.** Readability grade, lexical density, vocabulary TTR, nominalization ratio, passive ratio, mean sentence length — computed per-paragraph and per-document, with reference baselines (academic register vs conversational register) for context.
+2. **Document metrics dashboard.** Readability grade, lexical density, vocabulary TTR, nominalization ratio, passive ratio, mean sentence length. Computed per-paragraph and per-document, with reference baselines (academic register vs conversational register) for context.
 
 3. **Summarization comparison.** Same input, both algorithms side-by-side: TF-IDF (sentence-frequency coverage) and TextRank (graph-coherence ranking). See where they agree, where they diverge, and why.
 
@@ -28,15 +28,15 @@ The playground runs entirely client-side. Vaani's Rust core compiles to WebAssem
 
 The 🛠️ marker is honest. The WASM crust is two engineering steps away:
 
-- **Step 3** — `wasm-bindgen` surface mirroring the PyO3 API (methods don't cross FFI; fields do). Targets the npm package `vaani`.
-- **Step 4** — IndexedDB caching + SHA-256 verify for the model fetch.
+- **Step 3:** `wasm-bindgen` surface mirroring the PyO3 API (methods don't cross FFI; fields do). Targets the npm package `vaani`.
+- **Step 4:** IndexedDB caching + SHA-256 verify for the model fetch.
 
 Both are tracked in the alpha roadmap. When they land, this page wires up and the markers flip ✅.
 
 Meanwhile, the same capabilities are available today via:
 
-- [Rust](../usage/rust.md) — `cargo add vaani`
-- [Python](../usage/python.md) — `pip install vaani`
-- [CLI](../usage/cli.md) — quick scripted analysis
+- [Rust](../usage/rust.md): `cargo add vaani`
+- [Python](../usage/python.md): `pip install vaani`
+- [CLI](../usage/cli.md): quick scripted analysis
 
 The conviction is the same. The browser-without-install access is what comes with the WASM crust.
