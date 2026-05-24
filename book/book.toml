@@ -3,9 +3,7 @@ title = "vaani"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction"
 authors = ["yzavyas"]
 language = "en"
-multilingual = false
 src = "src"
-edition = "2024"
 
 [rust]
 edition = "2024"
@@ -19,6 +17,7 @@ site-url = "/"
 cname = ""
 no-section-label = false
 fold = { enable = true, level = 1 }
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
 
 [output.html.search]
 enable = true
@@ -40,6 +39,9 @@ runnable = false
 [preprocessor.mermaid]
 command = "mdbook-mermaid"
 
-[output.linkcheck]
-follow-web-links = false
-warning-policy = "warn"
+# linkcheck deferred: mdbook-linkcheck 0.7.7 is incompatible with mdbook 0.5.3
+# (RenderContext schema drift). Phase 0 floor uses lychee for link verification;
+# CI script in scripts/check-docsite-floor.sh handles it.
+# [output.linkcheck]
+# follow-web-links = false
+# warning-policy = "warn"
