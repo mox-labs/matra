@@ -19,13 +19,13 @@ The instance is **not thread-safe**. UDPipe holds C-side state that cannot safel
 All methods return Python dicts (or lists of dicts) mirroring the Rust domain types. The TypedDict shapes are documented in `_core.pyi` and exported from `vaani` for use as type annotations.
 
 ```python
-from vaani import Vaani, Analysis, ScoredSentence, Keyphrase
+from vaani import Vaani, Document, ScoredSentence, Keyphrase
 
 v: Vaani = Vaani.english(model_dir)
 
 # Full pipeline (parse + metrics)
-analysis: Analysis = v.analyze(text)              # plain text
-analysis: Analysis = v.analyze_markdown(md_text)  # markdown with section awareness
+analysis: Document = v.analyze(text)              # plain text
+analysis: Document = v.analyze_markdown(md_text)  # markdown with section awareness
 
 # Just summarization (parses internally)
 top3: list[ScoredSentence] = v.tfidf_summarize(text, 3)
@@ -69,7 +69,7 @@ class Section(TypedDict):
     level: int
     paragraphs: list[Paragraph]
 
-class Analysis(TypedDict):
+class Document(TypedDict):
     sections: list[Section]
     vocabulary_ttr: float | None
     nominalization_ratio: float | None
@@ -101,11 +101,11 @@ Each Rust error variant surfaces as a specific Python exception class. See [Erro
 
 ## Methods do not cross FFI
 
-Aggregate methods on the Rust `Analysis` (`passive_ratio()`, `mean_sentence_length()`, `total_sentences()`, `total_words()`) are not visible in the serialized Python dict. They are Rust methods, not fields. Compute the aggregates in Python from the section tree, or use the Rust API directly if you need them.
+Aggregate methods on the Rust `Document` (`passive_ratio()`, `mean_sentence_length()`, `total_sentences()`, `total_words()`) are not visible in the serialized Python dict. They are Rust methods, not fields. Compute the aggregates in Python from the section tree, or use the Rust API directly if you need them.
 
 ```python
 # Computing total sentence count from the Python dict
-def total_sentences(analysis: Analysis) -> int:
+def total_sentences(analysis: Document) -> int:
     return sum(
         len(para["sentences"])
         for sec in analysis["sections"]

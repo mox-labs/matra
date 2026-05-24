@@ -27,7 +27,7 @@ The pattern:
 
 1. Load an `NlpProvider` (here, `Udpipe::english(...)`).
 2. Call one of the convenience APIs (`analyze`, `analyze_markdown`, `analyze_file`, `analyze_directory`).
-3. Read structured results off the returned `Analysis`.
+3. Read structured results off the returned `Document`.
 
 ## Python
 
@@ -40,7 +40,7 @@ v = Vaani.english(str(Path.home() / ".vaani" / "models"))
 
 result = v.analyze_markdown(Path("essay.md").read_text())
 
-# result is a dict mirroring the Rust Analysis type.
+# result is a dict mirroring the Rust Document type.
 # Iterate sections → paragraphs → sentences → tokens.
 for sec in result["sections"]:
     for para in sec["paragraphs"]:

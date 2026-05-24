@@ -16,7 +16,7 @@ flowchart LR
     core --> stylistic["Stylistic\nhow authorship signals\n(lexical density · TTR\ncompression ratio · keyphrase distribution)"]
 ```
 
-The four faces are not four products. They are four lenses on one substrate. `analyze()` returns one `Analysis`; what you query from it depends on what your application is trying to know.
+The four faces are not four products. They are four lenses on one substrate. `analyze()` returns one `Document`; what you query from it depends on what your application is trying to know.
 
 ---
 
@@ -31,7 +31,7 @@ Discourse analysis, rhetorical criticism, and relationship-dynamics research all
 Record tier ✅:
 - Dependency arcs: `nsubj` (nominal subject), `agent` (passive agent, "by X"), `obj` (direct object), `nsubjpass` (passive subject)
 - `Sentence::is_passive()`: detects passive constructions across the sentence
-- Passive ratio at the document level via `Analysis`
+- Passive ratio at the document level via `Document`
 
 Abstract tier 🛠️ (planned v0.2+ via rule evaluation):
 - Relation triples: `(subject, verb, object)` extracted as structured tuples
@@ -128,7 +128,7 @@ vaani's structural output:
 - Second paragraph: 1 sentence, 20 words, nominalization present ("improvement," "outcomes")
 - Nominalization ratio (document-level): present via `-tion`-class nouns ("instruction," "intervention")
 
-An application that categorizes text by rhetorical genre, or that extracts the claim-evidence structure of an argument, reads the section hierarchy and sentence-level metrics from the same `Analysis` that a summarization system uses for its TF-IDF scores.
+An application that categorizes text by rhetorical genre, or that extracts the claim-evidence structure of an argument, reads the section hierarchy and sentence-level metrics from the same `Document` that a summarization system uses for its TF-IDF scores.
 
 **Who builds on this.** Tools that classify document genre or rhetorical form, systems that extract argument structure from research or policy text, applications that compare how different authors structure the same type of document.
 
@@ -176,7 +176,7 @@ A writing-coach application can show Author A how their prose compares to Author
 
 No consuming application uses only one face. A writing coach reads stylistic voice primarily but checks passive ratio (agentive) and sentence structure (structural). A relationship-dynamics analyzer reads agentive voice primarily but uses modal voice to distinguish commands from suggestions.
 
-The four faces are not a taxonomy of separate capabilities. They are a map of how different applications read from the same `Analysis`. Your application decides which fields to query and what to infer from them. vaani's job is to make the structure accessible so that decision is yours to make.
+The four faces are not a taxonomy of separate capabilities. They are a map of how different applications read from the same `Document`. Your application decides which fields to query and what to infer from them. vaani's job is to make the structure accessible so that decision is yours to make.
 
 At record tier ✅, all four faces have signal available now. At abstract tier 🛠️, rule evaluation will add typed outputs (named relation triples, modality classifications, schema patterns, voice signature structs) that make the faces available at higher resolution without requiring each consumer to write their own parse-pattern logic.
 

@@ -1,11 +1,11 @@
 //! Lexical density metric — content words over total words, per paragraph.
 
-use crate::domain::{Analysis, Sentence};
+use crate::domain::{Document, Sentence};
 use crate::stopwords::is_stop_word;
 
 /// Populate `Paragraph::lexical_density` for every non-empty,
 /// non-blockquote paragraph.
-pub fn compute(analysis: &mut Analysis, _sentences: &[Sentence]) {
+pub fn compute(analysis: &mut Document, _sentences: &[Sentence]) {
     for para in analysis.paragraphs_mut() {
         if para.word_count() == 0 || para.in_blockquote {
             continue;

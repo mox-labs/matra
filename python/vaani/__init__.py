@@ -2,7 +2,7 @@
 
 from vaani._core import Vaani
 from vaani.types import (
-    Analysis,
+    Document,
     Keyphrase,
     Paragraph,
     ScoredSentence,
@@ -17,7 +17,7 @@ __all__ = [
     "Sentence",
     "Paragraph",
     "Section",
-    "Analysis",
+    "Document",
     "ScoredSentence",
     "Keyphrase",
 ]
