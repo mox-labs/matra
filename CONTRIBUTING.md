@@ -5,6 +5,10 @@ the repository is run so that anyone (human contributor, AI collaborator,
 or curious onlooker) can see how decisions are made, where plans live,
 and how to participate.
 
+For the deeper exposition of *how* humans and AI work together on vaani
+(roles, discipline, the discourse-to-docs-to-code chain, the
+two-state model), see [docs/collaboration-model.md](./docs/collaboration-model.md).
+
 The working values are **transparency** (decisions are visible),
 **auditability** (every change has a trail), and **reversibility** (every
 change can be backed out cleanly).
