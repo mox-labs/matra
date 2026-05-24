@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, alpha]
   pull_request:
-    branches: [main]
+    branches: [main, alpha]
 
 # Principle of least privilege at the workflow level. Individual jobs
 # escalate only what they need via a per-job `permissions:` block.
