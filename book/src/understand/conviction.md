@@ -65,15 +65,15 @@ vaani's reach is tiered. Understanding which tier a capability occupies is the d
 
 ```mermaid
 flowchart TB
-    subgraph sattva["Extract tier — downstream"]
+    subgraph sattva["Extract tier (downstream)"]
         e1["Core claims · theses · principles\n(produced by a separate reasoning system)"]
     end
 
-    subgraph rajas["Abstract tier — planned v0.2+"]
+    subgraph rajas["Abstract tier (planned v0.2+)"]
         a1["Relations · schemas · modalities\nspeech acts · voice signatures\n(via rule evaluation over the parse)"]
     end
 
-    subgraph tamas["Record tier — ships in v0.1"]
+    subgraph tamas["Record tier (ships in v0.1)"]
         t1["Tokens · lemmas · POS · dependencies\nsentences · paragraphs · sections\nreadability · lexical density · TTR · keyphrases"]
     end
 
