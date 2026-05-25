@@ -92,6 +92,7 @@ Default
 Display
 Eq
 Exception
+FileNotFoundError
 From
 Hash
 Ignore
@@ -100,6 +101,7 @@ IntoIterator
 Iterator
 Mutex
 None
+OSError
 Option
 Ord
 PartialEq
@@ -122,6 +124,7 @@ ThreadPoolExecutor
 TryFrom
 TryInto
 TypeError
+TypedDict
 ValueError
 Vec
 Write
