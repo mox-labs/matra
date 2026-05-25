@@ -18,6 +18,15 @@
 - [Keyphrase extraction algorithms](./concepts/rake-yake.md)
 - [Passive voice and nominalization](./concepts/passive-nominalization.md)
 
+# Reference
+
+- [Domain types](./reference/domain-types.md)
+- [Errors](./reference/errors.md)
+- [Methodology](./reference/methodology.md)
+- [HTML report](./reference/html-report.md)
+- [Boundary rules](./reference/boundary-rules.md)
+- [API reference (rustdoc)](./reference/api-reference.md)
+
 # Playground
 
 - [Try vaani in your browser](./playground/index.md) 🛠️
