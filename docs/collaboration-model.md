@@ -59,7 +59,7 @@ Decisions go through one of three surfaces depending on stakes.
 
 **Open-ended exploration** lands in GitHub Discussions. RFCs, "should we consider X", retrospectives. No commitment. No labels.
 
-**Architectural decisions that will bind future work** land as a `decision` issue first, then as an ADR in `docs/decisions/`. The ADR records context, options, the chosen path, the alternatives rejected, and the trigger conditions that would re-open the question. Twelve ADRs as of this writing; each one is a load-bearing commitment.
+**Architectural decisions that will bind future work** land as a `decision` issue first, then as an ADR in `docs/decisions/`. The ADR records context, options, the chosen path, the alternatives rejected, and the trigger conditions that would re-open the question. Each ADR is a load-bearing commitment.
 
 **Concrete changes** land as a regular issue and a PR. The PR's body explains why; the commits explain what. Every commit carries a `Co-Authored-By` trailer naming the participating model. Author is Claude; co-author is the human director. Merge is gated by the human reviewer's approval with rationale.
 
