@@ -128,9 +128,12 @@ Write
 EOF
 )
 
-# Universal Dependencies (UD) POS tag set. Cross-language NLP standard;
-# external to vaani. Referenced in the concepts/pos-lemmas.md page.
-# Spec: https://universaldependencies.org/u/pos/
+# Universal Dependencies (UD) POS tag set + Penn Treebank tag set.
+# Cross-language NLP standards external to vaani. Referenced in
+# concepts/pos-lemmas.md (UD as the `pos` field; Penn as the
+# language-specific `xpos` field that UDPipe also emits).
+# UD spec: https://universaldependencies.org/u/pos/
+# Penn spec: https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html
 ud_pos_allowlist=$(cat <<'EOF'
 ADJ
 ADP
@@ -148,6 +151,39 @@ PUNCT
 SCONJ
 SYM
 VERB
+CC
+CD
+DT
+EX
+FW
+IN
+JJ
+JJR
+JJS
+LS
+MD
+NN
+NNS
+NNP
+NNPS
+PDT
+POS
+PRP
+RB
+RBR
+RBS
+RP
+TO
+UH
+VB
+VBD
+VBG
+VBN
+VBP
+VBZ
+WDT
+WP
+WRB
 EOF
 )
 
