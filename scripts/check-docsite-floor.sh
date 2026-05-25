@@ -118,6 +118,7 @@ RuntimeError
 Seek
 Send
 Some
+Stream
 String
 Sync
 ThreadPoolExecutor
@@ -187,6 +188,25 @@ VBZ
 WDT
 WP
 WRB
+Mood
+Voice
+Tense
+Number
+Person
+Case
+Aspect
+Gender
+Animacy
+Degree
+VerbForm
+Polarity
+Definite
+PronType
+NumType
+Reflex
+Foreign
+Abbr
+Typo
 EOF
 )
 
@@ -196,6 +216,20 @@ EOF
 planned_allowlist=$(cat <<'EOF'
 DocxDecomposer
 PdfDecomposer
+Finding
+SourceSpan
+Relation
+Schema
+Modality
+SpeechAct
+Stylometry
+Rule
+Predicate
+Pattern
+ParagraphKind
+ParagraphRole
+ParagraphMetrics
+DocumentMetrics
 EOF
 )
 

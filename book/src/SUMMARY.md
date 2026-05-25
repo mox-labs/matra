@@ -18,6 +18,16 @@
 - [Keyphrase extraction algorithms](./concepts/rake-yake.md)
 - [Passive voice and nominalization](./concepts/passive-nominalization.md)
 
+# Architecture
+
+- [What vaani illuminates](./architecture/conviction.md)
+- [Four faces of voice](./architecture/four-faces.md)
+- [The pipeline](./architecture/pipeline.md)
+- [Hex layout](./architecture/hex.md)
+- [Ports and adapters](./architecture/ports-adapters.md)
+- [Cross-language story](./architecture/cross-language.md)
+- [Future direction](./architecture/future-direction.md)
+
 # Reference
 
 - [Domain types](./reference/domain-types.md)
