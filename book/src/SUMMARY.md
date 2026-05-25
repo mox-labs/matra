@@ -7,6 +7,13 @@
 - [Installation](./tutorials/installation.md)
 - [Quickstart](./tutorials/quickstart.md)
 
+# Guides
+
+- [Rust](./guides/rust.md)
+- [Python](./guides/python.md)
+- [CLI](./guides/cli.md)
+- [Writing a new adapter](./guides/new-adapter.md)
+
 # Concepts
 
 - [What vaani offers](./concepts/affordances.md)
