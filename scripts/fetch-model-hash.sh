@@ -10,7 +10,10 @@
 set -euo pipefail
 
 MODEL="${1:-english-ewt}"
-URL="https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/11234/1-3131/${MODEL}-ud-2.5-191206.udpipe?sequence=17&isAllowed=y"
+# LINDAT migrated the bitstream endpoint. The /xmlui/bitstream/... pattern
+# now returns an HTML preview; the /server/api/core/bitstreams/... pattern
+# returns the actual binary. Verified 2026-05-21.
+URL="https://lindat.mff.cuni.cz/repository/server/api/core/bitstreams/handle/11234/1-3131/${MODEL}-ud-2.5-191206.udpipe?sequence=17&isAllowed=y"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 

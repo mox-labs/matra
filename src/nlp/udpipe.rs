@@ -15,10 +15,17 @@ use super::NlpProvider;
 /// Expected SHA-256 of the English UD-EWT 2.5 (release 191206) UDPipe model.
 /// Refresh with `scripts/fetch-model-hash.sh` when updating the model version.
 const ENGLISH_MODEL_SHA256: &str =
-    "eeeb1e45bcc89c7497b27fd03ba66bfe6af96fb6df2e64027e6c07bfda52c6a2";
+    "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957";
 
 /// Expected size in bytes, checked before hashing as a fast-fail guard.
-const ENGLISH_MODEL_SIZE: u64 = 451_996;
+const ENGLISH_MODEL_SIZE: u64 = 16_309_608;
+
+/// Direct download URL for the pinned model. LINDAT migrated the bitstream
+/// endpoint from `/repository/xmlui/bitstream/...` (now a 200 HTML preview)
+/// to `/repository/server/api/core/bitstreams/...` (the actual binary).
+/// `udpipe_rs::download_model` still uses the old pattern, so we call
+/// `download_model_from_url` directly with the working URL.
+const ENGLISH_MODEL_URL: &str = "https://lindat.mff.cuni.cz/repository/server/api/core/bitstreams/handle/11234/1-3131/english-ewt-ud-2.5-191206.udpipe?sequence=17&isAllowed=y";
 
 /// UDPipe adapter. Validated at construction: if the model is invalid,
 /// construction fails. After construction, parse calls are trusted.
@@ -135,12 +142,9 @@ where
 /// other pids are independent.
 fn download_english(dir: &Path, final_path: &Path) -> crate::domain::Result<()> {
     with_temp_subdir(dir, |tmp_dir| {
-        let tmp_str = tmp_dir.to_str().ok_or_else(|| {
-            Error::ModelInvalid("temp download directory path is not valid UTF-8".into())
-        })?;
-        udpipe_rs::download_model("english-ewt", tmp_str)
-            .map_err(|e| Error::ModelInvalid(e.to_string()))?;
         let tmp_file = tmp_dir.join(ENGLISH_MODEL_FILENAME);
+        udpipe_rs::download_model_from_url(ENGLISH_MODEL_URL, &tmp_file)
+            .map_err(|e| Error::ModelInvalid(e.to_string()))?;
         std::fs::rename(&tmp_file, final_path)?;
         Ok(())
     })
