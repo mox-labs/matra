@@ -124,4 +124,4 @@ Concretely: after `analyze()` or `analyze_markdown()` returns an `Document`, you
 
 What your system does with those handles (the questions it asks, the rules it applies, the inferences it draws) is the higher-order reasoning. vaani's job ends when the structure is visible. Yours begins there.
 
-See the [Roadmap](../reference/roadmap.md) for the planned v0.2+ capabilities, the specific triggers that will land them, and what each one unlocks in the abstract tier.
+See [Future direction](./future-direction.md) for the planned v0.2+ capabilities, the specific triggers that will land them, and what each one unlocks in the abstract tier.

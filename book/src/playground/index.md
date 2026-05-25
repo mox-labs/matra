@@ -35,8 +35,8 @@ Both are tracked in the alpha roadmap. When they land, this page wires up and th
 
 Meanwhile, the same capabilities are available today via:
 
-- [Rust](../usage/rust.md): `cargo add vaani`
-- [Python](../usage/python.md): `pip install vaani`
-- [CLI](../usage/cli.md): quick scripted analysis
+- [Rust](../guides/rust.md): `cargo add vaani`
+- [Python](../guides/python.md): `pip install vaani`
+- [CLI](../guides/cli.md): quick scripted analysis
 
 The conviction is the same. The browser-without-install access is what comes with the WASM crust.

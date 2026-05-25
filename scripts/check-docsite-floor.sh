@@ -128,9 +128,32 @@ Write
 EOF
 )
 
+# Universal Dependencies (UD) POS tag set. Cross-language NLP standard;
+# external to vaani. Referenced in the concepts/pos-lemmas.md page.
+# Spec: https://universaldependencies.org/u/pos/
+ud_pos_allowlist=$(cat <<'EOF'
+ADJ
+ADP
+ADV
+AUX
+CCONJ
+DET
+INTJ
+NOUN
+NUM
+PART
+PRON
+PROPN
+PUNCT
+SCONJ
+SYM
+VERB
+EOF
+)
+
 # Identifiers referenced in docs as planned adapters that do NOT yet exist in
-# src/. When one ships, remove it from this list — the gate will then catch
-# any subsequent rename drift. Keep this list short and load-bearing.
+# src/. When one ships, remove it from this list and the gate catches any
+# subsequent rename drift. Keep this list short and load-bearing.
 planned_allowlist=$(cat <<'EOF'
 DocxDecomposer
 PdfDecomposer
@@ -140,8 +163,11 @@ EOF
 unknown=()
 while IFS= read -r name; do
     [ -z "$name" ] && continue
-    # On either allowlist? skip.
+    # On any allowlist? skip.
     if printf '%s\n' "$external_allowlist" | grep -Fxq -- "$name"; then
+        continue
+    fi
+    if printf '%s\n' "$ud_pos_allowlist" | grep -Fxq -- "$name"; then
         continue
     fi
     if printf '%s\n' "$planned_allowlist" | grep -Fxq -- "$name"; then

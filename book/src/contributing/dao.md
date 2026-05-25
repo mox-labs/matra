@@ -54,4 +54,4 @@ The DAO is designed to operate with both human and AI contributors. Humans direc
 
 When Claude opens a PR, Claude has invoked the relevant agents and skills as part of producing the change. The audit trail shows which agent made which decision; the reviewer (human) gates the merge. Substitution of either side is degenerative. The human brings the divergent cognition; the AI brings the convergent throughput; the DAO is the structure that keeps both honest.
 
-For more on the collaboration philosophy, see [ACES and antifragility](../philosophy.md).
+For more on the collaboration philosophy, see [ACES and antifragility](../architecture/conviction.md).

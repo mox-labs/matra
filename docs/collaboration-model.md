@@ -90,5 +90,5 @@ The project is also part of an ongoing exploration into what human and AI collab
 - Architecture explanation: [book/src/architecture/](../book/src/architecture/)
 - Decision history: [docs/decisions/](./decisions/)
 - Discourse archive (working notes): `.claude/rhetoric/` (in-repo, not deployed)
-- ACES and antifragility: [philosophy.md](../book/src/philosophy.md)
-- The conviction: [What vaani illuminates](../book/src/understand/conviction.md)
+- ACES and antifragility: documented in `CLAUDE.md` and `.claude/skills/aces/SKILL.md` (working substrate; not in the rendered book)
+- The conviction: [What vaani illuminates](../book/src/architecture/conviction.md)

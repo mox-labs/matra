@@ -97,7 +97,7 @@ for sec in analysis["sections"]:
 
 ## Exception classes
 
-Each Rust error variant surfaces as a specific Python exception class. See [Errors](../concepts/errors.md#handling-errors-in-python) for the full mapping and usage examples.
+Each Rust error variant surfaces as a specific Python exception class. See [Errors](../reference/errors.md#handling-errors-in-python) for the full mapping and usage examples.
 
 ## Methods do not cross FFI
 

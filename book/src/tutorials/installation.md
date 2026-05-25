@@ -55,7 +55,7 @@ The wheel includes type stubs (`py.typed` + `_core.pyi`), so type checkers like 
 
 ## CLI
 
-The Python wheel installs a `vaani` CLI command (see [CLI usage](../usage/cli.md)):
+The Python wheel installs a `vaani` CLI command (see [CLI usage](../guides/cli.md)):
 
 ```bash
 vaani analyze README.md

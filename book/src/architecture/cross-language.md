@@ -22,7 +22,7 @@ This is why:
 
 The rule shapes the type system: if cross-language consumers need an aggregate, it is materialized as a field on a summary type, not as a method.
 
-See [Domain types](../concepts/domain-types.md) for the full type hierarchy and which fields are available on each level.
+See [Domain types](../reference/domain-types.md) for the full type hierarchy and which fields are available on each level.
 
 ## How types cross
 
@@ -47,7 +47,7 @@ Via `serde-wasm-bindgen` and `wasm-bindgen`. The same serde derive that powers P
 
 ## Error routing across FFI
 
-The Rust `Error` enum's concrete variants surface as specific Python exception classes (not the catch-all `RuntimeError`). See [Errors](../concepts/errors.md#handling-errors-in-python) for the full mapping and the exhaustiveness guarantee that keeps new variants from silently falling through.
+The Rust `Error` enum's concrete variants surface as specific Python exception classes (not the catch-all `RuntimeError`). See [Errors](../reference/errors.md#handling-errors-in-python) for the full mapping and the exhaustiveness guarantee that keeps new variants from silently falling through.
 
 ## Dual-publish via maturin
 

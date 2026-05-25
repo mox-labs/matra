@@ -84,7 +84,7 @@ ingest -> decompose -> parse -> measure
                       parse -> extract
 ```
 
-Parse is the expensive step. UDPipe runs a full dependency analysis on every sentence, walking the dependency graph to produce the CoNLL-U annotations that metrics and extractors both depend on. Everything downstream is cheap by comparison. Putting parse at the fork, rather than inside each branch, means a document that needs both an `Document` and a keyphrase list pays for the NLP exactly once. See [Quickstart](../getting-started/quickstart.md) for the code.
+Parse is the expensive step. UDPipe runs a full dependency analysis on every sentence, walking the dependency graph to produce the CoNLL-U annotations that metrics and extractors both depend on. Everything downstream is cheap by comparison. Putting parse at the fork, rather than inside each branch, means a document that needs both an `Document` and a keyphrase list pays for the NLP exactly once. See [Quickstart](../tutorials/quickstart.md) for the code.
 
 ## The bound is at the entry
 
