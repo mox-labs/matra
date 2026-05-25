@@ -47,3 +47,8 @@
 # Playground
 
 - [Try vaani in your browser](./playground/index.md) 🛠️
+
+# Contributing
+
+- [How this repo is run](./contributing/how-it-works.md)
+- [The DAO](./contributing/dao.md)
