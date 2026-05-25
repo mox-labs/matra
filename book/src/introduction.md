@@ -8,73 +8,99 @@
 
 ---
 
-## What vaani does
+## Install
 
-Text arrives as words. What those words are *doing* stays invisible until structure is applied: which clause is passive, which sentence governs the paragraph, where authorship is most concentrated.
+**Rust**
 
-vaani applies that structure. A concrete example:
+```toml
+[dependencies]
+vaani = "0.0"
+```
 
-**Input.**
+**Python**
+
+```bash
+pip install vaani
+```
+
+---
+
+## Five lines to a structured analysis
+
+```python
+from pathlib import Path
+from vaani import Vaani
+
+v = Vaani.english("~/.vaani/models")        # downloads ~16 MB on first call
+result = v.analyze_markdown(Path("essay.md").read_text(encoding="utf-8"))
+
+print(result["sections"][0]["paragraphs"][0]["readability_grade"])
+print(result["vocabulary_ttr"])
+```
+
+The result is a typed dict that mirrors the Rust `Document` type. Every field is stable, serializable, and traversable: document to section to paragraph to sentence to token. Query the fields your reasoning layer needs; ignore the rest.
+
+---
+
+## What the structure looks like
+
+Take two sentences with contrasting agency, of the kind a content-classification pipeline or an authorship-analysis system needs to distinguish:
+
 ```
 The committee approved the proposal without debate.
 Three amendments were submitted by the working group.
 ```
 
-**vaani output.**
+vaani parses each sentence into a dependency tree. The first is active: "committee" is the agent (`nsubj`), "proposal" is the patient (`obj`). The second is passive: "amendments" carries `nsubj:pass`, "group" carries `obl` via "by."
+
+```mermaid
+flowchart TD
+    subgraph s1["Sentence 1: active"]
+        approved["approved [VERB, root]"]
+        committee["committee [NOUN, nsubj]"]
+        proposal["proposal [NOUN, obj]"]
+        debate["debate [NOUN, obl]"]
+        approved --> committee
+        approved --> proposal
+        approved --> debate
+    end
+
+    subgraph s2["Sentence 2: passive"]
+        submitted["submitted [VERB, root]"]
+        amendments["amendments [NOUN, nsubj:pass]"]
+        were["were [AUX, aux:pass]"]
+        group["group [NOUN, obl]"]
+        submitted --> amendments
+        submitted --> were
+        submitted --> group
+    end
 ```
-sentence 1 — active voice, root verb "approved"
-  approved [VERB, root]
-  ├─ committee [NOUN, nsubj]
-  ├─ proposal [NOUN, obj]
-  └─ debate    [NOUN, obl via "without"]
 
-sentence 2 — passive voice, root verb "submitted"
-  submitted [VERB, root]
-  ├─ amendments [NOUN, nsubj:pass]
-  ├─ were       [AUX, aux:pass]
-  └─ group      [NOUN, obl:agent via "by"]
-
-document metrics
-  readability_grade   11.2
-  passive_ratio        0.50
-  lexical_density      0.61
-```
-
-That is the substrate. Every field is typed, stable across Rust and Python, and serializable to JSON. Your application reasons over it.
+That dependency structure is the substrate. Your application reasons over it: which sentences hedge, which commitments are made by named agents, whether the passive ratio signals intentional voice. vaani measures; your application decides.
 
 ---
 
 ## What vaani provides
 
-**✅ Structured parse.** Every token gets its lemma, part of speech, dependency relation (`dep`), and position in the sentence's dependency tree (`head`). Paragraphs and sections nest inside. The result is a typed hierarchy you can traverse: from document to section to paragraph to sentence to token.
+**✅ Structured parse.** Every token gets its lemma, part of speech, dependency relation (`dep`), and head position. Tokens nest into `Sentence`, sentences into `Paragraph`, paragraphs into `Section`, sections into `Document`. The result is a typed hierarchy you can traverse.
 
-**✅ Document metrics.** Readability grade (Flesch-Kincaid), lexical density, vocabulary type-token ratio, nominalization ratio, passive ratio, brotli compression ratio. These are instruments, not scores. vaani measures; your system judges.
+**✅ Document metrics.** Flesch-Kincaid readability grade, lexical density, vocabulary type-token ratio, nominalization ratio, passive ratio, brotli compression ratio. These are instruments, not scores. vaani measures; your system judges.
 
-**✅ Summarization.** Extractive summary via TF-IDF and TextRank. You choose the algorithm based on what "summary" means for your application: sentence-frequency coverage (TF-IDF) or graph-coherence ranking (TextRank).
+**✅ Summarization.** Extractive summaries via TF-IDF (sentence-frequency coverage) and TextRank (graph-coherence ranking). You choose the algorithm based on what "summary" means for your application.
 
-**✅ Keyphrase extraction.** RAKE and YAKE. RAKE is fast and rule-based; YAKE adds positional and statistical context. Both return ranked keyphrases your system can act on.
+**✅ Keyphrase extraction.** RAKE (fast, rule-based) and YAKE (positional + statistical). Both return ranked keyphrases your system can act on.
 
-**🛠️ Planned v0.2+.** Rule evaluation over the parsed structure, enabling relation extraction, schema extraction, modality detection, speech act classification, and voice signature analysis. Without rule evaluation, vaani delivers the record layer: tokens, dependencies, metrics. Rule evaluation is what extends that reach to the relational layer that higher-order reasoning systems need.
+**🛠️ Planned v0.2+.** Rule evaluation over the parsed structure, enabling relation extraction, schema extraction, modality detection, and speech act classification.
 
 ---
 
 ## The architecture: vaani structures, you interpret
 
-The most important thing vaani does not do: interpret.
-
-```
-manifest text  →  vaani [parse · measure · extract]  →  your interpreter [LLM · rule engine · human]  →  your system
-```
-
-vaani produces structure. The reasoning over that structure belongs to whatever interpreter you bring: what the passive ratio means, whether the dependency pattern signals a hedged claim, whether the lexical density fits the intended audience. In an LLM-native pipeline, the LLM is that interpreter; vaani gives it measurable handles instead of raw bytes.
-
-This is not a limitation. It is the design. Feeding an LLM structured text (with token roles, dependency trees, and readability grades attached) is different from feeding it the same text as a string. The reasoning becomes groundable. The structure vaani provides makes the LLM's work auditable, not replaced.
-
 ```mermaid
 flowchart LR
     text[("manifest text")]
-    structure["vaani<br/>parse · measure · extract"]
-    reason["your interpreter<br/>LLM · rule engine · human"]
+    structure["vaani\nparse · measure · extract"]
+    reason["your interpreter\nLLM · rule engine · human"]
     consumer["your system"]
 
     text --> structure
@@ -82,13 +108,11 @@ flowchart LR
     reason -->|"interpreted result"| consumer
 ```
 
----
+vaani does not reason. It structures. The reasoning is yours. Feeding an LLM typed dependency trees, passive ratios, and ranked keyphrases is different from feeding it the same text as a string. The same holds whether you are building a contract-review tool, a content classifier, or a voice-signature analyzer. The reasoning becomes groundable.
 
-## vaani measures; your application decides
+spaCy is also a structural NLP library (dependency parse, POS, named entity recognition); vaani is Rust-first with Python bindings via PyO3, ships with a stable cross-language domain type hierarchy, and is designed as a substrate (bounded inputs, panic-safe FFI, atomic model loading) rather than a general-purpose toolkit.
 
-The passive ratio and readability grade look like Grammarly output. They are not. vaani tells you that 50% of sentences in a document are passive constructions; it does not tell you whether that is a problem. The judgment is yours. vaani measures; your application decides what the measurement means.
-
-This also means vaani does not compete with transformer-based NLP. Transformers predict: they learn distributions over tokens and generate or classify. vaani reveals: it applies a deterministic structural analysis that produces the same typed output for the same input every time. Different category, different use.
+The full argument for this architectural separation is in [What vaani illuminates](./architecture/conviction.md).
 
 ---
 
@@ -107,10 +131,10 @@ This also means vaani does not compete with transformer-based NLP. Transformers 
 [Domain types](./reference/domain-types.md), [Errors](./reference/errors.md), [Methodology](./reference/methodology.md), and the [rustdoc](./reference/api-reference.md) are designed for lookup, not reading.
 
 **Evaluating fit at the architectural level:**
-[What vaani illuminates](./architecture/conviction.md) explains the grounding-substrate framing, the four faces of voice, and what the record and abstract tiers mean for your application. Read this before the quickstart if you want to understand the shape before committing.
+[What vaani illuminates](./architecture/conviction.md) explains the grounding-substrate framing, the four faces of voice, and what the record and abstract tiers mean for your application.
 
 **Try it without writing code:**
-[Interactive playground](./playground/index.md) 🛠️. Paste any text and see the structure appear. Available when the WASM crust ships.
+[Interactive playground](./playground/index.md) 🛠️. Available when the WASM crust ships.
 
 **Extending vaani** (new format, new NLP backend, new metric):
 [Hex layout](./architecture/hex.md) and [Write a new adapter](./guides/new-adapter.md) are the entry points.
