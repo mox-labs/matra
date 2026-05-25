@@ -94,17 +94,23 @@ This also means vaani does not compete with transformer-based NLP. Transformers 
 
 ## How to read this book
 
-**Evaluating fit (start here):**
-[What vaani illuminates](./understand/conviction.md) explains the grounding-substrate architecture, the four faces of voice, and what the record and abstract tiers mean for your application. Read this before the quickstart if you want to understand the shape before committing.
-
 **Ready to start:**
-[Installation](./getting-started/installation.md) and [Quickstart](./getting-started/quickstart.md) get you to a working analysis in five minutes.
+[Installation](./tutorials/installation.md) and [Quickstart](./tutorials/quickstart.md) get you to a working analysis in five minutes.
+
+**Building with vaani from a specific language:**
+[Rust](./guides/rust.md), [Python](./guides/python.md), and [CLI](./guides/cli.md) cover the day-to-day usage path.
+
+**Understanding the NLP behind the surface:**
+[Concepts](./concepts/affordances.md) maps what vaani offers and explains the underlying ideas: UDPipe and CoNLL-U, dependency parsing, readability and lexical metrics, summarization, keyphrase extraction.
+
+**Looking up a specific API, type, or formula:**
+[Domain types](./reference/domain-types.md), [Errors](./reference/errors.md), [Methodology](./reference/methodology.md), and the [rustdoc](./reference/api-reference.md) are designed for lookup, not reading.
+
+**Evaluating fit at the architectural level:**
+[What vaani illuminates](./architecture/conviction.md) explains the grounding-substrate framing, the four faces of voice, and what the record and abstract tiers mean for your application. Read this before the quickstart if you want to understand the shape before committing.
 
 **Try it without writing code:**
 [Interactive playground](./playground/index.md) 🛠️. Paste any text and see the structure appear. Available when the WASM crust ships.
 
-**Looking up a specific API or error:**
-[Domain types](./concepts/domain-types.md), [Errors](./concepts/errors.md), and the language-specific pages under [Usage](./usage/rust.md) are designed for lookup, not reading.
-
 **Extending vaani** (new format, new NLP backend, new metric):
-[Architecture](./architecture/hex.md) and [Write a new adapter](./extending/new-adapter.md) are the entry points.
+[Hex layout](./architecture/hex.md) and [Write a new adapter](./guides/new-adapter.md) are the entry points.

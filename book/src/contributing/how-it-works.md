@@ -83,7 +83,7 @@ The commit message is a teaching moment for the next reader, not just release-no
 
 ## ACES + antifragility: non-negotiable
 
-Every structural change is checked against the ACES boundary test and the antifragility checklist. Good engineering that violates ACES is not good for vaani. See [ACES and antifragility](../philosophy.md) for what both disciplines require and why they are non-negotiable.
+Every structural change is checked against the ACES boundary test and the antifragility checklist. Good engineering that violates ACES is not good for vaani. See [ACES and antifragility](../architecture/conviction.md) for what both disciplines require and why they are non-negotiable.
 
 ## Working with Claude
 

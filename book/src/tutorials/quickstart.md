@@ -73,6 +73,6 @@ let keyphrases = rake_keyphrases(&sentences, 10)?;
 
 ## What's next
 
-- [Rust usage](../usage/rust.md): full surface, including corpus analysis and error handling.
-- [Python usage](../usage/python.md): type stubs, dict shapes, exception classes.
-- [The pipeline](../concepts/pipeline.md): the five verbs (ingest, decompose, parse, measure, extract) and how they compose.
+- [Rust usage](../guides/rust.md): full surface, including corpus analysis and error handling.
+- [Python usage](../guides/python.md): type stubs, dict shapes, exception classes.
+- [The pipeline](../architecture/pipeline.md): the five verbs (ingest, decompose, parse, measure, extract) and how they compose.

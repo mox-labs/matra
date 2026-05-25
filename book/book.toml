@@ -5,6 +5,14 @@ authors = ["yzavyas"]
 language = "en"
 src = "src"
 
+[build]
+# When mdbook serve / build encounters a SUMMARY.md entry whose source file
+# does not exist, fail loudly instead of silently creating an empty stub.
+# Empty stubs from `create-missing = true` race the file moves during
+# IA restructures and re-spawn orphans in old directories. Setting this to
+# false makes the floor gate the authoritative source of truth.
+create-missing = false
+
 [rust]
 edition = "2024"
 

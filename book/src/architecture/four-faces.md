@@ -180,4 +180,4 @@ The four faces are not a taxonomy of separate capabilities. They are a map of ho
 
 At record tier ✅, all four faces have signal available now. At abstract tier 🛠️, rule evaluation will add typed outputs (named relation triples, modality classifications, schema patterns, voice signature structs) that make the faces available at higher resolution without requiring each consumer to write their own parse-pattern logic.
 
-For the conviction behind why these tiers exist, see [What vaani illuminates](./conviction.md). For the planned abstract-tier capabilities and their trigger conditions, see the [Roadmap](../reference/roadmap.md).
+For the conviction behind why these tiers exist, see [What vaani illuminates](./conviction.md). For the planned abstract-tier capabilities and their trigger conditions, see [Future direction](./future-direction.md).

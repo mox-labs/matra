@@ -39,3 +39,6 @@ book/book/
 # (Cargo.toml already excludes it via the `exclude` field) and nothing in it
 # belongs in git history either.
 scratch/
+
+# Rhetoric workspace (working artifacts)
+.rhet/

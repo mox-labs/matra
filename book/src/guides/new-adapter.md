@@ -51,7 +51,7 @@ impl Source for MyNewSource {
 
 Your adapter file imports from `crate::domain` and `super::` (the port module). It does **not** import from sibling adapters. If your adapter needs functionality from another adapter, the composition root composes them. Your file does not.
 
-This is [boundary rule 3](../architecture/boundary-rules.md): no port module imports another port module. The same principle applies to adapters within a port.
+This is [boundary rule 3](../reference/boundary-rules.md): no port module imports another port module. The same principle applies to adapters within a port.
 
 ## 5. Translate external errors
 

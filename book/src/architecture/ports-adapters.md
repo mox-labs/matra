@@ -64,7 +64,7 @@ Every adapter:
 
 ## Writing a new adapter
 
-See [Writing a new adapter](../extending/new-adapter.md) for the recipe.
+See [Writing a new adapter](../guides/new-adapter.md) for the recipe.
 
 ## Adapters that don't exist yet
 
@@ -75,6 +75,6 @@ These are deliberate gaps, not oversights.
 | `PdfDecomposer` | PDF is a format family, not a format. Half-shipping a PDF adapter would lock a bad shape into the public surface. |
 | `DocxDecomposer` | Same reasoning. |
 | WASM `NlpProvider` | Pure-Rust tagger + parser for browser/Node use. Lands when a TypeScript consumer commits. |
-| Streaming `Source` (websocket, filesystem watch) | Only if a consumer needs push semantics. See [Future direction](../extending/future-direction.md). |
+| Streaming `Source` (websocket, filesystem watch) | Only if a consumer needs push semantics. See [Future direction](../architecture/future-direction.md). |
 
 `Format::Pdf` and `Format::Docx` return `Error::UnsupportedFormat` until adapters exist for them.

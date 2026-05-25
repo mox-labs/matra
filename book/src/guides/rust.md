@@ -66,7 +66,7 @@ let summary = tfidf_summarize(&sentences, 3)?;
 let phrases = rake_keyphrases(&sentences, 10)?;
 ```
 
-This is why `measure` and `extract` are both peers of `parse` in the pipeline, not nested under each other. See [The pipeline](../concepts/pipeline.md) for the architectural rationale.
+This is why `measure` and `extract` are both peers of `parse` in the pipeline, not nested under each other. See [The pipeline](../architecture/pipeline.md) for the architectural rationale.
 
 ## Custom NlpProvider
 
@@ -120,7 +120,7 @@ for para in analysis.paragraphs_mut() {
 
 ## Error handling
 
-See [Errors](../concepts/errors.md). `Result<T, vaani::domain::Error>` is the universal return type; pattern-match on variants for fine-grained recovery.
+See [Errors](../reference/errors.md). `Result<T, vaani::domain::Error>` is the universal return type; pattern-match on variants for fine-grained recovery.
 
 ## Feature flags
 
