@@ -6,6 +6,10 @@ UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency tre
 
 Rule evaluation over parsed text structure is part of the intended scope and lands in a later iteration; document references describe it as planned, not present.
 
+## Session start: OODA and resume
+
+On session start in this directory, read `.claude/logs/SESSION-RESUME.md` first. Run the OODA loop it specifies (Observe state, Orient on what is in flight, Decide the next action, Act), then continue with the operational sections below. The resume file is the durable surface that captures where the work stopped and what the next move is; keep it updated after each batch ships or any meaningful state change.
+
 ## Posture
 
 vaani is a public OSS package intended as an exemplar for both Claude-managed repositories and human–AI collaborative intelligence. Two disciplines are non-negotiable:
