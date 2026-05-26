@@ -143,6 +143,12 @@ maturin build                                  # Python wheel
 | `resilience-floor` | Taleb patterns: catch_unwind, atomic ops, TOCTOU closure, size caps | `.claude/skills/resilience-floor/SKILL.md` |
 | `docs-lockstep` | CHANGELOG, ADRs, arch docs in sync with shipping code | `.claude/skills/docs-lockstep/SKILL.md` |
 
+## Docsite generation
+
+For producing docsite content under `book/src/`: load `.claude/logs/bootstrap-fresh-docsite-generation.md`. The bootstrap specifies the IA target, the per-bucket specialist subsets (tufte / karman / burner / jobs / ace / chesterton / researcher applied per Diátaxis bucket), voice invariants, floor-gate requirements, and the cross-architecture verification protocol (`gemini -p` at each batch ship point). Foundational artifacts in `.rhet/` (ground truth, voice anchor, cartography) are the inputs each pipeline step reads.
+
+Floor gates run via `just docs-floor`. Live preview via `cd book && mdbook serve --hostname 0.0.0.0 --port 3000` (mdbook 0.5.3; `create-missing = false` in `book.toml` so SUMMARY entries must exist on disk).
+
 ## Mastery references
 
 The rust-mastery corpus at `~/radix-workspaces/rust-mastery/` is the architectural decision substrate. It is closed (12 of 12 milestones complete as of 2026-05-14) with ~150 Frames at file / crate / cross-artifact / milestone scales across 50+ Rust codebases.
