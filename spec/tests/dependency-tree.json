@@ -1,0 +1,100 @@
+{
+  "name": "dependency-tree",
+  "input": "Structural analysis reveals the grammatical skeleton of a sentence.",
+  "format": "plain",
+  "expect": {
+    "total_sentences": 1,
+    "total_words": 9,
+    "paragraph_count": 1,
+    "sentences": [
+      {
+        "text": "Structural analysis reveals the grammatical skeleton of a sentence.",
+        "token_count": 10,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "Structural",
+            "lemma": "Structural",
+            "pos": "ADJ",
+            "head": 2,
+            "dep": "amod"
+          },
+          {
+            "id": 2,
+            "text": "analysis",
+            "lemma": "analysis",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "nsubj"
+          },
+          {
+            "id": 3,
+            "text": "reveals",
+            "lemma": "reveal",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 4,
+            "text": "the",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 6,
+            "dep": "det"
+          },
+          {
+            "id": 5,
+            "text": "grammatical",
+            "lemma": "grammatical",
+            "pos": "ADJ",
+            "head": 6,
+            "dep": "amod"
+          },
+          {
+            "id": 6,
+            "text": "skeleton",
+            "lemma": "skeleton",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "obj"
+          },
+          {
+            "id": 7,
+            "text": "of",
+            "lemma": "of",
+            "pos": "ADP",
+            "head": 9,
+            "dep": "case"
+          },
+          {
+            "id": 8,
+            "text": "a",
+            "lemma": "a",
+            "pos": "DET",
+            "head": 9,
+            "dep": "det"
+          },
+          {
+            "id": 9,
+            "text": "sentence",
+            "lemma": "sentence",
+            "pos": "NOUN",
+            "head": 6,
+            "dep": "nmod"
+          },
+          {
+            "id": 10,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 3,
+            "dep": "punct"
+          }
+        ]
+      }
+    ],
+    "vocabulary_ttr": 1.0,
+    "nominalization_ratio": 0.111111
+  }
+}
