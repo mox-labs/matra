@@ -13,6 +13,7 @@ Each iteration has one implan. The implans are agent-legible: every task names t
 | the retracted workspace plan | structural | Workspace conversion + `rumi-nlp` skeleton |
 | [i5-streaming.md](i5-streaming.md) | **MLP** | Streaming iterator + Engine + CorpusResult |
 | [i6-post-publish.md](i6-post-publish.md) | post-publish | OTel feature, PDF/DOCX, `rumi-nlp` patterns, deferred reactor |
+| [i7-structural-primitives.md](i7-structural-primitives.md) | rule-substrate | Negation, typed feats, modality, evidentiality, Hearst patterns |
 
 **Strict ordering.** No iteration starts until the previous one has met its acceptance gate. K's strategic verdict on this is non-negotiable: rename a stable surface before structure moves; install the resilience floor before the error contract; ship the error contract before the streaming surface that consumes it.
 
