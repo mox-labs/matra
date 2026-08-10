@@ -1,0 +1,111 @@
+/* matra docsite typography.
+ *
+ * Restrained on purpose. The default mdbook theme is sound; these rules
+ * address measure and vertical rhythm, which is where long-form technical
+ * prose gets hard to read. No colour changes: the ayu/light/rust themes
+ * already handle that, and overriding them breaks the theme switcher.
+ */
+
+/* Measure.
+   NOTE: mdbook sets `html { font-size: 62.5% }`, so 1rem here is 10px, not
+   16px. Set the variable rather than overriding `.content main` so the
+   sidebar-resize maths and the print stylesheet stay in agreement.
+
+   820px against mdbook's 750px default. The extra width is for the reference
+   tables and the architecture diagrams, which were wrapping. Body text goes
+   up to 17px at the same time: a wider column with unchanged type would push
+   past 100 characters a line, which is where the eye starts losing the
+   return. Wider column plus larger type holds the character count. */
+:root {
+    --content-max-width: 82rem; /* 820px */
+}
+
+body {
+    font-size: 1.7rem; /* 17px, from mdbook's 16px */
+}
+
+/* Vertical rhythm. Paragraphs need room to read as separate thoughts. */
+.content p {
+    line-height: 1.65;
+    margin-bottom: 1.15em;
+}
+
+.content li {
+    line-height: 1.6;
+    margin-bottom: 0.35em;
+}
+
+/* Headings: more space above than below, so a heading binds to the text
+   it introduces rather than floating between two blocks. */
+.content h2 {
+    margin-top: 2.4em;
+    margin-bottom: 0.7em;
+}
+
+.content h3 {
+    margin-top: 1.9em;
+    margin-bottom: 0.5em;
+}
+
+/* Code blocks sit inside the prose rhythm rather than interrupting it. */
+.content pre {
+    margin-top: 1.3em;
+    margin-bottom: 1.3em;
+    line-height: 1.5;
+}
+
+/* Tables carry a lot of the reference material; give them air. */
+.content table {
+    margin-top: 1.3em;
+    margin-bottom: 1.3em;
+}
+
+.content table td,
+.content table th {
+    padding: 0.45em 0.75em;
+}
+
+/* Blockquotes are used for the conviction statement. Make it read as a
+   statement rather than as an aside. */
+.content blockquote {
+    border-inline-start-width: 3px;
+    padding: 0.6em 1.2em;
+    font-size: 1.05em;
+}
+
+/* Diagrams break out past the prose measure.
+ *
+ * A dependency tree or a hex diagram carries more horizontal information than
+ * a line of prose does, and constraining it to the text column forces either
+ * a scrollbar or unreadably small labels. These are centred and allowed to
+ * run wider, clamped so they never overflow the viewport on a narrow screen.
+ */
+.content .mermaid,
+.content figure {
+    max-width: min(112rem, 100%);
+    width: fit-content;
+    margin-inline: auto;
+    margin-block: 2em;
+}
+
+.content .mermaid svg,
+.content figure svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Figure captions read as annotation, not as body text. */
+.content figcaption {
+    max-width: 62rem;
+    margin: 0.9em auto 0;
+    text-align: center;
+    font-size: 0.88em;
+    line-height: 1.5;
+    opacity: 0.78;
+}
+
+/* Wide reference tables scroll on their own rather than pushing the page
+ * sideways. Only the table moves; the prose column stays put. */
+.content .table-wrapper {
+    overflow-x: auto;
+}

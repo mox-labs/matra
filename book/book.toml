@@ -1,5 +1,5 @@
 [book]
-title = "vaani"
+title = "matra"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction"
 authors = ["yzavyas"]
 language = "en"
@@ -19,12 +19,13 @@ edition = "2024"
 [output.html]
 default-theme = "ayu"
 preferred-dark-theme = "ayu"
-git-repository-url = "https://github.com/mox-labs/vaani"
-edit-url-template = "https://github.com/mox-labs/vaani/edit/main/book/{path}"
+git-repository-url = "https://github.com/mox-labs/matra"
+edit-url-template = "https://github.com/mox-labs/matra/edit/main/book/{path}"
 site-url = "/"
 cname = ""
 no-section-label = false
 fold = { enable = true, level = 1 }
+additional-css = ["css/matra.css"]
 additional-js = ["mermaid.min.js", "mermaid-init.js"]
 
 [output.html.search]

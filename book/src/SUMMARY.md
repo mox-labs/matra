@@ -1,3 +1,21 @@
 # Summary
 
-(The docsite is being regenerated through the craft-rhetoric pipeline. Pages will be added here as each batch passes the per-bucket specialist subset + cross-architecture verification.)
+[Introduction](introduction.md)
+
+# Understanding matra
+
+- [What matra gives you](capabilities.md)
+- [Domain model](reference/domain-types.md)
+- [Architecture](architecture/design.md)
+
+# Using matra
+
+- [Installation](tutorials/installation.md)
+- [Rust](guides/rust.md)
+- [Python](guides/python.md)
+- [CLI](guides/cli.md)
+
+# Reference
+
+- [Errors](reference/errors.md)
+- [Boundary rules](reference/boundary-rules.md)
