@@ -97,7 +97,7 @@ Read the import block and the signatures, not the grep output.
 
 ## Rule 8 — `tracing` is forbidden in `domain.rs` and port modules
 
-Burner amendment, 2026-04-28, from `.claude/implans/i3-error-tracing.md` (task step: "Update CLAUDE.md to record the rule 8 amendment"). It went unrecorded until 2026-08-02, when the summary line was added to `CLAUDE.md`. The motivation lives here.
+Burner amendment, 2026-04-28, from `.claude/plans/i3-error-tracing.md` (task step: "Update CLAUDE.md to record the rule 8 amendment"). It went unrecorded until 2026-08-02, when the summary line was added to `CLAUDE.md`. The motivation lives here.
 
 **Why.** Observability is an adapter-tier and composition-root concern. A domain type that emits spans holds an opinion about the host's runtime and subscriber configuration. A port that traces forces that opinion onto every implementor. It is also rule 1 by another route: tracing in `domain.rs` is a fourth dependency.
 

@@ -31,14 +31,14 @@ justfile                    `just docs-floor` runs the gate suite
 
 .claude/
   arch/                     architecture working docs (read for system context)
-  implans/                  iteration plans
+  plans/                  iteration plans
   logs/                     iteration logs (this file lives here)
   rhetoric/polish-rubric/SYNTHESIS.md   per-bucket specialist subsets + criteria
 ```
 
 ## Authority order (when surfaces conflict)
 
-code > tests > `.claude/arch/` > `.claude/implans/` > ADRs > CHANGELOG > polish rubric > rhetoric artifacts.
+code > tests > `.claude/arch/` > `.claude/plans/` > ADRs > CHANGELOG > polish rubric > rhetoric artifacts.
 
 Closer to the running system wins.
 

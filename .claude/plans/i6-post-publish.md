@@ -13,7 +13,7 @@ I0 through I5 ship 0.1.0. Some work was deliberately deferred:
 - **`rumi-nlp` pattern content** — at 0.1.0 the bridge crate ships with primitives only (one `DataInput<Sentence>` smoke test). Domain-specific patterns (SVO, copular, prepositional, passive, nominal modifier; stance classification; relation extraction) land here, driven by real consumer needs rather than speculation.
 - **The reactor pattern** — Erlang and K converged on defer; the streaming iterator covers the load. Reactor returns only if named triggers fire.
 
-This implan is a holding pattern: each sub-iteration ships only when its specific trigger fires.
+This plan is a holding pattern: each sub-iteration ships only when its specific trigger fires.
 
 ## Sub-iterations (each ships independently)
 
@@ -90,14 +90,14 @@ This implan is a holding pattern: each sub-iteration ships only when its specifi
 
 **Why:** matra 0.1.0 ships `rumi-nlp` with a skeleton (one `DataInput<Sentence>` smoke test) so the architecture locks. Domain-specific content lands incrementally, driven by real consumer needs, not speculation. The barbell argument from the prior session: "Matra ships a built-in extractor (safe side: five patterns, deterministic, ~300 lines, bounded precision)" was redirected — relation extraction belongs in domain extension crates, not in matra-core. With `rumi-nlp` colocated in matra's workspace, the patterns live there when they land.
 
-**Possible scope (each its own implan when triggered):**
+**Possible scope (each its own plan when triggered):**
 
 1. **Tree-walk DataInputs.** `PosInput`, `LemmaInput`, `DepInput`, `HeadInput`, `SubtreeInput`, `ChildByLabelInput`. Each navigates the dep tree internally and returns flat `MatchingData`.
 2. **The five extraction patterns.** SVO, copular, prepositional, passive, nominal modifier. As `Matcher<Sentence, Triplet>` configurations using the DataInputs above. Conformance test suite (YAML fixtures, like rumi-http's).
 3. **`compile_nlp_rules()` config compiler.** Takes user-friendly YAML/TOML rule configs and produces `Matcher<Sentence, A>` trees.
 4. **Stance classification.** Nine-rule epistemic cascade (potential / assertoric / directive) as a matcher list. Reads `Token.feats`, `dep`, `lemma`. **Note:** stance is at the boundary of matra's substrate scope vs consumer's interpretive scope. May land in a separate downstream crate, not in `rumi-nlp`. Decide when triggered.
 
-Each sub-item is its own implan. None of them ship in 0.1.0.
+Each sub-item is its own plan. None of them ship in 0.1.0.
 
 **Acceptance:** depends on the sub-item. Each lands with conformance fixtures.
 

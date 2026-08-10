@@ -95,6 +95,6 @@ consumer requests a name we have to break to give them.
 
 ## References
 
-- I1 implan: `.claude/implans/i1-rename.md`.
+- I1 plan: `.claude/plans/i1-rename.md`.
 - Architecture: `.claude/arch/architecture.md` (pipeline through-line).
 - I1 PR (merged 2026-05-01): https://github.com/mox-labs/matra/pull/1.

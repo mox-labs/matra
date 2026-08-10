@@ -114,7 +114,7 @@ question; this ADR does not bind it.
 
 ## References
 
-- I4 implan: `.claude/implans/i4-workspace.md`.
+- I4 plan: `.claude/plans/i4-workspace.md`.
 - Architecture: `.claude/arch/architecture.md` (workspace section).
 - Evolution rationale: `.claude/arch/evolution.md` ("rumi-nlp in
   the matcher-engine's workspace" — rejected option).
