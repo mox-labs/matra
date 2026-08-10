@@ -1,4 +1,4 @@
-# I7 — Five structural primitives
+# I7: Five structural primitives
 
 **Boundary:** rule-substrate. Lands before any `src/rules/` design work.
 
@@ -34,7 +34,7 @@ Ordered by dependency, then by size. No milestone starts before the previous one
 
 ---
 
-## M1 — Negation
+## M1: Negation
 
 **What lands.** Negation scope on `Sentence`, derived from the dependency graph. The signal verified present in the parse: `not` appears as `advmod` with `lemma == "not"` attached to the verb it negates. `never`, `no`, `neither`, `nor` follow the same shape.
 
@@ -63,7 +63,7 @@ Whichever wins, it binds M2 through M5 and should be recorded as an ADR, because
 
 ---
 
-## M2 — Typed `feats`
+## M2: Typed `feats`
 
 **What lands.** Typed access to CoNLL-U column 6, which `Token.feats` carries today as a pipe-separated string like `Mood=Ind|Number=Sing|Tense=Pres`. Consumers parse that string themselves, every time.
 
@@ -87,7 +87,7 @@ The resolution likely sits between them: a lookup accessor (`feat("Mood")` retur
 
 ---
 
-## M3 — Modal classification
+## M3: Modal classification
 
 **What lands.** Classification of modal auxiliaries into the epistemic / deontic / dynamic distinction, plus the structural discriminator for bare assertion.
 
@@ -114,7 +114,7 @@ The resolution likely sits between them: a lookup accessor (`feat("Mood")` retur
 
 ---
 
-## M4 — Evidentiality markers
+## M4: Evidentiality markers
 
 **What lands.** Detection of evidential marking: reported speech, perception verbs, hearsay adverbs.
 
@@ -139,7 +139,7 @@ The resolution likely sits between them: a lookup accessor (`feat("Mood")` retur
 
 ---
 
-## M5 — Hearst patterns
+## M5: Hearst patterns
 
 **What lands.** Detection of the classical lexico-syntactic hypernymy patterns: "X such as Y", "X including Y", "Y and other X", "X, especially Y".
 

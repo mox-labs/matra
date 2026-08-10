@@ -1,15 +1,15 @@
-# I5 — Streaming iterator + Engine + CorpusResult
+# I5: Streaming iterator + Engine + CorpusResult
 
 **Status:** not-started
-**Boundary:** **MLP** — at the end of this iteration, matra scales to corpus-sized work without OOM and ships a delightful Rust DX.
+**Boundary:** **MLP**. at the end of this iteration, matra scales to corpus-sized work without OOM and ships a delightful Rust DX.
 **Depends on:** I4 (workspace + `rumi-nlp` skeleton)
 **Branch:** `i5/streaming` off the I4 commit
 
 ## Resolved 2026-04-30: deprecate-and-keep `analyze_directory`
 
-K (recovery 13-agent review, recovery-3.md:782) recommended **cutting `analyze_directory` from 0.1.0 entirely**. Considered and rejected — `deprecate-and-keep` wins. Reasoning:
+K (recovery 13-agent review, recovery-3.md:782) recommended **cutting `analyze_directory` from 0.1.0 entirely**. Considered and rejected, `deprecate-and-keep` wins. Reasoning:
 
-- pre-publish, matra has zero crates.io consumers — but the 0.1.0 surface defines what 0.2 has to honor. A consumer who picks up `analyze_directory` between 0.1.0 release and 0.1.x would face a surface change at 0.2 if it's removed.
+- pre-publish, matra has zero crates.io consumers, but the 0.1.0 surface defines what 0.2 has to honor. A consumer who picks up `analyze_directory` between 0.1.0 release and 0.1.x would face a surface change at 0.2 if it's removed.
 - the `#[deprecated]` annotation gives migration guidance without breaking the call site. `cargo build` warns; `cargo build -- -D warnings` errors on it. That's enough signal.
 - the smaller-surface argument applies more cleanly to types and traits than to convenience functions. A deprecated function adds zero ongoing maintenance cost; consumers pay attention to the warning or live with it.
 

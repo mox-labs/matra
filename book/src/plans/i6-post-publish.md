@@ -1,4 +1,4 @@
-# I6 — Post-publish: OTel, PDF/DOCX, `rumi-nlp` patterns, possibly the reactor
+# I6: Post-publish: OTel, PDF/DOCX, `rumi-nlp` patterns, possibly the reactor
 
 **Status:** not-started
 **Boundary:** post-0.1.0
@@ -8,16 +8,16 @@
 
 I0 through I5 ship 0.1.0. Some work was deliberately deferred:
 
-- **OTel export** (Wolf PR2/PR3) — `tracing-opentelemetry` is heavy (~30 transitive crates). Substrate library doesn't bundle it; consumers opt in.
-- **PDF/DOCX adapters** — half-shipping a PDF adapter would lock a bad shape into the public surface (PDF is a format family). User originally said "any kind of file"; we deferred deliberately, documented the gap.
-- **`rumi-nlp` pattern content** — at 0.1.0 the bridge crate ships with primitives only (one `DataInput<Sentence>` smoke test). Domain-specific patterns (SVO, copular, prepositional, passive, nominal modifier; stance classification; relation extraction) land here, driven by real consumer needs rather than speculation.
-- **The reactor pattern** — Erlang and K converged on defer; the streaming iterator covers the load. Reactor returns only if named triggers fire.
+- **OTel export** (Wolf PR2/PR3), `tracing-opentelemetry` is heavy (~30 transitive crates). Substrate library doesn't bundle it; consumers opt in.
+- **PDF/DOCX adapters**. half-shipping a PDF adapter would lock a bad shape into the public surface (PDF is a format family). User originally said "any kind of file"; we deferred deliberately, documented the gap.
+- **`rumi-nlp` pattern content**. at 0.1.0 the bridge crate ships with primitives only (one `DataInput<Sentence>` smoke test). Domain-specific patterns (SVO, copular, prepositional, passive, nominal modifier; stance classification; relation extraction) land here, driven by real consumer needs rather than speculation.
+- **The reactor pattern**. Erlang and K converged on defer; the streaming iterator covers the load. Reactor returns only if named triggers fire.
 
 This plan is a holding pattern: each sub-iteration ships only when its specific trigger fires.
 
 ## Sub-iterations (each ships independently)
 
-### I6a — `otel` feature
+### I6a: `otel` feature
 
 **Trigger:** at least one downstream consumer requests OTel export, OR a 0.1.0 ship-readiness review identifies the OTel story as a publish blocker.
 
@@ -38,7 +38,7 @@ This plan is a holding pattern: each sub-iteration ships only when its specific 
 - README has an "OTel Export" subsection under Observability.
 - `cargo build` (default) does **not** pull `tracing-opentelemetry`. Verified by `cargo tree`.
 
-### I6b — Per-extractor and per-source spans (Wolf PR2)
+### I6b: Per-extractor and per-source spans (Wolf PR2)
 
 **Trigger:** a consumer reports they cannot debug an extraction issue from the I3 instrumentation.
 
@@ -48,13 +48,13 @@ This plan is a holding pattern: each sub-iteration ships only when its specific 
 
 **Steps:**
 
-1. Per-extractor INFO spans were added in I3 task C — extend with per-iteration TRACE events for TextRank (PageRank delta convergence).
+1. Per-extractor INFO spans were added in I3 task C, extend with per-iteration TRACE events for TextRank (PageRank delta convergence).
 2. Per-file DEBUG events inside `analyze_directory_iter`: `tracing::debug!(?path, "matra.document.parsed")` on success.
 3. Update `examples/observability.rs`.
 
 **Acceptance:** TextRank trace at `RUST_LOG=matra=trace` shows iteration deltas. Per-file debug event present.
 
-### I6c — `PdfDecomposer` adapter
+### I6c: `PdfDecomposer` adapter
 
 **Trigger:** at least one consumer commits to needing PDF support.
 
@@ -72,7 +72,7 @@ This plan is a holding pattern: each sub-iteration ships only when its specific 
 
 **Acceptance:** PDF feature opt-in, basic PDF fixture decomposed. CHANGELOG documents the support surface.
 
-### I6d — `DocxDecomposer` adapter
+### I6d: `DocxDecomposer` adapter
 
 **Trigger:** same as I5c but for DOCX.
 
@@ -82,7 +82,7 @@ This plan is a holding pattern: each sub-iteration ships only when its specific 
 
 **Acceptance:** parallel to I5c.
 
-### I6e — `rumi-nlp` pattern content
+### I6e: `rumi-nlp` pattern content
 
 **Trigger:** at least one consumer commits to needing rule-based extraction over `Sentence` data, OR a clear pattern emerges across multiple consumer requests.
 
@@ -101,7 +101,7 @@ Each sub-item is its own plan. None of them ship in 0.1.0.
 
 **Acceptance:** depends on the sub-item. Each lands with conformance fixtures.
 
-### I6f — The reactor (only if triggered)
+### I6f: The reactor (only if triggered)
 
 **Trigger:** **any one** of:
 1. A consumer needs incremental re-analysis on file change (push semantics).

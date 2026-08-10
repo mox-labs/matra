@@ -7,9 +7,14 @@
 #   2. Orphan detect      — every page under book/src/ is referenced in SUMMARY.md
 #                            (with a small allowlist for include-only fragments).
 #   3. Type-name parity   — every backtick-inline PascalCase identifier in book/src/
+#                          EXCEPT under book/src/plans/. A plan describes types
+#                          that do not exist yet; that is what makes it a plan.
+#                          Gate 3 keeps reference pages honest about what ships,
+#                          and applying it to plans would invert their purpose.
 #                            either exists as an identifier in src/, or is on the
 #                            external-types allowlist below. Catches rename drift.
 #   4. mdbook clean build — `mdbook build` runs without warnings or errors.
+#   5. No em dashes       — project prose convention, exempting quoted material.
 #
 # Local invocation: lychee is optional locally (skip-with-warning); CI installs it.
 # mdbook is required (this script fails gate 4 if missing).
@@ -254,7 +259,7 @@ while IFS= read -r name; do
         continue
     fi
     unknown+=("$name")
-done < <(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' book/src/ | sort -u)
+done < <(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' book/src/ --glob '!**/plans/**' | sort -u)
 
 if [ ${#unknown[@]} -eq 0 ]; then
     echo "PASS (gate 3): every backtick-inline type name resolves in src/ or allowlist"
@@ -268,6 +273,31 @@ else
 fi
 echo ""
 
+# ---------------------------------------------------------------------------
+# Gate 5: no em dashes in prose
+# ---------------------------------------------------------------------------
+# Project convention forbids em dashes in documentation prose. The rule has
+# existed since early on and nothing enforced it, so it survived only as long
+# as whoever was writing happened to remember. It did not survive contact with
+# files moved in from elsewhere.
+#
+# Lines carrying a double quote are exempt. Plans quote reviewers verbatim, and
+# silently editing an attributed quote to satisfy a house style rule would be a
+# worse fault than the em dash.
+echo "=== Gate 5: no em dashes in prose ==="
+offenders=$(grep -rn '\u2014' book/src --include='*.md' | grep -v '"' || true)
+if [ -n "$offenders" ]; then
+    echo "FAIL (gate 5): em dashes found in documentation prose:"
+    echo "$offenders" | sed 's/^/  /'
+    echo ""
+    echo "        Replace with a colon, a comma, or a full stop."
+    echo "        If the line is a verbatim quotation, leave the quote intact;"
+    echo "        lines containing a double quote are exempt."
+    fail=$((fail + 1))
+else
+    echo "PASS (gate 5): no em dashes outside quoted material"
+fi
+echo ""
 # ---------------------------------------------------------------------------
 # Gate 4: mdbook clean build
 # ---------------------------------------------------------------------------

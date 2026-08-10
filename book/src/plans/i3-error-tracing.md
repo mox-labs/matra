@@ -1,7 +1,7 @@
-# I3 — Error restructure + tracing PR1
+# I3: Error restructure + tracing PR1
 
 **Status:** not-started
-**Boundary:** **MVP** — at the end of this iteration, matra is correct, bounded, has a recovery contract, and is observable.
+**Boundary:** **MVP**. at the end of this iteration, matra is correct, bounded, has a recovery contract, and is observable.
 **Depends on:** I2 (resilience floor)
 **Branch:** `i3/error-tracing` off the I2 commit
 
@@ -163,7 +163,7 @@ K's verdict (2026-04-28): "PR3: Error restructure + Wolf PR1 together. They co-d
 3. Tests: a `TestWriter`-based test captures events for a fault-injected fixture. Asserts the right event level and field shape.
 
 **Acceptance:**
-- `rg 'return Err\(' src/ --glob '!src/domain.rs' --glob '!**/tests.rs'` — every line has a sibling `tracing::warn!` or `tracing::error!` within 5 lines above it. Manual review checklist; consider a custom clippy lint as a follow-up in I5.
+- `rg 'return Err\(' src/ --glob '!src/domain.rs' --glob '!**/tests.rs'`, every line has a sibling `tracing::warn!` or `tracing::error!` within 5 lines above it. Manual review checklist; consider a custom clippy lint as a follow-up in I5.
 - `matra.document.failed { path, error_kind }` event emitted on every `analyze_directory` per-file error.
 
 ### Task E: examples and docs
