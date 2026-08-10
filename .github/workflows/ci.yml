@@ -85,8 +85,8 @@ jobs:
     name: cargo-semver-checks
     runs-on: ubuntu-latest
     # PR-only — we don't gate main on this (the baseline is the published version).
-    # `continue-on-error: true` because vaani has not yet been published to
-    # crates.io. The action errors with "vaani not found in registry" until
+    # `continue-on-error: true` because matra has not yet been published to
+    # crates.io. The action errors with "matra not found in registry" until
     # there is a published baseline to compare against. Once the first
     # publish happens, drop continue-on-error so PRs that break semver fail.
     if: github.event_name == 'pull_request'
@@ -138,15 +138,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5  # v2
+      - name: Install uv
+        run: python -m pip install --upgrade uv
       - name: Install maturin
-        run: pip install maturin
+        run: uv pip install --system maturin
       - name: Build wheel
         run: maturin build --release --out dist
       - name: Install and import
         shell: bash
         run: |
-          pip install dist/vaani-*.whl
-          python -c "from vaani import Vaani; print('ok')"
+          uv pip install --system dist/matra-*.whl
+          python -c "from matra import Matra; print('ok')"
 
   pytype:
     name: Python type-check (mypy)
@@ -167,8 +169,9 @@ jobs:
       - name: Install maturin + mypy in venv
         run: |
           . .venv/bin/activate
-          pip install maturin "mypy>=1.10" click rich
-      - name: Build and install vaani in venv (so the _core stub resolves)
+          python -m pip install --upgrade uv
+          uv pip install --system maturin "mypy>=1.10" click rich
+      - name: Build and install matra in venv (so the _core stub resolves)
         run: |
           . .venv/bin/activate
           maturin develop --features "python,udpipe"

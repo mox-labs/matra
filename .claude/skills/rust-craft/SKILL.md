@@ -1,11 +1,11 @@
 ---
 name: rust-craft
-description: Rust design decisions specific to vaani — error tier choice, dep pin rules, trait shape, version pinning, feature-flag composition, `#[non_exhaustive]` discipline. Use when making any non-trivial Rust design decision in this codebase. Grounded in the rust-mastery corpus at ~/radix-workspaces/rust-mastery/.
+description: Rust design decisions specific to matra — error tier choice, dep pin rules, trait shape, version pinning, feature-flag composition, `#[non_exhaustive]` discipline. Use when making any non-trivial Rust design decision in this codebase.
 ---
 
 # rust-craft
 
-Rust design decisions for vaani. This skill codifies the choices vaani has already made and the rules for making new ones.
+Rust design decisions for matra. This skill codifies the choices matra has already made and the rules for making new ones.
 
 ## When to invoke
 
@@ -16,9 +16,9 @@ Rust design decisions for vaani. This skill codifies the choices vaani has alrea
 - Adding a feature flag.
 - Deciding between `#[non_exhaustive]` and an open enum.
 
-## The error tier — what vaani uses today
+## The error tier — what matra uses today
 
-vaani uses a single hand-derived `domain::Error` enum via thiserror at the library tier. There is no anyhow in the working code.
+matra uses a single hand-derived `domain::Error` enum via thiserror at the library tier. There is no anyhow in the working code.
 
 ```rust
 #[derive(thiserror::Error, Debug)]
@@ -41,17 +41,17 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 ```
 
-**Why thiserror, not anyhow:** From the rust-mastery corpus (`frames/cross-artifact/errors-tier-lib-vs-app.json`), the decision rule is: if a caller may *match* on the error variant, the crate is library-tier and concrete enums (thiserror) preserve variant identity. If only the application's top-level handler will display/log/exit, type erasure (anyhow) is ergonomic.
+**Why thiserror, not anyhow:** The decision rule is: if a caller may *match* on the error variant, the crate is library-tier and concrete enums (thiserror) preserve variant identity. If only the application's top-level handler will display/log/exit, type erasure (anyhow) is ergonomic.
 
-vaani is a substrate library. Its callers will match on `InputTooLarge` (route to PyValueError, retry with smaller input, etc.), `ModelNotFound` (prompt for path, download, etc.), `Io(_)` (filesystem-specific recovery). Type preservation is required; thiserror is correct.
+matra is a substrate library. Its callers will match on `InputTooLarge` (route to PyValueError, retry with smaller input, etc.), `ModelNotFound` (prompt for path, download, etc.), `Io(_)` (filesystem-specific recovery). Type preservation is required; thiserror is correct.
 
-**Why not anyhow at any layer:** vaani has no lib/app boundary inside its Rust surface — it is a single crate. The PyO3 boundary in `lib.rs::python` routes variants to PyErr subclasses via an exhaustive match (no wildcard). A new variant becomes a compile error there — exactly what we want.
+**Why not anyhow at any layer:** matra has no lib/app boundary inside its Rust surface — it is a single crate. The PyO3 boundary in `lib.rs::python` routes variants to PyErr subclasses via an exhaustive match (no wildcard). A new variant becomes a compile error there — exactly what we want.
 
-If a future submodule (e.g., a CLI tool consuming vaani) needs `.context()` chains, *that* code uses anyhow. vaani itself stays on `domain::Result`.
+If a future submodule (e.g., a CLI tool consuming matra) needs `.context()` chains, *that* code uses anyhow. matra itself stays on `domain::Result`.
 
 ## Dep pinning — the 3-axis rule
 
-From `frames/cross-artifact/dtolnay-derive-style-ecosystem.json`, the rule for pinning macro-emitting crates:
+The rule for pinning macro-emitting crates:
 
 Ask three questions in order:
 
@@ -61,7 +61,7 @@ Ask three questions in order:
 
 `__private<patch>` versioning is required IFF (proc-macro AND emits-static-paths AND internal-helpers). For everything else, the pin can be more relaxed because multi-version dep graphs surface as compile errors, not silent UB.
 
-Applied to vaani's deps:
+Applied to matra's deps:
 
 | Dep | Pin | Axis 1 (path target) | Why |
 |---|---|---|---|
@@ -77,25 +77,25 @@ When you add a new dep, ask the three questions and pick the pin. Document in th
 
 ## Trait design
 
-Three principles from the rust-mastery corpus:
+Three principles:
 
-1. **Minimal contract.** Patterns 5 and 10 from the corpus show that the longest-lived ecosystem traits (tower::Service, tracing::Subscriber, futures::Stream) have one or two methods, not five. vaani's three ports (`Source`, `Decomposer`, `NlpProvider`) follow.
+1. **Minimal contract.** The longest-lived ecosystem traits (tower::Service, tracing::Subscriber, futures::Stream) have one or two methods, not five. matra's three ports (`Source`, `Decomposer`, `NlpProvider`) follow.
 2. **Object-safe.** Every port must be usable as `&dyn Trait`. The composition root needs runtime dispatch. No generic methods on Self.
 3. **`Send` if cross-thread is plausible.** `Source`, `NlpProvider` are `Send`. `Decomposer` is not (it operates on `&str` only). Don't add `Sync` unless you have a concrete cross-thread sharing case.
 
 ## `#[non_exhaustive]` discipline
 
-Every public type in `domain.rs` has `#[non_exhaustive]`. This is non-negotiable for vaani because:
+Every public enum and every public struct with public fields in `domain.rs` has `#[non_exhaustive]`. This is non-negotiable for matra because:
 
-- vaani is a substrate; downstream code reads every public field path as a contract.
+- matra is a substrate; downstream code reads every public field path as a contract.
 - Adding a variant or field later without `#[non_exhaustive]` is a breaking change. With it, additive changes are minor-version bumps.
 - Pattern-matches on `#[non_exhaustive]` enums must include `_` (the additive variant escape hatch) — forces consumers to write code that survives variant additions.
 
-Exception: the PyErr routing match in `lib.rs::python` deliberately omits the wildcard so new variants become compile errors. This is *inside* vaani, where exhaustiveness is the contract, not the breakage risk.
+Exception: the PyErr routing match in `lib.rs::python` deliberately omits the wildcard so new variants become compile errors. This is *inside* matra, where exhaustiveness is the contract, not the breakage risk.
 
 ## Feature flag discipline
 
-Vaani has two features:
+Matra has two features:
 
 ```toml
 [features]
@@ -110,15 +110,6 @@ Rules:
 - **`cargo check --no-default-features` must compile.** This is a hard CI gate.
 - **No cross-feature implications without an ADR.** If `python` had to imply `udpipe` (e.g., the Python class only works with UDPipe), document why.
 
-## When you reach for the corpus
-
-The audit at `.claude/arch/rust-mastery-audit.md` maps these decisions to specific Frames. Read it before any architectural choice.
-
-For deep dives:
-
-- `frames/cross-artifact/errors-tier-lib-vs-app.json` — error tier.
-- `frames/cross-artifact/dtolnay-derive-style-ecosystem.json` — 3-axis pin rule.
-- `frames/cross-artifact/vaani-readiness.json` — the integrating M1 Frame.
 
 ## What this skill won't tell you
 

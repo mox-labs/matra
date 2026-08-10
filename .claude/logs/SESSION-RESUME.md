@@ -31,7 +31,7 @@ lsof -nP -iTCP:3000 -sTCP:LISTEN 2>/dev/null   # is mdbook serve running?
 Read these in this order:
 
 1. This file (`.claude/logs/SESSION-RESUME.md`) — you are here.
-2. `CLAUDE.md` — project posture, conventions, gotchas, the seven boundary rules.
+2. `CLAUDE.md` — project posture, conventions, gotchas, the eight boundary rules (motivation and enforcement in `.claude/arch/boundary-rules.md`).
 3. `.claude/logs/bootstrap-fresh-docsite-generation.md` — the docsite production protocol.
 4. `.rhet/ground-truth.md` and `.rhet/voice.md` — load-bearing inputs every pipeline step reads.
 

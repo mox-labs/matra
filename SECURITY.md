@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-vaani is pre-1.0 and ships from `main`. Security fixes are released as
+matra is pre-1.0 and ships from `main`. Security fixes are released as
 patches against the latest tagged version. Older versions are not
 supported.
 
@@ -20,7 +20,7 @@ available puts every consumer at risk.
 Use one of these private channels:
 
 1. **GitHub Security Advisories** (preferred):
-   <https://github.com/mox-labs/vaani/security/advisories/new>
+   <https://github.com/mox-labs/matra/security/advisories/new>
 2. **Email:** open a draft advisory via the link above and the
    maintainer will follow up by the channel you prefer.
 
@@ -47,7 +47,7 @@ will move faster than the targets above.
 
 In scope:
 
-- Vulnerabilities in the `vaani` crate or any of its published artifacts
+- Vulnerabilities in the `matra` crate or any of its published artifacts
   (crates.io, PyPI wheels).
 - Vulnerabilities in `scripts/` that can affect a clone of this repo.
 - Vulnerabilities in CI or release tooling visible to PR authors.

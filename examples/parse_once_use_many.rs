@@ -7,15 +7,15 @@
 //! cheap.
 //!
 //! Run with: cargo run --example parse_once_use_many
-//! (requires UDPipe model at /tmp/vaani-models/)
+//! (requires UDPipe model at /tmp/matra-models/)
 
-use vaani::decompose::Decomposer;
-use vaani::decompose::markdown::MarkdownDecomposer;
-use vaani::extraction::{rake_keyphrases, tfidf_summarize};
-use vaani::nlp::udpipe::Udpipe;
+use matra::decompose::Decomposer;
+use matra::decompose::markdown::MarkdownDecomposer;
+use matra::extraction::{rake_keyphrases, tfidf_summarize};
+use matra::nlp::udpipe::Udpipe;
 
-fn main() -> vaani::domain::Result<()> {
-    let nlp = Udpipe::english("/tmp/vaani-models")?;
+fn main() -> matra::domain::Result<()> {
+    let nlp = Udpipe::english("/tmp/matra-models")?;
 
     let text = "\
 # Substrate libraries
@@ -37,10 +37,10 @@ mean the public surface locks at 0.1.0 and stays small.
 
     // Decompose and parse once.
     let sections = MarkdownDecomposer.decompose(text);
-    let sentences = vaani::parse(text, &nlp)?;
+    let sentences = matra::parse(text, &nlp)?;
 
     // Hand the parsed sentences to multiple consumers.
-    let analysis = vaani::analyze_from(sections, &sentences)?;
+    let analysis = matra::analyze_from(sections, &sentences)?;
     let summary = tfidf_summarize(&sentences, 2)?;
     let phrases = rake_keyphrases(&sentences, 6)?;
 

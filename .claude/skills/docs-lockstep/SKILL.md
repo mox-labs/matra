@@ -1,11 +1,11 @@
 ---
 name: docs-lockstep
-description: Documentation hygiene for vaani — CHANGELOG conventional-commit mapping, ADR template + supersede protocol, arch docs sync with code, README elevator pitch, aspirational-claim discipline. Use when a change lands and CHANGELOG / ADRs / arch docs / README need to update in lockstep.
+description: Documentation hygiene for matra — CHANGELOG conventional-commit mapping, ADR template + supersede protocol, arch docs sync with code, README elevator pitch, aspirational-claim discipline. Use when a change lands and CHANGELOG / ADRs / arch docs / README need to update in lockstep.
 ---
 
 # docs-lockstep
 
-Documentation discipline for vaani. The audit trail is the only durable artifact when a stranger inherits the project; this skill codifies what stays in sync with the code.
+Documentation discipline for matra. The audit trail is the only durable artifact when a stranger inherits the project; this skill codifies what stays in sync with the code.
 
 ## When to invoke
 
@@ -37,7 +37,7 @@ When the change is non-trivial and you cannot tell which docs are affected, run 
 
 ## CHANGELOG conventions
 
-vaani follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/):
+matra follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/):
 
 - `## [Unreleased]` at the top accumulates changes until the next release.
 - Section headers: Added / Changed / Fixed / Deprecated / Removed / Security.
@@ -103,20 +103,20 @@ Example: `docs/decisions/0003-workspace-with-rumi-nlp.md` was superseded by `doc
 | `ports.md` | The boundary traits. |
 | `adapters.md` | Concrete adapter implementations. |
 | `evolution.md` | What's locked, what's allowed to change, what's deferred. |
-| `rust-mastery-audit.md` | Gap analysis against the rust-mastery corpus. |
+| `boundary-rules.md` | The eight boundary rules, with motivation, failure modes, and review guidance. |
 
 If a single code change requires updating more than two of these, you're probably changing the architecture and need an ADR.
 
 ## Aspirational-claim discipline
 
-Vaani's docs went through a substantial cleanup on 2026-05-20 because they had drifted to describe an aspirational two-crate workspace, an `Engine` struct, `analyze_directory_iter`, `VaaniError` (the old shape), `otel` feature, and tracing-always-on — none of which existed in code.
+Matra's docs went through a substantial cleanup on 2026-05-20 because they had drifted to describe an aspirational two-crate workspace, an `Engine` struct, `analyze_directory_iter`, `MatraError` (the old shape), `otel` feature, and tracing-always-on — none of which existed in code.
 
 **Rule**: every claim in a shipping doc must be grounded in either:
 
 - Code that exists in `src/`, `python/`, or `Cargo.toml`.
 - A clear "planned" marker for intended-but-not-shipped capabilities.
 
-When in doubt, run the audit. The pattern from `.claude/arch/rust-mastery-audit.md`'s methodology applies: read the doc, read the code, ask "does this claim correspond to working code?"
+When in doubt, check the claim against the code.
 
 ## The README elevator pitch
 
@@ -126,13 +126,8 @@ When in doubt, run the audit. The pattern from `.claude/arch/rust-mastery-audit.
 >
 > UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.
 
-If vaani's scope shifts substantially, update README first, then everywhere else cascades. If a doc claim contradicts README's elevator pitch, fix one or the other in the same PR.
+If matra's scope shifts substantially, update README first, then everywhere else cascades. If a doc claim contradicts README's elevator pitch, fix one or the other in the same PR.
 
-## When you reach for the corpus
-
-- `frames/cross-artifact/dtolnay-derive-style-ecosystem.json` — for ADRs touching dep-pin decisions, cite the 3-axis rule.
-- `frames/milestone/m1-foundation-synthesis.json` — the M1 milestone Frame.
-- `frames/cross-artifact/vaani-readiness.json` — the integrating M1 Frame; substrate for architectural ADRs.
 
 ## Pre-release checklist
 
@@ -145,7 +140,7 @@ Before running `just release-prep VERSION`:
 - [ ] No aspirational claims in shipping docs.
 - [ ] CI is green on `main`.
 
-Then `just release-prep VERSION` rolls the CHANGELOG, bumps `Cargo.toml` and `pyproject.toml`, and stops. The actual publish requires explicit per-publish approval (memory rule); `cargo publish --dry-run --features udpipe` is the next gate.
+Then `just release-prep VERSION` rolls the CHANGELOG only. It does not touch `Cargo.toml` or `pyproject.toml` and does not commit: bump the versions by hand, review the diff, then commit.
 
 ## What this skill won't tell you
 

@@ -1,11 +1,11 @@
-# Contributing to vaani
+# Contributing to matra
 
-vaani is a Claude-managed open-source project. This document explains how
+matra is a Claude-managed open-source project. This document explains how
 the repository is run so that anyone (human contributor, AI collaborator,
 or curious onlooker) can see how decisions are made, where plans live,
 and how to participate.
 
-For the deeper exposition of *how* humans and AI work together on vaani
+For the deeper exposition of *how* humans and AI work together on matra
 (roles, discipline, the discourse-to-docs-to-code chain, the
 two-state model), see [docs/collaboration-model.md](./docs/collaboration-model.md).
 
@@ -17,7 +17,7 @@ change can be backed out cleanly).
 
 ## The working model
 
-vaani is developed in **iterations**. Each iteration addresses one
+matra is developed in **iterations**. Each iteration addresses one
 structural concern: resilience, observability, streaming, etc. The full
 plan is sequenced in `.claude/implans/` and the architecture it builds
 toward is documented in `.claude/arch/`. Anyone can read both before
@@ -92,8 +92,11 @@ every few iterations). Post-1.0, semver discipline binds.
    structured Keep-a-Changelog bullets.
 3. Maintainer bumps `Cargo.toml` version, commits.
 4. `cargo publish --dry-run --features udpipe` for sanity check.
-5. **Manual approval gate.** Publishing is a deliberate, per-call action.
-   When ready: `cargo publish` and `git push --follow-tags`.
+5. **Manual approval gate.** Push a signed tag
+   (`git tag -s vVERSION -m 'vVERSION'; git push --follow-tags`). The tag
+   triggers `.github/workflows/publish.yml`, which pauses at the
+   `crates-io` environment gate. Approving that deployment in the Actions
+   UI is the per-publish approval point. Nothing publishes from a laptop.
 
 The deliberate manual gate is by policy, not because automation is hard.
 Publishing is irreversible (yanking leaves a tombstone) and visible to
@@ -107,7 +110,7 @@ every downstream consumer; it deserves an explicit human moment.
 
 - Bug: `.github/ISSUE_TEMPLATE/bug_report.md` (auto-applied).
 - Feature: `.github/ISSUE_TEMPLATE/feature_request.md`. Ask whether the
-  feature belongs in vaani's substrate role or in a downstream consumer.
+  feature belongs in matra's substrate role or in a downstream consumer.
 - Architectural decision: `.github/ISSUE_TEMPLATE/decision_record.md`.
 
 ### Open a discussion
@@ -119,14 +122,19 @@ discussions into categories (configured in the GitHub UI):
 - **Ideas**: half-formed thoughts, "what if" questions.
 - **RFCs**: design proposals you want feedback on before opening an issue.
 - **Q&A**: usage questions.
-- **Show and tell**: things you built with vaani.
+- **Show and tell**: things you built with matra.
 
 ### Open a PR
 
 1. Fork; create a branch named after the work (e.g. `i3/error-tracing`,
    `fix/symlink-rejection`, `docs/clarify-tree-walk`).
-2. Run `just install-hooks` once on a fresh clone. The pre-commit hook
-   runs the same gates CI runs; passing locally means passing CI.
+2. Run `just install-hooks` once on a fresh clone. The hook runs the Rust
+   gates (fmt, check, clippy, doc, test on both feature configurations)
+   plus the boundary check. CI runs those too, and additionally
+   cargo-deny, cargo-semver-checks, the maturin wheel build and
+   `mypy --strict`; CI does not run the boundary check. A green hook is a
+   strong signal, not a guarantee. Run `just check` and `just typecheck`
+   before pushing.
 3. Make atomic commits. One logical change per commit. Conventional
    prefix: `feat / fix / docs / chore / refactor / perf / test / ci /
    build`. Optional scope in parens: `feat(extraction): ...`.
@@ -135,7 +143,9 @@ discussions into categories (configured in the GitHub UI):
    Highlight paragraph too.
 5. Open the PR. The PR template asks for Summary, Why, Test plan.
    Fill it in.
-6. CI runs the same gates the hook ran. If anything fails, fix and push.
+6. CI runs the Rust gates the hook ran, plus cargo-deny,
+   cargo-semver-checks, the wheel build and mypy. If anything fails, fix
+   and push.
 7. A human reviewer approves before merge.
 
 ### What "good" looks like in a commit
@@ -161,6 +171,36 @@ the existing `Option<f64> = None` semantics (Chesterton fence 7).
 
 ---
 
+## How verification works
+
+Three layers, each answering a different question.
+
+**Does the library behave?** `cargo test` runs the unit tests and doctests.
+`just check` runs the whole Rust gate suite plus the boundary check and the
+docsite floor gates.
+
+**Does the binary behave?** `tests/cli.rs` invokes the `matra` binary and
+asserts output shape and exit codes. The tests that need a parse are
+`#[ignore]` because they require the UDPipe model:
+
+```
+cargo test --features cli --test cli -- --ignored
+```
+
+**Do the crusts agree?** matra ships one Rust core behind several bindings.
+They all call the same parser, so a difference between them is never a
+difference of behaviour: it is a binding defect, a renamed field or a lost
+value or a rounded number. `spec/tests/*.json` holds language-agnostic
+fixtures that every crust runs, with one runner per language. Read
+[`spec/README.md`](./spec/README.md) for the fixture format and the rule
+about the model being part of the contract.
+
+```
+just conformance      # every crust against the shared spec
+just coverage-all     # line coverage, Rust and Python
+just lint             # clippy and ruff
+```
+
 ## Code style
 
 **ACES + antifragility:** non-negotiable. ACES (Adaptable, Composable,
@@ -171,9 +211,13 @@ closure). See `.claude/skills/aces/SKILL.md` and
 checked against the ACES boundary test; every new I/O or external-library
 boundary is checked against the antifragile checklist.
 
-**Boundary rules:** non-negotiable. See `CLAUDE.md` for the seven hex
-rules. The boundary check script (`scripts/check-boundaries.sh`) runs in
-the pre-commit hook and CI.
+**Boundary rules:** non-negotiable. See
+[`.claude/arch/boundary-rules.md`](.claude/arch/boundary-rules.md) for the
+canonical eight rules and how each is enforced; `CLAUDE.md` carries the
+summary. `scripts/check-boundaries.sh` greps three of them and runs from
+`just check` and the optional pre-commit hook. It is not wired into CI:
+only rule 6 has a CI gate. The rest rests on review, so run `just check`
+before opening a PR.
 
 **Formatting:** `cargo fmt`. Enforced.
 
@@ -209,7 +253,7 @@ When you (a human) open a PR with Claude's help:
   part of the auditability discipline.
 - The same review and CI gates apply.
 
-If you want to work on vaani with Claude Code on your machine, the
+If you want to work on matra with Claude Code on your machine, the
 `.claude/` directory in this repo is preloaded with the architecture
 docs and iteration plans. Claude Code will read those automatically.
 

@@ -1,4 +1,4 @@
-# vaani task runner. Run `just` to see all recipes.
+# matra task runner. Run `just` to see all recipes.
 #
 # Recipes are the single source of truth for repeatable workflows.
 # CI, the pre-commit hook, and humans all run the same commands.
@@ -11,13 +11,15 @@ default:
 # Quality gates — same commands CI runs.
 # ---------------------------------------------------------------------------
 
-# Run every CI gate locally. If this passes, CI will pass.
+# Run the local gate suite: the Rust gates CI runs, plus the boundary
+# check and docsite floor, which CI does not run. CI additionally runs
+# cargo-deny, cargo-semver-checks, the wheel build and mypy.
 check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-no-default boundary docs-floor
     @echo ""
     @echo "all gates pass"
 
 # Run the Python type-check (mypy) over the Python sources + stubs.
-# Requires `pip install -e '.[typecheck]'` once.
+# Requires `uv pip install -e '.[typecheck]'` once.
 typecheck:
     python -m mypy
 
@@ -75,6 +77,47 @@ docs-floor:
 # Install the pre-commit hook into .git/hooks/.
 install-hooks:
     bash scripts/install-hooks.sh
+
+# ---------------------------------------------------------------------------
+# Run the conformance suite across every crust. Requires the UDPipe model.
+conformance:
+    cargo test --test conformance -- --ignored
+    uv run pytest python/tests/test_conformance.py -q
+
+
+# ---------------------------------------------------------------------------
+# Quality
+# ---------------------------------------------------------------------------
+
+# Lint every language surface.
+lint: clippy clippy-no-default lint-py
+
+# Ruff over the Python surface.
+lint-py:
+    uv run --extra lint ruff check python/
+    uv run --extra lint ruff format --check python/
+
+# Python tests. Conformance needs the model; use `just test-py-fast` without it.
+test-py:
+    uv run --extra test pytest
+
+test-py-fast:
+    uv run --extra test pytest -m "not model"
+
+# Rust line coverage. Prints a summary and writes lcov.info.
+#
+# Needs llvm-tools in the active toolchain's sysroot:
+#   rustup component add llvm-tools-preview
+coverage:
+    cargo llvm-cov --features cli --lcov --output-path lcov.info
+    cargo llvm-cov --features cli --summary-only
+
+# Python line coverage.
+coverage-py:
+    uv run --extra test pytest --cov --cov-report=term --cov-report=xml
+
+# Coverage across both crusts.
+coverage-all: coverage coverage-py
 
 # ---------------------------------------------------------------------------
 # Release

@@ -6,7 +6,7 @@
 
 ## Context
 
-vaani's pipeline produces structured analysis from text in stages. The
+matra's pipeline produces structured analysis from text in stages. The
 stage names become the public vocabulary: trait method names appear in
 docs, trait names in code, free function names in `lib.rs`, and (via
 PyO3) Python class methods. Once 0.1.0 ships these names appear on
@@ -97,4 +97,4 @@ consumer requests a name we have to break to give them.
 
 - I1 implan: `.claude/implans/i1-rename.md`.
 - Architecture: `.claude/arch/architecture.md` (pipeline through-line).
-- I1 PR (merged 2026-05-01): https://github.com/mox-labs/vaani/pull/1.
+- I1 PR (merged 2026-05-01): https://github.com/mox-labs/matra/pull/1.

@@ -6,11 +6,11 @@
 
 ## Context
 
-Vaani is a substrate library. Downstream consumers (alif, cancan, radix, third-party Rust + Python projects) inherit vaani's supply-chain posture transitively. If vaani publishes from a workflow with a long-lived API token, every downstream depends on that token never leaking. If vaani's actions are pinned to floating tags, a hostile force-push to one of those tags can be injected into every downstream build through vaani's CI cache. The substrate's trust posture is load-bearing.
+Matra is a substrate library. Downstream consumers (alif, cancan, radix, third-party Rust + Python projects) inherit matra's supply-chain posture transitively. If matra publishes from a workflow with a long-lived API token, every downstream depends on that token never leaking. If matra's actions are pinned to floating tags, a hostile force-push to one of those tags can be injected into every downstream build through matra's CI cache. The substrate's trust posture is load-bearing.
 
 The rust-mastery research surfaced `sbom-tool/gh-guard` (https://github.com/sbom-tool/gh-guard), a Claude Code plugin that codifies current best practices for Rust supply-chain hardening: OpenSSF Scorecard, CodeQL, action SHA-pinning, Trusted Publishing for crates.io, SLSA L3 provenance attestation, signed tags. The plugin's `templates/workflows/` and `templates/versions.json` give concrete workflow yaml and pin set.
 
-This ADR records vaani's adoption of the gh-guard posture, the manual setup the maintainer performs on GitHub.com and crates.io, and the items deliberately deferred.
+This ADR records matra's adoption of the gh-guard posture, the manual setup the maintainer performs on GitHub.com and crates.io, and the items deliberately deferred.
 
 ## Decision
 
@@ -55,7 +55,7 @@ Every workflow declares `permissions: read-all` at workflow level. Individual jo
 
 ### 5. Trusted Publishing (OIDC) for crates.io
 
-`.github/workflows/publish.yml` mints a crates.io scoped token just-in-time via `rust-lang/crates-io-auth-action` (OIDC). No `CARGO_REGISTRY_TOKEN` secret is stored in the repo. The crate-side configuration at `crates.io/crates/vaani/settings → Trusted Publishing` binds the OIDC subject (repo + workflow + environment) to the right to publish vaani.
+`.github/workflows/publish.yml` mints a crates.io scoped token just-in-time via `rust-lang/crates-io-auth-action` (OIDC). No `CARGO_REGISTRY_TOKEN` secret is stored in the repo. The crate-side configuration at `crates.io/crates/matra/settings → Trusted Publishing` binds the OIDC subject (repo + workflow + environment) to the right to publish matra.
 
 ### 6. Manual approval gate via GitHub environment
 
@@ -70,9 +70,9 @@ After successful publish, `slsa-framework/slsa-github-generator@v2.1.0` (reusabl
 Downstream verification:
 
 ```bash
-slsa-verifier verify-artifact vaani-X.Y.Z.crate \
-  --provenance-path vaani.intoto.jsonl \
-  --source-uri github.com/mox-labs/vaani \
+slsa-verifier verify-artifact matra-X.Y.Z.crate \
+  --provenance-path matra.intoto.jsonl \
+  --source-uri github.com/mox-labs/matra \
   --source-tag vX.Y.Z
 ```
 
@@ -99,7 +99,7 @@ Past tags do not need re-signing; future ones do.
 - Scorecard "Signed-Releases" check eventually passes (after first SLSA-provenanced release ships).
 - Scorecard "Token Leakage" risk eliminated (Trusted Publishing; no `CARGO_REGISTRY_TOKEN` in repo or org secrets).
 - Per-publish approval gate moves from "human runs cargo publish locally" to "human approves a workflow deployment that runs cargo publish in a least-privilege ephemeral runner" — same human intent, stronger enforcement.
-- Downstream consumers can verify any vaani release's provenance via `slsa-verifier`.
+- Downstream consumers can verify any matra release's provenance via `slsa-verifier`.
 
 **Negative:**
 
@@ -140,9 +140,9 @@ Falsified if:
 | Item | Reason | Trigger to revisit |
 |---|---|---|
 | `cargo-vet` | Heavy review burden for a solo OSS substrate; cargo-deny already covers advisory / license / source policy. | A downstream consumer (alif, cancan) requires explicit audit attestation, or a CVE class emerges that cargo-deny misses. |
-| Fuzz testing (`fuzz/`, `fuzz.yml`) | Vaani has no `fuzz/` crate; the parser surface (`ingest`, `decompose`) is still evolving. | When a parser ships a bug class that fuzz would have caught, or when `ingest`/`decompose` stabilize for v1. |
+| Fuzz testing (`fuzz/`, `fuzz.yml`) | Matra has no `fuzz/` crate; the parser surface (`ingest`, `decompose`) is still evolving. | When a parser ships a bug class that fuzz would have caught, or when `ingest`/`decompose` stabilize for v1. |
 | `osv-scanner.toml` | No SBOM fixtures producing PURL false positives; cargo-deny's advisory check covers the same ground. | If Scorecard's `Vulnerabilities` check scores low after first analysis. |
-| Binary releases via `cargo-dist` | Vaani is a library crate; no CLI binary ships from the Rust side. Python wheels are handled by maturin. | If vaani ever ships a `vaani` Rust CLI binary. |
+| Binary releases via `cargo-dist` | Matra is a library crate; no CLI binary ships from the Rust side. Python wheels are handled by maturin. | If matra ever ships a `matra` Rust CLI binary. |
 | CII / OpenSSF Best Practices badge | Cosmetic for pre-1.0; nice-to-have post-1.0. | Approaching v1.0 release. |
 
 ## References

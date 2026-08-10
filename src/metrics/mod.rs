@@ -23,7 +23,11 @@ use crate::domain::{Document, Sentence};
 /// `Box<dyn Fn>` allows closures with captured config/state.
 pub type Metric = Box<dyn Fn(&mut Document, &[Sentence])>;
 
-/// Default metric suite. Returns metrics in dependency order.
+/// Default metric suite.
+///
+/// The suite is a list, not a chain. No metric reads a slot another metric
+/// writes, so the order here is not load-bearing and a caller may drop,
+/// reorder, or add entries freely.
 ///
 /// Per-paragraph metrics (readability, lexical, compression) read from
 /// `paragraph.sentences` which the composition root populates by parsing

@@ -1,33 +1,32 @@
-# vaani
+# matra
 
-[![crates.io](https://img.shields.io/crates/v/vaani.svg)](https://crates.io/crates/vaani)
-[![docs.rs](https://img.shields.io/docsrs/vaani)](https://docs.rs/vaani)
-[![PyPI](https://img.shields.io/pypi/v/vaani.svg)](https://pypi.org/project/vaani/)
-[![CI](https://github.com/mox-labs/vaani/actions/workflows/ci.yml/badge.svg)](https://github.com/mox-labs/vaani/actions/workflows/ci.yml)
-[![docs](https://github.com/mox-labs/vaani/actions/workflows/docs.yml/badge.svg)](https://mox-labs.github.io/vaani/)
-[![MSRV](https://img.shields.io/badge/MSRV-1.85-blue?logo=rust)](https://github.com/mox-labs/vaani/blob/main/Cargo.toml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mox-labs/vaani/blob/main/LICENSE)
+[![CI](https://github.com/mox-labs/matra/actions/workflows/ci.yml/badge.svg)](https://github.com/mox-labs/matra/actions/workflows/ci.yml)
+[![MSRV](https://img.shields.io/badge/MSRV-1.85-blue?logo=rust)](https://github.com/mox-labs/matra/blob/main/Cargo.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mox-labs/matra/blob/main/LICENSE)
 
 NLP library. Text in, structured analysis out.
 
 UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.
 
-A pure, performant, ACE-aligned NLP library: **A**daptable, **C**omposable, **E**xtensible. Hex architecture, domain has zero internal dependencies, every public type is `#[non_exhaustive]`. The substrate is small and stable; opinions live in consumer code.
+A pure, performant, ACE-aligned NLP library: **A**daptable, **C**omposable, **E**xtensible. Hex architecture, domain has zero internal dependencies, public enums and structs with public fields are `#[non_exhaustive]`. The substrate is small and stable; opinions live in consumer code.
 
 ## Install
 
+Not yet published to crates.io or PyPI. Build from source:
+
 ```bash
 # Rust
-cargo add vaani
+git clone https://github.com/mox-labs/matra && cd matra
+cargo build
 
-# Python
-pip install vaani
+# Python (requires maturin)
+maturin develop
 ```
 
 ## Usage (Rust)
 
 ```rust,ignore
-use vaani::{analyze_markdown, nlp::udpipe::Udpipe};
+use matra::{analyze_markdown, nlp::udpipe::Udpipe};
 
 // Downloads the English model on first call (~16MB)
 let nlp = Udpipe::english("./models").unwrap();
@@ -44,11 +43,11 @@ println!("Passive: {:.1}%", analysis.passive_ratio() * 100.0);
 
 ```python
 from pathlib import Path
-from vaani import Vaani
+from matra import Matra
 
 # Downloads the English model on first call (~16MB)
-model_dir = str(Path.home() / ".vaani" / "models")
-v = Vaani.english(model_dir)
+model_dir = str(Path.home() / ".matra" / "models")
+v = Matra.english(model_dir)
 
 result = v.analyze_markdown(Path("essay.md").read_text())
 ```
@@ -57,9 +56,9 @@ result = v.analyze_markdown(Path("essay.md").read_text())
 
 ```bash
 # Auto-downloads model on first use
-vaani analyze essay.md
-vaani analyze essay.md --json
-vaani analyze essay.md -s    # section breakdown
+matra analyze essay.md
+matra analyze essay.md --json
+matra analyze essay.md -s    # section breakdown
 ```
 
 ## Metrics
@@ -90,7 +89,7 @@ Deeper docs in `.claude/arch/`: ports, adapters, domain model, evolution.
 
 ## How this project is run
 
-vaani is a **Claude-managed** open-source project, intended as an exemplar
+matra is a **Claude-managed** open-source project, intended as an exemplar
 for both Claude-managed repositories and human–AI collaborative intelligence.
 The maintainer collaborates with Claude (Anthropic's AI) to plan, implement,
 and review changes; humans approve every PR before merge. The working values

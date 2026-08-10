@@ -103,11 +103,11 @@ pub fn analyze_directory(
 ///
 /// This enables the parse-once-use-many pattern:
 /// ```no_run
-/// # use vaani::nlp::NlpProvider;
-/// # fn example(text: &str, nlp: &dyn NlpProvider) -> vaani::domain::Result<()> {
-/// let sentences = vaani::parse(text, nlp)?;
-/// let summary = vaani::extraction::tfidf_summarize(&sentences, 3)?;
-/// let phrases = vaani::extraction::rake_keyphrases(&sentences, 10)?;
+/// # use matra::nlp::NlpProvider;
+/// # fn example(text: &str, nlp: &dyn NlpProvider) -> matra::domain::Result<()> {
+/// let sentences = matra::parse(text, nlp)?;
+/// let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
+/// let phrases = matra::extraction::rake_keyphrases(&sentences, 10)?;
 /// # Ok(())
 /// # }
 /// ```
@@ -120,13 +120,13 @@ pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Se
 /// Use with [`parse()`] for the no-double-parse pattern.
 ///
 /// ```no_run
-/// # use vaani::decompose::Decomposer;
-/// # use vaani::nlp::NlpProvider;
-/// # fn example(text: &str, nlp: &dyn NlpProvider) -> vaani::domain::Result<()> {
-/// let sections = vaani::decompose::markdown::MarkdownDecomposer.decompose(text);
-/// let sentences = vaani::parse(text, nlp)?;
-/// let analysis = vaani::analyze_from(sections, &sentences)?;
-/// let summary = vaani::extraction::tfidf_summarize(&sentences, 3)?;
+/// # use matra::decompose::Decomposer;
+/// # use matra::nlp::NlpProvider;
+/// # fn example(text: &str, nlp: &dyn NlpProvider) -> matra::domain::Result<()> {
+/// let sections = matra::decompose::markdown::MarkdownDecomposer.decompose(text);
+/// let sentences = matra::parse(text, nlp)?;
+/// let analysis = matra::analyze_from(sections, &sentences)?;
+/// let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
 /// # Ok(())
 /// # }
 /// ```
@@ -202,16 +202,16 @@ mod python {
     /// PyFileNotFoundError so Python `try ... except FileNotFoundError`
     /// works as expected; oversized or unsupported inputs are PyValueError;
     /// I/O errors are PyOSError; everything else is PyRuntimeError.
-    struct VaaniError(domain::Error);
+    struct MatraError(domain::Error);
 
-    impl From<domain::Error> for VaaniError {
+    impl From<domain::Error> for MatraError {
         fn from(e: domain::Error) -> Self {
-            VaaniError(e)
+            MatraError(e)
         }
     }
 
-    impl From<VaaniError> for PyErr {
-        fn from(e: VaaniError) -> PyErr {
+    impl From<MatraError> for PyErr {
+        fn from(e: MatraError) -> PyErr {
             use domain::Error::*;
             use pyo3::exceptions::*;
             let msg = e.0.to_string();
@@ -238,29 +238,29 @@ mod python {
     /// Marked unsendable because NLP models may contain C state that is
     /// not thread-safe. Python's GIL provides the necessary synchronization.
     #[pyclass(unsendable)]
-    struct Vaani {
+    struct Matra {
         nlp: Box<dyn NlpProvider>,
     }
 
     #[pymethods]
-    impl Vaani {
+    impl Matra {
         #[staticmethod]
         #[cfg(feature = "udpipe")]
         fn from_path(model_path: &str) -> PyResult<Self> {
-            let nlp = crate::nlp::udpipe::Udpipe::from_path(model_path).map_err(VaaniError)?;
+            let nlp = crate::nlp::udpipe::Udpipe::from_path(model_path).map_err(MatraError)?;
             Ok(Self { nlp: Box::new(nlp) })
         }
 
         #[staticmethod]
         #[cfg(feature = "udpipe")]
         fn english(model_dir: &str) -> PyResult<Self> {
-            let nlp = crate::nlp::udpipe::Udpipe::english(model_dir).map_err(VaaniError)?;
+            let nlp = crate::nlp::udpipe::Udpipe::english(model_dir).map_err(MatraError)?;
             Ok(Self { nlp: Box::new(nlp) })
         }
 
         /// Analyze plain text. Returns a Python dict.
         fn analyze<'py>(&self, py: Python<'py>, text: &str) -> PyResult<Bound<'py, PyAny>> {
-            let analysis = crate::analyze(text, self.nlp.as_ref()).map_err(VaaniError)?;
+            let analysis = crate::analyze(text, self.nlp.as_ref()).map_err(MatraError)?;
             to_dict(py, &analysis)
         }
 
@@ -270,7 +270,7 @@ mod python {
             py: Python<'py>,
             text: &str,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let analysis = crate::analyze_markdown(text, self.nlp.as_ref()).map_err(VaaniError)?;
+            let analysis = crate::analyze_markdown(text, self.nlp.as_ref()).map_err(MatraError)?;
             to_dict(py, &analysis)
         }
 
@@ -281,8 +281,8 @@ mod python {
             text: &str,
             n: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self.nlp.parse(text).map_err(VaaniError)?;
-            let result = crate::extraction::tfidf_summarize(&sentences, n).map_err(VaaniError)?;
+            let sentences = self.nlp.parse(text).map_err(MatraError)?;
+            let result = crate::extraction::tfidf_summarize(&sentences, n).map_err(MatraError)?;
             to_dict(py, &result)
         }
 
@@ -293,9 +293,9 @@ mod python {
             text: &str,
             n: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self.nlp.parse(text).map_err(VaaniError)?;
+            let sentences = self.nlp.parse(text).map_err(MatraError)?;
             let result =
-                crate::extraction::textrank_summarize(&sentences, n).map_err(VaaniError)?;
+                crate::extraction::textrank_summarize(&sentences, n).map_err(MatraError)?;
             to_dict(py, &result)
         }
 
@@ -306,9 +306,9 @@ mod python {
             text: &str,
             max_phrases: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self.nlp.parse(text).map_err(VaaniError)?;
+            let sentences = self.nlp.parse(text).map_err(MatraError)?;
             let result =
-                crate::extraction::rake_keyphrases(&sentences, max_phrases).map_err(VaaniError)?;
+                crate::extraction::rake_keyphrases(&sentences, max_phrases).map_err(MatraError)?;
             to_dict(py, &result)
         }
 
@@ -319,9 +319,9 @@ mod python {
             text: &str,
             max_phrases: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self.nlp.parse(text).map_err(VaaniError)?;
+            let sentences = self.nlp.parse(text).map_err(MatraError)?;
             let result =
-                crate::extraction::yake_keyphrases(&sentences, max_phrases).map_err(VaaniError)?;
+                crate::extraction::yake_keyphrases(&sentences, max_phrases).map_err(MatraError)?;
             to_dict(py, &result)
         }
     }
@@ -329,7 +329,7 @@ mod python {
     #[pymodule]
     #[allow(unreachable_pub)] // pyo3's #[pymodule] macro requires pub fn even when the module is private.
     pub fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
-        m.add_class::<Vaani>()?;
+        m.add_class::<Matra>()?;
         Ok(())
     }
 }

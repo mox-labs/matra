@@ -1,6 +1,6 @@
-# Bootstrap: docsite generation for vaani
+# Bootstrap: docsite generation for matra
 
-Pipeline-driven production of vaani's docsite under `book/src/`, batch by batch, applying the per-bucket specialist subsets from the polish rubric and the cross-architecture verification gate at each ship point.
+Pipeline-driven production of matra's docsite under `book/src/`, batch by batch, applying the per-bucket specialist subsets from the polish rubric and the cross-architecture verification gate at each ship point.
 
 Copy this prompt into a fresh `/clear`-ed session and begin from "First task" at the bottom.
 
@@ -8,7 +8,7 @@ Copy this prompt into a fresh `/clear`-ed session and begin from "First task" at
 
 ## Project
 
-vaani — NLP library at `/Users/yza.vyas/mox/packages/vaani/`. Rust core + Python bindings via PyO3 + planned WASM crust. Branch: `m2-docsite-ia-restructure`. Do not push to remote `main`; alpha is the working branch.
+matra — NLP library at `/Users/yza.vyas/mox/packages/matra/`. Rust core + Python bindings via PyO3 + planned WASM crust. Branch: `m2-docsite-ia-restructure`. Do not push to remote `main`; alpha is the working branch.
 
 ## Repo state for this work
 
@@ -149,11 +149,11 @@ Per `.rhet/voice.md`:
 1. **No em dashes in prose.** Both `—` (glyph) and `--` (double-hyphen). Mermaid node labels count as prose. Code-fence content depicting actual computed output is exempt.
 2. **No marketing register.** "just", "simply", "easy", "powerful", "blazingly", "robust", "production-ready".
 3. **No internal product names** in any shipping surface (book/src/, README, CLAUDE.md, CONTRIBUTING.md, docs/collaboration-model.md). Translate to product-agnostic language. The list of forbidden names lives in `.rhet/voice.md`.
-4. **Substrate framing preserved.** "vaani structures; the interpreter analyzes." "vaani measures; your application decides."
+4. **Substrate framing preserved.** "matra structures; the interpreter analyzes." "matra measures; your application decides."
 5. **Honest status markers.** ✅ ships in v0.0.x; 🛠️ planned vX.Y. Verify against `src/` before claiming ✅.
 6. **No LLM tells.** "notably", "however" (sentence-initial), "importantly", "in essence", "ultimately", "it is worth noting", "delve", "tapestry", "leverage" (as verb).
 
-The conviction tagline ("vaani illuminates the internal structural makeup of text, enabling effective higher-order reasoning on text") is verbatim from `.rhet/ground-truth.md`. Do not paraphrase.
+The conviction tagline ("matra illuminates the internal structural makeup of text, enabling effective higher-order reasoning on text") is verbatim from `.rhet/ground-truth.md`. Do not paraphrase.
 
 ## Verification + gates
 
@@ -225,7 +225,7 @@ Do not pause for routine progress reporting. Surface progress at batch boundarie
 - `CONTRIBUTING.md` — working values, iteration model, decision flow
 - `docs/collaboration-model.md` — the exemplar working-model document
 - `docs/decisions/*.md` — ADRs; ADR-0006 (abstract-tier vocabulary lock) is load-bearing for reserved names
-- Source code: `src/*.rs`, `python/vaani/*.py`. Verify every code claim against these.
+- Source code: `src/*.rs`, `python/matra/*.py`. Verify every code claim against these.
 
 ## Per-bucket batch order (suggested)
 
@@ -252,7 +252,7 @@ Inputs the agent reads:
 - `.rhet/map/cluster-domain-b-rust-oss.md` (exemplar landing patterns)
 - `.rhet/arrangement/ia-proposal.md` (for structural cross-references)
 - `src/lib.rs`, `src/domain.rs`, `src/nlp/udpipe.rs` (for verified capability claims)
-- `python/vaani/__init__.py`, `python/vaani/_core.pyi` (Python surface)
+- `python/matra/__init__.py`, `python/matra/_core.pyi` (Python surface)
 - `Cargo.toml`, `pyproject.toml` (versions + MSRV)
 
 Output:
@@ -264,7 +264,7 @@ Constraints in the brief:
 - Conviction tagline verbatim from ground-truth (line 3)
 - ✅/🛠️ status markers, each capability verifiable against src/
 - All voice invariants
-- Honest depiction of vaani's actual output: vaani returns `Document` (Rust) / dict (Python); the CLI prints a metrics table; an HTML report is planned v0.1 but does not ship in v0.0.x — do not depict output that does not exist
+- Honest depiction of matra's actual output: matra returns `Document` (Rust) / dict (Python); the CLI prints a metrics table; an HTML report is planned v0.1 but does not ship in v0.0.x — do not depict output that does not exist
 - Diagram for the structural example uses mermaid (a diagram of structure), not ASCII output (which would falsely imply CLI output that does not exist)
 - Cross-architecture verification (gemini -p) is the final gate before integration
 

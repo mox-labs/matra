@@ -1,11 +1,11 @@
 ---
 name: aces
-description: ACES — Adaptable, Composable, Extensible. The non-negotiable design philosophy for vaani. Every system decays through three endogenous forces (stasis, drag, opacity); ACE is the discipline that resists them. Use when making any structural decision, designing an interface, or evaluating whether a change preserves long-term substrate value.
+description: ACES — Adaptable, Composable, Extensible. The non-negotiable design philosophy for matra. Every system decays through three endogenous forces (stasis, drag, opacity); ACE is the discipline that resists them. Use when making any structural decision, designing an interface, or evaluating whether a change preserves long-term substrate value.
 ---
 
 # aces
 
-ACES is the design philosophy for vaani. It is **non-negotiable**. Every design decision is checked against it.
+ACES is the design philosophy for matra. It is **non-negotiable**. Every design decision is checked against it.
 
 ## The cycle
 
@@ -15,7 +15,7 @@ Every system decays through three endogenous forces. Left unchecked, they feed e
 - **Drag** — complexity accumulates. Dependencies tangle. Simple changes take weeks.
 - **Opacity** — understanding fades. Workarounds compound. Nobody knows why something works (or whether it does).
 
-**Opacity feeds stasis feeds drag.** A codebase that nobody fully understands cannot evolve safely; an unevolving codebase forces workarounds that pile on as drag; the drag obscures what's still load-bearing, deepening the opacity. This is the cycle vaani is built to resist.
+**Opacity feeds stasis feeds drag.** A codebase that nobody fully understands cannot evolve safely; an unevolving codebase forces workarounds that pile on as drag; the drag obscures what's still load-bearing, deepening the opacity. This is the cycle matra is built to resist.
 
 ## The counter-forces — ACE
 
@@ -25,7 +25,7 @@ Three disciplines, each countering one decay mode:
 
 **Counters stasis.** Configuration over hardcoding. Feature flags additive and orthogonal. Public types `#[non_exhaustive]` so future variants don't break consumers. Boundary rules stated explicitly so future maintainers know what they can move and what they can't.
 
-Vaani's adaptable surface:
+Matra's adaptable surface:
 
 - `default_suite` in `metrics/mod.rs` configures the default metric set; consumers can compose a different suite.
 - `Format` enum is `#[non_exhaustive]` so adding PDF/DOCX support later is additive.
@@ -36,23 +36,22 @@ Vaani's adaptable surface:
 
 **Counters drag.** Three ports (Source, Decomposer, NlpProvider). Multiple adapters per port. One composition root. Each piece has a single responsibility and a single boundary; replacing one piece does not require rewriting any other.
 
-Vaani's composable surface:
+Matra's composable surface:
 
 - The hex layout (domain → ports → adapters → composition root).
 - `&dyn NlpProvider` runtime dispatch so the NLP backend is replaceable without recompiling the rest.
 - Per-paragraph parse so paragraph-level changes don't cascade into document-level rewrites.
-- The 7 boundary rules enforced mechanically by `scripts/check-boundaries.sh`.
+- The eight boundary rules, stated with motivation in `.claude/arch/boundary-rules.md`. Enforcement is mostly review: `scripts/check-boundaries.sh` greps rules 3, 4 and 8 from `just check` and the opt-in pre-commit hook, and rule 6 is the only rule with a CI gate.
 
 ### Extensible — clear interfaces that invite contribution without requiring full comprehension
 
 **Counters opacity.** A new contributor should be able to add a new `Source`, `Decomposer`, or `NlpProvider` adapter by reading only the port trait and one existing adapter — not by reading the whole codebase. Every public surface has rustdoc; every boundary rule is stated explicitly.
 
-Vaani's extensible surface:
+Matra's extensible surface:
 
 - Three port traits, each minimal (one or two methods).
 - Adapter constraints documented in `.claude/arch/adapters.md`.
 - Rustdoc on every public type, with examples on every public function.
-- The rust-mastery audit at `.claude/arch/rust-mastery-audit.md` documents the *why* behind every architectural choice, grounded in corpus Frames.
 
 ## The boundary test
 
@@ -93,13 +92,13 @@ Each ACE force prevents the cycle from spinning:
 
 When a change makes any one of the three forces worse, all three counter-disciplines drift together. The reviewer's job is to catch this early.
 
-## ACES at vaani's scale today
+## ACES at matra's scale today
 
-Where vaani is doing well:
+Where matra is doing well:
 
 - **A**daptable: every public type is `#[non_exhaustive]`; feature flags are additive; the boundary rules are explicit.
 - **C**omposable: hex layout intact; three ports with multiple adapters; clear composition root.
-- **E**xtensible: rustdoc on every public surface; ADRs for substantive decisions; the rust-mastery audit grounds every architectural choice.
+- **E**xtensible: rustdoc on every public surface; ADRs for substantive decisions.
 
 Where to keep watch:
 
@@ -109,19 +108,14 @@ Where to keep watch:
 
 ## Inversion mechanisms — what to reach for when the cycle starts spinning
 
-From `~/radix-workspaces/rust-mastery/` (and the antifragile lens more broadly):
+From the antifragile lens:
 
 - **Stasis-first symptoms** (the platform stops evolving, decisions harden): inversion is **Adaptability**. Make the hardcoded thing configurable. Add the missing feature flag. Make the closed enum `#[non_exhaustive]`.
 - **Drag-first symptoms** (the platform team is a bottleneck, simple changes take quarters): inversion is **Extensibility**. Open the extension point so contributors don't need platform-team approval to add new adapters.
 - **Opacity-first symptoms** (nobody knows why something works, workarounds pile on): inversion is **Composability**. Decompose the god-module into discrete components with stated boundaries; what was opaque becomes a set of clearly-bounded pieces.
 
-vaani is small enough today that the cycle isn't actively spinning. The disciplines exist so that when scale arrives, the cycle never gets started.
+matra is small enough today that the cycle isn't actively spinning. The disciplines exist so that when scale arrives, the cycle never gets started.
 
-## When you reach for the corpus
-
-- The user's global CLAUDE.md "Design" section names the cycle and the three counter-forces; that's the source.
-- `~/radix-workspaces/rust-mastery/` corpus Frames identify specific patterns that resist each decay mode (Pattern 5 = capability composition; Pattern 6 = stable substrate boundary; Pattern 10 = orthogonal dispatch axes).
-- `.claude/arch/rust-mastery-audit.md` maps which ACES discipline each corpus prescription serves.
 
 ## What this skill won't tell you
 
@@ -131,7 +125,7 @@ vaani is small enough today that the cycle isn't actively spinning. The discipli
 
 ## The non-negotiable part
 
-ACES is the philosophy vaani is built on. A change that's good engineering but violates ACES is not good for vaani. Specifically:
+ACES is the philosophy matra is built on. A change that's good engineering but violates ACES is not good for matra. Specifically:
 
 - A change that makes the system harder to evolve (removes `#[non_exhaustive]`, locks in a backend, hardcodes a value that should be configurable) — **reject** unless there's an ADR justifying the trade.
 - A change that blurs boundaries (adapter imports another adapter, port imports another port, domain.rs grows a new dep beyond serde/thiserror/std) — **reject** unless there's an ADR.

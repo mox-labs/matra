@@ -1,7 +1,7 @@
 # I5 — Streaming iterator + Engine + CorpusResult
 
 **Status:** not-started
-**Boundary:** **MLP** — at the end of this iteration, vaani scales to corpus-sized work without OOM and ships a delightful Rust DX.
+**Boundary:** **MLP** — at the end of this iteration, matra scales to corpus-sized work without OOM and ships a delightful Rust DX.
 **Depends on:** I4 (workspace + `rumi-nlp` skeleton)
 **Branch:** `i5/streaming` off the I4 commit
 
@@ -9,7 +9,7 @@
 
 K (recovery 13-agent review, recovery-3.md:782) recommended **cutting `analyze_directory` from 0.1.0 entirely**. Considered and rejected — `deprecate-and-keep` wins. Reasoning:
 
-- pre-publish, vaani has zero crates.io consumers — but the 0.1.0 surface defines what 0.2 has to honor. A consumer who picks up `analyze_directory` between 0.1.0 release and 0.1.x would face a surface change at 0.2 if it's removed.
+- pre-publish, matra has zero crates.io consumers — but the 0.1.0 surface defines what 0.2 has to honor. A consumer who picks up `analyze_directory` between 0.1.0 release and 0.1.x would face a surface change at 0.2 if it's removed.
 - the `#[deprecated]` annotation gives migration guidance without breaking the call site. `cargo build` warns; `cargo build -- -D warnings` errors on it. That's enough signal.
 - the smaller-surface argument applies more cleanly to types and traits than to convenience functions. A deprecated function adds zero ongoing maintenance cost; consumers pay attention to the warning or live with it.
 
@@ -19,17 +19,17 @@ Task C below implements deprecate-and-keep.
 
 The buffered `analyze_directory` is a flow defect (Erlang OBJECTION, 2026-04-28): "5KB × 1M files = 5GB resident text → ~50GB of `Analysis` after parse. OOM at ~10k docs on most machines. Worse: aborts on first I/O error after possibly reading 999,999 files."
 
-The streaming iterator is the drainage primitive. It changes vaani from "works on test fixtures" to "deployable substrate." Erlang and K converged: this is the right primitive **now**, and the reactor decision is deferred.
+The streaming iterator is the drainage primitive. It changes matra from "works on test fixtures" to "deployable substrate." Erlang and K converged: this is the right primitive **now**, and the reactor decision is deferred.
 
 Two additional surface improvements come along (Ace, 2026-04-28) because they belong to the same DX upgrade:
-- **`Engine` struct** for Rust DX parity with the PyO3 `Vaani` class.
+- **`Engine` struct** for Rust DX parity with the PyO3 `Matra` class.
 - **`CorpusResult { corpus, errors }`** wrapper for clean serialization across FFI.
 
 ## What lands
 
 ### Task A: `DirectorySource::read_iter` inherent method
 
-**Files:** `crates/vaani-core/src/source/directory.rs`.
+**Files:** `src/source/directory.rs`.
 
 **Why (Burner, 2026-04-28):** "`Source::read_iter` on the trait forces every adapter (including `FileSource`, which yields exactly one doc) to implement an iterator with no benefit, and `impl Iterator` in trait return position constrains the trait object. Put `read_iter` as an *inherent* method on `DirectorySource`."
 
@@ -56,13 +56,13 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 **Acceptance:**
 - `read_iter` exists on `DirectorySource`. **Not on the `Source` trait.**
-- `rg 'fn read_iter' crates/vaani-core/src/source/mod.rs` returns empty.
-- `rg 'fn read_iter' crates/vaani-core/src/source/directory.rs` returns exactly one hit.
+- `rg 'fn read_iter' src/source/mod.rs` returns empty.
+- `rg 'fn read_iter' src/source/directory.rs` returns exactly one hit.
 - Lazy-read counter test passes.
 
 ### Task B: `analyze_directory_iter` in the composition root
 
-**Files:** `crates/vaani-core/src/lib.rs`.
+**Files:** `src/lib.rs`.
 
 **Why (Erlang):** "`analyze_directory_iter(path, nlp) -> impl Iterator<Item = Result<CorpusEntry, (PathBuf, Error)>>` — drops working set to one doc at a time. Survives the rename to `ingest` cleanly. If a reactor ever lands later, the iterator boundary is exactly where a channel slots in."
 
@@ -85,8 +85,8 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
        }))
    }
    ```
-2. Wrap the entire iterator chain in a `vaani.corpus.analyze_iter` INFO span (recorded fields update on close).
-3. Per-document failure event at the iterator: `tracing::warn!(?path, ?error_kind, "vaani.document.failed")`.
+2. Wrap the entire iterator chain in a `matra.corpus.analyze_iter` INFO span (recorded fields update on close).
+3. Per-document failure event at the iterator: `tracing::warn!(?path, ?error_kind, "matra.document.failed")`.
 4. Doc comment locks the order contract: "Documents are yielded in `DirectorySource` order (path-sorted). Consumers requiring deterministic order under future parallelization must `.collect().sort_by_key(|e| e.path.clone())`."
 5. Tests:
    - 5-file directory: collected vec equals existing `analyze_directory` output.
@@ -100,7 +100,7 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 ### Task C: `analyze_directory` deprecation shim returning `CorpusResult`
 
-**Files:** `crates/vaani-core/src/lib.rs`, `crates/vaani-core/src/domain.rs` (new `CorpusResult`).
+**Files:** `src/lib.rs`, `src/domain.rs` (new `CorpusResult`).
 
 **Why (Ace, 2026-04-28):** "The current return shape `Result<(Corpus, Vec<(PathBuf, Error)>)>` is awkward for Python — flatten to a `CorpusResult { corpus, errors }` struct so `pythonize` produces a clean dict instead of a tuple. `analyze_directory` carries `#[deprecated(since = "0.1.0", note = "use analyze_directory_iter")]` — but still compiles and passes its existing test."
 
@@ -133,9 +133,9 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 ### Task D: `pub struct Engine` for Rust DX parity
 
-**Files:** `crates/vaani-core/src/lib.rs`.
+**Files:** `src/lib.rs`.
 
-**Why (Ace):** "`analyze` takes `&dyn NlpProvider` while `Vaani` is the PyO3 class — Rust users have no top-level convenience type. Recommend a `pub struct Engine { nlp: Box<dyn NlpProvider> }` in Rust mirroring the Python `Vaani` shape, with `Engine::english(dir)` and `engine.analyze(text)`. This is the door handle."
+**Why (Ace):** "`analyze` takes `&dyn NlpProvider` while `Matra` is the PyO3 class — Rust users have no top-level convenience type. Recommend a `pub struct Engine { nlp: Box<dyn NlpProvider> }` in Rust mirroring the Python `Matra` shape, with `Engine::english(dir)` and `engine.analyze(text)`. This is the door handle."
 
 **Steps:**
 
@@ -167,9 +167,9 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 3. Doctest at the top of `Engine`:
    ```rust
    /// ```no_run
-   /// let engine = vaani::Engine::english("./models")?;
+   /// let engine = matra::Engine::english("./models")?;
    /// let analysis = engine.analyze("The team shipped the product.")?;
-   /// # Ok::<(), vaani::Error>(())
+   /// # Ok::<(), matra::Error>(())
    /// ```
    ```
 4. Three-line "Quick start" in README using `Engine` (Ace).
@@ -180,9 +180,9 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 ### Task E: `pub mod prelude`
 
-**Files:** `crates/vaani-core/src/lib.rs` (or a new `crates/vaani-core/src/prelude.rs`).
+**Files:** `src/lib.rs` (or a new `src/prelude.rs`).
 
-**Why (Ace):** "Recommend a `pub mod prelude` re-exporting only `analyze`, `Vaani`/`NlpProvider`, `Error`. Document `analyze_from` as 'advanced: skip double-parse'."
+**Why (Ace):** "Recommend a `pub mod prelude` re-exporting only `analyze`, `Matra`/`NlpProvider`, `Error`. Document `analyze_from` as 'advanced: skip double-parse'."
 
 **Steps:**
 
@@ -193,9 +193,9 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
    - `Analysis`, `Sentence`, `Token`, `Paragraph`, `Section`, `Corpus`, `CorpusEntry`, `CorpusResult`, `RawDocument`, `Format`
    - `ScoredSentence`, `Keyphrase`
    - The free functions (`analyze`, `analyze_markdown`, `analyze_file`, `analyze_directory`, `analyze_directory_iter`, `parse`, `analyze_from`).
-2. Update README Quick Start to `use vaani::prelude::*;`.
+2. Update README Quick Start to `use matra::prelude::*;`.
 
-**Acceptance:** `use vaani::prelude::*` compiles and gives access to the 90% surface.
+**Acceptance:** `use matra::prelude::*` compiles and gives access to the 90% surface.
 
 ## Validation
 
@@ -210,9 +210,9 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 ## Acceptance gate
 
-vaani is **MLP-shippable** at the end of I4 if:
+matra is **MLP-shippable** at the end of I4 if:
 - `analyze_directory_iter` streams; memory test confirms peak RSS reduction.
-- `Engine` is the door handle in Rust; mirror of PyO3 `Vaani` shape.
+- `Engine` is the door handle in Rust; mirror of PyO3 `Matra` shape.
 - `CorpusResult` replaces the awkward tuple return.
 - `prelude` exists.
 - All MVP acceptance gates from I3 still hold.
@@ -222,7 +222,7 @@ vaani is **MLP-shippable** at the end of I4 if:
 
 - **Risk:** `Error: Serialize` in `CorpusResult` leaks `io::ErrorKind` `Debug` representation, producing unstable JSON keys.
   - **Mitigation:** custom `Serialize` impl for `Error` that uses stable string representations (`"source_io"`, `"model_io"`, etc.) and structured fields (`path`, `kind` as a string).
-  - **Consult:** Ace on the JSON shape; it's the same concern as the `VaaniError` Python attribute mapping.
+  - **Consult:** Ace on the JSON shape; it's the same concern as the `MatraError` Python attribute mapping.
 
 - **Risk:** the `impl Iterator` return on `analyze_directory_iter` causes lifetime gymnastics that make downstream consumers struggle.
   - **Mitigation:** the lifetime ties to `&dyn NlpProvider`. Consumers hold the `Engine` for the iterator's lifetime, which is the natural pattern.

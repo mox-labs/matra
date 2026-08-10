@@ -1,4 +1,4 @@
-# Vaani
+# Matra
 
 NLP library. Text in, structured analysis out.
 
@@ -12,7 +12,7 @@ On session start in this directory, read `.claude/logs/SESSION-RESUME.md` first.
 
 ## Posture
 
-vaani is a public OSS package intended as an exemplar for both Claude-managed repositories and human–AI collaborative intelligence. Two disciplines are non-negotiable:
+matra is a public OSS package intended as an exemplar for both Claude-managed repositories and human–AI collaborative intelligence. Two disciplines are non-negotiable:
 
 - **ACES** — Adaptable, Composable, Extensible. The structural design philosophy resisting the stasis/drag/opacity cycle. Every structural change is checked against the ACES boundary test. See `.claude/skills/aces/SKILL.md`.
 - **Antifragility** — the operational discipline. Size caps at entry, panic boundaries at C/C++ FFI, atomic file writes, TOCTOU closure, cycle-safe graph walks. See `.claude/skills/resilience-floor/SKILL.md`.
@@ -23,7 +23,7 @@ For the working model that frames how humans and AI collaborate on this project 
 
 ## Architecture
 
-Hex architecture. Rust core with PyO3 Python bindings. Single crate, dual publish: `vaani` on crates.io, `vaani` on PyPI via maturin.
+Hex architecture. Rust core with PyO3 Python bindings. Single crate, dual publish: `matra` on crates.io, `matra` on PyPI via maturin.
 
 Pipeline: ingest → decompose → parse → measure (+ peer extract)
 
@@ -47,7 +47,7 @@ src/
     mod.rs                  # NlpProvider trait
     udpipe.rs               # UDPipe adapter (only file importing udpipe_rs)
   metrics/
-    mod.rs                  # Metric alias, default_suite, attach_sentences
+    mod.rs                  # Metric alias, default_suite, run_suite
     readability.rs          # Flesch-Kincaid
     lexical.rs              # lexical density
     compression.rs          # brotli compression ratio
@@ -59,19 +59,25 @@ src/
     rake.rs                 # rake_keyphrases
     yake.rs                 # yake_keyphrases
   stopwords.rs              # shared utility
-python/vaani/
-  __init__.py               # re-exports Vaani from _core
+python/matra/
+  __init__.py               # re-exports Matra from _core + the domain TypedDicts
+  _core.pyi                 # PyO3 extension stub (shipped in the wheel)
+  py.typed                  # PEP 561 marker
+  types.py                  # runtime TypedDicts mirroring domain.rs
   cli.py                    # click + rich CLI, auto-downloads model
 scripts/
   fetch-model-hash.sh       # refresh ENGLISH_MODEL_SHA256 when version changes
-  check-boundaries.sh       # enforces rules 3, 4, 2 in CI
+  check-boundaries.sh       # greps rules 3, 4, 8 (local only: just check + pre-commit hook)
   install-hooks.sh          # installs the pre-commit hook
   pre-commit-hook.sh        # local pre-commit gates
-  changelog-release.sh      # rolls CHANGELOG + bumps version for release
+  changelog-release.sh      # rolls the CHANGELOG (does not touch versions)
+  check-docsite-floor.sh    # the four docsite floor gates (just docs-floor)
 tests/
   integration.rs            # full pipeline tests (require UDPipe model)
 examples/
   basic.rs                  # getting-started example
+  corpus.rs                 # directory / corpus walk
+  parse_once_use_many.rs    # parse-once-use-many pattern
 ```
 
 ## Boundary rules
@@ -83,21 +89,24 @@ examples/
 5. `metrics/` and `extraction/` import only from `domain` and `stopwords`.
 6. `cargo check --no-default-features` must compile.
 7. Composition root (`lib.rs`) is the only place that knows all adapters and ports.
+8. `tracing` is forbidden in `domain.rs` and port modules (Burner amendment, 2026-04-28).
 
-Rules 2, 3, 4 are enforced by `scripts/check-boundaries.sh` in CI. Rules 1, 5, 6, 7 are enforced by the type system and `cargo check`.
+**Motivation for each rule, what breaks when it is violated, and what to read for when reviewing: [`.claude/arch/boundary-rules.md`](.claude/arch/boundary-rules.md).** That file is canonical; this list is the summary.
+
+Enforcement is mostly judgment, so review is the gate. Only rule 6 runs on every push (`ci.yml` MSRV job). Rules 3, 4, 8 get a partial grep from `scripts/check-boundaries.sh`, which runs from `just check` and the opt-in pre-commit hook but is **not** wired into any CI workflow. Rules 1, 2, 5, 7 have no mechanical check at all.
 
 ## Things that will bite you
 
 Non-obvious gotchas. Each is a behavior plus the failure mode if you violate it.
 
-- **Domain purity is hard-checked.** Adding `tokio` or `reqwest` (or anything beyond serde/thiserror/std) to `domain.rs` breaks `cargo check --no-default-features` and is caught at review. Adapters are where deps live; the domain stays pure.
-- **Single UDPipe importer.** `scripts/check-boundaries.sh` fails CI if anything outside `nlp/udpipe.rs` imports `udpipe_rs`. The wrap exists because UDPipe holds non-Send C-side state and a panic at the FFI boundary would otherwise abort the host process. The catch_unwind seam lives inside this file by design; reintroducing direct imports elsewhere puts the panic boundary back in user code.
+- **Domain purity rests on review, not the compiler.** A non-optional dependency added to `[dependencies]` and used in `domain.rs` compiles clean, including under `--no-default-features` (that flag drops only `udpipe`/`sha2`). Nothing mechanical catches it. See `.claude/arch/boundary-rules.md` rule 1 for what to read for. Adapters are where deps live; the domain stays pure.
+- **Single UDPipe importer.** `scripts/check-boundaries.sh` fails `just check` and the pre-commit hook if anything outside `nlp/udpipe.rs` imports `udpipe_rs`. No CI workflow runs it, so review is the real gate. The wrap exists because UDPipe holds non-Send C-side state and a panic at the FFI boundary would otherwise abort the host process. The catch_unwind seam lives inside this file by design; reintroducing direct imports elsewhere puts the panic boundary back in user code.
 - **Per-paragraph parse, not whole-document.** The previous join-then-prefix-match approach silently reassigned sentences when two paragraphs shared their first 30 characters (FM1). Don't reintroduce "join paragraphs, parse once, wire sentences back to paragraphs by substring match." The pipeline parses each non-blockquote paragraph individually for a reason.
 - **TOCTOU closes in `read_and_verify`.** The function returns `Vec<u8>` and the loader consumes those bytes via `Model::load_from_memory`. Never re-read the disk between hash verify and load — that opens the window a swap attack lives in.
 - **Magic numbers in tree walks are forbidden.** `Sentence::tree_depth` returns `usize::MAX` on cycles; cycle detection uses a visited set, not `if depth > 20 { return }`. The previous magic-ceiling silently truncated malformed parses; the sentinel is the loud failure.
-- **No `Result<T, String>` anywhere in the library.** Library callers match on concrete `domain::Error` variants. `anyhow` belongs in caller code (a CLI, a service) where erasure is ergonomic; vaani itself stays on enums via `thiserror`.
-- **PyErr routing is exhaustive at compile time.** Adding a variant to `domain::Error` will fail to compile until you wire it into `From<VaaniError> for PyErr` with a specific Python exception class. The no-wildcard match exists so new variants do not silently route to `PyRuntimeError`.
-- **Methods do not cross FFI. Only fields do.** Aggregate Rust methods (`Analysis::passive_ratio()`, `Corpus::total_words()`) are invisible to Python and (future) WASM consumers. If a value needs to be visible cross-language, materialize it as a field on a summary type, not a method.
+- **No `Result<T, String>` anywhere in the library.** Library callers match on concrete `domain::Error` variants. `anyhow` belongs in caller code (a CLI, a service) where erasure is ergonomic; matra itself stays on enums via `thiserror`.
+- **PyErr routing is exhaustive at compile time.** Adding a variant to `domain::Error` will fail to compile until you wire it into `From<MatraError> for PyErr` with a specific Python exception class. The no-wildcard match exists so new variants do not silently route to `PyRuntimeError`.
+- **Methods do not cross FFI. Only fields do.** Aggregate Rust methods (`Document::passive_ratio()`, `Corpus::total_words()`) are invisible to Python and (future) WASM consumers. If a value needs to be visible cross-language, materialize it as a field on a summary type, not a method.
 - **Em dashes get rejected.** Project convention forbids them in documentation prose. The orwell voice pass catches them in book content; reviewers catch them elsewhere.
 - **Publishing is hand-gated.** `cargo publish` and `maturin publish` are always preceded by `--dry-run`. The publish step itself requires explicit per-publish approval per the project memory. Do not script away the gate; it exists because publishing is irreversible and visible to every downstream consumer.
 
@@ -153,23 +162,5 @@ For producing docsite content under `book/src/`: load `.claude/logs/bootstrap-fr
 
 Floor gates run via `just docs-floor`. Live preview via `cd book && mdbook serve --hostname 0.0.0.0 --port 3000` (mdbook 0.5.3; `create-missing = false` in `book.toml` so SUMMARY entries must exist on disk).
 
-## Mastery references
-
-The rust-mastery corpus at `~/radix-workspaces/rust-mastery/` is the architectural decision substrate. It is closed (12 of 12 milestones complete as of 2026-05-14) with ~150 Frames at file / crate / cross-artifact / milestone scales across 50+ Rust codebases.
-
-For vaani specifically, the load-bearing Frames are:
-
-| Frame | When to consult |
-|------|------|
-| `frames/cross-artifact/frame__cross-artifact__vaani-readiness.json` | Integrating M1 Frame — the complete architectural prescription for vaani, grounded in 6 cross-artifact + 11 file-Frames |
-| `frames/cross-artifact/frame__cross-artifact__errors-tier-lib-vs-app.json` | Error tier discipline (thiserror at library tier, anyhow at app tier when applicable, `?` as the zero-cost seam) |
-| `frames/cross-artifact/frame__cross-artifact__rust-python-dual-publish.json` | PyO3 + pythonize + maturin layered disciplines; 0.20 → 0.28 migration archaeology |
-| `frames/cross-artifact/frame__cross-artifact__dtolnay-derive-style-ecosystem.json` | The 3-axis rule for `__private<patch>` versioning (internal-helpers / macro-rules / consumer-relationship) |
-| `frames/cross-artifact/frame__cross-artifact__cli-ergonomics-and-app-discipline.json` | clap + ripgrep WalkParallel + per-file tolerance + broken-pipe handling |
-| `frames/cross-artifact/frame__cross-artifact__typed-extension-config-trio.json` | inventory + typetag + serde for open-set polymorphic dispatch (deferred for vaani; relevant if extensibility surface ships) |
-| `frames/cross-artifact/frame__cross-artifact__m8-i3-search-tier-pattern6-substrate-stability.json` | Pattern 6 criterion (separately publish a minimal port crate iff an external implementor ecosystem exists) |
-| `frames/cross-artifact/frame__cross-artifact__cross-iteration-pattern-consolidation.json` | The four cross-iteration patterns: co-versioned-coupling, structural-rejection, vertical-layer-composition, isomorphic-dispatch |
-
-The `.claude/arch/rust-mastery-audit.md` document maps these Frames to vaani's actual code and surfaces the remaining gaps. Read it before architectural decisions.
 
 For workflow scaffolds (ci-scaffolds, problem-solving, crafting, collaborating), see the global skills under `~/.claude/`.

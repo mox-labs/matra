@@ -11,19 +11,19 @@
 //! of the corpus intact and the failure recorded in the error vector.
 //!
 //! Run with: cargo run --example corpus -- <directory>
-//! (requires UDPipe model at /tmp/vaani-models/)
+//! (requires UDPipe model at /tmp/matra-models/)
 
+use matra::nlp::udpipe::Udpipe;
 use std::path::PathBuf;
-use vaani::nlp::udpipe::Udpipe;
 
-fn main() -> vaani::domain::Result<()> {
+fn main() -> matra::domain::Result<()> {
     let dir: PathBuf = std::env::args()
         .nth(1)
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("./"));
 
-    let nlp = Udpipe::english("/tmp/vaani-models")?;
-    let (corpus, errors) = vaani::analyze_directory(&dir, &nlp)?;
+    let nlp = Udpipe::english("/tmp/matra-models")?;
+    let (corpus, errors) = matra::analyze_directory(&dir, &nlp)?;
 
     println!(
         "Analyzed {} documents from {}\n",

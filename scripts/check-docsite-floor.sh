@@ -83,6 +83,8 @@ echo "=== Gate 3: type-name parity ==="
 # probably miscalibrated.
 external_allowlist=$(cat <<'EOF'
 Arc
+BaseException
+Edit
 Bound
 Box
 Clone
@@ -133,7 +135,7 @@ EOF
 )
 
 # Universal Dependencies (UD) POS tag set + Penn Treebank tag set.
-# Cross-language NLP standards external to vaani. Referenced in
+# Cross-language NLP standards external to matra. Referenced in
 # concepts/pos-lemmas.md (UD as the `pos` field; Penn as the
 # language-specific `xpos` field that UDPipe also emits).
 # UD spec: https://universaldependencies.org/u/pos/
