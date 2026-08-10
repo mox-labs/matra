@@ -110,7 +110,9 @@ Five numbers computed over that structure. Three are per paragraph, two per docu
 | `vocabulary_ttr` | document | distinct words over total words |
 | `nominalization_ratio` | document | share of nouns formed from verbs (`decide` becoming `decision`) |
 
-Each is `Option<f64>`. `None` means the metric could not be computed for that unit, most often because it was too short or exceeded a size cap, and it is distinct from a computed zero.
+Each is `Option<f64>`. `None` means the metric could not be computed for that unit, most often because it was too short or exceeded a size cap, and it is distinct from a computed zero. [Methodology](./reference/methodology.md) gives each formula and the exact condition under which it returns `None`.
+
+One caution before you compare documents. `vocabulary_ttr` is a raw type-token ratio, and that measure falls as text grows: a longer document reuses words it has already spent. Two documents of different lengths are therefore not comparable on this field, and the gap you see is partly length rather than voice. Within a fixed length it is sound. Across a corpus, normalize first.
 
 Alongside them, `Document` computes on demand: `total_words`, `total_sentences`, `paragraph_count`, `passive_ratio`, `mean_sentence_length`, and `sentence_length_std`. `Corpus` adds `total_words`, `passive_ratio`, and `mean_readability` across every document in a directory.
 
@@ -129,6 +131,20 @@ Two extractors, both returning `Keyphrase` with the phrase and its score.
 `rake_keyphrases` splits on stopwords and scores the runs between them by word degree over frequency. It finds multi-word phrases well and needs no corpus.
 
 `yake_keyphrases` scores individual terms on position, casing, spread, and sentence frequency, then assembles phrases. It is more selective on single-word terms.
+
+### What these four are not
+
+All four rank what is already in the text by a statistical measure of importance. None of them produces a claim. A `ScoredSentence` is a sentence the document contained, selected because its vocabulary or its graph position scored well, and nothing about that selection asserts the sentence states something, or that what it states is atomic, or that it is true.
+
+If you need claims rather than salient sentences, that work sits above matra and generally needs a model that reads for meaning. What matra contributes to it is the layer underneath: sentence boundaries, the predicate-argument structure of each one, and the verbatim text to ground a claim back to.
+
+Used deliberately, the gap is informative. Where these extractors and a semantic extractor agree on what a document is about, that agreement is evidence. Where they diverge is worth looking at.
+
+## Provenance is preserved
+
+`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Nothing is normalized, re-wrapped, or rewritten on the way through, and because each paragraph is parsed on its own, the chain from a token up through its sentence, paragraph, and section is unambiguous rather than reconstructed by matching text.
+
+This matters if you store analysis and later have to show which bytes a value came from. Provenance holds by construction, not by convention.
 
 ## Entry points
 

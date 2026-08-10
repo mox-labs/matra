@@ -2,7 +2,7 @@
 
 What matra does not do yet, why, and the condition that would change that.
 
-Everything documented in `book/src/` describes what ships today. This file is the only place that describes what does not.
+Every other page of this documentation describes what ships today. This page is the only one that describes what does not, which is what lets you trust the rest without auditing each claim.
 
 
 matra follows a discipline borrowed from road-building: dirt road first, then cobblestone when traffic justifies it, then tarmac when the route is established. Each capability below is deferred not because it is unimportant, but because adding it before the trigger condition fires would add complexity that nobody needs yet, or that requires design decisions that need real consumer patterns to make correctly.
@@ -25,7 +25,7 @@ The research synthesis at `drafts/matra-substrate/SYNTHESIS.md` names five such 
 
 A second, sharper piece of evidence sits inside this repository. `Sentence::is_passive` is a method, and methods do not cross FFI, so `python/matra/cli.py` re-implements passive detection over raw tokens. matra's own crust duplicates its own primitive. Any consumer in any language does the same today.
 
-The five primitives land first, in [`.claude/plans/i7-structural-primitives.md`](.claude/plans/i7-structural-primitives.md). `Rule` and `Predicate` are designed after them, from the shape the five actually take, which is what "pulled from real use, not anticipated" asked for.
+The five primitives land first, in [`.claude/plans/i7-structural-primitives.md`](https://github.com/mox-labs/matra/blob/main/.claude/plans/i7-structural-primitives.md), which carries the milestones and their rubrics. `Rule` and `Predicate` are designed after them, from the shape the five actually take, which is what "pulled from real use, not anticipated" asked for.
 
 ## WASM crust for TypeScript/browser
 
@@ -88,3 +88,33 @@ The pattern across all of these: capability waits for the consumer that justifie
 **What is blocking it.** It depends on the WASM crust above.
 
 **Trigger condition.** The WASM crust ships.
+
+## Voice fingerprint metrics
+
+**What it is.** Three additions that make matra's existing metrics usable as a stylometric signature rather than as per-document readouts: a length-normalized lexical diversity measure, burstiness as a first-class value, and a contraction count.
+
+**Why these three specifically.** `~/mox/research/drafts/press/voice-measurement-gap.md` records a `scribe` agent blocked since 2026-04-21 on a calibration loop against a measured baseline: 26.6 word mean sentence length, 36.9 percent passive, 0 percent contractions, 7.7 percent nominalisation, 0.76 burstiness. Checked against what ships, three of those five are already `Document` methods or fields. Burstiness is derivable from `sentence_length_std` and the mean but is not exposed. Contractions are not counted at all. That document's own option 3 estimated the remaining work as "a small configuration layer, not a rewrite."
+
+**One of them is a defect, not an addition.** `vocabulary_ttr` is a raw type-token ratio and TTR falls mechanically as text grows. Measured on this repository: README scores 0.690 against `architecture/design.md` at 0.227, but README has 35 sentences and the other has 266, so most of that gap is length rather than voice. As a cross-document feature it is currently unsound, which matters most for `analyze_directory`, whose whole purpose invites the comparison. Either a length-normalized measure lands beside it (MTLD, MATTR, or standardized TTR) or the limitation is documented on the type. Doing neither leaves a trap.
+
+**Why this is the strongest candidate of anything on this page.** The four faces of voice all map onto shipping output with no hole: agentive onto `nsubj` and `nsubj:pass`, modal onto `aux` and `feats`, structural onto section hierarchy and sentence length, stylistic onto lexical density and compression. That is unlike claim atomization, which needs an LLM, and unlike SMRT derivation, where the Situation facet has no substrate at all.
+
+**Trigger condition.** Met in substance: a named consumer with a documented baseline exists and has been blocked for months. What is missing is confirmation that scribe still wants matra rather than the thin-wrapper alternative its option 4 described. Confirm that, then proceed.
+
+## Configuration-driven invocation
+
+**What it is.** A configuration file selecting which metrics run, which extractors run, and how output is shaped, so both the library and the CLI are driven by declaration rather than by argument lists.
+
+**What is blocking it.** Nothing structural, and the seam already exists. `default_suite()` returns `Vec<Metric>` and `run_suite` is public, so choosing a suite is already choosing the contents of a vector. What is absent is the surface: a format, a resolution order, and a decision about whether configuration is a library concern or belongs only to the application tier.
+
+That last question is the real one. matra's discipline is that the library returns typed data and the binary decides presentation. A config format that reaches into the library risks putting policy where the composition root belongs.
+
+**Trigger condition.** A consumer running matra repeatedly with the same non-default selection, where passing flags each time is the friction. Agent-driven use is the likely first instance, since an agent benefits from declaring intent once rather than reconstructing an invocation.
+
+## Record provenance accessor
+
+**What it is.** A single accessor returning the source path, the detected format, and the analysis provenance for a `Document`, as one value rather than as fields scattered across `CorpusEntry.path` and `RawDocument.format`.
+
+**Why it is worth doing.** The information is already present and already reconstructable; it is the assembly that is missing. Consumers building a grounding chain need it as one thing, and `Sentence.text` and `Paragraph.text` being verbatim by design means the chain from token to source is unambiguous once the anchor is reachable. That guarantee is currently undocumented, which is tracked separately.
+
+**Trigger condition.** A consumer that stores matra output and must later prove which bytes a value came from. Raised by the bidirectional research report as ask 4.
