@@ -19,7 +19,7 @@ change can be backed out cleanly).
 
 matra is developed in **iterations**. Each iteration addresses one
 structural concern: resilience, observability, streaming, etc. The full
-plan is sequenced in `.claude/implans/` and the architecture it builds
+plan is sequenced in `.claude/plans/` and the architecture it builds
 toward is documented in `.claude/arch/`. Anyone can read both before
 opening an issue or PR.
 
@@ -41,7 +41,7 @@ merge; nothing lands without a human OK.
 | Location | What lives there |
 |---|---|
 | `.claude/arch/` | Architecture docs: ports, adapters, domain model, evolution. Read this before changing structure. |
-| `.claude/implans/` | Iteration plans: I0, I1, I2, ... Each implan describes the goals, tasks, validation, and acceptance gate for one iteration. |
+| `.claude/plans/` | Iteration plans: I0, I1, I2, ... Each plan describes the goals, tasks, validation, and acceptance gate for one iteration. |
 | `docs/decisions/` | Architecture Decision Records (ADRs). One file per significant call. |
 | `CHANGELOG.md` | What shipped per release, with prose Highlights for load-bearing changes. |
 | `CLAUDE.md` | Working rules for AI collaborators: pipeline shape, boundary rules, conventions. |
@@ -51,7 +51,7 @@ merge; nothing lands without a human OK.
 | GitHub Discussions | Open-ended design space: RFCs, retrospectives, ideas, Q&A. |
 
 If something is unclear or contradictory across these surfaces, the order
-of authority is: code > tests > `.claude/arch/` > `.claude/implans/` >
+of authority is: code > tests > `.claude/arch/` > `.claude/plans/` >
 ADRs > CHANGELOG > Issues > Discussions. Closer to the running system
 wins.
 

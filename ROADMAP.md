@@ -25,7 +25,7 @@ The research synthesis at `drafts/matra-substrate/SYNTHESIS.md` names five such 
 
 A second, sharper piece of evidence sits inside this repository. `Sentence::is_passive` is a method, and methods do not cross FFI, so `python/matra/cli.py` re-implements passive detection over raw tokens. matra's own crust duplicates its own primitive. Any consumer in any language does the same today.
 
-The five primitives land first, in [`.claude/implans/i7-structural-primitives.md`](.claude/implans/i7-structural-primitives.md). `Rule` and `Predicate` are designed after them, from the shape the five actually take, which is what "pulled from real use, not anticipated" asked for.
+The five primitives land first, in [`.claude/plans/i7-structural-primitives.md`](.claude/plans/i7-structural-primitives.md). `Rule` and `Predicate` are designed after them, from the shape the five actually take, which is what "pulled from real use, not anticipated" asked for.
 
 ## WASM crust for TypeScript/browser
 

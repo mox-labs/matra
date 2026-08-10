@@ -1,10 +1,10 @@
 # Implementation Plans
 
-Each iteration has one implan. The implans are agent-legible: every task names the file, the line range, the reviewer who asked for it, the acceptance predicate, and the validation test.
+Each iteration has one plan. The plans are agent-legible: every task names the file, the line range, the reviewer who asked for it, the acceptance predicate, and the validation test.
 
 ## Iterations and their boundaries
 
-| Implan | Boundary | Title |
+| Plan | Boundary | Title |
 |---|---|---|
 | the i0 stabilization work | none | Commit the post-recovery baseline; capture N₀ and noise floor |
 | the i1 rename work | none | Karman pipeline rename |
@@ -17,9 +17,9 @@ Each iteration has one implan. The implans are agent-legible: every task names t
 
 **Strict ordering.** No iteration starts until the previous one has met its acceptance gate. K's strategic verdict on this is non-negotiable: rename a stable surface before structure moves; install the resilience floor before the error contract; ship the error contract before the streaming surface that consumes it.
 
-## How to read an implan
+## How to read an plan
 
-Each implan has the same skeleton:
+Each plan has the same skeleton:
 
 - **Why this iteration exists** — the ground-truth conviction, with reviewer attribution.
 - **What lands** — task list. Each task has:
@@ -28,10 +28,10 @@ Each implan has the same skeleton:
   - Steps.
   - Acceptance (an observable predicate that says the task is done).
 - **Validation** — Ixian's tests. Falsification scenarios. Tie-breaker experiments where there were disputes.
-- **Acceptance gate** — the single predicate that says the iteration is done. If this is false, the implan is not done.
+- **Acceptance gate** — the single predicate that says the iteration is done. If this is false, the plan is not done.
 - **Risks** — what could go wrong, who to consult.
 
-If a task is ambiguous in the implan, the implan is the bug. Edit the implan first, then the code.
+If a task is ambiguous in the plan, the plan is the bug. Edit the plan first, then the code.
 
 ## The cross-iteration regression matrix
 
@@ -76,7 +76,7 @@ Noise floor: `cargo test` wall time vs PR0 baseline within ±2σ of the 5-run me
 
 **Rollback trigger.** Any item false → do not run `cargo publish` or `maturin upload`. Stop at `--dry-run`.
 
-**Publish authorization.** One explicit approval per publish event. The user authorizes; the implan does not. (Memory rule, non-negotiable.)
+**Publish authorization.** One explicit approval per publish event. The user authorizes; the plan does not. (Memory rule, non-negotiable.)
 
 ## The post-ship loop closure
 
