@@ -8,7 +8,7 @@ Copy this prompt into a fresh `/clear`-ed session and begin from "First task" at
 
 ## Project
 
-matra — NLP library at `/Users/yza.vyas/mox/packages/matra/`. Rust core + Python bindings via PyO3 + planned WASM crust. Branch: `m2-docsite-ia-restructure`. Do not push to remote `main`; alpha is the working branch.
+matra, an NLP library. This repository. Rust core + Python bindings via PyO3 + planned WASM crust. Branch: `m2-docsite-ia-restructure`. Do not push to remote `main`; alpha is the working branch.
 
 ## Repo state for this work
 
@@ -198,7 +198,7 @@ Max 2 returns per step per the protocol. After that, escalate to yzavyas.
 
 1. Atomic commits on `m2-docsite-ia-restructure` branch
 2. Conventional commit prefix (`docs(book):`)
-3. `Co-Authored-By: yzavyas <yza.vyas@gmail.com>` trailer
+3. `Co-Authored-By:` trailer matching the address in `Cargo.toml`
 4. Local pre-commit hook runs floor gates automatically; the hook is the gate
 5. After all batches ship: `gh pr create --base alpha`, comment with rationale (the audit trail since GitHub blocks self-approval on solo projects), then `gh pr merge --rebase --delete-branch` after explicit user authorization
 6. Never push to `main`. Alpha branch is the working surface pre-0.1.0.
