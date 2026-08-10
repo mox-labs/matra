@@ -59,3 +59,9 @@ coverage.xml
 # carries build output measured in tens of megabytes.
 .claude/spikes/
 .claude/probes/
+
+# Plugin workspaces. craft-rhetoric and craft-research scratch: discourse,
+# comprehension traces, cartography, extraction units. Working state for the
+# agents, not project artifacts.
+.claude/rhetoric/
+.claude/research-deep-dive/
