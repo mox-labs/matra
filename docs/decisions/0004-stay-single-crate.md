@@ -57,4 +57,4 @@ Falsified if one of the re-open conditions fires before then, in which case we e
 ## References
 
 - [0003](0003-workspace-with-rumi-nlp.md) — superseded predecessor.
-- `.claude/arch/architecture.md` — describes the current single-crate shape.
+- `book/src/architecture/design.md` — describes the current single-crate shape.

@@ -2,7 +2,7 @@
 
 Eight rules hold matra's hexagonal architecture in place. This page states each rule, the files it governs, what enforces it, and what that enforcement misses.
 
-The source of truth is `.claude/arch/boundary-rules.md` in the repository, which carries the motivation behind each rule and the review guidance that goes with it. This page is its public rendering: the rules and the enforcement, without the review notes.
+This page is the source of truth for the eight rules: what each one says, why it exists, what breaks when it is violated, and how much of it is actually enforced. `CLAUDE.md` carries a summary list and points here for the reasoning.
 
 ## What enforcement means here
 

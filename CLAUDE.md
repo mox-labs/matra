@@ -91,7 +91,7 @@ examples/
 7. Composition root (`lib.rs`) is the only place that knows all adapters and ports.
 8. `tracing` is forbidden in `domain.rs` and port modules (Burner amendment, 2026-04-28).
 
-**Motivation for each rule, what breaks when it is violated, and what to read for when reviewing: [`.claude/arch/boundary-rules.md`](.claude/arch/boundary-rules.md).** That file is canonical; this list is the summary.
+**Motivation for each rule, what breaks when it is violated, and what to read for when reviewing: [`book/src/reference/boundary-rules.md`](book/src/reference/boundary-rules.md).** That file is canonical; this list is the summary.
 
 Enforcement is mostly judgment, so review is the gate. Only rule 6 runs on every push (`ci.yml` MSRV job). Rules 3, 4, 8 get a partial grep from `scripts/check-boundaries.sh`, which runs from `just check` and the opt-in pre-commit hook but is **not** wired into any CI workflow. Rules 1, 2, 5, 7 have no mechanical check at all.
 
@@ -99,7 +99,7 @@ Enforcement is mostly judgment, so review is the gate. Only rule 6 runs on every
 
 Non-obvious gotchas. Each is a behavior plus the failure mode if you violate it.
 
-- **Domain purity rests on review, not the compiler.** A non-optional dependency added to `[dependencies]` and used in `domain.rs` compiles clean, including under `--no-default-features` (that flag drops only `udpipe`/`sha2`). Nothing mechanical catches it. See `.claude/arch/boundary-rules.md` rule 1 for what to read for. Adapters are where deps live; the domain stays pure.
+- **Domain purity rests on review, not the compiler.** A non-optional dependency added to `[dependencies]` and used in `domain.rs` compiles clean, including under `--no-default-features` (that flag drops only `udpipe`/`sha2`). Nothing mechanical catches it. See `book/src/reference/boundary-rules.md` rule 1 for what to read for. Adapters are where deps live; the domain stays pure.
 - **Single UDPipe importer.** `scripts/check-boundaries.sh` fails `just check` and the pre-commit hook if anything outside `nlp/udpipe.rs` imports `udpipe_rs`. No CI workflow runs it, so review is the real gate. The wrap exists because UDPipe holds non-Send C-side state and a panic at the FFI boundary would otherwise abort the host process. The catch_unwind seam lives inside this file by design; reintroducing direct imports elsewhere puts the panic boundary back in user code.
 - **Per-paragraph parse, not whole-document.** The previous join-then-prefix-match approach silently reassigned sentences when two paragraphs shared their first 30 characters (FM1). Don't reintroduce "join paragraphs, parse once, wire sentences back to paragraphs by substring match." The pipeline parses each non-blockquote paragraph individually for a reason.
 - **TOCTOU closes in `read_and_verify`.** The function returns `Vec<u8>` and the loader consumes those bytes via `Model::load_from_memory`. Never re-read the disk between hash verify and load — that opens the window a swap attack lives in.
@@ -156,11 +156,13 @@ maturin build                                  # Python wheel
 | `resilience-floor` | Taleb patterns: catch_unwind, atomic ops, TOCTOU closure, size caps | `.claude/skills/resilience-floor/SKILL.md` |
 | `docs-lockstep` | CHANGELOG, ADRs, arch docs in sync with shipping code | `.claude/skills/docs-lockstep/SKILL.md` |
 
-## Docsite generation
+## Docsite
 
-For producing docsite content under `book/src/`: load `.claude/logs/bootstrap-fresh-docsite-generation.md`. The bootstrap specifies the IA target, the per-bucket specialist subsets (tufte / karman / burner / jobs / ace / chesterton / researcher applied per Diátaxis bucket), voice invariants, floor-gate requirements, and the cross-architecture verification protocol (`gemini -p` at each batch ship point). Foundational artifacts in `.rhet/` (ground truth, voice anchor, cartography) are the inputs each pipeline step reads.
+Content lives in `book/src/`. Every page describes what ships today; `book/src/roadmap.md` is the only page describing what does not, and `book/src/plans/` holds the plan for anything whose trigger has fired.
 
-Floor gates run via `just docs-floor`. Live preview via `cd book && mdbook serve --hostname 0.0.0.0 --port 3000` (mdbook 0.5.3; `create-missing = false` in `book.toml` so SUMMARY entries must exist on disk).
+Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/` (plans exempt, since a plan names types that do not exist yet), every link resolving, a clean build, and no em dashes outside quoted material.
 
+Live preview: `cd book && mdbook serve --port 3000`. `create-missing = false`, so a `SUMMARY.md` entry without a file on disk fails the build loudly rather than creating a stub.
 
-For workflow scaffolds (ci-scaffolds, problem-solving, crafting, collaborating), see the global skills under `~/.claude/`.
+Diagrams are hand-authored inline SVG. Mermaid is not installed; the rule for choosing between them, and the command to restore mermaid when a sequence or state machine needs it, are in `book/book.toml`.
+

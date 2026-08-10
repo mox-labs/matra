@@ -41,7 +41,7 @@ Matra's composable surface:
 - The hex layout (domain → ports → adapters → composition root).
 - `&dyn NlpProvider` runtime dispatch so the NLP backend is replaceable without recompiling the rest.
 - Per-paragraph parse so paragraph-level changes don't cascade into document-level rewrites.
-- The eight boundary rules, stated with motivation in `.claude/arch/boundary-rules.md`. Enforcement is mostly review: `scripts/check-boundaries.sh` greps rules 3, 4 and 8 from `just check` and the opt-in pre-commit hook, and rule 6 is the only rule with a CI gate.
+- The eight boundary rules, stated with motivation in `book/src/reference/boundary-rules.md`. Enforcement is mostly review: `scripts/check-boundaries.sh` greps rules 3, 4 and 8 from `just check` and the opt-in pre-commit hook, and rule 6 is the only rule with a CI gate.
 
 ### Extensible — clear interfaces that invite contribution without requiring full comprehension
 
@@ -50,7 +50,7 @@ Matra's composable surface:
 Matra's extensible surface:
 
 - Three port traits, each minimal (one or two methods).
-- Adapter constraints documented in `.claude/arch/adapters.md`.
+- Adapter constraints documented in `book/src/architecture/design.md`.
 - Rustdoc on every public type, with examples on every public function.
 
 ## The boundary test

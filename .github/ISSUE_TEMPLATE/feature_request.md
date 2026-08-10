@@ -12,7 +12,7 @@ labels: ["type:feature", "status:triage"]
 ## Why matra should have it
 
 <!-- Is this part of matra's substrate role, or does it belong in a downstream
-     consumer? See .claude/arch/architecture.md for the boundary. -->
+     consumer? See book/src/architecture/design.md for the boundary. -->
 
 ## Proposed shape
 

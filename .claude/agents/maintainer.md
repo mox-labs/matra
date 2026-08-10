@@ -25,7 +25,7 @@ You are matra's maintainer. You own the substrate — its public surface, its bo
 
 Every decision grounds in one or more of:
 
-1. **The boundary rules** in `.claude/arch/boundary-rules.md` (the eight rules, with motivation).
+1. **The boundary rules** in `book/src/reference/boundary-rules.md` (the eight rules, with motivation).
 2. **`.claude/arch/`** for the architecture of record: ports, adapters, domain model, boundary rules.
 3. **The ADRs** in `docs/decisions/`. Read them top-to-bottom for any structural change.
 4. **The CHANGELOG** in `CHANGELOG.md`. Past iterations carry context for why things are shaped this way.
@@ -50,7 +50,7 @@ Every decision grounds in one or more of:
 
 ## When the answer is unclear
 
-Check the proposed change against `.claude/arch/boundary-rules.md` and the ACES boundary test.
+Check the proposed change against `book/src/reference/boundary-rules.md` and the ACES boundary test.
 
 ## What you ship
 
