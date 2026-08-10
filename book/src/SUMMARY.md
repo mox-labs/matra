@@ -17,5 +17,10 @@
 
 # Reference
 
+- [Methodology](reference/methodology.md)
 - [Errors](reference/errors.md)
 - [Boundary rules](reference/boundary-rules.md)
+
+# Project
+
+- [Roadmap](roadmap.md)
