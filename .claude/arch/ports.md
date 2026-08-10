@@ -2,7 +2,7 @@
 
 A **port** is a boundary trait. It defines what the domain needs from the outside world without knowing how that need is met. Adapters implement ports.
 
-vaani has three ports. They were chosen as the minimum that preserves the boundary discipline; adding more does not increase composability, it increases coordination cost.
+matra has three ports. They were chosen as the minimum that preserves the boundary discipline; adding more does not increase composability, it increases coordination cost.
 
 ## `Source` (the ingest port)
 

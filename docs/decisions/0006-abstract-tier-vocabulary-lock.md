@@ -6,11 +6,11 @@
 
 ## Context
 
-vaani spans three triguna tiers per the conviction settled in 2026-05-21: **record** (tokens, sentences, paragraphs, sections, POS, lemmas, dependencies; ships in 0.0.x), **abstract** (relations, schemas, modalities, speech acts, voice signatures; planned 0.2+), and **extract** (core claims, theses, principles; downstream consumer concern).
+matra spans three triguna tiers per the conviction settled in 2026-05-21: **record** (tokens, sentences, paragraphs, sections, POS, lemmas, dependencies; ships in 0.0.x), **abstract** (relations, schemas, modalities, speech acts, voice signatures; planned 0.2+), and **extract** (core claims, theses, principles; downstream consumer concern).
 
 Two ontology problems were open after the 2026-05-21 conviction work:
 
-1. **`Analysis` is structurally a misnomer.** The type holds parsed *output*: sections, paragraphs, sentences, tokens, metric slots. It is the document representation, not an analytical act. Calling it `Analysis` collapses the substrate-vs-interpreter distinction the conviction depends on. vaani structures; the consumer analyzes.
+1. **`Analysis` is structurally a misnomer.** The type holds parsed *output*: sections, paragraphs, sentences, tokens, metric slots. It is the document representation, not an analytical act. Calling it `Analysis` collapses the substrate-vs-interpreter distinction the conviction depends on. matra structures; the consumer analyzes.
 
 2. **The abstract-tier names are not yet code, but they will be.** Relation, Schema, Modality, SpeechAct, Stylometry, the umbrella over them all (Finding, NOT Frame), the source-span pointer, the rule wrapper, the predicate function. Each name is a public-surface commitment. Settling them now (pre-publication) is cheap; settling them after 0.1.0 ships is a SemVer-major.
 
@@ -22,7 +22,7 @@ Reserve abstract-tier vocabulary now, in this ADR, without committing to shape.
 
 ### Renames executed in Phase 1 (this ADR's PR)
 
-- **`Analysis` → `Document`.** The type that holds parsed output is the document representation; the conviction page argues this directly ("vaani structures the trace"). Every reference in `src/`, `python/`, `book/`, `docs/`, `examples/`, `tests/`, `.claude/arch/`, and `CHANGELOG.md` is updated. A transitional `pub type Analysis = Document;` ships in `src/domain.rs` with a `#[deprecated]` annotation; it is scheduled for removal in 0.1.0 so in-flight branches and just-published downstream snippets keep compiling through the alpha cycle.
+- **`Analysis` → `Document`.** The type that holds parsed output is the document representation; the conviction page argues this directly ("matra structures the trace"). Every reference in `src/`, `python/`, `book/`, `docs/`, `examples/`, `tests/`, `.claude/arch/`, and `CHANGELOG.md` is updated. A transitional `pub type Analysis = Document;` ships in `src/domain.rs` with a `#[deprecated]` annotation; it is scheduled for removal in 0.1.0 so in-flight branches and just-published downstream snippets keep compiling through the alpha cycle.
 
 ### Reserved names (Phase 2 ships them; this ADR forbids alternatives)
 
@@ -64,7 +64,7 @@ If `Finding` lands as an enum, the same five rules apply at the variant level, p
 
 **Why `Document` (not `Analysis`).** The type holds the output of parsing; it is the document made queryable. The consumer brings the analytical act. Calling the type `Analysis` puts the verb in the substrate, contradicting the conviction's substrate-vs-interpreter line.
 
-**Why `Finding` (not `Frame`).** ADR-0002 reserved `Frame` for Fillmore-style semantic-frame outputs that vaani may someday produce. Reusing the name for the umbrella over all extraction outputs would erase that reservation and force a confusing rename later.
+**Why `Finding` (not `Frame`).** ADR-0002 reserved `Frame` for Fillmore-style semantic-frame outputs that matra may someday produce. Reusing the name for the umbrella over all extraction outputs would erase that reservation and force a confusing rename later.
 
 **Why reserve names without committing to shape.** Trait vs enum, `#[non_exhaustive]` placement, exact field layout: these are shape decisions that depend on real consumer patterns. Names are forward-looking commitments that block competitors and let the team plan migration. Shapes are present-tense decisions that need concrete code pulling them into existence.
 
@@ -81,13 +81,13 @@ If `Finding` lands as an enum, the same five rules apply at the variant level, p
 
 ### Negative
 
-- Existing downstream code (none yet, since vaani is unpublished) that references `Analysis` needs to migrate before 0.1.0. The deprecation alias keeps the 0.0.x line working but emits compiler warnings.
+- Existing downstream code (none yet, since matra is unpublished) that references `Analysis` needs to migrate before 0.1.0. The deprecation alias keeps the 0.0.x line working but emits compiler warnings.
 - Internal documents (`.claude/arch/*.md`) referencing `Analysis` are now updated; future authors must use `Document` consistently. The type-name parity floor gate (M0) catches drift.
 
 ### Neutral
 
 - ADR-0002's `frame` verb / `Frame` semantic-frame reservation is preserved unchanged. This ADR strengthens that reservation by routing the umbrella name through `Finding` instead.
-- ADR-0004's single-crate decision is unaffected. The abstract-tier vocabulary lives in `vaani::*` for now; extraction into a separate crate is a Pattern 6 decision triggered by external implementor ecosystems, not by name reservation.
+- ADR-0004's single-crate decision is unaffected. The abstract-tier vocabulary lives in `matra::*` for now; extraction into a separate crate is a Pattern 6 decision triggered by external implementor ecosystems, not by name reservation.
 
 ## Explicit non-decisions (deferred)
 

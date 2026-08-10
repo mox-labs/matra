@@ -87,7 +87,7 @@ The default `NlpProvider` adapter, gated behind the `udpipe` feature flag (defau
 
 ### Threading
 
-`Udpipe` holds a loaded `Model` that is **not** `Send` due to internal C state. The PyO3 wrapper `Vaani` is `#[pyclass(unsendable)]`; Python users get a runtime error if they try to share an instance across threads. Multi-process Python (e.g., `ProcessPoolExecutor`) is fine; multi-thread is not.
+`Udpipe` holds a loaded `Model` that is **not** `Send` due to internal C state. The PyO3 wrapper `Matra` is `#[pyclass(unsendable)]`; Python users get a runtime error if they try to share an instance across threads. Multi-process Python (e.g., `ProcessPoolExecutor`) is fine; multi-thread is not.
 
 A future `NlpProvider` adapter without C state (e.g., a pure-Rust tokenizer + tagger) could lift this restriction. The composition root takes `&dyn NlpProvider` and assumes `Send` but not `Sync`.
 

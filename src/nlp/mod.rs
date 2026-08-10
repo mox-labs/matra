@@ -1,4 +1,4 @@
-//! NLP port. Defines the boundary between vaani and NLP providers.
+//! NLP port. Defines the boundary between matra and NLP providers.
 //!
 //! This module contains ONLY the port trait. Domain types (Token, Sentence)
 //! live in domain.rs. Adapters live in submodules behind feature flags.

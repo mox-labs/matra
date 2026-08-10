@@ -26,7 +26,7 @@ pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;
 // Errors
 // ---------------------------------------------------------------------------
 
-/// All errors vaani can produce. Matchable, not opaque.
+/// All errors matra can produce. Matchable, not opaque.
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
 pub enum Error {
@@ -61,7 +61,7 @@ pub enum Error {
     Io(#[from] std::io::Error),
 }
 
-/// Result type for vaani operations.
+/// Result type for matra operations.
 pub type Result<T> = std::result::Result<T, Error>;
 
 // ---------------------------------------------------------------------------
@@ -386,7 +386,7 @@ pub struct Paragraph {
     /// (Body / Quote / Code / List / Caption) is justified by real
     /// consumer semantics. The boolean stays in the 0.0.x and 0.1.x lines
     /// because its job (gate measure or not) is binary today. See
-    /// [ADR-0006](https://github.com/mox-labs/vaani/blob/main/docs/decisions/0006-abstract-tier-vocabulary-lock.md)
+    /// [ADR-0006](https://github.com/mox-labs/matra/blob/main/docs/decisions/0006-abstract-tier-vocabulary-lock.md)
     /// for the abstract-tier vocabulary lock.
     pub in_blockquote: bool,
     /// Sentences produced by parsing this paragraph (populated by the
@@ -465,17 +465,6 @@ pub struct Document {
     /// Document-level nominalization ratio, if `measure` ran.
     pub nominalization_ratio: Option<f64>,
 }
-
-/// Transitional alias from the prior name `Analysis`.
-///
-/// vaani renamed `Analysis` to `Document` in the 0.0.x alpha cycle (ADR-0006).
-/// This alias keeps in-flight branches and just-published downstream snippets
-/// compiling; it is scheduled for removal in the first 0.1.0 release.
-#[deprecated(
-    since = "0.0.1",
-    note = "renamed to `Document`; the alias will be removed in 0.1.0"
-)]
-pub type Analysis = Document;
 
 impl Document {
     /// Construct a new `Document` from a section tree with `None` for

@@ -1,7 +1,7 @@
 # I3 — Error restructure + tracing PR1
 
 **Status:** not-started
-**Boundary:** **MVP** — at the end of this iteration, vaani is correct, bounded, has a recovery contract, and is observable.
+**Boundary:** **MVP** — at the end of this iteration, matra is correct, bounded, has a recovery contract, and is observable.
 **Depends on:** I2 (resilience floor)
 **Branch:** `i3/error-tracing` off the I2 commit
 
@@ -9,7 +9,7 @@
 
 Two things land together because they co-design.
 
-**Errors carry the recovery contract.** Today's `Error::ParseFailed(String)` and `Error::ModelInvalid(String)` are stringly-typed. A downstream consumer cannot distinguish "skip this document" from "the model is gone, abort the batch" without parsing the error message. Each consumer reinvents string-matching against vaani's error wording, breaking on the first message rewrite.
+**Errors carry the recovery contract.** Today's `Error::ParseFailed(String)` and `Error::ModelInvalid(String)` are stringly-typed. A downstream consumer cannot distinguish "skip this document" from "the model is gone, abort the batch" without parsing the error message. Each consumer reinvents string-matching against matra's error wording, breaking on the first message rewrite.
 
 **Errors carry the diagnosis nowhere visible.** Today, by the time the caller sees an error, the structured context (which file, which sentence index, which token) is gone. A substrate library that loses context at the boundary makes its consumers debug blind.
 
@@ -78,10 +78,10 @@ K's verdict (2026-04-28): "PR3: Error restructure + Wolf PR1 together. They co-d
    - Hash mismatch on fresh download → `recoverable: false`.
    - Truncated file or mid-download corruption → `recoverable: true`.
 7. Update PyO3 mapping in `src/lib.rs::python`:
-   - Define `VaaniError` exception class with attributes `kind`, `is_fatal`, `is_skip_doc`, `path` (per Ace's recommendation).
+   - Define `MatraError` exception class with attributes `kind`, `is_fatal`, `is_skip_doc`, `path` (per Ace's recommendation).
    - Map `Error::ModelNotFound` → `PyFileNotFoundError` (already done).
    - Map `Error::InputTooLarge` → `PyValueError`.
-   - Map everything else → `VaaniError` with attributes populated.
+   - Map everything else → `MatraError` with attributes populated.
 8. Truth-table tests in `src/domain.rs#[cfg(test)]`:
    - Each variant's `is_skip_doc`/`is_fatal` matches the truth table.
    - `parse_kind` returns `Some(&kind)` for `ParseFailed`, `None` otherwise.
@@ -90,7 +90,7 @@ K's verdict (2026-04-28): "PR3: Error restructure + Wolf PR1 together. They co-d
 - `cargo expand` confirms `#[non_exhaustive]` on `Error` and `ParseFailKind`.
 - Truth-table test passes.
 - No `Err(Error::Io(_))` sites remain in `src/`. `rg 'Error::Io\b' src/` returns hits only in `domain.rs` (the variant definition history) and possibly the `From<io::Error>` impl if kept for legacy compatibility (recommend removing).
-- Python `VaaniError` exception preserves `kind`, `is_fatal`, `is_skip_doc` across FFI.
+- Python `MatraError` exception preserves `kind`, `is_fatal`, `is_skip_doc` across FFI.
 
 ### Task B: install `tracing` as an always-on dependency
 
@@ -129,42 +129,42 @@ K's verdict (2026-04-28): "PR3: Error restructure + Wolf PR1 together. They co-d
 1. Wrap each composition-root entry in an INFO span:
    ```rust
    pub fn analyze(text: &str, nlp: &dyn NlpProvider) -> Result<Analysis> {
-       let span = tracing::info_span!("vaani.analyze", bytes = text.len(), format = "plain");
+       let span = tracing::info_span!("matra.analyze", bytes = text.len(), format = "plain");
        let _enter = span.enter();
        /* existing logic */
    }
    ```
    Apply to `analyze`, `analyze_markdown`, `analyze_file`, `analyze_directory`, `parse`, `analyze_from`. The fields on close should record `paragraph_count`, `sentence_count`, `total_words`.
-2. Wrap `Udpipe::parse` in `tracing::info_span!("vaani.nlp.parse", provider = "udpipe", bytes = text.len())`.
-3. Wrap `metrics::run_suite` in `tracing::info_span!("vaani.metrics.run_suite", metric_count = suite.len())`.
-4. Per-metric DEBUG spans: in each `metrics/{readability,lexical,compression,document}.rs::compute`, wrap in `tracing::debug_span!("vaani.metric", metric = "readability")` etc.
-5. Per-extractor INFO spans: in each `extraction/{tfidf,textrank,rake,yake}.rs`, wrap the entry in `tracing::info_span!("vaani.extract", algo = "tfidf", n_in = sentences.len())`.
-6. Source spans: `tracing::info_span!("vaani.source.read", path = ?path)` on `FileSource::read` and `DirectorySource::read`.
+2. Wrap `Udpipe::parse` in `tracing::info_span!("matra.nlp.parse", provider = "udpipe", bytes = text.len())`.
+3. Wrap `metrics::run_suite` in `tracing::info_span!("matra.metrics.run_suite", metric_count = suite.len())`.
+4. Per-metric DEBUG spans: in each `metrics/{readability,lexical,compression,document}.rs::compute`, wrap in `tracing::debug_span!("matra.metric", metric = "readability")` etc.
+5. Per-extractor INFO spans: in each `extraction/{tfidf,textrank,rake,yake}.rs`, wrap the entry in `tracing::info_span!("matra.extract", algo = "tfidf", n_in = sentences.len())`.
+6. Source spans: `tracing::info_span!("matra.source.read", path = ?path)` on `FileSource::read` and `DirectorySource::read`.
 7. **No `#[instrument]` macro on public API.** Manual spans with explicit fields only. The text content is not a span field; only `bytes = text.len()`.
 8. **No spans inside `Sentence::tree_depth`/`subtree`/`children_of`** (Wolf forbidden).
 
 **Acceptance:**
-- A test using `tracing-subscriber::fmt::test::TestWriter` captures emitted spans for one `analyze` call. Asserts the expected span hierarchy: `vaani.analyze` > `vaani.nlp.parse` > `vaani.metrics.run_suite` > per-metric DEBUG.
+- A test using `tracing-subscriber::fmt::test::TestWriter` captures emitted spans for one `analyze` call. Asserts the expected span hierarchy: `matra.analyze` > `matra.nlp.parse` > `matra.metrics.run_suite` > per-metric DEBUG.
 - `bash scripts/check-boundaries.sh` passes (rule 8 still holds).
 
 ### Task D: error events at every `Err(...)` site
 
 **Files:** every adapter and `src/lib.rs`. Not `src/domain.rs` (rule 8).
 
-**Why (Wolf):** "Every `return Err(...)` outside `domain.rs` and outside test modules must have a sibling `tracing::error!` (or `warn!` for recoverable) on the same path. The `analyze_directory` per-file errors must each emit `vaani.document.failed { path, error_kind }` so downstream OTel sees a per-failure event, not just the aggregate count."
+**Why (Wolf):** "Every `return Err(...)` outside `domain.rs` and outside test modules must have a sibling `tracing::error!` (or `warn!` for recoverable) on the same path. The `analyze_directory` per-file errors must each emit `matra.document.failed { path, error_kind }` so downstream OTel sees a per-failure event, not just the aggregate count."
 
 **Steps:**
 
 1. For every `Err(Error::*)` return in `src/lib.rs`, `src/source/*.rs`, `src/decompose/*.rs`, `src/nlp/udpipe.rs`, `src/extraction/*.rs`, `src/metrics/*.rs`: precede the return with a structured event.
-   - For `is_skip_doc()` errors: `tracing::warn!(?path, ?kind, "vaani.document.skipped")`.
-   - For `is_fatal()` errors: `tracing::error!(?path, ?kind, recoverable = false, "vaani.fatal")`.
-   - For other errors (`InputTooLarge`, etc.): `tracing::warn!(what, limit, actual, "vaani.input.too_large")`.
+   - For `is_skip_doc()` errors: `tracing::warn!(?path, ?kind, "matra.document.skipped")`.
+   - For `is_fatal()` errors: `tracing::error!(?path, ?kind, recoverable = false, "matra.fatal")`.
+   - For other errors (`InputTooLarge`, etc.): `tracing::warn!(what, limit, actual, "matra.input.too_large")`.
 2. The event field names match the variant fields. A consumer can correlate a span event to the returned `Error` by structured fields, not by message strings.
 3. Tests: a `TestWriter`-based test captures events for a fault-injected fixture. Asserts the right event level and field shape.
 
 **Acceptance:**
 - `rg 'return Err\(' src/ --glob '!src/domain.rs' --glob '!**/tests.rs'` — every line has a sibling `tracing::warn!` or `tracing::error!` within 5 lines above it. Manual review checklist; consider a custom clippy lint as a follow-up in I5.
-- `vaani.document.failed { path, error_kind }` event emitted on every `analyze_directory` per-file error.
+- `matra.document.failed { path, error_kind }` event emitted on every `analyze_directory` per-file error.
 
 ### Task E: examples and docs
 
@@ -175,7 +175,7 @@ K's verdict (2026-04-28): "PR3: Error restructure + Wolf PR1 together. They co-d
 **Steps:**
 
 1. `examples/observability.rs` shows two patterns:
-   - Local dev: `tracing_subscriber::fmt().with_env_filter("vaani=info").init()`.
+   - Local dev: `tracing_subscriber::fmt().with_env_filter("matra=info").init()`.
    - Production-bound non-blocking writer: `let (writer, _guard) = tracing_appender::non_blocking(std::io::stderr())`.
 2. README: brief "Observability" section pointing at the example.
 3. CHANGELOG `## [Unreleased]`:
@@ -186,7 +186,7 @@ K's verdict (2026-04-28): "PR3: Error restructure + Wolf PR1 together. They co-d
    - `Error::is_skip_doc()` and `Error::is_fatal()` accessors. Variant carries the recovery contract; `tracing` carries the diagnosis.
    - `Error::SourceIo` and `Error::ModelIo` (split from `Error::Io`) for clean recoverability classification.
    - `ParseFailKind` enum with `Empty`, `MalformedInput`, `ProviderInternal`, `ResourceLimit` variants.
-   - `VaaniError` Python exception class preserving `kind`, `is_fatal`, `is_skip_doc` attributes across FFI.
+   - `MatraError` Python exception class preserving `kind`, `is_fatal`, `is_skip_doc` attributes across FFI.
 
    ### Changed
 
@@ -210,10 +210,10 @@ K's verdict (2026-04-28): "PR3: Error restructure + Wolf PR1 together. They co-d
 
 ## Acceptance gate
 
-vaani is **MVP-correct** at the end of I3 if:
+matra is **MVP-correct** at the end of I3 if:
 - Variant-based recovery contract is in place (truth-table green).
 - Every `Err(...)` outside `domain.rs` has a sibling structured event.
-- A consumer running with `RUST_LOG=vaani=info` sees one INFO span per pipeline stage and one event per error.
+- A consumer running with `RUST_LOG=matra=info` sees one INFO span per pipeline stage and one event per error.
 - `cargo publish --dry-run` succeeds.
 - The Chesterton fence 7 matrix is run against the post-restructure surface; zero contradictions.
 
@@ -228,7 +228,7 @@ vaani is **MVP-correct** at the end of I3 if:
 - **Risk:** `#[non_exhaustive]` is forgotten on `ParseFailKind`, locking the variant set.
   - **Mitigation:** Chesterton fence 2 explicit; `cargo expand` verification step.
 
-- **Risk:** PyO3 `VaaniError` mapping leaks Rust internals (the `Debug` of `io::ErrorKind`) and creates an unstable Python attribute surface.
-  - **Mitigation:** `kind` on `VaaniError` is a Python string, mapped from the Rust `ParseFailKind` via a clean `as_str()` method, not a `Debug` derivation. Document in the implementation comment.
+- **Risk:** PyO3 `MatraError` mapping leaks Rust internals (the `Debug` of `io::ErrorKind`) and creates an unstable Python attribute surface.
+  - **Mitigation:** `kind` on `MatraError` is a Python string, mapped from the Rust `ParseFailKind` via a clean `as_str()` method, not a `Debug` derivation. Document in the implementation comment.
 
 - **Consult:** Burner if the `tracing` integration tempts a port-module instrumentation. Wolf if a span site is unclear.

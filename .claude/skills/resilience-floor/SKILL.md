@@ -1,11 +1,11 @@
 ---
 name: resilience-floor
-description: Antifragile operational discipline for vaani — size caps at the entry point, symlink rejection, atomic file writes, TOCTOU closure on hash-verified loads, `catch_unwind` panic boundaries at C/C++ FFI, cycle-safety in graph walks. The Taleb principles applied. Use when adding or auditing I/O, external library boundaries, user-input handling, or failure modes. Pair with `aces` for the structural design philosophy.
+description: Antifragile operational discipline for matra — size caps at the entry point, symlink rejection, atomic file writes, TOCTOU closure on hash-verified loads, `catch_unwind` panic boundaries at C/C++ FFI, cycle-safety in graph walks. The Taleb principles applied. Use when adding or auditing I/O, external library boundaries, user-input handling, or failure modes. Pair with `aces` for the structural design philosophy.
 ---
 
 # resilience-floor
 
-The antifragile operational discipline for vaani. This skill codifies the patterns that emerged from the i2 iteration's resilience work and from the rust-mastery corpus's resilience-floor Frames.
+The antifragile operational discipline for matra. This skill codifies the patterns that emerged from the i2 iteration's resilience work and from the rust-mastery corpus's resilience-floor Frames.
 
 ACES (`.claude/skills/aces/SKILL.md`) is the **structural** discipline (adaptability/composability/extensibility resisting stasis/drag/opacity). This skill is the **operational** discipline that complements it: when a process gets a hostile input, when a C library panics, when two processes race on the same file, the system survives loudly, not silently. ACES designs the system to evolve; resilience-floor designs it to fail well.
 
@@ -53,7 +53,7 @@ When adding a new gate, pick a distinct `what` discriminator.
 
 ### 2. Symlink rejection
 
-`FileSource` and `DirectorySource` use `symlink_metadata` (non-traversing) and reject any path whose file type is a symlink. This prevents path-redirection attacks: an attacker who controls a path passed to vaani cannot redirect to an arbitrary file via a symlink.
+`FileSource` and `DirectorySource` use `symlink_metadata` (non-traversing) and reject any path whose file type is a symlink. This prevents path-redirection attacks: an attacker who controls a path passed to matra cannot redirect to an arbitrary file via a symlink.
 
 ```rust
 let metadata = std::fs::symlink_metadata(input)?;
@@ -135,7 +135,7 @@ where F: FnOnce() -> domain::Result<T> {
 
 Without this wrapper, a panic inside `Model::parse` would abort the host process — interpreter death in Python, trap in WASM. The wrapper converts a C-side panic into `Err(ParseFailed(_))`, which the host can handle.
 
-**Rule**: every C/C++/FFI boundary in vaani is wrapped in `catch_unwind`. If the call site is async, use the synchronous variant inside the runtime.
+**Rule**: every C/C++/FFI boundary in matra is wrapped in `catch_unwind`. If the call site is async, use the synchronous variant inside the runtime.
 
 ### 6. Cycle-safety in graph walks
 
@@ -158,7 +158,7 @@ Cycles return `usize::MAX` for tokens transitively in the cycle. The malformed p
 
 ## The Taleb principles
 
-From the rust-mastery corpus's antifragility lens:
+From the antifragility lens:
 
 1. **Single Points of Failure are bugs.** Find and fix; the UDPipe C boundary was an SPOF that the `catch_unwind` boundary fixed.
 2. **Bounded inputs.** Unbounded input = unbounded resource use. The cap is a feature, not a limitation.
@@ -188,13 +188,9 @@ Every fixed failure mode gets a regression test that the failure cannot recur wi
 - `read_and_verify_returned_bytes_are_what_was_hashed` — the TOCTOU window cannot recur.
 - `catch_parse_panic_converts_*_panic_to_parse_failed` — the panic-aborting-host cannot recur.
 
-## When you reach for the corpus
-
-- `frames/cross-artifact/cli-ergonomics-and-app-discipline.json` — the 4 ripgrep application-tier disciplines (per-file error tolerance, atomic output buffering, exit codes, broken-pipe handling). Some apply to vaani's CLI tier (when one exists in Rust).
-- vaani's `CHANGELOG.md` `[Unreleased]` and i2 entries — each fix has a "why" grounded in this discipline set.
 
 ## What this skill won't tell you
 
 - Specific panic-recovery patterns at runtime — case-by-case.
 - Profiling for memory leaks — that's a separate tool (heaptrack, valgrind) and not covered here.
-- Async failure modes — vaani is synchronous; if/when async lands, this skill grows.
+- Async failure modes — matra is synchronous; if/when async lands, this skill grows.

@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This directory holds **Architecture Decision Records (ADRs)** for vaani.
+This directory holds **Architecture Decision Records (ADRs)** for matra.
 An ADR captures a single architectural decision: the context, the options
 considered, the choice made, and the consequences.
 
@@ -53,4 +53,7 @@ supersede old ones. The full lineage is preserved.
 |---|---|---|
 | [0001](0001-record-architectural-decisions.md) | Record architectural decisions | accepted |
 | [0002](0002-pipeline-vocabulary.md) | Pipeline vocabulary: ingest / decompose / parse / measure | accepted |
-| [0003](0003-workspace-with-rumi-nlp.md) | Cargo workspace with `vaani-core` and `rumi-nlp` | proposed |
+| [0003](0003-workspace-with-rumi-nlp.md) | Cargo workspace with `matra-core` and `rumi-nlp` | superseded by ADR-0004 |
+| [0004](0004-stay-single-crate.md) | Stay single-crate; supersede the workspace split | accepted |
+| [0005](0005-supply-chain-hardening.md) | Supply-chain hardening | accepted |
+| [0006](0006-abstract-tier-vocabulary-lock.md) | Abstract-tier vocabulary lock | accepted |

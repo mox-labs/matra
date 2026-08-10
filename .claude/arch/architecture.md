@@ -2,12 +2,12 @@
 
 ## The shape
 
-vaani is a single Cargo crate organized as a hexagonal architecture: a pure domain core surrounded by ports (boundary traits), implemented by adapters (concrete I/O and infrastructure), wired together by a composition root (`lib.rs`).
+matra is a single Cargo crate organized as a hexagonal architecture: a pure domain core surrounded by ports (boundary traits), implemented by adapters (concrete I/O and infrastructure), wired together by a composition root (`lib.rs`).
 
 ```mermaid
 flowchart TB
     subgraph composition["Composition Root (lib.rs)"]
-        engine["analyze / analyze_markdown / analyze_file / analyze_directory / parse / Vaani (PyO3)"]
+        engine["analyze / analyze_markdown / analyze_file / analyze_directory / parse / Matra (PyO3)"]
     end
 
     subgraph ports["Ports (boundary traits)"]
@@ -41,9 +41,9 @@ Read it as: dependencies point inward. Nothing in `domain` knows that adapters e
 
 ## Single-crate today
 
-vaani is a single Cargo crate. An earlier ADR (`docs/decisions/0003-workspace-with-rumi-nlp.md`) proposed splitting into `vaani-core` + a sibling crate; that proposal is now superseded by `docs/decisions/0004-stay-single-crate.md`. The split criterion (Pattern 6 from the rust-mastery corpus: separately publish a minimal port crate when an external implementor ecosystem exists) has not fired yet — vaani has no third-party `NlpProvider` implementors. Until it does, the single-crate shape is correct.
+matra is a single Cargo crate. An earlier ADR (`docs/decisions/0003-workspace-with-rumi-nlp.md`) proposed splitting into `matra-core` + a sibling crate; that proposal is now superseded by `docs/decisions/0004-stay-single-crate.md`. The split criterion (Pattern 6 from the rust-mastery corpus: separately publish a minimal port crate when an external implementor ecosystem exists) has not fired yet — matra has no third-party `NlpProvider` implementors. Until it does, the single-crate shape is correct.
 
-If and when external NLP backends emerge (`vaani-stanza`, `vaani-spacy`, etc. shipped by third parties), extract `vaani-nlp-api` and keep `vaani` as the consumer-facing crate.
+If and when external NLP backends emerge (`matra-stanza`, `matra-spacy`, etc. shipped by third parties), extract `matra-nlp-api` and keep `matra` as the consumer-facing crate.
 
 ## Why hex for a substrate library
 
@@ -60,7 +60,7 @@ Three forces pushed this shape.
 `src/lib.rs` is the only file that:
 - Imports adapters and ports together.
 - Wires the pipeline (`analyze`, `analyze_markdown`, `analyze_file`, `analyze_directory`, `parse`, `analyze_from`).
-- Exposes the PyO3 `Vaani` class behind the `python` feature.
+- Exposes the PyO3 `Matra` class behind the `python` feature.
 - Enforces `MAX_INPUT_BYTES` at every public entry point.
 
 Everything else is replaceable. The composition root is not.
@@ -86,7 +86,7 @@ The `parse` stage runs **per paragraph**, not per document. This is the correctn
 
 ## Boundary rules in force
 
-These are stated in `CLAUDE.md` and the project root `arch/README.md`; this section restates them so the architecture document is self-contained:
+These are stated in `CLAUDE.md` and in [boundary-rules.md](boundary-rules.md); this section restates them so the architecture document is self-contained:
 
 1. `domain.rs` has zero internal dependencies beyond `serde`, `thiserror`, and `std`.
 2. Port modules import only from `domain`.
@@ -96,20 +96,11 @@ These are stated in `CLAUDE.md` and the project root `arch/README.md`; this sect
 6. `cargo check --no-default-features` must compile.
 7. The composition root is the only place that knows all adapters and ports.
 
-A boundary check script (`scripts/check-boundaries.sh`) verifies rules 2, 3, and 4 in CI:
+An eighth rule holds in practice: `tracing` is forbidden in `domain.rs` and port modules (Burner amendment, 2026-04-28).
 
-```sh
-# Rule 4: only nlp/udpipe.rs imports udpipe_rs
-rg -l 'use udpipe_rs|udpipe_rs::' src/ --glob '!src/nlp/udpipe.rs'
+Motivation, failure modes, and review guidance for all eight live in [boundary-rules.md](boundary-rules.md), which is canonical.
 
-# Rule 3: port modules do not import each other
-rg -l 'use crate::source|use crate::decompose|use crate::nlp' \
-    src/source/mod.rs src/decompose/mod.rs src/nlp/mod.rs
-```
-
-Each command must return empty.
-
-Rules 1, 5, 6, and 7 are enforced by the type system + `cargo check` and do not need a script.
+Enforcement, stated accurately: rule 6 runs in CI (`ci.yml` MSRV job) and is the only rule gated on every push. `scripts/check-boundaries.sh` greps rules 3, 4, and 8, but runs only from `just check` and the opt-in pre-commit hook, and matches the literal import form only, so re-exports and grouped imports pass it. Rules 1, 2, 5, and 7 have no mechanical check. Rust provides no directional-import control inside a single crate, so review is the primary gate.
 
 ## Feature flags
 
@@ -118,13 +109,13 @@ Two features today. Each is additive. Each is independent.
 | Feature | What it enables | Default? |
 |---|---|---|
 | `udpipe` | UDPipe NLP adapter and the `Udpipe` struct | yes |
-| `python` | PyO3 bindings, the `Vaani` class, `_core` module | no |
+| `python` | PyO3 bindings, the `Matra` class, `_core` module | no |
 
 `maturin develop` and `maturin build` activate the `python` feature via `[tool.maturin].features` in `pyproject.toml`.
 
-Without `udpipe`: vaani still has the domain types, the metrics, the extraction algorithms, and the boundary traits. Any caller can plug in a different `NlpProvider`.
+Without `udpipe`: matra still has the domain types, the metrics, the extraction algorithms, and the boundary traits. Any caller can plug in a different `NlpProvider`.
 
-Without `python`: vaani is a pure Rust library. `cargo check --no-default-features` is the contract that this stays true.
+Without `python`: matra is a pure Rust library. `cargo check --no-default-features` is the contract that this stays true.
 
 ## Cross-language story
 
@@ -132,7 +123,7 @@ The Rust crate is the reference. One crust ships today; one is planned.
 
 ```mermaid
 flowchart TB
-    rust[("vaani (Rust)")] --> py[(vaani PyPI wheel)]
+    rust[("matra (Rust)")] --> py[(matra PyPI wheel)]
     rust --> wasm[("WASM/TS crust (planned)")]
     py --> pyc[(Python consumers)]
     wasm --> ts[(TypeScript / JS consumers)]
@@ -148,7 +139,7 @@ Names cross all crusts. Every public field, type, error variant, and method beco
 
 ## Composition: how a request flows
 
-A consumer calls `vaani::analyze(text, &nlp)`. What happens:
+A consumer calls `matra::analyze(text, &nlp)`. What happens:
 
 1. **Composition root** (`lib.rs::analyze`): checks input size against `MAX_INPUT_BYTES`.
 2. **decompose** (`PlainTextDecomposer::decompose`): produces `Vec<Section>` with one section, paragraphs split on blank lines.
@@ -162,13 +153,13 @@ Errors at any step propagate as `domain::Result<T>`. The `Error` enum's concrete
 
 - **Not a framework.** Consumers compose ports themselves if they need to. The composition root is one example, not the only path.
 - **Not async.** The pipeline is synchronous.
-- **Not opinionated about prose quality.** vaani measures; consumer code judges.
+- **Not opinionated about prose quality.** matra measures; consumer code judges.
 - **Not a complete pipeline.** PDF and DOCX adapters do not exist. `Format::Pdf` and `Format::Docx` return `Error::UnsupportedFormat`. This is deliberate; half-shipping a PDF adapter would lock a bad shape into the public surface.
 
 ## Future direction
 
 These are intended capabilities, not present ones:
 
-- **Rule evaluation over parsed text structure.** Querying parse trees with rule-like predicates (matchers over POS sequences, dep relations, lemma sets, subtrees). Lands as a sub-module inside vaani; no new crate. See [evolution.md](evolution.md) for the trigger conditions.
+- **Rule evaluation over parsed text structure.** Querying parse trees with rule-like predicates (matchers over POS sequences, dep relations, lemma sets, subtrees). Lands as a sub-module inside matra; no new crate. See [evolution.md](evolution.md) for the trigger conditions.
 - **WASM/TS crust.** Same Rust core, second crust via `wasm-bindgen`. Triggers when a TypeScript consumer commits.
 - **Pdf/Docx adapters.** Behind a feature flag, when a consumer needs them.

@@ -23,7 +23,7 @@ labels: ["type:bug", "status:triage"]
 
 ## Environment
 
-- vaani version (or git SHA): 
+- matra version (or git SHA): 
 - Rust version (`rustc --version`): 
 - OS / arch: 
 - Features enabled (`udpipe`, `python`, etc.): 

@@ -132,7 +132,7 @@ pub enum Error {
 
 `#[non_exhaustive]` is in force on the enum — variant additions are backward-compatible. `#[from] std::io::Error` makes the `?` operator convert at the boundary.
 
-The PyO3 layer maps each variant to a specific Python exception class (`PyFileNotFoundError` for `ModelNotFound`, `PyValueError` for `InputTooLarge` / `UnsupportedFormat`, `PyRuntimeError` for `ParseFailed` / `ModelInvalid`, `PyOSError` for `Io`). See `src/lib.rs` `From<domain::Error> for PyErr`.
+The PyO3 layer wraps `domain::Error` in a private `MatraError` newtype (`src/lib.rs`) whose `From<..> for PyErr` impl maps each variant to a specific Python exception class (`PyFileNotFoundError` for `ModelNotFound`, `PyValueError` for `InputTooLarge` / `UnsupportedFormat`, `PyRuntimeError` for `ParseFailed` / `ModelInvalid`, `PyOSError` for `Io`). See `src/lib.rs` `From<domain::Error> for PyErr`.
 
 ## What stays out of `domain.rs`
 

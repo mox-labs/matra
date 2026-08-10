@@ -6,11 +6,11 @@ Each iteration has one implan. The implans are agent-legible: every task names t
 
 | Implan | Boundary | Title |
 |---|---|---|
-| [i0-stabilize.md](i0-stabilize.md) | none | Commit the post-recovery baseline; capture N₀ and noise floor |
-| [i1-rename.md](i1-rename.md) | none | Karman pipeline rename |
-| [i2-resilience.md](i2-resilience.md) | resilience floor | Ten antifragile fixes |
+| the i0 stabilization work | none | Commit the post-recovery baseline; capture N₀ and noise floor |
+| the i1 rename work | none | Karman pipeline rename |
+| the i2 resilience work | resilience floor | Ten antifragile fixes |
 | [i3-error-tracing.md](i3-error-tracing.md) | **MVP** | Error restructure + tracing PR1 + cdylib feature-gating |
-| [i4-workspace.md](i4-workspace.md) | structural | Workspace conversion + `rumi-nlp` skeleton |
+| the retracted workspace plan | structural | Workspace conversion + `rumi-nlp` skeleton |
 | [i5-streaming.md](i5-streaming.md) | **MLP** | Streaming iterator + Engine + CorpusResult |
 | [i6-post-publish.md](i6-post-publish.md) | post-publish | OTel feature, PDF/DOCX, `rumi-nlp` patterns, deferred reactor |
 
@@ -53,12 +53,11 @@ If any matrix item fails at iteration landing, the iteration is rolled back, not
 
 ## The 0.1.0 ship predicate
 
-vaani 0.1.0 is publishable if and only if **all** of the following are true at HEAD on the release commit:
+matra 0.1.0 is publishable if and only if **all** of the following are true at HEAD on the release commit:
 
-- [ ] Cross-iteration regression matrix items 1–9 pass for **both** workspace crates (`vaani` and `rumi-nlp`).
-- [ ] `cargo publish --dry-run -p vaani` and `cargo publish --dry-run -p rumi-nlp` both succeed.
-- [ ] `rumi-nlp` smoke test green (the bridge actually wires through to `rumi-core`).
-- [ ] Fault-injection corpus passes (see [i2-resilience.md](i2-resilience.md) Validation):
+- [ ] Cross-iteration regression matrix items 1-9 pass.
+- [ ] `cargo publish --dry-run` succeeds.
+- [ ] Fault-injection corpus passes (see the i2 resilience work Validation):
   - 25-depth and 1000-depth chains return correct depths.
   - oversized inputs to TF-IDF, RAKE, and YAKE each return three distinct `InputTooLarge` errors with three distinct `what:` labels.
   - panic-injecting NLP fixture returns `ParseFailed`, never aborts.
@@ -68,7 +67,7 @@ vaani 0.1.0 is publishable if and only if **all** of the following are true at H
   - 1GB file returns `InputTooLarge`, not OOM.
 - [ ] `cargo test --test integration -- --ignored` green with UDPipe model. Wall time recorded against PR0 N₀.
 - [ ] `cargo publish --dry-run` succeeds with no warnings.
-- [ ] `maturin build --release` produces a wheel; `pip install <wheel>` plus `python -c "import vaani"` succeeds in a clean venv.
+- [ ] `maturin build --release` produces a wheel; `pip install <wheel>` plus `python -c "import matra"` succeeds in a clean venv.
 - [ ] Chesterton matrix v2 (Fence 7): zero contradictions vs post-restructure surface.
 - [ ] `CHANGELOG.md` documents every public-API delta vs the pre-recovery state.
 
@@ -84,7 +83,7 @@ Within 2 weeks of 0.1.0 publish, write `scratch/post-ship-0.1.0.md` capturing:
 
 - crates.io download count.
 - GitHub issues with labels `panic`, `crash`, `oom`, `hang`.
-- Any consumer-side issue that traces back to vaani.
+- Any consumer-side issue that traces back to matra.
 - Whether any of the deferred-reactor triggers fired (file-change push, >100k corpora, push-source request).
 
 The file is not optional. Without it, "we shipped resilience" is just a claim. With it, we know whether the iteration plan held.

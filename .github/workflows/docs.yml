@@ -17,7 +17,6 @@ concurrency:
 env:
   MDBOOK_VERSION: 0.4.40
   MDBOOK_MERMAID_VERSION: 0.14.0
-  MDBOOK_LINKCHECK_VERSION: 0.7.7
 
 jobs:
   build:
@@ -43,10 +42,6 @@ jobs:
             | tar -xz -C "$HOME/.local/bin"
           curl -sSL "https://github.com/badboy/mdbook-mermaid/releases/download/v${MDBOOK_MERMAID_VERSION}/mdbook-mermaid-v${MDBOOK_MERMAID_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
             | tar -xz -C "$HOME/.local/bin"
-          curl -sSL "https://github.com/Michael-F-Bryan/mdbook-linkcheck/releases/download/v${MDBOOK_LINKCHECK_VERSION}/mdbook-linkcheck.x86_64-unknown-linux-gnu.zip" \
-            -o /tmp/linkcheck.zip
-          unzip -o /tmp/linkcheck.zip -d "$HOME/.local/bin"
-          chmod +x "$HOME/.local/bin/mdbook-linkcheck"
 
       - name: Install mermaid assets
         working-directory: book
@@ -71,10 +66,10 @@ jobs:
           cat > _site/api/index.html <<'HTML'
           <!doctype html>
           <meta charset="utf-8">
-          <title>vaani API reference</title>
-          <meta http-equiv="refresh" content="0; url=vaani/index.html">
-          <link rel="canonical" href="vaani/index.html">
-          <p>Redirecting to <a href="vaani/index.html">vaani API reference</a>.</p>
+          <title>matra API reference</title>
+          <meta http-equiv="refresh" content="0; url=matra/index.html">
+          <link rel="canonical" href="matra/index.html">
+          <p>Redirecting to <a href="matra/index.html">matra API reference</a>.</p>
           HTML
 
       - name: Upload Pages artifact

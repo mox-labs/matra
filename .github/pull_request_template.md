@@ -1,5 +1,5 @@
 <!--
-PR template for vaani. Keep it tight; reviewers should see what changed
+PR template for matra. Keep it tight; reviewers should see what changed
 and why in under 60 seconds.
 -->
 

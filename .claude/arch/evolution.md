@@ -18,7 +18,7 @@ These are commitments, not preferences. Once locked, they hold:
 
 - **Domain purity.** `domain.rs` imports only `serde`, `thiserror`, and `std`. No further crates without an ADR.
 - **Single UDPipe importer.** Only `nlp/udpipe.rs` imports `udpipe_rs`. Adding a second site is a boundary failure. Enforced by `scripts/check-boundaries.sh`.
-- **`#[non_exhaustive]` on every public type.** Forward compatibility is non-negotiable; vaani is a substrate.
+- **`#[non_exhaustive]` on every public enum and every public struct with public fields.** Forward compatibility is non-negotiable; matra is a substrate.
 - **Hex layout.** Adapters do not import each other. Ports do not import each other. The composition root is the only file that knows the whole pipeline.
 - **No publish without explicit approval.** `cargo publish` and `maturin publish` always run with `--dry-run` first; explicit per-publish approval per the project memory.
 - **Conventional commits.** Commit messages follow the conventional-commit grammar so the CHANGELOG generator works without per-commit editing.
@@ -29,19 +29,19 @@ These are commitments, not preferences. Once locked, they hold:
 - Which features are default. `udpipe = ["udpipe-rs", "sha2"]` is default for ergonomic reasons; a future release could flip it if a lighter backend exists.
 - The number of metrics in the default suite. Adding readability variants, gating expensive metrics behind a feature flag.
 - Internal data structures. Sentence index caches, memoized depth tables, intern pools — none of these touch the public surface.
-- Adding a new sub-module within vaani for a planned capability (e.g., rule evaluation over parsed text structure).
+- Adding a new sub-module within matra for a planned capability (e.g., rule evaluation over parsed text structure).
 
 ## Decisions previously considered and rejected
 
-### Workspace split (`vaani-core` + sibling matcher-bridge crate)
+### Workspace split (`matra-core` + sibling matcher-bridge crate)
 
-Proposed in ADR-0003. The proposal was to split vaani into a substrate crate plus a sibling crate for rule-based pattern matching over parsed sentences. Superseded by ADR-0004 (2026-05-20) on the grounds that the rule-evaluation capability is part of vaani's own surface, not a peer crate, and the workspace-split criterion (Pattern 6 from the rust-mastery corpus: separately publish a minimal port crate when an external implementor ecosystem exists) has not fired.
+Proposed in ADR-0003. The proposal was to split matra into a substrate crate plus a sibling crate for rule-based pattern matching over parsed sentences. Superseded by ADR-0004 (2026-05-20) on the grounds that the rule-evaluation capability is part of matra's own surface, not a peer crate, and the workspace-split criterion (Pattern 6 from the rust-mastery corpus: separately publish a minimal port crate when an external implementor ecosystem exists) has not fired.
 
-If and when external NLP backends emerge as published crates (`vaani-stanza`, `vaani-spacy`, etc.), extract `vaani-nlp-api` as a minimal port crate and keep `vaani` as the consumer-facing crate. Until then, single-crate is correct.
+If and when external NLP backends emerge as published crates (`matra-stanza`, `matra-spacy`, etc.), extract `matra-nlp-api` as a minimal port crate and keep `matra` as the consumer-facing crate. Until then, single-crate is correct.
 
 ### Built-in extractors for specific patterns (SVO, copular, prepositional, passive, nominal modifier)
 
-Considered as part of vaani-core's surface. Rejected by user direction earlier in the project. Pattern extractors are opinions; vaani is a substrate that provides parse trees and aggregate metrics, not opinions about which patterns matter. Pattern extraction lands as consumer code or as a separate sub-module behind a clear "opinionated" boundary; it does not enter the default surface.
+Considered as part of matra-core's surface. Rejected by user direction earlier in the project. Pattern extractors are opinions; matra is a substrate that provides parse trees and aggregate metrics, not opinions about which patterns matter. Pattern extraction lands as consumer code or as a separate sub-module behind a clear "opinionated" boundary; it does not enter the default surface.
 
 ### A four-port model with a separate `Ingest` trait
 
@@ -72,7 +72,7 @@ Until at least one trigger fires, the reactor does not ship and that is the corr
 
 Planned capabilities, not yet shipped. Each carries its trigger condition:
 
-- **Rule evaluation over parsed text structure.** A sub-module inside vaani that lets consumers query parse trees with rule-like predicates (matchers over POS sequences, dep relations, lemma sets, subtrees). Lands when the surface design is settled and an internal or external consumer commits.
+- **Rule evaluation over parsed text structure.** A sub-module inside matra that lets consumers query parse trees with rule-like predicates (matchers over POS sequences, dep relations, lemma sets, subtrees). Lands when the surface design is settled and an internal or external consumer commits.
 - **WASM/TS crust.** Same Rust core, second crust via `wasm-bindgen` + `serde-wasm-bindgen`. Lands when a TypeScript consumer commits.
 - **Pdf/Docx adapters.** Behind feature flags, when a consumer needs them. Half-shipping a PDF adapter would lock a bad shape into the public surface; the gap is deliberate.
 

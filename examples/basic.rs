@@ -1,12 +1,12 @@
 //! Basic usage: analyze a text string and print metrics.
 //!
 //! Run with: cargo run --example basic
-//! (requires UDPipe model at /tmp/vaani-models/)
+//! (requires UDPipe model at /tmp/matra-models/)
 
-use vaani::nlp::udpipe::Udpipe;
+use matra::nlp::udpipe::Udpipe;
 
 fn main() {
-    let nlp = Udpipe::english("/tmp/vaani-models").expect("Failed to load English model");
+    let nlp = Udpipe::english("/tmp/matra-models").expect("Failed to load English model");
 
     let text = r#"
 ## The Problem
@@ -24,7 +24,7 @@ external contributors. Best-in-class had hundreds of external
 contributors solving problems before you knew you needed them solved.
 "#;
 
-    let analysis = vaani::analyze_markdown(text, &nlp).unwrap();
+    let analysis = matra::analyze_markdown(text, &nlp).unwrap();
 
     println!("Sentences:      {}", analysis.total_sentences());
     println!("Words:          {}", analysis.total_words());

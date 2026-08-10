@@ -23,7 +23,7 @@ Conditionally:
   or any port trait. Audits the port contract, pre/post-conditions, object-safety,
   Pattern 6 criterion.
 - **ffi-keeper** — if the diff touches `src/lib.rs` (PyO3 layer), `pyproject.toml`,
-  `python/vaani/`, the `pyo3` / `pythonize` / `maturin` deps. Audits the dual-publish
+  `python/matra/`, the `pyo3` / `pythonize` / `maturin` deps. Audits the dual-publish
   contract, error routing per variant, 4 pythonize blind spots, the 3-axis pin rule.
 - **resilience** — if the diff adds I/O, external library calls, user-input handling,
   file writes, hash verification, or graph-walk algorithms. Audits the six
@@ -49,7 +49,6 @@ Drop:
 Keep:
 
 - Anything that blocks merge under the boundary rules or ACES.
-- Anything that would have been caught by the corresponding rust-mastery Frame.
 - Anything where the diff drifts from a stated invariant (`#[non_exhaustive]`,
   domain purity, single UDPipe importer).
 

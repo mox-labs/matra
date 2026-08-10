@@ -9,9 +9,9 @@ labels: ["type:feature", "status:triage"]
 
 <!-- The use case in one paragraph. Concrete: what input, what output. -->
 
-## Why vaani should have it
+## Why matra should have it
 
-<!-- Is this part of vaani's substrate role, or does it belong in a downstream
+<!-- Is this part of matra's substrate role, or does it belong in a downstream
      consumer? See .claude/arch/architecture.md for the boundary. -->
 
 ## Proposed shape

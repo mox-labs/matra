@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# vaani pre-commit hook.
+# matra pre-commit hook.
 #
-# Runs the same gates that CI runs, in the same order. If this passes
-# locally, CI will pass too. If this fails, CI would have failed.
+# Runs the Rust gates plus the boundary check. CI runs the Rust gates too,
+# and additionally cargo-deny, cargo-semver-checks, the wheel build and mypy;
+# CI does not run the boundary check. Green here is a strong signal, not a
+# guarantee.
 #
 # Bypass with `git commit --no-verify` when intent justifies it.
 # Default behavior is tight; that is the point.
@@ -19,7 +21,7 @@ if echo "$staged" | grep -qE '\.rs$|^Cargo\.(toml|lock)$|^crates/'; then
     rust_touched=true
 fi
 
-echo "vaani pre-commit gate"
+echo "matra pre-commit gate"
 echo "  staged files: $(echo "$staged" | wc -l | tr -d ' ')"
 echo "  rust gates:   $rust_touched"
 

@@ -1,11 +1,11 @@
 ---
 name: testing
-description: Test strategy for vaani — regression discipline (every fixed bug gets a test so it cannot recur), unit + integration + doctest layout, property tests where useful, complexity benches for algorithmic code. Use when writing tests, reviewing coverage, or debugging test failures.
+description: Test strategy for matra — regression discipline (every fixed bug gets a test so it cannot recur), unit + integration + doctest layout, property tests where useful, complexity benches for algorithmic code. Use when writing tests, reviewing coverage, or debugging test failures.
 ---
 
 # testing
 
-Test strategy for vaani. This skill codifies what kinds of tests vaani has, what each kind verifies, and how to add new ones.
+Test strategy for matra. This skill codifies what kinds of tests matra has, what each kind verifies, and how to add new ones.
 
 ## When to invoke
 
@@ -35,7 +35,7 @@ End-to-end pipeline tests that exercise the public API. Many require the UDPipe 
 cargo test --test integration -- --ignored
 ```
 
-CI runs the ignored set as a separate gate (or skips them; see `.github/workflows/ci.yml`).
+CI does not run the ignored set; they need the UDPipe model and are run by hand.
 
 ### 3. Doctests — `///` blocks with `# Examples`
 
@@ -47,7 +47,7 @@ Run via `cargo test`.
 
 **Every fixed bug gets a regression test before the fix lands.** The test exists so the specific failure cannot recur without somebody noticing.
 
-Vaani's i2 iteration codified this for the resilience floor:
+Matra's i2 iteration codified this for the resilience floor:
 
 - `parse_per_paragraph_scopes_sentences_to_originating_paragraph` (FM1 — the prefix-match defect)
 - `parse_per_paragraph_no_inner_substring_theft` (FM1 — the inner-substring theft variant)
@@ -93,7 +93,7 @@ When adding a new algorithmic function, ask: what's the expected complexity? Wha
 
 ## Property tests — where they help
 
-Vaani doesn't use `proptest` or `quickcheck` heavily today. Where they would help:
+Matra doesn't use `proptest` or `quickcheck` heavily today. Where they would help:
 
 - Round-trip serialization tests (any type that derives Serialize+Deserialize: random instance → bytes → instance → compare).
 - Tree-walk invariants (`subtree(id)` always contains the token with `id`; `head_of(id)` and `children_of(parent_id)` agree).
@@ -109,13 +109,15 @@ If you add property tests, gate them behind a `dev-dependency` and run them in C
 
 ## CI gates
 
-`.github/workflows/ci.yml` runs three jobs:
+`ci.yml` declares seven jobs: **rust** (matrix over default and `--no-default-features`, on ubuntu and macos: fmt, check, clippy, test), **msrv**, **deny** (cargo-deny), **semver** (cargo-semver-checks), **docs** (rustdoc with `-Dwarnings`), **python** (maturin wheel build, install, import), and **pytype** (`mypy --strict`).
+
+The load-bearing ones:
 
 - **Rust matrix** — `default` features + `--no-default-features`. Runs `cargo fmt --check`, `cargo check --all-targets`, `cargo clippy --all-targets -- -D warnings`, `cargo test`.
 - **rustdoc** — `cargo doc --no-deps --all-features` with `RUSTDOCFLAGS=-Dwarnings`. Broken intra-doc links fail the build.
-- **Python wheel** — `maturin build --release` then `pip install` then `python -c "from vaani import Vaani; print('ok')"`.
+- **Python wheel** — `maturin build --release` then `uv pip install` then `python -c "from matra import Matra; print('ok')"`.
 
-`just check` runs everything CI runs, plus the boundary script. If `just check` is green, CI will be green.
+`just check` runs the Rust gates plus the boundary script and the docsite floor. It does not run cargo-deny, cargo-semver-checks, the wheel build or mypy, so green locally is a strong signal rather than a guarantee.
 
 ## What this skill won't tell you
 

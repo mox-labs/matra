@@ -7,7 +7,7 @@
 
 [graph]
 # Target triples to consider when resolving the dep graph. We care about
-# the platforms vaani actually ships on (linux, macos, windows) and the
+# the platforms matra actually ships on (linux, macos, windows) and the
 # WASM target the planned crust will use.
 targets = [
     "x86_64-unknown-linux-gnu",
@@ -34,7 +34,7 @@ ignore = []
 # Licenses
 # ---------------------------------------------------------------------------
 #
-# vaani is MIT-licensed; permissive licenses on deps are fine.
+# matra is MIT-licensed; permissive licenses on deps are fine.
 # Strong-copyleft (GPL family) is denied.
 
 [licenses]

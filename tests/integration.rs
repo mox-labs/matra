@@ -1,21 +1,21 @@
-//! Integration test. Requires UDPipe English model at /tmp/vaani-models/.
+//! Integration test. Requires UDPipe English model at /tmp/matra-models/.
 //! Run with: cargo test --test integration -- --ignored
 
 #[cfg(feature = "udpipe")]
 mod with_model {
-    use vaani::nlp::NlpProvider;
-    use vaani::nlp::udpipe::Udpipe;
+    use matra::nlp::NlpProvider;
+    use matra::nlp::udpipe::Udpipe;
 
     fn model() -> Udpipe {
-        Udpipe::from_path("/tmp/vaani-models/english-ewt-ud-2.5-191206.udpipe")
-            .expect("UDPipe model not found. Download to /tmp/vaani-models/")
+        Udpipe::from_path("/tmp/matra-models/english-ewt-ud-2.5-191206.udpipe")
+            .expect("UDPipe model not found. Download to /tmp/matra-models/")
     }
 
     #[test]
     #[ignore] // requires model file
     fn full_pipeline_plain_text() {
         let nlp = model();
-        let analysis = vaani::analyze(
+        let analysis = matra::analyze(
             "The cat sat on the mat. The dog chased the cat quickly.",
             &nlp,
         )
@@ -30,7 +30,7 @@ mod with_model {
     fn full_pipeline_markdown() {
         let nlp = model();
         let md = "---\ntitle: Test\n---\n\n## Introduction\n\nFirst paragraph with several words in it.\n\n## Body\n\nSecond paragraph here.\n\n> A blockquote that should be skipped.";
-        let analysis = vaani::analyze_markdown(md, &nlp).unwrap();
+        let analysis = matra::analyze_markdown(md, &nlp).unwrap();
 
         assert_eq!(analysis.sections.len(), 2);
         assert_eq!(
@@ -65,7 +65,7 @@ mod with_model {
     #[ignore]
     fn passive_voice_detected() {
         let nlp = model();
-        let analysis = vaani::analyze(
+        let analysis = matra::analyze(
             "The system was built by the team. The team shipped the product.",
             &nlp,
         )
@@ -80,7 +80,7 @@ mod with_model {
     fn compression_ratio_computed_for_long_paragraphs() {
         let nlp = model();
         let long_para = "The quick brown fox jumps over the lazy dog. ".repeat(10);
-        let analysis = vaani::analyze(&long_para, &nlp).unwrap();
+        let analysis = matra::analyze(&long_para, &nlp).unwrap();
 
         let has_ratio = analysis.paragraphs().any(|p| p.compression_ratio.is_some());
         assert!(has_ratio, "long paragraph should have compression ratio");
@@ -92,6 +92,6 @@ mod with_model {
         let result = Udpipe::from_path("/nonexistent/model.udpipe");
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(matches!(err, vaani::domain::Error::ModelNotFound(_)));
+        assert!(matches!(err, matra::domain::Error::ModelNotFound(_)));
     }
 }

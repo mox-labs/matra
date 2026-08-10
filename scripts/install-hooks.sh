@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs vaani's git hooks into the local clone.
+# Installs matra's git hooks into the local clone.
 #
 # Hooks live under scripts/ in the repo (so they are versioned and
 # reviewable). This script copies them into .git/hooks/ where git
@@ -22,4 +22,4 @@ install_one() {
 mkdir -p "$hooks_dir"
 install_one "$repo_root/scripts/pre-commit-hook.sh" "$hooks_dir/pre-commit"
 
-echo "vaani git hooks installed into $hooks_dir"
+echo "matra git hooks installed into $hooks_dir"

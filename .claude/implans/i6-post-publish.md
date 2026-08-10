@@ -21,7 +21,7 @@ This implan is a holding pattern: each sub-iteration ships only when its specifi
 
 **Trigger:** at least one downstream consumer requests OTel export, OR a 0.1.0 ship-readiness review identifies the OTel story as a publish blocker.
 
-**Files:** workspace `Cargo.toml`, `crates/vaani-core/src/lib.rs` or `crates/vaani-core/src/obs.rs` (new), `examples/observability_otel.rs`.
+**Files:** workspace `Cargo.toml`, `src/lib.rs` or `src/obs.rs` (new), `examples/observability_otel.rs`.
 
 **Why (Wolf):** "`tracing-opentelemetry` together pulls ~30 crates. Never default. Consumers turn it on; library publishes to crates.io with default features only."
 
@@ -42,23 +42,23 @@ This implan is a holding pattern: each sub-iteration ships only when its specifi
 
 **Trigger:** a consumer reports they cannot debug an extraction issue from the I3 instrumentation.
 
-**Files:** `crates/vaani-core/src/extraction/{tfidf,textrank,rake,yake}.rs`, `crates/vaani-core/src/source/{file,directory}.rs`.
+**Files:** `src/extraction/{tfidf,textrank,rake,yake}.rs`, `src/source/{file,directory}.rs`.
 
 **Why (Wolf, deferred from I3):** finer-grained spans per extractor algorithm and per-file in directory processing.
 
 **Steps:**
 
 1. Per-extractor INFO spans were added in I3 task C — extend with per-iteration TRACE events for TextRank (PageRank delta convergence).
-2. Per-file DEBUG events inside `analyze_directory_iter`: `tracing::debug!(?path, "vaani.document.parsed")` on success.
+2. Per-file DEBUG events inside `analyze_directory_iter`: `tracing::debug!(?path, "matra.document.parsed")` on success.
 3. Update `examples/observability.rs`.
 
-**Acceptance:** TextRank trace at `RUST_LOG=vaani=trace` shows iteration deltas. Per-file debug event present.
+**Acceptance:** TextRank trace at `RUST_LOG=matra=trace` shows iteration deltas. Per-file debug event present.
 
 ### I6c — `PdfDecomposer` adapter
 
 **Trigger:** at least one consumer commits to needing PDF support.
 
-**Files:** `crates/vaani-core/src/decompose/pdf.rs` (new), `crates/vaani-core/Cargo.toml` (new feature `pdf`).
+**Files:** `src/decompose/pdf.rs` (new), `the crate/Cargo.toml` (new feature `pdf`).
 
 **Why:** the library's `Format::Pdf` returns `UnsupportedFormat` today. PDF is a common input format and the gap closes once a consumer commits. Half-shipping was deferred deliberately (K, 2026-04-28: "PDF is a format family, not a format. Defer cleanly, don't half-ship.").
 
@@ -76,7 +76,7 @@ This implan is a holding pattern: each sub-iteration ships only when its specifi
 
 **Trigger:** same as I5c but for DOCX.
 
-**Files:** `crates/vaani-core/src/decompose/docx.rs` (new), `crates/vaani-core/Cargo.toml` (new feature `docx`).
+**Files:** `src/decompose/docx.rs` (new), `the crate/Cargo.toml` (new feature `docx`).
 
 **Steps:** parallel to I5c but for DOCX. Likely candidate crate: `docx-rs` or `zip` + custom XML parsing.
 
@@ -88,14 +88,14 @@ This implan is a holding pattern: each sub-iteration ships only when its specifi
 
 **Files:** `crates/rumi-nlp/src/inputs/`, `crates/rumi-nlp/src/matchers/`, `crates/rumi-nlp/src/compile.rs` (new), conformance tests under `crates/rumi-nlp/spec/`.
 
-**Why:** vaani 0.1.0 ships `rumi-nlp` with a skeleton (one `DataInput<Sentence>` smoke test) so the architecture locks. Domain-specific content lands incrementally, driven by real consumer needs, not speculation. The barbell argument from the prior session: "Vaani ships a built-in extractor (safe side: five patterns, deterministic, ~300 lines, bounded precision)" was redirected — relation extraction belongs in domain extension crates, not in vaani-core. With `rumi-nlp` colocated in vaani's workspace, the patterns live there when they land.
+**Why:** matra 0.1.0 ships `rumi-nlp` with a skeleton (one `DataInput<Sentence>` smoke test) so the architecture locks. Domain-specific content lands incrementally, driven by real consumer needs, not speculation. The barbell argument from the prior session: "Matra ships a built-in extractor (safe side: five patterns, deterministic, ~300 lines, bounded precision)" was redirected — relation extraction belongs in domain extension crates, not in matra-core. With `rumi-nlp` colocated in matra's workspace, the patterns live there when they land.
 
 **Possible scope (each its own implan when triggered):**
 
 1. **Tree-walk DataInputs.** `PosInput`, `LemmaInput`, `DepInput`, `HeadInput`, `SubtreeInput`, `ChildByLabelInput`. Each navigates the dep tree internally and returns flat `MatchingData`.
 2. **The five extraction patterns.** SVO, copular, prepositional, passive, nominal modifier. As `Matcher<Sentence, Triplet>` configurations using the DataInputs above. Conformance test suite (YAML fixtures, like rumi-http's).
 3. **`compile_nlp_rules()` config compiler.** Takes user-friendly YAML/TOML rule configs and produces `Matcher<Sentence, A>` trees.
-4. **Stance classification.** Nine-rule epistemic cascade (potential / assertoric / directive) as a matcher list. Reads `Token.feats`, `dep`, `lemma`. **Note:** stance is at the boundary of vaani's substrate scope vs consumer's interpretive scope. May land in a separate downstream crate, not in `rumi-nlp`. Decide when triggered.
+4. **Stance classification.** Nine-rule epistemic cascade (potential / assertoric / directive) as a matcher list. Reads `Token.feats`, `dep`, `lemma`. **Note:** stance is at the boundary of matra's substrate scope vs consumer's interpretive scope. May land in a separate downstream crate, not in `rumi-nlp`. Decide when triggered.
 
 Each sub-item is its own implan. None of them ship in 0.1.0.
 
@@ -108,7 +108,7 @@ Each sub-item is its own implan. None of them ship in 0.1.0.
 2. A corpus consumer reports more than 100k documents in regular use.
 3. A second `Source` arrives that is inherently push (websocket, filesystem watch, message queue).
 
-**Files:** depends on the trigger. Likely: `crates/vaani-core/src/runtime.rs` (new), workspace `Cargo.toml` (new feature `async`, new optional dep `tokio`).
+**Files:** depends on the trigger. Likely: `src/runtime.rs` (new), workspace `Cargo.toml` (new feature `async`, new optional dep `tokio`).
 
 **Why (Erlang + K, deferred from 2026-04-28):** "A reactor without a parallel sink is a bigger queue, not more throughput. Hot path for all three downstream consumers is `analyze(doc)` on a single document. ~140 lines of glue do not justify an async dependency tree."
 

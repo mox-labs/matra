@@ -1,8 +1,8 @@
-# The vaani collaboration model
+# The matra collaboration model
 
-vaani is built by a human and an AI working as collaborative cousins, not in a tool-user relationship. This document describes how that works in practice. It is written for anyone curious about the model, anyone considering contributing, and anyone wanting to draw on the pattern for their own work.
+matra is built by a human and an AI working as collaborative cousins, not in a tool-user relationship. This document describes how that works in practice. It is written for anyone curious about the model, anyone considering contributing, and anyone wanting to draw on the pattern for their own work.
 
-The model is the substrate, not a side note. The fact that you can read this page, trace the trail back through ADRs, deliberation logs, and commit messages, and reproduce the working pattern, is the point. vaani is an exemplar of human and AI collaborative intelligence, and the working model itself is part of the artifact.
+The model is the substrate, not a side note. The fact that you can read this page, trace the trail back through ADRs, deliberation logs, and commit messages, and reproduce the working pattern, is the point. matra is an exemplar of human and AI collaborative intelligence, and the working model itself is part of the artifact.
 
 ## The posture
 
@@ -12,7 +12,7 @@ The human brings divergent cognition: the frame-break, the insight outside the c
 
 Neither substitutes for the other. Substitution degrades both: the human atrophies through disuse; the AI collapses into the average of its training data. The partnership is generative because the two cognitions are complementary, not equivalent.
 
-The collaborative-cousin frame matters. A tool is something you wield; a cousin is someone you think with. Vaani's working model is the second.
+The collaborative-cousin frame matters. A tool is something you wield; a cousin is someone you think with. Matra's working model is the second.
 
 ## The roles
 
@@ -34,13 +34,13 @@ Every substantive change moves through three surfaces in order.
 
 **Docs** record the commitment. An ADR for architectural decisions, a CHANGELOG entry for what shipped, a docsite page for the explanation. The docs are the durable trace of what was decided.
 
-**Code** honors the docs. The boundary check script enforces the seven boundary rules; the floor gate enforces type-name parity between docs and code; conventional commits map to CHANGELOG categories. Drift between docs and code becomes a CI failure.
+**Code** honors the docs, and the enforcement is stated honestly rather than overclaimed. `scripts/check-boundaries.sh` greps three of the eight boundary rules; the docsite floor gate checks link integrity, orphans, type-name parity and a clean mdbook build; both run from `just check` and the opt-in pre-commit hook rather than CI. Conventional commits map to CHANGELOG categories.
 
-Each link is mechanically verifiable. Drift is detectable. The discipline produces a project whose history is queryable: any decision in the code can be traced back through docs to discourse, and any decision in discourse can be checked against what the code actually does.
+Where a check exists, drift is mechanically detectable. Where it does not, the audit trail is what makes drift findable, and review is the gate. The discipline produces a project whose history is queryable: any decision in the code can be traced back through docs to discourse, and any decision in discourse can be checked against what the code actually does.
 
 ## The two states: current and next
 
-vaani's docs live in two states simultaneously.
+matra's docs live in two states simultaneously.
 
 **Current** is what mirrors the released code. Whatever ships in the latest version of the crate, the wheel, and the future WASM crust. The `book/src/` site renders this state for visitors arriving from search engines or `pip install`.
 
@@ -69,7 +69,7 @@ The three surfaces correspond to different layers of commitment. The lighter the
 
 What is different about this project versus typical OSS:
 
-- **Discourse-first design.** Decisions begin in dialogue. The `.claude/rhetoric/` directory archives the deliberations that became commitments. Anyone can read how the conviction was settled, why `Document` replaces `Analysis`, why the pipeline parses per paragraph.
+- **Discourse-first design.** Decisions begin in dialogue and land where anyone can read them: an ADR in `docs/decisions/` for anything that binds future work, a CHANGELOG Highlight for anything user-visible. The reasoning is in the repository, not in a chat log.
 - **The docsite as verification surface.** Floor gates protect the docs against drift (broken links, orphaned pages, type-name mismatches, build warnings). The next-state docs cannot silently disagree with the code.
 - **Rubrics as guardrails.** Polish and governance rubrics live in `.claude/rhetoric/rubric/` and `.claude/rhetoric/polish-rubric/`. Each is a mechanical predicate set that gates content quality and structural integrity.
 - **Audience-stratified documentation.** CLAUDE.md addresses AI agents during sessions. CONTRIBUTING.md addresses human contributors. This document (you are reading it) addresses anyone curious about the model. README.md is the public face for visitors. Each surface has one audience and one purpose.
@@ -77,11 +77,11 @@ What is different about this project versus typical OSS:
 
 ## Why this matters
 
-vaani is a substrate library. Downstream consumers (alif, cancan, radix in the mox ecosystem; third-party Rust and Python projects in the wider world) inherit vaani's standards transitively. A substrate whose discipline is invisible cannot be inherited.
+matra is a substrate library. Downstream consumers (alif, cancan, radix in the mox ecosystem; third-party Rust and Python projects in the wider world) inherit matra's standards transitively. A substrate whose discipline is invisible cannot be inherited.
 
 The collaboration model is reproducible because every piece is visible. Read the rhetoric, read the rubrics, read the ADRs, read the CHANGELOG Highlights. Apply the same discipline to your own project. The pattern travels.
 
-The project is also part of an ongoing exploration into what human and AI collaborative intelligence looks like in practice. vaani is one specimen. The hypothesis under test: discipline plus dialogue plus a queryable audit trail produces software that survives, with both substrates strengthened by the exchange rather than degraded by it.
+The project is also part of an ongoing exploration into what human and AI collaborative intelligence looks like in practice. matra is one specimen. The hypothesis under test: discipline plus dialogue plus a queryable audit trail produces software that survives, with both substrates strengthened by the exchange rather than degraded by it.
 
 ## Pointers
 
@@ -91,4 +91,3 @@ The project is also part of an ongoing exploration into what human and AI collab
 - Decision history: [docs/decisions/](./decisions/)
 - Discourse archive (working notes): `.claude/rhetoric/` (in-repo, not deployed)
 - ACES and antifragility: documented in `CLAUDE.md` and `.claude/skills/aces/SKILL.md` (working substrate; not in the rendered book)
-- The conviction: [What vaani illuminates](../book/src/architecture/conviction.md)

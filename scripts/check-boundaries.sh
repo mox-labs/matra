@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Verifies vaani's hex-architecture boundary rules from CLAUDE.md.
-# Run in CI on every PR. Run locally before commit.
+# Verifies matra's hex-architecture boundary rules from CLAUDE.md.
+# Runs from 'just check' and the opt-in pre-commit hook. NOT wired into CI.
 #
 # Rules enforced here:
 #   3. No port module imports another port module.
 #   4. nlp/udpipe.rs is the ONLY file that imports udpipe_rs.
 #   8. tracing is forbidden in domain.rs and port modules (Burner amendment, 2026-04-28).
 #
-# Other rules (1, 2, 5, 6, 7) are enforced by the type system + cargo check
-# and do not need a script.
+# Rule 6 is gated by cargo check --no-default-features in ci.yml. Rules 1, 2, 5, 7
+# have no mechanical check (Rust offers no intra-crate directional-import control);
+# review is the gate. See .claude/arch/boundary-rules.md for the full table.
 
 set -euo pipefail
 
