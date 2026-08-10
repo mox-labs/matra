@@ -23,15 +23,15 @@ Each iteration has one plan. The plans are agent-legible: every task names the f
 
 Each plan has the same skeleton:
 
-- **Why this iteration exists** — the ground-truth conviction, with reviewer attribution.
-- **What lands** — task list. Each task has:
+- **Why this iteration exists**. the ground-truth conviction, with reviewer attribution.
+- **What lands**. task list. Each task has:
   - File(s) and line range.
   - Why (reviewer quote, with file or session attribution).
   - Steps.
   - Acceptance (an observable predicate that says the task is done).
-- **Validation** — Ixian's tests. Falsification scenarios. Tie-breaker experiments where there were disputes.
-- **Acceptance gate** — the single predicate that says the iteration is done. If this is false, the plan is not done.
-- **Risks** — what could go wrong, who to consult.
+- **Validation**. Ixian's tests. Falsification scenarios. Tie-breaker experiments where there were disputes.
+- **Acceptance gate**. the single predicate that says the iteration is done. If this is false, the plan is not done.
+- **Risks**. what could go wrong, who to consult.
 
 If a task is ambiguous in the plan, the plan is the bug. Edit the plan first, then the code.
 
