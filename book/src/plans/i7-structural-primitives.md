@@ -2,7 +2,7 @@
 
 **Boundary:** rule-substrate. Lands before any `src/rules/` design work.
 
-**Source of scope:** `~/mox/research/drafts/matra-substrate/SYNTHESIS.md` (2026-05-23), "The five concrete primitives it endorses for vaani", cross-walked in `~/mox/research/drafts/distillation/bidirectional/vaani.md` (2026-05-20) against cluster-1/3/4 research.
+**Source of scope:** an internal research synthesis dated 2026-05-23 naming five concrete primitives, cross-walked against a bidirectional report dated 2026-05-20 that maps the surveyed literature onto matra's actual surface. Neither is public; the grounding each cites is.
 
 ---
 

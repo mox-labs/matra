@@ -30,7 +30,7 @@ The roles are not exclusive to substrate. A human can write code; Claude can sug
 
 Every substantive change moves through three surfaces in order.
 
-**Discourse** forms the commitment. A session, a deliberation between agents, a guild voice raising a concern, a back-and-forth that converges on a decision. Recorded in `.claude/rhetoric/`, in PR comments, in CHANGELOG Highlight paragraphs.
+**Discourse** forms the commitment. A session, a deliberation between agents, a guild voice raising a concern, a back-and-forth that converges on a decision. Recorded in PR comments and in CHANGELOG Highlight paragraphs, and for decisions that bind future work, in an ADR.
 
 **Docs** record the commitment. An ADR for architectural decisions, a CHANGELOG entry for what shipped, a docsite page for the explanation. The docs are the durable trace of what was decided.
 
@@ -71,15 +71,15 @@ What is different about this project versus typical OSS:
 
 - **Discourse-first design.** Decisions begin in dialogue and land where anyone can read them: an ADR in `docs/decisions/` for anything that binds future work, a CHANGELOG Highlight for anything user-visible. The reasoning is in the repository, not in a chat log.
 - **The docsite as verification surface.** Floor gates protect the docs against drift (broken links, orphaned pages, type-name mismatches, build warnings). The next-state docs cannot silently disagree with the code.
-- **Rubrics as guardrails.** Polish and governance rubrics live in `.claude/rhetoric/rubric/` and `.claude/rhetoric/polish-rubric/`. Each is a mechanical predicate set that gates content quality and structural integrity.
+- **Rubrics as guardrails.** Each iteration plan under `book/src/plans/` carries a per-milestone rubric: a predicate set that gates the work rather than a description of it.
 - **Audience-stratified documentation.** CLAUDE.md addresses AI agents during sessions. CONTRIBUTING.md addresses human contributors. This document (you are reading it) addresses anyone curious about the model. README.md is the public face for visitors. Each surface has one audience and one purpose.
-- **Visible audit trail.** Every decision is reachable from a search through `docs/decisions/`, `.claude/rhetoric/`, and the commit log. The chain of reasoning never disappears into an org's internal Slack.
+- **Visible audit trail.** Every decision is reachable from a search through `docs/decisions/`, `book/src/plans/`, and the commit log. The chain of reasoning never disappears into an org's internal Slack.
 
 ## Why this matters
 
 matra is a substrate library. Downstream consumers (alif, cancan, radix in the mox ecosystem; third-party Rust and Python projects in the wider world) inherit matra's standards transitively. A substrate whose discipline is invisible cannot be inherited.
 
-The collaboration model is reproducible because every piece is visible. Read the rhetoric, read the rubrics, read the ADRs, read the CHANGELOG Highlights. Apply the same discipline to your own project. The pattern travels.
+The collaboration model is reproducible because every piece is visible. Read the plans, read the rubrics, read the ADRs, read the CHANGELOG Highlights. Apply the same discipline to your own project. The pattern travels.
 
 The project is also part of an ongoing exploration into what human and AI collaborative intelligence looks like in practice. matra is one specimen. The hypothesis under test: discipline plus dialogue plus a queryable audit trail produces software that survives, with both substrates strengthened by the exchange rather than degraded by it.
 
@@ -89,5 +89,5 @@ The project is also part of an ongoing exploration into what human and AI collab
 - PR mechanics and contribution flow for humans: [CONTRIBUTING.md](../CONTRIBUTING.md)
 - Architecture explanation: [book/src/architecture/](../book/src/architecture/)
 - Decision history: [docs/decisions/](./decisions/)
-- Discourse archive (working notes): `.claude/rhetoric/` (in-repo, not deployed)
+- Discourse archive (working notes): kept locally, not tracked. The durable record of a decision is its ADR, its PR discussion, and its CHANGELOG Highlight, all of which are in-repo.
 - ACES and antifragility: documented in `CLAUDE.md` and `.claude/skills/aces/SKILL.md` (working substrate; not in the rendered book)

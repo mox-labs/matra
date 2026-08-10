@@ -1,4 +1,6 @@
-# Implementation Plans
+# Plans
+
+The [roadmap](../roadmap.md) says what matra does not do yet and what condition would change that. A plan exists only once that condition has fired, and it says how the work gets done and how anyone knows it is finished. So the roadmap is the register and the plans are the execution; neither restates the other.
 
 Each iteration has one plan. The plans are agent-legible: every task names the file, the line range, the reviewer who asked for it, the acceptance predicate, and the validation test.
 

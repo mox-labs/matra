@@ -35,5 +35,5 @@ labels: ["type:feature", "status:triage"]
 
 ## Have you checked
 
-- [ ] The iteration plan under `.claude/plans/` to see if this is already planned
+- [ ] The iteration plan under `book/src/plans/` to see if this is already planned
 - [ ] Existing issues / discussions for prior art

@@ -21,6 +21,11 @@
 - [Errors](reference/errors.md)
 - [Boundary rules](reference/boundary-rules.md)
 
-# Project
+# What is planned
 
 - [Roadmap](roadmap.md)
+- [Plans](plans/README.md)
+  - [I3 Error tracing](plans/i3-error-tracing.md)
+  - [I5 Streaming](plans/i5-streaming.md)
+  - [I6 Post-publish](plans/i6-post-publish.md)
+  - [I7 Structural primitives](plans/i7-structural-primitives.md)

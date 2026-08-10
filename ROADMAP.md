@@ -21,11 +21,11 @@ This is the capability that bridges the record tier (what matra exposes today) a
 
 **Trigger condition. FIRED, 2026-05-23.** The condition was at least one concrete consumer pattern that direct `Document` field access and application-side logic cannot adequately serve.
 
-The research synthesis at `drafts/matra-substrate/SYNTHESIS.md` names five such patterns and states the case directly: "these five primitives *are* the consumer sites. The deferral has fired." They are negation, modal classification, evidentiality, Hearst patterns, and typed morphological features, each grounded in a distinct literature (FactBank polarity, CoNLL-2010 hedges, Aikhenvald evidentiality, Hearst 1992).
+An internal research synthesis dated 2026-05-23 names five such patterns and states the case directly: "these five primitives *are* the consumer sites. The deferral has fired." They are negation, modal classification, evidentiality, Hearst patterns, and typed morphological features, each grounded in a distinct literature (FactBank polarity, CoNLL-2010 hedges, Aikhenvald evidentiality, Hearst 1992).
 
 A second, sharper piece of evidence sits inside this repository. `Sentence::is_passive` is a method, and methods do not cross FFI, so `python/matra/cli.py` re-implements passive detection over raw tokens. matra's own crust duplicates its own primitive. Any consumer in any language does the same today.
 
-The five primitives land first, in [`.claude/plans/i7-structural-primitives.md`](https://github.com/mox-labs/matra/blob/main/.claude/plans/i7-structural-primitives.md), which carries the milestones and their rubrics. `Rule` and `Predicate` are designed after them, from the shape the five actually take, which is what "pulled from real use, not anticipated" asked for.
+The five primitives land first, in [`book/src/plans/i7-structural-primitives.md`](./plans/i7-structural-primitives.md), which carries the milestones and their rubrics. `Rule` and `Predicate` are designed after them, from the shape the five actually take, which is what "pulled from real use, not anticipated" asked for.
 
 ## WASM crust for TypeScript/browser
 
@@ -93,7 +93,7 @@ The pattern across all of these: capability waits for the consumer that justifie
 
 **What it is.** Three additions that make matra's existing metrics usable as a stylometric signature rather than as per-document readouts: a length-normalized lexical diversity measure, burstiness as a first-class value, and a contraction count.
 
-**Why these three specifically.** `~/mox/research/drafts/press/voice-measurement-gap.md` records a `scribe` agent blocked since 2026-04-21 on a calibration loop against a measured baseline: 26.6 word mean sentence length, 36.9 percent passive, 0 percent contractions, 7.7 percent nominalisation, 0.76 burstiness. Checked against what ships, three of those five are already `Document` methods or fields. Burstiness is derivable from `sentence_length_std` and the mean but is not exposed. Contractions are not counted at all. That document's own option 3 estimated the remaining work as "a small configuration layer, not a rewrite."
+**Why these three specifically.** An internal note dated 2026-04-21 records a writing-assistant agent blocked on a calibration loop against a measured baseline: 26.6 word mean sentence length, 36.9 percent passive, 0 percent contractions, 7.7 percent nominalisation, 0.76 burstiness. Checked against what ships, three of those five are already `Document` methods or fields. Burstiness is derivable from `sentence_length_std` and the mean but is not exposed. Contractions are not counted at all. That note estimated the remaining work as a small configuration layer rather than a rewrite.
 
 **One of them is a defect, not an addition.** `vocabulary_ttr` is a raw type-token ratio and TTR falls mechanically as text grows. Measured on this repository: README scores 0.690 against `architecture/design.md` at 0.227, but README has 35 sentences and the other has 266, so most of that gap is length rather than voice. As a cross-document feature it is currently unsound, which matters most for `analyze_directory`, whose whole purpose invites the comparison. Either a length-normalized measure lands beside it (MTLD, MATTR, or standardized TTR) or the limitation is documented on the type. Doing neither leaves a trap.
 

@@ -10,7 +10,7 @@ Architecture is a sequence of decisions across iterations. This file is the chan
 | I1 | Pipeline verbs (`ingest → decompose → parse → measure` + peer `extract`) | shipped |
 | I2 | Resilience floor (size caps, symlink rejection, atomic download, TOCTOU closure, `catch_unwind` panic boundary, O(n) tree_depth, parse-per-paragraph) | shipped |
 
-Future iterations are tracked in `.claude/plans/`. Past iterations are not rewritten; commitments only get superseded by new ADRs, never edited out.
+Future iterations are tracked in `book/src/plans/`. Past iterations are not rewritten; commitments only get superseded by new ADRs, never edited out.
 
 ## What never gets undone
 
@@ -89,7 +89,7 @@ These hold across the whole project, not per-iteration.
 ## How to add a future iteration
 
 1. Identify the trigger. What changed in the world that requires a new boundary? (Consumer report, performance ceiling, new requirement.)
-2. Write a short proposal in `.claude/plans/` named `iN-<topic>.md`. Use the same structure as the existing plans.
+2. Write a short proposal in `book/src/plans/` named `iN-<topic>.md`. Use the same structure as the existing plans.
 3. If the change touches the public surface or a boundary rule, write an ADR under `docs/decisions/` and link it from the plan.
 4. Land. Validate. Update CHANGELOG.md.
 

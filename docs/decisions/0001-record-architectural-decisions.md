@@ -73,7 +73,7 @@ them. They are append-only; obsolete ADRs are marked `deprecated` or
 
 **Neutral:**
 - ADRs sit alongside `.claude/arch/` (architecture overview, evergreen)
-  and `.claude/plans/` (sequenced execution plans). The three serve
+  and `book/src/plans/` (sequenced execution plans). The three serve
   different purposes: arch is *what*, plans are *when*, ADRs are
   *why this and not that*.
 
