@@ -1,0 +1,168 @@
+{
+  "name": "multi-paragraph",
+  "input": "First paragraph has one sentence.\n\nSecond paragraph has two sentences. This is the second.",
+  "format": "plain",
+  "expect": {
+    "total_sentences": 3,
+    "total_words": 14,
+    "paragraph_count": 2,
+    "sentences": [
+      {
+        "text": "First paragraph has one sentence.",
+        "token_count": 6,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "First",
+            "lemma": "first",
+            "pos": "ADJ",
+            "head": 2,
+            "dep": "amod"
+          },
+          {
+            "id": 2,
+            "text": "paragraph",
+            "lemma": "paragraph",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "nsubj"
+          },
+          {
+            "id": 3,
+            "text": "has",
+            "lemma": "have",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 4,
+            "text": "one",
+            "lemma": "one",
+            "pos": "NUM",
+            "head": 5,
+            "dep": "nummod"
+          },
+          {
+            "id": 5,
+            "text": "sentence",
+            "lemma": "sentence",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "obj"
+          },
+          {
+            "id": 6,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 3,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "Second paragraph has two sentences.",
+        "token_count": 6,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "Second",
+            "lemma": "second",
+            "pos": "ADJ",
+            "head": 2,
+            "dep": "amod"
+          },
+          {
+            "id": 2,
+            "text": "paragraph",
+            "lemma": "paragraph",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "nsubj"
+          },
+          {
+            "id": 3,
+            "text": "has",
+            "lemma": "have",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 4,
+            "text": "two",
+            "lemma": "two",
+            "pos": "NUM",
+            "head": 5,
+            "dep": "nummod"
+          },
+          {
+            "id": 5,
+            "text": "sentences",
+            "lemma": "sentence",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "obj"
+          },
+          {
+            "id": 6,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 3,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "This is the second.",
+        "token_count": 5,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "This",
+            "lemma": "this",
+            "pos": "PRON",
+            "head": 4,
+            "dep": "nsubj"
+          },
+          {
+            "id": 2,
+            "text": "is",
+            "lemma": "be",
+            "pos": "AUX",
+            "head": 4,
+            "dep": "cop"
+          },
+          {
+            "id": 3,
+            "text": "the",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 4,
+            "dep": "det"
+          },
+          {
+            "id": 4,
+            "text": "second",
+            "lemma": "second",
+            "pos": "NOUN",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 5,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 4,
+            "dep": "punct"
+          }
+        ]
+      }
+    ],
+    "vocabulary_ttr": 0.714286,
+    "nominalization_ratio": 0.071429
+  }
+}

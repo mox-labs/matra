@@ -1,0 +1,130 @@
+{
+  "name": "passive-voice",
+  "input": "The committee approved the proposal. It was reviewed by three members.",
+  "format": "plain",
+  "expect": {
+    "total_sentences": 2,
+    "total_words": 11,
+    "paragraph_count": 1,
+    "sentences": [
+      {
+        "text": "The committee approved the proposal.",
+        "token_count": 6,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "The",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 2,
+            "dep": "det"
+          },
+          {
+            "id": 2,
+            "text": "committee",
+            "lemma": "committee",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "nsubj"
+          },
+          {
+            "id": 3,
+            "text": "approved",
+            "lemma": "approve",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 4,
+            "text": "the",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 5,
+            "dep": "det"
+          },
+          {
+            "id": 5,
+            "text": "proposal",
+            "lemma": "proposal",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "obj"
+          },
+          {
+            "id": 6,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 3,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "It was reviewed by three members.",
+        "token_count": 7,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "It",
+            "lemma": "it",
+            "pos": "PRON",
+            "head": 3,
+            "dep": "nsubj:pass"
+          },
+          {
+            "id": 2,
+            "text": "was",
+            "lemma": "be",
+            "pos": "AUX",
+            "head": 3,
+            "dep": "aux:pass"
+          },
+          {
+            "id": 3,
+            "text": "reviewed",
+            "lemma": "review",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 4,
+            "text": "by",
+            "lemma": "by",
+            "pos": "ADP",
+            "head": 6,
+            "dep": "case"
+          },
+          {
+            "id": 5,
+            "text": "three",
+            "lemma": "three",
+            "pos": "NUM",
+            "head": 6,
+            "dep": "nummod"
+          },
+          {
+            "id": 6,
+            "text": "members",
+            "lemma": "member",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "obl"
+          },
+          {
+            "id": 7,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 3,
+            "dep": "punct"
+          }
+        ]
+      }
+    ],
+    "vocabulary_ttr": 0.909091,
+    "nominalization_ratio": 0.0
+  }
+}
