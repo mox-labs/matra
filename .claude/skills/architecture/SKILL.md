@@ -54,7 +54,7 @@ These are non-negotiable:
 7. The composition root (`lib.rs`) is the only place that knows all adapters and ports.
 8. `tracing` is forbidden in `domain.rs` and port modules (Burner amendment, 2026-04-28).
 
-Motivation, failure modes, and review guidance for each rule live in `.claude/arch/boundary-rules.md`. Read it before applying a rule you cannot justify from memory.
+Motivation, failure modes, and review guidance for each rule live in `book/src/reference/boundary-rules.md`. Read it before applying a rule you cannot justify from memory.
 
 Enforcement is thinner than it looks: only rule 6 has a gate that runs on every push. `scripts/check-boundaries.sh` greps for rules 3, 4, 8 but runs only from `just check` and the opt-in pre-commit hook, and it catches the literal import form only. Rules 1, 2, 5, 7 rest on review.
 

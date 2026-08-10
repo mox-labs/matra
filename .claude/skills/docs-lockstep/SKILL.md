@@ -24,12 +24,12 @@ When code changes, exactly the right docs change in the same PR. The mapping:
 | Fix a bug | regression test, `CHANGELOG.md [Unreleased] Fixed` |
 | Performance change | `CHANGELOG.md [Unreleased] Changed` (with perf note) |
 | Internal refactor | usually nothing (unless invariants change) |
-| New module under `src/` | `.claude/arch/architecture.md` (the diagram) |
-| New adapter | `.claude/arch/adapters.md` |
-| New port | `.claude/arch/ports.md` + ADR |
-| New domain type or field | `.claude/arch/domain-model.md` |
-| Boundary rule change | `.claude/arch/architecture.md` + ADR |
-| New feature flag | `Cargo.toml`, `.claude/arch/architecture.md`, `README.md` (if user-visible), `CLAUDE.md` (if structural) |
+| New module under `src/` | `book/src/architecture/design.md` (the diagram) |
+| New adapter | `book/src/architecture/design.md` |
+| New port | `book/src/architecture/design.md` + ADR |
+| New domain type or field | `book/src/reference/domain-types.md` |
+| Boundary rule change | `book/src/architecture/design.md` + ADR |
+| New feature flag | `Cargo.toml`, `book/src/architecture/design.md`, `README.md` (if user-visible), `CLAUDE.md` (if structural) |
 | Dep added/removed/bumped | `Cargo.toml`, `CHANGELOG.md`, ADR (if non-trivial) |
 | Public surface change | All of the above + ADR |
 

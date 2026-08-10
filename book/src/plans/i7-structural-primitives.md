@@ -67,7 +67,7 @@ Whichever wins, it binds M2 through M5 and should be recorded as an ADR, because
 
 **What lands.** Typed access to CoNLL-U column 6, which `Token.feats` carries today as a pipe-separated string like `Mood=Ind|Number=Sing|Tense=Pres`. Consumers parse that string themselves, every time.
 
-**The known counter-argument, recorded so it is answered rather than forgotten.** `bidirectional/vaani.md` judged this boundary correctly placed: CoNLL-U has thousands of feature combinations, so typing them fully is costly on matra's side and cheap on the consumer's. The synthesis disagreed and listed it. Both are in scope for the ADR.
+**The known counter-argument, recorded so it is answered rather than forgotten.** The bidirectional report judged this boundary correctly placed: CoNLL-U has thousands of feature combinations, so typing them fully is costly on matra's side and cheap on the consumer's. The synthesis disagreed and listed it. Both are in scope for the ADR.
 
 The resolution likely sits between them: a lookup accessor (`feat("Mood")` returning `Option<&str>`) rather than an exhaustive enum. That answers M3's need without matra taking a position on the full feature inventory.
 

@@ -1,66 +1,26 @@
-# matra — Architecture
+# Architecture notes
 
-NLP library. Text in, structured analysis out. A pure, performant, ACE-aligned NLP library in Rust with Python bindings via PyO3.
+Most of what used to live here now lives in the book, where it is built, gated, and read by people who are not us.
 
-## Read in this order
+| What you want | Where it is |
+|---|---|
+| How a call runs, what is resident, what can fail, what is swappable | [`book/src/architecture/design.md`](../../book/src/architecture/design.md) |
+| The type graph, stored versus computed, what crosses into Python | [`book/src/reference/domain-types.md`](../../book/src/reference/domain-types.md) |
+| The eight boundary rules, why each exists, how each is enforced | [`book/src/reference/boundary-rules.md`](../../book/src/reference/boundary-rules.md) |
+| Every metric formula and its applicability condition | [`book/src/reference/methodology.md`](../../book/src/reference/methodology.md) |
+| What matra does not do yet and what would change that | [`book/src/roadmap.md`](../../book/src/roadmap.md) |
+| How a triggered capability gets built | [`book/src/plans/`](../../book/src/plans/) |
 
-1. **[architecture.md](architecture.md)** — the big picture: single-crate shape, hex layout, composition root, boundary rules, cross-language story.
-2. **[domain-model.md](domain-model.md)** — the data shapes everything else depends on. Read this if you are touching any type.
-3. **[ports.md](ports.md)** — the three boundary traits: `Source`, `Decomposer`, `NlpProvider`. Read this if you are adding a new format, NLP backend, or input shape.
-4. **[adapters.md](adapters.md)** — concrete implementations of the ports.
-5. **[evolution.md](evolution.md)** — what's locked, what's allowed to change, what's deferred.
+## What is still here
 
-## Pipeline at a glance
+[`evolution.md`](evolution.md) records decisions considered and **rejected**: the workspace split, built-in pattern extractors, a four-port model with a separate ingest trait, the async pipeline, the streaming reactor. Each says what was proposed and why it was turned down.
 
-```mermaid
-flowchart LR
-    file[("file or directory")] --> ingest[ingest]
-    text[("text")] --> ingest
-    ingest --> decompose[decompose]
-    decompose --> parse[parse]
-    parse --> measure[measure]
-    parse --> extract[extract]
-    measure --> analysis[("Document")]
-    extract --> selections[("ScoredSentence / Keyphrase")]
-```
+That is the one thing the book cannot carry. The book describes what matra is; a reader deciding whether to propose one of these needs to know it was already argued and lost, and on what grounds. Removing it would take the fence down without reading the sign.
 
-Five verbs. Four sequential, one peer.
+## Why the rest went
 
-- `ingest` reads bytes and produces a `RawDocument`.
-- `decompose` breaks a document into structural units (sections, paragraphs).
-- `parse` annotates text with linguistic structure (tokens, dep tree).
-- `measure` produces scalars (readability, lexical density, compression ratio, TTR, nominalization, passive ratio).
-- `extract` produces selections (top sentences via TF-IDF / TextRank, key phrases via RAKE / YAKE).
+Five files here duplicated the pages above: `architecture.md`, `ports.md`, `adapters.md`, `domain-model.md`, `boundary-rules.md`. Duplication is not free. Nothing under `.claude/` is gated, so the copies drifted silently and one of them still carried the project's previous name three months after the rename.
 
-`measure` and `extract` are peers, not nested. They both consume parsed sentences and produce different kinds of artifact: aggregations vs selections.
+The book is gated by `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quotations. Architecture prose that lives there gets checked. Architecture prose that lives here does not.
 
-## Invariants that hold today
-
-These hold today. See [boundary-rules.md](boundary-rules.md) for how each is (and is not) enforced:
-
-1. `domain.rs` has zero internal dependencies beyond `serde`, `thiserror`, and `std`.
-2. Port modules (`source/mod.rs`, `decompose/mod.rs`, `nlp/mod.rs`) import only from `domain`. They do not import each other.
-3. Each adapter implements one port. Adapters do not import each other.
-4. `nlp/udpipe.rs` is the only file allowed to import `udpipe_rs`.
-5. `metrics/` and `extraction/` import only from `domain` and `stopwords`.
-6. `cargo check --no-default-features` must compile.
-7. The composition root (`lib.rs`) is the only place that knows all adapters and all ports.
-8. `tracing` is forbidden in `domain.rs` and port modules (Burner amendment, 2026-04-28).
-
-Enforcement is thinner than this list suggests. Only rule 6 (`cargo check --no-default-features`) is gated in CI. `scripts/check-boundaries.sh` greps three rules (no cross-port import, single `udpipe_rs` importer, no `tracing` in domain or ports) and runs from `just check` and the opt-in pre-commit hook, never in CI. Everything else rests on review. The canonical list, with motivation and failure modes, is [boundary-rules.md](boundary-rules.md).
-
-## ACE: the design discipline
-
-matra is built around three forces, each countering a known decay mode in long-lived libraries.
-
-- **Adaptable** — design for change. `#[non_exhaustive]` on every public enum and every public struct with public fields. Configuration over hardcoding. Feature flags are additive and orthogonal.
-- **Composable** — discrete components, clear boundaries, swappable parts. Three ports, multiple adapters per port, one composition root.
-- **Extensible** — clear interfaces that invite contribution without requiring full comprehension. Add a new `Source`, `Decomposer`, or `NlpProvider` adapter without reading the rest of the codebase.
-
-matra is **pure**: it does not opine on what good prose looks like. It produces the trees, scalars, and selections; consumer code opines.
-
-matra is **performant**: bounded memory, O(n) algorithms where possible, capped where not. No silent quadratic surprises.
-
-matra is **enabling**: a substrate. Designed so other libraries do meaningful work on top without forking the core.
-
-Names appear in three languages (Rust, Python, TypeScript via WASM when that crust lands) and become public field paths. They are contracts.
+So the rule is: if a fact about the architecture is worth writing down, it goes in the book. This directory holds only what the book has no place for.

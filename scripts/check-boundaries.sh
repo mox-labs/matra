@@ -9,7 +9,7 @@
 #
 # Rule 6 is gated by cargo check --no-default-features in ci.yml. Rules 1, 2, 5, 7
 # have no mechanical check (Rust offers no intra-crate directional-import control);
-# review is the gate. See .claude/arch/boundary-rules.md for the full table.
+# review is the gate. See book/src/reference/boundary-rules.md for the full table.
 
 set -euo pipefail
 

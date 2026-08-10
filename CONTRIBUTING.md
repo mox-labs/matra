@@ -212,7 +212,7 @@ checked against the ACES boundary test; every new I/O or external-library
 boundary is checked against the antifragile checklist.
 
 **Boundary rules:** non-negotiable. See
-[`.claude/arch/boundary-rules.md`](.claude/arch/boundary-rules.md) for the
+[`book/src/reference/boundary-rules.md`](book/src/reference/boundary-rules.md) for the
 canonical eight rules and how each is enforced; `CLAUDE.md` carries the
 summary. `scripts/check-boundaries.sh` greps three of them and runs from
 `just check` and the optional pre-commit hook. It is not wired into CI:
