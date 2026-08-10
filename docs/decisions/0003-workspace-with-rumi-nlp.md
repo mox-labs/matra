@@ -114,7 +114,7 @@ question; this ADR does not bind it.
 
 ## References
 
-- I4 plan: `book/src/plans/i4-workspace.md`.
+- I4 plan: retracted. The workspace conversion was not carried out; see ADR-0004, which supersedes the direction, and `.claude/arch/evolution.md` for why the split was rejected.
 - Architecture: `book/src/architecture/design.md` (workspace section).
 - Evolution rationale: `.claude/arch/evolution.md` ("rumi-nlp in
   the matcher-engine's workspace" — rejected option).
