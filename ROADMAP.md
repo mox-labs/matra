@@ -19,7 +19,13 @@ This is the capability that bridges the record tier (what matra exposes today) a
 
 **Where it lands.** Inside matra, in a new `src/rules/` module. The vocabulary is locked by ADR-0006: `Rule`, `Predicate`, `Finding`, `SourceSpan`. Rule evaluation is not a separate crate; consumers compose against one surface. The `Finding` type's shape (trait vs enum) is deferred to Phase 2; the name is locked.
 
-**Trigger condition.** At least one concrete consumer pattern that requires rule evaluation cannot be adequately served by direct `Document` field access and application-side logic. The design of `Rule` and `Predicate` must be pulled from real use, not anticipated.
+**Trigger condition. FIRED, 2026-05-23.** The condition was at least one concrete consumer pattern that direct `Document` field access and application-side logic cannot adequately serve.
+
+The research synthesis at `drafts/matra-substrate/SYNTHESIS.md` names five such patterns and states the case directly: "these five primitives *are* the consumer sites. The deferral has fired." They are negation, modal classification, evidentiality, Hearst patterns, and typed morphological features, each grounded in a distinct literature (FactBank polarity, CoNLL-2010 hedges, Aikhenvald evidentiality, Hearst 1992).
+
+A second, sharper piece of evidence sits inside this repository. `Sentence::is_passive` is a method, and methods do not cross FFI, so `python/matra/cli.py` re-implements passive detection over raw tokens. matra's own crust duplicates its own primitive. Any consumer in any language does the same today.
+
+The five primitives land first, in [`.claude/implans/i7-structural-primitives.md`](.claude/implans/i7-structural-primitives.md). `Rule` and `Predicate` are designed after them, from the shape the five actually take, which is what "pulled from real use, not anticipated" asked for.
 
 ## WASM crust for TypeScript/browser
 
