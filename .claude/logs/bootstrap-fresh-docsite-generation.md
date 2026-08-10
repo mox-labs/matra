@@ -38,7 +38,7 @@ justfile                    `just docs-floor` runs the gate suite
 
 ## Authority order (when surfaces conflict)
 
-code > tests > `.claude/arch/` > `.claude/plans/` > ADRs > CHANGELOG > polish rubric > rhetoric artifacts.
+code > tests > `.claude/arch/` > `book/src/plans/` > ADRs > CHANGELOG > polish rubric > rhetoric artifacts.
 
 Closer to the running system wins.
 

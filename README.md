@@ -114,7 +114,7 @@ participate without re-deriving the substrate.
 | Where to look | What's there |
 |---|---|
 | [`.claude/arch/`](.claude/arch/) | Architecture docs |
-| [`.claude/plans/`](.claude/plans/) | Iteration plans (current + future) |
+| [`book/src/plans/`](book/src/plans/) | Iteration plans (current + future) |
 | [`docs/decisions/`](docs/decisions/) | Architecture Decision Records (ADRs) |
 | [`CHANGELOG.md`](CHANGELOG.md) | What changed and why, per release |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to participate, commit conventions, decision flow |
