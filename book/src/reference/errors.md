@@ -1,0 +1,169 @@
+# Errors
+
+Every fallible function in matra returns `domain::Result<T>`, which is `std::result::Result<T, domain::Error>`. No function in the library returns `Result<T, String>`. matra signals failure by returning `Error`, not by unwinding: a panic raised inside the UDPipe C++ boundary is caught at the adapter and converted into `Error::ParseFailed`.
+
+`Error` is `#[non_exhaustive]`. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. `Error` derives neither `Clone` nor serde; it is moved, not copied, and `analyze_directory` moves each per-file failure into its returned vector.
+
+## The variants
+
+| Variant | Payload | Returned when |
+|---|---|---|
+| `ModelNotFound` | `PathBuf` | A model file does not exist at the given path |
+| `ModelInvalid` | `String` | A model file exists but could not be loaded, downloaded, or verified |
+| `ParseFailed` | `String` | The NLP provider failed on the input, or panicked, or produced an unusable token id |
+| `InputTooLarge` | `{ limit: usize, actual: usize, what: &'static str }` | A size gate rejected the input. `what` names the gate |
+| `UnsupportedFormat` | `Format` | The document's format has no registered decomposer |
+| `Io` | `std::io::Error` | A filesystem operation failed |
+
+`Error` implements `std::error::Error` and `Display` through `thiserror`, and `From<std::io::Error>`, so `?` converts I/O failures automatically.
+
+### ModelNotFound
+
+Returned by `Udpipe::from_path` when the path does not exist. The payload is the path as given. `Udpipe::english` does not return this variant: it downloads the model when the file is absent.
+
+### ModelInvalid
+
+Returned by:
+
+- `Udpipe::from_path` and `Udpipe::from_bytes` when the loader rejects the bytes. The payload is the loader's message.
+- `Udpipe::english` when the download fails. The payload is the download error's message.
+- `Udpipe::english` when the file still fails SHA-256 verification after one delete and re-download. The payload is `SHA-256 mismatch after re-download: <path>`.
+
+A file whose hash does not match the pinned constant is treated as untrusted and is never loaded.
+
+### ParseFailed
+
+Returned by the UDPipe adapter's `parse` in three situations:
+
+- The underlying parser returns an error. The payload is that error's message.
+- The underlying parser panics. The payload is `udpipe panicked: <message>`. The `catch_unwind` seam that produces this lives in `nlp/udpipe.rs`, and it exists because an unhandled panic crossing the C++ boundary aborts the host process instead of unwinding.
+- A token id or head value cannot be represented as `usize`. The payload names the token and its sentence.
+
+### InputTooLarge
+
+Six gate labels produce this variant. The `what` field carries the label so a caller can route each gate differently.
+
+| `what` | Gate | Limit | Measured over |
+|---|---|---|---|
+| `"input"` | `analyze`, `analyze_markdown`, `parse`, `analyze_from` | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | UTF-8 byte length of the text. `analyze_from` sums the byte lengths of every paragraph instead |
+| `"file_source"` | `FileSource::read`, and `DirectorySource` through it | 8,388,608 bytes | File size reported by the filesystem, checked before any read |
+| `"tfidf"` | `tfidf_summarize` | 2,000 | Number of sentences in the slice |
+| `"textrank"` | `textrank_summarize` | 2,000 | Number of sentences in the slice |
+| `"rake"` | `rake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
+| `"yake"` | `yake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
+
+`limit` carries the cap and `actual` carries the measured size, so an error message can be built without hardcoding the constants.
+
+The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens.
+
+Four details govern when a gate fires.
+
+`analyze_file` and `analyze_directory` cross the `"input"` gate too, because they route through `analyze` or `analyze_markdown` once the format is known. In practice `"file_source"` fires first, since both gates carry the same 8 MiB limit and the file size is checked before the read.
+
+Calling a provider's `parse` directly bypasses the `"input"` gate. The gate belongs to the library entry points, not to the `NlpProvider` trait.
+
+The four extractors check their caps after their empty-result checks. `tfidf_summarize(sentences, 0)`, `textrank_summarize(sentences, 0)`, `rake_keyphrases(sentences, 0)`, and `yake_keyphrases(sentences, 0)` return an empty vector without evaluating the cap, whatever the size of the slice. The same holds for an empty slice.
+
+A metric has no gate of its own. The compression ratio skips any paragraph over 262,144 bytes and leaves its metric slot at `None` rather than returning an error.
+
+### UnsupportedFormat
+
+Returned by `analyze_file`, and recorded per file by `analyze_directory`, when the detected `Format` is `Pdf` or `Docx`. The payload is the `Format` value. `Markdown` and `PlainText` always have a decomposer.
+
+### Io
+
+Wraps `std::io::Error`, produced by:
+
+- `FileSource` rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`.
+- `FileSource` rejecting a path that is not a regular file, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`.
+- Any read, directory listing, directory creation, file removal, or rename that fails.
+- `analyze_file` when the source yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
+
+## Per-file failures in a directory read
+
+`analyze_directory` returns `Result<(Corpus, Vec<(PathBuf, Error)>)>`. The outer `Result` is `Err` only when the directory listing itself fails. One unreadable or oversized file does not stop the run: it becomes an entry in the error vector, and analysis continues with the next file. Both ingest failures and analysis failures land in that vector.
+
+Two kinds of entry never reach it. `DirectorySource` skips symlinks while listing, so a symlink in the directory produces no document and no error. It also skips anything that is not a regular file. The read is one level deep, so a subdirectory is skipped the same way.
+
+## Display strings
+
+These are the strings `Display` produces, and the strings Python's `str(exc)` returns.
+
+| Variant | Format |
+|---|---|
+| `ModelNotFound(path)` | `model not found: {path}` |
+| `ModelInvalid(s)` | `invalid model: {s}` |
+| `ParseFailed(s)` | `parse failed: {s}` |
+| `InputTooLarge { limit, actual, what }` | `{what} input too large: {actual} > limit {limit}` |
+| `UnsupportedFormat(format)` | `unsupported format: {format:?}` |
+| `Io(e)` | `io error: {e}` |
+
+`UnsupportedFormat` renders the variant name, so the string reads `unsupported format: Pdf`.
+
+## Matching in Rust
+
+```rust
+use matra::domain::Error;
+use matra::nlp::NlpProvider;
+
+fn report(text: &str, nlp: &dyn NlpProvider) {
+    match matra::analyze(text, nlp) {
+        Ok(document) => println!("{} sentences", document.total_sentences()),
+        Err(Error::InputTooLarge {
+            what,
+            actual,
+            limit,
+        }) => eprintln!("{what} gate: {actual} over limit {limit}"),
+        Err(Error::ModelNotFound(path)) => {
+            eprintln!("model missing at {}", path.display())
+        }
+        Err(other) => eprintln!("{other}"),
+    }
+}
+```
+
+The catch-all arm is required, both because `Error` is `#[non_exhaustive]` and because a new variant can appear in a minor release.
+
+## Python exception mapping
+
+The PyO3 binding converts `Error` into a Python exception class. The conversion is a match with no wildcard arm, so adding a variant to `Error` without assigning it an exception class fails to compile.
+
+| Variant | Python exception |
+|---|---|
+| `ModelNotFound` | `FileNotFoundError` |
+| `InputTooLarge` | `ValueError` |
+| `UnsupportedFormat` | `ValueError` |
+| `Io` | `OSError` |
+| `ModelInvalid` | `RuntimeError` |
+| `ParseFailed` | `RuntimeError` |
+
+`ModelNotFound` maps to `FileNotFoundError` so that the conventional Python idiom works:
+
+```python
+from matra import Matra
+
+try:
+    engine = Matra.from_path("models/english-ewt-ud-2.5-191206.udpipe")
+except FileNotFoundError as exc:
+    print(exc)  # model not found: models/english-ewt-ud-2.5-191206.udpipe
+```
+
+The exception message is the `Display` string from the table above. Variant identity beyond the exception class is not carried across the boundary; a caller that needs to distinguish `InputTooLarge` from `UnsupportedFormat` inspects the message.
+
+Which gates apply on the Python side follows from what each method calls. `Matra.analyze` and `Matra.analyze_markdown` route through the Rust `analyze` and `analyze_markdown` functions, so the 8 MiB `"input"` gate applies. `Matra.tfidf_summarize`, `Matra.textrank_summarize`, `Matra.rake_keyphrases`, and `Matra.yake_keyphrases` call the provider's `parse` directly, so the 8 MiB gate does not apply to them. Their per-extractor caps do.
+
+One further failure has no `Error` variant behind it. The `Matra` class is `#[pyclass(unsendable)]`, because the loaded model holds C-side state that is not thread-safe. Accessing one instance from a thread other than the one that created it fails at runtime. Multi-process use is unaffected.
+
+## At the command line
+
+Two programs are installed under the name `matra`. The Rust binary comes from `cargo install matra --features cli`. The Python console script comes from the wheel and wraps the same engine through the binding. The exit-code contract below belongs to the Rust binary.
+
+| Exit code | Meaning |
+|---|---|
+| 0 | The command succeeded, and where applicable something was found |
+| 1 | The command succeeded and found nothing |
+| 2 | An error occurred |
+
+On exit code 2 the binary writes `matra: ` followed by the error's `Display` string to standard error. A broken pipe, which is what happens when the reading end of `matra analyze file.md | head` goes away, exits 0 and prints nothing.
+
+The Python console script does not implement that contract. It exits 1 when the model cannot be loaded, and otherwise surfaces the exception classes from the table above.
