@@ -27,17 +27,7 @@ A change that's good engineering but violates ACES is not good for matra. The he
 
 ## The hex layout
 
-```
-src/
-├── lib.rs              # composition root (the only file that knows the whole)
-├── domain.rs           # types — serde + thiserror + std only
-├── source/             # Source port + FileSource + DirectorySource adapters
-├── decompose/          # Decomposer port + MarkdownDecomposer + PlainTextDecomposer
-├── nlp/                # NlpProvider port + Udpipe adapter
-├── metrics/            # metric functions — depend only on domain + stopwords
-├── extraction/         # extractor functions — depend only on domain + stopwords
-└── stopwords.rs        # shared utility
-```
+`domain.rs` at the centre. One `mod.rs` per port declaring one trait. One adapter per port responsibility, each implementing its port and nothing else. `metrics/` and `extraction/` as plain functions over `domain` and `stopwords`. `lib.rs` as the composition root.
 
 Dependencies point inward. Adapters know about `domain` and the port they implement. Ports know only about `domain`. Domain knows nothing. Composition root knows everything.
 

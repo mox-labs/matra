@@ -31,62 +31,19 @@ The five verbs are the public stage vocabulary. Trait names (`Source`, `Decompos
 
 Domain depends on port traits (NlpProvider, Decomposer, Source), not on adapters directly. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
 
-```
-src/
-  lib.rs                    # composition root + PyO3 module (feature-gated)
-  domain.rs                 # all domain types (only serde, thiserror, std)
-  source/
-    mod.rs                  # Source trait
-    file.rs                 # FileSource adapter (symlink-rejecting, size-capped)
-    directory.rs            # DirectorySource adapter (skips symlinks, sorted, per-file error tolerance)
-  decompose/
-    mod.rs                  # Decomposer trait
-    markdown.rs             # MarkdownDecomposer adapter
-    plain.rs                # PlainTextDecomposer adapter
-  nlp/
-    mod.rs                  # NlpProvider trait
-    udpipe.rs               # UDPipe adapter (only file importing udpipe_rs)
-  metrics/
-    mod.rs                  # Metric alias, default_suite, run_suite
-    readability.rs          # Flesch-Kincaid
-    lexical.rs              # lexical density
-    compression.rs          # brotli compression ratio
-    document.rs             # vocabulary_ttr + nominalization_ratio
-  extraction/
-    mod.rs                  # re-exports
-    tfidf.rs                # tfidf_summarize
-    textrank.rs             # textrank_summarize (capped at MAX_SENTENCES)
-    rake.rs                 # rake_keyphrases
-    yake.rs                 # yake_keyphrases
-  stopwords.rs              # shared utility
-  bin/
-    matra.rs                # Rust CLI (feature: cli). Application tier: rendering,
-                            # exit codes, and what to do when input is missing
-python/matra/
-  __init__.py               # re-exports Matra from _core + the domain TypedDicts
-  _core.pyi                 # PyO3 extension stub (shipped in the wheel)
-  py.typed                  # PEP 561 marker
-  types.py                  # runtime TypedDicts mirroring domain.rs
-  cli.py                    # click + rich CLI, auto-downloads model
-scripts/
-  fetch-model-hash.sh       # refresh ENGLISH_MODEL_SHA256 when version changes
-  check-boundaries.sh       # greps rules 3, 4, 8 (local only: just check + pre-commit hook)
-  install-hooks.sh          # installs the pre-commit hook
-  pre-commit-hook.sh        # local pre-commit gates
-  changelog-release.sh      # rolls the CHANGELOG (does not touch versions)
-  check-docsite-floor.sh    # the five docsite floor gates (just docs-floor)
-spec/
-  README.md                 # the conformance contract; the model is part of it
-  tests/*.json              # language-agnostic fixtures every crust runs
-tests/
-  integration.rs            # full pipeline tests (require UDPipe model)
-  cli.rs                    # binary behaviour: args, format detection, exit codes
-  conformance.rs            # Rust runner over spec/tests/
-examples/
-  basic.rs                  # getting-started example
-  corpus.rs                 # directory / corpus walk
-  parse_once_use_many.rs    # parse-once-use-many pattern
-```
+Four layers, and the dependency arrows only ever point inward.
+
+- `domain.rs` holds every type the library hands back and depends on `serde`, `thiserror` and `std`. Nothing else.
+- Each port is a `mod.rs` (`source/`, `decompose/`, `nlp/`) declaring one trait and importing only `domain`.
+- Each adapter implements one port. `nlp/udpipe.rs` is the only file in the tree that imports `udpipe_rs`, because that is where the panic boundary lives.
+- `metrics/` and `extraction/` are plain functions over `domain` and `stopwords`. They touch no port, which is why they test without a model.
+- `lib.rs` is the composition root: the only file that knows every adapter and every port, and the only place they are wired together.
+
+Above the library, `bin/matra.rs` is the application tier and decides rendering and exit codes, while `python/matra/` is the crust.
+
+Run `ls` for the file list. It is not repeated here, because a hand-maintained tree in a context document goes stale the first time a file moves and then quietly misinforms whoever trusted it.
+
+For how a call actually runs through those layers, read `book/src/architecture/design.md`.
 
 ## Boundary rules
 
