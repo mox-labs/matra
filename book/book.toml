@@ -26,7 +26,6 @@ cname = ""
 no-section-label = false
 fold = { enable = true, level = 1 }
 additional-css = ["css/matra.css"]
-additional-js = ["mermaid.min.js", "mermaid-init.js"]
 
 [output.html.search]
 enable = true
@@ -45,8 +44,21 @@ copy-js = true
 line-numbers = false
 runnable = false
 
-[preprocessor.mermaid]
-command = "mdbook-mermaid"
+# Mermaid is not installed. Every figure in this book is hand-authored inline
+# SVG, because in all of them the meaning depends on where something sits:
+# word order in the dependency tree, containment in the type graph, arrows that
+# stop at the FFI wall while others cross it. Mermaid gives nodes, edges and
+# labels but not position, so its auto-layout would contradict the data while
+# looking authoritative.
+#
+# Mermaid remains the right tool for sequences, state machines and decision
+# trees. When one of those is needed, restore it with:
+#
+#     mdbook-mermaid install book
+#
+# which re-vendors mermaid.min.js and mermaid-init.js and re-adds the
+# additional-js and [preprocessor.mermaid] entries this comment replaces.
+# The rule for choosing between them is in .rhet/voice.md feature 8.
 
 # linkcheck deferred: mdbook-linkcheck 0.7.7 is incompatible with mdbook 0.5.3
 # (RenderContext schema drift). Phase 0 floor uses lychee for link verification;
