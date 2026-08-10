@@ -59,6 +59,9 @@ src/
     rake.rs                 # rake_keyphrases
     yake.rs                 # yake_keyphrases
   stopwords.rs              # shared utility
+  bin/
+    matra.rs                # Rust CLI (feature: cli). Application tier: rendering,
+                            # exit codes, and what to do when input is missing
 python/matra/
   __init__.py               # re-exports Matra from _core + the domain TypedDicts
   _core.pyi                 # PyO3 extension stub (shipped in the wheel)
@@ -71,9 +74,14 @@ scripts/
   install-hooks.sh          # installs the pre-commit hook
   pre-commit-hook.sh        # local pre-commit gates
   changelog-release.sh      # rolls the CHANGELOG (does not touch versions)
-  check-docsite-floor.sh    # the four docsite floor gates (just docs-floor)
+  check-docsite-floor.sh    # the five docsite floor gates (just docs-floor)
+spec/
+  README.md                 # the conformance contract; the model is part of it
+  tests/*.json              # language-agnostic fixtures every crust runs
 tests/
   integration.rs            # full pipeline tests (require UDPipe model)
+  cli.rs                    # binary behaviour: args, format detection, exit codes
+  conformance.rs            # Rust runner over spec/tests/
 examples/
   basic.rs                  # getting-started example
   corpus.rs                 # directory / corpus walk
@@ -128,10 +136,15 @@ just check                                     # runs every CI gate locally
 cargo build                                    # default (with udpipe)
 cargo build --no-default-features              # without udpipe
 cargo test                                     # unit + doctests
+cargo test --features cli                      # + the binary's own tests
 cargo test --test integration -- --ignored     # integration (needs model)
+just conformance                               # every crust against spec/tests/
+just docs-floor                                # the five docsite gates
 maturin develop                                # Python local install
 maturin build                                  # Python wheel
 ```
+
+Features are additive: `udpipe` (default), `python`, `cli`. **Do not run `cargo test --all-features`.** It enables `python`, which builds against libpython with symbols deliberately left undefined until the interpreter loads them, so it fails at link with an arm64 symbol error that looks like a regression and is not.
 
 ## DAO — practitioner agents
 
