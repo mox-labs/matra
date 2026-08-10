@@ -1,0 +1,13 @@
+# The toolchain matra is developed against.
+#
+# rustup reads this automatically, so `cargo` in this directory uses this
+# toolchain regardless of the machine default, and CI gets the same compiler
+# a contributor has locally.
+#
+# `stable`, not the MSRV. Developing on the oldest supported compiler would
+# cost the newer diagnostics for no gain: the MSRV claim in Cargo.toml
+# (rust-version = "1.85") is verified separately by the `msrv` job in
+# .github/workflows/ci.yml, which is where that check belongs.
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy", "llvm-tools-preview"]
