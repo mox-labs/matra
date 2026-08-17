@@ -116,8 +116,33 @@ pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Se
     nlp.parse(text)
 }
 
-/// Analyze from pre-decomposed sections and pre-parsed sentences.
-/// Use with [`parse()`] for the no-double-parse pattern.
+/// Analyze from pre-decomposed sections and pre-parsed sentences, so a
+/// caller who needs both a `Document` and the sentence slice pays for the
+/// parse once.
+///
+/// # This does not produce the same `Document` as [`analyze_markdown()`]
+///
+/// Only the two document-level metrics are populated. Every paragraph-level
+/// metric stays `None`:
+///
+/// | Field | After `analyze_from` |
+/// |---|---|
+/// | `vocabulary_ttr`, `nominalization_ratio` | `Some` |
+/// | `readability_grade`, `lexical_density`, `compression_ratio` | **always `None`** |
+///
+/// The reason is structural. Paragraph metrics gate on
+/// [`Paragraph::word_count`](domain::Paragraph::word_count), which sums over
+/// `Paragraph::sentences`. This function receives one flat slice with no
+/// record of which sentence came from which paragraph, so it cannot fill
+/// those in. Recovering the mapping would mean matching sentences back to
+/// paragraphs by text, which this crate removed deliberately: two paragraphs
+/// sharing an opening substring were silently assigned each other's
+/// sentences.
+///
+/// So the flat slice serves the document-level metrics and the extractors,
+/// and nothing else. If you want paragraph metrics, call
+/// [`analyze_markdown()`] or [`analyze()`] and read the sentences back off
+/// the tree with `Document::sentences()`.
 ///
 /// ```no_run
 /// # use matra::decompose::Decomposer;
@@ -125,6 +150,8 @@ pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Se
 /// # fn example(text: &str, nlp: &dyn NlpProvider) -> matra::domain::Result<()> {
 /// let sections = matra::decompose::markdown::MarkdownDecomposer.decompose(text);
 /// let sentences = matra::parse(text, nlp)?;
+///
+/// // Document-level metrics only. Paragraph slots stay None.
 /// let analysis = matra::analyze_from(sections, &sentences)?;
 /// let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
 /// # Ok(())
@@ -281,6 +308,7 @@ mod python {
             text: &str,
             n: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
+            crate::check_input_size(text).map_err(MatraError)?;
             let sentences = self.nlp.parse(text).map_err(MatraError)?;
             let result = crate::extraction::tfidf_summarize(&sentences, n).map_err(MatraError)?;
             to_dict(py, &result)
@@ -293,6 +321,7 @@ mod python {
             text: &str,
             n: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
+            crate::check_input_size(text).map_err(MatraError)?;
             let sentences = self.nlp.parse(text).map_err(MatraError)?;
             let result =
                 crate::extraction::textrank_summarize(&sentences, n).map_err(MatraError)?;
@@ -306,6 +335,7 @@ mod python {
             text: &str,
             max_phrases: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
+            crate::check_input_size(text).map_err(MatraError)?;
             let sentences = self.nlp.parse(text).map_err(MatraError)?;
             let result =
                 crate::extraction::rake_keyphrases(&sentences, max_phrases).map_err(MatraError)?;
@@ -319,6 +349,7 @@ mod python {
             text: &str,
             max_phrases: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
+            crate::check_input_size(text).map_err(MatraError)?;
             let sentences = self.nlp.parse(text).map_err(MatraError)?;
             let result =
                 crate::extraction::yake_keyphrases(&sentences, max_phrases).map_err(MatraError)?;
@@ -468,6 +499,83 @@ mod tests {
         );
         assert!(!paras[1].sentences.is_empty());
         assert!(!paras[2].sentences.is_empty());
+    }
+
+    /// Regression: `analyze_from` receives one flat sentence slice with no
+    /// record of which sentence came from which paragraph, so it cannot fill
+    /// `Paragraph::sentences`. Every paragraph metric gates on
+    /// `Paragraph::word_count`, which sums over that field, so all three stay
+    /// `None` while the document-level pair is populated.
+    ///
+    /// This pins the documented postcondition. It was previously undocumented
+    /// and the doctest presented the function as equivalent to
+    /// `analyze_markdown`, so a caller following the no-double-parse pattern
+    /// got a half-populated `Document` with no error.
+    #[test]
+    fn analyze_from_leaves_paragraph_metrics_none() {
+        let text = "The committee approved the proposal without any further \
+                    debate today. Three amendments were submitted by the \
+                    working group before the meeting closed.";
+        let para = domain::Paragraph::new(text.to_string(), false);
+        let sections = vec![domain::Section::new(None, 0, vec![para])];
+
+        // The caller's own parse, as the no-double-parse pattern prescribes.
+        // Tokens are real so the document-level metrics have something to
+        // read; that is what makes the asymmetry visible rather than merely
+        // making everything None.
+        let sentences: Vec<domain::Sentence> = text
+            .split('.')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|s| {
+                let tokens = s
+                    .split_whitespace()
+                    .enumerate()
+                    .map(|(i, w)| {
+                        domain::Token::builder(
+                            i + 1,
+                            w.to_string(),
+                            w.to_lowercase(),
+                            "NOUN".to_string(),
+                            0,
+                            "root".to_string(),
+                        )
+                        .build()
+                    })
+                    .collect();
+                domain::Sentence::new(s.to_string(), tokens)
+            })
+            .collect();
+        assert!(sentences.len() >= 2, "fixture yields multiple sentences");
+
+        let doc = analyze_from(sections, &sentences).expect("under the cap");
+        let paras: Vec<_> = doc.paragraphs().collect();
+
+        // Document level: populated, because these read the flat slice.
+        assert!(
+            doc.vocabulary_ttr.is_some(),
+            "document metrics read the flat slice directly"
+        );
+
+        // Paragraph level: silently empty, because these read
+        // Paragraph::sentences, which analyze_from never fills.
+        assert_eq!(
+            paras[0].word_count(),
+            0,
+            "paragraph carries no sentences, so word_count is zero"
+        );
+        assert!(
+            paras[0].readability_grade.is_none(),
+            "readability gates on word_count > 10, which cannot fire"
+        );
+        assert!(
+            paras[0].lexical_density.is_none(),
+            "lexical density skips paragraphs with word_count == 0"
+        );
+        assert!(
+            paras[0].compression_ratio.is_none(),
+            "compression gates on word_count > 50, which cannot fire"
+        );
     }
 
     #[test]
