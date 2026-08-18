@@ -1,5 +1,11 @@
 # I7: Five structural primitives
 
+> **Sequenced after [I8](i8-pipeline-surface.md) M4.** M1 below decides
+> whether structural primitives are fields or methods. That question is
+> entangled with the surface I8 redesigns, so deciding it first would fix an
+> answer against a shape that is about to change. Everything else in this
+> plan stands.
+
 **Boundary:** rule-substrate. Lands before any `src/rules/` design work.
 
 **Source of scope:** an internal research synthesis dated 2026-05-23 naming five concrete primitives, cross-walked against a bidirectional report dated 2026-05-20 that maps the surveyed literature onto matra's actual surface. Neither is public; the grounding each cites is.
