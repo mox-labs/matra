@@ -27,6 +27,11 @@ Hex architecture. Rust core with PyO3 Python bindings. Single crate, dual publis
 
 Pipeline: ingest → decompose → parse → measure (+ peer extract)
 
+That vocabulary is ADR-0002 and it is currently under challenge by
+`book/src/plans/i8-pipeline-surface.md`, which argues the five verbs
+enumerate calling conventions rather than transformations. It stands until
+an ADR supersedes it. Read I8 before renaming anything in this area.
+
 The five verbs are the public stage vocabulary. Trait names (`Source`, `Decomposer`, `NlpProvider`) keep their existing names; the renamed verbs appear in stage descriptions and composition-root function names.
 
 Domain depends on port traits (NlpProvider, Decomposer, Source), not on adapters directly. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.

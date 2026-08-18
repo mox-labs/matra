@@ -1,5 +1,18 @@
 # I5: Streaming iterator + Engine + CorpusResult
 
+> **Superseded in part by [I8](i8-pipeline-surface.md).** I8 subsumes Tasks A
+> through D: `read_iter` becomes `Ingest`, `analyze_directory_iter` becomes
+> `Engine::analyze` generalized past directories, `CorpusResult` arrives via
+> `FromIterator`, and `Engine` is required rather than optional because
+> something must own the decomposer table. Task E is unaffected.
+>
+> It **contradicts** the deprecate-and-keep decision below. That decision
+> rested on protecting a consumer who adopts `analyze_directory` between
+> 0.1.0 and 0.1.x. Nothing is published, so there is no such consumer, and
+> deleting now is free while deleting later is not.
+>
+> Read I8 before acting on anything here.
+
 **Status:** not-started
 **Boundary:** **MLP**. at the end of this iteration, matra scales to corpus-sized work without OOM and ships a delightful Rust DX.
 **Depends on:** I4 (workspace + `rumi-nlp` skeleton)
