@@ -4,14 +4,24 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 
 ---
 
-## State (2026-08-10)
+## State (2026-08-18)
 
 - **Branch:** `m2-docsite-ia-restructure`. No upstream configured, nothing pushed. The remote is still named for the project's previous name, so the GitHub rename is outstanding.
 - **Working tree:** clean.
-- **Code:** `cargo test` 84 pass, `cargo test --features cli` 89 pass, `cargo check --no-default-features` clean. `just docs-floor` all gates pass.
+- **Code:** `cargo test` 85 pass, `cargo test --features cli` 90 pass, `cargo check --no-default-features` clean. `just docs-floor` all gates pass.
 - **Docsite:** 17 entries. Live via `cd book && mdbook serve --port 3000`.
 
-### What shipped this session
+### Where the work is
+
+**The next thing is I8, not I7.** A maintainer question about the six entry points opened a formal review that found two live defects and produced a redesign. I7 M1's field-versus-method question is entangled with that surface and should be decided after I8 M4, not before.
+
+Plan: `book/src/plans/i8-pipeline-surface.md`. It carries the design, the milestone rubrics, the seven equivalence laws that are the acceptance test, and the costs.
+
+**I8 M0 is done** (commit 368bac5). The input size cap was bypassable from Python: four PyO3 extraction methods called the parser with no gate, so `Matra.analyze(huge)` raised while `Matra.tfidf_summarize(huge, 3)` did not. Fixed, with a parametrized test over every text-taking method. And `analyze_from` returns a Document whose three paragraph metrics are unconditionally `None` while the docs claimed equivalence to `analyze_markdown`; that postcondition is now documented and pinned by a regression test. Its root cause, `run_suite` carrying the sentence set twice, is I8 M1.
+
+**Milestones 1 through 3 are worth doing regardless.** None commits to the surface change. M4 adds the new surface alongside the old so nothing breaks mid-flight. M6, deleting the six, is the gate: free now, a breaking change after publish.
+
+### What shipped earlier
 
 The project was renamed to matra after a name collision on PyPI made dual publishing impossible. A CLI binary landed behind the `cli` feature, with a conformance suite running shared JSON fixtures through every crust. The docsite was cut from 19 pages to a working set, gained the roadmap, and then the plans moved out of `.claude/` into `book/src/plans/` so the whole planning surface is one thing a reader can follow.
 
@@ -29,11 +39,15 @@ The project was renamed to matra after a name collision on PyPI made dual publis
 
 ## Next actions, in order
 
-1. **I7 M1.** Write the ADR deciding whether structural primitives are fields or methods, then implement negation on `Sentence`. The rest of I7 inherits that answer. Plan: `book/src/plans/i7-structural-primitives.md`.
-2. **Confirm the voice-fingerprint consumer.** The roadmap entry says the trigger is met in substance but needs confirmation that the blocked consumer still wants matra rather than the thin-wrapper alternative it considered.
-3. **Decide the publish identity.** `Cargo.toml` and `pyproject.toml` carry a personal address that becomes permanently public on first publish, and crates.io yanks do not remove metadata.
+1. **I8 M1.** `Metric` becomes `Fn(&mut Document)`; `run_suite` drops its sentence-slice parameter and derives the set from `Document::sentences()`. This removes the redundant representation that made Defect B possible. Four metric modules plus the suite. Breaks any external `Metric` impl, which is free now.
+2. **I8 M2 and M3.** Domain additions, then the decomposer registry. Both additive.
+3. **Confirm the voice-fingerprint consumer.** The roadmap entry says the trigger is met in substance but needs confirmation that the blocked consumer still wants matra rather than the thin-wrapper alternative it considered.
+4. **Decide the publish identity.** `Cargo.toml` and `pyproject.toml` carry a personal address that becomes permanently public on first publish, and crates.io yanks do not remove metadata.
 
 ## Open, not blocking
+
+- **`Error` is neither `Serialize` nor `Clone`** (it wraps `io::Error`), so `DocumentError` and `CorpusResult` inherit both gaps while `Corpus` has neither. Crossing to Python needs a projection with stable kind strings. Blocks I8 M5, not M1 through M4.
+- **ADR-0002 should be superseded** by I8: its five verbs enumerate calling conventions rather than transformations. Recommended vocabulary is `ingest -> decompose -> compose` with `abstract` reserved as a named empty seam. Note `abstract` is a reserved keyword in Rust and can never name code.
 
 - The docsite is gated but not voiced: it has not been through orwell, sagan, jobs, or ebert.
 - `rumi-nlp` is named in the published plans. Already public via ADR-0003, but worth deciding before release.
