@@ -16,6 +16,7 @@ Each iteration has one plan. The plans are agent-legible: every task names the f
 | [i5-streaming.md](i5-streaming.md) | **MLP** | Streaming iterator + Engine + CorpusResult |
 | [i6-post-publish.md](i6-post-publish.md) | post-publish | OTel feature, PDF/DOCX, `rumi-nlp` patterns, deferred reactor |
 | [i7-structural-primitives.md](i7-structural-primitives.md) | rule-substrate | Negation, typed feats, modality, evidentiality, Hearst patterns |
+| [i8-pipeline-surface.md](i8-pipeline-surface.md) | **pre-publish surface freeze** | One pipeline replacing six entry points |
 
 **Strict ordering.** No iteration starts until the previous one has met its acceptance gate. K's strategic verdict on this is non-negotiable: rename a stable surface before structure moves; install the resilience floor before the error contract; ship the error contract before the streaming surface that consumes it.
 
