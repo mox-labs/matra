@@ -17,12 +17,46 @@ Verify claims by reading code, and where cheap, by running:
 CI, so model-gated tests stay ignored; say so rather than skipping the
 thought.
 
-## Gate 0: ACES
+## The review corpus: load what the diff touches
+
+This repo carries the full guideline set as skills. Read the ones the
+diff makes relevant before judging; the gates below are the
+distillation, the skills are the depth.
+
+The project has two non-negotiable disciplines (CLAUDE.md, Posture):
+ACES, the structural philosophy, and antifragility, the operational
+one. They are a pair, not alternatives: any structural change (ports,
+adapters, composition root, new modules) is reviewed under BOTH
+`.claude/skills/aces/SKILL.md` and
+`.claude/skills/resilience-floor/SKILL.md`, because a boundary that is
+well-placed but fragile fails the second discipline and a robust
+mechanism in the wrong place fails the first. Load them together;
+each is the check on the other.
+
+| Diff touches | Read |
+|---|---|
+| any structural change | `aces` + `resilience-floor` together (the two non-negotiables; Gate 0 and Gate 6 come from them) |
+| ports, adapters, composition root | the pair above, plus `.claude/skills/architecture/SKILL.md` for the hex mechanics |
+| Rust design: errors, traits, deps, versions | `.claude/skills/rust-craft/SKILL.md` |
+| I/O, FFI, input handling, graph walks | `.claude/skills/resilience-floor/SKILL.md` |
+| `src/lib.rs` PyO3 layer, `python/`, pins | `.claude/skills/ffi-surface/SKILL.md` |
+| tests | `.claude/skills/testing/SKILL.md` |
+| public surface, ADRs, book pages | `.claude/skills/docs-lockstep/SKILL.md` |
+
+## Gate 0: ACES and the pit of success
 
 Every structural change: does it leave the system more adaptable,
 composable, extensible, or less? A change that is good engineering but
 violates ACES blocks merge unless the PR carries an ADR justifying the
 trade.
+
+New public surface must also be a pit of success: the obvious way to
+call it is the correct way. Concretely: misuse the API on purpose and
+see what happens. A signature that lets the caller pass the wrong thing
+silently, a default that is unsafe, a name that reads differently in
+Python than in Rust, an error message that names the symptom but not
+the fix, or a doc without a runnable example are findings. The next
+consumer must fall into correct usage, not climb into it.
 
 ## Gate 1: boundary rules, reviewed against motivation not pattern
 
@@ -86,7 +120,29 @@ embedded lists that look authoritative.
   boundary. Graph walks: visited sets, loud sentinels, no magic
   ceilings.
 
-## Gate 6: docs lockstep and conventions
+## Gate 6: security
+
+Review as the attacker (the vector posture) and demand falsifiable
+claims (the mudge posture): "it should be safe" is not evidence.
+
+- Input surfaces: anything new that reads bytes, paths, or text gets
+  the resilience questions first (cap before read? symlink refused?
+  what does a malicious parse do here?). Untrusted input reaching an
+  allocation or a loop without a bound is a blocker.
+- `unsafe` blocks: each one needs a stated invariant and a reason the
+  compiler cannot check it. New `unsafe` without that is a blocker.
+- Dependencies: a new crate needs a stated justification, and
+  `cargo deny check` must stay clean. Watch for a small dep pulling a
+  large transitive tree.
+- Workflows: actions stay SHA-pinned, permissions stay minimal, no
+  `pull_request_target` with checkout of PR code, no secret ever
+  interpolated into a run block that echoes. A workflow diff that
+  loosens any of these is a blocker.
+- Panics at boundaries: a reachable panic in library code is a DoS
+  primitive for whoever embeds matra; the FFI panic boundary in
+  `nlp/udpipe.rs` must stay the only entrance.
+
+## Gate 7: docs lockstep and conventions
 
 - Public surface changes move CHANGELOG `[Unreleased]`, the relevant
   book page, and (for non-obvious decisions) an ADR in the same PR.
