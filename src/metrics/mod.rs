@@ -17,11 +17,18 @@ pub mod document;
 pub mod lexical;
 pub mod readability;
 
-use crate::domain::{Document, Sentence};
+use crate::domain::Document;
 
 /// A metric reads NLP output and enriches the analysis.
 /// `Box<dyn Fn>` allows closures with captured config/state.
-pub type Metric = Box<dyn Fn(&mut Document, &[Sentence])>;
+///
+/// One parameter, one sentence set: every metric reads the sentences
+/// attached to the document's paragraphs ([`Document::sentences`]).
+/// The old two-parameter shape carried the sentence set twice (a flat
+/// slice plus the paragraph attachment) with nothing enforcing
+/// agreement, which is how `analyze_from` shipped half-populated
+/// documents.
+pub type Metric = Box<dyn Fn(&mut Document)>;
 
 /// Default metric suite.
 ///
@@ -30,9 +37,9 @@ pub type Metric = Box<dyn Fn(&mut Document, &[Sentence])>;
 /// reorder, or add entries freely.
 ///
 /// Per-paragraph metrics (readability, lexical, compression) read from
-/// `paragraph.sentences` which the composition root populates by parsing
-/// each paragraph individually. Document-level metrics run over the
-/// flat sentence slice passed to [`run_suite`].
+/// `paragraph.sentences`, which the composition root populates by parsing
+/// each paragraph individually. Document-level metrics aggregate over
+/// the same attachment via [`Document::sentences`].
 pub fn default_suite() -> Vec<Metric> {
     vec![
         Box::new(readability::compute),
@@ -43,16 +50,16 @@ pub fn default_suite() -> Vec<Metric> {
 }
 
 /// Run every metric in the suite, in order.
-pub fn run_suite(analysis: &mut Document, sentences: &[Sentence], suite: &[Metric]) {
+pub fn run_suite(analysis: &mut Document, suite: &[Metric]) {
     for metric in suite {
-        metric(analysis, sentences);
+        metric(analysis);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{Paragraph, Section, Token};
+    use crate::domain::{Paragraph, Section, Sentence, Token};
 
     fn make_token(text: &str, pos: &str, dep: &str, head: usize) -> Token {
         Token {
@@ -82,17 +89,12 @@ mod tests {
 
     /// Build an analysis where each paragraph is pre-populated with its
     /// own sentences (mimicking what the composition root does in the
-    /// per-paragraph parse pipeline). Returns the analysis plus a flat
-    /// sentence slice for document-level metrics.
-    fn analysis_from_paragraphs(
-        paragraphs: Vec<(Paragraph, Vec<Sentence>)>,
-    ) -> (Document, Vec<Sentence>) {
-        let mut all_sentences = Vec::new();
+    /// per-paragraph parse pipeline).
+    fn analysis_from_paragraphs(paragraphs: Vec<(Paragraph, Vec<Sentence>)>) -> Document {
         let mut paras = Vec::new();
         for (mut para, sents) in paragraphs {
             if !para.in_blockquote {
-                para.sentences = sents.clone();
-                all_sentences.extend(sents);
+                para.sentences = sents;
             }
             paras.push(para);
         }
@@ -101,7 +103,7 @@ mod tests {
             level: 0,
             paragraphs: paras,
         }];
-        (Document::new(sections), all_sentences)
+        Document::new(sections)
     }
 
     #[test]
@@ -120,10 +122,10 @@ mod tests {
             ],
         )]);
 
-        let (mut analysis, sentences) =
+        let mut analysis =
             analysis_from_paragraphs(vec![(Paragraph::new(para_text.to_string(), false), sents)]);
         let suite = default_suite();
-        run_suite(&mut analysis, &sentences, &suite);
+        run_suite(&mut analysis, &suite);
 
         assert_eq!(analysis.total_sentences(), 1);
         assert!(
@@ -136,12 +138,12 @@ mod tests {
     fn blockquote_paragraphs_have_no_sentences() {
         // Blockquote paragraphs are skipped by the composition root, so
         // they reach the suite with an empty sentences vec.
-        let (mut analysis, sentences) = analysis_from_paragraphs(vec![(
+        let mut analysis = analysis_from_paragraphs(vec![(
             Paragraph::new("Some text here".to_string(), true),
             vec![],
         )]);
         let suite = default_suite();
-        run_suite(&mut analysis, &sentences, &suite);
+        run_suite(&mut analysis, &suite);
 
         assert_eq!(
             analysis.total_sentences(),
@@ -172,7 +174,7 @@ mod tests {
             ],
         )]);
 
-        let (mut analysis, sentences) = analysis_from_paragraphs(vec![
+        let mut analysis = analysis_from_paragraphs(vec![
             (
                 Paragraph::new("The system was built".to_string(), false),
                 s1,
@@ -183,7 +185,7 @@ mod tests {
             ),
         ]);
         let suite = default_suite();
-        run_suite(&mut analysis, &sentences, &suite);
+        run_suite(&mut analysis, &suite);
 
         assert_eq!(analysis.total_sentences(), 2);
         assert!(

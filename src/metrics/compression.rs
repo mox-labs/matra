@@ -5,7 +5,7 @@
 
 use std::io::Write;
 
-use crate::domain::{Document, Sentence};
+use crate::domain::Document;
 
 /// Brotli sliding-window size (log2 bytes). 18 = 256 KiB window.
 ///
@@ -32,7 +32,7 @@ const MAX_PARAGRAPH_BYTES: usize = 256 * 1024;
 /// Populate `Paragraph::compression_ratio` for every paragraph with
 /// more than 50 words that is not in a blockquote and is at or under
 /// the per-paragraph byte cap.
-pub fn compute(analysis: &mut Document, _sentences: &[Sentence]) {
+pub fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
         if para.word_count() > 50 && !para.in_blockquote && para.text.len() <= MAX_PARAGRAPH_BYTES {
             para.compression_ratio = compression_ratio(&para.text);
@@ -57,7 +57,7 @@ fn compression_ratio(text: &str) -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{Paragraph, Section, Token};
+    use crate::domain::{Paragraph, Section, Sentence, Token};
 
     fn content_token(text: &str) -> Token {
         Token {
@@ -107,10 +107,8 @@ mod tests {
                 tokens,
             });
         }
-
-        let empty: Vec<Sentence> = vec![];
         let start = std::time::Instant::now();
-        compute(&mut analysis, &empty);
+        compute(&mut analysis);
         let elapsed = start.elapsed();
 
         let paras: Vec<_> = analysis.paragraphs().collect();
@@ -134,7 +132,6 @@ mod tests {
             .map(|i| format!("word{i}"))
             .collect::<Vec<_>>()
             .join(" ");
-        let empty: Vec<Sentence> = vec![];
 
         let sections = vec![Section {
             heading: None,
@@ -157,7 +154,7 @@ mod tests {
             });
         }
 
-        compute(&mut analysis, &empty);
+        compute(&mut analysis);
 
         let paras: Vec<_> = analysis.paragraphs().collect();
         assert!(
