@@ -21,7 +21,7 @@ Documentation is in lockstep: book pages, README, CHANGELOG, CLAUDE.md, the agen
 ### Known traps, carried forward
 
 - `cargo test --all-features` **fails to link.** The `python` feature builds against libpython with symbols deliberately left undefined. Not a regression; never make it a gate.
-- The Python wheel in `python/matra/_core...so` predates I8. The Python method names are unchanged so the conformance suite still describes the intended behavior, but `maturin develop` must run before `python/tests/` reflects the new internals (extraction methods now gate at 8 MiB and decompose as plain text).
+- After any Rust change, `maturin develop` must run before `python/tests/` tests the new internals; the installed wheel does not rebuild itself. Verified post-I8: all 9 Python tests pass against the rebuilt wheel, including the parametrized size-cap suite (extraction methods now gate at 8 MiB and decompose as plain text).
 - UDPipe splits `Smith et al. reported` at the period in `et al.`; every sentence-scoped primitive inherits this.
 - `vocabulary_ttr` is a raw type-token ratio, not comparable across document lengths.
 - `Sentence::is_passive` is a method, so `python/matra/cli.py` re-implements passive detection. I7 M1 settles this.
@@ -32,9 +32,8 @@ Documentation is in lockstep: book pages, README, CHANGELOG, CLAUDE.md, the agen
 ## Next actions, in order
 
 1. **I7, structural primitives.** Now unblocked: I8 M4 landed, so the field-versus-method question (I7 M1) can be decided against the real surface. Read `book/src/plans/i7-structural-primitives.md`.
-2. **Run `maturin develop` and the Python test suite** against the new pipeline internals before any further Python-surface work.
-3. **Confirm the voice-fingerprint consumer** still wants matra rather than the thin-wrapper alternative.
-4. **Decide the publish identity.** `Cargo.toml` and `pyproject.toml` carry a personal address that becomes permanently public on first publish.
+2. **Confirm the voice-fingerprint consumer** still wants matra rather than the thin-wrapper alternative.
+3. **Decide the publish identity.** `Cargo.toml` and `pyproject.toml` carry a personal address that becomes permanently public on first publish.
 
 ## Open, not blocking
 
