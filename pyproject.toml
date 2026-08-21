@@ -12,7 +12,7 @@ authors = [{ name = "yzavyas" }]
 requires-python = ">=3.12"
 dependencies = [
     "click>=8",
-    "rich>=13",
+    "rich>=15.0.0",
 ]
 
 [project.optional-dependencies]
