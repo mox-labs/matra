@@ -1,21 +1,22 @@
 //! Parse once, use many: the no-double-parse pattern.
 //!
-//! When you want both an Document and one or more extractions over the
-//! same text, parse the text once and hand the sentences to the
-//! consumers. `parse` is the single expensive step (UDPipe runs a full
-//! dependency analysis on every sentence); the other consumers are
-//! cheap.
+//! When you want both a Document and one or more extractions over the
+//! same text, run the pipeline once and read the sentences back off the
+//! tree. The parse inside `annotate` is the single expensive step
+//! (UDPipe runs a full dependency analysis on every sentence); the
+//! extractors are cheap functions over the sentences it attached.
 //!
 //! Run with: cargo run --example parse_once_use_many
 //! (requires UDPipe model at /tmp/matra-models/)
 
-use matra::decompose::Decomposer;
-use matra::decompose::markdown::MarkdownDecomposer;
+use matra::Engine;
+use matra::domain::{Format, RawDocument, Sentence};
 use matra::extraction::{rake_keyphrases, tfidf_summarize};
 use matra::nlp::udpipe::Udpipe;
 
 fn main() -> matra::domain::Result<()> {
     let nlp = Udpipe::english("/tmp/matra-models")?;
+    let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
 
     let text = "\
 # Substrate libraries
@@ -35,12 +36,14 @@ across FFI without dragging the adapters along. Pre-publish economics \
 mean the public surface locks at 0.1.0 and stays small.
 ";
 
-    // Decompose and parse once.
-    let sections = MarkdownDecomposer.decompose(text);
-    let sentences = matra::parse(text, &nlp)?;
+    // Annotate once: decompose, parse per paragraph, attach sentences.
+    let raw = RawDocument::new(text.to_string(), None, Format::Markdown);
+    let mut analysis = engine.annotate(&raw)?;
+    engine.compose(&mut analysis);
 
-    // Hand the parsed sentences to multiple consumers.
-    let analysis = matra::analyze_from(sections, &sentences)?;
+    // Read the sentences back off the tree and hand them to multiple
+    // consumers. Nothing is parsed twice.
+    let sentences: Vec<Sentence> = analysis.sentences().cloned().collect();
     let summary = tfidf_summarize(&sentences, 2)?;
     let phrases = rake_keyphrases(&sentences, 6)?;
 

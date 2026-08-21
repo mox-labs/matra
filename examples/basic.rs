@@ -3,10 +3,13 @@
 //! Run with: cargo run --example basic
 //! (requires UDPipe model at /tmp/matra-models/)
 
+use matra::domain::Format;
 use matra::nlp::udpipe::Udpipe;
+use matra::{Engine, Ingest};
 
 fn main() {
     let nlp = Udpipe::english("/tmp/matra-models").expect("Failed to load English model");
+    let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
 
     let text = r#"
 ## The Problem
@@ -24,7 +27,12 @@ external contributors. Best-in-class had hundreds of external
 contributors solving problems before you knew you needed them solved.
 "#;
 
-    let analysis = matra::analyze_markdown(text, &nlp).unwrap();
+    let analysis = engine
+        .analyze(Ingest::text(text, Format::Markdown))
+        .next()
+        .expect("a stream of one")
+        .expect("analysis failed")
+        .analysis;
 
     println!("Sentences:      {}", analysis.total_sentences());
     println!("Words:          {}", analysis.total_words());
