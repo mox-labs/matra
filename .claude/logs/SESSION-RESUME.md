@@ -7,10 +7,12 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 ## State (2026-08-21)
 
 - **Branch:** `m2-docsite-ia-restructure`. No upstream configured, nothing pushed. The remote is still named for the project's previous name, so the GitHub rename is outstanding.
-- **Working tree:** clean.
-- **Code:** `cargo test` 106 pass, `cargo test --features cli` 106+ pass, `cargo check --no-default-features` clean, clippy clean. Conformance and all six integration tests verified against the real UDPipe model this session. `just docs-floor` all gates pass.
+- **Working tree:** clean after the I7 close commit.
+- **Code:** `cargo test` 166 pass, `cargo test --features cli` 166 unit + 5 CLI integration pass, `cargo check --no-default-features` clean. Rust conformance against the real UDPipe model passes; Python suite 14 pass (conformance fixtures included) against a freshly built wheel. `just docs-floor` all gates pass.
 
 ### Where the work is
+
+**I7 is shipped, all five milestones.** Structural primitives cross FFI as fields per ADR-0008 (derivations cross as serde-visible data computed once at a pipeline choke point; views over data already crossing stay methods, ADR-0009's `Token::feat` being the instance). `Sentence` now carries `negations`, `modals`, `bare_assertion`, `reportings`, `root_adverbials` and `hearst_pairs`; `Document.passive_ratio` is a materialized slot and `python/matra/cli.py` reads it instead of re-deriving passive detection. `spec/tests/` fixtures (negation, modal, modal-coordination, evidentiality, hearst) pin every crossing primitive across the Rust and Python crusts. The ROADMAP rule-evaluation entry records what the five revealed about the shape `Rule` and `Predicate` must take (arcs by relation and lemma, feats lookups at tree positions, multi-arc constructions with optional participants, caller-supplied lexicons for open classes, span pairs with token-id provenance). The plan carries a shipped banner and stays as the milestone record.
 
 **I8 is shipped, all eight milestones.** The six entry points are gone. The surface is `Ingest` (text/path constructors; a string is a stream of one) into `Engine` (`analyze`, `analyze_one`, `annotate`, `compose`). `annotate` is the only route from text to the parser, so the 8 MiB cap holds pipeline-wide; seven equivalence laws (L1 to L7) run as tests in `src/lib.rs`. ADR-0007 records the decision and supersedes ADR-0002; the vocabulary is `ingest -> decompose -> compose` with `abstract` reserved as the empty seam for rule evaluation. The I8 plan (`book/src/plans/i8-pipeline-surface.md`) carries a shipped banner and stays as the defect record.
 
@@ -24,14 +26,13 @@ Documentation is in lockstep: book pages, README, CHANGELOG, CLAUDE.md, the agen
 - After any Rust change, `maturin develop` must run before `python/tests/` tests the new internals; the installed wheel does not rebuild itself. Verified post-I8: all 9 Python tests pass against the rebuilt wheel, including the parametrized size-cap suite (extraction methods now gate at 8 MiB and decompose as plain text).
 - UDPipe splits `Smith et al. reported` at the period in `et al.`; every sentence-scoped primitive inherits this.
 - `vocabulary_ttr` is a raw type-token ratio, not comparable across document lengths.
-- `Sentence::is_passive` is a method, so `python/matra/cli.py` re-implements passive detection. I7 M1 settles this.
 - Floor gate 1 (`lychee`) runs without `--include-fragments`, so anchors are never checked.
 
 ---
 
 ## Next actions, in order
 
-1. **I7, structural primitives.** Now unblocked: I8 M4 landed, so the field-versus-method question (I7 M1) can be decided against the real surface. Read `book/src/plans/i7-structural-primitives.md`.
+1. **Rule vocabulary design, now unblocked.** I7 delivered the substrate the vocabulary must describe. Design `Rule`, `Predicate`, `Finding`, `SourceSpan` (names locked by ADR-0006, shape open) from the ROADMAP rule-evaluation entry's five requirements; lands in `src/rules/`, occupying the `abstract` seam ADR-0007 reserves.
 2. **Confirm the voice-fingerprint consumer** still wants matra rather than the thin-wrapper alternative.
 3. **Decide the publish identity.** `Cargo.toml` and `pyproject.toml` carry a personal address that becomes permanently public on first publish.
 
