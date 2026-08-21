@@ -174,6 +174,21 @@ jobs:
           pattern: wheels-*
           merge-multiple: true
           path: dist
-      - uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26  # v1.14.2
+      # The pypa publish action is a Docker action whose image is only
+      # tagged by release tag, so the org's mandatory commit-SHA pinning
+      # breaks its image pull (manifest unknown). The Trusted Publishing
+      # exchange is a documented two-request flow, done directly here
+      # with no third-party action: GitHub mints an OIDC identity proof,
+      # PyPI verifies it against the registered publisher and returns a
+      # minutes-lived upload token, twine uploads with it.
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
-          packages-dir: dist
+          python-version: "3.12"
+      - name: Upload via Trusted Publishing (OIDC, no stored secret)
+        run: |
+          set -euo pipefail
+          oidc=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN"             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=pypi"             | python3 -c "import json,sys; print(json.load(sys.stdin)['value'])")
+          token=$(curl -sSf -X POST https://pypi.org/_/oidc/mint-token             -H "Content-Type: application/json"             -d "{\"token\": \"$oidc\"}"             | python3 -c "import json,sys; print(json.load(sys.stdin)['token'])")
+          echo "::add-mask::$token"
+          python -m pip install twine==6.2.0
+          TWINE_USERNAME=__token__ TWINE_PASSWORD="$token"             python -m twine upload --non-interactive dist/*
