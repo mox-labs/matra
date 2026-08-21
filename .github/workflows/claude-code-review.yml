@@ -10,6 +10,10 @@ on:
     #   - "src/**/*.js"
     #   - "src/**/*.jsx"
 
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   claude-review:
     # Optional: Filter by PR author
@@ -37,11 +41,22 @@ jobs:
         uses: anthropics/claude-code-action@3f854a8fb5146b39d5cbf8b57f70d80810e1366f  # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Project-specific review: the pr-review skill in this repo
-          # carries the gates (boundary rules, pipeline laws, substrate
-          # discipline, FFI criterion). The generic code-review plugin
-          # is deliberately not used.
-          prompt: 'Use the pr-review skill to review pull request #${{ github.event.pull_request.number }} in ${{ github.repository }}, and post the review as a PR comment per the skill output contract.'
-          claude_args: '--model claude-fable-5'
+          # The code-review plugin is the posting harness (it owns the
+          # comment/inline-finding mechanics); the repo's pr-review
+          # skill supplies the criteria. A skill-only prompt was tried
+          # first and the review had no way to post (15 tool denials).
+          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
+          plugins: 'code-review@claude-code-plugins'
+          prompt: |
+            /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}
+
+            Review criteria: this repository defines its own review
+            gates in .claude/skills/pr-review/SKILL.md (boundary rules
+            with grep-blind spellings, pipeline laws L1-L7, substrate
+            discipline, FFI exposure criterion, security gate, pit of
+            success). Load that skill and apply its gates as the
+            primary criteria; generic review heuristics are secondary.
+            Findings must name the gate they violate.
+          claude_args: '--model claude-fable-5 --allowedTools "Bash(cargo test:*),Bash(cargo check:*),Bash(cargo fmt --check),Bash(./scripts/check-boundaries.sh)"'
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
 
