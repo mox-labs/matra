@@ -142,7 +142,15 @@ let token = matra::domain::Token::builder(
 
 `Token::builder(id, text, lemma, pos, head, dep) -> TokenBuilder` takes the six CoNLL-U essentials. `TokenBuilder` carries one setter per optional field (`xpos`, `feats`, `deps`, `misc`, each taking `String`; `is_punct` taking `bool`), each consuming and returning the builder. `build()` returns the `Token`. Unset string fields default to empty; `is_punct` defaults to `false`.
 
-`Token` has no other methods.
+### Methods
+
+| Signature | Returns | Behavior |
+|---|---|---|
+| `feat(&self, key: &str)` | `Option<&str>` | First exact-key match over the pipe-separated `feats` pairs. `None` when the key is absent |
+
+`feat("Mood")` returns `Some("Ind")` when `feats` is `Mood=Ind|Tense=Pres`. The value is borrowed raw from `feats`, so multi-valued features (`Case=Nom,Acc`) come back unsplit: matra exposes what the provider emitted and does not normalise it. Both the empty string and the CoNLL-U placeholder `_` carry no `key=value` pair, so every lookup on them returns `None`.
+
+`feat` is Rust-only by design. `feats` already crosses FFI as a string, so a lookup over it adds no information to the wire; a Python or TypeScript caller splits the same string ([ADR-0009](https://github.com/mox-labs/matra/blob/main/docs/decisions/0009-feats-lookup-accessor.md)).
 
 ## Sentence
 
@@ -388,7 +396,7 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 <text class="nt" x="462" y="218">from the sections it already has</text>
 </svg>
 
-`Document::passive_ratio`, `Corpus::total_words`, `Sentence::tree_depth`, and every other method in the tables above are available to Rust callers only.
+`Token::feat`, `Document::passive_ratio`, `Corpus::total_words`, `Sentence::tree_depth`, and every other method in the tables above are available to Rust callers only.
 
 | Rust type | Python shape |
 |---|---|

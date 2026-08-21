@@ -237,10 +237,13 @@ pub struct Negation {
 /// The single Rust implementation behind [`Sentence::negations`]
 /// (ADR-0008). The shapes were verified against live UDPipe parses:
 /// `not` and `never` attach as `advmod` to the word they negate,
-/// `no` and `neither` attach as `det` to the noun they negate, and
-/// `nor` attaches as `cc` to the conjunct it links. Matching on the
-/// cue lemma plus the carrying relation keeps precision: `nothing`
-/// as a subject (`nsubj`) does not fire, and tokenizer-split `cannot`
+/// determiner `no` and `neither` attach as `det` to the noun they
+/// negate, and `nor` attaches as `cc` to the conjunct it links.
+/// Matching on the cue lemma plus the carrying relation keeps
+/// precision, and it bounds recall to those shapes by decision:
+/// `nothing` as a subject (`nsubj`) does not fire, pronominal
+/// `neither` ("Neither of them came.", `nsubj` on the live model
+/// rather than `det`) does not fire, and tokenizer-split `cannot`
 /// (`can` + `not`) fires exactly once, on the `not` token.
 fn detect_negations(tokens: &[Token]) -> Vec<Negation> {
     const CUE_LEMMAS: [&str; 5] = ["not", "never", "no", "neither", "nor"];
@@ -1155,6 +1158,28 @@ mod tests {
                 make_token(1, "Nothing", "PRON", "nsubj", 2),
                 make_token(2, "happened", "VERB", "root", 0),
                 make_token(3, ".", "PUNCT", "punct", 2),
+            ],
+        );
+        assert!(sent.negations.is_empty());
+    }
+
+    #[test]
+    fn negation_no_fire_on_pronominal_neither() {
+        // "Neither of them came." Pronominal `neither` heads the
+        // subject itself (DET, `nsubj` on the live model) instead of
+        // attaching as `det` to a noun it negates. Out of scope by the
+        // same decision that excludes `nothing` as a subject: a cue
+        // fires only on its carrying relation, and `nsubj` is not one.
+        // This test records the recall boundary; widening it means
+        // changing detect_negations deliberately, not by drift.
+        let sent = Sentence::new(
+            "Neither of them came.".to_string(),
+            vec![
+                make_token(1, "Neither", "DET", "nsubj", 4),
+                make_token(2, "of", "ADP", "case", 3),
+                make_token(3, "them", "PRON", "nmod", 1),
+                make_token(4, "came", "VERB", "root", 0),
+                make_token(5, ".", "PUNCT", "punct", 4),
             ],
         );
         assert!(sent.negations.is_empty());
