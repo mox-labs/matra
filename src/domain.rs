@@ -125,6 +125,29 @@ impl Token {
             is_punct: false,
         }
     }
+
+    /// Look up one morphological feature by exact key in the CoNLL-U
+    /// `feats` string (column 6): `feat("Mood")` is `Some("Ind")` when
+    /// `feats` is `"Mood=Ind|Tense=Pres"`.
+    ///
+    /// A linear scan over the pipe-separated pairs, first exact-key
+    /// match, no allocation. The value is borrowed raw from `feats`,
+    /// so multi-valued features (`Case=Nom,Acc`) come back unsplit:
+    /// matra exposes what the provider emitted and does not normalise
+    /// it. Both the empty string and the CoNLL-U placeholder `"_"`
+    /// contain no `key=value` pair, so every lookup on them returns
+    /// `None` by construction.
+    ///
+    /// Rust-only by design: `feats` already crosses FFI as a string,
+    /// so this view adds no information to the wire (ADR-0009).
+    pub fn feat(&self, key: &str) -> Option<&str> {
+        self.feats
+            .split('|')
+            .find_map(|pair| match pair.split_once('=') {
+                Some((k, v)) if k == key => Some(v),
+                _ => None,
+            })
+    }
 }
 
 /// Builder for [`Token`]. Created via [`Token::builder`].
@@ -943,6 +966,94 @@ mod tests {
     fn is_passive_detects_passive() {
         assert!(passive_sentence().is_passive());
         assert!(!active_sentence().is_passive());
+    }
+
+    fn token_with_feats(feats: &str) -> Token {
+        Token::builder(
+            1,
+            "x".to_string(),
+            "x".to_string(),
+            "NOUN".to_string(),
+            0,
+            "root".to_string(),
+        )
+        .feats(feats.to_string())
+        .build()
+    }
+
+    /// Feats strings harvested verbatim from a live parse with the
+    /// English UDPipe model (2026-08-21), plus the empty string the
+    /// udpipe adapter stores for feature-less tokens.
+    const HARVESTED_FEATS: &[&str] = &[
+        "",
+        "Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs",
+        "Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin",
+        "Tense=Past|VerbForm=Part|Voice=Pass",
+        "Definite=Def|PronType=Art",
+        "Number=Sing",
+        "Degree=Pos",
+        "Mood=Ind|Tense=Past|VerbForm=Fin",
+        "VerbForm=Fin",
+        "Case=Nom|Number=Plur|Person=1|PronType=Prs",
+        "VerbForm=Inf",
+        "Number=Sing|PronType=Dem",
+        "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin",
+        "Number=Plur",
+    ];
+
+    #[test]
+    fn feat_round_trips_every_harvested_pair() {
+        // Property over the harvested corpus: every key=value pair a
+        // feats string carries is returned exactly by feat(key), and
+        // keys the string does not carry return None.
+        for feats in HARVESTED_FEATS {
+            let tok = token_with_feats(feats);
+            for pair in feats.split('|').filter(|p| !p.is_empty()) {
+                let (k, v) = pair.split_once('=').expect("harvested pair has =");
+                assert_eq!(tok.feat(k), Some(v), "feats {feats:?} key {k:?}");
+            }
+            assert_eq!(tok.feat("Absent"), None, "feats {feats:?}");
+            assert_eq!(tok.feat(""), None, "feats {feats:?}");
+        }
+    }
+
+    #[test]
+    fn feat_none_on_empty_and_underscore_placeholder() {
+        // The udpipe adapter stores "" for feature-less tokens
+        // (verified against a live parse); "_" is the CoNLL-U
+        // placeholder seen when reading CoNLL-U from disk. Both must
+        // yield None for every key.
+        for feats in ["", "_"] {
+            let tok = token_with_feats(feats);
+            for key in ["Mood", "VerbForm", "_", ""] {
+                assert_eq!(tok.feat(key), None, "feats {feats:?} key {key:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn feat_single_feature() {
+        let tok = token_with_feats("Number=Sing");
+        assert_eq!(tok.feat("Number"), Some("Sing"));
+        assert_eq!(tok.feat("number"), None, "keys match exactly");
+        assert_eq!(tok.feat("Num"), None, "no prefix match");
+    }
+
+    #[test]
+    fn feat_multi_value_returned_unsplit() {
+        let tok = token_with_feats("Case=Nom,Acc|Number=Sing");
+        assert_eq!(tok.feat("Case"), Some("Nom,Acc"));
+    }
+
+    #[test]
+    fn feat_malformed_input_does_not_panic() {
+        // Segments without '=' are never matched; a second '=' stays
+        // in the value; duplicate keys resolve to the first match.
+        let tok = token_with_feats("junk|Mood=Ind=extra|Mood=Sub|=orphan|Tense=");
+        assert_eq!(tok.feat("junk"), None);
+        assert_eq!(tok.feat("Mood"), Some("Ind=extra"));
+        assert_eq!(tok.feat("Tense"), Some(""));
+        assert_eq!(tok.feat("orphan"), None);
     }
 
     // Negation fixtures mirror live UDPipe parses (verified 2026-08-21):

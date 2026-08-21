@@ -60,6 +60,8 @@ Nothing released yet. matra is pre-0.1.0 and unpublished on crates.io and PyPI.
 - `Document.passive_ratio` as an `Option<f64>` slot filled by the metric suite, beside `vocabulary_ttr` and `nominalization_ratio`; the aggregate now crosses FFI as data, and the Python CLI reads it instead of re-deriving passive detection from raw tokens.
 - ADR-0008: derived structural facts cross FFI as serde-visible fields with a single Rust implementation; zero-information accessors over data already on the wire stay Rust-only methods.
 - Conformance fixture `spec/tests/negation.json` pinning per-sentence negation cues and `passive_ratio` across crusts.
+- `Token::feat`: borrowed lookup of one morphological feature in the CoNLL-U `feats` string, first exact-key match, no allocation. Rust-only by design since `feats` already crosses FFI as a string (ADR-0009).
+- ADR-0009: feats access is a lookup accessor, not an exhaustive enum and not a per-token map; derivations cross as fields, views over crossing data stay methods.
 
 ### Removed
 
