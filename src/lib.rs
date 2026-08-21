@@ -446,6 +446,8 @@ mod python {
     use crate::domain;
     use crate::nlp::NlpProvider;
 
+    use domain::{Format, RawDocument};
+
     /// Routes domain::Error variants to the appropriate Python exception
     /// class, preserving variant identity across the FFI boundary.
     ///
@@ -484,13 +486,38 @@ mod python {
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
     }
 
-    /// Holds a loaded NLP model. Create once, reuse across calls.
+    /// Holds the assembled pipeline. Create once, reuse across calls.
     ///
     /// Marked unsendable because NLP models may contain C state that is
     /// not thread-safe. Python's GIL provides the necessary synchronization.
     #[pyclass(unsendable)]
     struct Matra {
-        nlp: Box<dyn NlpProvider>,
+        engine: crate::Engine,
+    }
+
+    impl Matra {
+        fn from_nlp(nlp: Box<dyn NlpProvider>) -> Self {
+            Self {
+                engine: crate::Engine::new(nlp, crate::standard_decomposers()),
+            }
+        }
+
+        /// One in-memory document through the whole pipeline.
+        fn document(&self, text: &str, format: Format) -> Result<domain::Document, MatraError> {
+            let raw = RawDocument::new(text.to_string(), None, format);
+            self.engine
+                .analyze_one(raw)
+                .map(|entry| entry.analysis)
+                .map_err(|e| MatraError(e.error))
+        }
+
+        /// Pipeline-routed sentences for the extractors: same size gate,
+        /// same decomposition, same blockquote skipping as `analyze`.
+        fn sentences(&self, text: &str) -> Result<Vec<domain::Sentence>, MatraError> {
+            let raw = RawDocument::new(text.to_string(), None, Format::PlainText);
+            let doc = self.engine.annotate(&raw).map_err(MatraError)?;
+            Ok(doc.sentences().cloned().collect())
+        }
     }
 
     #[pymethods]
@@ -499,19 +526,19 @@ mod python {
         #[cfg(feature = "udpipe")]
         fn from_path(model_path: &str) -> PyResult<Self> {
             let nlp = crate::nlp::udpipe::Udpipe::from_path(model_path).map_err(MatraError)?;
-            Ok(Self { nlp: Box::new(nlp) })
+            Ok(Self::from_nlp(Box::new(nlp)))
         }
 
         #[staticmethod]
         #[cfg(feature = "udpipe")]
         fn english(model_dir: &str) -> PyResult<Self> {
             let nlp = crate::nlp::udpipe::Udpipe::english(model_dir).map_err(MatraError)?;
-            Ok(Self { nlp: Box::new(nlp) })
+            Ok(Self::from_nlp(Box::new(nlp)))
         }
 
         /// Analyze plain text. Returns a Python dict.
         fn analyze<'py>(&self, py: Python<'py>, text: &str) -> PyResult<Bound<'py, PyAny>> {
-            let analysis = crate::analyze(text, self.nlp.as_ref()).map_err(MatraError)?;
+            let analysis = self.document(text, Format::PlainText)?;
             to_dict(py, &analysis)
         }
 
@@ -521,7 +548,7 @@ mod python {
             py: Python<'py>,
             text: &str,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let analysis = crate::analyze_markdown(text, self.nlp.as_ref()).map_err(MatraError)?;
+            let analysis = self.document(text, Format::Markdown)?;
             to_dict(py, &analysis)
         }
 
@@ -532,8 +559,7 @@ mod python {
             text: &str,
             n: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            crate::check_input_size(text).map_err(MatraError)?;
-            let sentences = self.nlp.parse(text).map_err(MatraError)?;
+            let sentences = self.sentences(text)?;
             let result = crate::extraction::tfidf_summarize(&sentences, n).map_err(MatraError)?;
             to_dict(py, &result)
         }
@@ -545,8 +571,7 @@ mod python {
             text: &str,
             n: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            crate::check_input_size(text).map_err(MatraError)?;
-            let sentences = self.nlp.parse(text).map_err(MatraError)?;
+            let sentences = self.sentences(text)?;
             let result =
                 crate::extraction::textrank_summarize(&sentences, n).map_err(MatraError)?;
             to_dict(py, &result)
@@ -559,8 +584,7 @@ mod python {
             text: &str,
             max_phrases: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            crate::check_input_size(text).map_err(MatraError)?;
-            let sentences = self.nlp.parse(text).map_err(MatraError)?;
+            let sentences = self.sentences(text)?;
             let result =
                 crate::extraction::rake_keyphrases(&sentences, max_phrases).map_err(MatraError)?;
             to_dict(py, &result)
@@ -573,8 +597,7 @@ mod python {
             text: &str,
             max_phrases: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            crate::check_input_size(text).map_err(MatraError)?;
-            let sentences = self.nlp.parse(text).map_err(MatraError)?;
+            let sentences = self.sentences(text)?;
             let result =
                 crate::extraction::yake_keyphrases(&sentences, max_phrases).map_err(MatraError)?;
             to_dict(py, &result)

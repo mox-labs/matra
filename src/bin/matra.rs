@@ -116,12 +116,15 @@ fn run(cli: &Cli) -> Result<Outcome, Box<dyn std::error::Error>> {
         return Err(format!("no such file: {}", input.display()).into());
     }
 
-    let nlp = load_model(cli.model_dir.as_deref())?;
+    let engine = matra::Engine::new(
+        load_model(cli.model_dir.as_deref())?,
+        matra::standard_decomposers(),
+    );
     let mut out = io::stdout().lock();
 
     match &cli.command {
         Command::Analyze { path } => {
-            let doc = matra::analyze_file(path, &nlp)?;
+            let doc = document_of(path, &engine)?;
             if cli.json {
                 writeln!(out, "{}", serde_json::to_string_pretty(&doc)?)?;
             } else {
@@ -134,7 +137,7 @@ fn run(cli: &Cli) -> Result<Outcome, Box<dyn std::error::Error>> {
             })
         }
         Command::Summarize { path, n, method } => {
-            let sentences = sentences_of(path, &nlp)?;
+            let sentences = sentences_of(path, &engine)?;
             let picked = match method {
                 SummaryMethod::Tfidf => matra::extraction::tfidf_summarize(&sentences, *n)?,
                 SummaryMethod::Textrank => matra::extraction::textrank_summarize(&sentences, *n)?,
@@ -147,7 +150,7 @@ fn run(cli: &Cli) -> Result<Outcome, Box<dyn std::error::Error>> {
             Ok(outcome(picked.is_empty()))
         }
         Command::Keyphrases { path, n, method } => {
-            let sentences = sentences_of(path, &nlp)?;
+            let sentences = sentences_of(path, &engine)?;
             let phrases = match method {
                 KeyphraseMethod::Rake => matra::extraction::rake_keyphrases(&sentences, *n)?,
                 KeyphraseMethod::Yake => matra::extraction::yake_keyphrases(&sentences, *n)?,
@@ -171,7 +174,7 @@ fn outcome(empty: bool) -> Outcome {
 }
 
 /// Resolve the model directory, defaulting to `~/.matra/models`.
-fn load_model(explicit: Option<&Path>) -> Result<impl NlpProvider, Box<dyn std::error::Error>> {
+fn load_model(explicit: Option<&Path>) -> Result<Box<dyn NlpProvider>, Box<dyn std::error::Error>> {
     let dir = match explicit {
         Some(d) => d.to_path_buf(),
         None if std::env::var_os("MATRA_MODEL_DIR").is_some() => {
@@ -182,27 +185,43 @@ fn load_model(explicit: Option<&Path>) -> Result<impl NlpProvider, Box<dyn std::
             .join(".matra")
             .join("models"),
     };
-    Ok(Udpipe::english(&dir)?)
+    Ok(Box::new(Udpipe::english(&dir)?))
 }
 
 fn home_dir() -> Option<PathBuf> {
     std::env::var_os("HOME").map(PathBuf::from)
 }
 
-/// Sentences for the extractors, taken through the same format detection and
-/// decomposition `analyze` uses.
+/// One analyzed document from a path, through the pipeline.
 ///
-/// Reading the file and calling `parse` on it directly would feed markdown
-/// headings and fenced code to the extractors as if they were prose, so
-/// `summarize` on a README returns its headings. Going through
-/// `analyze_file` applies the right decomposer for the extension and skips
-/// blockquotes, and the sentences it produces are the ones the extractors
-/// should rank.
+/// The CLI's subcommands take a single file, so the stream has exactly
+/// one item; an empty stream means the source produced nothing.
+fn document_of(
+    path: &Path,
+    engine: &matra::Engine,
+) -> Result<Document, Box<dyn std::error::Error>> {
+    let mut stream = engine.analyze(matra::Ingest::path(path)?);
+    match stream.next() {
+        Some(Ok(entry)) => Ok(entry.analysis),
+        Some(Err(e)) => Err(Box::new(e)),
+        None => Err(format!("no documents at {}", path.display()).into()),
+    }
+}
+
+/// Sentences for the extractors, taken through the same decomposition
+/// the pipeline uses.
+///
+/// Reading the file and parsing it directly would feed markdown headings
+/// and fenced code to the extractors as if they were prose, so
+/// `summarize` on a README returns its headings. Going through the
+/// pipeline applies the right decomposer for the extension and skips
+/// blockquotes, and the sentences it produces are the ones the
+/// extractors should rank.
 fn sentences_of(
     path: &Path,
-    nlp: &dyn NlpProvider,
+    engine: &matra::Engine,
 ) -> Result<Vec<Sentence>, Box<dyn std::error::Error>> {
-    let doc = matra::analyze_file(path, nlp)?;
+    let doc = document_of(path, engine)?;
     Ok(doc.sentences().cloned().collect())
 }
 

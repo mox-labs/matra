@@ -1,10 +1,10 @@
 //! Corpus analysis with per-document error collection.
 //!
-//! `analyze_directory` walks a directory of markdown / plain-text files,
-//! analyzes each one, and returns:
+//! `Ingest::path` on a directory streams every readable file through the
+//! pipeline, and collecting into `CorpusResult` partitions the outcomes:
 //!   - a `Corpus` containing entries for every document that analyzed
 //!     successfully
-//!   - a parallel `Vec<(PathBuf, Error)>` recording per-document failures
+//!   - a parallel `Vec<DocumentError>` recording per-document failures
 //!
 //! Per-file failures never abort the corpus walk. A symlink, an
 //! oversized file, or a UDPipe panic on one document leaves the rest
@@ -13,7 +13,9 @@
 //! Run with: cargo run --example corpus -- <directory>
 //! (requires UDPipe model at /tmp/matra-models/)
 
+use matra::domain::CorpusResult;
 use matra::nlp::udpipe::Udpipe;
+use matra::{Engine, Ingest};
 use std::path::PathBuf;
 
 fn main() -> matra::domain::Result<()> {
@@ -23,23 +25,31 @@ fn main() -> matra::domain::Result<()> {
         .unwrap_or_else(|| PathBuf::from("./"));
 
     let nlp = Udpipe::english("/tmp/matra-models")?;
-    let (corpus, errors) = matra::analyze_directory(&dir, &nlp)?;
+    let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
+    let result: CorpusResult = engine.analyze(Ingest::path(&dir)?).collect();
 
     println!(
         "Analyzed {} documents from {}\n",
-        corpus.entries.len(),
+        result.corpus.entries.len(),
         dir.display(),
     );
 
-    println!("  total words:    {}", corpus.total_words(),);
-    println!("  passive ratio:  {:.1}%", corpus.passive_ratio() * 100.0,);
-    println!("  mean readability: {:.1}", corpus.mean_readability(),);
+    println!("  total words:    {}", result.corpus.total_words(),);
+    println!(
+        "  passive ratio:  {:.1}%",
+        result.corpus.passive_ratio() * 100.0,
+    );
+    println!(
+        "  mean readability: {:.1}",
+        result.corpus.mean_readability(),
+    );
 
-    // Per-document failures are surfaced, not silenced.
-    if !errors.is_empty() {
-        println!("\nPer-document failures ({}):", errors.len());
-        for (path, err) in &errors {
-            println!("  {}: {}", path.display(), err);
+    // Per-document failures are surfaced, not silenced. DocumentError
+    // renders its path when it has one.
+    if !result.errors.is_empty() {
+        println!("\nPer-document failures ({}):", result.errors.len());
+        for err in &result.errors {
+            println!("  {err}");
         }
     }
 
