@@ -189,6 +189,50 @@ impl TokenBuilder {
     }
 }
 
+/// One negation cue in a sentence, referenced by token id.
+///
+/// Reports structure only: which token carries the cue, its lemma, and
+/// the head it attaches to in the dependency graph. What the negation
+/// means for the sentence is the consumer's reading, not matra's.
+///
+/// Derived at [`Sentence`] construction from the dependency graph
+/// (see [`Sentence::new`]) and serialized with the sentence, so every
+/// crust reads the same detection (ADR-0008).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Negation {
+    /// Token id of the cue (`not`, `never`, `no`, `neither`, `nor`).
+    pub cue_id: usize,
+    /// Lemma of the cue token.
+    pub cue_lemma: String,
+    /// Token id the cue attaches to (`0` if the cue is the root).
+    pub head_id: usize,
+}
+
+/// Negation cue detection over a sentence's tokens.
+///
+/// The single Rust implementation behind [`Sentence::negations`]
+/// (ADR-0008). The shapes were verified against live UDPipe parses:
+/// `not` and `never` attach as `advmod` to the word they negate,
+/// `no` and `neither` attach as `det` to the noun they negate, and
+/// `nor` attaches as `cc` to the conjunct it links. Matching on the
+/// cue lemma plus the carrying relation keeps precision: `nothing`
+/// as a subject (`nsubj`) does not fire, and tokenizer-split `cannot`
+/// (`can` + `not`) fires exactly once, on the `not` token.
+fn detect_negations(tokens: &[Token]) -> Vec<Negation> {
+    const CUE_LEMMAS: [&str; 5] = ["not", "never", "no", "neither", "nor"];
+    const CUE_DEPS: [&str; 3] = ["advmod", "det", "cc"];
+    tokens
+        .iter()
+        .filter(|t| CUE_LEMMAS.contains(&t.lemma.as_str()) && CUE_DEPS.contains(&t.dep.as_str()))
+        .map(|t| Negation {
+            cue_id: t.id,
+            cue_lemma: t.lemma.clone(),
+            head_id: t.head,
+        })
+        .collect()
+}
+
 /// One parsed sentence: a verbatim text string plus its ordered tokens.
 ///
 /// Invariants downstream code relies on:
@@ -203,15 +247,29 @@ pub struct Sentence {
     pub text: String,
     /// CoNLL-U tokens in id-sorted order.
     pub tokens: Vec<Token>,
+    /// Negation cues derived from the dependency graph at construction
+    /// (see [`Sentence::new`]). Serialized with the sentence so the
+    /// detection crosses FFI as data (ADR-0008). Defaults to empty when
+    /// deserializing sentences serialized before this field existed.
+    #[serde(default)]
+    pub negations: Vec<Negation>,
 }
 
 impl Sentence {
     /// Construct a `Sentence` from a text string and a token vector.
     ///
     /// The caller is responsible for upholding the invariants documented
-    /// on [`Sentence`]; this constructor does not validate them.
+    /// on [`Sentence`]; this constructor does not validate them. Derived
+    /// fields (`negations`) are computed here and reflect `tokens` as
+    /// passed in; mutating `tokens` afterwards does not recompute them,
+    /// and keeping them consistent is part of the same caller contract.
     pub fn new(text: String, tokens: Vec<Token>) -> Self {
-        Self { text, tokens }
+        let negations = detect_negations(&tokens);
+        Self {
+            text,
+            tokens,
+            negations,
+        }
     }
 
     /// Tokens excluding punctuation.
@@ -464,6 +522,13 @@ pub struct Document {
     pub vocabulary_ttr: Option<f64>,
     /// Document-level nominalization ratio, if `measure` ran.
     pub nominalization_ratio: Option<f64>,
+    /// Fraction of sentences containing a passive-voice construction,
+    /// if `measure` ran. Materialized so the aggregate crosses FFI as
+    /// data instead of being re-derived per crust (ADR-0008). Defaults
+    /// to `None` when deserializing documents serialized before this
+    /// field existed.
+    #[serde(default)]
+    pub passive_ratio: Option<f64>,
 }
 
 impl Document {
@@ -474,6 +539,7 @@ impl Document {
             sections,
             vocabulary_ttr: None,
             nominalization_ratio: None,
+            passive_ratio: None,
         }
     }
 
@@ -523,6 +589,11 @@ impl Document {
 
     /// Fraction of sentences containing a passive-voice construction.
     /// Returns `0.0` when there are no sentences.
+    ///
+    /// This is the computation behind the [`Document::passive_ratio`]
+    /// field, which the metric suite fills so the value crosses FFI
+    /// (ADR-0008). The method stays for Rust callers who want the
+    /// ratio on an unmeasured document.
     pub fn passive_ratio(&self) -> f64 {
         let total = self.total_sentences();
         if total == 0 {
@@ -826,9 +897,9 @@ mod tests {
     }
 
     fn passive_sentence() -> Sentence {
-        Sentence {
-            text: "The system was built by the team".to_string(),
-            tokens: vec![
+        Sentence::new(
+            "The system was built by the team".to_string(),
+            vec![
                 make_token(1, "The", "DET", "det", 2),
                 make_token(2, "system", "NOUN", "nsubj:pass", 4),
                 make_token(3, "was", "AUX", "aux:pass", 4),
@@ -837,33 +908,33 @@ mod tests {
                 make_token(6, "the", "DET", "det", 7),
                 make_token(7, "team", "NOUN", "obl", 4),
             ],
-        }
+        )
     }
 
     fn active_sentence() -> Sentence {
-        Sentence {
-            text: "The team shipped the product".to_string(),
-            tokens: vec![
+        Sentence::new(
+            "The team shipped the product".to_string(),
+            vec![
                 make_token(1, "The", "DET", "det", 2),
                 make_token(2, "team", "NOUN", "nsubj", 3),
                 make_token(3, "shipped", "VERB", "root", 0),
                 make_token(4, "the", "DET", "det", 5),
                 make_token(5, "product", "NOUN", "obj", 3),
             ],
-        }
+        )
     }
 
     #[test]
     fn content_tokens_excludes_punct() {
-        let sent = Sentence {
-            text: "Hello, world!".to_string(),
-            tokens: vec![
+        let sent = Sentence::new(
+            "Hello, world!".to_string(),
+            vec![
                 make_token(1, "Hello", "INTJ", "root", 0),
                 make_token(2, ",", "PUNCT", "punct", 1),
                 make_token(3, "world", "NOUN", "vocative", 1),
                 make_token(4, "!", "PUNCT", "punct", 1),
             ],
-        };
+        );
         assert_eq!(sent.content_tokens().len(), 2);
         assert_eq!(sent.word_count(), 2);
     }
@@ -872,6 +943,154 @@ mod tests {
     fn is_passive_detects_passive() {
         assert!(passive_sentence().is_passive());
         assert!(!active_sentence().is_passive());
+    }
+
+    // Negation fixtures mirror live UDPipe parses (verified 2026-08-21):
+    // `not` is PART/advmod, `never` is ADV/advmod, `no` and `neither`
+    // are DET/det, `nor` is CCONJ/cc.
+
+    #[test]
+    fn negation_detects_not_as_advmod() {
+        // "The plan is not ready."
+        let sent = Sentence::new(
+            "The plan is not ready.".to_string(),
+            vec![
+                make_token(1, "The", "DET", "det", 2),
+                make_token(2, "plan", "NOUN", "nsubj", 5),
+                make_token(3, "is", "AUX", "cop", 5),
+                make_token(4, "not", "PART", "advmod", 5),
+                make_token(5, "ready", "ADJ", "root", 0),
+                make_token(6, ".", "PUNCT", "punct", 5),
+            ],
+        );
+        assert_eq!(sent.negations.len(), 1);
+        assert_eq!(sent.negations[0].cue_id, 4);
+        assert_eq!(sent.negations[0].cue_lemma, "not");
+        assert_eq!(sent.negations[0].head_id, 5);
+    }
+
+    #[test]
+    fn negation_detects_never_as_advmod() {
+        // "It was never reviewed."
+        let sent = Sentence::new(
+            "It was never reviewed.".to_string(),
+            vec![
+                make_token(1, "It", "PRON", "nsubj:pass", 4),
+                make_token(2, "was", "AUX", "aux:pass", 4),
+                make_token(3, "never", "ADV", "advmod", 4),
+                make_token(4, "reviewed", "VERB", "root", 0),
+                make_token(5, ".", "PUNCT", "punct", 4),
+            ],
+        );
+        assert_eq!(sent.negations.len(), 1);
+        assert_eq!(sent.negations[0].cue_lemma, "never");
+        assert_eq!(sent.negations[0].cue_id, 3);
+        assert_eq!(sent.negations[0].head_id, 4);
+    }
+
+    #[test]
+    fn negation_detects_no_as_det() {
+        // "No changes were made."
+        let sent = Sentence::new(
+            "No changes were made.".to_string(),
+            vec![
+                make_token(1, "No", "DET", "det", 2),
+                make_token(2, "changes", "NOUN", "nsubj:pass", 4),
+                make_token(3, "were", "AUX", "aux:pass", 4),
+                make_token(4, "made", "VERB", "root", 0),
+                make_token(5, ".", "PUNCT", "punct", 4),
+            ],
+        );
+        assert_eq!(sent.negations.len(), 1);
+        assert_eq!(sent.negations[0].cue_lemma, "no");
+        assert_eq!(sent.negations[0].head_id, 2);
+    }
+
+    #[test]
+    fn negation_detects_neither_and_nor() {
+        // "Neither option worked, nor did the fallback."
+        let sent = Sentence::new(
+            "Neither option worked, nor did the fallback.".to_string(),
+            vec![
+                make_token(1, "Neither", "DET", "det", 2),
+                make_token(2, "option", "NOUN", "nsubj", 3),
+                make_token(3, "worked", "VERB", "root", 0),
+                make_token(4, ",", "PUNCT", "punct", 6),
+                make_token(5, "nor", "CCONJ", "cc", 6),
+                make_token(6, "did", "VERB", "conj", 3),
+                make_token(7, "the", "DET", "det", 8),
+                make_token(8, "fallback", "NOUN", "obj", 6),
+                make_token(9, ".", "PUNCT", "punct", 3),
+            ],
+        );
+        let lemmas: Vec<&str> = sent
+            .negations
+            .iter()
+            .map(|n| n.cue_lemma.as_str())
+            .collect();
+        assert_eq!(lemmas, vec!["neither", "nor"]);
+        assert_eq!(sent.negations[0].head_id, 2);
+        assert_eq!(sent.negations[1].head_id, 6);
+    }
+
+    #[test]
+    fn negation_no_false_positive_on_nothing_as_subject() {
+        // "Nothing happened." UDPipe lemmatizes `Nothing` to `nothing`
+        // (PRON, nsubj), which is not a cue: the indefinite carries the
+        // negation lexically, not as a dependency-graph cue token.
+        let sent = Sentence::new(
+            "Nothing happened.".to_string(),
+            vec![
+                make_token(1, "Nothing", "PRON", "nsubj", 2),
+                make_token(2, "happened", "VERB", "root", 0),
+                make_token(3, ".", "PUNCT", "punct", 2),
+            ],
+        );
+        assert!(sent.negations.is_empty());
+    }
+
+    #[test]
+    fn negation_on_tokenizer_split_cannot_fires_once_on_not() {
+        // "We cannot merge this." The tokenizer splits `cannot` into
+        // `can` + `not` (verified against a live parse); exactly one
+        // cue must fire, on the `not` token, not on `can` and not twice.
+        let sent = Sentence::new(
+            "We cannot merge this.".to_string(),
+            vec![
+                make_token(1, "We", "PRON", "nsubj", 4),
+                make_token(2, "can", "AUX", "aux", 4),
+                make_token(3, "not", "PART", "advmod", 4),
+                make_token(4, "merge", "VERB", "root", 0),
+                make_token(5, "this", "PRON", "obj", 4),
+                make_token(6, ".", "PUNCT", "punct", 4),
+            ],
+        );
+        assert_eq!(sent.negations.len(), 1);
+        assert_eq!(sent.negations[0].cue_id, 3);
+        assert_eq!(sent.negations[0].cue_lemma, "not");
+        assert_eq!(sent.negations[0].head_id, 4);
+    }
+
+    #[test]
+    fn negation_empty_on_unnegated_sentences() {
+        assert!(active_sentence().negations.is_empty());
+        assert!(passive_sentence().negations.is_empty());
+    }
+
+    #[test]
+    fn negations_serialize_and_default_on_old_json() {
+        // The field crosses the wire (ADR-0008) ...
+        let sent = Sentence::new(
+            "It was never reviewed.".to_string(),
+            vec![make_token(1, "never", "ADV", "advmod", 0)],
+        );
+        let json = serde_json::to_value(&sent).unwrap();
+        assert_eq!(json["negations"][0]["cue_lemma"], "never");
+        // ... and JSON serialized before the field existed still
+        // deserializes, with an empty default.
+        let old = r#"{"text":"old","tokens":[]}"#;
+        let sent: Sentence = serde_json::from_str(old).unwrap();
+        assert!(sent.negations.is_empty());
     }
 
     #[test]
@@ -937,14 +1156,14 @@ mod tests {
     fn tree_depth_with_non_contiguous_ids() {
         // Token IDs 10, 20, 30 -- not contiguous, not 1-based sequential.
         // tree: 30 (root) -> 20 -> 10
-        let sent = Sentence {
-            text: "non contiguous ids".to_string(),
-            tokens: vec![
+        let sent = Sentence::new(
+            "non contiguous ids".to_string(),
+            vec![
                 make_token(10, "A", "NOUN", "dep", 20),
                 make_token(20, "B", "NOUN", "dep", 30),
                 make_token(30, "C", "VERB", "root", 0),
             ],
-        };
+        );
         // Depth from A: A->20(B)->30(C)->root = 2
         // Depth from B: B->30(C)->root = 1
         // Depth from C: root = 0
@@ -957,23 +1176,20 @@ mod tests {
     #[test]
     fn subtree_safe_on_cyclic_graph() {
         // A -> B -> A (cycle of length 2). Must not infinite-loop.
-        let sent = Sentence {
-            text: "cyclic".to_string(),
-            tokens: vec![
+        let sent = Sentence::new(
+            "cyclic".to_string(),
+            vec![
                 make_token(1, "A", "NOUN", "dep", 2),
                 make_token(2, "B", "NOUN", "dep", 1),
             ],
-        };
+        );
         let sub = sent.subtree(1);
         assert_eq!(sub.len(), 2);
     }
 
     #[test]
     fn empty_sentence_is_safe() {
-        let sent = Sentence {
-            text: String::new(),
-            tokens: vec![],
-        };
+        let sent = Sentence::new(String::new(), vec![]);
         assert_eq!(sent.word_count(), 0);
         assert!(!sent.is_passive());
         assert_eq!(sent.tree_depth(), 0);
@@ -990,10 +1206,7 @@ mod tests {
         let tokens: Vec<Token> = (1..=n)
             .map(|i| make_token(i, "x", "NOUN", "dep", if i == 1 { 0 } else { i - 1 }))
             .collect();
-        Sentence {
-            text: "chain".to_string(),
-            tokens,
-        }
+        Sentence::new("chain".to_string(), tokens)
     }
 
     #[test]
@@ -1094,13 +1307,13 @@ mod tests {
         // malformed parse loudly. The previous magic-< 20 ceiling
         // silently truncated to 20 — protective by accident, not by
         // design (and silently wrong on legitimate deep parses).
-        let sent = Sentence {
-            text: "cyclic".to_string(),
-            tokens: vec![
+        let sent = Sentence::new(
+            "cyclic".to_string(),
+            vec![
                 make_token(1, "A", "NOUN", "dep", 2),
                 make_token(2, "B", "NOUN", "dep", 1),
             ],
-        };
+        );
         assert_eq!(sent.tree_depth(), usize::MAX);
     }
 }

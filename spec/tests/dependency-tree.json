@@ -95,6 +95,7 @@
       }
     ],
     "vocabulary_ttr": 1.0,
-    "nominalization_ratio": 0.111111
+    "nominalization_ratio": 0.111111,
+    "passive_ratio": 0.0
   }
 }

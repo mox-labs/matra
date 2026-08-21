@@ -278,7 +278,7 @@ impl NlpProvider for Udpipe {
                     buf
                 };
 
-                Ok(Sentence { text, tokens })
+                Ok(Sentence::new(text, tokens))
             })
             .collect()
     }

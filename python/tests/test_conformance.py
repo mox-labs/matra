@@ -82,6 +82,8 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
 
     for i, (got, want) in enumerate(zip(got_sentences, expect["sentences"], strict=True)):
         assert got["text"] == want["text"], f"sentence {i} text"
+        if "negations" in want:
+            assert got["negations"] == want["negations"], f"sentence {i} negations"
         assert len(got["tokens"]) == want["token_count"], f"sentence {i} token count"
         for j, (token, wanted) in enumerate(zip(got["tokens"], want["tokens"], strict=True)):
             where = f"sentence {i} token {j}"
@@ -92,6 +94,8 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
             assert token["head"] == wanted["head"], f"{where} head"
             assert token["dep"] == wanted["dep"], f"{where} dep"
 
+    if expect.get("passive_ratio") is not None:
+        assert abs(doc["passive_ratio"] - expect["passive_ratio"]) < TOLERANCE
     if expect.get("vocabulary_ttr") is not None:
         assert abs(doc["vocabulary_ttr"] - expect["vocabulary_ttr"]) < TOLERANCE
     if expect.get("nominalization_ratio") is not None:

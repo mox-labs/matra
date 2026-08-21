@@ -26,7 +26,12 @@ def _get_matra() -> Matra:
 
 
 def _doc_metrics(result: Document) -> dict[str, float | int | None]:
-    """Compute document-level metrics from a serialized Document."""
+    """Collect document-level metrics from a serialized Document.
+
+    Materialized aggregates (`passive_ratio`, `vocabulary_ttr`,
+    `nominalization_ratio`) are read straight off the wire (ADR-0008);
+    only the count-shaped values are folded here.
+    """
     sentences = [
         sent
         for sec in result["sections"]
@@ -37,19 +42,13 @@ def _doc_metrics(result: Document) -> dict[str, float | int | None]:
     total = len(sentences)
     word_counts = [sum(1 for t in s["tokens"] if not t["is_punct"]) for s in sentences]
     total_words = sum(word_counts)
-    passive = sum(
-        1
-        for s in sentences
-        if any(t["dep"] in ("nsubj:pass", "nsubjpass", "aux:pass") for t in s["tokens"])
-    )
 
     mean_len = total_words / total if total else 0.0
-    passive_ratio = passive / total if total else 0.0
 
     return {
         "total_sentences": total,
         "total_words": total_words,
-        "passive_ratio": passive_ratio,
+        "passive_ratio": result["passive_ratio"],
         "mean_sentence_length": mean_len,
         "vocabulary_ttr": result["vocabulary_ttr"],
         "nominalization_ratio": result["nominalization_ratio"],
@@ -155,7 +154,8 @@ def analyze(path: Path, json_output: bool, sections: bool) -> None:
     table.add_row("Sentences", str(doc["total_sentences"]))
     table.add_row("Words", str(doc["total_words"]))
     table.add_row("", "")
-    table.add_row("Passive ratio", f"{doc['passive_ratio']:.1%}")
+    pr = doc["passive_ratio"]
+    table.add_row("Passive ratio", f"{pr:.1%}" if pr is not None else "-")
     table.add_row("Mean sentence length", f"{doc['mean_sentence_length']:.1f}")
     ttr = doc["vocabulary_ttr"]
     table.add_row("Vocabulary TTR", f"{ttr:.2f}" if ttr is not None else "-")

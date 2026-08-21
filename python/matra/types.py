@@ -29,11 +29,25 @@ class Token(TypedDict):
     is_punct: bool
 
 
+class Negation(TypedDict):
+    """One negation cue, referenced by token id. Mirrors `matra::domain::Negation`.
+
+    Reports structure only: which token carries the cue, its lemma,
+    and the head it attaches to. What the negation means is the
+    consumer's reading.
+    """
+
+    cue_id: int
+    cue_lemma: str
+    head_id: int
+
+
 class Sentence(TypedDict):
     """One parsed sentence. Mirrors `matra::domain::Sentence`."""
 
     text: str
     tokens: list[Token]
+    negations: list[Negation]
 
 
 class Paragraph(TypedDict):
@@ -58,14 +72,18 @@ class Section(TypedDict):
 class Document(TypedDict):
     """Top-level analysis output. Mirrors `matra::domain::Document`.
 
-    Aggregate methods on the Rust `Document` (`passive_ratio`,
-    `mean_sentence_length`, etc.) do not cross the FFI boundary —
-    consumers compute them from `sections` if needed.
+    Document-level aggregates that cross the FFI boundary do so as
+    fields filled by the metric suite (ADR-0008): `passive_ratio`
+    arrives materialized, like `vocabulary_ttr`. Remaining aggregate
+    methods on the Rust `Document` (`mean_sentence_length`,
+    `total_words`, etc.) do not cross; consumers compute them from
+    `sections` if needed.
     """
 
     sections: list[Section]
     vocabulary_ttr: float | None
     nominalization_ratio: float | None
+    passive_ratio: float | None
 
 
 class ScoredSentence(TypedDict):
@@ -86,6 +104,7 @@ class Keyphrase(TypedDict):
 __all__ = [
     "Document",
     "Keyphrase",
+    "Negation",
     "Paragraph",
     "ScoredSentence",
     "Section",
