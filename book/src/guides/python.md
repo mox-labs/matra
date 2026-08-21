@@ -101,7 +101,8 @@ for section in result["sections"]:            # heading, level, paragraphs
                                               # compression_ratio
         for sentence in para["sentences"]:    # text, tokens, negations,
                                               # modals, bare_assertion,
-                                              # reportings, root_adverbials
+                                              # reportings, root_adverbials,
+                                              # hearst_pairs
             for token in sentence["tokens"]:
                 print(token["lemma"], token["pos"], token["dep"])
 

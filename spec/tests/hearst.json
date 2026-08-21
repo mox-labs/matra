@@ -1,0 +1,354 @@
+{
+  "name": "hearst",
+  "input": "Animals such as dogs and cats need daily care. They built temples, treasuries, and other important civic buildings. She invited John, and other guests brought gifts.",
+  "format": "plain",
+  "expect": {
+    "total_sentences": 3,
+    "total_words": 26,
+    "paragraph_count": 1,
+    "sentences": [
+      {
+        "text": "Animals such as dogs and cats need daily care.",
+        "token_count": 10,
+        "hearst_pairs": [
+          {
+            "pattern": "such_as",
+            "hypernym": {
+              "head_id": 1,
+              "head_lemma": "animal",
+              "first_id": 1,
+              "last_id": 1
+            },
+            "hyponym": {
+              "head_id": 4,
+              "head_lemma": "dog",
+              "first_id": 4,
+              "last_id": 4
+            }
+          },
+          {
+            "pattern": "such_as",
+            "hypernym": {
+              "head_id": 1,
+              "head_lemma": "animal",
+              "first_id": 1,
+              "last_id": 1
+            },
+            "hyponym": {
+              "head_id": 6,
+              "head_lemma": "cat",
+              "first_id": 6,
+              "last_id": 6
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "id": 1,
+            "text": "Animals",
+            "lemma": "animal",
+            "pos": "NOUN",
+            "head": 7,
+            "dep": "nsubj"
+          },
+          {
+            "id": 2,
+            "text": "such",
+            "lemma": "such",
+            "pos": "ADJ",
+            "head": 4,
+            "dep": "case"
+          },
+          {
+            "id": 3,
+            "text": "as",
+            "lemma": "as",
+            "pos": "ADP",
+            "head": 2,
+            "dep": "fixed"
+          },
+          {
+            "id": 4,
+            "text": "dogs",
+            "lemma": "dog",
+            "pos": "NOUN",
+            "head": 1,
+            "dep": "nmod"
+          },
+          {
+            "id": 5,
+            "text": "and",
+            "lemma": "and",
+            "pos": "CCONJ",
+            "head": 6,
+            "dep": "cc"
+          },
+          {
+            "id": 6,
+            "text": "cats",
+            "lemma": "cat",
+            "pos": "NOUN",
+            "head": 4,
+            "dep": "conj"
+          },
+          {
+            "id": 7,
+            "text": "need",
+            "lemma": "need",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 8,
+            "text": "daily",
+            "lemma": "daily",
+            "pos": "ADJ",
+            "head": 9,
+            "dep": "amod"
+          },
+          {
+            "id": 9,
+            "text": "care",
+            "lemma": "care",
+            "pos": "NOUN",
+            "head": 7,
+            "dep": "obj"
+          },
+          {
+            "id": 10,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 7,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "They built temples, treasuries, and other important civic buildings.",
+        "token_count": 12,
+        "hearst_pairs": [
+          {
+            "pattern": "and_other",
+            "hypernym": {
+              "head_id": 11,
+              "head_lemma": "building",
+              "first_id": 9,
+              "last_id": 11
+            },
+            "hyponym": {
+              "head_id": 3,
+              "head_lemma": "temple",
+              "first_id": 3,
+              "last_id": 3
+            }
+          },
+          {
+            "pattern": "and_other",
+            "hypernym": {
+              "head_id": 11,
+              "head_lemma": "building",
+              "first_id": 9,
+              "last_id": 11
+            },
+            "hyponym": {
+              "head_id": 5,
+              "head_lemma": "treasury",
+              "first_id": 5,
+              "last_id": 5
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "id": 1,
+            "text": "They",
+            "lemma": "they",
+            "pos": "PRON",
+            "head": 2,
+            "dep": "nsubj"
+          },
+          {
+            "id": 2,
+            "text": "built",
+            "lemma": "build",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 3,
+            "text": "temples",
+            "lemma": "temple",
+            "pos": "NOUN",
+            "head": 2,
+            "dep": "obj"
+          },
+          {
+            "id": 4,
+            "text": ",",
+            "lemma": ",",
+            "pos": "PUNCT",
+            "head": 5,
+            "dep": "punct"
+          },
+          {
+            "id": 5,
+            "text": "treasuries",
+            "lemma": "treasury",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "conj"
+          },
+          {
+            "id": 6,
+            "text": ",",
+            "lemma": ",",
+            "pos": "PUNCT",
+            "head": 11,
+            "dep": "punct"
+          },
+          {
+            "id": 7,
+            "text": "and",
+            "lemma": "and",
+            "pos": "CCONJ",
+            "head": 11,
+            "dep": "cc"
+          },
+          {
+            "id": 8,
+            "text": "other",
+            "lemma": "other",
+            "pos": "ADJ",
+            "head": 11,
+            "dep": "amod"
+          },
+          {
+            "id": 9,
+            "text": "important",
+            "lemma": "important",
+            "pos": "ADJ",
+            "head": 11,
+            "dep": "amod"
+          },
+          {
+            "id": 10,
+            "text": "civic",
+            "lemma": "civic",
+            "pos": "ADJ",
+            "head": 11,
+            "dep": "amod"
+          },
+          {
+            "id": 11,
+            "text": "buildings",
+            "lemma": "building",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "conj"
+          },
+          {
+            "id": 12,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 2,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "She invited John, and other guests brought gifts.",
+        "token_count": 10,
+        "hearst_pairs": [],
+        "tokens": [
+          {
+            "id": 1,
+            "text": "She",
+            "lemma": "she",
+            "pos": "PRON",
+            "head": 2,
+            "dep": "nsubj"
+          },
+          {
+            "id": 2,
+            "text": "invited",
+            "lemma": "invite",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 3,
+            "text": "John",
+            "lemma": "John",
+            "pos": "PROPN",
+            "head": 2,
+            "dep": "obj"
+          },
+          {
+            "id": 4,
+            "text": ",",
+            "lemma": ",",
+            "pos": "PUNCT",
+            "head": 8,
+            "dep": "punct"
+          },
+          {
+            "id": 5,
+            "text": "and",
+            "lemma": "and",
+            "pos": "CCONJ",
+            "head": 8,
+            "dep": "cc"
+          },
+          {
+            "id": 6,
+            "text": "other",
+            "lemma": "other",
+            "pos": "ADJ",
+            "head": 7,
+            "dep": "amod"
+          },
+          {
+            "id": 7,
+            "text": "guests",
+            "lemma": "guest",
+            "pos": "NOUN",
+            "head": 8,
+            "dep": "nsubj"
+          },
+          {
+            "id": 8,
+            "text": "brought",
+            "lemma": "bring",
+            "pos": "VERB",
+            "head": 2,
+            "dep": "conj"
+          },
+          {
+            "id": 9,
+            "text": "gifts",
+            "lemma": "gift",
+            "pos": "NOUN",
+            "head": 8,
+            "dep": "obj"
+          },
+          {
+            "id": 10,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 2,
+            "dep": "punct"
+          }
+        ]
+      }
+    ],
+    "vocabulary_ttr": 0.8846153846153846,
+    "nominalization_ratio": 0.0,
+    "passive_ratio": 0.0
+  }
+}

@@ -3,6 +3,7 @@
 pub mod decompose;
 pub mod domain;
 pub mod extraction;
+pub mod hearst;
 pub mod metrics;
 pub mod nlp;
 pub mod source;
@@ -212,6 +213,14 @@ impl Engine {
     /// makes the input size cap a property of the pipeline rather than
     /// of each entry point: no text over [`MAX_INPUT_BYTES`] reaches
     /// [`NlpProvider::parse`].
+    ///
+    /// Structure materializes here (ADR-0008): derived facts whose
+    /// detectors live outside the domain are filled onto each parsed
+    /// sentence at this choke point. Today that is
+    /// [`domain::Sentence::hearst_pairs`], computed by
+    /// [`hearst::hypernymy_pairs`]; sentence-level facts whose
+    /// detectors live in the domain are computed by `Sentence::new`
+    /// inside the provider.
     pub fn annotate(&self, raw: &domain::RawDocument) -> domain::Result<Document> {
         check_input_size(&raw.text)?;
         let decomposer = self
@@ -224,6 +233,9 @@ impl Engine {
                 continue;
             }
             para.sentences = self.nlp.parse(&para.text)?;
+            for sentence in &mut para.sentences {
+                sentence.hearst_pairs = hearst::hypernymy_pairs(&sentence.tokens);
+            }
         }
         Ok(doc)
     }
@@ -708,6 +720,48 @@ mod tests {
             Some(0.0),
             "compose fills the sentence-derived aggregate"
         );
+    }
+
+    #[test]
+    fn annotate_fills_hearst_pairs_at_the_choke_point() {
+        /// Returns one sentence carrying the verified "Animals such as
+        /// dogs" arc shape for any input, so the test can observe the
+        /// pipeline running the detector without a real model.
+        struct SuchAsNlp;
+        impl NlpProvider for SuchAsNlp {
+            fn parse(&self, _text: &str) -> domain::Result<Vec<domain::Sentence>> {
+                let tok = |id: usize, text: &str, lemma: &str, pos: &str, dep: &str, head| {
+                    domain::Token::builder(
+                        id,
+                        text.to_string(),
+                        lemma.to_string(),
+                        pos.to_string(),
+                        head,
+                        dep.to_string(),
+                    )
+                    .build()
+                };
+                Ok(vec![domain::Sentence::new(
+                    "Animals such as dogs bark".to_string(),
+                    vec![
+                        tok(1, "Animals", "animal", "NOUN", "nsubj", 5),
+                        tok(2, "such", "such", "ADJ", "case", 4),
+                        tok(3, "as", "as", "ADP", "fixed", 2),
+                        tok(4, "dogs", "dog", "NOUN", "nmod", 1),
+                        tok(5, "bark", "bark", "VERB", "root", 0),
+                    ],
+                )])
+            }
+        }
+
+        let engine = Engine::new(Box::new(SuchAsNlp), standard_decomposers());
+        let doc = engine.annotate(&raw_plain("any text")).unwrap();
+        let sentence = doc.sentences().next().expect("one sentence");
+        assert_eq!(sentence.hearst_pairs.len(), 1, "annotate ran the detector");
+        let pair = &sentence.hearst_pairs[0];
+        assert_eq!(pair.pattern, domain::HearstPattern::SuchAs);
+        assert_eq!(pair.hypernym.head_id, 1);
+        assert_eq!(pair.hyponym.head_id, 4);
     }
 
     #[test]

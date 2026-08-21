@@ -477,6 +477,73 @@ fn detect_root_adverbials(tokens: &[Token]) -> Vec<RootAdverbial> {
         .collect()
 }
 
+/// Which of the six Hearst (1992) lexico-syntactic patterns produced a
+/// candidate hypernymy pair.
+///
+/// Each variant names a surface construction, not a semantic verdict:
+/// the tag records which dependency shape matched, and whether the
+/// hypernymy relation actually holds is the consumer's reading, not
+/// matra's. Serialized in `snake_case` (`"such_as"`, `"and_other"`,
+/// ...) so the tag crosses FFI as a plain string.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum HearstPattern {
+    /// `NP such as NP`: "animals such as dogs".
+    SuchAs,
+    /// `such NP as NP`: "such authors as Herrick".
+    SuchNpAs,
+    /// `NP, including NP`: "countries, including Canada".
+    Including,
+    /// `NP, especially NP`: "countries, especially France".
+    Especially,
+    /// `NP and other NP`: "temples and other buildings".
+    AndOther,
+    /// `NP or other NP`: "bruises or other injuries".
+    OrOther,
+}
+
+/// One noun phrase in a Hearst pair, referenced by token id.
+///
+/// `head_id` is the syntactic head noun; `first_id..=last_id` is the
+/// contiguous token range of that noun plus its adjacent nominal
+/// modifiers (`det`, `amod`, `compound`, `nummod`, `flat`), with the
+/// pattern's own marker words (`such`, `other`) excluded. Ids are
+/// sentence-scoped, so provenance holds against
+/// [`Sentence::tokens`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct HearstSpan {
+    /// Token id of the head noun.
+    pub head_id: usize,
+    /// Lemma of the head noun.
+    pub head_lemma: String,
+    /// Token id of the first token in the span.
+    pub first_id: usize,
+    /// Token id of the last token in the span.
+    pub last_id: usize,
+}
+
+/// One candidate hypernymy pair from a Hearst pattern, as structure.
+///
+/// Reports the two spans and the construction that connected them.
+/// It is a *candidate* by design: matra does not build a taxonomy or
+/// assert the relation is true, it reports that the sentence used a
+/// construction which conventionally signals one. Derived at the
+/// annotate stage by the pipeline (the detector lives in
+/// `matra::hearst`, outside the domain) and serialized with the
+/// sentence, so every crust reads the same detection (ADR-0008).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct HearstPair {
+    /// The construction that matched.
+    pub pattern: HearstPattern,
+    /// The general term's span (the class).
+    pub hypernym: HearstSpan,
+    /// The specific term's span (the member).
+    pub hyponym: HearstSpan,
+}
+
 /// One parsed sentence: a verbatim text string plus its ordered tokens.
 ///
 /// Invariants downstream code relies on:
@@ -539,6 +606,18 @@ pub struct Sentence {
     /// before this field existed.
     #[serde(default)]
     pub root_adverbials: Vec<RootAdverbial>,
+    /// Candidate hypernymy pairs from the six Hearst (1992) patterns.
+    ///
+    /// Unlike the other derived fields, this one is not computed by
+    /// [`Sentence::new`]: the detector lives in `matra::hearst`, a
+    /// module outside the domain (I7 M5 boundary), so the pipeline
+    /// fills the field at the annotate stage. A hand-built `Sentence`
+    /// carries an empty vector until the caller runs the detector.
+    /// Serialized with the sentence so the detection crosses FFI as
+    /// data (ADR-0008). Defaults to empty when deserializing
+    /// sentences serialized before this field existed.
+    #[serde(default)]
+    pub hearst_pairs: Vec<HearstPair>,
 }
 
 impl Sentence {
@@ -550,6 +629,9 @@ impl Sentence {
     /// `root_adverbials`) are computed here and reflect `tokens` as
     /// passed in; mutating `tokens` afterwards does not recompute them,
     /// and keeping them consistent is part of the same caller contract.
+    /// `hearst_pairs` starts empty and is filled at the annotate stage
+    /// by the pipeline, because its detector lives outside the domain
+    /// (see the field's documentation).
     pub fn new(text: String, tokens: Vec<Token>) -> Self {
         let negations = detect_negations(&tokens);
         let modals = detect_modals(&tokens);
@@ -564,6 +646,7 @@ impl Sentence {
             bare_assertion,
             reportings,
             root_adverbials,
+            hearst_pairs: Vec::new(),
         }
     }
 
