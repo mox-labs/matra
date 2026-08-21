@@ -31,7 +31,12 @@ those by hand.
 
 ## [Unreleased]
 
-Nothing released yet. matra is pre-0.1.0 and unpublished on crates.io and PyPI.
+## [0.1.0] - 2026-08-21
+
+First release. The surface this version freezes is the one pipeline
+(ADR-0007) plus the five structural primitives (ADR-0008): everything
+below happened pre-publish, which is why none of it carries a
+deprecation.
 
 ### Highlights
 

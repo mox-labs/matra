@@ -4,11 +4,11 @@ build-backend = "maturin"
 
 [project]
 name = "matra"
-version = "0.0.1"
+version = "0.1.0"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction."
 readme = "README.md"
 license = { text = "MIT" }
-authors = [{ name = "yzavyas", email = "yza.vyas@gmail.com" }]
+authors = [{ name = "yzavyas" }]
 requires-python = ">=3.12"
 dependencies = [
     "click>=8",
