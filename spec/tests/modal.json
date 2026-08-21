@@ -1,0 +1,206 @@
+{
+  "name": "modal",
+  "input": "It might have been done. You must complete the form by Friday. The committee approved it.",
+  "format": "plain",
+  "expect": {
+    "total_sentences": 3,
+    "total_words": 16,
+    "paragraph_count": 1,
+    "sentences": [
+      {
+        "text": "It might have been done.",
+        "token_count": 6,
+        "negations": [],
+        "modals": [
+          {
+            "aux_id": 2,
+            "aux_lemma": "might",
+            "head_id": 5
+          }
+        ],
+        "bare_assertion": false,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "It",
+            "lemma": "it",
+            "pos": "PRON",
+            "head": 5,
+            "dep": "nsubj:pass"
+          },
+          {
+            "id": 2,
+            "text": "might",
+            "lemma": "might",
+            "pos": "AUX",
+            "head": 5,
+            "dep": "aux"
+          },
+          {
+            "id": 3,
+            "text": "have",
+            "lemma": "have",
+            "pos": "AUX",
+            "head": 5,
+            "dep": "aux"
+          },
+          {
+            "id": 4,
+            "text": "been",
+            "lemma": "be",
+            "pos": "AUX",
+            "head": 5,
+            "dep": "aux:pass"
+          },
+          {
+            "id": 5,
+            "text": "done",
+            "lemma": "do",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 6,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 5,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "You must complete the form by Friday.",
+        "token_count": 8,
+        "negations": [],
+        "modals": [
+          {
+            "aux_id": 2,
+            "aux_lemma": "must",
+            "head_id": 3
+          }
+        ],
+        "bare_assertion": false,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "You",
+            "lemma": "you",
+            "pos": "PRON",
+            "head": 3,
+            "dep": "nsubj"
+          },
+          {
+            "id": 2,
+            "text": "must",
+            "lemma": "must",
+            "pos": "AUX",
+            "head": 3,
+            "dep": "aux"
+          },
+          {
+            "id": 3,
+            "text": "complete",
+            "lemma": "complete",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 4,
+            "text": "the",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 5,
+            "dep": "det"
+          },
+          {
+            "id": 5,
+            "text": "form",
+            "lemma": "form",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "obj"
+          },
+          {
+            "id": 6,
+            "text": "by",
+            "lemma": "by",
+            "pos": "ADP",
+            "head": 7,
+            "dep": "case"
+          },
+          {
+            "id": 7,
+            "text": "Friday",
+            "lemma": "Friday",
+            "pos": "PROPN",
+            "head": 3,
+            "dep": "obl"
+          },
+          {
+            "id": 8,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 3,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "The committee approved it.",
+        "token_count": 5,
+        "negations": [],
+        "modals": [],
+        "bare_assertion": true,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "The",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 2,
+            "dep": "det"
+          },
+          {
+            "id": 2,
+            "text": "committee",
+            "lemma": "committee",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "nsubj"
+          },
+          {
+            "id": 3,
+            "text": "approved",
+            "lemma": "approve",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 4,
+            "text": "it",
+            "lemma": "it",
+            "pos": "PRON",
+            "head": 3,
+            "dep": "obj"
+          },
+          {
+            "id": 5,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 3,
+            "dep": "punct"
+          }
+        ]
+      }
+    ],
+    "vocabulary_ttr": 0.875,
+    "nominalization_ratio": 0.0,
+    "passive_ratio": 0.3333333333333333
+  }
+}

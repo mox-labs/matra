@@ -84,6 +84,10 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
         assert got["text"] == want["text"], f"sentence {i} text"
         if "negations" in want:
             assert got["negations"] == want["negations"], f"sentence {i} negations"
+        if "modals" in want:
+            assert got["modals"] == want["modals"], f"sentence {i} modals"
+        if "bare_assertion" in want:
+            assert got["bare_assertion"] == want["bare_assertion"], f"sentence {i} bare_assertion"
         assert len(got["tokens"]) == want["token_count"], f"sentence {i} token count"
         for j, (token, wanted) in enumerate(zip(got["tokens"], want["tokens"], strict=True)):
             where = f"sentence {i} token {j}"
