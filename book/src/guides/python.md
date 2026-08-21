@@ -99,7 +99,8 @@ for section in result["sections"]:            # heading, level, paragraphs
     for para in section["paragraphs"]:        # text, in_blockquote, sentences,
                                               # readability_grade, lexical_density,
                                               # compression_ratio
-        for sentence in para["sentences"]:    # text, tokens
+        for sentence in para["sentences"]:    # text, tokens, negations,
+                                              # modals, bare_assertion
             for token in sentence["tokens"]:
                 print(token["lemma"], token["pos"], token["dep"])
 
