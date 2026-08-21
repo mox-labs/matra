@@ -1,12 +1,12 @@
 # Use matra from Rust
 
-You already have `matra` in your `Cargo.toml` and a UDPipe model on disk. This guide covers the entry points, the size gates, the parse-once-use-many pattern, why a metric slot comes back `None`, error handling, and walking a parsed document's dependency trees.
+You already have `matra` in your `Cargo.toml` and a UDPipe model on disk. This guide covers assembling the pipeline, the size gates, the parse-once-use-many pattern, why a metric slot comes back `None`, error handling, and walking a parsed document's dependency trees.
 
 Every snippet below assumes it runs inside a function returning `matra::domain::Result<()>`, which is why `?` works.
 
 ## Construct a provider
 
-Every public function that touches text takes `nlp: &dyn NlpProvider`. `Udpipe` is the adapter that ships with the `udpipe` feature (on by default):
+The pipeline owns a `Box<dyn NlpProvider>`. `Udpipe` is the adapter that ships with the `udpipe` feature (on by default):
 
 ```rust
 use matra::nlp::udpipe::Udpipe;
@@ -26,94 +26,91 @@ let nlp = Udpipe::from_path("/path/to/english-ewt-ud-2.5-191206.udpipe")?;
 
 `from_path` returns `Error::ModelNotFound` when the path does not exist and `Error::ModelInvalid` when the file exists but fails to load. A third constructor, `Udpipe::from_bytes`, loads from an in-memory byte slice, which suits a model embedded with `include_bytes!`.
 
-Construction is the expensive step: it loads and validates the model once. Build one `Udpipe` and pass `&nlp` to every call that needs it, rather than constructing a new one per document.
+Construction is the expensive step: it loads and validates the model once. Build one provider, hand it to one `Engine`, and reuse that engine for every document.
 
-`NlpProvider` is declared `Send`, not `Sync`. A `Box<dyn NlpProvider>` moves between threads, but `&dyn NlpProvider` does not, so you cannot hand one shared provider to several worker threads by reference. That is a compile error, not a runtime surprise. Build one provider per worker thread, or serialize calls behind a mutex.
+`NlpProvider` is declared `Send`, not `Sync`. A `Box<dyn NlpProvider>` moves between threads, but a reference to it does not, so an `Engine` (and any stream borrowed from it) belongs to one thread at a time. That is a compile error, not a runtime surprise. Build one engine per worker thread, or serialize calls behind a mutex.
 
-## The six entry points
+## The pipeline
 
-matra's public Rust API is six functions in `lib.rs`, the composition root. Each takes `&dyn NlpProvider`; together they cover every combination of how your text is decomposed and how much of the pipeline you want to run yourself.
+matra's public Rust surface is one pipeline assembled from two values. `Ingest` says where documents come from; `Engine` says what happens to each one.
 
-| Function | Takes | Returns | Use it when |
+```rust
+use matra::domain::{CorpusResult, Format};
+use matra::nlp::udpipe::Udpipe;
+use matra::{Engine, Ingest};
+
+let nlp = Udpipe::english("/tmp/matra-models")?;
+let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
+
+// A string is a stream of one.
+let one = engine
+    .analyze(Ingest::text("Plain text in memory.", Format::PlainText))
+    .next()
+    .expect("a stream of one")
+    .map_err(|e| e.error)?;
+
+// A directory is a stream of many. Same call.
+let many: CorpusResult = engine.analyze(Ingest::path("./corpus")?).collect();
+```
+
+`Ingest` has two constructors and they cover every source shape:
+
+| Constructor | Yields | Notes |
+|---|---|---|
+| `Ingest::text(string, format)` | one document | never fails; the format says which decomposer runs |
+| `Ingest::path(path)` | one document for a file, zero or more for a directory | `Err` only when the path does not exist or the directory cannot be listed |
+
+Format comes from the extension for `Ingest::path` (`.md` and `.markdown` route to the markdown decomposer, everything else to plain text) and from the argument for `Ingest::text`. Reads are lazy: `Ingest::path` on a directory lists entries up front but touches no file until the stream is pulled, and a per-file failure (unreadable, oversized, a symlink) becomes an `Err` item carrying its path rather than an abort.
+
+`Engine` exposes the pipeline at three grains:
+
+| Method | Takes | Returns | Use it when |
 |---|---|---|---|
-| `analyze` | `&str` (plain text) | `Document` | You have plain text in memory. Paragraphs split on blank lines. |
-| `analyze_markdown` | `&str` (markdown) | `Document` | You have markdown in memory and want section and paragraph structure, with blockquotes flagged out of the metric suite. |
-| `analyze_file` | a path | `Document` | You have one file on disk. Format is detected from the extension (`.md` and `.markdown` route to the markdown decomposer, everything else to plain text); the file is read only after a symlink check and a size check pass. |
-| `analyze_directory` | a directory path | `(Corpus, Vec<(PathBuf, Error)>)` | You have a directory of files and want per-file error tolerance. |
-| `parse` | `&str` | `Vec<Sentence>` | You want the parsed sentences without the metric suite, most often to feed one or more extraction functions. |
-| `analyze_from` | pre-decomposed `Vec<Section>` + pre-parsed `&[Sentence]` | `Document` | You already ran a `Decomposer` and `parse` separately. Read the caveat below before you reach for this one expecting a fully populated `Document`. |
+| `analyze` | anything yielding `Ingested` items | a lazy stream of `Result<CorpusEntry, DocumentError>` | the default: any number of documents, end to end |
+| `analyze_one` | one `RawDocument` | `Result<CorpusEntry, DocumentError>` | you have exactly one document and no stream |
+| `annotate` | `&RawDocument` | `Result<Document>` | you want structure and sentences without the metric suite |
+| `compose` | `&mut Document` | nothing | run the metric suite over an annotated document; total, no failure path |
 
-`analyze_file` and `analyze_directory` return `Err(Error::UnsupportedFormat(Format::Pdf | Format::Docx))` when they hit a format with no registered decomposer. Both formats are reserved variants today, not shipped decomposers.
+The three grains agree by construction: `analyze` is `analyze_one` mapped over the stream, and `analyze_one` is `annotate` followed by `compose`. The library's test suite pins that agreement as equivalence laws, so the grains cannot drift apart silently.
 
-One ordering detail that shapes which error you actually see: `FileSource` reads the file with `read_to_string` before it looks at the extension. A genuine binary PDF fails the UTF-8 decode first, so you get `Error::Io` with kind `InvalidData`, not `Error::UnsupportedFormat`. You reach `UnsupportedFormat` only when the file is valid UTF-8 and carries a `.pdf` or `.docx` extension.
+`standard_decomposers()` is the format table this build ships: markdown and plain text. `Error::UnsupportedFormat` means exactly "no entry in the table", and `Pdf`/`Docx` are reserved variants with no entry today. A caller can build a different table with `Decomposers::new().with(format, decomposer)` and hand it to `Engine::new`, which is also how you plug in your own `Decomposer`.
+
+One ordering detail that shapes which error you actually see: `Ingest::path` reads the file with `read_to_string` before the engine looks at the extension. A genuine binary PDF fails the UTF-8 decode first, so you get `Error::Io` with kind `InvalidData`, not `Error::UnsupportedFormat`. You reach `UnsupportedFormat` only when the file is valid UTF-8 and carries a `.pdf` or `.docx` extension.
 
 ## What the size gates reject
 
-Six separate caps guard the pipeline. Each one returns `Error::InputTooLarge`, and the `what` field names which gate fired so you can route on the label instead of guessing from context.
+Six caps guard the pipeline. Each one returns `Error::InputTooLarge`, and the `what` field names which gate fired so you can route on the label instead of guessing from context.
 
 | `what` | Limit | Fires in |
 |---|---|---|
-| `"input"` | 8 MiB of text (`domain::MAX_INPUT_BYTES`) | `analyze`, `analyze_markdown`, `parse`, and `analyze_from` (which sums the byte length of every paragraph it was handed) |
-| `"file_source"` | 8 MiB on disk | `analyze_file` and `analyze_directory`, checked against file metadata before any read |
+| `"input"` | 8 MiB of text (`domain::MAX_INPUT_BYTES`) | `Engine::annotate`, which is the only route from text to the parser, so every pipeline call inherits it |
+| `"file_source"` | 8 MiB on disk | `Ingest::path`, checked against file metadata before any read |
 | `"tfidf"` | 2000 sentences | `tfidf_summarize` |
 | `"textrank"` | 2000 sentences | `textrank_summarize` |
 | `"rake"` | 200000 tokens summed across all sentences | `rake_keyphrases` |
 | `"yake"` | 200000 tokens summed across all sentences | `yake_keyphrases` |
 
-`analyze_file` runs two of these in sequence: the metadata check first, then the text check inside `analyze` or `analyze_markdown`. A file at exactly the cap is accepted; one byte over is rejected.
+A document from disk passes two of these in sequence: the metadata check when `Ingest` reads it, then the text check inside `annotate`. A file at exactly the cap is accepted; one byte over is rejected.
 
 The extraction caps are counted after parsing, so a document under 8 MiB can still exceed the TF-IDF sentence cap. Check `sentences.len()` before calling if you need to decide between summarizing and chunking.
 
 ## Parse once, use many
 
-`parse` is the expensive step in the pipeline: it runs the NLP provider once over the text. The extraction functions (`tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`) are pure functions over `&[Sentence]` and never call the NLP provider themselves. Call `parse` once and hand the result to as many extractors as you need:
+The parse inside `annotate` is the expensive step: it runs the NLP provider once per paragraph. The extraction functions (`tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`) are pure functions over `&[Sentence]` and never call the NLP provider themselves. Run the pipeline once, read the sentences back off the tree, and hand the same slice to as many extractors as you need:
 
 ```rust
-let sentences = matra::parse(text, &nlp)?;
+use matra::domain::{Format, RawDocument, Sentence};
 
+let raw = RawDocument::new(text.to_string(), None, Format::Markdown);
+let mut doc = engine.annotate(&raw)?;
+engine.compose(&mut doc);
+
+let sentences: Vec<Sentence> = doc.sentences().cloned().collect();
 let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
 let phrases = matra::extraction::rake_keyphrases(&sentences, 10)?;
 ```
 
-Each extractor reads the same slice; neither one re-parses. This is the shape to reach for whenever you want more than one extraction result from the same text.
-
-### `analyze_from` does not attach sentences to paragraphs
-
-If you also want a `Document` from that same parse, `analyze_from` takes the sentences plus the `Vec<Section>` a `Decomposer` produced. Be precise about what it gives you, because the obvious reading is wrong:
-
-```rust
-use matra::decompose::Decomposer;
-use matra::decompose::markdown::MarkdownDecomposer;
-
-let sections = MarkdownDecomposer.decompose(text);
-let sentences = matra::parse(text, &nlp)?;
-let doc = matra::analyze_from(sections, &sentences)?;
-```
-
-`analyze_from` populates `Document::vocabulary_ttr` and `Document::nominalization_ratio` from the `sentences` slice, because those two metrics read that slice directly. It does not attach the sentences to the paragraphs inside `sections`, and no `Decomposer` fills `Paragraph::sentences` either. Both shipped decomposers leave it empty.
-
-So after the snippet above, `doc` is hollow below the document level. Every per-paragraph slot (`readability_grade`, `lexical_density`, `compression_ratio`) stays `None`, and every `Document` method that counts sentences or words (`total_sentences`, `total_words`, `passive_ratio`, `mean_sentence_length`, `sentence_length_std`) reports zero, because they all walk `paragraphs().flat_map(|p| p.sentences.iter())`, which yields nothing.
-
-This is a rough edge in the current API rather than a subtlety you are meant to have inferred. The crate's own rustdoc example on `analyze_from` and the shipped `examples/parse_once_use_many.rs` both present this combination without the caveat, and the example's printed sentence, word, and passive-ratio line reads as zero when you run it.
-
-Two ways out. If you want a fully populated `Document` and do not mind a second pass over the text, call `analyze` or `analyze_markdown`, which parse each non-blockquote paragraph individually and wire the sentences in themselves. If you want to keep a single parse, attach the sentences to their paragraphs yourself, parsing per paragraph:
-
-```rust
-let mut sections = MarkdownDecomposer.decompose(text);
-for paragraph in sections.iter_mut().flat_map(|s| &mut s.paragraphs) {
-    if !paragraph.in_blockquote {
-        paragraph.sentences = matra::parse(&paragraph.text, &nlp)?;
-    }
-}
-let flat: Vec<_> = sections
-    .iter()
-    .flat_map(|s| s.paragraphs.iter())
-    .flat_map(|p| p.sentences.iter().cloned())
-    .collect();
-let doc = matra::analyze_from(sections, &flat)?;
-```
-
-Parse per paragraph here, rather than splitting one whole-text parse across paragraphs afterward. Two paragraphs that share a prefix cannot be told apart by substring matching, and the pipeline was changed to per-paragraph parsing for exactly that reason. `Paragraph::sentences` is a public field so callers can wire it this way.
+Each extractor reads the same slice; nothing re-parses. Skip the `compose` call if you only want the extractions and not the metrics. The sentences you read off the tree are the ones the decomposer kept, so markdown headings, fenced code, and blockquotes never reach the extractors as if they were prose.
 
 ## Why a metric slot is `None`
 
@@ -124,16 +121,16 @@ Every metric slot is an `Option`, and each metric has its own threshold. A `None
 | `Paragraph::readability_grade` | the paragraph has more than 10 words and is not in a blockquote |
 | `Paragraph::lexical_density` | the paragraph has at least 1 word and is not in a blockquote |
 | `Paragraph::compression_ratio` | the paragraph has more than 50 words, is not in a blockquote, and its text is at most 256 KiB |
-| `Document::vocabulary_ttr` | the sentence slice holds at least one non-punctuation token |
+| `Document::vocabulary_ttr` | the document's attached sentences hold at least one non-punctuation token |
 | `Document::nominalization_ratio` | the same condition as `vocabulary_ttr` |
 
-"Words" here means `Paragraph::word_count()`, the non-punctuation token count summed over the paragraph's attached sentences. A paragraph whose `sentences` vector is empty has a word count of zero and therefore no per-paragraph metrics at all, which is the mechanism behind the `analyze_from` behavior described above.
+"Words" here means `Paragraph::word_count()`, the non-punctuation token count summed over the paragraph's attached sentences. A paragraph whose `sentences` vector is empty has a word count of zero and therefore no per-paragraph metrics at all.
 
-Blockquote paragraphs are never parsed. `analyze` and `analyze_markdown` skip them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`. They remain in the section tree with `in_blockquote = true` and their `text` intact.
+Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`. They remain in the section tree with `in_blockquote = true` and their `text` intact.
 
 ## What markdown decomposition drops
 
-`analyze_markdown` and `analyze_file` on a `.md` file run `MarkdownDecomposer`, which discards several kinds of content before any parsing happens:
+A markdown document (by format argument or by `.md` extension) runs `MarkdownDecomposer`, which discards several kinds of content before any parsing happens:
 
 - YAML frontmatter, when the very first line is `---`, through to the closing `---`
 - fenced code blocks, along with the fence lines
@@ -144,22 +141,26 @@ That last rule ends decomposition rather than skipping a block. A document with 
 
 ## Handle `domain::Error`
 
-Every public function returns `domain::Result<T>`, an alias for `Result<T, domain::Error>`. Match on the concrete variant rather than treating every failure the same way:
+`annotate` returns `domain::Result<T>`, an alias for `Result<T, domain::Error>`. The stream methods wrap the same error with its path: `analyze` and `analyze_one` return `DocumentError`, whose `path` field is `Some` for documents that came from disk and whose `error` field is the `domain::Error` to match on:
 
 ```rust
 use matra::domain::Error;
 
-match matra::analyze_file("notes.txt", &nlp) {
-    Ok(doc) => { /* ... */ }
-    Err(Error::InputTooLarge { limit, actual, what }) => {
-        eprintln!("{what} gate: {actual} bytes over the {limit} cap");
+for outcome in engine.analyze(matra::Ingest::path("notes.txt")?) {
+    match outcome {
+        Ok(entry) => { /* entry.analysis */ }
+        Err(doc_err) => match doc_err.error {
+            Error::InputTooLarge { limit, actual, what } => {
+                eprintln!("{what} gate: {actual} bytes over the {limit} cap");
+            }
+            Error::UnsupportedFormat(format) => {
+                eprintln!("no decomposer registered for {format:?}");
+            }
+            Error::Io(e) => eprintln!("could not read the file: {e}"),
+            Error::ParseFailed(msg) => eprintln!("the provider failed: {msg}"),
+            e => eprintln!("analysis failed: {e}"),
+        },
     }
-    Err(Error::UnsupportedFormat(format)) => {
-        eprintln!("no decomposer registered for {format:?}");
-    }
-    Err(Error::Io(e)) => eprintln!("could not read the file: {e}"),
-    Err(Error::ParseFailed(msg)) => eprintln!("the provider failed: {msg}"),
-    Err(e) => eprintln!("analysis failed: {e}"),
 }
 ```
 
@@ -171,20 +172,28 @@ The domain structs carry `#[non_exhaustive]` for the same reason. From outside t
 
 ## Analyze a directory
 
-`analyze_directory` reads one level of a directory and tolerates per-file failure:
+`Ingest::path` on a directory streams one level of it, and collecting into `CorpusResult` partitions the outcomes:
 
 ```rust
-let (corpus, errors) = matra::analyze_directory("./corpus", &nlp)?;
+use matra::domain::CorpusResult;
 
-println!("{} documents, {} words", corpus.entries.len(), corpus.total_words());
-for (path, error) in &errors {
-    eprintln!("skipped {}: {error}", path.display());
+let result: CorpusResult = engine.analyze(matra::Ingest::path("./corpus")?).collect();
+
+println!(
+    "{} documents, {} words",
+    result.corpus.entries.len(),
+    result.corpus.total_words()
+);
+for err in &result.errors {
+    eprintln!("skipped: {err}");
 }
 ```
 
-The outer `Result` is `Err` only when the listing itself fails, such as the directory not existing. Everything else lands in the error vector: an unreadable file as `Io`, a file over the cap as `InputTooLarge` with `what = "file_source"`, a non-UTF-8 file as `Io` with kind `InvalidData`, a `.pdf` or `.docx` name that happens to hold UTF-8 as `UnsupportedFormat`, and a provider failure as `ParseFailed`.
+`Ingest::path` is `Err` only when the listing itself fails, such as the directory not existing. Everything else lands in `errors`: an unreadable file as `Io`, a file over the cap as `InputTooLarge` with `what = "file_source"`, a non-UTF-8 file as `Io` with kind `InvalidData`, a `.pdf` or `.docx` name that happens to hold UTF-8 as `UnsupportedFormat`, and a provider failure as `ParseFailed`. The partition holds by construction: entries plus errors equals documents consumed.
 
-Two kinds of entry are skipped without an error entry, so they will not appear in either return value: subdirectories, because the walk is one level deep, and symlinks, which are filtered out with `symlink_metadata` so a link cannot redirect the read elsewhere. Files are attempted in sorted path order, and `Corpus` gives you `total_words()`, `passive_ratio()`, and `mean_readability()` across the whole set.
+Two kinds of entry are skipped without an error entry, so they will not appear in either list: subdirectories, because the walk is one level deep, and symlinks, which are filtered out with `symlink_metadata` so a link cannot redirect the read elsewhere. Files are attempted in sorted path order, and `Corpus` gives you `total_words()`, `passive_ratio()`, and `mean_readability()` across the whole set.
+
+You do not have to collect. The stream from `analyze` is lazy, so a loop that renders each document as it completes holds one document in memory at a time, not the corpus.
 
 ## Walk a `Document`
 

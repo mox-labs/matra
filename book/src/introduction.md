@@ -20,12 +20,21 @@ essay.md
 ## Rust
 
 ```rust
+use matra::domain::Format;
 use matra::nlp::udpipe::Udpipe;
+use matra::{Engine, Ingest};
 
 let nlp = Udpipe::english("/tmp/matra-models")?;
+let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
+
 let text = "The committee approved the proposal without debate. \
             Three amendments were submitted by the working group.";
-let doc = matra::analyze(text, &nlp)?;
+let doc = engine
+    .analyze(Ingest::text(text, Format::PlainText))
+    .next()
+    .expect("a stream of one")
+    .map_err(|e| e.error)?
+    .analysis;
 
 println!("{:?}", doc.sections[0].paragraphs[0].readability_grade);
 println!("{:?}", doc.vocabulary_ttr);

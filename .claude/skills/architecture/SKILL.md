@@ -103,7 +103,7 @@ This is appropriate at matra's scale. The corpus shows N=4 axes only at search-e
 
 ### Pattern 11 — incremental computation
 
-Not applicable. Matra is a one-shot pipeline (parse → analyze → return), not an incremental system. Memoizing parse results across calls is fine at the consumer level (and is what `parse-once-use-many` via the public `parse` function enables), but the substrate is stateless.
+Not applicable. Matra is a one-shot pipeline (annotate → compose → return), not an incremental system. Memoizing parse results across calls is fine at the consumer level (and is what annotate-once, read-the-tree enables), but the substrate is stateless.
 
 ## Cross-language considerations
 

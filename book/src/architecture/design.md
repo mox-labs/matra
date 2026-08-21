@@ -1,23 +1,23 @@
 # How matra runs
 
-`matra::analyze_file("essay.md", &nlp)` returns a `Document` or an `Error`. This page is about what happens in between: what executes in what order, what gets allocated, what survives across calls, and what can fail.
+`engine.analyze(Ingest::path("essay.md")?)` yields a `Document` or a `DocumentError`. This page is about what happens in between: what executes in what order, what gets allocated, what survives across calls, and what can fail.
 
 It is written for the reader who is about to use matra in a long-running process, debug an unexpected `None`, or add an adapter. Not for the reader collecting architectural patterns. matra is hexagonal, which is worth exactly one sentence, and this is it.
 
 ## One call, end to end
 
-Take a 40 KB markdown file. `analyze_file` runs four things in order, and only the last one is expensive.
+Take a 40 KB markdown file. Pulling it through the pipeline runs four things in order, and only the last one is expensive.
 
-**Ingest.** `FileSource` calls `symlink_metadata`, which does not traverse. A symlink is refused. Anything that is not a regular file is refused. A file whose metadata size exceeds `MAX_INPUT_BYTES`, 8 MiB, is refused before a byte is read, so a 1 GB file costs one `stat` call rather than a GB of resident memory. Then `read_to_string` pulls all 40 KB in, and the `.md` extension sets `Format::Markdown`.
+**Ingest.** When the stream is pulled, `FileSource` calls `symlink_metadata`, which does not traverse. A symlink is refused. Anything that is not a regular file is refused. A file whose metadata size exceeds `MAX_INPUT_BYTES`, 8 MiB, is refused before a byte is read, so a 1 GB file costs one `stat` call rather than a GB of resident memory. Then `read_to_string` pulls all 40 KB in, and the `.md` extension sets `Format::Markdown` on the `RawDocument`.
 
-**Dispatch.** The composition root matches on that `Format` and calls `analyze_markdown`, which re-checks the same 8 MiB bound on the string it now holds. Two gates, same limit, different `what` labels, because text handed in directly never passed the first one.
+**Dispatch.** `Engine::annotate` re-checks the same 8 MiB bound on the string it now holds (two gates, same limit, different `what` labels, because text from `Ingest::text` never passed the first one), then looks the format up in the engine's decomposer table. No entry means `Error::UnsupportedFormat`; for `Markdown` the entry is `MarkdownDecomposer`.
 
 **Decompose.** `MarkdownDecomposer` walks the file line by line, once. Frontmatter, fenced code, and table rows are dropped. A `#` line closes the current section and opens a new one. A `>` line marks its paragraph as a blockquote. A blank line flushes the accumulated paragraph. Output is a `Vec<Section>` holding fresh `String`s: a second copy of the prose.
 
-**Parse and measure.** `run_analysis` walks every paragraph in document order, skips the blockquotes, and calls `nlp.parse` on each remaining paragraph's text. Sixty body paragraphs means sixty calls into UDPipe. Each call's sentences are stored on the paragraph and also cloned into a flat vector, which the two document-level metrics read. Then four metric functions run over the result.
+**Parse and measure.** `annotate` walks every paragraph in document order, skips the blockquotes, and calls `nlp.parse` on each remaining paragraph's text. Sixty body paragraphs means sixty calls into UDPipe, and each call's sentences are stored on their paragraph. Then `compose` runs four metric functions over the attached tree; the document-level pair aggregates over the same attachment, so there is no second sentence set to keep in agreement.
 
-<svg class="mx-res" role="img" aria-label="Residency chart: four allocations of the same prose, showing which are alive at each stage of an analyze_file call" viewBox="0 0 720 210" width="720" height="210" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
-<title>What is alive at each stage of one analyze_file call</title>
+<svg class="mx-res" role="img" aria-label="Residency chart: three allocations of the same prose, showing which are alive at each stage of one pipeline call" viewBox="0 0 720 180" width="720" height="180" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
+<title>What is alive at each stage of one pipeline call</title>
 <style>
 .mx-res text{fill:currentColor}
 .mx-res .hd{font-size:8.5px;text-anchor:middle;opacity:.55;font-family:inherit}
@@ -29,35 +29,33 @@ Take a 40 KB markdown file. `analyze_file` runs four things in order, and only t
 .mx-res .ret{stroke:currentColor;opacity:.4;stroke-width:1px;stroke-dasharray:4 3}
 .mx-res .band{fill:currentColor;fill-opacity:.05}
 </style>
-<rect class="band" x="430" y="34" width="180" height="148"/>
+<rect class="band" x="430" y="34" width="180" height="118"/>
 <text class="hd" x="205" y="26">ingest</text>
 <text class="hd" x="295" y="26">dispatch</text>
 <text class="hd" x="385" y="26">decompose</text>
 <text class="hd" x="475" y="26">parse</text>
 <text class="hd" x="565" y="26">measure</text>
 <text class="hd" x="655" y="26">returned</text>
-<line class="sep" x1="250" y1="34" x2="250" y2="182"/>
-<line class="sep" x1="340" y1="34" x2="340" y2="182"/>
-<line class="sep" x1="430" y1="34" x2="430" y2="182"/>
-<line class="sep" x1="520" y1="34" x2="520" y2="182"/>
-<line class="ret" x1="610" y1="34" x2="610" y2="182"/>
-<text class="bd" x="520" y="47">all four resident</text>
+<line class="sep" x1="250" y1="34" x2="250" y2="152"/>
+<line class="sep" x1="340" y1="34" x2="340" y2="152"/>
+<line class="sep" x1="430" y1="34" x2="430" y2="152"/>
+<line class="sep" x1="520" y1="34" x2="520" y2="152"/>
+<line class="ret" x1="610" y1="34" x2="610" y2="152"/>
+<text class="bd" x="520" y="47">all three resident</text>
 <rect class="bar" x="160" y="62" width="450" height="16" rx="3"/>
 <rect class="bar" x="340" y="92" width="360" height="16" rx="3"/>
 <rect class="bar" x="430" y="122" width="270" height="16" rx="3"/>
-<rect class="bar" x="430" y="152" width="180" height="16" rx="3"/>
 <text class="lb" x="150" y="74">String, the file text</text>
 <text class="lb" x="150" y="104">Vec&lt;Section&gt;, a second copy</text>
 <text class="lb" x="150" y="134">Vec&lt;Sentence&gt; per paragraph</text>
-<text class="lb" x="150" y="164">the same sentences, cloned</text>
-<text class="nt" x="160" y="198">bar length is how long an allocation is alive, not how large it is</text>
+<text class="nt" x="160" y="168">bar length is how long an allocation is alive, not how large it is</text>
 </svg>
 
-At peak, four representations of the same document are resident at once: the original `String`, the section copies, the parsed tokens hanging off the paragraphs, and the flat clone of those tokens. The clone is dropped when `run_analysis` returns.
+At peak, three representations of the same document are resident at once: the original `String`, the section copies, and the parsed tokens hanging off the paragraphs.
 
-For a 40 KB input none of that matters. For a caller sizing a batch job against a memory ceiling it does, because every `Token` carries nine owned `String`s and the clone duplicates all of them.
+For a 40 KB input none of that matters. For a caller sizing a batch job against a memory ceiling it does, because every `Token` carries nine owned `String`s.
 
-`analyze_directory` changes the shape again. `DirectorySource` reads every file in the directory first, then analysis begins. The whole corpus text is resident before the first parse call, and the returned `Corpus` retains every `Document` for every file.
+A directory changes the shape by streaming. `Ingest::path` lists the entries up front but reads nothing until pulled, and each pull runs one document through the whole pipeline before the next file is read. One document's representations are resident at a time; only what you retain accumulates, and collecting into `CorpusResult` retains everything.
 
 ## The model is the expensive thing
 
@@ -71,7 +69,7 @@ The verify step returns the bytes it hashed, and those exact bytes go to the loa
 
 `Udpipe::from_path` and `Udpipe::from_bytes` verify nothing. They load what you name. Provenance for those two paths belongs to the caller.
 
-**Load once, reuse.** After construction, the model is a live handle to a C++ object. Parsing does not reload it. Every entry point takes `&dyn NlpProvider`, so a service builds one and passes references to it for its lifetime.
+**Load once, reuse.** After construction, the model is a live handle to a C++ object. Parsing does not reload it. The `Engine` owns the provider, so a service builds one engine and keeps it for its lifetime.
 
 **One model per thread, or a lock.** The underlying `Model` is `Send` and deliberately not `Sync`: its parse path mutates internal workspace caches. In Rust this is a compile error rather than a race, because sharing `&Udpipe` across threads will not typecheck. To parallelize you either give each thread its own model, paying another 16 MB load, or put one behind a `Mutex` and serialize the parse calls.
 
@@ -154,11 +152,11 @@ The two identical sentences are the ones from the regression fixture in `src/lib
 
 Per-paragraph parsing deletes the wiring step instead of improving it. A paragraph's sentences are the return value of the call made on that paragraph's text. The relationship comes from the call graph, so there is nothing left to get wrong.
 
-Two consequences follow. Blockquote paragraphs are skipped at this stage, which is why they reach the end with no sentences and all three metric slots at `None`. And a parse failure in any single paragraph aborts the whole call with `Error::ParseFailed`; the partial document is dropped, not returned.
+Two consequences follow. Blockquote paragraphs are skipped at this stage, which is why they reach the end with no sentences and all three metric slots at `None`. And a parse failure in any single paragraph aborts that document with `Error::ParseFailed`; the partial document is dropped, not returned, and in a stream the failure travels as that document's `DocumentError` while the next document proceeds.
 
 ## Measure fills slots, extract is a separate call
 
-The measure stage is four functions with one signature, `Box<dyn Fn(&mut Document, &[Sentence])>`, run in sequence. Readability, lexical density, and compression write per-paragraph slots. The document pass writes `vocabulary_ttr` and `nominalization_ratio`. None of the four reads another's output, so the suite is a list, not a chain.
+The measure stage is four functions with one signature, `Box<dyn Fn(&mut Document)>`, run in sequence by `compose`. Readability, lexical density, and compression write per-paragraph slots. The document pass writes `vocabulary_ttr` and `nominalization_ratio`. None of the four reads another's output, so the suite is a list, not a chain.
 
 Each carries its own applicability condition, and this is where unexplained `None` values come from:
 
@@ -171,21 +169,22 @@ Each carries its own applicability condition, and this is where unexplained `Non
 
 `None` is not zero. A three-word paragraph has no meaningful Flesch-Kincaid grade, and the slot says so rather than reporting a number nobody should use. The compression cap is a CPU bound: the brotli window is 2^18 bytes, and a paragraph larger than one window is skipped instead of pegging a core on adversarial input.
 
-Summarization and keyphrase extraction are not part of this. `analyze` never calls them. They take `&[Sentence]` and are invoked directly by the consumer:
+Summarization and keyphrase extraction are not part of this. The pipeline never calls them. They take `&[Sentence]` and are invoked directly by the consumer, on sentences read back off the tree:
 
 ```rust
-let sentences = matra::parse(text, nlp)?;
+let mut doc = engine.annotate(&raw)?;
+let sentences: Vec<_> = doc.sentences().cloned().collect();
 let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
 let phrases = matra::extraction::rake_keyphrases(&sentences, 10)?;
 ```
 
-Keeping them out of `analyze` is a cost decision. TextRank builds a dense sentence-similarity matrix that is quadratic in sentence count, roughly 32 MB of `f64` at its 2,000-sentence ceiling. Folding it into the analysis pass would charge that to every caller who only wanted a readability grade. Inputs above a cap return `Error::InputTooLarge` rather than allocating.
+Keeping them out of the pipeline is a cost decision. TextRank builds a dense sentence-similarity matrix that is quadratic in sentence count, roughly 32 MB of `f64` at its 2,000-sentence ceiling. Folding it into the analysis pass would charge that to every caller who only wanted a readability grade. Inputs above a cap return `Error::InputTooLarge` rather than allocating.
 
 ## What can fail, and where it surfaces
 
 Every guard sits at the earliest point where the check is still cheap.
 
-<svg class="mx-grd" role="img" aria-label="Three separate call paths with their guards: model construction, analyze_file, and the extractors" viewBox="0 0 720 245" width="720" height="245" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
+<svg class="mx-grd" role="img" aria-label="Three separate call paths with their guards: model construction, the pipeline, and the extractors" viewBox="0 0 720 245" width="720" height="245" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
 <title>Where each guard fires, on which call path</title>
 <style>
 .mx-grd text{fill:currentColor}
@@ -205,7 +204,7 @@ Every guard sits at the earliest point where the check is still cheap.
 <line class="tick" x1="330" y1="40" x2="330" y2="52"/>
 <text class="gd" x="330" y="64">size constant, then SHA-256</text>
 <text class="er" x="330" y="75">Error::ModelInvalid</text>
-<text class="en" x="162" y="133">analyze_file(path)</text>
+<text class="en" x="162" y="133">analyze(Ingest::path(p)?)</text>
 <line class="lane" x1="170" y1="130" x2="630" y2="130"/>
 <line class="cap" x1="170" y1="124" x2="170" y2="136"/>
 <line class="cap" x1="630" y1="124" x2="630" y2="136"/>
@@ -217,7 +216,7 @@ Every guard sits at the earliest point where the check is still cheap.
 <text class="gd" x="270" y="190">file size, on metadata</text>
 <text class="er" x="270" y="201">Error::InputTooLarge</text>
 <line class="tick" x1="350" y1="130" x2="350" y2="116"/>
-<text class="gd" x="350" y="108">text size, at the entry point</text>
+<text class="gd" x="350" y="108">text size, in annotate</text>
 <text class="er" x="350" y="97">Error::InputTooLarge</text>
 <line class="tick" x1="490" y1="130" x2="490" y2="116"/>
 <text class="gd" x="490" y="108">catch_unwind, once per paragraph</text>
@@ -232,7 +231,7 @@ Every guard sits at the earliest point where the check is still cheap.
 <text class="er" x="390" y="195">Error::InputTooLarge</text>
 </svg>
 
-Three separate lanes, because these are three separate call paths. Only the middle one runs during `analyze_file`. The model check fires once when you construct the provider, and the extractor caps fire only when you call an extractor, which is why neither shows up in an `analyze` stack trace.
+Three separate lanes, because these are three separate call paths. Only the middle one runs during a pipeline call. The model check fires once when you construct the provider, and the extractor caps fire only when you call an extractor, which is why neither shows up in a pipeline stack trace.
 
 The `catch_unwind` is the load-bearing one. A panic crossing an FFI boundary does not unwind into your code, it aborts the process: interpreter death in Python, a trap in WASM, from a library that promised typed errors.
 
@@ -240,7 +239,7 @@ The seam that converts such a panic into an `Error` lives in `nlp/udpipe.rs`, an
 
 Two guards live in the domain types rather than at an edge, because a parse arrives from outside and its shape is not guaranteed. `Sentence::tree_depth` walks head references with a visited set and returns `usize::MAX` when they form a cycle. `Sentence::subtree` carries the same visited set so it terminates. The sentinel is deliberate: an earlier version capped depth at a magic 20, which silently truncated malformed parses and legitimate deep ones alike.
 
-Directory reads fail differently. `analyze_directory` returns successes and per-file failures side by side, so one unreadable file does not cost you the other ninety-nine. The outer `Result` is `Err` only when the listing itself fails. Full detail on every gate, every variant, and the Python exception each maps to is in [Errors](../reference/errors.md).
+Directory reads fail differently. The stream yields successes and per-document failures side by side, so one unreadable file does not cost you the other ninety-nine; `Ingest::path` is `Err` only when the listing itself fails. Full detail on every gate, every variant, and the Python exception each maps to is in [Errors](../reference/errors.md).
 
 ## What you can replace
 
@@ -320,11 +319,11 @@ Directory reads fail differently. `analyze_directory` returns successes and per-
 
 Every arrow points down, and that is the rule: a module imports from the row below it, never the row above. The one arrow that runs sideways is `source/directory.rs` reaching into `source/file.rs`, inside a single port, so a directory read inherits the same symlink and size guards rather than reimplementing them.
 
-One seam is dispatched at runtime. `NlpProvider` has a single method, and every public function takes `&dyn NlpProvider`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. That is what makes UDPipe an implementation detail rather than the library.
+Two seams are dispatched at runtime. `NlpProvider` has a single method, and the engine holds it as `Box<dyn NlpProvider>`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. That is what makes UDPipe an implementation detail rather than the library. And `Decomposer` dispatch is a value: the engine's `Decomposers` table maps each `Format` to a boxed decomposer, `standard_decomposers()` is merely the table this build ships, and `Decomposers::new().with(format, decomposer)` builds a different one. Registering a format is data flow, not a code change.
 
-`Source` and `Decomposer` are traits too, but the entry points name concrete adapters, so those choices are static. You reach around them instead: produce a `String` and call `analyze`, or produce a `Vec<Section>` yourself and call `analyze_from` with sentences you already parsed.
+`Source` stays static: `Ingest`'s constructors name the file and directory adapters. To ingest from somewhere else, construct `RawDocument` values yourself and feed them to `Engine::analyze` as `Ok` items; the pipeline does not care where they came from.
 
-The metric suite is data as well. `Metric`, `run_suite`, and `Document::new` are all public, so a caller can assemble a different suite and run it over a document. `analyze` always runs the default four.
+The metric suite is data as well. `Metric`, `run_suite`, and `Document::new` are all public, so a caller can assemble a different suite and run it over a document. `compose` always runs the default four.
 
 What you gain from the arrangement is concrete and mostly shows up in test suites. Nothing under `metrics/` or `extraction/` imports a port, which is the one column above that skips the port row entirely, so those functions run with no model loaded. A new metric is testable against hand-built `Sentence` values, with no 16 MB download and no C++ toolchain. The rules that keep it that way, and how weakly some of them are enforced, are listed in [Boundary rules](../reference/boundary-rules.md).
 
@@ -336,7 +335,7 @@ Fields cross. Methods do not. `Document::passive_ratio()`, `mean_sentence_length
 
 Errors cross by type. The conversion is a match with no wildcard arm, so adding a variant to `domain::Error` fails to compile until someone decides which Python exception class it becomes. A wildcard would let new failure modes fall through to `RuntimeError` unnoticed.
 
-The gates that apply depend on the method. `Matra.analyze` and `Matra.analyze_markdown` route through the Rust entry points and pick up the 8 MiB text cap. The four extraction methods call the provider directly, so that cap does not fire on them, though the per-extractor caps still do.
+Every Python method that takes text routes through the same pipeline, so the 8 MiB text cap fires uniformly. The extraction methods add their per-extractor caps on top.
 
 ## Where to look next
 

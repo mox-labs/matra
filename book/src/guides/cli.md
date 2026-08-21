@@ -44,7 +44,7 @@ matra analyze essay.md
 matra analyze essay.md --json
 ```
 
-This is the only subcommand that decomposes the file. It routes through the same file-reading path as the library's `analyze_file`, which rejects symlinks, rejects files over 8 MiB before reading them, and picks a decomposer from the extension.
+The Rust binary routes every subcommand through the library pipeline, which rejects symlinks, rejects files over 8 MiB before reading them, and picks a decomposer from the extension.
 
 On a markdown file, decomposition drops YAML frontmatter, fenced code blocks, and table rows beginning with `|`, and it stops entirely at a line reading `## References` or `*References*`. Content after that heading is not analyzed and does not appear in the output.
 
@@ -110,13 +110,13 @@ Phrases are printed as lowercased lemmas, not as the surface text of the documen
 matra keyphrases essay.md --json | jq -S '.[0:3]'
 ```
 
-## `summarize` and `keyphrases` do not decompose
+## What `summarize` and `keyphrases` feed the extractors
 
-Both commands, on both routes, read the file as one string and parse it whole. They do not run a decomposer. Markdown syntax goes into the parse as prose: heading hashes, list markers, link brackets, and code fence contents all become tokens, and they can appear inside a summarized sentence or a keyphrase.
+The two routes differ here. The Rust binary runs the file through the pipeline first, so on a `.md` file the extractors rank prose: frontmatter, fenced code, table rows, and blockquotes are stripped before anything is scored, and the symlink and file-size checks apply.
 
-Neither command applies the symlink or file-size checks that `analyze` gets from the library's file source. The Rust binary still enforces the 8 MiB text cap after reading, because it calls `matra::parse`. The Python entry point does not, because it calls the extraction methods directly.
+The Python entry point reads the file as a string and hands it to the extraction methods, which treat it as plain text. Paragraphs still split on blank lines and the 8 MiB cap still applies, but no markdown stripping happens: heading hashes, list markers, link brackets, and code fence contents go into the parse as prose and can appear inside a summarized sentence or a keyphrase. The symlink and file-size pre-read checks do not run on this route either, because the Python script does its own file read.
 
-If you want markdown structure stripped before summarizing, pre-process the file, or use the Rust library where you can run a decomposer and hand the paragraphs to the extractors yourself.
+If you want markdown structure stripped before summarizing, use the Rust binary, or pre-process the file yourself.
 
 ## Exit codes
 

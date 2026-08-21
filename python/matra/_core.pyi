@@ -64,17 +64,41 @@ class Matra:
         ...
 
     def tfidf_summarize(self, text: str, n: int) -> list[ScoredSentence]:
-        """TF-IDF extractive summary. Returns the top-`n` sentences."""
+        """TF-IDF extractive summary. Returns the top-`n` sentences.
+
+        Raises:
+            ValueError: input exceeds the size cap (8 MiB) or the
+                per-algorithm sentence cap.
+            RuntimeError: NLP parsing failed.
+        """
         ...
 
     def textrank_summarize(self, text: str, n: int) -> list[ScoredSentence]:
-        """TextRank extractive summary. Returns the top-`n` sentences."""
+        """TextRank extractive summary. Returns the top-`n` sentences.
+
+        Raises:
+            ValueError: input exceeds the size cap (8 MiB) or the
+                per-algorithm sentence cap.
+            RuntimeError: NLP parsing failed.
+        """
         ...
 
     def rake_keyphrases(self, text: str, max_phrases: int) -> list[Keyphrase]:
-        """RAKE keyphrase extraction. Returns up to `max_phrases` ranked phrases."""
+        """RAKE keyphrase extraction. Returns up to `max_phrases` ranked phrases.
+
+        Raises:
+            ValueError: input exceeds the size cap (8 MiB) or the
+                per-algorithm token cap.
+            RuntimeError: NLP parsing failed.
+        """
         ...
 
     def yake_keyphrases(self, text: str, max_phrases: int) -> list[Keyphrase]:
-        """YAKE keyphrase extraction. Returns up to `max_phrases` ranked phrases."""
+        """YAKE keyphrase extraction. Returns up to `max_phrases` ranked phrases.
+
+        Raises:
+            ValueError: input exceeds the size cap (8 MiB) or the
+                per-algorithm token cap.
+            RuntimeError: NLP parsing failed.
+        """
         ...

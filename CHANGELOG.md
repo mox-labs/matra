@@ -35,6 +35,8 @@ Nothing released yet. matra is pre-0.1.0 and unpublished on crates.io and PyPI.
 
 ### Highlights
 
+**One pipeline replaced six entry points.** The old surface enumerated its calling conventions: `analyze`, `analyze_markdown`, `analyze_file`, `analyze_directory`, `parse`, and `analyze_from` were partial applications of one chain, and each restated invariants the compiler checked in none of them. Two live defects had that exact shape: the input size cap was bypassable from Python because four methods restated it and four did not, and `analyze_from` returned a half-populated `Document` because the metric suite carried the sentence set twice. The surface is now `Ingest` (a string is a stream of one, a directory is a stream of many) into `Engine` (`analyze`, or the stages `annotate` and `compose`). `annotate` is the only route from text to the parser, so the size cap is a property of the pipeline rather than of each entry point, and seven equivalence laws in the test suite pin the grains together. Streams are lazy: a directory holds one document's allocations at a time, and per-file failures travel as `DocumentError` items instead of aborting the walk.
+
 **The project is now called matra.** The previous name collided with an existing package on PyPI, which makes dual publishing to crates.io and PyPI under one name impossible. The name is the public contract across Rust, Python and a future TypeScript crust, so the collision had to be resolved before the first release rather than after. There are no consumers and nothing has been published, so the change carries no aliases, shims or deprecations.
 
 **A command-line interface ships behind the `cli` feature.** The library returns typed errors and structured data; the binary decides rendering, exit codes, and what to do when input is missing. Exit codes follow the ripgrep convention, so nothing-found is 1 and a genuine failure is 2, and an empty document is not an error. `summarize` and `keyphrases` route through the same format detection `analyze` uses, so markdown headings and fenced code are never ranked as prose.
@@ -43,6 +45,10 @@ Nothing released yet. matra is pre-0.1.0 and unpublished on crates.io and PyPI.
 
 ### Added
 
+- `Ingest`, `Engine`, `standard_decomposers`, `decompose::Decomposers`: the pipeline surface.
+- `domain::DocumentError` (per-document failure with its path) and `domain::CorpusResult` (the partition of a result stream, constructed by `collect()`).
+- `Format` derives `PartialEq` and `Eq`, which the decomposer table keys on.
+- Equivalence laws L1 to L7 as tests: chain homomorphism, empty, singleton injection, stage composition, partition, Err passthrough, and the size-cap bound on everything the parser sees.
 - `matra` binary behind the `cli` feature: `analyze`, `summarize`, `keyphrases`, each accepting `--json`.
 - Conformance suite: `spec/tests/*.json` with Rust and Python runners.
 - `tests/cli.rs` covering argument handling, format detection, output shape and exit codes.
@@ -51,8 +57,15 @@ Nothing released yet. matra is pre-0.1.0 and unpublished on crates.io and PyPI.
 - `book/src/plans/`, the iteration plans, with per-milestone rubrics.
 - Docsite floor gate 5: no em dashes outside quoted material.
 
+### Removed
+
+- The six entry points: `analyze`, `analyze_markdown`, `analyze_file`, `analyze_directory`, `analyze_from`, `parse`. Variation lives in `Ingest`'s constructors and the decomposer table, not the function namespace. Pre-publish, so no consumer breaks.
+- `Metric`'s sentence-slice parameter. Metrics read the one sentence set attached to the document's paragraphs, which removes the redundant representation behind the `analyze_from` half-population defect.
+- `DirectorySource::read_collecting_errors`, orphaned by `analyze_directory`'s removal; `Ingest` yields per-file failures as stream items.
+
 ### Changed
 
+- The four Python extraction methods route through the pipeline, so the 8 MiB input gate, plain-text decomposition, and paragraph-scoped parsing apply to them uniformly.
 - Documentation rebuilt around what a reader needs first: what matra returns, the type graph, and how a call runs. The architecture page is written from source and organised by the call path rather than by the pattern it happens to instantiate.
 - Diagrams are hand-authored inline SVG. Mermaid is not installed; `book/book.toml` records the rule for choosing between them and the command to restore it.
 - Architecture prose consolidated into the book, which is gated, and out of `.claude/`, which is not.
