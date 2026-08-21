@@ -158,10 +158,23 @@ let token = matra::domain::Token::builder(
 |---|---|---|
 | `text` | `String` | Sentence text as the NLP provider reports it |
 | `tokens` | `Vec<Token>` | Tokens in ascending `id` order |
+| `negations` | `Vec<Negation>` | Negation cues, derived at construction |
+| `modals` | `Vec<Modal>` | Modal auxiliaries, derived at construction |
+| `bare_assertion` | `bool` | Whether the root carries `Mood=Ind` with no modal auxiliary attached, derived at construction |
 
 Invariants that downstream code relies on, and that a hand-built `Sentence` is expected to uphold: tokens are id-sorted; exactly one token has `head == 0`; every other `head` names a token in the same sentence.
 
 The UDPipe adapter builds `text` by joining token surface forms, inserting a space unless the preceding token carries `SpaceAfter=No` in `misc`. The string is a reconstruction, not a slice of the input, so whitespace can differ from the source text.
+
+### Derived structural fields
+
+The last three fields are computed once at `Sentence::new` from the dependency graph and serialized with the sentence, so every crust and the CLI's JSON read one Rust detection as data ([ADR-0008](https://github.com/mox-labs/matra/blob/main/docs/decisions/0008-structural-primitives-are-fields.md)). Each reports structure only; the reading is the consumer's. All three default (to empty or `false`) when deserializing JSON produced before the field existed.
+
+`Negation` reports one cue by token id: `cue_id`, `cue_lemma` (`not`, `never`, `no`, `neither`, `nor`), and `head_id`, the token the cue attaches to. A cue fires only on its carrying relation (`advmod`, `det`, `cc`), so `nothing` as a subject does not fire and tokenizer-split `cannot` fires exactly once, on the `not` token. Whether the negation reverses the sentence's claim is not matra's call.
+
+`Modal` reports one modal auxiliary by token id: `aux_id`, `aux_lemma`, and `head_id`, the verb the auxiliary attaches to. The closed class is the ten lemmas the UD English treebank tags `MD`: `can`, `could`, `may`, `might`, `must`, `ought`, `shall`, `should`, `will`, `would`, matched by lemma on the `aux` relation. Contracted forms fire on their lemma (`wo` in `won't` lemmatizes to `will`), the noun `will` never fires because it never carries `aux`, and a multi-auxiliary chain (`might have been done`) reports its modal with `head_id` on the content verb. English modals are ambiguous across readings, and resolving `must` into obligation or inference takes context matra does not model, so no epistemic, deontic, or dynamic category is assigned: the auxiliary and its arc are reported, the reading is the consumer's.
+
+`bare_assertion` is true when the root token carries `Mood=Ind` in its feats and no detected modal attaches to it: the bare assertoric surface form, as opposed to a modalized clause (whose root is an infinitive or participle with no `Mood`) or an imperative (`Mood=Imp`). It reads the root clause only, so a modal in a subordinate clause is reported in `modals` without defeating it.
 
 ### Methods
 

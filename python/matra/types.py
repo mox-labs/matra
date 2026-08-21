@@ -42,12 +42,28 @@ class Negation(TypedDict):
     head_id: int
 
 
+class Modal(TypedDict):
+    """One modal auxiliary, referenced by token id. Mirrors `matra::domain::Modal`.
+
+    Reports structure only: which token carries the modal, its lemma
+    (closed class: can, could, may, might, must, ought, shall, should,
+    will, would), and the head it attaches to. The epistemic, deontic
+    or dynamic reading is the consumer's, not matra's.
+    """
+
+    aux_id: int
+    aux_lemma: str
+    head_id: int
+
+
 class Sentence(TypedDict):
     """One parsed sentence. Mirrors `matra::domain::Sentence`."""
 
     text: str
     tokens: list[Token]
     negations: list[Negation]
+    modals: list[Modal]
+    bare_assertion: bool
 
 
 class Paragraph(TypedDict):
@@ -104,6 +120,7 @@ class Keyphrase(TypedDict):
 __all__ = [
     "Document",
     "Keyphrase",
+    "Modal",
     "Negation",
     "Paragraph",
     "ScoredSentence",

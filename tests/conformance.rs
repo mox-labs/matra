@@ -46,6 +46,11 @@ struct ExpectedSentence {
     /// Expected negation cues, when the fixture pins them. `None` means
     /// the fixture predates the field and the check is skipped.
     negations: Option<Vec<ExpectedNegation>>,
+    /// Expected modal auxiliaries, when the fixture pins them. Same
+    /// convention as `negations`.
+    modals: Option<Vec<ExpectedModal>>,
+    /// Expected bare-assertion discriminator, when the fixture pins it.
+    bare_assertion: Option<bool>,
     tokens: Vec<ExpectedToken>,
 }
 
@@ -53,6 +58,13 @@ struct ExpectedSentence {
 struct ExpectedNegation {
     cue_id: usize,
     cue_lemma: String,
+    head_id: usize,
+}
+
+#[derive(Deserialize)]
+struct ExpectedModal {
+    aux_id: usize,
+    aux_lemma: String,
     head_id: usize,
 }
 
@@ -164,6 +176,25 @@ fn rust_crust_conforms_to_spec() {
                     assert_eq!(n.cue_lemma, w.cue_lemma, "{at} cue_lemma");
                     assert_eq!(n.head_id, w.head_id, "{at} head_id");
                 }
+            }
+            if let Some(want_modals) = &want.modals {
+                assert_eq!(
+                    got.modals.len(),
+                    want_modals.len(),
+                    "{name}: sentence {i} modal count"
+                );
+                for (j, (m, w)) in got.modals.iter().zip(want_modals).enumerate() {
+                    let at = format!("{name}: sentence {i} modal {j}");
+                    assert_eq!(m.aux_id, w.aux_id, "{at} aux_id");
+                    assert_eq!(m.aux_lemma, w.aux_lemma, "{at} aux_lemma");
+                    assert_eq!(m.head_id, w.head_id, "{at} head_id");
+                }
+            }
+            if let Some(want_bare) = want.bare_assertion {
+                assert_eq!(
+                    got.bare_assertion, want_bare,
+                    "{name}: sentence {i} bare_assertion"
+                );
             }
             assert_eq!(
                 got.tokens.len(),
