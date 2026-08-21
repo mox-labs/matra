@@ -72,7 +72,7 @@ summary = v.tfidf_summarize(text, 3)
 phrases = v.rake_keyphrases(text, 10)
 ```
 
-There is no standalone `parse` method on the Python surface, and `analyze_from` has no Python equivalent. Each of the four extraction methods parses the text it is given on its own. Calling `analyze` and then `tfidf_summarize` on the same string parses that string twice, and there is no parse-once-use-many path from Python today. If the second parse matters for your workload, do that work in Rust and expose the result through your own binding.
+There is no standalone parse method on the Python surface. Each of the four extraction methods runs the text it is given through the pipeline on its own, treating it as plain text. Calling `analyze` and then `tfidf_summarize` on the same string parses that string twice, and there is no parse-once-use-many path from Python today. If the second parse matters for your workload, do that work in Rust and expose the result through your own binding.
 
 The two summarizers return their selection in document order, not score order. Read `position` to see where a sentence sits in the source and `score` to see how it ranked. The two keyphrase methods return score order, highest first, because `Keyphrase` has no position to sort back into.
 
@@ -80,9 +80,9 @@ Keyphrases come back as lowercased lemmas joined with spaces, not as the surface
 
 ## Size limits
 
-`analyze` and `analyze_markdown` reject text over 8 MiB with `ValueError`.
+Every method that takes text rejects text over 8 MiB with `ValueError`. The gate lives in the pipeline stage every method routes through, not in each method, so there is no method that skips it.
 
-The four extraction methods do not run that check. They hand the text straight to the parser, so the only caps that apply are the per-algorithm ones: 2000 sentences for `tfidf_summarize` and `textrank_summarize`, and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `ValueError` when exceeded. That is an asymmetry with the Rust API, where `matra::parse` applies the text gate first. If you feed untrusted input to the extraction methods, check `len(text.encode())` yourself before the call.
+The per-algorithm caps apply on top: 2000 sentences for `tfidf_summarize` and `textrank_summarize`, and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `ValueError` when exceeded.
 
 ## The returned dicts and their shape
 

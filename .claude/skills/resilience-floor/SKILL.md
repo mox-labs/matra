@@ -22,7 +22,7 @@ ACES (`.claude/skills/aces/SKILL.md`) is the **structural** discipline (adaptabi
 
 ### 1. Size caps at the entry point, not deep in the call stack
 
-`MAX_INPUT_BYTES = 8 * 1024 * 1024` is checked at every public entry point in `lib.rs`:
+`MAX_INPUT_BYTES = 8 * 1024 * 1024` is checked once, in `Engine::annotate`, the only route from text to the parser:
 
 ```rust
 fn check_input_size(text: &str) -> domain::Result<()> {
@@ -37,15 +37,15 @@ fn check_input_size(text: &str) -> domain::Result<()> {
 }
 ```
 
-Called from `analyze`, `analyze_markdown`, `parse`, `analyze_from`. Source adapters (`source/file.rs::read`) check file metadata size *before* reading into memory. Extractors with quadratic-class characteristics (TextRank) check their own `MAX_SENTENCES` cap.
+Called from `Engine::annotate` before decomposition. Because annotate is the unique path to `NlpProvider::parse`, the bound is a property of the pipeline rather than a per-entry-point restatement, and equivalence law L7 pins it in tests. Source adapters (`source/file.rs::read`) check file metadata size *before* reading into memory. Extractors with quadratic-class characteristics (TextRank) check their own `MAX_SENTENCES` cap.
 
-**Rule**: every entry point checks size before doing real work. Deep callers may trust the bound is already checked.
+**Rule**: the gate lives at the unique choke point, checked before real work. Deep callers may trust the bound is already checked.
 
 **Discriminator**: each `InputTooLarge` carries a `what: &'static str` so consumers can distinguish input-too-large at the apex from per-extractor caps:
 
 | `what` value | Where it fires |
 |---|---|
-| `"input"` | Top-level public entry points in `lib.rs` |
+| `"input"` | `Engine::annotate` in `lib.rs` |
 | `"file_source"` | `source/file.rs` before reading the file |
 | `"rake"`, `"yake"` | Per-extractor caps in `extraction/` |
 

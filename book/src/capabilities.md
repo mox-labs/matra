@@ -146,18 +146,16 @@ Used deliberately, the gap is informative. Where these extractors and a semantic
 
 This matters if you store analysis and later have to show which bytes a value came from. Provenance holds by construction, not by convention.
 
-## Entry points
+## The surface
 
-| Function | Input | Output |
+One pipeline, two values. `Ingest` says where documents come from; `Engine` says what happens to each one.
+
+| Value | Constructors | What it carries |
 |---|---|---|
-| `analyze` | a string of plain text | `Document` |
-| `analyze_markdown` | a string of markdown | `Document` |
-| `analyze_file` | a path, format detected from the extension | `Document` |
-| `analyze_directory` | a directory path | `Corpus` |
-| `parse` | a string | `Vec<Sentence>`, no metrics, no structure |
-| `analyze_from` | sections you already have plus sentences you already parsed | `Document` |
+| `Ingest` | `text(string, format)`, `path(file or directory)` | the source variation: a string is a stream of one, a directory is a stream of many |
+| `Engine` | `new(provider, decomposer table)` | the pipeline: `analyze` a stream, `analyze_one` document, or the stages `annotate` and `compose` separately |
 
-`analyze_from` exists so you do not parse twice. Parsing is the expensive step, and the extractors want `&[Sentence]` while the metrics want a `Document`. Call `parse` once, decompose once, then hand both to `analyze_from` and run the extractors off the same sentences.
+`engine.analyze(ingest)` returns a lazy stream of per-document results; collecting it into `CorpusResult` partitions successes from failures, and nothing in between aborts on one bad file. `annotate` gives you structure and sentences without the metric suite, which is the route when you want the extractors: read the sentences off the tree once and hand the same slice to every extractor. Nothing is parsed twice.
 
 ## What this is for
 
@@ -167,7 +165,7 @@ Some things that fall out of it:
 
 **Retrieval and chunking.** Section and paragraph boundaries come from the document's own outline, so chunks split where the author split rather than every N tokens.
 
-**Corpus comparison.** `analyze_directory` gives per-document metrics on a shared scale, so drift between documents or across time is measurable rather than felt.
+**Corpus comparison.** A directory streamed through the pipeline gives per-document metrics on a shared scale, so drift between documents or across time is measurable rather than felt.
 
 **Rule evaluation.** The dependency tree is queryable. A rule like "flag passive constructions whose agent is omitted" is a walk over `children_of` and `dep`, not a regex over prose.
 

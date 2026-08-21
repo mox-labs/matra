@@ -35,15 +35,11 @@ One `Token` per token with all ten CoNLL-U columns, grouped into sentences. Two 
 
 The route through the library changes what gets segmented into sentences.
 
-| Entry point | Parsed unit | Blockquotes |
-|---|---|---|
-| `analyze`, `analyze_markdown`, `analyze_file`, `analyze_directory` | Each non-blockquote paragraph separately | Not parsed, so they contribute nothing to any metric |
-| `parse` | The whole string in one call | Included, since no decomposition happens |
-| `analyze_from` | Whatever sections and sentences you supply | Your choice |
+Every pipeline route parses each non-blockquote paragraph separately. Blockquote paragraphs are not parsed, so they contribute nothing to any metric. Calling a provider's `parse` directly parses the whole string in one call with no decomposition, and its segmentation can differ from the pipeline's at paragraph boundaries.
 
-`analyze_file` and `analyze_directory` pick the decomposer from the file extension, so the same bytes segment differently under `.md` and under `.txt`.
+`Ingest::path` picks the format from the file extension, so the same bytes segment differently under `.md` and under `.txt`; `Ingest::text` takes the format as an argument.
 
-Paragraph-at-a-time parsing means a sentence can never be attributed to the wrong paragraph. It also means sentence segmentation cannot run across a paragraph boundary. Report which entry point produced your numbers.
+Paragraph-at-a-time parsing means a sentence can never be attributed to the wrong paragraph. It also means sentence segmentation cannot run across a paragraph boundary. Report which format your numbers were produced under.
 
 ### Citation
 
@@ -119,7 +115,7 @@ compression_ratio = compressed_bytes / original_bytes
 
 ## Document metrics
 
-The two stored document metrics and the derived document methods are computed over the flat slice of sentences handed to the measure stage. For the `analyze` entry points that slice is the concatenation of the per-paragraph parses in document order, which excludes blockquote paragraphs. For `analyze_from` it is the slice you pass.
+The two stored document metrics and the derived document methods are computed over the sentences attached to the document's paragraphs, which excludes blockquote paragraphs. There is exactly one sentence set, and it is derivable from the tree in one way, so the numbers cannot disagree with the structure they describe.
 
 ### Vocabulary type-token ratio
 
@@ -322,13 +318,13 @@ Two further sources of variation are worth recording in a methods section.
 
 ### What to record
 
-To let someone reproduce a result, report: the matra version, the model file name and its SHA-256, which entry point produced the numbers, and the parameter values you passed, such as the requested sentence count or maximum phrase count.
+To let someone reproduce a result, report: the matra version, the model file name and its SHA-256, which format the document was analyzed under, and the parameter values you passed, such as the requested sentence count or maximum phrase count.
 
 ```
 matra <crate version> (https://github.com/mox-labs/matra)
 parse: UDPipe, english-ewt-ud-2.5-191206.udpipe
        SHA-256 784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957
-entry point: analyze_markdown
+format: markdown
 parameters: tfidf_summarize(sentences, 5)
 ```
 

@@ -83,7 +83,7 @@ When code changes, exactly one or two of these files need updates. If you're upd
 
 ## Aspirational-claim discipline
 
-matra's docs went through a substantial cleanup on 2026-05-20 because they had drifted to describe an aspirational two-crate workspace, an `Engine` struct, `analyze_directory_iter`, `MatraError`, `otel` feature, and tracing-always-on — none of which existed in code. Anti-pattern to avoid.
+matra's docs went through a substantial cleanup on 2026-05-20 because they had drifted to describe an aspirational two-crate workspace, an `Engine` struct, `analyze_directory_iter`, `MatraError`, `otel` feature, and tracing-always-on — none of which existed in code at the time (I8 later shipped a real `Engine`, deliberately; the defect was docs asserting one before it existed). Anti-pattern to avoid.
 
 Rule: every claim in a shipping doc (`README.md`, `CLAUDE.md`, `.claude/arch/`, `docs/decisions/`) must be grounded in either:
 

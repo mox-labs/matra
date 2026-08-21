@@ -188,7 +188,7 @@ Every method below is a walk over the `head` and `dep` columns. [What matra give
 
 The three metric slots hold `None` until the measure stage fills them, and stay `None` when the paragraph does not meet a metric's applicability condition.
 
-The `analyze` entry points skip blockquote paragraphs at the parse stage, so a paragraph with `in_blockquote == true` reaches the measure stage with no sentences and keeps all three slots at `None`.
+The pipeline skips blockquote paragraphs at the parse stage, so a paragraph with `in_blockquote == true` reaches the measure stage with no sentences and keeps all three slots at `None`.
 
 ### Methods
 
@@ -212,7 +212,7 @@ The `analyze` entry points skip blockquote paragraphs at the parse stage, so a p
 
 ## Document
 
-The output of every `analyze` entry point.
+The output of the pipeline.
 
 | Field | Type | Contents |
 |---|---|---|
@@ -266,7 +266,7 @@ Which decomposer a document needs. `FileSource` assigns the variant from the fil
 | `Pdf` | Extension `.pdf` |
 | `Docx` | Extension `.docx` |
 
-`Pdf` and `Docx` have no decomposer, so analyzing such a file returns `Error::UnsupportedFormat`. The text entry points (`analyze`, `analyze_markdown`) take a decomposer directly and never construct a `Format`.
+`Pdf` and `Docx` have no entry in the standard decomposer table, so analyzing such a file returns `Error::UnsupportedFormat`. `Ingest::text` takes the format as an argument; `Ingest::path` assigns one from the extension. `Format` derives `PartialEq` and `Eq`, which is what the decomposer table keys on.
 
 ## RawDocument
 
@@ -293,7 +293,7 @@ Which decomposer a document needs. `FileSource` assigns the variant from the fil
 |---|---|---|
 | `entries` | `Vec<CorpusEntry>` | One entry per successfully analyzed document |
 
-Documents that failed do not appear here. `analyze_directory` returns them alongside the corpus as a `Vec<(PathBuf, Error)>`.
+Documents that failed do not appear here. They travel as `DocumentError` values and land in `CorpusResult::errors` beside the corpus.
 
 ### Methods
 
@@ -304,11 +304,29 @@ Documents that failed do not appear here. `analyze_directory` returns them along
 | `passive_ratio(&self)` | `f64` | Passive sentences over total sentences across every entry. 0.0 with no sentences |
 | `mean_readability(&self)` | `f64` | Mean of the paragraphs that carry a `readability_grade`, across every entry. 0.0 when none do |
 
+## DocumentError
+
+| Field | Type | Contents |
+|---|---|---|
+| `path` | `Option<PathBuf>` | Where the failure occurred, `None` for in-memory text |
+| `error` | `Error` | What went wrong |
+
+One per-document failure. `Display` prints `path: error` when a path exists and the bare error otherwise; `source()` returns the wrapped `Error`. `DocumentError::new(path, error)` is the constructor. Not `Serialize` and not `Clone`, because `Error` wraps `std::io::Error`.
+
+## CorpusResult
+
+| Field | Type | Contents |
+|---|---|---|
+| `corpus` | `Corpus` | Every successfully analyzed document |
+| `errors` | `Vec<DocumentError>` | Every per-document failure, in consumption order |
+
+The partition of a per-document result stream: entries plus errors equals documents consumed. `collect()` is its constructor, via `FromIterator<Result<CorpusEntry, DocumentError>>`, which is how a stream from `Engine::analyze` becomes one value. Inherits `DocumentError`'s serialization gap, so it does not cross the language boundary today.
+
 ## Constants, aliases, and the error type
 
 | Item | Definition | Role |
 |---|---|---|
-| `MAX_INPUT_BYTES` | `usize`, `8 * 1024 * 1024` (8,388,608) | Byte cap the public entry points apply to text input |
+| `MAX_INPUT_BYTES` | `usize`, `8 * 1024 * 1024` (8,388,608) | Byte cap the pipeline applies to text input |
 | `Result<T>` | `std::result::Result<T, Error>` | Return type of every fallible library function |
 | `Error` | enum, `#[non_exhaustive]` | Every failure the library returns. See [Errors](errors.md) |
 

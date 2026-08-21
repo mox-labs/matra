@@ -109,7 +109,7 @@ If a single code change requires updating more than two of these, you're probabl
 
 ## Aspirational-claim discipline
 
-Matra's docs went through a substantial cleanup on 2026-05-20 because they had drifted to describe an aspirational two-crate workspace, an `Engine` struct, `analyze_directory_iter`, `MatraError` (the old shape), `otel` feature, and tracing-always-on — none of which existed in code.
+Matra's docs went through a substantial cleanup on 2026-05-20 because they had drifted to describe an aspirational two-crate workspace, an `Engine` struct, `analyze_directory_iter`, `MatraError` (the old shape), `otel` feature, and tracing-always-on — none of which existed in code at the time (I8 later shipped a real `Engine`, deliberately; the defect was docs asserting one before it existed).
 
 **Rule**: every claim in a shipping doc must be grounded in either:
 

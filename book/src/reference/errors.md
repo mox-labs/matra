@@ -2,7 +2,7 @@
 
 Every fallible function in matra returns `domain::Result<T>`, which is `std::result::Result<T, domain::Error>`. No function in the library returns `Result<T, String>`. matra signals failure by returning `Error`, not by unwinding: a panic raised inside the UDPipe C++ boundary is caught at the adapter and converted into `Error::ParseFailed`.
 
-`Error` is `#[non_exhaustive]`. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. `Error` derives neither `Clone` nor serde; it is moved, not copied, and `analyze_directory` moves each per-file failure into its returned vector.
+`Error` is `#[non_exhaustive]`. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. `Error` derives neither `Clone` nor serde; it is moved, not copied. The stream surface wraps it in `DocumentError`, which adds the path the failure occurred at and moves the error into `CorpusResult::errors`.
 
 ## The variants
 
@@ -45,8 +45,8 @@ Six gate labels produce this variant. The `what` field carries the label so a ca
 
 | `what` | Gate | Limit | Measured over |
 |---|---|---|---|
-| `"input"` | `analyze`, `analyze_markdown`, `parse`, `analyze_from` | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | UTF-8 byte length of the text. `analyze_from` sums the byte lengths of every paragraph instead |
-| `"file_source"` | `FileSource::read`, and `DirectorySource` through it | 8,388,608 bytes | File size reported by the filesystem, checked before any read |
+| `"input"` | `Engine::annotate`, the only route from text to the parser | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | UTF-8 byte length of the text |
+| `"file_source"` | `FileSource::read`, which `Ingest::path` reads through | 8,388,608 bytes | File size reported by the filesystem, checked before any read |
 | `"tfidf"` | `tfidf_summarize` | 2,000 | Number of sentences in the slice |
 | `"textrank"` | `textrank_summarize` | 2,000 | Number of sentences in the slice |
 | `"rake"` | `rake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
@@ -58,9 +58,9 @@ The caps bound worst-case memory and time. TextRank builds a dense similarity ma
 
 Four details govern when a gate fires.
 
-`analyze_file` and `analyze_directory` cross the `"input"` gate too, because they route through `analyze` or `analyze_markdown` once the format is known. In practice `"file_source"` fires first, since both gates carry the same 8 MiB limit and the file size is checked before the read.
+A document from disk crosses both text gates in sequence: `"file_source"` when `Ingest` reads it, `"input"` inside `annotate`. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
-Calling a provider's `parse` directly bypasses the `"input"` gate. The gate belongs to the library entry points, not to the `NlpProvider` trait.
+Calling a provider's `parse` directly bypasses the `"input"` gate. The gate belongs to `Engine::annotate`, not to the `NlpProvider` trait.
 
 The four extractors check their caps after their empty-result checks. `tfidf_summarize(sentences, 0)`, `textrank_summarize(sentences, 0)`, `rake_keyphrases(sentences, 0)`, and `yake_keyphrases(sentences, 0)` return an empty vector without evaluating the cap, whatever the size of the slice. The same holds for an empty slice.
 
@@ -68,7 +68,7 @@ A metric has no gate of its own. The compression ratio skips any paragraph over 
 
 ### UnsupportedFormat
 
-Returned by `analyze_file`, and recorded per file by `analyze_directory`, when the detected `Format` is `Pdf` or `Docx`. The payload is the `Format` value. `Markdown` and `PlainText` always have a decomposer.
+Returned by `Engine::annotate` when the document's `Format` has no entry in the engine's decomposer table. With `standard_decomposers()` that means `Pdf` or `Docx`; `Markdown` and `PlainText` always have an entry. The payload is the `Format` value.
 
 ### Io
 
@@ -77,13 +77,17 @@ Wraps `std::io::Error`, produced by:
 - `FileSource` rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`.
 - `FileSource` rejecting a path that is not a regular file, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`.
 - Any read, directory listing, directory creation, file removal, or rename that fails.
-- `analyze_file` when the source yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
+- `Ingest` when a source yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
 
-## Per-file failures in a directory read
+## Per-document failures: `DocumentError` and `CorpusResult`
 
-`analyze_directory` returns `Result<(Corpus, Vec<(PathBuf, Error)>)>`. The outer `Result` is `Err` only when the directory listing itself fails. One unreadable or oversized file does not stop the run: it becomes an entry in the error vector, and analysis continues with the next file. Both ingest failures and analysis failures land in that vector.
+The stream surface never lets one bad document abort the rest. `Engine::analyze` yields `Result<CorpusEntry, DocumentError>` per document, where `DocumentError` pairs the `Error` with the path it occurred at (`None` for in-memory text, so a path-less document is distinguishable from one at an empty path). Its `Display` prints `path: error` when a path exists and the bare error otherwise, and its `source()` is the wrapped `Error`.
 
-Two kinds of entry never reach it. `DirectorySource` skips symlinks while listing, so a symlink in the directory produces no document and no error. It also skips anything that is not a regular file. The read is one level deep, so a subdirectory is skipped the same way.
+Collecting the stream into `CorpusResult` partitions it: every success into `corpus`, every failure into `errors`, in order, with entries plus errors equal to documents consumed. `Ingest::path` is `Err` only when the listing itself fails; both read failures and analysis failures travel as stream items.
+
+Two kinds of entry never appear on either side. The directory listing skips symlinks, so a symlink produces no document and no error. It also skips anything that is not a regular file, and the walk is one level deep, so a subdirectory is skipped the same way.
+
+Neither `DocumentError` nor `CorpusResult` is `Serialize`, because `Error` wraps `std::io::Error`. Crossing a language boundary needs a projection with stable kind strings, which does not exist yet; the types stay Rust-side until it does.
 
 ## Display strings
 
@@ -103,21 +107,24 @@ These are the strings `Display` produces, and the strings Python's `str(exc)` re
 ## Matching in Rust
 
 ```rust
-use matra::domain::Error;
-use matra::nlp::NlpProvider;
+use matra::Engine;
+use matra::domain::{Error, Format, RawDocument};
 
-fn report(text: &str, nlp: &dyn NlpProvider) {
-    match matra::analyze(text, nlp) {
-        Ok(document) => println!("{} sentences", document.total_sentences()),
-        Err(Error::InputTooLarge {
-            what,
-            actual,
-            limit,
-        }) => eprintln!("{what} gate: {actual} over limit {limit}"),
-        Err(Error::ModelNotFound(path)) => {
-            eprintln!("model missing at {}", path.display())
-        }
-        Err(other) => eprintln!("{other}"),
+fn report(text: &str, engine: &Engine) {
+    let raw = RawDocument::new(text.to_string(), None, Format::PlainText);
+    match engine.analyze_one(raw) {
+        Ok(entry) => println!("{} sentences", entry.analysis.total_sentences()),
+        Err(doc_err) => match doc_err.error {
+            Error::InputTooLarge {
+                what,
+                actual,
+                limit,
+            } => eprintln!("{what} gate: {actual} over limit {limit}"),
+            Error::ModelNotFound(path) => {
+                eprintln!("model missing at {}", path.display())
+            }
+            other => eprintln!("{other}"),
+        },
     }
 }
 ```
@@ -150,7 +157,7 @@ except FileNotFoundError as exc:
 
 The exception message is the `Display` string from the table above. Variant identity beyond the exception class is not carried across the boundary; a caller that needs to distinguish `InputTooLarge` from `UnsupportedFormat` inspects the message.
 
-Which gates apply on the Python side follows from what each method calls. `Matra.analyze` and `Matra.analyze_markdown` route through the Rust `analyze` and `analyze_markdown` functions, so the 8 MiB `"input"` gate applies. `Matra.tfidf_summarize`, `Matra.textrank_summarize`, `Matra.rake_keyphrases`, and `Matra.yake_keyphrases` call the provider's `parse` directly, so the 8 MiB gate does not apply to them. Their per-extractor caps do.
+Every Python method that takes text routes through `Engine::annotate`, so the 8 MiB `"input"` gate applies uniformly: to `analyze` and `analyze_markdown`, and to the four extraction methods, whose per-extractor caps apply on top.
 
 One further failure has no `Error` variant behind it. The `Matra` class is `#[pyclass(unsendable)]`, because the loaded model holds C-side state that is not thread-safe. Accessing one instance from a thread other than the one that created it fails at runtime. Multi-process use is unaffected.
 

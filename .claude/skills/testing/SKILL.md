@@ -39,7 +39,7 @@ CI does not run the ignored set; they need the UDPipe model and are run by hand.
 
 ### 3. Doctests — `///` blocks with `# Examples`
 
-Compile and run the examples in rustdoc. The `lib.rs` `parse` and `analyze_from` doctests confirm the public API examples don't bit-rot. Doctests with `no_run` confirm compilation only.
+Compile and run the examples in rustdoc. The `lib.rs` `Engine::analyze` doctest confirms the public API examples don't bit-rot. Doctests with `no_run` confirm compilation only.
 
 Run via `cargo test`.
 
