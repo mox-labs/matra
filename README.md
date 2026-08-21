@@ -26,13 +26,18 @@ maturin develop
 ## Usage (Rust)
 
 ```rust,ignore
-use matra::{analyze_markdown, nlp::udpipe::Udpipe};
+use matra::{Engine, Ingest, standard_decomposers, nlp::udpipe::Udpipe};
 
 // Downloads the English model on first call (~16MB)
 let nlp = Udpipe::english("./models").unwrap();
+let engine = Engine::new(Box::new(nlp), standard_decomposers());
 
-let text = std::fs::read_to_string("essay.md").unwrap();
-let analysis = analyze_markdown(&text, &nlp).unwrap();
+let analysis = engine
+    .analyze(Ingest::path("essay.md").unwrap())
+    .next()
+    .unwrap()
+    .unwrap()
+    .analysis;
 
 println!("Sentences: {}", analysis.total_sentences());
 println!("Mean length: {:.1}", analysis.mean_sentence_length());

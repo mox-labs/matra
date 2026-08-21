@@ -13,7 +13,8 @@
 use std::fs;
 use std::path::PathBuf;
 
-use matra::domain::Document;
+use matra::Engine;
+use matra::domain::{Document, Format, RawDocument};
 use matra::nlp::udpipe::Udpipe;
 use serde::Deserialize;
 
@@ -103,14 +104,18 @@ fn close(a: f64, b: f64) -> bool {
 #[ignore = "requires the UDPipe model"]
 fn rust_crust_conforms_to_spec() {
     let nlp = Udpipe::english(model_dir()).expect("load english model");
+    let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
 
     for fixture in load_fixtures() {
-        let doc: Document = match fixture.format.as_str() {
-            "markdown" => matra::analyze_markdown(&fixture.input, &nlp),
-            "plain" => matra::analyze(&fixture.input, &nlp),
+        let format = match fixture.format.as_str() {
+            "markdown" => Format::Markdown,
+            "plain" => Format::PlainText,
             other => panic!("{}: unknown format {other}", fixture.name),
-        }
-        .unwrap_or_else(|e| panic!("{}: analyze failed: {e}", fixture.name));
+        };
+        let doc: Document = engine
+            .analyze_one(RawDocument::new(fixture.input.clone(), None, format))
+            .unwrap_or_else(|e| panic!("{}: analyze failed: {e}", fixture.name))
+            .analysis;
 
         let e = &fixture.expect;
         let name = &fixture.name;

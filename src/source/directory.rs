@@ -2,16 +2,10 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::domain::{self, Error, RawDocument};
+use crate::domain::{self, RawDocument};
 
 use super::Source;
 use super::file::FileSource;
-
-/// Successes plus per-file failures from a directory read. The outer
-/// `Result` of [`DirectorySource::read_collecting_errors`] is `Err` only
-/// for top-level (directory-listing) failures; per-file failures land
-/// here.
-pub type ReadOutcome = (Vec<RawDocument>, Vec<(PathBuf, Error)>);
 
 /// Reads all regular files in a directory (non-recursive, symlinks skipped).
 ///
@@ -21,12 +15,10 @@ pub type ReadOutcome = (Vec<RawDocument>, Vec<(PathBuf, Error)>);
 ///   into unexpected parts of the filesystem.
 /// - Files are yielded sorted by path (lexicographic, byte-wise on
 ///   `PathBuf`) — consumers may rely on this ordering.
-/// - Per-file read failures are tolerated: each failed file becomes an
-///   entry in the error list and iteration continues. Use
-///   [`DirectorySource::read_collecting_errors`] to receive both.
 /// - [`Source::read`] (the trait method) returns only the successfully-read
 ///   documents; per-file failures are silently dropped. Callers that care
-///   about which files failed should use `read_collecting_errors`.
+///   about which files failed should stream through `Ingest`, which
+///   yields each failure as an item carrying its path.
 pub struct DirectorySource;
 
 impl DirectorySource {
@@ -50,32 +42,20 @@ impl DirectorySource {
         paths.sort();
         Ok(paths)
     }
-
-    /// Read all candidate files, returning successes and per-file failures
-    /// separately. The outer `Result` is `Err` only for top-level directory
-    /// failures (`read_dir` itself failing). Once the listing succeeds,
-    /// every file is attempted; failures are collected with their path.
-    pub fn read_collecting_errors(&self, input: &Path) -> domain::Result<ReadOutcome> {
-        let paths = self.candidate_paths(input)?;
-        let file_source = FileSource;
-        let mut docs = Vec::new();
-        let mut errors = Vec::new();
-        for path in paths {
-            match file_source.read(&path) {
-                Ok(read) => docs.extend(read),
-                Err(e) => errors.push((path, e)),
-            }
-        }
-        Ok((docs, errors))
-    }
 }
 
 impl Source for DirectorySource {
     /// Reads all documents in the directory, dropping per-file failures
-    /// silently. Use [`DirectorySource::read_collecting_errors`] to get
-    /// both successes and failures.
+    /// silently. Callers that care about which files failed should
+    /// stream through `Ingest` instead.
     fn read(&self, input: &Path) -> domain::Result<Vec<RawDocument>> {
-        let (docs, _errors) = self.read_collecting_errors(input)?;
+        let file_source = FileSource;
+        let docs = self
+            .candidate_paths(input)?
+            .into_iter()
+            .filter_map(|path| file_source.read(&path).ok())
+            .flatten()
+            .collect();
         Ok(docs)
     }
 
@@ -129,7 +109,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn read_collecting_errors_per_file_io_failure() {
+    fn read_tolerates_per_file_io_failure() {
         use std::os::unix::fs::PermissionsExt;
 
         let dir = tempfile::tempdir().unwrap();
@@ -142,14 +122,12 @@ mod tests {
         std::fs::write(&bad, "# Bad").unwrap();
         std::fs::set_permissions(&bad, std::fs::Permissions::from_mode(0o000)).unwrap();
 
-        let result = DirectorySource.read_collecting_errors(dir.path());
+        let result = DirectorySource.read(dir.path());
         // Restore permissions so tempdir cleanup works.
         let _ = std::fs::set_permissions(&bad, std::fs::Permissions::from_mode(0o644));
 
-        let (docs, errors) = result.unwrap();
-        assert_eq!(docs.len(), 3, "three readable files should succeed");
-        assert_eq!(errors.len(), 1, "one unreadable file should error");
-        assert!(errors[0].0.ends_with("bad.md"));
+        let docs = result.unwrap();
+        assert_eq!(docs.len(), 3, "three readable files succeed, one drops");
     }
 
     #[test]
