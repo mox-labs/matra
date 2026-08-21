@@ -101,7 +101,7 @@ jobs:
       - name: Build wheel
         run: |
           set -euo pipefail
-          python -m pip install --upgrade maturin
+          python -m pip install maturin==1.14.1
           maturin build --release --out dist
       - name: Smoke test the wheel
         run: |
@@ -129,7 +129,7 @@ jobs:
       - name: Build sdist
         run: |
           set -euo pipefail
-          python -m pip install --upgrade maturin
+          python -m pip install maturin==1.14.1
           maturin sdist --out dist
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
