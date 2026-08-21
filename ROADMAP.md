@@ -121,6 +121,27 @@ The pattern across all of these: capability waits for the consumer that justifie
 
 **Trigger condition.** Met in substance: a named consumer with a documented baseline exists and has been blocked for months. What is missing is confirmation that scribe still wants matra rather than the thin-wrapper alternative its option 4 described. Confirm that, then proceed.
 
+## Self-similarity and redundancy metrics
+
+**What it is.** Structural detection of a document repeating itself: clusters of sentences restating the same content, with quantitative measures over them. The concrete consumer pattern is auditing LLM-generated text, whose characteristic failure is high-lexical-overlap restatement.
+
+The shape, all deterministic and provenance-preserving:
+
+| Output | Kind |
+|---|---|
+| Similarity clusters: sentence groups whose pairwise content-lemma overlap (Jaccard or TF-IDF cosine) exceeds a caller-supplied threshold, returned as span sets with the shared lemmas as evidence | qualitative |
+| Redundancy ratio: share of sentences in clusters of size above one | quantitative |
+| rep-n and distinct-n: n-gram repetition rates, the established NLG-literature measures | quantitative |
+| Skeleton repetition: sentences sharing root-verb lemma plus subject and object lemmas | qualitative |
+| Opener formulae: repeated sentence-initial lemma sequences | quantitative |
+| Document-scope compression ratio, closing the per-paragraph measure's cross-paragraph blind spot | quantitative |
+
+matra reports the clusters and the numbers; whether they constitute fluff is the consumer's reading. The word never appears in the output. Synonym-level paraphrase (different vocabulary, same meaning) is out of reach of lexical overlap by design; catching it needs semantic similarity, which sits above the verifiable tier and would only ever arrive as a specialist adapter with its tier stated.
+
+**Where it lands.** Mostly paid for already: `extraction/textrank.rs` builds a pairwise sentence-similarity matrix and projects it down to centrality ranks; re-projecting the same matrix as clusters is the core of this capability. Thresholds are caller-supplied parameters, not constants matra pretends to know.
+
+**Trigger condition. FIRED, 2026-08-21.** A concrete consumer pattern was named that field access cannot serve: quantifying restatement across a document for LLM-output auditing. Design against I7's primitives and the rule-vocabulary shape; an ADR settles whether this is a metric family, an extractor, or the first rule pack.
+
 ## Configuration-driven invocation
 
 **What it is.** A configuration file selecting which metrics run, which extractors run, and how output is shaped, so both the library and the CLI are driven by declaration rather than by argument lists.
