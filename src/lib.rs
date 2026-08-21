@@ -116,43 +116,29 @@ pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Se
     nlp.parse(text)
 }
 
-/// Analyze from pre-decomposed sections and pre-parsed sentences, so a
-/// caller who needs both a `Document` and the sentence slice pays for the
-/// parse once.
+/// Assemble a `Document` from pre-decomposed sections.
 ///
-/// # This does not produce the same `Document` as [`analyze_markdown()`]
+/// # No metric is populated. Every slot stays `None`.
 ///
-/// Only the two document-level metrics are populated. Every paragraph-level
-/// metric stays `None`:
+/// Metrics read the sentences attached to the document's paragraphs, and
+/// this function receives one flat slice with no record of which sentence
+/// came from which paragraph, so it cannot attach anything. Recovering the
+/// mapping would mean matching sentences back to paragraphs by text, which
+/// this crate removed deliberately: two paragraphs sharing an opening
+/// substring were silently assigned each other's sentences.
 ///
-/// | Field | After `analyze_from` |
-/// |---|---|
-/// | `vocabulary_ttr`, `nominalization_ratio` | `Some` |
-/// | `readability_grade`, `lexical_density`, `compression_ratio` | **always `None`** |
-///
-/// The reason is structural. Paragraph metrics gate on
-/// [`Paragraph::word_count`](domain::Paragraph::word_count), which sums over
-/// `Paragraph::sentences`. This function receives one flat slice with no
-/// record of which sentence came from which paragraph, so it cannot fill
-/// those in. Recovering the mapping would mean matching sentences back to
-/// paragraphs by text, which this crate removed deliberately: two paragraphs
-/// sharing an opening substring were silently assigned each other's
-/// sentences.
-///
-/// So the flat slice serves the document-level metrics and the extractors,
-/// and nothing else. If you want paragraph metrics, call
-/// [`analyze_markdown()`] or [`analyze()`] and read the sentences back off
-/// the tree with `Document::sentences()`.
+/// The `sentences` parameter is unused beyond documentation intent; it
+/// stays in the signature only for call-site compatibility until this
+/// function is removed. If you want a measured `Document`, call
+/// [`analyze()`] or [`analyze_markdown()`] and read the sentences back off
+/// the tree with `Document::sentences()`; the extractors take that same
+/// slice, so nothing is parsed twice.
 ///
 /// ```no_run
-/// # use matra::decompose::Decomposer;
 /// # use matra::nlp::NlpProvider;
 /// # fn example(text: &str, nlp: &dyn NlpProvider) -> matra::domain::Result<()> {
-/// let sections = matra::decompose::markdown::MarkdownDecomposer.decompose(text);
-/// let sentences = matra::parse(text, nlp)?;
-///
-/// // Document-level metrics only. Paragraph slots stay None.
-/// let analysis = matra::analyze_from(sections, &sentences)?;
+/// let analysis = matra::analyze_markdown(text, nlp)?;
+/// let sentences: Vec<_> = analysis.sentences().cloned().collect();
 /// let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
 /// # Ok(())
 /// # }
@@ -173,9 +159,10 @@ pub fn analyze_from(
             what: "input",
         });
     }
+    let _ = sentences;
     let mut analysis = Document::new(sections);
     let suite = metrics::default_suite();
-    metrics::run_suite(&mut analysis, sentences, &suite);
+    metrics::run_suite(&mut analysis, &suite);
     Ok(analysis)
 }
 
@@ -189,24 +176,21 @@ pub fn analyze_from(
 /// sentences come straight from `nlp.parse(&paragraph.text)` — no
 /// document-level joining, no string-prefix recovery, no ambiguity.
 ///
-/// The flat sentence slice fed to document-level metrics
-/// (`vocabulary_ttr`, `nominalization_ratio`) is concatenated from the
-/// per-paragraph parses in document order.
+/// Document-level metrics (`vocabulary_ttr`, `nominalization_ratio`)
+/// aggregate over the same attachment via `Document::sentences()`; there
+/// is no second sentence set to keep in agreement.
 fn run_analysis(sections: Vec<Section>, nlp: &dyn NlpProvider) -> domain::Result<Document> {
     let mut analysis = Document::new(sections);
-    let mut all_sentences: Vec<domain::Sentence> = Vec::new();
 
     for para in analysis.paragraphs_mut() {
         if para.in_blockquote {
             continue;
         }
-        let parsed = nlp.parse(&para.text)?;
-        all_sentences.extend(parsed.iter().cloned());
-        para.sentences = parsed;
+        para.sentences = nlp.parse(&para.text)?;
     }
 
     let suite = metrics::default_suite();
-    metrics::run_suite(&mut analysis, &all_sentences, &suite);
+    metrics::run_suite(&mut analysis, &suite);
     Ok(analysis)
 }
 
@@ -503,16 +487,15 @@ mod tests {
 
     /// Regression: `analyze_from` receives one flat sentence slice with no
     /// record of which sentence came from which paragraph, so it cannot fill
-    /// `Paragraph::sentences`. Every paragraph metric gates on
-    /// `Paragraph::word_count`, which sums over that field, so all three stay
-    /// `None` while the document-level pair is populated.
+    /// `Paragraph::sentences`. Since I8 M1 every metric reads that
+    /// attachment, so all five metric slots stay `None`.
     ///
-    /// This pins the documented postcondition. It was previously undocumented
-    /// and the doctest presented the function as equivalent to
-    /// `analyze_markdown`, so a caller following the no-double-parse pattern
-    /// got a half-populated `Document` with no error.
+    /// History: before M1 the document-level pair read the flat slice
+    /// directly, so `analyze_from` returned a half-populated `Document`
+    /// (Defect B). Removing the redundant sentence channel turned the
+    /// half-populated surprise into uniform, documented absence.
     #[test]
-    fn analyze_from_leaves_paragraph_metrics_none() {
+    fn analyze_from_leaves_every_metric_none() {
         let text = "The committee approved the proposal without any further \
                     debate today. Three amendments were submitted by the \
                     working group before the meeting closed.";
@@ -551,14 +534,15 @@ mod tests {
         let doc = analyze_from(sections, &sentences).expect("under the cap");
         let paras: Vec<_> = doc.paragraphs().collect();
 
-        // Document level: populated, because these read the flat slice.
+        // Document level: also None now. Metrics read the attachment, and
+        // analyze_from cannot attach.
         assert!(
-            doc.vocabulary_ttr.is_some(),
-            "document metrics read the flat slice directly"
+            doc.vocabulary_ttr.is_none(),
+            "document metrics read Paragraph::sentences, which analyze_from never fills"
         );
+        assert!(doc.nominalization_ratio.is_none());
 
-        // Paragraph level: silently empty, because these read
-        // Paragraph::sentences, which analyze_from never fills.
+        // Paragraph level: empty for the same reason.
         assert_eq!(
             paras[0].word_count(),
             0,
