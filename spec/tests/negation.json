@@ -1,0 +1,115 @@
+{
+  "name": "negation",
+  "input": "It was never reviewed. The committee approved it.",
+  "format": "plain",
+  "expect": {
+    "total_sentences": 2,
+    "total_words": 8,
+    "paragraph_count": 1,
+    "sentences": [
+      {
+        "text": "It was never reviewed.",
+        "token_count": 5,
+        "negations": [
+          {
+            "cue_id": 3,
+            "cue_lemma": "never",
+            "head_id": 4
+          }
+        ],
+        "tokens": [
+          {
+            "id": 1,
+            "text": "It",
+            "lemma": "it",
+            "pos": "PRON",
+            "head": 4,
+            "dep": "nsubj:pass"
+          },
+          {
+            "id": 2,
+            "text": "was",
+            "lemma": "be",
+            "pos": "AUX",
+            "head": 4,
+            "dep": "aux:pass"
+          },
+          {
+            "id": 3,
+            "text": "never",
+            "lemma": "never",
+            "pos": "ADV",
+            "head": 4,
+            "dep": "advmod"
+          },
+          {
+            "id": 4,
+            "text": "reviewed",
+            "lemma": "review",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 5,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 4,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "The committee approved it.",
+        "token_count": 5,
+        "negations": [],
+        "tokens": [
+          {
+            "id": 1,
+            "text": "The",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 2,
+            "dep": "det"
+          },
+          {
+            "id": 2,
+            "text": "committee",
+            "lemma": "committee",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "nsubj"
+          },
+          {
+            "id": 3,
+            "text": "approved",
+            "lemma": "approve",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 4,
+            "text": "it",
+            "lemma": "it",
+            "pos": "PRON",
+            "head": 3,
+            "dep": "obj"
+          },
+          {
+            "id": 5,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 3,
+            "dep": "punct"
+          }
+        ]
+      }
+    ],
+    "vocabulary_ttr": 0.875,
+    "nominalization_ratio": 0.0,
+    "passive_ratio": 0.5
+  }
+}

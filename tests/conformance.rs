@@ -36,13 +36,24 @@ struct Expect {
     sentences: Vec<ExpectedSentence>,
     vocabulary_ttr: Option<f64>,
     nominalization_ratio: Option<f64>,
+    passive_ratio: Option<f64>,
 }
 
 #[derive(Deserialize)]
 struct ExpectedSentence {
     text: String,
     token_count: usize,
+    /// Expected negation cues, when the fixture pins them. `None` means
+    /// the fixture predates the field and the check is skipped.
+    negations: Option<Vec<ExpectedNegation>>,
     tokens: Vec<ExpectedToken>,
+}
+
+#[derive(Deserialize)]
+struct ExpectedNegation {
+    cue_id: usize,
+    cue_lemma: String,
+    head_id: usize,
 }
 
 #[derive(Deserialize)]
@@ -141,6 +152,19 @@ fn rust_crust_conforms_to_spec() {
 
         for (i, (got, want)) in sentences.iter().zip(&e.sentences).enumerate() {
             assert_eq!(got.text, want.text, "{name}: sentence {i} text");
+            if let Some(want_negs) = &want.negations {
+                assert_eq!(
+                    got.negations.len(),
+                    want_negs.len(),
+                    "{name}: sentence {i} negation count"
+                );
+                for (j, (n, w)) in got.negations.iter().zip(want_negs).enumerate() {
+                    let at = format!("{name}: sentence {i} negation {j}");
+                    assert_eq!(n.cue_id, w.cue_id, "{at} cue_id");
+                    assert_eq!(n.cue_lemma, w.cue_lemma, "{at} cue_lemma");
+                    assert_eq!(n.head_id, w.head_id, "{at} head_id");
+                }
+            }
             assert_eq!(
                 got.tokens.len(),
                 want.token_count,
@@ -157,6 +181,10 @@ fn rust_crust_conforms_to_spec() {
             }
         }
 
+        if let Some(want) = e.passive_ratio {
+            let got = doc.passive_ratio.expect("passive_ratio present");
+            assert!(close(got, want), "{name}: passive_ratio {got} != {want}");
+        }
         if let Some(want) = e.vocabulary_ttr {
             let got = doc.vocabulary_ttr.expect("vocabulary_ttr present");
             assert!(close(got, want), "{name}: vocabulary_ttr {got} != {want}");

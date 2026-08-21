@@ -102,10 +102,7 @@ mod tests {
         // Attach enough content tokens so word_count clears the >50 threshold.
         for para in analysis.paragraphs_mut() {
             let tokens = (0..51).map(|j| content_token(&format!("w{j}"))).collect();
-            para.sentences.push(Sentence {
-                text: String::new(),
-                tokens,
-            });
+            para.sentences.push(Sentence::new(String::new(), tokens));
         }
         let start = std::time::Instant::now();
         compute(&mut analysis);
@@ -148,10 +145,7 @@ mod tests {
             let tokens = (0..(50 + i))
                 .map(|j| content_token(&format!("w{j}")))
                 .collect();
-            para.sentences.push(Sentence {
-                text: String::new(),
-                tokens,
-            });
+            para.sentences.push(Sentence::new(String::new(), tokens));
         }
 
         compute(&mut analysis);

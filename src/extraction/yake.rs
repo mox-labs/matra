@@ -187,10 +187,7 @@ mod tests {
     }
 
     fn sent(text: &str, tokens: Vec<Token>) -> Sentence {
-        Sentence {
-            text: text.to_string(),
-            tokens,
-        }
+        Sentence::new(text.to_string(), tokens)
     }
 
     #[test]

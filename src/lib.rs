@@ -695,11 +695,19 @@ mod tests {
         let raw = raw_plain("Annotate attaches structure. Compose measures it.");
         let mut doc = engine.annotate(&raw).unwrap();
         assert!(doc.vocabulary_ttr.is_none(), "annotate does not measure");
+        assert!(doc.passive_ratio.is_none(), "annotate does not measure");
         assert!(doc.total_sentences() > 0, "annotate does attach");
         engine.compose(&mut doc);
-        // DotSplitNlp builds token-less sentences, so document metrics
-        // stay None here; what compose guarantees is totality, which is
-        // the absence of a failure path in its signature.
+        // DotSplitNlp builds token-less sentences, so token-derived
+        // document metrics stay None here; what compose guarantees is
+        // totality, which is the absence of a failure path in its
+        // signature. passive_ratio is sentence-derived, so it does
+        // fill: no sentence here has a passive construction.
+        assert_eq!(
+            doc.passive_ratio,
+            Some(0.0),
+            "compose fills the sentence-derived aggregate"
+        );
     }
 
     #[test]

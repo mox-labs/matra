@@ -80,10 +80,7 @@ mod tests {
     fn make_sentences(input: Vec<(&str, Vec<Token>)>) -> Vec<Sentence> {
         input
             .into_iter()
-            .map(|(text, tokens)| Sentence {
-                text: text.to_string(),
-                tokens,
-            })
+            .map(|(text, tokens)| Sentence::new(text.to_string(), tokens))
             .collect()
     }
 

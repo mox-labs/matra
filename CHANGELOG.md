@@ -56,6 +56,10 @@ Nothing released yet. matra is pre-0.1.0 and unpublished on crates.io and PyPI.
 - `ROADMAP.md`, the single register of unbuilt capability and its trigger conditions, rendered into the book.
 - `book/src/plans/`, the iteration plans, with per-milestone rubrics.
 - Docsite floor gate 5: no em dashes outside quoted material.
+- `domain::Negation` and `Sentence.negations`: negation cues (`not`, `never`, `no`, `neither`, `nor`) detected from the dependency graph at sentence construction and serialized with the sentence, so every crust reads one Rust detection (ADR-0008).
+- `Document.passive_ratio` as an `Option<f64>` slot filled by the metric suite, beside `vocabulary_ttr` and `nominalization_ratio`; the aggregate now crosses FFI as data, and the Python CLI reads it instead of re-deriving passive detection from raw tokens.
+- ADR-0008: derived structural facts cross FFI as serde-visible fields with a single Rust implementation; zero-information accessors over data already on the wire stay Rust-only methods.
+- Conformance fixture `spec/tests/negation.json` pinning per-sentence negation cues and `passive_ratio` across crusts.
 
 ### Removed
 

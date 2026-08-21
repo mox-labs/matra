@@ -163,6 +163,7 @@
       }
     ],
     "vocabulary_ttr": 0.714286,
-    "nominalization_ratio": 0.071429
+    "nominalization_ratio": 0.071429,
+    "passive_ratio": 0.0
   }
 }

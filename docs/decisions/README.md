@@ -58,3 +58,4 @@ supersede old ones. The full lineage is preserved.
 | [0005](0005-supply-chain-hardening.md) | Supply-chain hardening | accepted |
 | [0006](0006-abstract-tier-vocabulary-lock.md) | Abstract-tier vocabulary lock | accepted |
 | [0007](0007-one-pipeline.md) | One pipeline: ingest -> decompose -> compose, with abstract reserved | accepted |
+| [0008](0008-structural-primitives-are-fields.md) | Structural primitives are fields | accepted |

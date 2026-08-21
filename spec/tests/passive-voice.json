@@ -125,6 +125,7 @@
       }
     ],
     "vocabulary_ttr": 0.909091,
-    "nominalization_ratio": 0.0
+    "nominalization_ratio": 0.0,
+    "passive_ratio": 0.5
   }
 }
