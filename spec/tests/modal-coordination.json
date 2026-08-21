@@ -1,0 +1,187 @@
+{
+  "name": "modal-coordination",
+  "input": "Yes, you should. He can and will succeed. The sky is blue.",
+  "format": "plain",
+  "expect": {
+    "total_sentences": 3,
+    "total_words": 12,
+    "paragraph_count": 1,
+    "sentences": [
+      {
+        "text": "Yes, you should.",
+        "token_count": 5,
+        "negations": [],
+        "modals": [
+          {
+            "aux_id": 4,
+            "aux_lemma": "should",
+            "head_id": 0
+          }
+        ],
+        "bare_assertion": false,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "Yes",
+            "lemma": "yes",
+            "pos": "INTJ",
+            "head": 4,
+            "dep": "discourse"
+          },
+          {
+            "id": 2,
+            "text": ",",
+            "lemma": ",",
+            "pos": "PUNCT",
+            "head": 4,
+            "dep": "punct"
+          },
+          {
+            "id": 3,
+            "text": "you",
+            "lemma": "you",
+            "pos": "PRON",
+            "head": 4,
+            "dep": "nsubj"
+          },
+          {
+            "id": 4,
+            "text": "should",
+            "lemma": "should",
+            "pos": "AUX",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 5,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 4,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "He can and will succeed.",
+        "token_count": 6,
+        "negations": [],
+        "modals": [
+          {
+            "aux_id": 2,
+            "aux_lemma": "can",
+            "head_id": 0
+          },
+          {
+            "aux_id": 4,
+            "aux_lemma": "will",
+            "head_id": 5
+          }
+        ],
+        "bare_assertion": false,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "He",
+            "lemma": "he",
+            "pos": "PRON",
+            "head": 2,
+            "dep": "nsubj"
+          },
+          {
+            "id": 2,
+            "text": "can",
+            "lemma": "can",
+            "pos": "AUX",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 3,
+            "text": "and",
+            "lemma": "and",
+            "pos": "CCONJ",
+            "head": 5,
+            "dep": "cc"
+          },
+          {
+            "id": 4,
+            "text": "will",
+            "lemma": "will",
+            "pos": "AUX",
+            "head": 5,
+            "dep": "aux"
+          },
+          {
+            "id": 5,
+            "text": "succeed",
+            "lemma": "succeed",
+            "pos": "VERB",
+            "head": 2,
+            "dep": "conj"
+          },
+          {
+            "id": 6,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 2,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "The sky is blue.",
+        "token_count": 5,
+        "negations": [],
+        "modals": [],
+        "bare_assertion": true,
+        "tokens": [
+          {
+            "id": 1,
+            "text": "The",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 2,
+            "dep": "det"
+          },
+          {
+            "id": 2,
+            "text": "sky",
+            "lemma": "sky",
+            "pos": "NOUN",
+            "head": 4,
+            "dep": "nsubj"
+          },
+          {
+            "id": 3,
+            "text": "is",
+            "lemma": "be",
+            "pos": "AUX",
+            "head": 4,
+            "dep": "cop"
+          },
+          {
+            "id": 4,
+            "text": "blue",
+            "lemma": "blue",
+            "pos": "ADJ",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 5,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 4,
+            "dep": "punct"
+          }
+        ]
+      }
+    ],
+    "vocabulary_ttr": 1.0,
+    "nominalization_ratio": 0.0,
+    "passive_ratio": 0.0
+  }
+}

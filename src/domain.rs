@@ -289,25 +289,31 @@ pub struct Modal {
 /// (ADR-0008). The closed class is the ten lemmas the UD English
 /// treebank tags `MD`, enumerated from live UDPipe parses (verified
 /// 2026-08-21): `can`, `could`, `may`, `might`, `must`, `ought`,
-/// `shall`, `should`, `will`, `would`. Each appears as `AUX` with
-/// dep `aux` attached to the verb it scopes. Matching on the lemma
-/// plus the `aux` relation keeps precision: contracted forms fire
-/// because the model lemmatizes them into the class (`wo` in `won't`
-/// carries lemma `will`, verified live), the noun `will` does not
-/// fire because it never carries `aux`, and `need`/`dare` are outside
-/// the class because the live model tags them as main verbs (`VERB`,
-/// root), not modal auxiliaries. In a multi-auxiliary chain
-/// (`might have been done`) only the modal is in the class; `have`
-/// and `be` attach as `aux`/`aux:pass` but are not modals, so the
-/// chain reports exactly its modals, each with `head_id` pointing at
-/// the content verb.
+/// `shall`, `should`, `will`, `would`. A class lemma matches when it
+/// carries the `aux` relation or the `AUX` part of speech, because
+/// the live model does not park every modal on `aux`: under VP
+/// ellipsis ("Yes, you should.") the modal is promoted to root, and
+/// with coordinated auxiliaries the first conjunct parses as root
+/// with the second as `aux` ("He can and will succeed.") or `conj`
+/// ("He can, and he will, succeed."), all verified live. The lemma
+/// plus either signal keeps precision: the model's only other `AUX`
+/// lemmas (`be`, `have`, `do`, `get`) are outside the class,
+/// contracted forms fire because the model lemmatizes them into the
+/// class (`wo` in `won't` carries lemma `will`, verified live), the
+/// noun `will` does not fire because it never carries `aux` or
+/// `AUX`, and `need`/`dare` are outside the class because the live
+/// model tags them as main verbs (`VERB`, root), not modal
+/// auxiliaries. In a multi-auxiliary chain (`might have been done`)
+/// only the modal is in the class; `have` and `be` attach as
+/// `aux`/`aux:pass` but are not modals, so the chain reports exactly
+/// its modals, each with `head_id` pointing at the content verb.
 fn detect_modals(tokens: &[Token]) -> Vec<Modal> {
     const MODAL_LEMMAS: [&str; 10] = [
         "can", "could", "may", "might", "must", "ought", "shall", "should", "will", "would",
     ];
     tokens
         .iter()
-        .filter(|t| t.dep == "aux" && MODAL_LEMMAS.contains(&t.lemma.as_str()))
+        .filter(|t| (t.dep == "aux" || t.pos == "AUX") && MODAL_LEMMAS.contains(&t.lemma.as_str()))
         .map(|t| Modal {
             aux_id: t.id,
             aux_lemma: t.lemma.clone(),
@@ -318,17 +324,34 @@ fn detect_modals(tokens: &[Token]) -> Vec<Modal> {
 
 /// Bare-assertion discriminator over a sentence's tokens.
 ///
-/// True when the root token carries `Mood=Ind` in its feats (read via
-/// [`Token::feat`]) and no detected modal auxiliary attaches to it:
-/// the bare assertoric surface form. A modalized clause fails on both
-/// counts (its root is an infinitive or participle with no `Mood`,
-/// verified live), an imperative fails on `Mood=Imp`, and a sentence
-/// with no root or no feats is not a bare assertion. The discriminator
-/// reads the root clause only: a modal in a subordinate clause is
-/// reported in [`Sentence::modals`] but does not defeat it.
+/// True when the root clause is finite indicative and no modal
+/// auxiliary governs it: the bare assertoric surface form. `Mood=Ind`
+/// is read (via [`Token::feat`]) off the root token itself or off a
+/// `cop`, `aux`, or `aux:pass` child of the root, because the live
+/// model parks finiteness on the auxiliary rather than the root in
+/// copular ("The sky is blue.", root `ADJ`, `Mood=Ind` on the `cop`),
+/// do-support ("He did leave.", root infinitive, `Mood=Ind` on the
+/// `aux`) and passive ("The will was signed.", root participle,
+/// `Mood=Ind` on the `aux:pass`) clauses, all verified live. A
+/// modalized clause fails because a detected modal attaches to the
+/// root or is itself the root, an imperative fails on `Mood=Imp`, and
+/// a sentence with no root or no indicative finite element is not a
+/// bare assertion. The discriminator reads the root clause only: a
+/// modal in a subordinate clause is reported in [`Sentence::modals`]
+/// but does not defeat it.
 fn detect_bare_assertion(tokens: &[Token], modals: &[Modal]) -> bool {
+    const FINITE_CARRIER_DEPS: [&str; 3] = ["cop", "aux", "aux:pass"];
     tokens.iter().find(|t| t.head == 0).is_some_and(|root| {
-        root.feat("Mood") == Some("Ind") && !modals.iter().any(|m| m.head_id == root.id)
+        let unmodalized = !modals
+            .iter()
+            .any(|m| m.head_id == root.id || m.aux_id == root.id);
+        let indicative = root.feat("Mood") == Some("Ind")
+            || tokens.iter().any(|t| {
+                t.head == root.id
+                    && FINITE_CARRIER_DEPS.contains(&t.dep.as_str())
+                    && t.feat("Mood") == Some("Ind")
+            });
+        unmodalized && indicative
     })
 }
 
@@ -353,20 +376,24 @@ pub struct Sentence {
     #[serde(default)]
     pub negations: Vec<Negation>,
     /// Modal auxiliaries derived from the dependency graph at
-    /// construction (see [`Sentence::new`]): lemma-matched `aux`
-    /// tokens from the closed class `can`, `could`, `may`, `might`,
-    /// `must`, `ought`, `shall`, `should`, `will`, `would`.
-    /// Serialized with the sentence so the detection crosses FFI as
-    /// data (ADR-0008). Defaults to empty when deserializing
-    /// sentences serialized before this field existed.
+    /// construction (see [`Sentence::new`]): tokens from the closed
+    /// class `can`, `could`, `may`, `might`, `must`, `ought`,
+    /// `shall`, `should`, `will`, `would`, matched by lemma on the
+    /// `aux` relation or the `AUX` part of speech (the latter catches
+    /// modals the model promotes to root or `conj` under VP ellipsis
+    /// and coordination). Serialized with the sentence so the
+    /// detection crosses FFI as data (ADR-0008). Defaults to empty
+    /// when deserializing sentences serialized before this field
+    /// existed.
     #[serde(default)]
     pub modals: Vec<Modal>,
     /// Bare-assertion discriminator, derived at construction: true
-    /// when the root token carries `Mood=Ind` and no modal auxiliary
-    /// attaches to it. Reports the surface form only; what the
-    /// assertion commits its speaker to is the consumer's reading.
-    /// Defaults to false when deserializing sentences serialized
-    /// before this field existed.
+    /// when the root clause is finite indicative (`Mood=Ind` on the
+    /// root token or on a `cop`, `aux`, or `aux:pass` child of it)
+    /// and no modal auxiliary governs it. Reports the surface form
+    /// only; what the assertion commits its speaker to is the
+    /// consumer's reading. Defaults to false when deserializing
+    /// sentences serialized before this field existed.
     #[serde(default)]
     pub bare_assertion: bool,
 }
@@ -1434,6 +1461,128 @@ mod tests {
     }
 
     #[test]
+    fn modal_promoted_to_root_under_vp_ellipsis_is_found() {
+        // "Yes, you should." VP ellipsis promotes the modal to root
+        // (verified live), so the `aux` relation is absent and the
+        // `AUX` part of speech carries the match. head_id is 0, the
+        // documented root convention. A clause whose root is a modal
+        // is modalized, not a bare assertion.
+        let sent = Sentence::new(
+            "Yes, you should.".to_string(),
+            vec![
+                make_token(1, "Yes", "INTJ", "discourse", 4),
+                make_token(2, ",", "PUNCT", "punct", 4),
+                make_token(3, "you", "PRON", "nsubj", 4),
+                make_token_feats(4, "should", "AUX", "root", 0, "VerbForm=Fin"),
+                make_token(5, ".", "PUNCT", "punct", 4),
+            ],
+        );
+        assert_eq!(sent.modals.len(), 1);
+        assert_eq!(sent.modals[0].aux_lemma, "should");
+        assert_eq!(sent.modals[0].head_id, 0);
+        assert!(!sent.bare_assertion, "root modal means a modalized clause");
+    }
+
+    #[test]
+    fn modal_coordinated_auxiliaries_report_both() {
+        // "He can and will succeed." The live model parses the first
+        // coordinated auxiliary as root and the second as `aux` on
+        // the shared verb, so the first is found by its `AUX` part
+        // of speech and the second by its relation.
+        let sent = Sentence::new(
+            "He can and will succeed.".to_string(),
+            vec![
+                make_token(1, "He", "PRON", "nsubj", 2),
+                make_token_feats(2, "can", "AUX", "root", 0, "VerbForm=Fin"),
+                make_token(3, "and", "CCONJ", "cc", 5),
+                make_token_feats(4, "will", "AUX", "aux", 5, "VerbForm=Fin"),
+                make_token_feats(5, "succeed", "VERB", "conj", 2, "VerbForm=Inf"),
+                make_token(6, ".", "PUNCT", "punct", 2),
+            ],
+        );
+        let found: Vec<(&str, usize)> = sent
+            .modals
+            .iter()
+            .map(|m| (m.aux_lemma.as_str(), m.head_id))
+            .collect();
+        assert_eq!(found, vec![("can", 0), ("will", 5)]);
+        assert!(!sent.bare_assertion);
+    }
+
+    #[test]
+    fn modal_second_coordinated_auxiliary_as_conj_is_found() {
+        // "He can, and he will, succeed." With full clausal
+        // coordination the live model parses the first modal as root
+        // and the second as `conj`, so both are found by the `AUX`
+        // part of speech and neither carries `aux`.
+        let sent = Sentence::new(
+            "He can, and he will, succeed.".to_string(),
+            vec![
+                make_token(1, "He", "PRON", "nsubj", 2),
+                make_token_feats(2, "can", "AUX", "root", 0, "VerbForm=Fin"),
+                make_token(3, ",", "PUNCT", "punct", 6),
+                make_token(4, "and", "CCONJ", "cc", 6),
+                make_token(5, "he", "PRON", "nsubj", 6),
+                make_token_feats(6, "will", "AUX", "conj", 2, "VerbForm=Fin"),
+                make_token(7, ",", "PUNCT", "punct", 8),
+                make_token_feats(8, "succeed", "VERB", "conj", 2, "Mood=Ind|VerbForm=Fin"),
+                make_token(9, ".", "PUNCT", "punct", 2),
+            ],
+        );
+        let found: Vec<(&str, usize)> = sent
+            .modals
+            .iter()
+            .map(|m| (m.aux_lemma.as_str(), m.head_id))
+            .collect();
+        assert_eq!(found, vec![("can", 0), ("will", 2)]);
+        assert!(!sent.bare_assertion, "root modal means a modalized clause");
+    }
+
+    #[test]
+    fn copular_assertion_is_bare() {
+        // "The sky is blue." The live model roots the predicate ADJ
+        // and parks Mood=Ind on the `cop` child, so the discriminator
+        // reads finiteness off the copula, not the root.
+        let sent = Sentence::new(
+            "The sky is blue.".to_string(),
+            vec![
+                make_token(1, "The", "DET", "det", 2),
+                make_token(2, "sky", "NOUN", "nsubj", 4),
+                make_token_feats(
+                    3,
+                    "is",
+                    "AUX",
+                    "cop",
+                    4,
+                    "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin",
+                ),
+                make_token_feats(4, "blue", "ADJ", "root", 0, "Degree=Pos"),
+                make_token(5, ".", "PUNCT", "punct", 4),
+            ],
+        );
+        assert!(sent.modals.is_empty(), "the copula be is outside the class");
+        assert!(sent.bare_assertion);
+    }
+
+    #[test]
+    fn do_support_assertion_is_bare() {
+        // "He did leave." Do-support roots the infinitive and parks
+        // Mood=Ind on the `aux` child, whose lemma is outside the
+        // modal class, so the clause is a bare assertion.
+        let sent = Sentence::new(
+            "He did leave.".to_string(),
+            vec![
+                make_token(1, "He", "PRON", "nsubj", 3),
+                make_token_feats(2, "do", "AUX", "aux", 3, "Mood=Ind|Tense=Past|VerbForm=Fin"),
+                make_token_feats(3, "leave", "VERB", "root", 0, "VerbForm=Inf"),
+                make_token(4, ".", "PUNCT", "punct", 3),
+            ],
+        );
+        assert!(sent.modals.is_empty());
+        assert!(sent.bare_assertion);
+    }
+
+    #[test]
     fn modal_contraction_fires_on_its_lemma() {
         // "They won't stop." The tokenizer splits the contraction and
         // the model lemmatizes `wo` to `will` (verified live), so the
@@ -1484,6 +1633,9 @@ mod tests {
             ],
         );
         assert!(sent.modals.is_empty());
+        // The indicative passive is a bare assertion: Mood=Ind rides
+        // the `aux:pass` child of the participle root.
+        assert!(sent.bare_assertion);
     }
 
     #[test]
