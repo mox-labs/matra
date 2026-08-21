@@ -57,7 +57,25 @@ struct ExpectedSentence {
     /// Expected root-attached adverbials, when the fixture pins them.
     /// Same convention as `negations`.
     root_adverbials: Option<Vec<ExpectedRootAdverbial>>,
+    /// Expected Hearst pairs, when the fixture pins them. Same
+    /// convention as `negations`; an empty list pins "nothing fires".
+    hearst_pairs: Option<Vec<ExpectedHearstPair>>,
     tokens: Vec<ExpectedToken>,
+}
+
+#[derive(Deserialize)]
+struct ExpectedHearstPair {
+    pattern: matra::domain::HearstPattern,
+    hypernym: ExpectedHearstSpan,
+    hyponym: ExpectedHearstSpan,
+}
+
+#[derive(Deserialize)]
+struct ExpectedHearstSpan {
+    head_id: usize,
+    head_lemma: String,
+    first_id: usize,
+    last_id: usize,
 }
 
 #[derive(Deserialize)]
@@ -242,6 +260,32 @@ fn rust_crust_conforms_to_spec() {
                     let at = format!("{name}: sentence {i} root adverbial {j}");
                     assert_eq!(a.adv_id, w.adv_id, "{at} adv_id");
                     assert_eq!(a.adv_lemma, w.adv_lemma, "{at} adv_lemma");
+                }
+            }
+            if let Some(want_pairs) = &want.hearst_pairs {
+                assert_eq!(
+                    got.hearst_pairs.len(),
+                    want_pairs.len(),
+                    "{name}: sentence {i} hearst pair count"
+                );
+                for (j, (p, w)) in got.hearst_pairs.iter().zip(want_pairs).enumerate() {
+                    let at = format!("{name}: sentence {i} hearst pair {j}");
+                    assert_eq!(p.pattern, w.pattern, "{at} pattern");
+                    for (got_span, want_span, side) in [
+                        (&p.hypernym, &w.hypernym, "hypernym"),
+                        (&p.hyponym, &w.hyponym, "hyponym"),
+                    ] {
+                        assert_eq!(got_span.head_id, want_span.head_id, "{at} {side} head_id");
+                        assert_eq!(
+                            got_span.head_lemma, want_span.head_lemma,
+                            "{at} {side} head_lemma"
+                        );
+                        assert_eq!(
+                            got_span.first_id, want_span.first_id,
+                            "{at} {side} first_id"
+                        );
+                        assert_eq!(got_span.last_id, want_span.last_id, "{at} {side} last_id");
+                    }
                 }
             }
             assert_eq!(

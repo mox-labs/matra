@@ -10,7 +10,7 @@ Keep in lockstep with `python/matra/_core.pyi`.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 
 class Token(TypedDict):
@@ -89,6 +89,51 @@ class RootAdverbial(TypedDict):
     adv_lemma: str
 
 
+HearstPattern = Literal[
+    "such_as",
+    "such_np_as",
+    "including",
+    "especially",
+    "and_other",
+    "or_other",
+]
+"""Which Hearst (1992) construction matched. Mirrors
+`matra::domain::HearstPattern` (serde `snake_case` tags).
+
+Each tag names a surface construction, not a semantic verdict; whether
+the hypernymy relation actually holds is the consumer's reading.
+"""
+
+
+class HearstSpan(TypedDict):
+    """One noun phrase in a Hearst pair. Mirrors `matra::domain::HearstSpan`.
+
+    `head_id` is the syntactic head noun; `first_id..last_id` is the
+    contiguous token range of that noun plus its adjacent nominal
+    modifiers, with the pattern's own marker words (`such`, `other`)
+    excluded. Ids are sentence-scoped token ids.
+    """
+
+    head_id: int
+    head_lemma: str
+    first_id: int
+    last_id: int
+
+
+class HearstPair(TypedDict):
+    """One candidate hypernymy pair. Mirrors `matra::domain::HearstPair`.
+
+    Reports the two spans and the construction that connected them. It
+    is a candidate by design: matra does not build a taxonomy or assert
+    the relation is true, it reports that the sentence used a
+    construction which conventionally signals one.
+    """
+
+    pattern: HearstPattern
+    hypernym: HearstSpan
+    hyponym: HearstSpan
+
+
 class Sentence(TypedDict):
     """One parsed sentence. Mirrors `matra::domain::Sentence`."""
 
@@ -99,6 +144,7 @@ class Sentence(TypedDict):
     bare_assertion: bool
     reportings: list[Reporting]
     root_adverbials: list[RootAdverbial]
+    hearst_pairs: list[HearstPair]
 
 
 class Paragraph(TypedDict):

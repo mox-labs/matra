@@ -65,9 +65,9 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 **Enforcement.** `scripts/check-boundaries.sh` searches `src/` for `use udpipe_rs` and `udpipe_rs::`, excluding `src/nlp/udpipe.rs`. It cannot see re-exports: a `pub use udpipe_rs::Model;` inside the adapter would let any other file name the C-backed type while the check stays green. Review reads for re-exports and for any `udpipe_rs` type appearing in a signature outside that file.
 
-## Rule 5: metrics and extraction stay pure
+## Rule 5: metrics, extraction, and structure readers stay pure
 
-**The rule.** No file under `src/metrics/` or `src/extraction/` imports from any crate module other than `crate::domain` and `crate::stopwords`.
+**The rule.** No file under `src/metrics/` or `src/extraction/`, and no structure-reading module (`src/hearst.rs`), imports from any crate module other than `crate::domain` and `crate::stopwords`.
 
 **Scope.** Intra-crate imports only. External crates that the computation itself needs are unaffected: the compression metric uses `brotli`, and several extraction files use `std::collections`.
 
@@ -113,7 +113,7 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 | `src/source/mod.rs`, `src/decompose/mod.rs`, `src/nlp/mod.rs` | 2, 3, 8 |
 | `src/nlp/udpipe.rs` | 4, 6 |
 | Other adapters | 6, 7 |
-| `src/metrics/`, `src/extraction/` | 5, 6 |
+| `src/metrics/`, `src/extraction/`, `src/hearst.rs` | 5, 6 |
 | `src/lib.rs` | 6, 7 |
 | `Cargo.toml` | 1, 6 |
 
