@@ -22,6 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        features: [default, no-default-features]
         include:
           - features: default
             flags: ""
@@ -84,13 +85,10 @@ jobs:
   semver:
     name: cargo-semver-checks
     runs-on: ubuntu-latest
-    # PR-only — we don't gate main on this (the baseline is the published version).
-    # `continue-on-error: true` because matra has not yet been published to
-    # crates.io. The action errors with "matra not found in registry" until
-    # there is a published baseline to compare against. Once the first
-    # publish happens, drop continue-on-error so PRs that break semver fail.
+    # PR-only: the baseline is the published version, so pushes to main
+    # (which are merges of already-checked PRs) skip it. Armed since
+    # matra 0.1.0 landed on crates.io; a PR that breaks semver now fails.
     if: github.event_name == 'pull_request'
-    continue-on-error: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
