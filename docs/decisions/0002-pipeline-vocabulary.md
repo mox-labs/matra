@@ -1,18 +1,16 @@
 # 0002. Pipeline vocabulary: ingest / decompose / parse / measure (+ peer extract)
 
-- **Status:** accepted, under challenge by [I8](../../book/src/plans/i8-pipeline-surface.md)
+- **Status:** Superseded by [ADR-0007](0007-one-pipeline.md) (2026-08-21)
 - **Date:** 2026-04-28
 - **Decider(s):** project maintainer; ontology review by the architecture guild (Karman)
 
-> **Challenged, not yet superseded.** I8 argues the five verbs enumerate
-> calling conventions rather than transformations: `measure` mutates and
-> returns unit while extractors return values, and that difference is the
-> only thing making `extract` a peer. It proposes three stages, `ingest`,
-> `decompose`, `compose`, with `abstract` reserved as a named empty seam for
-> rule evaluation. Note that `abstract` is a reserved keyword in Rust and
-> can never name code.
->
-> This ADR remains in force until I8 lands an ADR superseding it.
+> **Superseded.** The five verbs enumerated calling conventions rather
+> than transformations: `measure` mutates and returns unit while
+> extractors return values, and that difference was the only thing
+> making `extract` a peer. ADR-0007 adopts `ingest -> decompose ->
+> compose` with `abstract` reserved as a named empty seam. The trait
+> names this ADR kept (`Source`, `Decomposer`, `NlpProvider`) carry
+> forward unchanged.
 
 ## Context
 

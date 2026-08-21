@@ -11,13 +11,23 @@ The discipline is Chesterton's fence applied to features: before you add a capab
 
 Every entry below names the trigger condition. When the condition is met, write an ADR and proceed.
 
+## The scoping principle: lowest verifiable tier
+
+A survey of the computational landscape (internal, 2026-08-21) sorts NLP affordances into three tiers: deterministic tooling whose output is checkable against the source (tokenizers, morphology, dependency parsers, document-structure extraction), specialist models (coreference, discourse relations), and general model judgment, which has the widest coverage and the lowest verifiability. The engineering rule it supports: route each operation to the lowest tier that meets the accuracy and verifiability requirement, and escalate only when the cheaper tier provably fails.
+
+matra is the first tier, deliberately. Everything it ships is deterministic and grounds back to the bytes it came from, which is what makes its output usable as evidence rather than as opinion. Two consequences bound the roadmap:
+
+**Capabilities with no reliable affordance stay out, and the gap is recorded rather than simulated.** Pragmatic enrichment (implicature, purport, illocutionary force) and claim or fallacy certification have no deterministic path and no reliable model path either; the honest output there is a structural gap marker, not simulated confidence. matra's idiom already encodes this (`Option` slots that mean "declined to compute", the `usize::MAX` cycle sentinel, `UnsupportedFormat`, `DocumentError`), and new capabilities inherit it.
+
+**Capabilities that need a specialist model are adapter work, not extensions of the parse.** Coreference is the clearest case: it sits a tier above UDPipe, the research synthesis places it above matra beside SRL and NLI, and pretending otherwise would put unverifiable output behind a surface that promises verifiability. If a specialist coreference adapter ever lands, it arrives as a new `NlpProvider` implementation behind its own feature flag, with its tier stated plainly.
+
 ## Rule evaluation over parsed structure
 
 **What it is.** Declarative rules expressed as predicates over `Document`. A `Rule` names a structural pattern (a dependency arc, a token sequence, a metric threshold) and fires when the pattern is present. The output is a `Finding` with a `SourceSpan` that points back to the bytes in the original text where the rule matched.
 
 This is the capability that bridges the record tier (what matra exposes today) and the abstract tier: relation extraction, modality detection, speech act classification, voice signature analysis. The record tier gives you the tokens and arcs. Rule evaluation gives you the named patterns over them.
 
-**Where it lands.** Inside matra, in a new `src/rules/` module. The vocabulary is locked by ADR-0006: `Rule`, `Predicate`, `Finding`, `SourceSpan`. Rule evaluation is not a separate crate; consumers compose against one surface. The `Finding` type's shape (trait vs enum) is deferred to Phase 2; the name is locked.
+**Where it lands.** Inside matra, in a new `src/rules/` module, occupying the `abstract` seam ADR-0007 reserves between structure and purpose-fitted output. The vocabulary is locked by ADR-0006: `Rule`, `Predicate`, `Finding`, `SourceSpan`. Rule evaluation is not a separate crate; consumers compose against one surface. The `Finding` type's shape (trait vs enum) is deferred to Phase 2; the name is locked. Rules are deterministic predicates over structure, so their findings stay at the verifiable tier: a `Finding` names the pattern and points at the bytes, and whether the pattern matters remains the consumer's judgment.
 
 **Trigger condition. FIRED, 2026-05-23.** The condition was at least one concrete consumer pattern that direct `Document` field access and application-side logic cannot adequately serve.
 

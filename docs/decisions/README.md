@@ -52,8 +52,9 @@ supersede old ones. The full lineage is preserved.
 | ID | Title | Status |
 |---|---|---|
 | [0001](0001-record-architectural-decisions.md) | Record architectural decisions | accepted |
-| [0002](0002-pipeline-vocabulary.md) | Pipeline vocabulary: ingest / decompose / parse / measure | accepted |
+| [0002](0002-pipeline-vocabulary.md) | Pipeline vocabulary: ingest / decompose / parse / measure | superseded by ADR-0007 |
 | [0003](0003-workspace-with-rumi-nlp.md) | Cargo workspace with `matra-core` and `rumi-nlp` | superseded by ADR-0004 |
 | [0004](0004-stay-single-crate.md) | Stay single-crate; supersede the workspace split | accepted |
 | [0005](0005-supply-chain-hardening.md) | Supply-chain hardening | accepted |
 | [0006](0006-abstract-tier-vocabulary-lock.md) | Abstract-tier vocabulary lock | accepted |
+| [0007](0007-one-pipeline.md) | One pipeline: ingest -> decompose -> compose, with abstract reserved | accepted |

@@ -1,17 +1,17 @@
 # I5: Streaming iterator + Engine + CorpusResult
 
-> **Superseded in part by [I8](i8-pipeline-surface.md).** I8 subsumes Tasks A
-> through D: `read_iter` becomes `Ingest`, `analyze_directory_iter` becomes
-> `Engine::analyze` generalized past directories, `CorpusResult` arrives via
-> `FromIterator`, and `Engine` is required rather than optional because
-> something must own the decomposer table. Task E is unaffected.
+> **Retired: I8 shipped this, 2026-08-21.** Tasks A through D landed
+> through [I8](i8-pipeline-surface.md): `read_iter` became `Ingest`,
+> `analyze_directory_iter` became `Engine::analyze` generalized past
+> directories, `CorpusResult` arrived via `FromIterator`, and `Engine`
+> is required rather than optional because something must own the
+> decomposer table. The deprecate-and-keep decision below was overtaken:
+> `analyze_directory` is deleted outright, because nothing was published
+> and the consumer that decision protected never existed.
 >
-> It **contradicts** the deprecate-and-keep decision below. That decision
-> rested on protecting a consumer who adopts `analyze_directory` between
-> 0.1.0 and 0.1.x. Nothing is published, so there is no such consumer, and
-> deleting now is free while deleting later is not.
->
-> Read I8 before acting on anything here.
+> Task E (`pub mod prelude`) is the one piece still open; it is small
+> and belongs with the 0.1.0 release pass. This plan stays as the
+> deliberation record for the flow-control arguments.
 
 **Status:** not-started
 **Boundary:** **MLP**. at the end of this iteration, matra scales to corpus-sized work without OOM and ships a delightful Rust DX.

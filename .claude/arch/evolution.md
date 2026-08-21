@@ -8,7 +8,7 @@ Architecture is a sequence of decisions across iterations. This file is the chan
 |---|---|---|
 | I0 | Hex layout, three ports, single-crate shape, `#[non_exhaustive]` everywhere | shipped |
 | I1 | Pipeline verbs (`ingest → decompose → parse → measure` + peer `extract`) | shipped |
-| I8 | Revisits the above: three stages, `abstract` reserved. Not yet landed | proposed |
+| I8 | Three stages (`ingest -> decompose -> compose`), `abstract` reserved, the six entry points deleted for `Ingest` + `Engine`. ADR-0007 supersedes ADR-0002 | shipped 2026-08-21 |
 | I2 | Resilience floor (size caps, symlink rejection, atomic download, TOCTOU closure, `catch_unwind` panic boundary, O(n) tree_depth, parse-per-paragraph) | shipped |
 
 Future iterations are tracked in `book/src/plans/`. Past iterations are not rewritten; commitments only get superseded by new ADRs, never edited out.
