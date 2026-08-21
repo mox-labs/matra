@@ -61,8 +61,6 @@ jobs:
     permissions:
       contents: read
       id-token: write   # for Trusted Publishing OIDC
-    outputs:
-      hashes: ${{ steps.hash.outputs.hashes }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
@@ -112,14 +110,6 @@ jobs:
       - name: cargo package (build the .crate artifact)
         run: cargo package --locked
 
-      - name: Compute SLSA-compatible digest of the published artifact
-        id: hash
-        run: |
-          set -euo pipefail
-          cd target/package
-          HASHES="$(sha256sum matra-*.crate | base64 -w0)"
-          echo "hashes=$HASHES" >> "$GITHUB_OUTPUT"
-
       - name: Mint a crates.io scoped token via Trusted Publishing (OIDC)
         id: auth
         uses: rust-lang/crates-io-auth-action@b7e9a28eded4986ec6b1fa40eeee8f8f165559ec  # v1
@@ -129,36 +119,22 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: cargo publish --locked
 
-  provenance:
-    name: SLSA L3 provenance
-    needs: [publish]
-    permissions:
-      actions: read
-      id-token: write
-      contents: write
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
-    with:
-      base64-subjects: ${{ needs.publish.outputs.hashes }}
-      upload-assets: false   # we attach to the GitHub Release in the next job
-      provenance-name: matra.intoto.jsonl
-
+  # SLSA provenance is intentionally absent for now: the
+  # slsa-github-generator reusable workflow must be referenced by tag,
+  # and the org Actions policy requires SHA-pinned refs, which the
+  # generator rejects at runtime. Restore when either constraint moves;
+  # docs/decisions/0005-supply-chain-hardening.md tracks the intent.
   release:
-    name: Create GitHub Release with provenance
-    needs: [publish, provenance]
+    name: Create GitHub Release
+    needs: [publish]
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: ${{ env.PUBLISH_TAG }}
           persist-credentials: false
-
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
-        with:
-          name: matra.intoto.jsonl
-          path: provenance/
 
       - name: Create GitHub Release
         env:
@@ -166,7 +142,6 @@ jobs:
           TAG_NAME: ${{ env.PUBLISH_TAG }}
         run: |
           gh release create "$TAG_NAME" \
-            provenance/matra.intoto.jsonl \
             --title "$TAG_NAME" \
             --generate-notes \
             --verify-tag
