@@ -25,14 +25,9 @@ For the working model that frames how humans and AI collaborate on this project 
 
 Hex architecture. Rust core with PyO3 Python bindings. Single crate, dual publish: `matra` on crates.io, `matra` on PyPI via maturin.
 
-Pipeline: ingest → decompose → parse → measure (+ peer extract)
+Pipeline: ingest → decompose → compose (ADR-0007, superseding ADR-0002). `abstract` is the reserved empty seam between structure and purpose-fitted output; rule evaluation lands there, and `abstract` is a Rust keyword so it names the tier, never code.
 
-That vocabulary is ADR-0002 and it is currently under challenge by
-`book/src/plans/i8-pipeline-surface.md`, which argues the five verbs
-enumerate calling conventions rather than transformations. It stands until
-an ADR supersedes it. Read I8 before renaming anything in this area.
-
-The five verbs are the public stage vocabulary. Trait names (`Source`, `Decomposer`, `NlpProvider`) keep their existing names; the renamed verbs appear in stage descriptions and composition-root function names.
+The surface is `Ingest` (source variation as data: a string is a stream of one, a directory a stream of many) into `Engine` (`analyze` over a stream, `analyze_one`, or the stages `annotate` and `compose`). `annotate` is the only route from text to the parser, so the size cap holds pipeline-wide; seven equivalence laws in `src/lib.rs` tests pin the grains together. Trait names (`Source`, `Decomposer`, `NlpProvider`) keep their existing names.
 
 Domain depends on port traits (NlpProvider, Decomposer, Source), not on adapters directly. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
 

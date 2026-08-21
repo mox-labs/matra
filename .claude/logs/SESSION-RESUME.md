@@ -4,54 +4,44 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 
 ---
 
-## State (2026-08-18)
+## State (2026-08-21)
 
 - **Branch:** `m2-docsite-ia-restructure`. No upstream configured, nothing pushed. The remote is still named for the project's previous name, so the GitHub rename is outstanding.
 - **Working tree:** clean.
-- **Code:** `cargo test` 85 pass, `cargo test --features cli` 90 pass, `cargo check --no-default-features` clean. `just docs-floor` all gates pass.
-- **Docsite:** 17 entries. Live via `cd book && mdbook serve --port 3000`.
+- **Code:** `cargo test` 106 pass, `cargo test --features cli` 106+ pass, `cargo check --no-default-features` clean, clippy clean. Conformance and all six integration tests verified against the real UDPipe model this session. `just docs-floor` all gates pass.
 
 ### Where the work is
 
-**The next thing is I8, not I7.** A maintainer question about the six entry points opened a formal review that found two live defects and produced a redesign. I7 M1's field-versus-method question is entangled with that surface and should be decided after I8 M4, not before.
+**I8 is shipped, all eight milestones.** The six entry points are gone. The surface is `Ingest` (text/path constructors; a string is a stream of one) into `Engine` (`analyze`, `analyze_one`, `annotate`, `compose`). `annotate` is the only route from text to the parser, so the 8 MiB cap holds pipeline-wide; seven equivalence laws (L1 to L7) run as tests in `src/lib.rs`. ADR-0007 records the decision and supersedes ADR-0002; the vocabulary is `ingest -> decompose -> compose` with `abstract` reserved as the empty seam for rule evaluation. The I8 plan (`book/src/plans/i8-pipeline-surface.md`) carries a shipped banner and stays as the defect record.
 
-Plan: `book/src/plans/i8-pipeline-surface.md`. It carries the design, the milestone rubrics, the seven equivalence laws that are the acceptance test, and the costs.
+Documentation is in lockstep: book pages, README, CHANGELOG, CLAUDE.md, the agent/skill files, the ADR index, evolution.md. I5 is retired (I8 subsumed Tasks A through D; Task E, `pub mod prelude`, waits for the 0.1.0 release pass).
 
-**I8 M0 is done** (commit 368bac5). The input size cap was bypassable from Python: four PyO3 extraction methods called the parser with no gate, so `Matra.analyze(huge)` raised while `Matra.tfidf_summarize(huge, 3)` did not. Fixed, with a parametrized test over every text-taking method. And `analyze_from` returns a Document whose three paragraph metrics are unconditionally `None` while the docs claimed equivalence to `analyze_markdown`; that postcondition is now documented and pinned by a regression test. Its root cause, `run_suite` carrying the sentence set twice, is I8 M1.
+**A domain survey landed 2026-08-21** (filed at `~/mox/research/drafts/matra-substrate/2026-08-21-domain-cartography-inquiry-hermeneutics-semiosis.md`). Its consequence for matra is a scoping principle now recorded on the roadmap: matra stays at the deterministic, verifiable tier; pragmatic enrichment and claim/fallacy certification stay out with the gap recorded, and coreference is specialist-adapter work above UDPipe, not a parse extension.
 
-**Milestones 1 through 3 are worth doing regardless.** None commits to the surface change. M4 adds the new surface alongside the old so nothing breaks mid-flight. M6, deleting the six, is the gate: free now, a breaking change after publish.
+### Known traps, carried forward
 
-### What shipped earlier
-
-The project was renamed to matra after a name collision on PyPI made dual publishing impossible. A CLI binary landed behind the `cli` feature, with a conformance suite running shared JSON fixtures through every crust. The docsite was cut from 19 pages to a working set, gained the roadmap, and then the plans moved out of `.claude/` into `book/src/plans/` so the whole planning surface is one thing a reader can follow.
-
-`ROADMAP.md` now records that the rule-evaluation trigger has fired, and `book/src/plans/i7-structural-primitives.md` is the plan that follows from it.
-
-### Known traps, all verified this session
-
-- `cargo test --all-features` **fails to link.** The `python` feature builds against libpython with symbols deliberately left undefined. Not a regression, and it must never become a gate. Use `cargo test` and `cargo test --features cli`.
-- UDPipe splits `Smith et al. reported a finding` into two sentences at the period in `et al.`, so attribution lands in a different sentence from its reporting verb. Every sentence-scoped primitive inherits this.
-- `vocabulary_ttr` is a raw type-token ratio and falls as text grows, so it is not comparable across documents of different lengths. Documented on `capabilities.md`; a normalized measure is on the roadmap.
-- `Sentence::is_passive` is a method, and methods do not cross FFI, so `python/matra/cli.py` re-implements passive detection. This is the decision I7 M1 exists to settle.
-- Floor gate 1 (`lychee`) runs without `--include-fragments`, so **anchors are never checked**. A link to a heading that no longer exists still passes.
+- `cargo test --all-features` **fails to link.** The `python` feature builds against libpython with symbols deliberately left undefined. Not a regression; never make it a gate.
+- The Python wheel in `python/matra/_core...so` predates I8. The Python method names are unchanged so the conformance suite still describes the intended behavior, but `maturin develop` must run before `python/tests/` reflects the new internals (extraction methods now gate at 8 MiB and decompose as plain text).
+- UDPipe splits `Smith et al. reported` at the period in `et al.`; every sentence-scoped primitive inherits this.
+- `vocabulary_ttr` is a raw type-token ratio, not comparable across document lengths.
+- `Sentence::is_passive` is a method, so `python/matra/cli.py` re-implements passive detection. I7 M1 settles this.
+- Floor gate 1 (`lychee`) runs without `--include-fragments`, so anchors are never checked.
 
 ---
 
 ## Next actions, in order
 
-1. **I8 M1.** `Metric` becomes `Fn(&mut Document)`; `run_suite` drops its sentence-slice parameter and derives the set from `Document::sentences()`. This removes the redundant representation that made Defect B possible. Four metric modules plus the suite. Breaks any external `Metric` impl, which is free now.
-2. **I8 M2 and M3.** Domain additions, then the decomposer registry. Both additive.
-3. **Confirm the voice-fingerprint consumer.** The roadmap entry says the trigger is met in substance but needs confirmation that the blocked consumer still wants matra rather than the thin-wrapper alternative it considered.
-4. **Decide the publish identity.** `Cargo.toml` and `pyproject.toml` carry a personal address that becomes permanently public on first publish, and crates.io yanks do not remove metadata.
+1. **I7, structural primitives.** Now unblocked: I8 M4 landed, so the field-versus-method question (I7 M1) can be decided against the real surface. Read `book/src/plans/i7-structural-primitives.md`.
+2. **Run `maturin develop` and the Python test suite** against the new pipeline internals before any further Python-surface work.
+3. **Confirm the voice-fingerprint consumer** still wants matra rather than the thin-wrapper alternative.
+4. **Decide the publish identity.** `Cargo.toml` and `pyproject.toml` carry a personal address that becomes permanently public on first publish.
 
 ## Open, not blocking
 
-- **`Error` is neither `Serialize` nor `Clone`** (it wraps `io::Error`), so `DocumentError` and `CorpusResult` inherit both gaps while `Corpus` has neither. Crossing to Python needs a projection with stable kind strings. Blocks I8 M5, not M1 through M4.
-- **ADR-0002 should be superseded** by I8: its five verbs enumerate calling conventions rather than transformations. Recommended vocabulary is `ingest -> decompose -> compose` with `abstract` reserved as a named empty seam. Note `abstract` is a reserved keyword in Rust and can never name code.
-
+- **`Error` is neither `Serialize` nor `Clone`.** `DocumentError`/`CorpusResult` therefore stay Rust-side; crossing to Python needs a projection with stable kind strings. Documented in the book (errors page). Needed before any Python corpus surface.
 - The docsite is gated but not voiced: it has not been through orwell, sagan, jobs, or ebert.
 - `rumi-nlp` is named in the published plans. Already public via ADR-0003, but worth deciding before release.
-- Floor gate 1 should gain `--include-fragments`.
+- Floor gate 1 should gain `--include-fragments`. I5 Task E (`prelude`) waits for the 0.1.0 pass.
 
 ---
 

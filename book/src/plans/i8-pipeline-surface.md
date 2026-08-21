@@ -1,5 +1,11 @@
 # I8: One pipeline, not six entry points
 
+> **Shipped, 2026-08-21.** All eight milestones landed;
+> [ADR-0007](https://github.com/mox-labs/matra/blob/main/docs/decisions/0007-one-pipeline.md)
+> records the decision and supersedes ADR-0002. The laws in M4 run as
+> tests in `src/lib.rs`. This plan stays as the defect record and the
+> reasoning trail.
+
 **Boundary:** pre-publish surface freeze. Must land before 0.1.0 or never.
 
 **Origin:** a maintainer question ("why do we have so many entry points?") followed by a formal review. Two live defects were found by taking the stage types seriously; one is fixed, one is documented with its root cause still open.
