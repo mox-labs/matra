@@ -31,8 +31,9 @@ pub struct DirectorySource;
 
 impl DirectorySource {
     /// List candidate paths in the directory, sorted, after the symlink and
-    /// extension-acceptance filters.
-    fn candidate_paths(&self, input: &Path) -> domain::Result<Vec<PathBuf>> {
+    /// extension-acceptance filters. Listing is separate from reading so
+    /// the composition root can enumerate eagerly and read lazily.
+    pub(crate) fn candidate_paths(&self, input: &Path) -> domain::Result<Vec<PathBuf>> {
         let file_source = FileSource;
         let mut paths: Vec<_> = std::fs::read_dir(input)?
             .filter_map(|e| e.ok())
