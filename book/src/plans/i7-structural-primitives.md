@@ -1,10 +1,15 @@
 # I7: Five structural primitives
 
-> **Sequenced after [I8](i8-pipeline-surface.md) M4.** M1 below decides
-> whether structural primitives are fields or methods. That question is
-> entangled with the surface I8 redesigns, so deciding it first would fix an
-> answer against a shape that is about to change. Everything else in this
-> plan stands.
+> **Shipped, 2026-08-21.** All five milestones landed.
+> [ADR-0008](https://github.com/mox-labs/matra/blob/main/docs/decisions/0008-structural-primitives-are-fields.md)
+> records the field-versus-method decision (derivations cross FFI as
+> fields; views over data already crossing stay methods) and
+> [ADR-0009](https://github.com/mox-labs/matra/blob/main/docs/decisions/0009-feats-lookup-accessor.md)
+> the feats accessor shape. The Python CLI's passive re-implementation
+> is deleted, `spec/tests/` fixtures pin negation, modals, evidentiality
+> and Hearst pairs across crusts, and what the five revealed about the
+> rule vocabulary is recorded on the roadmap. This plan stays as the
+> milestone record and the reasoning trail.
 
 **Boundary:** rule-substrate. Lands before any `src/rules/` design work.
 

@@ -10,6 +10,7 @@ Architecture is a sequence of decisions across iterations. This file is the chan
 | I1 | Pipeline verbs (`ingest → decompose → parse → measure` + peer `extract`) | shipped |
 | I8 | Three stages (`ingest -> decompose -> compose`), `abstract` reserved, the six entry points deleted for `Ingest` + `Engine`. ADR-0007 supersedes ADR-0002 | shipped 2026-08-21 |
 | I2 | Resilience floor (size caps, symlink rejection, atomic download, TOCTOU closure, `catch_unwind` panic boundary, O(n) tree_depth, parse-per-paragraph) | shipped |
+| I7 | Structural primitives are fields (ADR-0008): derivations cross FFI as serde-visible data computed once at a pipeline choke point; views over data already crossing stay methods (ADR-0009). Five primitives landed on that channel: negation cues, modals plus the bare-assertion discriminator, reporting constructions, root adverbials, Hearst span pairs | shipped 2026-08-21 |
 
 Future iterations are tracked in `book/src/plans/`. Past iterations are not rewritten; commitments only get superseded by new ADRs, never edited out.
 
