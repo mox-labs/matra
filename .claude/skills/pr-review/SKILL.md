@@ -23,11 +23,21 @@ This repo carries the full guideline set as skills. Read the ones the
 diff makes relevant before judging; the gates below are the
 distillation, the skills are the depth.
 
+The project has two non-negotiable disciplines (CLAUDE.md, Posture):
+ACES, the structural philosophy, and antifragility, the operational
+one. They are a pair, not alternatives: any structural change (ports,
+adapters, composition root, new modules) is reviewed under BOTH
+`.claude/skills/aces/SKILL.md` and
+`.claude/skills/resilience-floor/SKILL.md`, because a boundary that is
+well-placed but fragile fails the second discipline and a robust
+mechanism in the wrong place fails the first. Load them together;
+each is the check on the other.
+
 | Diff touches | Read |
 |---|---|
-| any structural change | `.claude/skills/aces/SKILL.md` (always; Gate 0 comes from here) |
+| any structural change | `aces` + `resilience-floor` together (the two non-negotiables; Gate 0 and Gate 6 come from them) |
+| ports, adapters, composition root | the pair above, plus `.claude/skills/architecture/SKILL.md` for the hex mechanics |
 | Rust design: errors, traits, deps, versions | `.claude/skills/rust-craft/SKILL.md` |
-| ports, adapters, composition root | `.claude/skills/architecture/SKILL.md` |
 | I/O, FFI, input handling, graph walks | `.claude/skills/resilience-floor/SKILL.md` |
 | `src/lib.rs` PyO3 layer, `python/`, pins | `.claude/skills/ffi-surface/SKILL.md` |
 | tests | `.claude/skills/testing/SKILL.md` |
