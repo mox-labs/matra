@@ -31,6 +31,41 @@ fn check_input_size(text: &str) -> domain::Result<()> {
     Ok(())
 }
 
+/// The decomposer this build ships for `format`, or `None` for formats
+/// that are reserved but unimplemented.
+///
+/// The match is deliberately exhaustive with no wildcard: adding a
+/// `Format` variant fails compilation here, so a new format is a
+/// conscious registration decision rather than a silent
+/// `Error::UnsupportedFormat` at run time.
+fn default_decomposer(format: &domain::Format) -> Option<Box<dyn Decomposer>> {
+    match format {
+        domain::Format::Markdown => Some(Box::new(decompose::markdown::MarkdownDecomposer)),
+        domain::Format::PlainText => Some(Box::new(decompose::plain::PlainTextDecomposer)),
+        domain::Format::Pdf | domain::Format::Docx => None,
+    }
+}
+
+/// The decomposer table this build ships: markdown and plain text.
+///
+/// Lives in the composition root because it is the only place that
+/// names every adapter (boundary rule 7). Callers who want a different
+/// table build their own with [`decompose::Decomposers::with`].
+pub fn standard_decomposers() -> decompose::Decomposers {
+    let mut table = decompose::Decomposers::new();
+    for format in [
+        domain::Format::Markdown,
+        domain::Format::PlainText,
+        domain::Format::Pdf,
+        domain::Format::Docx,
+    ] {
+        if let Some(decomposer) = default_decomposer(&format) {
+            table = table.with(format, decomposer);
+        }
+    }
+    table
+}
+
 /// Analyze raw text. Returns structured metrics.
 pub fn analyze(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Document> {
     check_input_size(text)?;
@@ -377,6 +412,21 @@ mod tests {
                 .map(|s| domain::Sentence::new(s.to_string(), Vec::new()))
                 .collect())
         }
+    }
+
+    #[test]
+    fn standard_decomposers_cover_exactly_the_shipping_formats() {
+        let table = standard_decomposers();
+        assert!(table.get(&domain::Format::Markdown).is_some());
+        assert!(table.get(&domain::Format::PlainText).is_some());
+        assert!(
+            table.get(&domain::Format::Pdf).is_none(),
+            "Pdf is reserved, not shipped"
+        );
+        assert!(
+            table.get(&domain::Format::Docx).is_none(),
+            "Docx is reserved, not shipped"
+        );
     }
 
     #[test]
