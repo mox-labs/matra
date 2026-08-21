@@ -56,6 +56,39 @@ class Modal(TypedDict):
     head_id: int
 
 
+class Reporting(TypedDict):
+    """One reporting construction. Mirrors `matra::domain::Reporting`.
+
+    Reports structure only: a verb governing a clausal complement
+    (`ccomp`), plus its subject when the parse has one in the same
+    sentence. Fires for every verb that fills the construction; which
+    verb lemmas count as evidential is the consumer's lexicon, and
+    whether the source is credible is the consumer's reading. The
+    subject is absent when upstream sentence segmentation strands the
+    attribution in a previous sentence ("Smith et al. reported ..."
+    splits at the period in "et al.").
+    """
+
+    verb_id: int
+    verb_lemma: str
+    ccomp_id: int
+    subject_id: int | None
+    subject_lemma: str | None
+
+
+class RootAdverbial(TypedDict):
+    """One root-attached adverbial. Mirrors `matra::domain::RootAdverbial`.
+
+    Reports structure only: the `advmod` arc into the root, where
+    sentence-scope adverbs land. The parse does not distinguish
+    sentence scope from manner, so every root-attached adverbial is
+    reported and the consumer's lexicon selects the evidential ones.
+    """
+
+    adv_id: int
+    adv_lemma: str
+
+
 class Sentence(TypedDict):
     """One parsed sentence. Mirrors `matra::domain::Sentence`."""
 
@@ -64,6 +97,8 @@ class Sentence(TypedDict):
     negations: list[Negation]
     modals: list[Modal]
     bare_assertion: bool
+    reportings: list[Reporting]
+    root_adverbials: list[RootAdverbial]
 
 
 class Paragraph(TypedDict):
@@ -123,6 +158,8 @@ __all__ = [
     "Modal",
     "Negation",
     "Paragraph",
+    "Reporting",
+    "RootAdverbial",
     "ScoredSentence",
     "Section",
     "Sentence",

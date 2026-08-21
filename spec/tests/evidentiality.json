@@ -1,0 +1,320 @@
+{
+  "name": "evidentiality",
+  "input": "We show that the method works. Smith reported that the effect vanished. These results suggest that the mechanism is shared. Reportedly, the deal closed.",
+  "format": "plain",
+  "expect": {
+    "total_sentences": 4,
+    "total_words": 24,
+    "paragraph_count": 1,
+    "sentences": [
+      {
+        "text": "We show that the method works.",
+        "token_count": 7,
+        "negations": [],
+        "modals": [],
+        "bare_assertion": true,
+        "reportings": [
+          {
+            "verb_id": 2,
+            "verb_lemma": "show",
+            "ccomp_id": 6,
+            "subject_id": 1,
+            "subject_lemma": "we"
+          }
+        ],
+        "root_adverbials": [],
+        "tokens": [
+          {
+            "id": 1,
+            "text": "We",
+            "lemma": "we",
+            "pos": "PRON",
+            "head": 2,
+            "dep": "nsubj"
+          },
+          {
+            "id": 2,
+            "text": "show",
+            "lemma": "show",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 3,
+            "text": "that",
+            "lemma": "that",
+            "pos": "SCONJ",
+            "head": 6,
+            "dep": "mark"
+          },
+          {
+            "id": 4,
+            "text": "the",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 5,
+            "dep": "det"
+          },
+          {
+            "id": 5,
+            "text": "method",
+            "lemma": "method",
+            "pos": "NOUN",
+            "head": 6,
+            "dep": "nsubj"
+          },
+          {
+            "id": 6,
+            "text": "works",
+            "lemma": "work",
+            "pos": "VERB",
+            "head": 2,
+            "dep": "ccomp"
+          },
+          {
+            "id": 7,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 2,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "Smith reported that the effect vanished.",
+        "token_count": 7,
+        "negations": [],
+        "modals": [],
+        "bare_assertion": true,
+        "reportings": [
+          {
+            "verb_id": 2,
+            "verb_lemma": "report",
+            "ccomp_id": 6,
+            "subject_id": 1,
+            "subject_lemma": "Smith"
+          }
+        ],
+        "root_adverbials": [],
+        "tokens": [
+          {
+            "id": 1,
+            "text": "Smith",
+            "lemma": "Smith",
+            "pos": "PROPN",
+            "head": 2,
+            "dep": "nsubj"
+          },
+          {
+            "id": 2,
+            "text": "reported",
+            "lemma": "report",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 3,
+            "text": "that",
+            "lemma": "that",
+            "pos": "SCONJ",
+            "head": 6,
+            "dep": "mark"
+          },
+          {
+            "id": 4,
+            "text": "the",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 5,
+            "dep": "det"
+          },
+          {
+            "id": 5,
+            "text": "effect",
+            "lemma": "effect",
+            "pos": "NOUN",
+            "head": 6,
+            "dep": "nsubj"
+          },
+          {
+            "id": 6,
+            "text": "vanished",
+            "lemma": "vanish",
+            "pos": "VERB",
+            "head": 2,
+            "dep": "ccomp"
+          },
+          {
+            "id": 7,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 2,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "These results suggest that the mechanism is shared.",
+        "token_count": 9,
+        "negations": [],
+        "modals": [],
+        "bare_assertion": true,
+        "reportings": [
+          {
+            "verb_id": 3,
+            "verb_lemma": "suggest",
+            "ccomp_id": 8,
+            "subject_id": 2,
+            "subject_lemma": "result"
+          }
+        ],
+        "root_adverbials": [],
+        "tokens": [
+          {
+            "id": 1,
+            "text": "These",
+            "lemma": "these",
+            "pos": "DET",
+            "head": 2,
+            "dep": "det"
+          },
+          {
+            "id": 2,
+            "text": "results",
+            "lemma": "result",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "nsubj"
+          },
+          {
+            "id": 3,
+            "text": "suggest",
+            "lemma": "suggest",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 4,
+            "text": "that",
+            "lemma": "that",
+            "pos": "SCONJ",
+            "head": 8,
+            "dep": "mark"
+          },
+          {
+            "id": 5,
+            "text": "the",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 6,
+            "dep": "det"
+          },
+          {
+            "id": 6,
+            "text": "mechanism",
+            "lemma": "mechanism",
+            "pos": "NOUN",
+            "head": 8,
+            "dep": "nsubj:pass"
+          },
+          {
+            "id": 7,
+            "text": "is",
+            "lemma": "be",
+            "pos": "AUX",
+            "head": 8,
+            "dep": "aux:pass"
+          },
+          {
+            "id": 8,
+            "text": "shared",
+            "lemma": "share",
+            "pos": "VERB",
+            "head": 3,
+            "dep": "ccomp"
+          },
+          {
+            "id": 9,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 3,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "text": "Reportedly, the deal closed.",
+        "token_count": 6,
+        "negations": [],
+        "modals": [],
+        "bare_assertion": true,
+        "reportings": [],
+        "root_adverbials": [
+          {
+            "adv_id": 1,
+            "adv_lemma": "reportedly"
+          }
+        ],
+        "tokens": [
+          {
+            "id": 1,
+            "text": "Reportedly",
+            "lemma": "reportedly",
+            "pos": "ADV",
+            "head": 5,
+            "dep": "advmod"
+          },
+          {
+            "id": 2,
+            "text": ",",
+            "lemma": ",",
+            "pos": "PUNCT",
+            "head": 5,
+            "dep": "punct"
+          },
+          {
+            "id": 3,
+            "text": "the",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 4,
+            "dep": "det"
+          },
+          {
+            "id": 4,
+            "text": "deal",
+            "lemma": "deal",
+            "pos": "NOUN",
+            "head": 5,
+            "dep": "nsubj"
+          },
+          {
+            "id": 5,
+            "text": "closed",
+            "lemma": "close",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 6,
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 5,
+            "dep": "punct"
+          }
+        ]
+      }
+    ],
+    "vocabulary_ttr": 0.7916666666666666,
+    "nominalization_ratio": 0.0,
+    "passive_ratio": 0.25
+  }
+}

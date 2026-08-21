@@ -355,6 +355,128 @@ fn detect_bare_assertion(tokens: &[Token], modals: &[Modal]) -> bool {
     })
 }
 
+/// One reporting construction in a sentence, referenced by token id.
+///
+/// Reports structure only: a verb governing a clausal complement
+/// (`ccomp`), plus the verb's subject when the parse has one in the
+/// same sentence. The construction fires regardless of which verb
+/// fills it (`show`, `report`, `suggest`, `think`, `ensure` all
+/// parse identically), because reporting verbs are an open class: any
+/// list matra shipped would be incomplete while looking authoritative.
+/// Which verb lemmas count as evidential is the consumer's lexicon
+/// (see [`Sentence::reportings_in`]), and whether the source is
+/// credible or the claim attributed rather than asserted is the
+/// consumer's reading, not matra's.
+///
+/// Derived at [`Sentence`] construction from the dependency graph
+/// (see [`Sentence::new`]) and serialized with the sentence, so every
+/// crust reads the same detection (ADR-0008).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Reporting {
+    /// Token id of the verb governing the clausal complement.
+    pub verb_id: usize,
+    /// Lemma of that verb.
+    pub verb_lemma: String,
+    /// Token id of the head of the clausal complement (the token
+    /// carrying the `ccomp` relation).
+    pub ccomp_id: usize,
+    /// Token id of the verb's subject (`nsubj`, `nsubj:pass`,
+    /// `nsubjpass`), when the parse has one in this sentence.
+    pub subject_id: Option<usize>,
+    /// Lemma of that subject, when present.
+    pub subject_lemma: Option<String>,
+}
+
+/// Reporting-construction detection over a sentence's tokens.
+///
+/// The single Rust implementation behind [`Sentence::reportings`]
+/// (ADR-0008). The shape was verified against live UDPipe parses
+/// (2026-08-21): in "Smith reported that the effect vanished." the
+/// complement head `vanished` attaches as `ccomp` to `reported`
+/// (`VERB`, root) and `Smith` attaches as `nsubj` to `reported`. The
+/// detector walks every `ccomp` arc whose head is a `VERB` and
+/// records the verb, the complement head, and the verb's subject
+/// child if it has one. The subject is optional by observed fact,
+/// not caution: UDPipe splits "Smith et al. reported that ..." into
+/// two sentences at the period in "et al." (verified live), leaving
+/// the reporting verb with its `ccomp` but no `nsubj`, the
+/// attribution stranded in the previous sentence. That is an
+/// upstream segmentation defect this detector inherits and records
+/// rather than papers over. A `ccomp` under a non-verb head ("I am
+/// sure that it works.", `ccomp` on the adjective `sure`) is outside
+/// the construction by decision: the milestone detects the reporting
+/// construction, which the plan defines as verbal.
+fn detect_reportings(tokens: &[Token]) -> Vec<Reporting> {
+    const SUBJECT_DEPS: [&str; 3] = ["nsubj", "nsubj:pass", "nsubjpass"];
+    tokens
+        .iter()
+        .filter(|c| c.dep == "ccomp")
+        .filter_map(|c| {
+            let verb = tokens.iter().find(|t| t.id == c.head && t.pos == "VERB")?;
+            let subject = tokens
+                .iter()
+                .find(|t| t.head == verb.id && SUBJECT_DEPS.contains(&t.dep.as_str()));
+            Some(Reporting {
+                verb_id: verb.id,
+                verb_lemma: verb.lemma.clone(),
+                ccomp_id: c.id,
+                subject_id: subject.map(|s| s.id),
+                subject_lemma: subject.map(|s| s.lemma.clone()),
+            })
+        })
+        .collect()
+}
+
+/// One adverbial modifier attached to the sentence root, referenced
+/// by token id.
+///
+/// Reports structure only: the `advmod` arc into the root, which is
+/// where sentence-scope adverbs land ("Reportedly, the deal closed."
+/// parses `reportedly` as `advmod` on the root `closed`, verified
+/// live). The dependency graph does not distinguish sentence scope
+/// from manner ("The team quickly shipped." puts `quickly` on the
+/// same arc), and evidential adverbs are an open class, so matra
+/// reports every root-attached adverbial and ships no lexicon: which
+/// lemmas read as hearsay markers is the consumer's list (see
+/// [`Sentence::root_adverbials_in`]), and what the marker does to
+/// the claim is the consumer's reading, not matra's.
+///
+/// Derived at [`Sentence`] construction from the dependency graph
+/// (see [`Sentence::new`]) and serialized with the sentence, so every
+/// crust reads the same detection (ADR-0008).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct RootAdverbial {
+    /// Token id of the adverbial modifier attached to the root.
+    pub adv_id: usize,
+    /// Lemma of the adverbial.
+    pub adv_lemma: String,
+}
+
+/// Root-attached adverbial detection over a sentence's tokens.
+///
+/// The single Rust implementation behind [`Sentence::root_adverbials`]
+/// (ADR-0008). Every token carrying `advmod` whose head is the root
+/// is reported, whatever its part of speech: negation particles
+/// ("not" is `PART` on the same arc) appear here and in
+/// [`Sentence::negations`], and the overlap is intentional, because
+/// both fields report arcs and neither assigns a reading. A sentence
+/// with no root (malformed parse) reports none.
+fn detect_root_adverbials(tokens: &[Token]) -> Vec<RootAdverbial> {
+    let Some(root) = tokens.iter().find(|t| t.head == 0) else {
+        return Vec::new();
+    };
+    tokens
+        .iter()
+        .filter(|t| t.dep == "advmod" && t.head == root.id)
+        .map(|t| RootAdverbial {
+            adv_id: t.id,
+            adv_lemma: t.lemma.clone(),
+        })
+        .collect()
+}
+
 /// One parsed sentence: a verbatim text string plus its ordered tokens.
 ///
 /// Invariants downstream code relies on:
@@ -396,6 +518,27 @@ pub struct Sentence {
     /// sentences serialized before this field existed.
     #[serde(default)]
     pub bare_assertion: bool,
+    /// Reporting constructions derived from the dependency graph at
+    /// construction (see [`Sentence::new`]): each verb governing a
+    /// clausal complement (`ccomp`), with its subject when the parse
+    /// has one. The construction is reported for every verb that
+    /// fills it; which verbs count as evidential is the consumer's
+    /// lexicon ([`Sentence::reportings_in`]). Serialized with the
+    /// sentence so the detection crosses FFI as data (ADR-0008).
+    /// Defaults to empty when deserializing sentences serialized
+    /// before this field existed.
+    #[serde(default)]
+    pub reportings: Vec<Reporting>,
+    /// Adverbial modifiers attached to the root, derived at
+    /// construction (see [`Sentence::new`]): the arc sentence-scope
+    /// adverbs land on. Every root-attached `advmod` is reported;
+    /// which lemmas read as evidential is the consumer's lexicon
+    /// ([`Sentence::root_adverbials_in`]). Serialized with the
+    /// sentence so the detection crosses FFI as data (ADR-0008).
+    /// Defaults to empty when deserializing sentences serialized
+    /// before this field existed.
+    #[serde(default)]
+    pub root_adverbials: Vec<RootAdverbial>,
 }
 
 impl Sentence {
@@ -403,21 +546,56 @@ impl Sentence {
     ///
     /// The caller is responsible for upholding the invariants documented
     /// on [`Sentence`]; this constructor does not validate them. Derived
-    /// fields (`negations`, `modals`, `bare_assertion`) are computed here
-    /// and reflect `tokens` as passed in; mutating `tokens` afterwards
-    /// does not recompute them, and keeping them consistent is part of
-    /// the same caller contract.
+    /// fields (`negations`, `modals`, `bare_assertion`, `reportings`,
+    /// `root_adverbials`) are computed here and reflect `tokens` as
+    /// passed in; mutating `tokens` afterwards does not recompute them,
+    /// and keeping them consistent is part of the same caller contract.
     pub fn new(text: String, tokens: Vec<Token>) -> Self {
         let negations = detect_negations(&tokens);
         let modals = detect_modals(&tokens);
         let bare_assertion = detect_bare_assertion(&tokens, &modals);
+        let reportings = detect_reportings(&tokens);
+        let root_adverbials = detect_root_adverbials(&tokens);
         Self {
             text,
             tokens,
             negations,
             modals,
             bare_assertion,
+            reportings,
+            root_adverbials,
         }
+    }
+
+    /// The reporting constructions whose verb lemma is in the
+    /// caller-supplied lexicon.
+    ///
+    /// Reporting verbs are an open class, so matra ships no default
+    /// lexicon: an incomplete list that looks authoritative is worse
+    /// than none. The structural detection ([`Sentence::reportings`])
+    /// crosses FFI as data; this is a Rust-side convenience view over
+    /// it, per ADR-0008's criterion (derivations cross as fields,
+    /// views over crossing data stay methods). Non-Rust consumers
+    /// filter the field by `verb_lemma` the same way.
+    pub fn reportings_in(&self, lexicon: &[&str]) -> Vec<&Reporting> {
+        self.reportings
+            .iter()
+            .filter(|r| lexicon.contains(&r.verb_lemma.as_str()))
+            .collect()
+    }
+
+    /// The root-attached adverbials whose lemma is in the
+    /// caller-supplied lexicon.
+    ///
+    /// Evidential adverbs are an open class, so matra ships no default
+    /// lexicon; see [`Sentence::reportings_in`] for the reasoning and
+    /// the ADR-0008 classification. Non-Rust consumers filter
+    /// [`Sentence::root_adverbials`] by `adv_lemma` the same way.
+    pub fn root_adverbials_in(&self, lexicon: &[&str]) -> Vec<&RootAdverbial> {
+        self.root_adverbials
+            .iter()
+            .filter(|a| lexicon.contains(&a.adv_lemma.as_str()))
+            .collect()
     }
 
     /// Tokens excluding punctuation.
@@ -1752,6 +1930,286 @@ mod tests {
         let sent: Sentence = serde_json::from_str(old).unwrap();
         assert!(sent.modals.is_empty());
         assert!(!sent.bare_assertion);
+    }
+
+    // Reporting and root-adverbial fixtures mirror live UDPipe parses
+    // (verified 2026-08-21): the complement head attaches as `ccomp`
+    // to the reporting verb, the subject as `nsubj` (or `nsubj:pass`)
+    // to the same verb, and a sentence-scope adverb as `advmod` to
+    // the root.
+
+    #[test]
+    fn reporting_self_attribution() {
+        // "We show that the method works."
+        let sent = Sentence::new(
+            "We show that the method works.".to_string(),
+            vec![
+                make_token(1, "We", "PRON", "nsubj", 2),
+                make_token(2, "show", "VERB", "root", 0),
+                make_token(3, "that", "SCONJ", "mark", 6),
+                make_token(4, "the", "DET", "det", 5),
+                make_token(5, "method", "NOUN", "nsubj", 6),
+                make_token(6, "works", "VERB", "ccomp", 2),
+                make_token(7, ".", "PUNCT", "punct", 2),
+            ],
+        );
+        assert_eq!(sent.reportings.len(), 1);
+        let r = &sent.reportings[0];
+        assert_eq!(r.verb_id, 2);
+        assert_eq!(r.verb_lemma, "show");
+        assert_eq!(r.ccomp_id, 6);
+        // The complement's own subject ("method", nsubj of token 6)
+        // is not the matrix subject; only the verb's child qualifies.
+        assert_eq!(r.subject_id, Some(1));
+        assert_eq!(r.subject_lemma.as_deref(), Some("we"));
+    }
+
+    #[test]
+    fn reporting_other_attribution() {
+        // "Smith reported that the effect vanished."
+        let sent = Sentence::new(
+            "Smith reported that the effect vanished.".to_string(),
+            vec![
+                make_token(1, "Smith", "PROPN", "nsubj", 2),
+                make_token(2, "reported", "VERB", "root", 0),
+                make_token(3, "that", "SCONJ", "mark", 6),
+                make_token(4, "the", "DET", "det", 5),
+                make_token(5, "effect", "NOUN", "nsubj", 6),
+                make_token(6, "vanished", "VERB", "ccomp", 2),
+                make_token(7, ".", "PUNCT", "punct", 2),
+            ],
+        );
+        assert_eq!(sent.reportings.len(), 1);
+        let r = &sent.reportings[0];
+        assert_eq!((r.verb_id, r.ccomp_id), (2, 6));
+        assert_eq!(r.verb_lemma, "reported");
+        assert_eq!(r.subject_id, Some(1));
+    }
+
+    #[test]
+    fn reporting_impersonal() {
+        // "These results suggest that the mechanism is shared."
+        // The complement is passive; its `nsubj:pass` belongs to the
+        // complement head, not to the reporting verb.
+        let sent = Sentence::new(
+            "These results suggest that the mechanism is shared.".to_string(),
+            vec![
+                make_token(1, "These", "DET", "det", 2),
+                make_token(2, "results", "NOUN", "nsubj", 3),
+                make_token(3, "suggest", "VERB", "root", 0),
+                make_token(4, "that", "SCONJ", "mark", 8),
+                make_token(5, "the", "DET", "det", 6),
+                make_token(6, "mechanism", "NOUN", "nsubj:pass", 8),
+                make_token(7, "is", "AUX", "aux:pass", 8),
+                make_token(8, "shared", "VERB", "ccomp", 3),
+                make_token(9, ".", "PUNCT", "punct", 3),
+            ],
+        );
+        assert_eq!(sent.reportings.len(), 1);
+        let r = &sent.reportings[0];
+        assert_eq!((r.verb_id, r.ccomp_id), (3, 8));
+        assert_eq!(r.subject_id, Some(2));
+        assert_eq!(r.subject_lemma.as_deref(), Some("results"));
+    }
+
+    #[test]
+    fn reporting_survives_upstream_split_with_no_subject() {
+        // Known upstream defect, recorded not fixed: UDPipe splits
+        // "Smith et al. reported that the effect vanished." into two
+        // sentences at the period in "et al." (verified live,
+        // 2026-08-21). The reporting verb keeps its `ccomp` but its
+        // attribution is stranded in the previous sentence, so the
+        // construction reports with no subject. This test pins the
+        // detector's behaviour on that second fragment.
+        let sent = Sentence::new(
+            "reported that the effect vanished.".to_string(),
+            vec![
+                make_token(1, "reported", "VERB", "root", 0),
+                make_token(2, "that", "SCONJ", "mark", 5),
+                make_token(3, "the", "DET", "det", 4),
+                make_token(4, "effect", "NOUN", "nsubj", 5),
+                make_token(5, "vanished", "VERB", "ccomp", 1),
+                make_token(6, ".", "PUNCT", "punct", 1),
+            ],
+        );
+        assert_eq!(sent.reportings.len(), 1);
+        let r = &sent.reportings[0];
+        assert_eq!((r.verb_id, r.ccomp_id), (1, 5));
+        assert_eq!(r.subject_id, None);
+        assert_eq!(r.subject_lemma, None);
+    }
+
+    #[test]
+    fn reporting_no_fire_without_ccomp() {
+        // "Smith reported a similar finding." takes a plain object,
+        // not a clausal complement; the construction is absent.
+        let sent = Sentence::new(
+            "Smith reported a similar finding.".to_string(),
+            vec![
+                make_token(1, "Smith", "PROPN", "nsubj", 2),
+                make_token(2, "reported", "VERB", "root", 0),
+                make_token(3, "a", "DET", "det", 5),
+                make_token(4, "similar", "ADJ", "amod", 5),
+                make_token(5, "finding", "NOUN", "obj", 2),
+                make_token(6, ".", "PUNCT", "punct", 2),
+            ],
+        );
+        assert!(sent.reportings.is_empty());
+        assert!(active_sentence().reportings.is_empty());
+    }
+
+    #[test]
+    fn reporting_no_fire_on_non_verb_head() {
+        // "I am sure that it works." parses the `ccomp` under the
+        // adjective `sure`. The plan defines the reporting
+        // construction as verbal, so a non-VERB head is outside it
+        // by decision, not omission.
+        let sent = Sentence::new(
+            "I am sure that it works.".to_string(),
+            vec![
+                make_token(1, "I", "PRON", "nsubj", 3),
+                make_token(2, "am", "AUX", "cop", 3),
+                make_token(3, "sure", "ADJ", "root", 0),
+                make_token(4, "that", "SCONJ", "mark", 6),
+                make_token(5, "it", "PRON", "nsubj", 6),
+                make_token(6, "works", "VERB", "ccomp", 3),
+                make_token(7, ".", "PUNCT", "punct", 3),
+            ],
+        );
+        assert!(sent.reportings.is_empty());
+    }
+
+    #[test]
+    fn root_adverbial_detects_sentence_scope_advmod() {
+        // "Reportedly, the deal closed."
+        let sent = Sentence::new(
+            "Reportedly, the deal closed.".to_string(),
+            vec![
+                make_token(1, "Reportedly", "ADV", "advmod", 5),
+                make_token(2, ",", "PUNCT", "punct", 5),
+                make_token(3, "the", "DET", "det", 4),
+                make_token(4, "deal", "NOUN", "nsubj", 5),
+                make_token(5, "closed", "VERB", "root", 0),
+                make_token(6, ".", "PUNCT", "punct", 5),
+            ],
+        );
+        assert_eq!(sent.root_adverbials.len(), 1);
+        assert_eq!(sent.root_adverbials[0].adv_id, 1);
+        assert_eq!(sent.root_adverbials[0].adv_lemma, "reportedly");
+    }
+
+    #[test]
+    fn root_adverbial_reports_manner_adverbs_too() {
+        // "The team quickly shipped." puts `quickly` on the same
+        // root-attached `advmod` arc as `reportedly`. The dependency
+        // graph does not distinguish sentence scope from manner, so
+        // the detector reports the arc and the caller's lexicon
+        // decides the evidential reading (I7 M4: construction, not
+        // category).
+        let sent = Sentence::new(
+            "The team quickly shipped.".to_string(),
+            vec![
+                make_token(1, "The", "DET", "det", 2),
+                make_token(2, "team", "NOUN", "nsubj", 4),
+                make_token(3, "quickly", "ADV", "advmod", 4),
+                make_token(4, "shipped", "VERB", "root", 0),
+                make_token(5, ".", "PUNCT", "punct", 4),
+            ],
+        );
+        assert_eq!(sent.root_adverbials.len(), 1);
+        assert_eq!(sent.root_adverbials[0].adv_lemma, "quickly");
+        // The caller's lexicon is where the evidential reading lives.
+        assert!(
+            sent.root_adverbials_in(&["reportedly", "allegedly"])
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn root_adverbial_ignores_non_root_attachment() {
+        // "She says he ran quickly." attaches `quickly` to `ran`
+        // (the complement head), not the root, so no root adverbial;
+        // the reporting construction on `says` still fires.
+        let sent = Sentence::new(
+            "She says he ran quickly.".to_string(),
+            vec![
+                make_token(1, "She", "PRON", "nsubj", 2),
+                make_token(2, "says", "VERB", "root", 0),
+                make_token(3, "he", "PRON", "nsubj", 4),
+                make_token(4, "ran", "VERB", "ccomp", 2),
+                make_token(5, "quickly", "ADV", "advmod", 4),
+                make_token(6, ".", "PUNCT", "punct", 2),
+            ],
+        );
+        assert!(sent.root_adverbials.is_empty());
+        assert_eq!(sent.reportings.len(), 1);
+    }
+
+    #[test]
+    fn root_adverbial_overlaps_negation_by_design() {
+        // "The plan is not ready." carries `not` as `advmod` on the
+        // root, so it appears in both `negations` and
+        // `root_adverbials`. Both report arcs; neither assigns a
+        // reading; the overlap is intentional.
+        let sent = Sentence::new(
+            "The plan is not ready.".to_string(),
+            vec![
+                make_token(1, "The", "DET", "det", 2),
+                make_token(2, "plan", "NOUN", "nsubj", 5),
+                make_token(3, "is", "AUX", "cop", 5),
+                make_token(4, "not", "PART", "advmod", 5),
+                make_token(5, "ready", "ADJ", "root", 0),
+                make_token(6, ".", "PUNCT", "punct", 5),
+            ],
+        );
+        assert_eq!(sent.negations.len(), 1);
+        assert_eq!(sent.root_adverbials.len(), 1);
+        assert_eq!(sent.root_adverbials[0].adv_id, 4);
+    }
+
+    #[test]
+    fn reportings_in_filters_by_caller_lexicon() {
+        // matra ships no evidential lexicon (open class); the caller
+        // supplies one and the filter is a view over crossing data.
+        let sent = Sentence::new(
+            "Smith reported that the effect vanished.".to_string(),
+            vec![
+                make_token(1, "Smith", "PROPN", "nsubj", 2),
+                make_token(2, "reported", "VERB", "root", 0),
+                make_token(3, "that", "SCONJ", "mark", 6),
+                make_token(4, "the", "DET", "det", 5),
+                make_token(5, "effect", "NOUN", "nsubj", 6),
+                make_token(6, "vanished", "VERB", "ccomp", 2),
+                make_token(7, ".", "PUNCT", "punct", 2),
+            ],
+        );
+        // make_token lemmatizes to the lowercased text, so the
+        // caller's lexicon here uses the surface-derived lemma.
+        assert_eq!(sent.reportings_in(&["reported", "suggest"]).len(), 1);
+        assert!(sent.reportings_in(&["say", "claim"]).is_empty());
+    }
+
+    #[test]
+    fn reportings_serialize_and_default_on_old_json() {
+        // The fields cross the wire (ADR-0008) ...
+        let sent = Sentence::new(
+            "Reportedly, it works.".to_string(),
+            vec![
+                make_token(1, "Reportedly", "ADV", "advmod", 3),
+                make_token(2, "it", "PRON", "nsubj", 3),
+                make_token(3, "works", "VERB", "root", 0),
+                make_token(4, ".", "PUNCT", "punct", 3),
+            ],
+        );
+        let json = serde_json::to_value(&sent).unwrap();
+        assert_eq!(json["root_adverbials"][0]["adv_lemma"], "reportedly");
+        assert!(json["reportings"].as_array().unwrap().is_empty());
+        // ... and JSON serialized before the fields existed still
+        // deserializes, with empty defaults.
+        let old = r#"{"text":"old","tokens":[]}"#;
+        let sent: Sentence = serde_json::from_str(old).unwrap();
+        assert!(sent.reportings.is_empty());
+        assert!(sent.root_adverbials.is_empty());
     }
 
     #[test]
