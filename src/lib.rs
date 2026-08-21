@@ -11,7 +11,7 @@ mod stopwords;
 use std::path::Path;
 
 use decompose::Decomposer;
-use domain::{Document, MAX_INPUT_BYTES, Section};
+use domain::{Document, MAX_INPUT_BYTES};
 use nlp::NlpProvider;
 use source::Source;
 
@@ -19,7 +19,8 @@ use source::Source;
 ///
 /// Returns `Error::InputTooLarge { what: "input", .. }` so consumers can
 /// distinguish the bound check from per-extractor caps (which use distinct
-/// `what` labels). All public entry points that take text run this gate.
+/// `what` labels). [`Engine::annotate`] runs this gate, and annotate is
+/// the only route from text to the parser.
 fn check_input_size(text: &str) -> domain::Result<()> {
     if text.len() > MAX_INPUT_BYTES {
         return Err(domain::Error::InputTooLarge {
@@ -271,169 +272,6 @@ pub fn standard_decomposers() -> decompose::Decomposers {
     table
 }
 
-/// Analyze raw text. Returns structured metrics.
-pub fn analyze(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Document> {
-    check_input_size(text)?;
-    let sections = decompose::plain::PlainTextDecomposer.decompose(text);
-    run_analysis(sections, nlp)
-}
-
-/// Analyze markdown text. Returns structured metrics with section awareness.
-pub fn analyze_markdown(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Document> {
-    check_input_size(text)?;
-    let sections = decompose::markdown::MarkdownDecomposer.decompose(text);
-    run_analysis(sections, nlp)
-}
-
-/// Analyze a file, detecting format by extension. Returns
-/// [`domain::Error::UnsupportedFormat`] for `Pdf`/`Docx` until a
-/// decomposer is registered for those formats.
-pub fn analyze_file(path: impl AsRef<Path>, nlp: &dyn NlpProvider) -> domain::Result<Document> {
-    let docs = source::file::FileSource.read(path.as_ref())?;
-    let doc = docs.into_iter().next().ok_or_else(|| {
-        domain::Error::Io(std::io::Error::new(
-            std::io::ErrorKind::InvalidData,
-            "source returned no documents",
-        ))
-    })?;
-    analyze_raw(&doc.text, doc.format, nlp)
-}
-
-fn analyze_raw(
-    text: &str,
-    format: domain::Format,
-    nlp: &dyn NlpProvider,
-) -> domain::Result<Document> {
-    match format {
-        domain::Format::Markdown => analyze_markdown(text, nlp),
-        domain::Format::PlainText => analyze(text, nlp),
-        other @ (domain::Format::Pdf | domain::Format::Docx) => {
-            Err(domain::Error::UnsupportedFormat(other))
-        }
-    }
-}
-
-/// Analyze all readable files in a directory. Returns a `Corpus` of
-/// successfully analyzed documents and a list of per-document errors
-/// (combining I/O failures during ingest with analysis failures during
-/// the per-document pipeline).
-///
-/// Per-file I/O failures and per-document analysis failures both flow
-/// into the returned error vector; the iteration never aborts on a
-/// single bad file. The outer `Result` is `Err` only for top-level
-/// failures (e.g., the directory itself does not exist).
-pub fn analyze_directory(
-    path: impl AsRef<Path>,
-    nlp: &dyn NlpProvider,
-) -> domain::Result<(domain::Corpus, Vec<(std::path::PathBuf, domain::Error)>)> {
-    let (docs, mut errors) =
-        source::directory::DirectorySource.read_collecting_errors(path.as_ref())?;
-    let mut entries = Vec::new();
-    for doc in docs {
-        let path = doc.path.clone();
-        match analyze_raw(&doc.text, doc.format, nlp) {
-            Ok(analysis) => entries.push(domain::CorpusEntry { path, analysis }),
-            Err(e) => errors.push((path.unwrap_or_default(), e)),
-        }
-    }
-    Ok((domain::Corpus::new(entries), errors))
-}
-
-/// Parse text into NLP annotations. Call once, pass to multiple consumers.
-///
-/// This enables the parse-once-use-many pattern:
-/// ```no_run
-/// # use matra::nlp::NlpProvider;
-/// # fn example(text: &str, nlp: &dyn NlpProvider) -> matra::domain::Result<()> {
-/// let sentences = matra::parse(text, nlp)?;
-/// let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
-/// let phrases = matra::extraction::rake_keyphrases(&sentences, 10)?;
-/// # Ok(())
-/// # }
-/// ```
-pub fn parse(text: &str, nlp: &dyn NlpProvider) -> domain::Result<Vec<domain::Sentence>> {
-    check_input_size(text)?;
-    nlp.parse(text)
-}
-
-/// Assemble a `Document` from pre-decomposed sections.
-///
-/// # No metric is populated. Every slot stays `None`.
-///
-/// Metrics read the sentences attached to the document's paragraphs, and
-/// this function receives one flat slice with no record of which sentence
-/// came from which paragraph, so it cannot attach anything. Recovering the
-/// mapping would mean matching sentences back to paragraphs by text, which
-/// this crate removed deliberately: two paragraphs sharing an opening
-/// substring were silently assigned each other's sentences.
-///
-/// The `sentences` parameter is unused beyond documentation intent; it
-/// stays in the signature only for call-site compatibility until this
-/// function is removed. If you want a measured `Document`, call
-/// [`analyze()`] or [`analyze_markdown()`] and read the sentences back off
-/// the tree with `Document::sentences()`; the extractors take that same
-/// slice, so nothing is parsed twice.
-///
-/// ```no_run
-/// # use matra::nlp::NlpProvider;
-/// # fn example(text: &str, nlp: &dyn NlpProvider) -> matra::domain::Result<()> {
-/// let analysis = matra::analyze_markdown(text, nlp)?;
-/// let sentences: Vec<_> = analysis.sentences().cloned().collect();
-/// let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
-/// # Ok(())
-/// # }
-/// ```
-pub fn analyze_from(
-    sections: Vec<Section>,
-    sentences: &[domain::Sentence],
-) -> domain::Result<Document> {
-    let total_bytes: usize = sections
-        .iter()
-        .flat_map(|s| s.paragraphs.iter())
-        .map(|p| p.text.len())
-        .sum();
-    if total_bytes > MAX_INPUT_BYTES {
-        return Err(domain::Error::InputTooLarge {
-            limit: MAX_INPUT_BYTES,
-            actual: total_bytes,
-            what: "input",
-        });
-    }
-    let _ = sentences;
-    let mut analysis = Document::new(sections);
-    let suite = metrics::default_suite();
-    metrics::run_suite(&mut analysis, &suite);
-    Ok(analysis)
-}
-
-/// Shared analysis pipeline: parse each non-blockquote paragraph
-/// individually, attaching its sentences directly. Then run the default
-/// metric suite over the populated analysis.
-///
-/// Per-paragraph parse eliminates the prefix-match wiring step that the
-/// previous implementation needed (and the silent sentence-loss /
-/// inner-substring-theft defects that came with it). Each paragraph's
-/// sentences come straight from `nlp.parse(&paragraph.text)` — no
-/// document-level joining, no string-prefix recovery, no ambiguity.
-///
-/// Document-level metrics (`vocabulary_ttr`, `nominalization_ratio`)
-/// aggregate over the same attachment via `Document::sentences()`; there
-/// is no second sentence set to keep in agreement.
-fn run_analysis(sections: Vec<Section>, nlp: &dyn NlpProvider) -> domain::Result<Document> {
-    let mut analysis = Document::new(sections);
-
-    for para in analysis.paragraphs_mut() {
-        if para.in_blockquote {
-            continue;
-        }
-        para.sentences = nlp.parse(&para.text)?;
-    }
-
-    let suite = metrics::default_suite();
-    metrics::run_suite(&mut analysis, &suite);
-    Ok(analysis)
-}
-
 // ---------------------------------------------------------------------------
 // PyO3 bindings (behind "python" feature flag)
 // ---------------------------------------------------------------------------
@@ -616,6 +454,7 @@ mod python {
 mod tests {
     use super::*;
     use crate::nlp::NlpProvider;
+    use domain::Section;
 
     /// Minimal NlpProvider that returns no sentences. Lets us test composition-root
     /// gates (input size, etc.) without requiring a real NLP backend.
@@ -941,15 +780,19 @@ mod tests {
     #[test]
     fn input_at_cap_is_accepted() {
         // "a" repeated MAX_INPUT_BYTES times = exactly the cap.
-        let text = "a".repeat(MAX_INPUT_BYTES);
-        let result = analyze(&text, &EmptyNlp);
-        assert!(result.is_ok(), "input exactly at cap should be accepted");
+        let engine = Engine::new(Box::new(EmptyNlp), standard_decomposers());
+        let raw = raw_plain(&"a".repeat(MAX_INPUT_BYTES));
+        assert!(
+            engine.annotate(&raw).is_ok(),
+            "input exactly at cap should be accepted"
+        );
     }
 
     #[test]
     fn input_one_byte_over_cap_is_rejected() {
-        let text = "a".repeat(MAX_INPUT_BYTES + 1);
-        match analyze(&text, &EmptyNlp) {
+        let engine = Engine::new(Box::new(EmptyNlp), standard_decomposers());
+        let raw = raw_plain(&"a".repeat(MAX_INPUT_BYTES + 1));
+        match engine.annotate(&raw) {
             Err(domain::Error::InputTooLarge {
                 limit,
                 actual,
@@ -964,17 +807,6 @@ mod tests {
     }
 
     #[test]
-    fn parse_also_gates_input_size() {
-        let text = "a".repeat(MAX_INPUT_BYTES + 1);
-        match parse(&text, &EmptyNlp) {
-            Err(domain::Error::InputTooLarge { what, .. }) => {
-                assert_eq!(what, "input");
-            }
-            other => panic!("expected InputTooLarge from parse, got {other:?}"),
-        }
-    }
-
-    #[test]
     fn parse_per_paragraph_scopes_sentences_to_originating_paragraph() {
         // FM1 regression: two paragraphs with the same first 30 chars.
         // Pre-fix, attach_sentences would prefix-match and could assign
@@ -983,7 +815,7 @@ mod tests {
         // assignment unambiguous by construction.
         let text = "The system processes input now. Tail one.\n\n\
                     The system processes input now. Tail two.";
-        let analysis = analyze(text, &DotSplitNlp).unwrap();
+        let analysis = law_engine().analyze_one(raw_plain(text)).unwrap().analysis;
 
         let paras: Vec<_> = analysis.paragraphs().collect();
         assert_eq!(paras.len(), 2);
@@ -1005,7 +837,7 @@ mod tests {
         // Per-paragraph parse makes the question moot.
         let text = "Outer talks about the special phrase processes input now. End A.\n\n\
                     The special phrase processes input now. End B.";
-        let analysis = analyze(text, &DotSplitNlp).unwrap();
+        let analysis = law_engine().analyze_one(raw_plain(text)).unwrap().analysis;
 
         let paras: Vec<_> = analysis.paragraphs().collect();
         assert_eq!(paras.len(), 2);
@@ -1020,18 +852,29 @@ mod tests {
     fn empty_paragraph_followed_by_valid_paragraph() {
         // Trailing whitespace on an empty paragraph used to confuse the
         // prefix-match wiring; per-paragraph parse handles cleanly.
-        // (PlainTextDecomposer collapses runs of blank lines, so we
-        // construct sections manually for this test to keep an empty
-        // paragraph entry.)
-        let mut sections = decompose::plain::PlainTextDecomposer
-            .decompose("Real content sentence.\n\nAnother real one.");
-        // Inject an empty paragraph in front.
-        if let Some(section) = sections.first_mut() {
-            section
-                .paragraphs
-                .insert(0, domain::Paragraph::new(String::new(), false));
+        // PlainTextDecomposer collapses runs of blank lines, so this
+        // registers a custom decomposer that injects an empty paragraph,
+        // which also exercises a caller-built table end to end.
+        struct InjectEmptyParagraph;
+        impl Decomposer for InjectEmptyParagraph {
+            fn decompose(&self, text: &str) -> Vec<Section> {
+                let mut sections = decompose::plain::PlainTextDecomposer.decompose(text);
+                if let Some(section) = sections.first_mut() {
+                    section
+                        .paragraphs
+                        .insert(0, domain::Paragraph::new(String::new(), false));
+                }
+                sections
+            }
         }
-        let analysis = run_analysis(sections, &DotSplitNlp).unwrap();
+
+        let table = decompose::Decomposers::new()
+            .with(domain::Format::PlainText, Box::new(InjectEmptyParagraph));
+        let engine = Engine::new(Box::new(DotSplitNlp), table);
+        let analysis = engine
+            .analyze_one(raw_plain("Real content sentence.\n\nAnother real one."))
+            .unwrap()
+            .analysis;
 
         let paras: Vec<_> = analysis.paragraphs().collect();
         assert_eq!(paras.len(), 3);
@@ -1042,98 +885,5 @@ mod tests {
         );
         assert!(!paras[1].sentences.is_empty());
         assert!(!paras[2].sentences.is_empty());
-    }
-
-    /// Regression: `analyze_from` receives one flat sentence slice with no
-    /// record of which sentence came from which paragraph, so it cannot fill
-    /// `Paragraph::sentences`. Since I8 M1 every metric reads that
-    /// attachment, so all five metric slots stay `None`.
-    ///
-    /// History: before M1 the document-level pair read the flat slice
-    /// directly, so `analyze_from` returned a half-populated `Document`
-    /// (Defect B). Removing the redundant sentence channel turned the
-    /// half-populated surprise into uniform, documented absence.
-    #[test]
-    fn analyze_from_leaves_every_metric_none() {
-        let text = "The committee approved the proposal without any further \
-                    debate today. Three amendments were submitted by the \
-                    working group before the meeting closed.";
-        let para = domain::Paragraph::new(text.to_string(), false);
-        let sections = vec![domain::Section::new(None, 0, vec![para])];
-
-        // The caller's own parse, as the no-double-parse pattern prescribes.
-        // Tokens are real so the document-level metrics have something to
-        // read; that is what makes the asymmetry visible rather than merely
-        // making everything None.
-        let sentences: Vec<domain::Sentence> = text
-            .split('.')
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(|s| {
-                let tokens = s
-                    .split_whitespace()
-                    .enumerate()
-                    .map(|(i, w)| {
-                        domain::Token::builder(
-                            i + 1,
-                            w.to_string(),
-                            w.to_lowercase(),
-                            "NOUN".to_string(),
-                            0,
-                            "root".to_string(),
-                        )
-                        .build()
-                    })
-                    .collect();
-                domain::Sentence::new(s.to_string(), tokens)
-            })
-            .collect();
-        assert!(sentences.len() >= 2, "fixture yields multiple sentences");
-
-        let doc = analyze_from(sections, &sentences).expect("under the cap");
-        let paras: Vec<_> = doc.paragraphs().collect();
-
-        // Document level: also None now. Metrics read the attachment, and
-        // analyze_from cannot attach.
-        assert!(
-            doc.vocabulary_ttr.is_none(),
-            "document metrics read Paragraph::sentences, which analyze_from never fills"
-        );
-        assert!(doc.nominalization_ratio.is_none());
-
-        // Paragraph level: empty for the same reason.
-        assert_eq!(
-            paras[0].word_count(),
-            0,
-            "paragraph carries no sentences, so word_count is zero"
-        );
-        assert!(
-            paras[0].readability_grade.is_none(),
-            "readability gates on word_count > 10, which cannot fire"
-        );
-        assert!(
-            paras[0].lexical_density.is_none(),
-            "lexical density skips paragraphs with word_count == 0"
-        );
-        assert!(
-            paras[0].compression_ratio.is_none(),
-            "compression gates on word_count > 50, which cannot fire"
-        );
-    }
-
-    #[test]
-    fn analyze_from_gates_total_section_bytes() {
-        // Two sections each at half the cap + one byte = over.
-        let half = MAX_INPUT_BYTES / 2 + 1;
-        let p = domain::Paragraph::new("a".repeat(half), false);
-        let s = domain::Section::new(None, 0, vec![p]);
-        let sections = vec![s.clone(), s];
-        let result = analyze_from(sections, &[]);
-        match result {
-            Err(domain::Error::InputTooLarge { what, .. }) => {
-                assert_eq!(what, "input");
-            }
-            other => panic!("expected InputTooLarge from analyze_from, got {other:?}"),
-        }
     }
 }

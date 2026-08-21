@@ -3,6 +3,8 @@
 
 #[cfg(feature = "udpipe")]
 mod with_model {
+    use matra::Engine;
+    use matra::domain::{Document, Format, RawDocument};
     use matra::nlp::NlpProvider;
     use matra::nlp::udpipe::Udpipe;
 
@@ -11,15 +13,24 @@ mod with_model {
             .expect("UDPipe model not found. Download to /tmp/matra-models/")
     }
 
+    fn engine() -> Engine {
+        Engine::new(Box::new(model()), matra::standard_decomposers())
+    }
+
+    fn analyze(text: &str, format: Format) -> Document {
+        engine()
+            .analyze_one(RawDocument::new(text.to_string(), None, format))
+            .unwrap()
+            .analysis
+    }
+
     #[test]
     #[ignore] // requires model file
     fn full_pipeline_plain_text() {
-        let nlp = model();
-        let analysis = matra::analyze(
+        let analysis = analyze(
             "The cat sat on the mat. The dog chased the cat quickly.",
-            &nlp,
-        )
-        .unwrap();
+            Format::PlainText,
+        );
 
         assert!(analysis.total_sentences() >= 2);
         assert!(analysis.total_words() > 0);
@@ -28,9 +39,8 @@ mod with_model {
     #[test]
     #[ignore]
     fn full_pipeline_markdown() {
-        let nlp = model();
         let md = "---\ntitle: Test\n---\n\n## Introduction\n\nFirst paragraph with several words in it.\n\n## Body\n\nSecond paragraph here.\n\n> A blockquote that should be skipped.";
-        let analysis = matra::analyze_markdown(md, &nlp).unwrap();
+        let analysis = analyze(md, Format::Markdown);
 
         assert_eq!(analysis.sections.len(), 2);
         assert_eq!(
@@ -64,12 +74,10 @@ mod with_model {
     #[test]
     #[ignore]
     fn passive_voice_detected() {
-        let nlp = model();
-        let analysis = matra::analyze(
+        let analysis = analyze(
             "The system was built by the team. The team shipped the product.",
-            &nlp,
-        )
-        .unwrap();
+            Format::PlainText,
+        );
 
         assert!(analysis.sentences().any(|s| s.is_passive()));
         assert!(analysis.sentences().any(|s| !s.is_passive()));
@@ -78,9 +86,8 @@ mod with_model {
     #[test]
     #[ignore]
     fn compression_ratio_computed_for_long_paragraphs() {
-        let nlp = model();
         let long_para = "The quick brown fox jumps over the lazy dog. ".repeat(10);
-        let analysis = matra::analyze(&long_para, &nlp).unwrap();
+        let analysis = analyze(&long_para, Format::PlainText);
 
         let has_ratio = analysis.paragraphs().any(|p| p.compression_ratio.is_some());
         assert!(has_ratio, "long paragraph should have compression ratio");
