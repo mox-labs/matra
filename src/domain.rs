@@ -614,7 +614,7 @@ impl Keyphrase {
 ///
 /// `Pdf` and `Docx` are reserved variants; the library returns
 /// [`Error::UnsupportedFormat`] for those today.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub enum Format {
     /// Markdown source.
@@ -717,6 +717,87 @@ impl Corpus {
             return 0.0;
         }
         grades.iter().sum::<f64>() / grades.len() as f64
+    }
+}
+
+/// A per-document failure: the error plus the path it occurred at, if
+/// the document came from disk.
+///
+/// `path` is `Option` because in-memory text has no path. This closes a
+/// real hole: the previous corpus surface fabricated an empty `PathBuf`
+/// for a path-less document, which collided with a genuinely empty path.
+#[derive(Debug)]
+#[non_exhaustive]
+pub struct DocumentError {
+    /// Source path, if the document came from disk.
+    pub path: Option<PathBuf>,
+    /// What went wrong.
+    pub error: Error,
+}
+
+impl DocumentError {
+    /// Construct a new `DocumentError`.
+    pub fn new(path: Option<PathBuf>, error: Error) -> Self {
+        Self { path, error }
+    }
+}
+
+impl std::fmt::Display for DocumentError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.path {
+            Some(p) => write!(f, "{}: {}", p.display(), self.error),
+            None => write!(f, "{}", self.error),
+        }
+    }
+}
+
+impl std::error::Error for DocumentError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.error)
+    }
+}
+
+/// The outcome of analyzing a stream of documents: every success in a
+/// [`Corpus`], every per-document failure alongside it.
+///
+/// The partition invariant: entries plus errors equals documents
+/// consumed. Nothing is silently dropped.
+///
+/// Not `Serialize`: [`DocumentError`] wraps [`Error`], which wraps
+/// `std::io::Error`. Crossing a language boundary needs a projection
+/// with stable kind strings, not a serialization of `io::Error`.
+#[derive(Debug)]
+#[non_exhaustive]
+pub struct CorpusResult {
+    /// Every successfully analyzed document.
+    pub corpus: Corpus,
+    /// Every per-document failure, in consumption order.
+    pub errors: Vec<DocumentError>,
+}
+
+impl CorpusResult {
+    /// Construct a new `CorpusResult`.
+    pub fn new(corpus: Corpus, errors: Vec<DocumentError>) -> Self {
+        Self { corpus, errors }
+    }
+}
+
+/// `collect()` is the corpus constructor: a stream of per-document
+/// results partitions into successes and failures, preserving order
+/// within each.
+impl FromIterator<std::result::Result<CorpusEntry, DocumentError>> for CorpusResult {
+    fn from_iter<I: IntoIterator<Item = std::result::Result<CorpusEntry, DocumentError>>>(
+        iter: I,
+    ) -> Self {
+        let mut entries = Vec::new();
+        let mut errors = Vec::new();
+        for item in iter {
+            match item {
+                Ok(entry) => entries.push(entry),
+                Err(err) => errors.push(err),
+            }
+        }
+        CorpusResult::new(Corpus::new(entries), errors)
     }
 }
 
@@ -937,6 +1018,73 @@ mod tests {
             elapsed < std::time::Duration::from_millis(50),
             "tree_depth on 1000-chain took {elapsed:?} (expected < 50ms; suggests non-linear complexity)"
         );
+    }
+
+    #[test]
+    fn corpus_result_partition_holds() {
+        // |entries| + |errors| = items consumed, order preserved per side.
+        let items: Vec<std::result::Result<CorpusEntry, DocumentError>> = vec![
+            Ok(CorpusEntry::new(
+                Some(PathBuf::from("a.md")),
+                Document::new(Vec::new()),
+            )),
+            Err(DocumentError::new(
+                Some(PathBuf::from("b.md")),
+                Error::ParseFailed("bad".to_string()),
+            )),
+            Ok(CorpusEntry::new(None, Document::new(Vec::new()))),
+            Err(DocumentError::new(
+                None,
+                Error::ParseFailed("worse".to_string()),
+            )),
+        ];
+        let consumed = items.len();
+        let result: CorpusResult = items.into_iter().collect();
+        assert_eq!(result.corpus.entries.len() + result.errors.len(), consumed);
+        assert_eq!(result.corpus.entries.len(), 2);
+        assert_eq!(
+            result.corpus.entries[0].path,
+            Some(PathBuf::from("a.md")),
+            "success order preserved"
+        );
+        assert_eq!(
+            result.errors[0].path,
+            Some(PathBuf::from("b.md")),
+            "failure order preserved"
+        );
+        assert_eq!(result.errors[1].path, None, "path-less failure stays None");
+    }
+
+    #[test]
+    fn corpus_result_from_empty_iterator() {
+        let result: CorpusResult = std::iter::empty().collect();
+        assert!(result.corpus.entries.is_empty());
+        assert!(result.errors.is_empty());
+    }
+
+    #[test]
+    fn document_error_display_with_and_without_path() {
+        let with_path = DocumentError::new(
+            Some(PathBuf::from("essay.md")),
+            Error::ParseFailed("boom".to_string()),
+        );
+        assert_eq!(with_path.to_string(), "essay.md: parse failed: boom");
+
+        let without = DocumentError::new(None, Error::ParseFailed("boom".to_string()));
+        assert_eq!(without.to_string(), "parse failed: boom");
+    }
+
+    #[test]
+    fn document_error_source_is_the_domain_error() {
+        use std::error::Error as _;
+        let err = DocumentError::new(None, Error::ParseFailed("boom".to_string()));
+        assert!(err.source().is_some());
+    }
+
+    #[test]
+    fn format_equality() {
+        assert_eq!(Format::Markdown, Format::Markdown);
+        assert_ne!(Format::Markdown, Format::PlainText);
     }
 
     #[test]
