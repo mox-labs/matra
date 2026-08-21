@@ -18,6 +18,10 @@ name: Publish to PyPI
 #
 # Windows wheels are deliberately absent for 0.1.x: the UDPipe C++
 # build under MSVC is unverified. Add the target when it is.
+#
+# pypa/gh-action-pypi-publish is the one third-party action here; pypa
+# is a verified creator, which the org policy admits, and the ref is a
+# commit SHA, which the policy requires.
 
 on:
   push:
@@ -68,6 +72,13 @@ jobs:
             exit 1
           fi
 
+  # Wheels build with pip-installed maturin rather than a third-party
+  # build action: the org Actions policy validates every `uses` ref at
+  # workflow start, and keeping the build to `actions/*` plus shell
+  # removes that variable entirely. Cost: linux wheels carry the
+  # runner's glibc tag rather than broad manylinux, and no linux
+  # aarch64 wheel ships for 0.1.x. Restore PyO3/maturin-action (SHA
+  # pinned, org-allowlisted) when broader targets matter.
   wheels:
     name: Wheel ${{ matrix.platform.name }}
     needs: [verify]
@@ -76,25 +87,26 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { name: linux-x86_64, runner: ubuntu-latest, target: x86_64 }
-          - { name: linux-aarch64, runner: ubuntu-24.04-arm, target: aarch64 }
-          - { name: macos-x86_64, runner: macos-13, target: x86_64 }
-          - { name: macos-aarch64, runner: macos-14, target: aarch64 }
+          - { name: linux-x86_64, runner: ubuntu-latest }
+          - { name: macos-x86_64, runner: macos-13 }
+          - { name: macos-aarch64, runner: macos-14 }
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: ${{ env.PUBLISH_TAG }}
           persist-credentials: false
-      - uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
-          target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
-          manylinux: auto
-      - name: Smoke test the wheel (linux x86_64 only)
-        if: matrix.platform.name == 'linux-x86_64'
+          python-version: "3.12"
+      - name: Build wheel
         run: |
           set -euo pipefail
-          python3 -m venv /tmp/smoke
+          python -m pip install --upgrade maturin
+          maturin build --release --out dist
+      - name: Smoke test the wheel
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/smoke
           /tmp/smoke/bin/pip install --no-index --find-links dist matra
           /tmp/smoke/bin/python -c "import matra; print(matra.Matra)"
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
@@ -111,10 +123,14 @@ jobs:
         with:
           ref: ${{ env.PUBLISH_TAG }}
           persist-credentials: false
-      - uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
-          command: sdist
-          args: --out dist
+          python-version: "3.12"
+      - name: Build sdist
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade maturin
+          maturin sdist --out dist
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: wheels-sdist
