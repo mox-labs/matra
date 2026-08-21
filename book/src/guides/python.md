@@ -100,7 +100,8 @@ for section in result["sections"]:            # heading, level, paragraphs
                                               # readability_grade, lexical_density,
                                               # compression_ratio
         for sentence in para["sentences"]:    # text, tokens, negations,
-                                              # modals, bare_assertion
+                                              # modals, bare_assertion,
+                                              # reportings, root_adverbials
             for token in sentence["tokens"]:
                 print(token["lemma"], token["pos"], token["dep"])
 

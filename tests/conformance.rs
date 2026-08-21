@@ -51,7 +51,28 @@ struct ExpectedSentence {
     modals: Option<Vec<ExpectedModal>>,
     /// Expected bare-assertion discriminator, when the fixture pins it.
     bare_assertion: Option<bool>,
+    /// Expected reporting constructions, when the fixture pins them.
+    /// Same convention as `negations`.
+    reportings: Option<Vec<ExpectedReporting>>,
+    /// Expected root-attached adverbials, when the fixture pins them.
+    /// Same convention as `negations`.
+    root_adverbials: Option<Vec<ExpectedRootAdverbial>>,
     tokens: Vec<ExpectedToken>,
+}
+
+#[derive(Deserialize)]
+struct ExpectedReporting {
+    verb_id: usize,
+    verb_lemma: String,
+    ccomp_id: usize,
+    subject_id: Option<usize>,
+    subject_lemma: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct ExpectedRootAdverbial {
+    adv_id: usize,
+    adv_lemma: String,
 }
 
 #[derive(Deserialize)]
@@ -195,6 +216,33 @@ fn rust_crust_conforms_to_spec() {
                     got.bare_assertion, want_bare,
                     "{name}: sentence {i} bare_assertion"
                 );
+            }
+            if let Some(want_reps) = &want.reportings {
+                assert_eq!(
+                    got.reportings.len(),
+                    want_reps.len(),
+                    "{name}: sentence {i} reporting count"
+                );
+                for (j, (r, w)) in got.reportings.iter().zip(want_reps).enumerate() {
+                    let at = format!("{name}: sentence {i} reporting {j}");
+                    assert_eq!(r.verb_id, w.verb_id, "{at} verb_id");
+                    assert_eq!(r.verb_lemma, w.verb_lemma, "{at} verb_lemma");
+                    assert_eq!(r.ccomp_id, w.ccomp_id, "{at} ccomp_id");
+                    assert_eq!(r.subject_id, w.subject_id, "{at} subject_id");
+                    assert_eq!(r.subject_lemma, w.subject_lemma, "{at} subject_lemma");
+                }
+            }
+            if let Some(want_advs) = &want.root_adverbials {
+                assert_eq!(
+                    got.root_adverbials.len(),
+                    want_advs.len(),
+                    "{name}: sentence {i} root adverbial count"
+                );
+                for (j, (a, w)) in got.root_adverbials.iter().zip(want_advs).enumerate() {
+                    let at = format!("{name}: sentence {i} root adverbial {j}");
+                    assert_eq!(a.adv_id, w.adv_id, "{at} adv_id");
+                    assert_eq!(a.adv_lemma, w.adv_lemma, "{at} adv_lemma");
+                }
             }
             assert_eq!(
                 got.tokens.len(),

@@ -161,6 +161,8 @@ let token = matra::domain::Token::builder(
 | `negations` | `Vec<Negation>` | Negation cues, derived at construction |
 | `modals` | `Vec<Modal>` | Modal auxiliaries, derived at construction |
 | `bare_assertion` | `bool` | Whether the root clause is finite indicative with no modal auxiliary governing it, derived at construction |
+| `reportings` | `Vec<Reporting>` | Reporting constructions (verb governing a `ccomp`, plus its subject), derived at construction |
+| `root_adverbials` | `Vec<RootAdverbial>` | Adverbial modifiers attached to the root, derived at construction |
 
 Invariants that downstream code relies on, and that a hand-built `Sentence` is expected to uphold: tokens are id-sorted; exactly one token has `head == 0`; every other `head` names a token in the same sentence.
 
@@ -168,7 +170,7 @@ The UDPipe adapter builds `text` by joining token surface forms, inserting a spa
 
 ### Derived structural fields
 
-The last three fields are computed once at `Sentence::new` from the dependency graph and serialized with the sentence, so every crust and the CLI's JSON read one Rust detection as data ([ADR-0008](https://github.com/mox-labs/matra/blob/main/docs/decisions/0008-structural-primitives-are-fields.md)). Each reports structure only; the reading is the consumer's. All three default (to empty or `false`) when deserializing JSON produced before the field existed.
+The fields after `tokens` are computed once at `Sentence::new` from the dependency graph and serialized with the sentence, so every crust and the CLI's JSON read one Rust detection as data ([ADR-0008](https://github.com/mox-labs/matra/blob/main/docs/decisions/0008-structural-primitives-are-fields.md)). Each reports structure only; the reading is the consumer's. All of them default (to empty or `false`) when deserializing JSON produced before the field existed.
 
 `Negation` reports one cue by token id: `cue_id`, `cue_lemma` (`not`, `never`, `no`, `neither`, `nor`), and `head_id`, the token the cue attaches to. A cue fires only on its carrying relation (`advmod`, `det`, `cc`), so `nothing` as a subject does not fire and tokenizer-split `cannot` fires exactly once, on the `not` token. Whether the negation reverses the sentence's claim is not matra's call.
 
@@ -176,9 +178,13 @@ The last three fields are computed once at `Sentence::new` from the dependency g
 
 `bare_assertion` is true when the root clause is finite indicative and no detected modal governs it: the bare assertoric surface form. `Mood=Ind` is read off the root token or off a `cop`, `aux`, or `aux:pass` child of the root, because the model parks finiteness on the auxiliary in copular ("The sky is blue."), do-support ("He did leave.") and passive clauses. A modalized clause fails because a modal attaches to the root or is itself the root, and an imperative fails on `Mood=Imp`. It reads the root clause only, so a modal in a subordinate clause is reported in `modals` without defeating it.
 
+`Reporting` reports one reporting construction by token id: `verb_id` and `verb_lemma` for the verb governing a clausal complement, `ccomp_id` for the head of that complement, and `subject_id` plus `subject_lemma` for the verb's subject (`nsubj`, `nsubj:pass`) when the parse has one in the same sentence. The construction fires for every verb that fills it ("Smith reported that the effect vanished.", "These results suggest that the mechanism is shared.", "We show that the method works." all match), because reporting verbs are an open class and any list matra shipped would be incomplete while looking authoritative. Which verb lemmas count as evidential is the consumer's lexicon, supplied as a parameter to `reportings_in` or applied to the field directly in any language. A `ccomp` under a non-verb head ("I am sure that it works." parses the complement under the adjective) is outside the construction by decision. The subject is optional by observed fact: UDPipe splits "Smith et al. reported that ..." into two sentences at the period in "et al.", stranding the attribution in the previous sentence while the reporting verb keeps its `ccomp`. That upstream segmentation defect is recorded here and in the test suite rather than papered over.
+
+`RootAdverbial` reports one adverbial modifier attached to the root by token id: `adv_id` and `adv_lemma`. The root-attached `advmod` arc is where sentence-scope adverbs land ("Reportedly, the deal closed."), but the dependency graph does not distinguish sentence scope from manner ("The team quickly shipped." puts `quickly` on the same arc), so every root-attached adverbial is reported and the consumer's lexicon selects the evidential ones, via `root_adverbials_in` or a filter over the field. Negation particles on the same arc ("not" in "The plan is not ready.") appear in both `negations` and `root_adverbials`; both report arcs, neither assigns a reading, and the overlap is intentional.
+
 ### Methods
 
-Every method below is a walk over the `head` and `dep` columns. [What matra gives you](../capabilities.md#1-structure) draws one parsed sentence as the tree these walk.
+Most methods below are walks over the `head` and `dep` columns; the two `_in` filters are views over the derived fields against a caller-supplied lexicon. [What matra gives you](../capabilities.md#1-structure) draws one parsed sentence as the tree these walk.
 
 | Signature | Returns | Behavior |
 |---|---|---|
@@ -191,6 +197,8 @@ Every method below is a walk over the `head` and `dep` columns. [What matra give
 | `children_of(&self, id: usize)` | `Vec<&Token>` | Tokens whose `head` equals `id`. Empty for an unknown id |
 | `head_of(&self, id: usize)` | `Option<&Token>` | The governing token. `None` for the root and for an unknown id |
 | `subtree(&self, id: usize)` | `Vec<&Token>` | The token and all its descendants, sorted by `id`. Empty for an unknown id |
+| `reportings_in(&self, lexicon: &[&str])` | `Vec<&Reporting>` | Reporting constructions whose `verb_lemma` is in the caller-supplied lexicon |
+| `root_adverbials_in(&self, lexicon: &[&str])` | `Vec<&RootAdverbial>` | Root adverbials whose `adv_lemma` is in the caller-supplied lexicon |
 
 `tree_depth` runs in time linear in token count and returns `usize::MAX` when the head references form a cycle, which reports a malformed parse instead of truncating it. An empty sentence returns 0. `subtree` carries a visited set, so it terminates on cyclic input.
 
