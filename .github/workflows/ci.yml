@@ -170,7 +170,9 @@ jobs:
         run: |
           . .venv/bin/activate
           python -m pip install --upgrade uv
-          uv pip install --system maturin "mypy>=1.10" click rich
+          # No --system: install into the activated venv, where the
+          # mypy step below runs. Newer uv treats --system literally.
+          uv pip install maturin "mypy>=1.10" click rich
       - name: Build and install matra in venv (so the _core stub resolves)
         run: |
           . .venv/bin/activate
