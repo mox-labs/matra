@@ -110,7 +110,9 @@ jobs:
         run: |
           set -euo pipefail
           python -m venv /tmp/smoke
-          /tmp/smoke/bin/pip install --no-index --find-links dist matra
+          # The wheel comes from dist; its runtime deps (click, rich)
+          # come from PyPI. --no-index would forbid them.
+          /tmp/smoke/bin/pip install --find-links dist matra
           /tmp/smoke/bin/python -c "import matra; print(matra.Matra)"
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
