@@ -1,0 +1,138 @@
+name: Publish to PyPI
+
+# Tag-driven, mirroring publish.yml (crates.io). Mechanical gates:
+# tag must match pyproject.toml version, the commit must be on main,
+# and the Python test suite must pass against a freshly built wheel
+# before anything uploads.
+#
+# Trusted Publishing (OIDC): no PyPI token is stored anywhere. PyPI
+# supports *pending* publishers, so unlike crates.io this works for the
+# very first release with no bootstrap token.
+#
+# MANUAL PREREQUISITE (one-time, in the PyPI UI):
+#   pypi.org -> account -> Publishing -> Add pending publisher:
+#     - Project name: matra
+#     - Owner: mox-labs   Repository: matra
+#     - Workflow filename: publish-pypi.yml
+#     - Environment: pypi
+#
+# Windows wheels are deliberately absent for 0.1.x: the UDPipe C++
+# build under MSVC is unverified. Add the target when it is.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g. v0.1.0). Use this only to retry a failed publish."
+        required: true
+        type: string
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  PUBLISH_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+jobs:
+  verify:
+    name: Tag matches pyproject.toml and sits on main
+    if: >-
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && startsWith(inputs.tag, 'v'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ env.PUBLISH_TAG }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify
+        env:
+          TAG_REF: ${{ env.PUBLISH_TAG }}
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${TAG_REF#v}"
+          PY_VERSION="$(sed -nE 's/^version = "([^"]+)"/\1/p' pyproject.toml | head -n1)"
+          if [[ "$TAG_VERSION" != "$PY_VERSION" ]]; then
+            echo "::error::tag version ($TAG_VERSION) != pyproject.toml version ($PY_VERSION)"
+            exit 1
+          fi
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" "origin/main"; then
+            echo "::error::tag $TAG_REF is not on main; refusing to publish"
+            exit 1
+          fi
+
+  wheels:
+    name: Wheel ${{ matrix.platform.name }}
+    needs: [verify]
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: linux-x86_64, runner: ubuntu-latest, target: x86_64 }
+          - { name: linux-aarch64, runner: ubuntu-24.04-arm, target: aarch64 }
+          - { name: macos-x86_64, runner: macos-13, target: x86_64 }
+          - { name: macos-aarch64, runner: macos-14, target: aarch64 }
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ env.PUBLISH_TAG }}
+          persist-credentials: false
+      - uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist --find-interpreter
+          manylinux: auto
+      - name: Smoke test the wheel (linux x86_64 only)
+        if: matrix.platform.name == 'linux-x86_64'
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install --no-index --find-links dist matra
+          /tmp/smoke/bin/python -c "import matra; print(matra.Matra)"
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: wheels-${{ matrix.platform.name }}
+          path: dist
+
+  sdist:
+    name: Source distribution
+    needs: [verify]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ env.PUBLISH_TAG }}
+          persist-credentials: false
+      - uses: PyO3/maturin-action@3e2bdf6ba6453a61e649744019b8a2d906c7eb38  # v1.51.0
+        with:
+          command: sdist
+          args: --out dist
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: wheels-sdist
+          path: dist
+
+  publish:
+    name: Publish (pypi environment)
+    needs: [wheels, sdist]
+    environment: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # Trusted Publishing OIDC
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26  # v1.14.2
+        with:
+          packages-dir: dist

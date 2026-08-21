@@ -32,10 +32,10 @@ Documentation is in lockstep: book pages, README, CHANGELOG, CLAUDE.md, the agen
 
 ## Next actions, in order
 
-Sequence agreed with the maintainer 2026-08-24:
+Sequence agreed with the maintainer 2026-08-21:
 
 1. **Publish batch 1: Rust + Python.** Both dry-run verified (cargo publish --dry-run packages and compiles; maturin build produces the wheel; 14 Python tests pass). Blocked on maintainer-only gates, in order: GitHub rename to mox-labs/matra (manifests already declare that URL; the remote is still vaani.git), merge m2-docsite-ia-restructure to main (63 commits ahead, unpushed), identity decision (personal email in both manifests becomes permanent), version decision (0.1.0 recommended: ADR-0007 froze the surface, which is what 0.1.0 means), Trusted Publishing / crates-io environment setup, then the hand-gated uploads.
-2. **Embeddings adapter, after publish.** New port (Embedder trait) plus a specialist adapter, feature-gated, tier stated in output per the roadmap scoping principle. Design constraint settled 2026-08-24: pure-Rust inference (candle), NOT ort/fastembed (C FFI), because the core already compiles to wasm32-unknown-unknown with --no-default-features (verified) and a candle adapter keeps the WASM/TS path open where an ONNX adapter would close it forever.
+2. **Embeddings adapter, after publish.** New port (Embedder trait) plus a specialist adapter, feature-gated, tier stated in output per the roadmap scoping principle. Design constraint settled 2026-08-21: pure-Rust inference (candle), NOT ort/fastembed (C FFI), because the core already compiles to wasm32-unknown-unknown with --no-default-features (verified) and a candle adapter keeps the WASM/TS path open where an ONNX adapter would close it forever.
 3. **Redundancy metrics, both halves.** The deterministic family from the roadmap entry (clusters, redundancy ratio, rep-n, skeleton repetition, opener formulae, document-scope compression; TextRank's similarity matrix is the head start), then semantic-equivalence clustering over the embeddings adapter.
 4. **TS package decision.** The hard blocker is UDPipe's C FFI only; everything else compiles to WASM today. Options: types-and-helpers package now, everything-but-parse WASM crust, full crust when a WASM-capable provider exists (candle embeddings move this materially closer).
 5. **Rule vocabulary design** (Rule / Predicate / Finding) against the shape recorded on the roadmap; slots anywhere after 1.

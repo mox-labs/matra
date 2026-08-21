@@ -1,9 +1,9 @@
 [package]
 name = "matra"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-authors = ["yzavyas <yza.vyas@gmail.com>"]
+authors = ["yzavyas"]
 license = "MIT"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction. Rust core with Python bindings."
 repository = "https://github.com/mox-labs/matra"
