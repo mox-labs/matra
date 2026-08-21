@@ -106,6 +106,15 @@ Rust-only methods: they derive nothing, so there is nothing to cross.
 The criterion, stated once: derivations cross as fields; views over
 data already crossing stay methods.
 
+**Amendment (I7 M5, 2026-08-21):** one sentence-level primitive is not
+computed by `Sentence::new`. `Sentence.hearst_pairs` is filled by
+`Engine::annotate`, because its detector lives in `matra::hearst`,
+outside the domain (the M5 boundary rubric requires a new module
+importing only `domain`, and `domain.rs` cannot import it back). The
+field still crosses as data per this ADR; only the choke point moved
+from construction to the annotate stage. A hand-built `Sentence`
+carries an empty `hearst_pairs` until the caller runs the detector.
+
 This does NOT pre-empt ADR-0006's deferred `Finding` shape. These are
 record-tier structural facts on record-tier types. The abstract tier
 (`Finding`, `Rule`, `Predicate`) still lands separately in Phase 2, and

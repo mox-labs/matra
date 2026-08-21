@@ -39,6 +39,16 @@ const NOMINAL_POS: [&str; 2] = ["NOUN", "PROPN"];
 /// as `amod`) are excluded by the caller via the marker list.
 const SPAN_MODIFIER_DEPS: [&str; 5] = ["det", "amod", "compound", "nummod", "flat"];
 
+/// Determiner lemmas that mark the `other`-carrying conjunct as
+/// anaphoric-contrastive rather than a Hearst listing. Hearst's
+/// `and other NP` / `or other NP` is bare: "temples, treasuries, and
+/// other civic buildings". A definite or demonstrative determiner on
+/// the conjunct ("the teacher and the other students") is plain
+/// coordination between disjoint classes and must not produce a pair,
+/// while an indefinite one ("apples or some other fruit") keeps the
+/// listing reading and may.
+const CONTRASTIVE_DET_LEMMAS: [&str; 5] = ["the", "this", "that", "these", "those"];
+
 fn is_nominal(t: &Token) -> bool {
     NOMINAL_POS.contains(&t.pos.as_str())
 }
@@ -76,7 +86,7 @@ fn span(tokens: &[Token], head: &Token, marker_ids: &[usize]) -> HearstSpan {
             .is_some_and(|t| t.head == head.id && (t.dep == "flat" || t.dep.starts_with("flat:")))
     };
     let mut last_id = head.id;
-    while extends_right(last_id + 1) {
+    while last_id < usize::MAX && extends_right(last_id + 1) {
         last_id += 1;
     }
     HearstSpan {
@@ -172,7 +182,13 @@ fn detect_nmod_family(tokens: &[Token], t: &Token, out: &mut Vec<HearstPair>) {
 ///   civic buildings"): the *hypernym* is the conjunct carrying both a
 ///   `cc` child (`and`/`or`) and an `amod` child with lemma `other`;
 ///   the hyponyms are the head of its `conj` arc plus that head's
-///   earlier `conj` children.
+///   earlier `conj` children. The pattern is bare: a definite or
+///   demonstrative determiner on that conjunct ("the teacher and the
+///   other students", verified live) marks anaphoric-contrastive
+///   coordination between disjoint classes, so a `det` child with a
+///   lemma in [`CONTRASTIVE_DET_LEMMAS`] rejects the match, while an
+///   indefinite one ("apples or some other fruit", verified live)
+///   keeps the listing reading and fires.
 /// - `NP, especially NP` ("countries, especially France"): the
 ///   *hyponym* is an asyndetic conjunct (no `cc` child) carrying
 ///   `especially` as a preceding `advmod`. The no-`cc` requirement is
@@ -198,7 +214,9 @@ fn detect_conj_family(tokens: &[Token], t: &Token, out: &mut Vec<HearstPair>) {
         .find(|c| c.dep == "advmod" && c.lemma == "especially" && c.id < t.id);
 
     if let (Some(c), Some(o)) = (cc, other) {
-        if c.id < o.id && (c.lemma == "and" || c.lemma == "or") {
+        let contrastive_det = children(tokens, t.id)
+            .any(|d| d.dep == "det" && CONTRASTIVE_DET_LEMMAS.contains(&d.lemma.as_str()));
+        if c.id < o.id && !contrastive_det && (c.lemma == "and" || c.lemma == "or") {
             let pattern = if c.lemma == "and" {
                 HearstPattern::AndOther
             } else {
@@ -503,6 +521,75 @@ mod tests {
                     span_of(8, "Angeles", 7, 8),
                 ),
             ]
+        );
+    }
+
+    // Hard negative: "The teacher and the other students laughed loudly."
+    // Anaphoric-contrastive coordination: the definite determiner on
+    // the `other`-carrying conjunct marks two disjoint classes, not a
+    // Hearst listing. Before the determiner guard this produced the
+    // false pair students > teacher (regression, review of M5).
+    #[test]
+    fn definite_other_conjunct_does_not_fire() {
+        let tokens = vec![
+            tok(1, "The", "the", "DET", "det", 2),
+            tok(2, "teacher", "teacher", "NOUN", "root", 0),
+            tok(3, "and", "and", "CCONJ", "cc", 6),
+            tok(4, "the", "the", "DET", "det", 6),
+            tok(5, "other", "other", "ADJ", "amod", 6),
+            tok(6, "students", "student", "NOUN", "conj", 2),
+            tok(7, "laughed", "laugh", "VERB", "acl", 6),
+            tok(8, "loudly", "loudly", "ADV", "advmod", 7),
+            tok(9, ".", ".", "PUNCT", "punct", 2),
+        ];
+        assert_eq!(hypernymy_pairs(&tokens), Vec::new());
+    }
+
+    // Positive guard for the determiner rule: "Apples or some other
+    // fruit will do." An indefinite determiner keeps the listing
+    // reading; the guard must reject only definites and
+    // demonstratives, not every det child.
+    #[test]
+    fn indefinite_other_conjunct_fires() {
+        let tokens = vec![
+            tok(1, "Apples", "Apple", "NOUN", "nsubj", 7),
+            tok(2, "or", "or", "CCONJ", "cc", 5),
+            tok(3, "some", "some", "DET", "det", 5),
+            tok(4, "other", "other", "ADJ", "amod", 5),
+            tok(5, "fruit", "fruit", "NOUN", "conj", 1),
+            tok(6, "will", "will", "AUX", "aux", 7),
+            tok(7, "do", "do", "VERB", "root", 0),
+            tok(8, ".", ".", "PUNCT", "punct", 7),
+        ];
+        assert_eq!(
+            hypernymy_pairs(&tokens),
+            vec![pair(
+                HearstPattern::OrOther,
+                span_of(5, "fruit", 5, 5),
+                span_of(1, "Apple", 1, 1),
+            )]
+        );
+    }
+
+    // Synthetic arc shape (not a live parse: UDPipe never emits this
+    // id): a hyponym carrying id usize::MAX must not overflow the
+    // rightward flat-walk in `span`. Regression for the unguarded
+    // `last_id + 1` (the leftward walk already had its `> 1` guard).
+    #[test]
+    fn max_id_token_does_not_overflow_span_walk() {
+        let tokens = vec![
+            tok(1, "Animals", "animal", "NOUN", "root", 0),
+            tok(2, "such", "such", "ADJ", "case", usize::MAX),
+            tok(3, "as", "as", "ADP", "fixed", 2),
+            tok(usize::MAX, "dogs", "dog", "NOUN", "nmod", 1),
+        ];
+        assert_eq!(
+            hypernymy_pairs(&tokens),
+            vec![pair(
+                HearstPattern::SuchAs,
+                span_of(1, "animal", 1, 1),
+                span_of(usize::MAX, "dog", usize::MAX, usize::MAX),
+            )]
         );
     }
 
