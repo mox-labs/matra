@@ -4,11 +4,12 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 
 ---
 
-## State (2026-08-21)
+## State (2026-09-04)
 
-- **Branch:** `m2-docsite-ia-restructure`. No upstream configured, nothing pushed. The remote is still named for the project's previous name, so the GitHub rename is outstanding.
-- **Working tree:** clean after the I7 close commit.
-- **Code:** `cargo test` 166 pass, `cargo test --features cli` 166 unit + 5 CLI integration pass, `cargo check --no-default-features` clean. Rust conformance against the real UDPipe model passes; Python suite 14 pass (conformance fixtures included) against a freshly built wheel. `just docs-floor` all gates pass.
+- **0.1.0 is published everywhere.** crates.io (maintainer-run `cargo publish`, 2026-08-23), PyPI (2026-09-04, all four artifacts: linux x86_64 / macOS Intel / macOS arm64 wheels + sdist), GitHub release v0.1.0. The surface freeze is live; every change from here is post-publish and semver-governed (`cargo-semver-checks` is armed in CI).
+- **Repo:** `mox-labs/matra` (renamed from the previous project name). Branch protection on `main`: 13 required checks, `enforce_admins`, linear history, no force pushes. Everything lands via PR now, including doc-only changes like this file.
+- **Publish pipeline:** `publish-pypi.yml` uses PyPI Trusted Publishing via a direct OIDC token exchange plus pinned `twine` (zero third-party actions in the upload path); `publish.yml` gates crates.io behind the `crates-io` environment. Five real defects were found and fixed getting there; the ledger lives in PRs #36 to #42.
+- **Branch:** `main`, clean.
 
 ### Where the work is
 
@@ -32,13 +33,14 @@ Documentation is in lockstep: book pages, README, CHANGELOG, CLAUDE.md, the agen
 
 ## Next actions, in order
 
-Sequence agreed with the maintainer 2026-08-21:
+Sequence agreed with the maintainer 2026-08-21, publish gate cleared 2026-09-04:
 
-1. **Publish batch 1: Rust + Python.** Both dry-run verified (cargo publish --dry-run packages and compiles; maturin build produces the wheel; 14 Python tests pass). Blocked on maintainer-only gates, in order: GitHub rename to mox-labs/matra (manifests already declare that URL; the remote is still vaani.git), merge m2-docsite-ia-restructure to main (63 commits ahead, unpushed), identity decision (personal email in both manifests becomes permanent), version decision (0.1.0 recommended: ADR-0007 froze the surface, which is what 0.1.0 means), Trusted Publishing / crates-io environment setup, then the hand-gated uploads.
-2. **Embeddings adapter, after publish.** New port (Embedder trait) plus a specialist adapter, feature-gated, tier stated in output per the roadmap scoping principle. Design constraint settled 2026-08-21: pure-Rust inference (candle), NOT ort/fastembed (C FFI), because the core already compiles to wasm32-unknown-unknown with --no-default-features (verified) and a candle adapter keeps the WASM/TS path open where an ONNX adapter would close it forever.
-3. **Redundancy metrics, both halves.** The deterministic family from the roadmap entry (clusters, redundancy ratio, rep-n, skeleton repetition, opener formulae, document-scope compression; TextRank's similarity matrix is the head start), then semantic-equivalence clustering over the embeddings adapter.
-4. **TS package decision.** The hard blocker is UDPipe's C FFI only; everything else compiles to WASM today. Options: types-and-helpers package now, everything-but-parse WASM crust, full crust when a WASM-capable provider exists (candle embeddings move this materially closer).
-5. **Rule vocabulary design** (Rule / Predicate / Finding) against the shape recorded on the roadmap; slots anywhere after 1.
+1. **Maintainer-only: crates.io Trusted Publishing + token revoke.** Configure Trusted Publishing on crates.io for `mox-labs/matra`, workflow `publish.yml`, environment `crates-io`, then revoke the bootstrap API token used for the 0.1.0 hand publish. Nothing else can do this; it closes the last credential in the release path.
+2. **Claude review CI (PR #35).** Tabled during the publish sprint, un-tabled after. Plugin-as-harness plus the `pr-review` skill as criteria; the action refuses to run on PRs that modify its own workflow file, so the live test only happens on the first PR after merge.
+3. **Embeddings adapter (i9).** New port (Embedder trait) plus a specialist adapter, feature-gated, tier stated in output per the roadmap scoping principle. Design constraint settled 2026-08-21: pure-Rust inference (candle), NOT ort/fastembed (C FFI), because the core already compiles to wasm32-unknown-unknown with --no-default-features (verified) and a candle adapter keeps the WASM/TS path open where an ONNX adapter would close it forever. Write the plan under `book/src/plans/` first.
+4. **Redundancy metrics, both halves.** The deterministic family from the roadmap entry (clusters, redundancy ratio, rep-n, skeleton repetition, opener formulae, document-scope compression; TextRank's similarity matrix is the head start), then semantic-equivalence clustering over the embeddings adapter.
+5. **TS package decision.** The hard blocker is UDPipe's C FFI only; everything else compiles to WASM today. Options: types-and-helpers package now, everything-but-parse WASM crust, full crust when a WASM-capable provider exists (candle embeddings move this materially closer).
+6. **Rule vocabulary design** (Rule / Predicate / Finding) against the shape recorded on the roadmap; slots anywhere after 3. x.uma composes as a peer consumer, never a dependency.
 
 
 ## Open, not blocking
