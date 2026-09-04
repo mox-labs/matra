@@ -50,7 +50,7 @@ pub fn semantic_clusters(
 
 The load-bearing move is the last one. Rule 5 says `metrics/` and `extraction/` import only `domain` and `stopwords`, so the clustering function cannot call the port. It does not need to: it takes precomputed vectors, which are domain values, and stays a total function testable without any model. Whoever holds both the `Document` and the `Embedder` runs one, then the other. That is the composition root's job, exactly as rule 7 wants, and it is the same split the pipeline already uses (`annotate` touches the provider, `compose` is total).
 
-`SemanticClusters` names its tier in the type: it carries the model identity (the caller-supplied model hash), the threshold used, and cluster members as sentence indices with pairwise scores. It is serde-visible so it can cross FFI, and it is a standalone value, never attached to `Document`. Whether a cluster constitutes restatement is the consumer's reading; the word fluff appears nowhere.
+`SemanticClusters` names its tier in the type: it carries the model identity (the caller-supplied model hash), the threshold used, and each cluster as its member sentence indices together with the above-threshold edges that connect them (index pairs with their scores). Clusters are connected components, so co-membership is transitive: two sentences can share a cluster without sharing an edge. The type reports only the edges that cleared the threshold, which is why they travel alongside the members; a consumer must never read co-membership as pairwise similarity, and the type's docs say so. It is serde-visible so it can cross FFI, and it is a standalone value, never attached to `Document`. Whether a cluster constitutes restatement is the consumer's reading; the word fluff appears nowhere.
 
 Threshold is caller-supplied. matra does not know a universal similarity cutoff, and pretending to would be a fixed opinion wearing a constant's clothing.
 
@@ -75,11 +75,11 @@ Each leaves the tree green. Names settle before code moves (ontology first).
 
 ### M1: names and the ADR
 
-`Embedder`, `Embedding`, `SemanticClusters`, feature name `embeddings`. Run the names through the naming gate before any code. ADR-0010 records: Tier 2 output travels in its own types and never as `Document` fields; ports name only domain types; the adapter is the sole candle importer; models are caller-supplied and hash-verified; the backend must stay pure Rust while the WASM path is open. Update the boundary-rules reference: `embed/mod.rs` joins the port list, candle crates join the sole-importer rule.
+`Embedder`, `Embedding`, `SemanticClusters`, feature name `embeddings`. Run the names through the naming gate before any code. ADR-0010 records: Tier 2 output travels in its own types and never as `Document` fields; ports name only domain types; the adapter is the sole candle importer; models are caller-supplied and hash-verified; the backend must stay pure Rust while the WASM path is open; clusters are connected components reporting their above-threshold edges, not cliques (chained restatement is the consumer pattern and cliques would split it; the cost, co-membership without direct similarity, is visible because the edges travel in the type); and `Embedding` departs from the `#[non_exhaustive]` convention (see M2), with the departure recorded. Update the boundary-rules reference: `embed/mod.rs` joins the port list, candle crates join the sole-importer rule.
 
 ### M2: domain carrier and port
 
-Purely additive. `Embedding` derives what `domain.rs` already derives (serde-visible, `#[non_exhaustive]` does not apply to a tuple struct carrying one public field; decide struct shape at M1). The port module contains only the trait and the feature-gated adapter declaration, mirroring `nlp/mod.rs` line for line.
+Purely additive. `Embedding` derives what `domain.rs` already derives (serde-visible), and it deliberately departs from the `#[non_exhaustive]` convention: the attribute is legal on a tuple struct, but its effect there is to make the constructor crate-private, and external `Embedder` implementors must be able to construct `Embedding` values, which is the port's whole purpose. Struct shape (tuple vs named field) is decided at M1; ADR-0010 records the departure and its reason. The port module contains only the trait and the feature-gated adapter declaration, mirroring `nlp/mod.rs` line for line.
 
 **Rubric.** `cargo check --no-default-features` clean. No port imports another port. The trait contract (length preservation, uniform dimension) is written on the trait, because it is what M4 tests against.
 
@@ -93,17 +93,17 @@ Version pins are settled here against the live crates (candle-core, candle-trans
 
 `semantic_clusters` is total over its inputs and returns `Err` only on contract violation (length mismatch between sentences and embeddings, dimension disagreement). Clustering over a pairwise cosine matrix with a caller threshold; connected components above threshold, the same graph discipline as TextRank, cycle-safe by construction.
 
-**Rubric.** Tested without any model: hand-built vectors with known geometry produce known clusters. Postconditions: every sentence index appears in at most one cluster; every reported pairwise score is above the threshold; empty input yields empty clusters, not an error.
+**Rubric.** Tested without any model: hand-built vectors with known geometry produce known clusters, including the chained case (a near b, b near c, a far from c) asserting one component whose edge list omits the far pair. Postconditions: every sentence index appears in at most one cluster; every reported edge score is above the threshold; cluster membership equals the transitive closure of the reported edges; empty input yields empty clusters, not an error.
 
 ### M5: wiring and the Python crust
 
 The composition root grows the one function that holds both halves (embed the sentence texts, then cluster). The Python surface exposes it behind the same feature; `SemanticClusters` crosses as serialized fields per ADR-0008's channel discipline. Sentence text reaching the embedder has already passed the pipeline's size cap because it came out of `annotate`; no second cap is introduced.
 
-**Rubric.** No PyO3 method on a type that should be data. `From<domain::Error> for PyErr` stays exhaustive if M2 added variants. `maturin develop` then the Python suite passes.
+**Rubric.** No PyO3 method on a type that should be data. `From<domain::Error> for PyErr` stays exhaustive if M2 added variants. `maturin develop` then the Python suite passes. A modelless shape fixture lands in `spec/tests/` in the same change as the crossing (serialized `SemanticClusters` from M4's hand-built vectors), because ADR-0008's lockstep is fixture-with-crossing, not fixture-eventually; M6 then pins only the reference-model conformance fixture.
 
 ### M6: conformance and docs
 
-Spec fixtures pin input sentences, the reference model hash, and expected cluster membership (scores asserted with tolerance, since float geometry varies by target). Book gains an embeddings page stating the tier in the first paragraph; the ROADMAP redundancy entry is updated to record which half shipped; CHANGELOG under Unreleased.
+Spec fixtures pin input sentences, the reference model hash, and expected cluster membership (scores asserted with tolerance, since float geometry varies by target); the shape fixture already landed with M5. Book gains an embeddings page stating the tier in the first paragraph; the ROADMAP redundancy entry is updated to record which half shipped; CHANGELOG under Unreleased.
 
 ---
 
