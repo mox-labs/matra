@@ -30,3 +30,4 @@
   - [I6 Post-publish](plans/i6-post-publish.md)
   - [I7 Structural primitives](plans/i7-structural-primitives.md)
   - [I8 Pipeline surface](plans/i8-pipeline-surface.md)
+  - [I9 Embeddings adapter](plans/i9-embeddings-adapter.md)
