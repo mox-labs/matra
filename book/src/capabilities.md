@@ -96,6 +96,19 @@ Words keep their reading order left to right; height is depth in the tree. `buil
 | `content_tokens()` | non-punctuation tokens |
 | `word_count()` | count of those |
 
+Each `Sentence` also carries six structural primitives, read off the tree once at parse time and shipped as fields:
+
+| Field | What it records |
+|---|---|
+| `negations` | negation cues: the arc carrying `not`, `never`, `no` and the token it negates |
+| `modals` | modal auxiliaries (`may`, `must`, `could`) with the verb they scope |
+| `bare_assertion` | whether the root clause asserts outright, with no modal and no negation on it |
+| `reportings` | reporting constructions: a verb governing a clausal complement, with the subject when one is present (`the author claims that ...`) |
+| `root_adverbials` | adverbials attached to the root, the position evidential markers occupy (`reportedly`, `clearly`) |
+| `hearst_pairs` | hypernym candidates from the six Hearst patterns (`metrics such as readability`), as span pairs with token ids |
+
+Same substrate line as everything else: each names a construction, not a judgment. `reportings` and `root_adverbials` match structure for open word classes, so the filtering lexicon is yours to supply.
+
 Above the sentence sit `Paragraph`, `Section`, and `Document`. Sections carry their heading and level, so the document tree mirrors the document's own outline.
 
 ## 2. Metrics
