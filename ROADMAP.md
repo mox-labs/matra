@@ -117,9 +117,9 @@ The pattern across all of these: capability waits for the consumer that justifie
 
 **One of them is a defect, not an addition.** `vocabulary_ttr` is a raw type-token ratio and TTR falls mechanically as text grows. Measured on this repository: README scores 0.690 against `architecture/design.md` at 0.227, but README has 35 sentences and the other has 266, so most of that gap is length rather than voice. As a cross-document feature it is currently unsound, which matters most for `analyze_directory`, whose whole purpose invites the comparison. Either a length-normalized measure lands beside it (MTLD, MATTR, or standardized TTR) or the limitation is documented on the type. Doing neither leaves a trap.
 
-**Why this is the strongest candidate of anything on this page.** The four faces of voice all map onto shipping output with no hole: agentive onto `nsubj` and `nsubj:pass`, modal onto `aux` and `feats`, structural onto section hierarchy and sentence length, stylistic onto lexical density and compression. That is unlike claim atomization, which needs an LLM, and unlike SMRT derivation, where the Situation facet has no substrate at all.
+**Why this is the strongest candidate of anything on this page.** The four faces of voice all map onto shipping output with no hole: agentive onto `nsubj` and `nsubj:pass`, modal onto `aux` and `feats`, structural onto section hierarchy and sentence length, stylistic onto lexical density and compression. That is unlike claim atomization, which needs an LLM, and unlike deriving a text's situation model, for which no shipping output is a substrate at all.
 
-**Trigger condition.** Met in substance: a named consumer with a documented baseline exists and has been blocked for months. What is missing is confirmation that scribe still wants matra rather than the thin-wrapper alternative its option 4 described. Confirm that, then proceed.
+**Trigger condition.** Met in substance: a named consumer with a documented baseline exists and has been blocked for months. What is missing is confirmation that the consumer still wants matra rather than the thin-wrapper alternative it also considered. Confirm that, then proceed.
 
 ## Self-similarity and redundancy metrics
 

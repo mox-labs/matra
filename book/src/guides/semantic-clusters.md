@@ -1,6 +1,6 @@
 # Semantic clusters
 
-Everything else matra returns is deterministic structure, checkable against the source bytes. This page's output is not: semantic clusters come from a model's opinion about meaning, they cannot be verified against the text, and matra treats that difference structurally. Clusters arrive as a standalone `SemanticClusters` value from a separate call, never as a field on `Document`, and they carry the identity of the model that produced them plus the threshold you chose. That is the deal on this page; the rest is mechanics.
+Everything else matra returns is deterministic structure, checkable against the source bytes. This page's output is not: semantic clusters come from a model's opinion about meaning, they cannot be verified against the text, and matra treats that difference structurally. Clusters arrive as a standalone `SemanticClusters` value from a separate call, never as a field on `Document`, and they carry the identity of the model that produced them plus the threshold you chose.
 
 ## What you get
 

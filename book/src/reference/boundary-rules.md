@@ -1,8 +1,8 @@
 # Boundary rules
 
-Eight rules hold matra's hexagonal architecture in place. This page states each rule, the files it governs, what enforces it, and what that enforcement misses.
+Eight rules hold matra's hexagonal architecture in place.
 
-This page is the source of truth for the eight rules: what each one says, why it exists, what breaks when it is violated, and how much of it is actually enforced. `CLAUDE.md` carries a summary list and points here for the reasoning.
+`CLAUDE.md` carries a summary list and points here for the reasoning.
 
 ## What enforcement means here
 

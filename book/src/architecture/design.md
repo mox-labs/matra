@@ -1,8 +1,6 @@
 # How matra runs
 
-`engine.analyze(Ingest::path("essay.md")?)` yields a `Document` or a `DocumentError`. This page is about what happens in between: what executes in what order, what gets allocated, what survives across calls, and what can fail.
-
-It is written for the reader who is about to use matra in a long-running process, debug an unexpected `None`, or add an adapter. Not for the reader collecting architectural patterns. matra is hexagonal, which is worth exactly one sentence, and this is it.
+`engine.analyze(Ingest::path("essay.md")?)` yields a `Document` or a `DocumentError`.
 
 ## One call, end to end
 
@@ -152,7 +150,7 @@ The two identical sentences are the ones from the regression fixture in `src/lib
 
 Per-paragraph parsing deletes the wiring step instead of improving it. A paragraph's sentences are the return value of the call made on that paragraph's text. The relationship comes from the call graph, so there is nothing left to get wrong.
 
-Two consequences follow. Blockquote paragraphs are skipped at this stage, which is why they reach the end with no sentences and all three metric slots at `None`. And a parse failure in any single paragraph aborts that document with `Error::ParseFailed`; the partial document is dropped, not returned, and in a stream the failure travels as that document's `DocumentError` while the next document proceeds.
+Blockquote paragraphs are skipped at this stage, which is why they reach the end with no sentences and all three metric slots at `None`. And a parse failure in any single paragraph aborts that document with `Error::ParseFailed`; the partial document is dropped, not returned, and in a stream the failure travels as that document's `DocumentError` while the next document proceeds.
 
 ## Measure fills slots, extract is a separate call
 

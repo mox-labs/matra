@@ -58,8 +58,6 @@ Seven gate labels produce this variant. The `what` field carries the label so a 
 
 The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens.
 
-Four details govern when a gate fires.
-
 A document from disk crosses both text gates in sequence: `"file_source"` when `Ingest` reads it, `"input"` inside `annotate`. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
 Calling a provider's `parse` directly bypasses the `"input"` gate. The gate belongs to `Engine::annotate`, not to the `NlpProvider` trait.
@@ -135,8 +133,6 @@ fn report(text: &str, engine: &Engine) {
     }
 }
 ```
-
-The catch-all arm is required, both because `Error` is `#[non_exhaustive]` and because a new variant can appear in a minor release.
 
 ## Python exception mapping
 
