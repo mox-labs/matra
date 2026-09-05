@@ -28,7 +28,13 @@ feature-depth = 1
 [advisories]
 version = 2
 yanked = "deny"
-ignore = []
+ignore = [
+    # RUSTSEC-2024-0436: paste is unmaintained. Compile-time proc-macro
+    # only (no runtime code in the binary), pulled transitively by
+    # tokenizers, which has not migrated off it. Revisit at each
+    # tokenizers upgrade; drop this ignore the release it disappears.
+    "RUSTSEC-2024-0436",
+]
 
 # ---------------------------------------------------------------------------
 # Licenses

@@ -116,7 +116,7 @@ The composition root grows the one function that holds both halves (embed the se
 
 ### M6: conformance and docs
 
-Spec fixtures pin input sentences, the reference model hash, and expected cluster membership; the shape fixture already landed with M5. Because the adapter is bit-deterministic, the conformance fixture asserts exact vectors on native targets rather than tolerances; a WASM crust, when it arrives, inherits the same exact assertion. Book gains an embeddings page stating the tier in the first paragraph; the ROADMAP redundancy entry is updated to record which half shipped; CHANGELOG under Unreleased.
+Spec fixtures pin input sentences, the reference model hash, and expected cluster membership; the shape fixture already landed with M5. Because the adapter is bit-deterministic, the conformance fixture asserts exact vectors on native targets rather than tolerances; a WASM crust, when it arrives, inherits the same exact assertion. Book gains an embeddings page stating the tier in the first paragraph; the architecture module map in `design.md` gains the embed port and its adapter (flagged stale by the M3 review); the ROADMAP redundancy entry is updated to record which half shipped; CHANGELOG under Unreleased.
 
 ---
 

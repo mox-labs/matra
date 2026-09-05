@@ -8,7 +8,9 @@
 //!
 //! This is the ONLY file that imports `safetensors` and `tokenizers`
 //! (boundary rule 4 analog). The inference semantics replicate the Python
-//! reference implementation; the parity fixtures in `spec/` pin them.
+//! reference implementation, pinned by the parity and bit-identity
+//! fixtures in this file's tests; `spec/` conformance fixtures for the
+//! pinned reference model arrive with the docs milestone.
 
 use std::fs;
 use std::path::Path;
@@ -28,11 +30,12 @@ const DEFAULT_MAX_TOKENS: usize = 512;
 
 /// A loaded static embedding model in the model2vec artifact format.
 ///
-/// Construct with [`Model2Vec::from_dir`]. The embedding matrix bytes are
+/// Construct with [`Model2Vec::from_dir`]. Each artifact's bytes are
 /// read once, hashed, and parsed from that same buffer (the read-then-
 /// consume discipline `read_and_verify` established for UDPipe; nothing
-/// re-reads disk between hash and load). The hash is the model identity
-/// that provenance-carrying result types report.
+/// re-reads disk between hash and load). The digest over all three
+/// files is the model identity that provenance-carrying result types
+/// report.
 pub struct Model2Vec {
     /// Row-major `[vocab, dim]` embedding matrix, converted to f32.
     matrix: Vec<f32>,
@@ -48,7 +51,7 @@ pub struct Model2Vec {
     median_token_length: usize,
     /// `normalize` from config.json (default true): L2-normalize outputs.
     normalize: bool,
-    /// SHA-256 of the safetensors bytes, lowercase hex.
+    /// SHA-256 over matrix, tokenizer, and config bytes, lowercase hex.
     model_hash: String,
 }
 
@@ -57,6 +60,10 @@ impl Model2Vec {
     /// `tokenizer.json`, and `config.json`.
     ///
     /// No network is touched; the caller supplies the files (ADR-0010).
+    /// Paths are trusted as given, matching the `Udpipe::from_path`
+    /// precedent for caller-supplied model locations: no size cap (the
+    /// artifacts are the model, and a huge one fails in safetensors
+    /// validation, not in an OOM loop) and no symlink rejection.
     ///
     /// # Errors
     ///
@@ -80,14 +87,22 @@ impl Model2Vec {
         catch_embed_panic(|| Self::from_bytes(&model_bytes, &tokenizer_bytes, &config_bytes))
     }
 
-    /// Parse a model from in-memory artifact bytes. The safetensors bytes
-    /// are hashed here, so the identity always matches what was loaded.
+    /// Parse a model from in-memory artifact bytes. The identity hash is
+    /// computed here over the same buffers that get parsed, so it always
+    /// matches what was loaded.
     fn from_bytes(
         model_bytes: &[u8],
         tokenizer_bytes: &[u8],
         config_bytes: &[u8],
     ) -> domain::Result<Self> {
-        let model_hash = format!("{:x}", Sha256::digest(model_bytes));
+        // All three artifacts determine the output vectors (the tokenizer
+        // decides which rows pool, config's normalize flips the geometry),
+        // so the identity covers all three, in this order.
+        let mut hasher = Sha256::new();
+        hasher.update(model_bytes);
+        hasher.update(tokenizer_bytes);
+        hasher.update(config_bytes);
+        let model_hash = format!("{:x}", hasher.finalize());
 
         let tensors = SafeTensors::deserialize(model_bytes)
             .map_err(|e| Error::ModelInvalid(format!("safetensors: {e}")))?;
@@ -110,6 +125,11 @@ impl Model2Vec {
             )));
         }
         let (vocab, dim) = (emb.shape()[0], emb.shape()[1]);
+        if vocab == 0 || dim == 0 {
+            return Err(Error::ModelInvalid(format!(
+                "embeddings tensor has a zero dimension: shape {vocab}x{dim}"
+            )));
+        }
         let matrix = f32_tensor(emb.dtype(), emb.data(), "embeddings")?;
         if matrix.len() != vocab * dim {
             return Err(Error::ModelInvalid(format!(
@@ -128,20 +148,52 @@ impl Model2Vec {
             Ok(t) => Some(index_tensor(t.dtype(), t.data())?),
             Err(_) => None,
         };
+        // Malformation is loud at load, not silent at embed. Every mapping
+        // entry must be a valid matrix row, and a weights table must cover
+        // the id space it is indexed by (token ids, so the mapping's
+        // length when one exists, the matrix vocab otherwise). The Python
+        // reference tolerates short weights by defaulting to 1.0; a
+        // half-scaled artifact is a defect, not a model, so matra rejects
+        // it (resilience floor over quiet parity on malformed input).
+        if let Some(map) = &mapping {
+            if let Some(&bad) = map.iter().find(|&&row| row >= vocab) {
+                return Err(Error::ModelInvalid(format!(
+                    "mapping entry {bad} outside matrix vocab {vocab}"
+                )));
+            }
+        }
+        if let Some(w) = &weights {
+            let id_space = mapping.as_ref().map_or(vocab, Vec::len);
+            if w.len() < id_space {
+                return Err(Error::ModelInvalid(format!(
+                    "weights tensor length {} does not cover the token id space {id_space}",
+                    w.len()
+                )));
+            }
+        }
 
         let tokenizer = Tokenizer::from_bytes(tokenizer_bytes)
             .map_err(|e| Error::ModelInvalid(format!("tokenizer: {e}")))?;
 
-        // The unknown token's string lives in tokenizer.json under
-        // model.unk_token; the tokenizers API exposes no direct accessor,
-        // so read it from the same JSON the tokenizer was built from.
+        // The unknown token lives in tokenizer.json under the model key;
+        // the tokenizers API exposes no direct accessor, so read it from
+        // the same JSON the tokenizer was built from. WordPiece/BPE store
+        // it as a string (`unk_token`); Unigram stores an index
+        // (`unk_id`). Missing both means no unk filtering, which is the
+        // reference behavior for such tokenizers.
         let tokenizer_json: serde_json::Value = serde_json::from_slice(tokenizer_bytes)
             .map_err(|e| Error::ModelInvalid(format!("tokenizer.json: {e}")))?;
-        let unk_id = tokenizer_json
-            .get("model")
+        let model_obj = tokenizer_json.get("model");
+        let unk_id = model_obj
             .and_then(|m| m.get("unk_token"))
             .and_then(|u| u.as_str())
-            .and_then(|s| tokenizer.token_to_id(s));
+            .and_then(|s| tokenizer.token_to_id(s))
+            .or_else(|| {
+                model_obj
+                    .and_then(|m| m.get("unk_id"))
+                    .and_then(serde_json::Value::as_u64)
+                    .and_then(|v| u32::try_from(v).ok())
+            });
 
         let mut lengths: Vec<usize> = tokenizer
             .get_vocab(false)
@@ -149,6 +201,8 @@ impl Model2Vec {
             .map(|token| token.len())
             .collect();
         lengths.sort_unstable();
+        // Upper middle on even-length vocabularies, matching the Rust
+        // reference; only shifts the truncation heuristic on long inputs.
         let median_token_length = lengths.get(lengths.len() / 2).copied().unwrap_or(1).max(1);
 
         let config: serde_json::Value = serde_json::from_slice(config_bytes)
@@ -171,8 +225,10 @@ impl Model2Vec {
         })
     }
 
-    /// SHA-256 of the embedding matrix file, lowercase hex. The model
-    /// identity for provenance-carrying result types.
+    /// SHA-256 over the three artifact files (matrix, tokenizer, config,
+    /// in that order), lowercase hex. The model identity for
+    /// provenance-carrying result types; all three files determine the
+    /// output vectors, so all three are covered.
     #[must_use]
     pub fn model_hash(&self) -> &str {
         &self.model_hash
@@ -239,6 +295,9 @@ impl Model2Vec {
                     "token id {id} maps to row {row} outside vocab {vocab}"
                 )));
             }
+            // Indexed by original token id, per the reference; load-time
+            // validation makes a miss unreachable, so 1.0 is defensive,
+            // not a silent tolerance.
             let scale = self
                 .weights
                 .as_ref()
@@ -379,7 +438,12 @@ mod tests {
             .collect()
     }
 
-    fn write_model(dir: &Path, weights: Option<&[f32]>, config: &str) {
+    fn write_model_full(
+        dir: &Path,
+        weights: Option<&[f32]>,
+        mapping: Option<&[i64]>,
+        config: &str,
+    ) {
         let emb = tensor_bytes(&MATRIX);
         let mut tensors = HashMap::new();
         tensors.insert(
@@ -394,15 +458,33 @@ mod tests {
                 TensorView::new(Dtype::F32, vec![w.len()], &wbytes).unwrap(),
             );
         }
+        let mbytes: Vec<u8>;
+        if let Some(m) = mapping {
+            mbytes = m.iter().flat_map(|v| v.to_le_bytes()).collect();
+            tensors.insert(
+                "mapping".to_string(),
+                TensorView::new(Dtype::I64, vec![m.len()], &mbytes).unwrap(),
+            );
+        }
         let bytes = safetensors::serialize(&tensors, None).unwrap();
         fs::write(dir.join("model.safetensors"), bytes).unwrap();
         fs::write(dir.join("tokenizer.json"), TOKENIZER_JSON).unwrap();
         fs::write(dir.join("config.json"), config).unwrap();
     }
 
+    fn write_model(dir: &Path, weights: Option<&[f32]>, config: &str) {
+        write_model_full(dir, weights, None, config);
+    }
+
     fn load(weights: Option<&[f32]>, config: &str) -> Model2Vec {
         let dir = tempfile::tempdir().unwrap();
         write_model(dir.path(), weights, config);
+        Model2Vec::from_dir(dir.path()).unwrap()
+    }
+
+    fn load_full(weights: Option<&[f32]>, mapping: Option<&[i64]>, config: &str) -> Model2Vec {
+        let dir = tempfile::tempdir().unwrap();
+        write_model_full(dir.path(), weights, mapping, config);
         Model2Vec::from_dir(dir.path()).unwrap()
     }
 
@@ -464,13 +546,83 @@ mod tests {
     }
 
     #[test]
-    fn model_hash_is_the_sha256_of_the_matrix_file() {
+    fn model_hash_covers_all_three_artifact_files() {
         let dir = tempfile::tempdir().unwrap();
         write_model(dir.path(), None, "{}");
-        let bytes = fs::read(dir.path().join("model.safetensors")).unwrap();
-        let expected = format!("{:x}", Sha256::digest(&bytes));
+        let mut hasher = Sha256::new();
+        for f in ["model.safetensors", "tokenizer.json", "config.json"] {
+            hasher.update(fs::read(dir.path().join(f)).unwrap());
+        }
+        let expected = format!("{:x}", hasher.finalize());
         let m = Model2Vec::from_dir(dir.path()).unwrap();
         assert_eq!(m.model_hash(), expected);
+
+        // A config-only change is a different geometry, so a different
+        // identity, which is the point of covering all three files.
+        let dir2 = tempfile::tempdir().unwrap();
+        write_model(dir2.path(), None, r#"{"normalize": false}"#);
+        let m2 = Model2Vec::from_dir(dir2.path()).unwrap();
+        assert_ne!(m.model_hash(), m2.model_hash());
+    }
+
+    #[test]
+    fn mapping_remaps_token_ids_to_rows() {
+        // Swap hello and world: id 1 -> row 2, id 2 -> row 1.
+        let m = load_full(None, Some(&[0, 2, 1]), r#"{"normalize": false}"#);
+        let out = m.embed(&["hello"]).unwrap();
+        assert_eq!(out[0].0, vec![0.0, 2.0, 0.0, 4.0]);
+    }
+
+    #[test]
+    fn weights_index_by_original_token_id_not_mapped_row() {
+        // Mapping swaps rows; weights[1]=2.0 must scale token id 1
+        // (hello, now gathering row 2), pinning the reference semantics.
+        let m = load_full(
+            Some(&[1.0, 2.0, 1.0]),
+            Some(&[0, 2, 1]),
+            r#"{"normalize": false}"#,
+        );
+        let out = m.embed(&["hello"]).unwrap();
+        assert_eq!(out[0].0, vec![0.0, 4.0, 0.0, 8.0]);
+    }
+
+    #[test]
+    fn mapping_entry_outside_vocab_is_rejected_at_load() {
+        let dir = tempfile::tempdir().unwrap();
+        write_model_full(dir.path(), None, Some(&[0, 3, 1]), "{}");
+        match Model2Vec::from_dir(dir.path()) {
+            Err(Error::ModelInvalid(msg)) => assert!(msg.contains("mapping entry")),
+            other => panic!("expected ModelInvalid, got {:?}", other.map(|_| ())),
+        }
+    }
+
+    #[test]
+    fn short_weights_tensor_is_rejected_at_load() {
+        let dir = tempfile::tempdir().unwrap();
+        write_model(dir.path(), Some(&[1.0, 2.0]), "{}");
+        match Model2Vec::from_dir(dir.path()) {
+            Err(Error::ModelInvalid(msg)) => assert!(msg.contains("weights tensor length")),
+            other => panic!("expected ModelInvalid, got {:?}", other.map(|_| ())),
+        }
+    }
+
+    #[test]
+    fn zero_dimension_matrix_is_rejected_at_load() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut tensors = HashMap::new();
+        let empty: Vec<u8> = Vec::new();
+        tensors.insert(
+            "embeddings".to_string(),
+            TensorView::new(Dtype::F32, vec![3, 0], &empty).unwrap(),
+        );
+        let bytes = safetensors::serialize(&tensors, None).unwrap();
+        fs::write(dir.path().join("model.safetensors"), bytes).unwrap();
+        fs::write(dir.path().join("tokenizer.json"), TOKENIZER_JSON).unwrap();
+        fs::write(dir.path().join("config.json"), "{}").unwrap();
+        match Model2Vec::from_dir(dir.path()) {
+            Err(Error::ModelInvalid(msg)) => assert!(msg.contains("zero dimension")),
+            other => panic!("expected ModelInvalid, got {:?}", other.map(|_| ())),
+        }
     }
 
     #[test]
