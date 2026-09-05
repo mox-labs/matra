@@ -9,6 +9,7 @@ mod yake;
 
 pub use rake::keyphrases as rake_keyphrases;
 pub use semantic::semantic_clusters;
+pub(crate) use textrank::MAX_SENTENCES as MAX_SEMANTIC_SENTENCES;
 pub use textrank::textrank_summarize;
 pub use tfidf::summarize as tfidf_summarize;
 pub use yake::yake_keyphrases;

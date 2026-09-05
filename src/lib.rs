@@ -304,6 +304,17 @@ pub fn embed_and_cluster(
     threshold: f32,
 ) -> domain::Result<domain::SemanticClusters> {
     let texts: Vec<&str> = doc.sentences().map(|s| s.text.as_str()).collect();
+    // The count cap fires before the expensive stage, not after it: an
+    // over-cap document must not run a full embedding pass just to be
+    // rejected by the clustering gate. The same check inside
+    // `extraction::semantic_clusters` still guards the vectors-in path.
+    if texts.len() > extraction::MAX_SEMANTIC_SENTENCES {
+        return Err(domain::Error::InputTooLarge {
+            limit: extraction::MAX_SEMANTIC_SENTENCES,
+            actual: texts.len(),
+            what: "semantic_clusters",
+        });
+    }
     let embeddings = embedder.embed(&texts)?;
     if embeddings.len() != texts.len() {
         return Err(domain::Error::InvalidInput(format!(
@@ -497,7 +508,10 @@ mod python {
             threshold: f32,
             model: &Model2Vec,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let doc = self.document(text, Format::PlainText)?;
+            // Annotated structure suffices; running compose would fill a
+            // metric suite this method immediately discards.
+            let raw = RawDocument::new(text.to_string(), None, Format::PlainText);
+            let doc = self.engine.annotate(&raw).map_err(MatraError)?;
             let result =
                 crate::embed_and_cluster(&doc, &model.inner, threshold).map_err(MatraError)?;
             to_dict(py, &result)
@@ -1053,5 +1067,88 @@ mod tests {
         );
         assert!(!paras[1].sentences.is_empty());
         assert!(!paras[2].sentences.is_empty());
+    }
+
+    // ------------------------------------------------------------------
+    // embed_and_cluster: the composition root's pairing of the halves
+    // ------------------------------------------------------------------
+
+    /// Mock embedder: a fixed vector per call, optionally lying about
+    /// the count to violate the length contract.
+    struct FixedEmbedder {
+        identity: &'static str,
+        /// When set, return this many vectors regardless of input.
+        force_count: Option<usize>,
+    }
+    impl embed::Embedder for FixedEmbedder {
+        fn embed(&self, texts: &[&str]) -> domain::Result<Vec<domain::Embedding>> {
+            let n = self.force_count.unwrap_or(texts.len());
+            Ok((0..n).map(|_| domain::Embedding(vec![1.0, 0.0])).collect())
+        }
+        fn identity(&self) -> &str {
+            self.identity
+        }
+    }
+
+    fn two_sentence_doc() -> Document {
+        let engine = Engine::new(Box::new(DotSplitNlp), standard_decomposers());
+        let raw = domain::RawDocument::new(
+            "One sentence. Another sentence.".to_string(),
+            None,
+            domain::Format::PlainText,
+        );
+        engine.annotate(&raw).expect("annotate")
+    }
+
+    #[test]
+    fn embed_and_cluster_carries_the_embedder_identity() {
+        let doc = two_sentence_doc();
+        let embedder = FixedEmbedder {
+            identity: "the-real-model",
+            force_count: None,
+        };
+        let out = embed_and_cluster(&doc, &embedder, 0.9).expect("cluster");
+        assert_eq!(out.model_hash, "the-real-model");
+        // Identical vectors cluster together, sanity of the plumbing.
+        assert_eq!(out.clusters.len(), 1);
+    }
+
+    #[test]
+    fn embed_and_cluster_rejects_a_length_contract_violation() {
+        let doc = two_sentence_doc();
+        let embedder = FixedEmbedder {
+            identity: "liar",
+            force_count: Some(1),
+        };
+        match embed_and_cluster(&doc, &embedder, 0.9) {
+            Err(domain::Error::InvalidInput(msg)) => {
+                assert!(msg.contains("violating its contract"));
+            }
+            other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
+        }
+    }
+
+    #[test]
+    fn embed_and_cluster_caps_before_embedding() {
+        /// An embedder that panics if reached: the cap must fire first.
+        struct MustNotEmbed;
+        impl embed::Embedder for MustNotEmbed {
+            fn embed(&self, _texts: &[&str]) -> domain::Result<Vec<domain::Embedding>> {
+                panic!("embed ran on an over-cap document");
+            }
+            fn identity(&self) -> &str {
+                "unreached"
+            }
+        }
+        let many = "Word. ".repeat(extraction::MAX_SEMANTIC_SENTENCES + 1);
+        let engine = Engine::new(Box::new(DotSplitNlp), standard_decomposers());
+        let raw = domain::RawDocument::new(many, None, domain::Format::PlainText);
+        let doc = engine.annotate(&raw).expect("annotate");
+        match embed_and_cluster(&doc, &MustNotEmbed, 0.9) {
+            Err(domain::Error::InputTooLarge { what, .. }) => {
+                assert_eq!(what, "semantic_clusters");
+            }
+            other => panic!("expected InputTooLarge, got {:?}", other.map(|_| ())),
+        }
     }
 }
