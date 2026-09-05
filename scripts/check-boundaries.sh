@@ -29,6 +29,7 @@ hits=$(rg -l '(^|\s)use tracing|tracing::' \
     src/source/mod.rs \
     src/decompose/mod.rs \
     src/nlp/mod.rs \
+    src/embed/mod.rs \
     2>/dev/null || true)
 if [ -n "$hits" ]; then
     echo "FAIL (rule 8): tracing imported in domain.rs or a port module"
@@ -37,10 +38,11 @@ if [ -n "$hits" ]; then
 fi
 
 # Rule 3: port modules do not import each other.
-hits=$(rg -l 'use crate::source|use crate::decompose|use crate::nlp' \
+hits=$(rg -l 'use crate::source|use crate::decompose|use crate::nlp|use crate::embed' \
     src/source/mod.rs \
     src/decompose/mod.rs \
     src/nlp/mod.rs \
+    src/embed/mod.rs \
     2>/dev/null || true)
 if [ -n "$hits" ]; then
     echo "FAIL (rule 3): cross-port import detected"

@@ -48,7 +48,7 @@ For how a call actually runs through those layers, read `book/src/architecture/d
 ## Boundary rules
 
 1. `domain.rs` depends only on `serde`, `thiserror`, and `std`. Adding any other dependency requires an ADR.
-2. Port modules (`source/mod.rs`, `decompose/mod.rs`, `nlp/mod.rs`) import only from `domain`.
+2. Port modules (`source/mod.rs`, `decompose/mod.rs`, `nlp/mod.rs`, `embed/mod.rs`) import only from `domain`.
 3. No port module imports another port module.
 4. `nlp/udpipe.rs` is the ONLY file that imports `udpipe_rs`.
 5. `metrics/` and `extraction/` import only from `domain` and `stopwords`.

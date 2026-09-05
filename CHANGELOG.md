@@ -31,6 +31,10 @@ those by hand.
 
 ## [Unreleased]
 
+### Added
+
+- `embed` port: the `Embedder` trait (one method, `embed`, batch in, vectors out, length- and dimension-uniform by contract) and the `domain::Embedding` carrier, a serde-transparent newtype over `Vec<f32>`. Tier 2 channel discipline per ADR-0010: nothing derived from embeddings becomes a field on the deterministic pipeline's types. No adapter ships yet; the model2vec adapter follows.
+
 ## [0.1.0] - 2026-08-21
 
 First release. The surface this version freezes is the one pipeline

@@ -2,6 +2,7 @@
 
 pub mod decompose;
 pub mod domain;
+pub mod embed;
 pub mod extraction;
 pub mod hearst;
 pub mod metrics;
