@@ -48,6 +48,8 @@ pub trait Embedder: Send {
     /// Embed each text. Postcondition: output length equals input length,
     /// and every vector has the same dimension.
     fn embed(&self, texts: &[&str]) -> domain::Result<Vec<Embedding>>;
+    /// Provenance identity, carried into every derived result (M5).
+    fn identity(&self) -> &str;
 }
 
 // embed/model2vec.rs: the adapter, behind the `model2vec` feature.
@@ -55,10 +57,16 @@ pub trait Embedder: Send {
 
 // extraction (or metrics): a pure function over domain types (rule 5 holds)
 pub fn semantic_clusters(
-    sentences: &[Sentence],
     embeddings: &[Embedding],
     threshold: f32,
     model_hash: &str,
+) -> domain::Result<SemanticClusters>
+
+// lib.rs: the composition root's pairing of the two halves (rule 7)
+pub fn embed_and_cluster(
+    doc: &Document,
+    embedder: &dyn Embedder,
+    threshold: f32,
 ) -> domain::Result<SemanticClusters>
 ```
 

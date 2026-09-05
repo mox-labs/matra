@@ -5,15 +5,18 @@
 //! then the other; the composition root owns that pairing. Everything
 //! here is a total computation over the vectors it is handed.
 
-use crate::domain::{
-    Embedding, Error, Result, SemanticCluster, SemanticClusters, SemanticEdge, Sentence,
-};
+use crate::domain::{Embedding, Error, Result, SemanticCluster, SemanticClusters, SemanticEdge};
 
 // The O(n^2) cap: literally TextRank's bound, not a copy of it, so the
 // two cannot drift apart.
 use super::textrank::MAX_SENTENCES;
 
-/// Cluster sentences whose embedding cosine similarity clears `threshold`.
+/// Cluster texts whose embedding cosine similarity clears `threshold`.
+///
+/// Indices in the result are positions in `embeddings`; the caller knows
+/// what each vector stands for (the composition root's
+/// `embed_and_cluster` pairs them with a document's sentences and
+/// validates the correspondence before calling here).
 ///
 /// Clusters are connected components of the above-threshold graph, with
 /// the clearing edges reported alongside the members (see
@@ -28,32 +31,24 @@ use super::textrank::MAX_SENTENCES;
 ///
 /// # Errors
 ///
-/// [`Error::InvalidInput`] when `sentences` and `embeddings` differ in
-/// length, when the embeddings disagree on dimension, or when
-/// `threshold` is not finite. [`Error::InputTooLarge`] (what =
-/// `"semantic_clusters"`) past the O(n^2) cap.
+/// [`Error::InvalidInput`] when the embeddings disagree on dimension,
+/// contain a non-finite value, or when `threshold` is not finite.
+/// [`Error::InputTooLarge`] (what = `"semantic_clusters"`) past the
+/// O(n^2) cap.
 pub fn semantic_clusters(
-    sentences: &[Sentence],
     embeddings: &[Embedding],
     threshold: f32,
     model_hash: &str,
 ) -> Result<SemanticClusters> {
-    if sentences.len() != embeddings.len() {
-        return Err(Error::InvalidInput(format!(
-            "sentences ({}) and embeddings ({}) must have equal length",
-            sentences.len(),
-            embeddings.len()
-        )));
-    }
     if !threshold.is_finite() {
         return Err(Error::InvalidInput(format!(
             "threshold must be finite, got {threshold}"
         )));
     }
-    if sentences.len() > MAX_SENTENCES {
+    if embeddings.len() > MAX_SENTENCES {
         return Err(Error::InputTooLarge {
             limit: MAX_SENTENCES,
-            actual: sentences.len(),
+            actual: embeddings.len(),
             what: "semantic_clusters",
         });
     }
@@ -162,12 +157,6 @@ pub fn semantic_clusters(
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn sentences(n: usize) -> Vec<Sentence> {
-        // Structure is irrelevant to clustering; only the count is used.
-        (0..n)
-            .map(|i| Sentence::new(format!("s{i}"), Vec::new()))
-            .collect()
-    }
 
     fn e(v: &[f32]) -> Embedding {
         Embedding(v.to_vec())
@@ -183,7 +172,7 @@ mod tests {
             e(&[0.9239, 0.3827]), // ~cos 22.5 deg from a
             e(&[f, f]),           // cos 45 deg from a, ~22.5 from b
         ];
-        let out = semantic_clusters(&sentences(3), &emb, 0.92, "h").unwrap();
+        let out = semantic_clusters(&emb, 0.92, "h").unwrap();
         assert_eq!(out.clusters.len(), 1);
         let c = &out.clusters[0];
         assert_eq!(c.members, vec![0, 1, 2]);
@@ -200,7 +189,7 @@ mod tests {
             e(&[0.0, 1.0]),
             e(&[-1.0, 0.0]),
         ];
-        let out = semantic_clusters(&sentences(5), &emb, 0.99, "h").unwrap();
+        let out = semantic_clusters(&emb, 0.99, "h").unwrap();
         // Two clusters; index 4 is a singleton and appears nowhere.
         assert_eq!(out.clusters.len(), 2);
         let mut seen = std::collections::HashSet::new();
@@ -241,7 +230,7 @@ mod tests {
 
     #[test]
     fn empty_input_yields_empty_clusters_not_an_error() {
-        let out = semantic_clusters(&[], &[], 0.8, "h").unwrap();
+        let out = semantic_clusters(&[], 0.8, "h").unwrap();
         assert!(out.clusters.is_empty());
         assert_eq!(out.model_hash, "h");
     }
@@ -249,23 +238,14 @@ mod tests {
     #[test]
     fn zero_norm_embeddings_get_no_edges_even_at_threshold_zero() {
         let emb = [e(&[0.0, 0.0]), e(&[0.0, 0.0]), e(&[1.0, 0.0])];
-        let out = semantic_clusters(&sentences(3), &emb, 0.0, "h").unwrap();
+        let out = semantic_clusters(&emb, 0.0, "h").unwrap();
         assert!(out.clusters.is_empty());
-    }
-
-    #[test]
-    fn length_mismatch_is_invalid_input() {
-        let emb = [e(&[1.0, 0.0])];
-        match semantic_clusters(&sentences(2), &emb, 0.8, "h") {
-            Err(Error::InvalidInput(msg)) => assert!(msg.contains("equal length")),
-            other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
-        }
     }
 
     #[test]
     fn dimension_disagreement_is_invalid_input() {
         let emb = [e(&[1.0, 0.0]), e(&[1.0, 0.0, 0.0])];
-        match semantic_clusters(&sentences(2), &emb, 0.8, "h") {
+        match semantic_clusters(&emb, 0.8, "h") {
             Err(Error::InvalidInput(msg)) => assert!(msg.contains("dimension")),
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
@@ -274,7 +254,7 @@ mod tests {
     #[test]
     fn non_finite_embedding_value_is_invalid_input() {
         let emb = [e(&[1.0, 0.0]), e(&[f32::NAN, 0.0])];
-        match semantic_clusters(&sentences(2), &emb, 0.8, "h") {
+        match semantic_clusters(&emb, 0.8, "h") {
             Err(Error::InvalidInput(msg)) => assert!(msg.contains("non-finite")),
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
@@ -282,7 +262,7 @@ mod tests {
 
     #[test]
     fn non_finite_threshold_is_invalid_input() {
-        match semantic_clusters(&[], &[], f32::NAN, "h") {
+        match semantic_clusters(&[], f32::NAN, "h") {
             Err(Error::InvalidInput(msg)) => assert!(msg.contains("finite")),
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
@@ -292,7 +272,7 @@ mod tests {
     fn sentence_cap_is_enforced_with_its_own_label() {
         let n = MAX_SENTENCES + 1;
         let emb: Vec<Embedding> = (0..n).map(|_| e(&[1.0])).collect();
-        match semantic_clusters(&sentences(n), &emb, 0.9, "h") {
+        match semantic_clusters(&emb, 0.9, "h") {
             Err(Error::InputTooLarge { what, .. }) => assert_eq!(what, "semantic_clusters"),
             other => panic!("expected InputTooLarge, got {:?}", other.map(|_| ())),
         }
@@ -306,7 +286,7 @@ mod tests {
             e(&[0.0, 1.0]),
             e(&[1.0, 0.0]),
         ];
-        let out = semantic_clusters(&sentences(4), &emb, 0.99, "h").unwrap();
+        let out = semantic_clusters(&emb, 0.99, "h").unwrap();
         assert_eq!(out.clusters[0].members, vec![0, 2]);
         assert_eq!(out.clusters[1].members, vec![1, 3]);
     }
