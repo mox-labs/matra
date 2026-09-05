@@ -135,12 +135,25 @@ The shape, all deterministic and provenance-preserving:
 | Skeleton repetition: sentences sharing root-verb lemma plus subject and object lemmas | qualitative |
 | Opener formulae: repeated sentence-initial lemma sequences | quantitative |
 | Document-scope compression ratio, closing the per-paragraph measure's cross-paragraph blind spot | quantitative |
+| POS-sequence compression ratio: the same compression measure over the tag sequence, catching structural repetition independent of vocabulary (Shaib et al. 2024) | quantitative |
+| Syntactic template rate: recurring POS n-grams, the published operationalization of templated LLM output (Shaib et al., EMNLP 2024) | quantitative |
+| Span recurrence: long token spans repeating verbatim, the loop-degeneration signature | qualitative |
 
-matra reports the clusters and the numbers; whether they constitute fluff is the consumer's reading. The word never appears in the output. Synonym-level paraphrase (different vocabulary, same meaning) is out of reach of lexical overlap by design; catching it needs semantic similarity, which sits above the verifiable tier and would only ever arrive as a specialist adapter with its tier stated.
+matra reports the clusters and the numbers; whether they constitute fluff is the consumer's reading. The word never appears in the output. That restraint is now empirical as well as principled: the 2026 slop-measurement literature found repetition and templatedness are weak predictors of human quality judgments on their own, so these are structural facts for a consumer's argument, never a verdict. Synonym-level paraphrase (different vocabulary, same meaning) is out of reach of lexical overlap by design; catching it needs semantic similarity, which sits above the verifiable tier and arrives as the specialist adapter planned in [i9](https://github.com/mox-labs/matra/blob/main/book/src/plans/i9-embeddings-adapter.md). Published similarity thresholds for that task span 0.67 to 0.9 with no consensus, which is why every threshold here is caller-supplied.
 
 **Where it lands.** Mostly paid for already: `extraction/textrank.rs` builds a pairwise sentence-similarity matrix and projects it down to centrality ranks; re-projecting the same matrix as clusters is the core of this capability. Thresholds are caller-supplied parameters, not constants matra pretends to know.
 
 **Trigger condition. FIRED, 2026-08-21.** A concrete consumer pattern was named that field access cannot serve: quantifying restatement across a document for LLM-output auditing. Design against I7's primitives and the rule-vocabulary shape; an ADR settles whether this is a metric family, an extractor, or the first rule pack.
+
+## Information density
+
+**What it is.** Deterministic measures of how much a text says per word, the complement of the redundancy family: redundancy catches the same thing said twice, density catches little said at length. The anchor is propositional idea density, a validated psycholinguistics measure (propositions per word) with two published computational forms. CPIDR counts propositions from Penn Treebank tags, which UDPipe already emits in `Token::xpos`; DEPID counts them from dependency relations, which is matra's core output, and agrees with human raters slightly better than CPIDR does. DEPID-R, the variant counting distinct relation-lemma triples rather than tokens of them, catches fluent-but-repetitive text and costs nothing extra once lemmas are in hand. Around the anchor sit smaller settled measures that are direct tree walks: mean dependency distance, modifiers per noun phrase, words before the main verb, content-to-function ratio.
+
+**Where it lands.** Metric functions over `Document`, same family as the shipping five. The DEPID relation inventory is Stanford-style, so an explicit mapping to UD relations is part of the design, and three counting rules the literature leaves genuinely unsettled (direct objects, coordinating conjunctions, the denominator) get settled by ADR rather than inherited silently. The reference implementations are GPL, so the derivation is clean-room from the published rules, and exact numeric parity with them is a non-goal. No implementation of idea density exists for CoNLL-U input in any language; this would be the first.
+
+**What stays out, and why.** Hedging and booster density need a lexicon, and no canonical machine-readable hedge list exists; per the open-class precedent (`reportings_in`), any such lexicon is caller-supplied data, never shipped as if authoritative. Surprisal needs frequency norms or a language model, and sycophancy detection has no deterministic path at all; both gaps are recorded rather than simulated.
+
+**Trigger condition. FIRED, 2026-09-04.** The same LLM-output-auditing consumer pattern that fired the redundancy entry names low density as the second failure mode, and the 2026-09-04 landscape survey (filed in the maintainer's research drafts) established implementability from matra's existing parse output. Design together with the redundancy family; the same ADR should place both.
 
 ## Configuration-driven invocation
 
