@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  MDBOOK_VERSION: 0.4.40
-  MDBOOK_MERMAID_VERSION: 0.14.0
+  # Must support edition = "2024" in book.toml; 0.4.x does not.
+  MDBOOK_VERSION: 0.5.3
 
 jobs:
   build:
@@ -34,18 +34,15 @@ jobs:
 
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5  # v2
 
-      - name: Install mdbook + plugins
+      # No mermaid: diagrams are hand-authored inline SVG, and the plugin's
+      # install step would re-add the preprocessor entries book/book.toml
+      # deliberately removed (restore instructions live in that file).
+      - name: Install mdbook
         run: |
           mkdir -p "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           curl -sSL "https://github.com/rust-lang/mdBook/releases/download/v${MDBOOK_VERSION}/mdbook-v${MDBOOK_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
             | tar -xz -C "$HOME/.local/bin"
-          curl -sSL "https://github.com/badboy/mdbook-mermaid/releases/download/v${MDBOOK_MERMAID_VERSION}/mdbook-mermaid-v${MDBOOK_MERMAID_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
-            | tar -xz -C "$HOME/.local/bin"
-
-      - name: Install mermaid assets
-        working-directory: book
-        run: mdbook-mermaid install .
 
       - name: Build mdbook
         working-directory: book
