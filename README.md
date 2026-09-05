@@ -12,16 +12,15 @@ A pure, performant, ACE-aligned NLP library: **A**daptable, **C**omposable, **E*
 
 ## Install
 
-Not yet published to crates.io or PyPI. Build from source:
-
 ```bash
 # Rust
-git clone https://github.com/mox-labs/matra && cd matra
-cargo build
+cargo add matra
 
-# Python (requires maturin)
-maturin develop
+# Python
+pip install matra
 ```
+
+Wheels ship for Linux x86_64 and macOS (Intel and Apple Silicon). Anything else builds from the sdist, which needs a Rust toolchain.
 
 ## Usage (Rust)
 
