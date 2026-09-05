@@ -93,7 +93,7 @@ Version pins are settled here against the live crates (candle-core, candle-trans
 
 `semantic_clusters` is total over its inputs and returns `Err` only on contract violation (length mismatch between sentences and embeddings, dimension disagreement). Clustering over a pairwise cosine matrix with a caller threshold; connected components above threshold, the same graph discipline as TextRank, cycle-safe by construction.
 
-**Rubric.** Tested without any model: hand-built vectors with known geometry produce known clusters, including the chained case (a near b, b near c, a far from c) asserting one component whose edge list omits the far pair. Postconditions: every sentence index appears in at most one cluster; every reported edge score is above the threshold; cluster membership equals the transitive closure of the reported edges; empty input yields empty clusters, not an error.
+**Rubric.** Tested without any model: hand-built vectors with known geometry produce known clusters, including the chained case (a near b, b near c, a far from c) asserting one component whose edge list omits the far pair. Postconditions: every sentence index appears in at most one cluster; every reported edge score is above the threshold; cluster membership equals the transitive closure of the reported edges; empty input yields empty clusters, not an error. A consequence the type's docs state outright: a sentence with no above-threshold edge appears in no cluster, so singletons are excluded by construction and "unclustered" is a meaningful consumer count.
 
 ### M5: wiring and the Python crust
 
