@@ -23,6 +23,14 @@ if [ -n "$hits" ]; then
     fail=1
 fi
 
+# Rule 4 analog: only embed/model2vec.rs imports safetensors and tokenizers.
+hits=$(rg -l 'use safetensors|safetensors::|use tokenizers|tokenizers::' src/ --glob '!src/embed/model2vec.rs' 2>/dev/null || true)
+if [ -n "$hits" ]; then
+    echo "FAIL (rule 4 analog): safetensors/tokenizers imported outside src/embed/model2vec.rs"
+    echo "$hits" | sed 's/^/  /'
+    fail=1
+fi
+
 # Rule 8: tracing forbidden in domain.rs and port modules.
 hits=$(rg -l '(^|\s)use tracing|tracing::' \
     src/domain.rs \

@@ -22,12 +22,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        features: [default, no-default-features]
+        features: [default, no-default-features, model2vec]
         include:
           - features: default
             flags: ""
           - features: no-default-features
             flags: "--no-default-features"
+          # The adapter's tests, including the cross-target bit-identity
+          # assertion, which only means something because this lane runs
+          # on both x86_64 (ubuntu) and aarch64 (macos).
+          - features: model2vec
+            flags: "--no-default-features --features model2vec"
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
@@ -69,6 +74,26 @@ jobs:
         run: cargo check --all-targets --all-features
       - name: cargo check (MSRV, no default features)
         run: cargo check --all-targets --no-default-features
+
+  wasm32:
+    # The WASM constraint made mechanical (ADR-0010): the core and the
+    # model2vec adapter must keep compiling for wasm32-unknown-unknown
+    # with no C FFI in the closure.
+    name: wasm32 check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9  # master
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5  # v2
+      - name: cargo check (wasm32, core)
+        run: cargo check --no-default-features --target wasm32-unknown-unknown
+      - name: cargo check (wasm32, model2vec adapter)
+        run: cargo check --no-default-features --features model2vec --target wasm32-unknown-unknown
 
   deny:
     name: cargo-deny

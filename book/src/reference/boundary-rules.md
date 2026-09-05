@@ -65,6 +65,8 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 **Enforcement.** `scripts/check-boundaries.sh` searches `src/` for `use udpipe_rs` and `udpipe_rs::`, excluding `src/nlp/udpipe.rs`. It cannot see re-exports: a `pub use udpipe_rs::Model;` inside the adapter would let any other file name the C-backed type while the check stays green. Review reads for re-exports and for any `udpipe_rs` type appearing in a signature outside that file.
 
+**The analog.** `src/embed/model2vec.rs` is the only file that imports `safetensors` and `tokenizers`, enforced by the same script with the same re-export blind spot. Those crates are pure Rust, so the confinement is not a C panic boundary; it is what keeps the adapter swappable and the model-format vocabulary out of every other file's reach. A second embedding backend gets its own adapter file with its own confinement line.
+
 ## Rule 5: metrics, extraction, and structure readers stay pure
 
 **The rule.** No file under `src/metrics/` or `src/extraction/`, and no structure-reading module (`src/hearst.rs`), imports from any crate module other than `crate::domain` and `crate::stopwords`.

@@ -10,6 +10,9 @@
 //! channel discipline: nothing derived from embeddings becomes a field on
 //! the deterministic pipeline's types.
 
+#[cfg(feature = "model2vec")]
+pub mod model2vec;
+
 use crate::domain;
 
 /// Any embedding provider implements this. Consumers depend on this trait,
