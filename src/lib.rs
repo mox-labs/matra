@@ -550,6 +550,15 @@ mod python {
         fn dimensions(&self) -> usize {
             self.inner.dimensions()
         }
+
+        /// Embed each text into a vector. One vector per text, in
+        /// order, all of `dimensions` length.
+        fn embed(&self, texts: Vec<String>) -> PyResult<Vec<Vec<f32>>> {
+            use crate::embed::Embedder;
+            let refs: Vec<&str> = texts.iter().map(String::as_str).collect();
+            let out = self.inner.embed(&refs).map_err(MatraError)?;
+            Ok(out.into_iter().map(|e| e.0).collect())
+        }
     }
 
     /// Cluster caller-supplied embedding vectors at `threshold`,

@@ -14,6 +14,7 @@
 - [Rust](guides/rust.md)
 - [Python](guides/python.md)
 - [CLI](guides/cli.md)
+- [Semantic clusters](guides/semantic-clusters.md)
 
 # Reference
 

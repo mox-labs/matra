@@ -11,6 +11,7 @@ Architecture is a sequence of decisions across iterations. This file is the chan
 | I8 | Three stages (`ingest -> decompose -> compose`), `abstract` reserved, the six entry points deleted for `Ingest` + `Engine`. ADR-0007 supersedes ADR-0002 | shipped 2026-08-21 |
 | I2 | Resilience floor (size caps, symlink rejection, atomic download, TOCTOU closure, `catch_unwind` panic boundary, O(n) tree_depth, parse-per-paragraph) | shipped |
 | I7 | Structural primitives are fields (ADR-0008): derivations cross FFI as serde-visible data computed once at a pipeline choke point; views over data already crossing stay methods (ADR-0009). Five primitives landed on that channel: negation cues, modals plus the bare-assertion discriminator, reporting constructions, root adverbials, Hearst span pairs | shipped 2026-08-21 |
+| I9 | The Tier-2 channel (ADR-0010): embeddings behind the `Embedder` port with provenance identity, the model2vec static adapter (bit-deterministic, wasm-clean), `semantic_clusters` as connected components carrying their edges, `embed_and_cluster` as the composition-root pairing. Adapter features name their backend | shipped 2026-09-05 |
 
 Future iterations are tracked in `book/src/plans/`. Past iterations are not rewritten; commitments only get superseded by new ADRs, never edited out.
 

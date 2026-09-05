@@ -9,10 +9,13 @@ denote the same f32 while differing as f64.
 """
 
 import json
+import os
 import struct
 from pathlib import Path
 
-from matra import semantic_clusters
+import pytest
+
+from matra import Model2Vec, semantic_clusters
 
 SPEC = Path(__file__).resolve().parents[2] / "spec" / "tests" / "semantic" / "clusters.json"
 
@@ -38,3 +41,38 @@ def test_semantic_clusters_matches_the_shape_fixture() -> None:
             assert ge["a"] == ee["a"]
             assert ge["b"] == ee["b"]
             assert as_f32(ge["score"]) == as_f32(ee["score"])
+
+
+REF = SPEC.parent / "reference-model.json"
+
+
+@pytest.mark.model
+def test_reference_model_vectors_and_clusters_are_exact() -> None:
+    """Reference-model conformance (i9 M6): the Python crust reproduces
+    the pinned potion-base-8M expectations exactly. The adapter is
+    bit-deterministic, so cluster scores compare exactly in f32 space.
+    Requires the model at ~/.matra/models/potion-base-8M (or
+    MATRA_MODEL2VEC_DIR).
+    """
+    fixture = json.loads(REF.read_text())
+    model_dir = os.environ.get(
+        "MATRA_MODEL2VEC_DIR",
+        str(Path.home() / ".matra" / "models" / "potion-base-8M"),
+    )
+    model = Model2Vec.from_dir(model_dir)
+    assert model.model_hash == fixture["model"]["artifact_hash"]
+    assert model.dimensions == fixture["model"]["dimensions"]
+
+    vectors = model.embed(fixture["inputs"])
+    assert all(len(v) == model.dimensions for v in vectors)
+
+    for case in fixture["cases"]:
+        got = semantic_clusters(vectors, case["threshold"], model.model_hash)
+        expect = case["clusters"]
+        assert len(got["clusters"]) == len(expect)
+        for g, e in zip(got["clusters"], expect):
+            assert g["members"] == e["members"]
+            assert len(g["edges"]) == len(e["edges"])
+            for ge, ee in zip(g["edges"], e["edges"]):
+                assert (ge["a"], ge["b"]) == (ee["a"], ee["b"])
+                assert as_f32(ge["score"]) == as_f32(ee["score"])
