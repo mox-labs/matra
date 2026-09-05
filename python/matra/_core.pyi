@@ -147,6 +147,15 @@ class Model2Vec:
         """Dimensions of every vector this model produces."""
         ...
 
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        """Embed each text into a vector: one per text, in order, all
+        of `dimensions` length.
+
+        Raises:
+            RuntimeError: embedding failed.
+        """
+        ...
+
 def semantic_clusters(
     embeddings: list[list[float]], threshold: float, model_hash: str
 ) -> SemanticClusters:

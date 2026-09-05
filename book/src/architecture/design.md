@@ -261,65 +261,76 @@ Directory reads fail differently. The stream yields successes and per-document f
 <text class="fp" x="120" y="22">src/bin/matra.rs</text>
 <text class="sub" x="120" y="33">consumer of the public API, feature: cli</text>
 <line class="dep" x1="120" y1="38" x2="120" y2="54" marker-end="url(#mx-mod-a)"/>
-<rect class="band" x="20" y="58" width="680" height="36" rx="4"/>
-<text class="fp" x="360" y="74">src/lib.rs</text>
-<text class="sub" x="360" y="87">declares every module, and is the only file that names every adapter and every port</text>
-<line class="dep" x1="360" y1="94" x2="360" y2="102"/>
-<line class="dep" x1="90" y1="102" x2="609" y2="102"/>
-<line class="dep" x1="90" y1="102" x2="90" y2="116" marker-end="url(#mx-mod-a)"/>
-<line class="dep" x1="256" y1="102" x2="256" y2="116" marker-end="url(#mx-mod-a)"/>
-<line class="dep" x1="422" y1="102" x2="422" y2="116" marker-end="url(#mx-mod-a)"/>
-<line class="dep" x1="609" y1="102" x2="609" y2="116" marker-end="url(#mx-mod-a)"/>
-<rect class="box" x="20" y="120" width="140" height="26" rx="4"/>
-<text class="fp" x="90" y="137">source/directory.rs</text>
-<rect class="box" x="44" y="160" width="116" height="26" rx="4"/>
-<text class="fp" x="102" y="177">source/file.rs</text>
-<line class="dep" x1="100" y1="146" x2="100" y2="158" marker-end="url(#mx-mod-a)"/>
-<text class="nt" x="106" y="156">delegates</text>
-<rect class="box" x="186" y="120" width="140" height="26" rx="4"/>
-<text class="fp" x="256" y="137">decompose/markdown.rs</text>
-<rect class="box" x="210" y="160" width="116" height="26" rx="4"/>
-<text class="fp" x="268" y="177">decompose/plain.rs</text>
-<rect class="box" x="352" y="120" width="140" height="46" rx="4"/>
-<text class="fp" x="422" y="136">nlp/udpipe.rs</text>
-<text class="sub" x="422" y="148">the only importer of udpipe_rs</text>
-<text class="sub" x="422" y="159">feature: udpipe</text>
-<rect class="box" x="518" y="120" width="182" height="26" rx="4"/>
-<text class="fp" x="609" y="137">metrics/</text>
-<rect class="box" x="542" y="160" width="158" height="26" rx="4"/>
-<text class="fp" x="621" y="177">extraction/</text>
-<line class="dep" x1="32" y1="146" x2="32" y2="206" marker-end="url(#mx-mod-a)"/>
-<line class="dep" x1="102" y1="186" x2="102" y2="206" marker-end="url(#mx-mod-a)"/>
-<line class="dep" x1="198" y1="146" x2="198" y2="206" marker-end="url(#mx-mod-a)"/>
-<line class="dep" x1="268" y1="186" x2="268" y2="206" marker-end="url(#mx-mod-a)"/>
-<line class="dep" x1="422" y1="166" x2="422" y2="206" marker-end="url(#mx-mod-a)"/>
-<rect class="box" x="20" y="210" width="140" height="46" rx="4"/>
-<text class="fp" x="90" y="226">source/mod.rs</text>
-<text class="tr" x="90" y="238">trait Source</text>
-<text class="sub" x="90" y="250">chosen statically in lib.rs</text>
-<rect class="box" x="186" y="210" width="140" height="46" rx="4"/>
-<text class="fp" x="256" y="226">decompose/mod.rs</text>
-<text class="tr" x="256" y="238">trait Decomposer</text>
-<text class="sub" x="256" y="250">chosen statically in lib.rs</text>
-<rect class="box" x="352" y="210" width="140" height="46" rx="4"/>
-<text class="fp" x="422" y="226">nlp/mod.rs</text>
-<text class="tr" x="422" y="238">trait NlpProvider</text>
-<text class="sub" x="422" y="250">&amp;dyn, chosen at runtime</text>
-<text class="sub" x="590" y="232">no port, no trait</text>
-<line class="dep" x1="528" y1="146" x2="528" y2="286" marker-end="url(#mx-mod-a)"/>
-<line class="dep" x1="690" y1="186" x2="690" y2="286" marker-end="url(#mx-mod-a)"/>
-<text class="sub" x="609" y="270">domain and stopwords only</text>
-<line class="dep" x1="90" y1="256" x2="90" y2="286" marker-end="url(#mx-mod-a)"/>
-<line class="dep" x1="256" y1="256" x2="256" y2="286" marker-end="url(#mx-mod-a)"/>
-<line class="dep" x1="422" y1="256" x2="422" y2="286" marker-end="url(#mx-mod-a)"/>
-<rect class="band" x="20" y="290" width="680" height="36" rx="4"/>
-<text class="fp" x="360" y="306">src/domain.rs</text>
-<text class="sub" x="360" y="319">serde · thiserror · std, and nothing else</text>
+<rect class="band" x="16" y="58" width="700" height="36" rx="4"/>
+<text class="fp" x="366" y="74">src/lib.rs</text>
+<text class="sub" x="366" y="87">declares every module, and is the only file that names every adapter and every port</text>
+<line class="dep" x1="366" y1="94" x2="366" y2="102"/>
+<line class="dep" x1="80" y1="102" x2="648" y2="102"/>
+<line class="dep" x1="80" y1="102" x2="80" y2="116" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="222" y1="102" x2="222" y2="116" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="364" y1="102" x2="364" y2="116" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="506" y1="102" x2="506" y2="116" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="648" y1="102" x2="648" y2="116" marker-end="url(#mx-mod-a)"/>
+<rect class="box" x="16" y="120" width="128" height="26" rx="4"/>
+<text class="fp" x="80" y="137">source/directory.rs</text>
+<rect class="box" x="40" y="160" width="104" height="26" rx="4"/>
+<text class="fp" x="92" y="177">source/file.rs</text>
+<line class="dep" x1="90" y1="146" x2="90" y2="158" marker-end="url(#mx-mod-a)"/>
+<text class="nt" x="96" y="156">delegates</text>
+<rect class="box" x="158" y="120" width="128" height="26" rx="4"/>
+<text class="fp" x="222" y="136">decompose/markdown.rs</text>
+<rect class="box" x="182" y="160" width="104" height="26" rx="4"/>
+<text class="fp" x="234" y="177">decompose/plain.rs</text>
+<rect class="box" x="300" y="120" width="128" height="46" rx="4"/>
+<text class="fp" x="364" y="134">nlp/udpipe.rs</text>
+<text class="sub" x="364" y="146">the only importer of udpipe_rs</text>
+<text class="sub" x="364" y="158">feature: udpipe</text>
+<rect class="box" x="442" y="120" width="128" height="46" rx="4"/>
+<text class="fp" x="506" y="134">embed/model2vec.rs</text>
+<text class="sub" x="506" y="146">sole importer of safetensors,</text>
+<text class="sub" x="506" y="157">tokenizers · feature: model2vec</text>
+<rect class="box" x="584" y="120" width="132" height="26" rx="4"/>
+<text class="fp" x="650" y="137">metrics/</text>
+<rect class="box" x="600" y="160" width="116" height="26" rx="4"/>
+<text class="fp" x="658" y="177">extraction/</text>
+<line class="dep" x1="28" y1="146" x2="28" y2="206" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="92" y1="186" x2="92" y2="206" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="170" y1="146" x2="170" y2="206" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="234" y1="186" x2="234" y2="206" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="364" y1="166" x2="364" y2="206" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="506" y1="166" x2="506" y2="206" marker-end="url(#mx-mod-a)"/>
+<rect class="box" x="16" y="210" width="128" height="46" rx="4"/>
+<text class="fp" x="80" y="226">source/mod.rs</text>
+<text class="tr" x="80" y="238">trait Source</text>
+<text class="sub" x="80" y="250">chosen statically in lib.rs</text>
+<rect class="box" x="158" y="210" width="128" height="46" rx="4"/>
+<text class="fp" x="222" y="226">decompose/mod.rs</text>
+<text class="tr" x="222" y="238">trait Decomposer</text>
+<text class="sub" x="222" y="250">chosen statically in lib.rs</text>
+<rect class="box" x="300" y="210" width="128" height="46" rx="4"/>
+<text class="fp" x="364" y="226">nlp/mod.rs</text>
+<text class="tr" x="364" y="238">trait NlpProvider</text>
+<text class="sub" x="364" y="250">&amp;dyn, chosen at runtime</text>
+<rect class="box" x="442" y="210" width="128" height="46" rx="4"/>
+<text class="fp" x="506" y="226">embed/mod.rs</text>
+<text class="tr" x="506" y="238">trait Embedder</text>
+<text class="sub" x="506" y="250">&amp;dyn, chosen at runtime</text>
+<text class="sub" x="650" y="232">no port, no trait</text>
+<line class="dep" x1="592" y1="146" x2="592" y2="286" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="708" y1="186" x2="708" y2="286" marker-end="url(#mx-mod-a)"/>
+<text class="sub" x="650" y="270">domain and stopwords only</text>
+<line class="dep" x1="80" y1="256" x2="80" y2="286" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="222" y1="256" x2="222" y2="286" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="364" y1="256" x2="364" y2="286" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="506" y1="256" x2="506" y2="286" marker-end="url(#mx-mod-a)"/>
+<rect class="band" x="16" y="290" width="700" height="36" rx="4"/>
+<text class="fp" x="366" y="306">src/domain.rs</text>
+<text class="sub" x="366" y="319">serde · thiserror · std, and nothing else</text>
 </svg>
 
 Every arrow points down, and that is the rule: a module imports from the row below it, never the row above. The one arrow that runs sideways is `source/directory.rs` reaching into `source/file.rs`, inside a single port, so a directory read inherits the same symlink and size guards rather than reimplementing them.
 
-Two seams are dispatched at runtime. `NlpProvider` has a single method, and the engine holds it as `Box<dyn NlpProvider>`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. That is what makes UDPipe an implementation detail rather than the library. And `Decomposer` dispatch is a value: the engine's `Decomposers` table maps each `Format` to a boxed decomposer, `standard_decomposers()` is merely the table this build ships, and `Decomposers::new().with(format, decomposer)` builds a different one. Registering a format is data flow, not a code change.
+Three seams are dispatched at runtime. `NlpProvider` has a single method, and the engine holds it as `Box<dyn NlpProvider>`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. `Embedder` is the same shape one tier over: `embed_and_cluster` takes it as `&dyn Embedder`, and its `identity` travels into every result so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library. And `Decomposer` dispatch is a value: the engine's `Decomposers` table maps each `Format` to a boxed decomposer, `standard_decomposers()` is merely the table this build ships, and `Decomposers::new().with(format, decomposer)` builds a different one. Registering a format is data flow, not a code change.
 
 `Source` stays static: `Ingest`'s constructors name the file and directory adapters. To ingest from somewhere else, construct `RawDocument` values yourself and feed them to `Engine::analyze` as `Ok` items; the pipeline does not care where they came from.
 

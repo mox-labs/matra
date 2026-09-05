@@ -1,0 +1,37 @@
+{
+  "name": "semantic-clusters-reference-model",
+  "description": "Reference-model conformance (i9 M6): potion-base-8M, pinned by the adapter's three-file digest. The adapter is bit-deterministic, so vector expectations are exact: the SHA-256 over the little-endian f32 bytes of all four vectors in order must match on every target and in every crust. The inputs are chosen so 0 and 1 are paraphrases of each other (active vs passive voice, different wording), 2 shares topic vocabulary without restating, and 3 is unrelated.",
+  "model": {
+    "name": "potion-base-8M",
+    "source": "https://huggingface.co/minishlab/potion-base-8M",
+    "artifact_hash": "81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4",
+    "dimensions": 256
+  },
+  "inputs": [
+    "The committee approved the proposal without debate.",
+    "The proposal was approved by the committee with no discussion.",
+    "Three amendments were submitted by the working group.",
+    "Rainfall in the northern basin doubled last spring."
+  ],
+  "vectors_sha256": "4556c15850502c5f46698384f0a2687e2565133eeeb1157662e165d30098ed5f",
+  "cases": [
+    {
+      "threshold": 0.6,
+      "clusters": [
+        {
+          "members": [0, 1],
+          "edges": [{ "a": 0, "b": 1, "score": 0.88515013 }]
+        }
+      ]
+    },
+    {
+      "threshold": 0.85,
+      "clusters": [
+        {
+          "members": [0, 1],
+          "edges": [{ "a": 0, "b": 1, "score": 0.88515013 }]
+        }
+      ]
+    }
+  ]
+}

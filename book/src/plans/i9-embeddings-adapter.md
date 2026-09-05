@@ -1,5 +1,11 @@
 # I9: Embeddings as a specialist adapter
 
+> **Shipped, 2026-09-05.** All six milestones landed across PRs #51 to
+> #56; [ADR-0010](https://github.com/mox-labs/matra/blob/main/docs/decisions/0010-embeddings-adapter.md)
+> records the decisions and its M5 amendment. The shape fixture and the
+> pinned reference-model conformance live in `spec/tests/semantic/`.
+> This plan stays as the reasoning trail and the amendment record.
+
 **Boundary:** first post-publish capability. Additive only; 0.1.0 froze the surface, so nothing here may change an existing signature.
 
 **Origin:** the self-similarity roadmap entry (trigger fired 2026-08-21) names two halves. The deterministic half (lexical clusters, redundancy ratio, rep-n, skeleton repetition) needs no new capability. The semantic half, paraphrase restatement with different vocabulary, is out of reach of lexical overlap by design and needs sentence embeddings, which sit above the verifiable tier. The roadmap's scoping principle already states the only acceptable arrival: a specialist adapter behind its own feature flag, with its tier stated plainly.

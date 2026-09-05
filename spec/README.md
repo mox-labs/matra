@@ -16,7 +16,10 @@ These fixtures exist to make that class of defect loud.
 ```
 spec/
   README.md          this file
-  tests/*.json       one fixture per file
+  tests/*.json       one fixture per file (parse conformance)
+  tests/semantic/    embedding-tier fixtures: the FFI shape fixture
+                     (modelless) and the pinned reference-model
+                     conformance (potion-base-8M by artifact digest)
 ```
 
 Each crust has a runner that loads every fixture in `spec/tests/` and asserts
