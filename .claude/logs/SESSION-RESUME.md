@@ -4,11 +4,14 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 
 ---
 
-## State (2026-09-04)
+## State (2026-09-04, evening)
 
-- **0.1.0 is published everywhere.** crates.io (maintainer-run `cargo publish`, 2026-08-23), PyPI (2026-09-04, all four artifacts: linux x86_64 / macOS Intel / macOS arm64 wheels + sdist), GitHub release v0.1.0. The surface freeze is live; every change from here is post-publish and semver-governed (`cargo-semver-checks` is armed in CI).
-- **Repo:** `mox-labs/matra` (renamed from the previous project name). Branch protection on `main`: 13 required checks, `enforce_admins`, linear history, no force pushes. Everything lands via PR now, including doc-only changes like this file.
-- **Publish pipeline:** `publish-pypi.yml` uses PyPI Trusted Publishing via a direct OIDC token exchange plus pinned `twine` (zero third-party actions in the upload path); `publish.yml` gates crates.io behind the `crates-io` environment. Five real defects were found and fixed getting there; the ledger lives in PRs #36 to #42.
+- **0.1.0 is published everywhere.** crates.io (maintainer-run `cargo publish`, 2026-08-23), PyPI (2026-09-04, all four artifacts), GitHub release v0.1.0. crates.io Trusted Publishing is configured (`publish.yml`, environment `crates-io`, required reviewers) and the maintainer was advised to enable require-trusted-publishing and revoke the bootstrap tokens.
+- **Repo:** `mox-labs/matra`. Branch protection on `main`: 13 required checks, `enforce_admins`, linear history. Everything lands via PR, including this file.
+- **The docsite is live** at mox-labs.github.io/matra (book + rustdoc under `/api/`) after fixing a never-deployed docs workflow (mdbook 0.5.3 for edition 2024; PR #46) and a consumer-docs comprehension pass (install paths for the published packages, I7 primitives on the capabilities page; PRs #47/#48).
+- **Claude review CI works end to end** (PR #45 granted the posting channel: the two comment MCP tools plus track_progress). Its first day caught a design contradiction, a wrong Rust fact, an ADR-lockstep gap, a shipped-behavior error, and a merge-order dependency. Treat it as a real gate.
+- **The i9 plan is merged** (`book/src/plans/i9-embeddings-adapter.md`): Embedder port, static-first adapter (model2vec-format loader over safetensors + tokenizers unstable_wasm, bit-parity across crusts as a tested property), candle BERT later behind the same port, `semantic_clusters` as proving consumer. Grounded by the 2026-09-04 three-lane landscape survey, filed at `~/mox/research/drafts/matra-substrate/2026-09-04-redundancy-density-inference-survey.md`.
+- **ROADMAP carries the LLM-audit program:** redundancy entry extended (CR-POS, syntactic template rate, span recurrence, slop-paper negative result, threshold-spread citation) and a new information-density entry (CPIDR-from-xpos English-only caveat, DEPID-equivalent with UD mapping, contested rules routed to an ADR). Both triggers fired.
 - **Branch:** `main`, clean.
 
 ### Where the work is
@@ -33,14 +36,13 @@ Documentation is in lockstep: book pages, README, CHANGELOG, CLAUDE.md, the agen
 
 ## Next actions, in order
 
-Sequence agreed with the maintainer 2026-08-21, publish gate cleared 2026-09-04:
+Sequence agreed with the maintainer 2026-08-21, publish and plan gates cleared 2026-09-04:
 
-1. **Maintainer-only: crates.io Trusted Publishing + token revoke.** Configure Trusted Publishing on crates.io for `mox-labs/matra`, workflow `publish.yml`, environment `crates-io`, then revoke the bootstrap API token used for the 0.1.0 hand publish. Nothing else can do this; it closes the last credential in the release path.
-2. **Claude review CI (PR #35).** Tabled during the publish sprint, un-tabled after. Plugin-as-harness plus the `pr-review` skill as criteria; the action refuses to run on PRs that modify its own workflow file, so the live test only happens on the first PR after merge.
-3. **Embeddings adapter (i9).** New port (Embedder trait) plus a specialist adapter, feature-gated, tier stated in output per the roadmap scoping principle. Design constraint settled 2026-08-21: pure-Rust inference (candle), NOT ort/fastembed (C FFI), because the core already compiles to wasm32-unknown-unknown with --no-default-features (verified) and a candle adapter keeps the WASM/TS path open where an ONNX adapter would close it forever. Write the plan under `book/src/plans/` first.
-4. **Redundancy metrics, both halves.** The deterministic family from the roadmap entry (clusters, redundancy ratio, rep-n, skeleton repetition, opener formulae, document-scope compression; TextRank's similarity matrix is the head start), then semantic-equivalence clustering over the embeddings adapter.
-5. **TS package decision.** The hard blocker is UDPipe's C FFI only; everything else compiles to WASM today. Options: types-and-helpers package now, everything-but-parse WASM crust, full crust when a WASM-capable provider exists (candle embeddings move this materially closer).
-6. **Rule vocabulary design** (Rule / Predicate / Finding) against the shape recorded on the roadmap; slots anywhere after 3. x.uma composes as a peer consumer, never a dependency.
+1. **i9 implementation, M1 through M6, per the merged plan.** M1 (names + ADR-0010) is underway: a Karman naming review of Embedder / Embedding / SemanticClusters / `embeddings` / `embed/static_model.rs` was dispatched 2026-09-04 evening; the ADR waits on its verdict. Then M2 (domain carrier + port), M3 (static adapter, pins verified live, parity fixture, wasm32 gate in CI), M4 (semantic_clusters, modelless tests), M5 (wiring + Python + shape fixture), M6 (conformance + docs lockstep).
+2. **Redundancy + density families under one ADR.** The deterministic redundancy family (now nine outputs on the roadmap) and the information-density family (DEPID-equivalent, CPIDR-derived, tree-walk measures) design against I7's primitives; the ADR settles metric-family-vs-extractor-vs-rule-pack, the DEPID contested rules, and the non-English xpos story. The semantic half rides i9's adapter.
+3. **TS package decision.** Everything but parse compiles to WASM today, and i9's static adapter is wasm-verified at the dependency level. Options unchanged (types-and-helpers, everything-but-parse crust, full crust on a WASM provider).
+4. **Rule vocabulary design** (Rule / Predicate / Finding) against the shape recorded on the roadmap. x.uma composes as a peer consumer, never a dependency.
+5. **Maintainer-side, still open:** enable require-trusted-publishing on crates.io and revoke the bootstrap tokens (advised 2026-09-04); the post-ship loop-closure file `scratch/post-ship-0.1.0.md` is due by ~2026-09-18 per the plans README.
 
 
 ## Open, not blocking
