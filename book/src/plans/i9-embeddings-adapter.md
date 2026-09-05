@@ -4,19 +4,32 @@
 
 **Origin:** the self-similarity roadmap entry (trigger fired 2026-08-21) names two halves. The deterministic half (lexical clusters, redundancy ratio, rep-n, skeleton repetition) needs no new capability. The semantic half, paraphrase restatement with different vocabulary, is out of reach of lexical overlap by design and needs sentence embeddings, which sit above the verifiable tier. The roadmap's scoping principle already states the only acceptable arrival: a specialist adapter behind its own feature flag, with its tier stated plainly.
 
+**Amended 2026-09-04** after a three-lane landscape survey (redundancy metrics, information density, pure-Rust inference; filed in the research drafts). The port and consumer are unchanged; the first adapter changed from a candle BERT model to a static embedding model, for reasons recorded below.
+
 ---
 
 ## Why this shape and not another
 
 ### The tier line is the design
 
-Everything on `Document` today is deterministic and grounds back to the bytes it came from. An embedding does not: two runs of two different models give two different geometries, and no consumer can check a cosine score against the source text. So the one thing this iteration must not do is put Tier 2 output behind a Tier 1 surface.
+Everything on `Document` today is deterministic and grounds back to the bytes it came from. An embedding does not: two different models give two different geometries, and no consumer can check a cosine score against the source text. So the one thing this iteration must not do is put Tier 2 output behind a Tier 1 surface.
 
 The consequence is structural, not documentary. Semantic similarity results never become fields on `Document`, `Sentence`, or any type the deterministic pipeline returns. They arrive as a separate value, from a separate call, whose type names its tier. ADR-0008's rule (derivations cross FFI as fields) applies to derivations of the parse; an embedding is not a derivation of the parse, it is another model's opinion, and it gets another channel.
 
 ### Pure Rust is the WASM decision, made now
 
-`cargo check --no-default-features --target wasm32-unknown-unknown` passes today; UDPipe's C FFI is the only thing keeping the TS crust hypothetical. The embeddings backend is chosen so that stays true: candle (pure Rust, compiles to wasm32, no C in the dependency closure) and not ort or fastembed (ONNX Runtime, C FFI, would close the WASM path for every downstream consumer, forever). This constraint was settled 2026-08-21 and is not reopened here; the plan's job is to hold it, which is why the WASM check is a milestone gate and not a hope.
+`cargo check --no-default-features --target wasm32-unknown-unknown` passes today; UDPipe's C FFI is the only thing keeping the TS crust hypothetical. The embeddings backend is chosen so that stays true: pure Rust, no C in the dependency closure, and never ort or fastembed (ONNX Runtime, C FFI, would close the WASM path for every downstream consumer, forever). The survey verified this is achievable end to end: the static path below and the candle path both compile clean for wasm32 with zero `-sys` crates in the tree.
+
+### The first adapter is a static model, not a transformer
+
+The survey overturned the original candle-first plan on four grounds:
+
+1. **Determinism by construction.** A static embedding is a per-token row lookup in a fixed matrix, mean-pooled and normalized. No matmul kernels, no target-dependent dispatch, so Rust, Python, and a future WASM crust return bit-identical vectors. A transformer path cannot promise that: its `gemm` dispatch differs by target and float accumulation order differs with it. For a library whose whole contract is cross-crust equivalence pinned by conformance fixtures, bit-parity is worth more than the quality delta.
+2. **The quality delta is modest and stated.** Static models of the model2vec family hold roughly ninety percent of a small transformer's benchmark quality at a third of the size (the candidate below is a 30 MB safetensors file) and orders of magnitude less compute, with no context-window limit.
+3. **The dependency closure stays reviewable.** The static adapter needs `safetensors` and `tokenizers` (built with `default-features = false`, wasm-safe feature set, verified to drop every C dependency). The candle closure adds the whole inference stack.
+4. **The port makes the transformer a later adapter, not a lost option.** When paraphrase detection needs transformer quality, a candle BERT adapter (verified viable: current candle compiles clean for wasm32 and carries an in-tree browser BERT example) implements the same trait behind its own feature. That is exactly what the port is for.
+
+The adapter is matra-owned, not a dependency on the existing model2vec Rust crate, which carries CLI dependencies as library deps, a version-skewed closure, and license metadata that automated scanning flags. The format it loads is the published model2vec artifact (embedding matrix + tokenizer + config), and a parity fixture against the Python reference implementation pins compatibility. The re-derivation is small (a loader plus gather, mean-pool, normalize) but not trivial: dtype handling, optional per-token weights, the normalize flag from config, unknown-token handling, and the reference's median-token-length truncation heuristic all must match.
 
 ### The port comes with its proving consumer
 
@@ -37,8 +50,8 @@ pub trait Embedder: Send {
     fn embed(&self, texts: &[&str]) -> domain::Result<Vec<Embedding>>;
 }
 
-// embed/candle.rs: the adapter, behind the `embeddings` feature.
-// The ONLY file importing candle crates (rule 4 analog).
+// embed/static_model.rs: the adapter, behind the `embeddings` feature.
+// The ONLY file importing safetensors and tokenizers (rule 4 analog).
 
 // extraction (or metrics): a pure function over domain types (rule 5 holds)
 pub fn semantic_clusters(
@@ -50,15 +63,15 @@ pub fn semantic_clusters(
 
 The load-bearing move is the last one. Rule 5 says `metrics/` and `extraction/` import only `domain` and `stopwords`, so the clustering function cannot call the port. It does not need to: it takes precomputed vectors, which are domain values, and stays a total function testable without any model. Whoever holds both the `Document` and the `Embedder` runs one, then the other. That is the composition root's job, exactly as rule 7 wants, and it is the same split the pipeline already uses (`annotate` touches the provider, `compose` is total).
 
-`SemanticClusters` names its tier in the type: it carries the model identity (the caller-supplied model hash), the threshold used, and each cluster as its member sentence indices together with the above-threshold edges that connect them (index pairs with their scores). Clusters are connected components, so co-membership is transitive: two sentences can share a cluster without sharing an edge. The type reports only the edges that cleared the threshold, which is why they travel alongside the members; a consumer must never read co-membership as pairwise similarity, and the type's docs say so. It is serde-visible so it can cross FFI, and it is a standalone value, never attached to `Document`. Whether a cluster constitutes restatement is the consumer's reading; the word fluff appears nowhere.
+`SemanticClusters` names its tier in the type: it carries the model identity (the caller-supplied model hash), the threshold used, and each cluster as its member sentence indices together with the above-threshold edges that connect them (index pairs with their scores). Clusters are connected components, so co-membership is transitive: two sentences can share a cluster without sharing an edge. The type reports only the edges that cleared the threshold, which is why they travel alongside the members; a consumer must never read co-membership as pairwise similarity, and the type's docs say so. It is serde-visible so it can cross FFI, and it is a standalone value, never attached to `Document`.
 
-Threshold is caller-supplied. matra does not know a universal similarity cutoff, and pretending to would be a fixed opinion wearing a constant's clothing.
+Threshold is caller-supplied. The survey confirmed this from the literature: published similarity cutoffs for paraphrase detection range from 0.67 to 0.9 with no consensus, because the operating point shifts with encoder, domain, and length. matra pretending to know a universal cutoff would be a fixed opinion wearing a constant's clothing.
 
 ## Model supply, same discipline as UDPipe
 
-No network in the library. The caller supplies model files (weights, tokenizer, config) and the adapter verifies bytes by SHA-256 through the same read-then-consume pattern `read_and_verify` established: hash the bytes in memory, load from those same bytes, never re-read disk between verify and load (TOCTOU stays closed). The reference model for conformance fixtures is pinned by hash in `spec/`, because the model is part of the contract exactly as the UDPipe model is.
+No network in the library. The caller supplies model files (embedding matrix, tokenizer, config) and the adapter verifies bytes by SHA-256 through the same read-then-consume pattern `read_and_verify` established: hash the bytes in memory, load from those same bytes, never re-read disk between verify and load (TOCTOU stays closed). The reference model for conformance fixtures is pinned by hash in `spec/`, because the model is part of the contract exactly as the UDPipe model is.
 
-The candidate reference model is all-MiniLM-L6-v2 (384 dimensions, BERT family, the sentence-transformers standard recipe: mean pooling over token embeddings, then L2 normalization, both implemented in the adapter since candle-transformers hands back token-level output). Candidate, not commitment: the milestone verifies candle-transformers loads it cleanly on the pinned candle version before the spec pins anything.
+The candidate reference model is potion-base-8M (30 MB safetensors, 256-dimension static embeddings, the model2vec family's standard small model). Candidate, not commitment: M3 verifies the artifact loads cleanly and the parity fixture matches the Python reference before the spec pins anything.
 
 ## Milestones
 
@@ -66,16 +79,16 @@ Each leaves the tree green. Names settle before code moves (ontology first).
 
 | M | What | Gate |
 |---|---|---|
-| 1 | Names and ADR-0010 | ADR records tier channel, port shape, model discipline, pure-Rust constraint |
+| 1 | Names and ADR-0010 | ADR records tier channel, port shape, model discipline, static-first with the transformer as a later adapter |
 | 2 | `Embedding` in domain, `Embedder` port | additive; no existing signature changes; rules 1 to 3 hold |
-| 3 | candle adapter behind `embeddings` feature | pins settled; sole importer; panic boundary; wasm32 check passes with the feature on |
+| 3 | static adapter behind `embeddings` feature | pins settled; sole importer; parity with the Python reference; bit-identical across native targets; wasm32 check passes with the feature on |
 | 4 | `semantic_clusters` + `SemanticClusters` | pure over domain; postconditions tested modelless |
-| 5 | Composition root wiring + Python surface | rule 7; FFI fields-not-methods; size cap honored |
+| 5 | Composition root wiring + Python surface | rule 7; FFI fields-not-methods; shape fixture lands with the crossing |
 | 6 | Conformance fixtures + docs lockstep | spec pins the reference model by hash; book, CHANGELOG, ROADMAP updated |
 
 ### M1: names and the ADR
 
-`Embedder`, `Embedding`, `SemanticClusters`, feature name `embeddings`. Run the names through the naming gate before any code. ADR-0010 records: Tier 2 output travels in its own types and never as `Document` fields; ports name only domain types; the adapter is the sole candle importer; models are caller-supplied and hash-verified; the backend must stay pure Rust while the WASM path is open; clusters are connected components reporting their above-threshold edges, not cliques (chained restatement is the consumer pattern and cliques would split it; the cost, co-membership without direct similarity, is visible because the edges travel in the type); and `Embedding` departs from the `#[non_exhaustive]` convention (see M2), with the departure recorded. Update the boundary-rules reference: `embed/mod.rs` joins the port list, candle crates join the sole-importer rule.
+`Embedder`, `Embedding`, `SemanticClusters`, feature name `embeddings`. Run the names through the naming gate before any code. ADR-0010 records: Tier 2 output travels in its own types and never as `Document` fields; ports name only domain types; the adapter is the sole importer of its model-loading dependencies; models are caller-supplied and hash-verified; the backend must stay pure Rust while the WASM path is open; the first adapter is static for bit-parity, with the transformer adapter arriving later behind the same port; clusters are connected components reporting their above-threshold edges, not cliques (chained restatement is the consumer pattern and cliques would split it; the cost, co-membership without direct similarity, is visible because the edges travel in the type); and `Embedding` departs from the `#[non_exhaustive]` convention (see M2), with the departure recorded. Update the boundary-rules reference: `embed/mod.rs` joins the port list, the adapter's crates join the sole-importer rule.
 
 ### M2: domain carrier and port
 
@@ -83,11 +96,11 @@ Purely additive. `Embedding` derives what `domain.rs` already derives (serde-vis
 
 **Rubric.** `cargo check --no-default-features` clean. No port imports another port. The trait contract (length preservation, uniform dimension) is written on the trait, because it is what M4 tests against.
 
-### M3: the candle adapter
+### M3: the static adapter
 
-Version pins are settled here against the live crates (candle-core, candle-transformers, tokenizers), following the pin rules; do not trust remembered versions. The adapter owns tokenization, forward pass, pooling, and normalization. candle is pure Rust, so its panics are Rust panics, not C aborts; a malformed model file must surface as `domain::Error`, not a crash, so the same catch_unwind seam UDPipe uses wraps the load-and-forward path with the panic converted at the boundary.
+Version pins are settled here against the live crates (`safetensors`, `tokenizers` with `default-features = false` and its wasm-safe feature set), following the pin rules; do not trust remembered versions. The adapter owns loading (dtype dispatch, optional token weights, normalize flag, unknown-token handling, median-token-length truncation), tokenization, gather, mean-pool, and normalization. All pure Rust; a malformed model file must surface as `domain::Error`, not a panic, so the load path gets the same catch_unwind seam UDPipe uses with the panic converted at the boundary.
 
-**Rubric.** `scripts/check-boundaries.sh` extended: only `embed/candle.rs` imports candle. `cargo check --no-default-features --features embeddings --target wasm32-unknown-unknown` passes, which is the entire justification for the backend choice, enforced mechanically. Feature stays additive: enabling `embeddings` changes nothing about existing behavior.
+**Rubric.** `scripts/check-boundaries.sh` extended: only the adapter file imports its crates. A parity fixture matches the Python model2vec reference on pinned inputs. The same fixture produces bit-identical vectors on x86_64 and aarch64, which is the property the static choice buys and therefore gets a test. `cargo check --no-default-features --features embeddings --target wasm32-unknown-unknown` passes, enforced in the CI matrix, which is the WASM constraint made mechanical. Feature stays additive: enabling `embeddings` changes nothing about existing behavior.
 
 ### M4: the proving consumer
 
@@ -103,21 +116,21 @@ The composition root grows the one function that holds both halves (embed the se
 
 ### M6: conformance and docs
 
-Spec fixtures pin input sentences, the reference model hash, and expected cluster membership (scores asserted with tolerance, since float geometry varies by target); the shape fixture already landed with M5. Book gains an embeddings page stating the tier in the first paragraph; the ROADMAP redundancy entry is updated to record which half shipped; CHANGELOG under Unreleased.
+Spec fixtures pin input sentences, the reference model hash, and expected cluster membership; the shape fixture already landed with M5. Because the adapter is bit-deterministic, the conformance fixture asserts exact vectors on native targets rather than tolerances; a WASM crust, when it arrives, inherits the same exact assertion. Book gains an embeddings page stating the tier in the first paragraph; the ROADMAP redundancy entry is updated to record which half shipped; CHANGELOG under Unreleased.
 
 ---
 
 ## Costs, named
 
-1. **The dependency closure grows substantially.** candle plus tokenizers is the largest addition since UDPipe. It is feature-gated and additive, but `cargo deny` and the license audit must pass on the full closure, and build time with the feature on will be felt.
+1. **A quality ceiling, chosen deliberately.** A static model holds roughly ninety percent of a small transformer's quality. Paraphrase pairs a transformer would catch near the threshold will be missed. The mitigation is architectural: the candle BERT adapter arrives behind the same port when a consumer demonstrates the gap matters, and nothing about the surface changes when it does.
 2. **A second model artifact.** Consumers of the semantic half now manage two caller-supplied models. The discipline is identical, which is the mitigation.
-3. **Float nondeterminism across targets.** Same model, same input, slightly different scores on different hardware. The spec handles it with tolerances, and cluster membership near the threshold can genuinely differ; fixtures must not sit near their own threshold.
+3. **Parity work against the Python reference.** The loader must match model2vec's behaviors exactly (dtypes, weights, truncation heuristic); the fixture makes drift loud, but the initial derivation is careful work, not translation.
 4. **`Embedding` in domain is a commitment.** Rule 2 forces the carrier into `domain.rs`, so the type is public surface from M2 onward even though most consumers only ever see `SemanticClusters`.
 
 ## Risks
 
-**candle API churn.** candle is pre-1.0 and moves. The pin rules apply, the adapter is one file, and the port means a replacement backend is an adapter swap, not a surface change. That is what the port is for.
+**The reference model bet.** If the potion artifact does not load cleanly or the parity fixture cannot be made to match, M3 falls back to another model2vec-family artifact; the format, not the specific model, is what the adapter targets. Only `spec/` cares which one is pinned.
 
-**The reference model bet.** If candle-transformers does not load the candidate model cleanly, M3 picks another sentence-embedding model from candle's supported set. The trait and the consumer are model-agnostic; only `spec/` cares which one is pinned.
+**Upstream format drift.** The model2vec artifact format is small and stable, but it is a third party's format. The parity fixture pins the version matra understands; a format change is a new adapter version, caught by hash mismatch, never silent.
 
 **Scope pull toward the deterministic half.** The lexical redundancy family will be tempting to fold in here. It has no dependency on any of this and deserves its own plan against the rule-vocabulary question the roadmap poses (metric family, extractor, or first rule pack). Keeping it out keeps this iteration one thing.
