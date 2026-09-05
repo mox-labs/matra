@@ -58,6 +58,7 @@ pub fn semantic_clusters(
     sentences: &[Sentence],
     embeddings: &[Embedding],
     threshold: f32,
+    model_hash: &str,
 ) -> domain::Result<SemanticClusters>
 ```
 

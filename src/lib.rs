@@ -325,7 +325,9 @@ mod python {
             // compile error — exactly what we want for routing fidelity.
             match e.0 {
                 ModelNotFound(_) => PyFileNotFoundError::new_err(msg),
-                InputTooLarge { .. } | UnsupportedFormat(_) => PyValueError::new_err(msg),
+                InputTooLarge { .. } | UnsupportedFormat(_) | InvalidInput(_) => {
+                    PyValueError::new_err(msg)
+                }
                 Io(_) => PyOSError::new_err(msg),
                 ModelInvalid(_) | ParseFailed(_) => PyRuntimeError::new_err(msg),
             }
