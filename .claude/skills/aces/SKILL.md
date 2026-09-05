@@ -34,7 +34,7 @@ Matra's adaptable surface:
 
 ### Composable — discrete components, clear boundaries, swappable parts
 
-**Counters drag.** Three ports (Source, Decomposer, NlpProvider). Multiple adapters per port. One composition root. Each piece has a single responsibility and a single boundary; replacing one piece does not require rewriting any other.
+**Counters drag.** Four ports (Source, Decomposer, NlpProvider, Embedder). Multiple adapters per port. One composition root. Each piece has a single responsibility and a single boundary; replacing one piece does not require rewriting any other.
 
 Matra's composable surface:
 
@@ -49,7 +49,7 @@ Matra's composable surface:
 
 Matra's extensible surface:
 
-- Three port traits, each minimal (one or two methods).
+- Four port traits, each minimal (one or two methods).
 - Adapter constraints documented in `book/src/architecture/design.md`.
 - Rustdoc on every public type, with examples on every public function.
 
@@ -97,7 +97,7 @@ When a change makes any one of the three forces worse, all three counter-discipl
 Where matra is doing well:
 
 - **A**daptable: every public type is `#[non_exhaustive]`; feature flags are additive; the boundary rules are explicit.
-- **C**omposable: hex layout intact; three ports with multiple adapters; clear composition root.
+- **C**omposable: hex layout intact; four ports with adapters behind them; clear composition root.
 - **E**xtensible: rustdoc on every public surface; ADRs for substantive decisions.
 
 Where to keep watch:

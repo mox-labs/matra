@@ -17,7 +17,7 @@ Rust offers no directional import control between modules inside a single crate,
 | 5. Metrics and extraction purity | review | judgment only |
 | 6. No-default-features build | CI | the whole rule, mechanically |
 | 7. Composition root knows the whole | review | judgment only |
-| 8. No `tracing` in domain or ports | `scripts/check-boundaries.sh` | `use tracing` and `tracing::` in four named files |
+| 8. No `tracing` in domain or ports | `scripts/check-boundaries.sh` | `use tracing` and `tracing::` in five named files |
 
 `scripts/check-boundaries.sh` runs from `just check` and from the pre-commit hook that `scripts/install-hooks.sh` installs. No CI workflow invokes it, and the hook is opt-in. The hook runs the script on every commit regardless of which files are staged.
 
@@ -43,17 +43,17 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 **Why it is drawn there.** A port is a contract. Whatever the contract imports becomes a requirement on everyone who implements it, so a domain-only port stays implementable by someone who has never read matra's adapters.
 
-**Enforcement.** Review. Read the import block and the trait method signatures in those three files.
+**Enforcement.** Review. Read the import block and the trait method signatures in those four files.
 
 ## Rule 3: no port module imports another port module
 
-**The rule.** The three ports are peers and name each other nowhere.
+**The rule.** The four ports are peers and name each other nowhere.
 
-**Scope.** The same three files.
+**Scope.** The same four files.
 
 **Why it is drawn there.** Stage order belongs to the composition root, not to the contracts. If `Decomposer` knew about `NlpProvider`, the pipeline's shape would be encoded in the traits and a stage could no longer be replaced on its own.
 
-**Enforcement.** `scripts/check-boundaries.sh` greps the three port files for `use crate::source`, `use crate::decompose`, and `use crate::nlp`. The check sees only that literal form. Grouped imports, fully qualified inline paths with no `use` line, a trait bound naming another port's trait, and a type alias that launders the path all pass the script and still violate the rule.
+**Enforcement.** `scripts/check-boundaries.sh` greps the four port files for `use crate::source`, `use crate::decompose`, `use crate::nlp`, and `use crate::embed`. The check sees only that literal form. Grouped imports, fully qualified inline paths with no `use` line, a trait bound naming another port's trait, and a type alias that launders the path all pass the script and still violate the rule.
 
 ## Rule 4: one file imports `udpipe_rs`
 
@@ -97,13 +97,13 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 ## Rule 8: no `tracing` in the domain or the ports
 
-**The rule.** `tracing` is forbidden in `src/domain.rs` and in the three port modules.
+**The rule.** `tracing` is forbidden in `src/domain.rs` and in the four port modules.
 
-**Scope.** Those four files.
+**Scope.** Those five files.
 
 **Why it is drawn there.** Observability is an adapter and composition-root concern. A domain type that emits spans holds an opinion about the host's runtime and subscriber configuration, and a port that traces forces that opinion onto every implementor. In `domain.rs` it is also rule 1 by another route, since it would be a fourth dependency.
 
-**Enforcement.** `scripts/check-boundaries.sh` greps those four files for `use tracing` and for `tracing::`. The rule is preemptive: `tracing` is not a dependency of matra at all. The line was drawn before the first import could land.
+**Enforcement.** `scripts/check-boundaries.sh` greps those five files for `use tracing` and for `tracing::`. The rule is preemptive: `tracing` is not a dependency of matra at all. The line was drawn before the first import could land.
 
 ## Which rules apply to which files
 

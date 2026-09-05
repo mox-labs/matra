@@ -34,7 +34,7 @@ Domain depends on port traits (NlpProvider, Decomposer, Source), not on adapters
 Four layers, and the dependency arrows only ever point inward.
 
 - `domain.rs` holds every type the library hands back and depends on `serde`, `thiserror` and `std`. Nothing else.
-- Each port is a `mod.rs` (`source/`, `decompose/`, `nlp/`) declaring one trait and importing only `domain`.
+- Each port is a `mod.rs` (`source/`, `decompose/`, `nlp/`, `embed/`) declaring one trait and importing only `domain`.
 - Each adapter implements one port. `nlp/udpipe.rs` is the only file in the tree that imports `udpipe_rs`, because that is where the panic boundary lives.
 - `metrics/` and `extraction/` are plain functions over `domain` and `stopwords`. They touch no port, which is why they test without a model.
 - `lib.rs` is the composition root: the only file that knows every adapter and every port, and the only place they are wired together.
