@@ -9,9 +9,9 @@ use crate::domain::{
     Embedding, Error, Result, SemanticCluster, SemanticClusters, SemanticEdge, Sentence,
 };
 
-/// Cap on sentence count: the similarity matrix is O(n^2), same bound and
-/// reason as TextRank's.
-const MAX_SENTENCES: usize = 2000;
+// The O(n^2) cap: literally TextRank's bound, not a copy of it, so the
+// two cannot drift apart.
+use super::textrank::MAX_SENTENCES;
 
 /// Cluster sentences whose embedding cosine similarity clears `threshold`.
 ///
@@ -58,15 +58,21 @@ pub fn semantic_clusters(
         });
     }
     let dim = embeddings.first().map_or(0, |e| e.0.len());
-    if let Some((i, e)) = embeddings
-        .iter()
-        .enumerate()
-        .find(|(_, e)| e.0.len() != dim)
-    {
-        return Err(Error::InvalidInput(format!(
-            "embedding {i} has dimension {}, expected {dim}",
-            e.0.len()
-        )));
+    for (i, e) in embeddings.iter().enumerate() {
+        if e.0.len() != dim {
+            return Err(Error::InvalidInput(format!(
+                "embedding {i} has dimension {}, expected {dim}",
+                e.0.len()
+            )));
+        }
+        // A zero vector is a real geometry (documented above); a NaN or
+        // infinity is not a geometry at all, and letting it through
+        // would silently park its sentence in the unclustered count.
+        if !e.0.iter().all(|v| v.is_finite()) {
+            return Err(Error::InvalidInput(format!(
+                "embedding {i} contains a non-finite value"
+            )));
+        }
     }
 
     let n = embeddings.len();
@@ -208,11 +214,25 @@ mod tests {
                 assert!(c.members.contains(&edge.a) && c.members.contains(&edge.b));
             }
             // membership = transitive closure of the reported edges:
-            // every member touches at least one edge.
+            // every member is REACHABLE from members[0] over the
+            // cluster's own edge list, not merely incident to some edge.
+            let mut reach = std::collections::HashSet::from([c.members[0]]);
+            let mut grew = true;
+            while grew {
+                grew = false;
+                for edge in &c.edges {
+                    if reach.contains(&edge.a) && reach.insert(edge.b) {
+                        grew = true;
+                    }
+                    if reach.contains(&edge.b) && reach.insert(edge.a) {
+                        grew = true;
+                    }
+                }
+            }
             for &m in &c.members {
                 assert!(
-                    c.edges.iter().any(|e| e.a == m || e.b == m),
-                    "member {m} has no edge"
+                    reach.contains(&m),
+                    "member {m} unreachable over reported edges"
                 );
             }
         }
@@ -247,6 +267,15 @@ mod tests {
         let emb = [e(&[1.0, 0.0]), e(&[1.0, 0.0, 0.0])];
         match semantic_clusters(&sentences(2), &emb, 0.8, "h") {
             Err(Error::InvalidInput(msg)) => assert!(msg.contains("dimension")),
+            other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
+        }
+    }
+
+    #[test]
+    fn non_finite_embedding_value_is_invalid_input() {
+        let emb = [e(&[1.0, 0.0]), e(&[f32::NAN, 0.0])];
+        match semantic_clusters(&sentences(2), &emb, 0.8, "h") {
+            Err(Error::InvalidInput(msg)) => assert!(msg.contains("non-finite")),
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
     }

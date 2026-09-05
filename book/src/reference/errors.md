@@ -13,6 +13,7 @@ Every fallible function in matra returns `domain::Result<T>`, which is `std::res
 | `ParseFailed` | `String` | The NLP provider failed on the input, or panicked, or produced an unusable token id |
 | `InputTooLarge` | `{ limit: usize, actual: usize, what: &'static str }` | A size gate rejected the input. `what` names the gate |
 | `UnsupportedFormat` | `Format` | The document's format has no registered decomposer |
+| `InvalidInput` | `String` | A caller violated a documented API contract |
 | `Io` | `std::io::Error` | A filesystem operation failed |
 
 `Error` implements `std::error::Error` and `Display` through `thiserror`, and `From<std::io::Error>`, so `?` converts I/O failures automatically.
@@ -41,7 +42,7 @@ Returned by the UDPipe adapter's `parse` in three situations:
 
 ### InputTooLarge
 
-Six gate labels produce this variant. The `what` field carries the label so a caller can route each gate differently.
+Seven gate labels produce this variant. The `what` field carries the label so a caller can route each gate differently.
 
 | `what` | Gate | Limit | Measured over |
 |---|---|---|---|
@@ -51,6 +52,7 @@ Six gate labels produce this variant. The `what` field carries the label so a ca
 | `"textrank"` | `textrank_summarize` | 2,000 | Number of sentences in the slice |
 | `"rake"` | `rake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
 | `"yake"` | `yake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
+| `"semantic_clusters"` | `semantic_clusters` | 2,000 | Number of sentences in the slice |
 
 `limit` carries the cap and `actual` carries the measured size, so an error message can be built without hardcoding the constants.
 
@@ -62,9 +64,13 @@ A document from disk crosses both text gates in sequence: `"file_source"` when `
 
 Calling a provider's `parse` directly bypasses the `"input"` gate. The gate belongs to `Engine::annotate`, not to the `NlpProvider` trait.
 
-The four extractors check their caps after their empty-result checks. `tfidf_summarize(sentences, 0)`, `textrank_summarize(sentences, 0)`, `rake_keyphrases(sentences, 0)`, and `yake_keyphrases(sentences, 0)` return an empty vector without evaluating the cap, whatever the size of the slice. The same holds for an empty slice.
+The four ranking extractors check their caps after their empty-result checks. `tfidf_summarize(sentences, 0)`, `textrank_summarize(sentences, 0)`, `rake_keyphrases(sentences, 0)`, and `yake_keyphrases(sentences, 0)` return an empty vector without evaluating the cap, whatever the size of the slice. The same holds for an empty slice. `semantic_clusters` has no count parameter; its contract checks run first, then its cap, and an empty slice returns empty clusters.
 
 A metric has no gate of its own. The compression ratio skips any paragraph over 262,144 bytes and leaves its metric slot at `None` rather than returning an error.
+
+### InvalidInput
+
+Returned by `semantic_clusters` when a caller breaks its documented contract: `sentences` and `embeddings` differing in length, embeddings disagreeing on dimension, an embedding containing a non-finite value, or a non-finite threshold. The payload names the violation. This variant means the call site is wrong, not the input data; nothing about the analyzed text produces it.
 
 ### UnsupportedFormat
 
@@ -100,6 +106,7 @@ These are the strings `Display` produces, and the strings Python's `str(exc)` re
 | `ParseFailed(s)` | `parse failed: {s}` |
 | `InputTooLarge { limit, actual, what }` | `{what} input too large: {actual} > limit {limit}` |
 | `UnsupportedFormat(format)` | `unsupported format: {format:?}` |
+| `InvalidInput(s)` | `invalid input: {s}` |
 | `Io(e)` | `io error: {e}` |
 
 `UnsupportedFormat` renders the variant name, so the string reads `unsupported format: Pdf`.
@@ -140,6 +147,7 @@ The PyO3 binding converts `Error` into a Python exception class. The conversion 
 | `ModelNotFound` | `FileNotFoundError` |
 | `InputTooLarge` | `ValueError` |
 | `UnsupportedFormat` | `ValueError` |
+| `InvalidInput` | `ValueError` |
 | `Io` | `OSError` |
 | `ModelInvalid` | `RuntimeError` |
 | `ParseFailed` | `RuntimeError` |
