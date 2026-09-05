@@ -18,7 +18,7 @@ ADR-0008's rule (derivations cross FFI as fields) applies to derivations of the 
 
 `Embedder` follows the majority port pattern (agent noun from capability: `Decomposer`, `Source`; `NlpProvider` is the forced exception, not the rule). The trait lives in `embed/mod.rs`, imports only `domain`, and names one method, `embed(&[&str]) -> Result<Vec<Embedding>>`, with the contract on the trait: output length equals input length, uniform dimension.
 
-`Embedding` sits in `domain.rs` because ports name only domain types (boundary rule 2). It deliberately departs from the `#[non_exhaustive]` convention: on its struct shape the attribute would make construction crate-private, and external `Embedder` implementors must construct `Embedding` values, which is the port's whole purpose. The departure is this ADR's to record so review does not "fix" it later.
+`Embedding` sits in `domain.rs` because ports name only domain types (boundary rule 2). Its shape is a newtype tuple struct, `Embedding(pub Vec<f32>)`: the type name itself is the constructor external implementors call, and serde serializes a newtype transparently as the bare array, which is the compact wire form a vector deserves (a named field would wrap every vector in an object for no information gain). It deliberately departs from the `#[non_exhaustive]` convention: on a tuple struct the attribute makes the constructor crate-private, and external `Embedder` implementors must construct `Embedding` values, which is the port's whole purpose. The departure is this ADR's to record so review does not "fix" it later.
 
 ### 3. The first adapter is static (model2vec format); the transformer comes later behind the same port
 
@@ -49,3 +49,21 @@ Caller-supplied files, SHA-256 verified through the read-then-consume pattern (h
 - The `abstract` seam stays empty: this is adapter plus consumer work, not rule evaluation.
 - The i9 plan text is amended to the settled names; boundary-rules gain `embed/mod.rs` (port list) and `embed/model2vec.rs` (sole-importer rule) when the code lands, in the same PR, per docs-lockstep.
 - A vocabulary drift found during the naming review is recorded on ADR-0006's deferred list rather than fixed here: `CorpusEntry.analysis` still carries the name ADR-0006 rejected, now SemVer-major to rename; the free half (metric function parameter names) may be fixed any time.
+
+## Validation
+
+The decisions rest on falsifiable claims, and each has a check:
+
+- **Bit-parity** (the reason static won the first slot): M3's fixture asserts identical vectors on x86_64 and aarch64, and M6's conformance fixture asserts exact vectors rather than tolerances. If exactness cannot be held, the static-first rationale loses its decisive property and this ADR should be revisited, not patched around.
+- **Format compatibility:** the parity fixture against the Python model2vec reference on pinned inputs. Failure means the adapter does not actually speak the format it claims.
+- **The WASM constraint:** `cargo check --no-default-features --features model2vec --target wasm32-unknown-unknown` in CI from M3 onward. A C-FFI crate entering the closure fails this loudly.
+- **Revisit trigger for static-first:** a consumer demonstrating that the roughly ten percent quality ceiling causes missed paraphrase clusters that matter to their use. The answer is the candle adapter behind the same port (a new ADR is not required; this one already designates it), not a change to the surface.
+- **Revisit trigger for the feature-naming rule:** if a second adapter arrives whose natural backend name collides with an existing feature, the rule needs a tiebreak amendment.
+
+## References
+
+- [i9 plan](../../book/src/plans/i9-embeddings-adapter.md): milestones, rubrics, and the survey-driven amendment trail
+- [ADR-0006](0006-abstract-tier-vocabulary-lock.md): the vocabulary lock this ADR's naming review extends, and the deferred list that gained `CorpusEntry.analysis`
+- [ADR-0007](0007-one-pipeline.md): the pipeline whose annotate/compose split the embed-then-cluster shape mirrors
+- [ADR-0008](0008-structural-primitives-are-fields.md): the FFI channel rule this ADR scopes to parse derivations
+- Landscape survey, 2026-09-04, filed in the maintainer's research drafts (`matra-substrate/2026-09-04-redundancy-density-inference-survey.md`): the verified wasm32 compilation results, the static-vs-transformer evidence, and the threshold-spread literature
