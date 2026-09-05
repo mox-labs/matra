@@ -50,7 +50,7 @@ pub trait Embedder: Send {
     fn embed(&self, texts: &[&str]) -> domain::Result<Vec<Embedding>>;
 }
 
-// embed/static_model.rs: the adapter, behind the `embeddings` feature.
+// embed/model2vec.rs: the adapter, behind the `model2vec` feature.
 // The ONLY file importing safetensors and tokenizers (rule 4 analog).
 
 // extraction (or metrics): a pure function over domain types (rule 5 holds)
@@ -81,14 +81,14 @@ Each leaves the tree green. Names settle before code moves (ontology first).
 |---|---|---|
 | 1 | Names and ADR-0010 | ADR records tier channel, port shape, model discipline, static-first with the transformer as a later adapter |
 | 2 | `Embedding` in domain, `Embedder` port | additive; no existing signature changes; rules 1 to 3 hold |
-| 3 | static adapter behind `embeddings` feature | pins settled; sole importer; parity with the Python reference; bit-identical across native targets; wasm32 check passes with the feature on |
+| 3 | static adapter behind `model2vec` feature | pins settled; sole importer; parity with the Python reference; bit-identical across native targets; wasm32 check passes with the feature on |
 | 4 | `semantic_clusters` + `SemanticClusters` | pure over domain; postconditions tested modelless |
 | 5 | Composition root wiring + Python surface | rule 7; FFI fields-not-methods; shape fixture lands with the crossing |
 | 6 | Conformance fixtures + docs lockstep | spec pins the reference model by hash; book, CHANGELOG, ROADMAP updated |
 
 ### M1: names and the ADR
 
-`Embedder`, `Embedding`, `SemanticClusters`, feature name `embeddings`. Run the names through the naming gate before any code. ADR-0010 records: Tier 2 output travels in its own types and never as `Document` fields; ports name only domain types; the adapter is the sole importer of its model-loading dependencies; models are caller-supplied and hash-verified; the backend must stay pure Rust while the WASM path is open; the first adapter is static for bit-parity, with the transformer adapter arriving later behind the same port; clusters are connected components reporting their above-threshold edges, not cliques (chained restatement is the consumer pattern and cliques would split it; the cost, co-membership without direct similarity, is visible because the edges travel in the type); and `Embedding` departs from the `#[non_exhaustive]` convention (see M2), with the departure recorded. Update the boundary-rules reference: `embed/mod.rs` joins the port list, the adapter's crates join the sole-importer rule.
+`Embedder`, `Embedding`, `SemanticClusters` (inner type reserved: `SemanticCluster`), feature name `model2vec`, adapter file `embed/model2vec.rs`. The naming gate ran 2026-09-04 and settled the last two: adapter features name their backend, per the `udpipe` precedent now stated as a rule in ADR-0010, so a capability-named `embeddings` feature would collide with the future candle adapter's flag. ADR-0010 records: Tier 2 output travels in its own types and never as `Document` fields; ports name only domain types; the adapter is the sole importer of its model-loading dependencies; models are caller-supplied and hash-verified; the backend must stay pure Rust while the WASM path is open; the first adapter is static for bit-parity, with the transformer adapter arriving later behind the same port; clusters are connected components reporting their above-threshold edges, not cliques (chained restatement is the consumer pattern and cliques would split it; the cost, co-membership without direct similarity, is visible because the edges travel in the type); and `Embedding` departs from the `#[non_exhaustive]` convention (see M2), with the departure recorded. Update the boundary-rules reference: `embed/mod.rs` joins the port list, the adapter's crates join the sole-importer rule.
 
 ### M2: domain carrier and port
 
@@ -100,7 +100,7 @@ Purely additive. `Embedding` derives what `domain.rs` already derives (serde-vis
 
 Version pins are settled here against the live crates (`safetensors`, `tokenizers` with `default-features = false` and its wasm-safe feature set), following the pin rules; do not trust remembered versions. The adapter owns loading (dtype dispatch, optional token weights, normalize flag, unknown-token handling, median-token-length truncation), tokenization, gather, mean-pool, and normalization. All pure Rust; a malformed model file must surface as `domain::Error`, not a panic, so the load path gets the same catch_unwind seam UDPipe uses with the panic converted at the boundary.
 
-**Rubric.** `scripts/check-boundaries.sh` extended: only the adapter file imports its crates. A parity fixture matches the Python model2vec reference on pinned inputs. The same fixture produces bit-identical vectors on x86_64 and aarch64, which is the property the static choice buys and therefore gets a test. `cargo check --no-default-features --features embeddings --target wasm32-unknown-unknown` passes, enforced in the CI matrix, which is the WASM constraint made mechanical. Feature stays additive: enabling `embeddings` changes nothing about existing behavior.
+**Rubric.** `scripts/check-boundaries.sh` extended: only the adapter file imports its crates. A parity fixture matches the Python model2vec reference on pinned inputs. The same fixture produces bit-identical vectors on x86_64 and aarch64, which is the property the static choice buys and therefore gets a test. `cargo check --no-default-features --features model2vec --target wasm32-unknown-unknown` passes, enforced in the CI matrix, which is the WASM constraint made mechanical. Feature stays additive: enabling `model2vec` changes nothing about existing behavior.
 
 ### M4: the proving consumer
 

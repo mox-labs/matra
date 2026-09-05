@@ -60,3 +60,4 @@ supersede old ones. The full lineage is preserved.
 | [0007](0007-one-pipeline.md) | One pipeline: ingest -> decompose -> compose, with abstract reserved | accepted |
 | [0008](0008-structural-primitives-are-fields.md) | Structural primitives are fields | accepted |
 | [0009](0009-feats-lookup-accessor.md) | Feats lookup accessor, Rust-only | accepted |
+| [0010](0010-embeddings-adapter.md) | Embeddings: a Tier-2 channel behind an Embedder port, static adapter first | accepted |
