@@ -25,12 +25,16 @@ spec/
 Each crust has a runner that loads every fixture in `spec/tests/` and asserts
 the same expectations:
 
-| Crust | Runner |
-|---|---|
-| Rust | `tests/conformance.rs` |
-| Python | `python/tests/test_conformance.py` |
+| Crust | Parse runner | Semantic runner |
+|---|---|---|
+| Rust | `tests/conformance.rs` | `tests/semantic_conformance.rs` |
+| Python | `python/tests/test_conformance.py` | `python/tests/test_semantic_conformance.py` |
 
-Run them with `just conformance`.
+Run them with `just conformance`. The parse lane needs the UDPipe model
+(downloaded on first use); the semantic reference lane needs
+potion-base-8M placed at `~/.matra/models/potion-base-8M` by hand,
+because the library never downloads embedding models. The semantic
+shape fixture runs everywhere with no model at all.
 
 ## Fixture format
 

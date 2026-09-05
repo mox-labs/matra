@@ -30,7 +30,7 @@ $ for f in model.safetensors tokenizer.json config.json; do
   done
 ```
 
-A static model is a lookup table, not a transformer: inference is a row gather, a mean, and a normalize. That costs roughly ten percent of a small transformer's benchmark quality and buys bit-identical vectors on every platform and in every crust, which is what lets the conformance suite pin exact vectors rather than tolerances. The adapter hashes all three files on load, and that digest is the `model_hash` in every result.
+A static model is a lookup table, not a transformer: inference is a row gather, a mean, and a normalize. That costs roughly ten percent of a small transformer's benchmark quality and buys bit-identical vectors on every platform and in every crust, which is what lets the conformance suite pin exact vectors rather than tolerances. The adapter hashes all three files on load, and that digest is the `model_hash` in every result. The hash is identity, not verification, so check your download yourself: for the release the conformance suite pins, `model_hash` reads `81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4` (also recorded in `spec/tests/semantic/reference-model.json`).
 
 ## Rust
 
@@ -41,7 +41,9 @@ use matra::nlp::udpipe::Udpipe;
 
 let nlp = Udpipe::english("/tmp/matra-models")?;
 let engine = Engine::new(Box::new(nlp), standard_decomposers());
-let model = Model2Vec::from_dir("~/.matra/models/potion-base-8M")?;
+// Rust does not expand `~`; build the path from $HOME.
+let home = std::env::var("HOME").expect("HOME");
+let model = Model2Vec::from_dir(format!("{home}/.matra/models/potion-base-8M"))?;
 
 let raw = matra::domain::RawDocument::new(text, None, matra::domain::Format::PlainText);
 let doc = engine.annotate(&raw)?;
