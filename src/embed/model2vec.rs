@@ -328,6 +328,10 @@ impl Embedder for Model2Vec {
     fn embed(&self, texts: &[&str]) -> domain::Result<Vec<Embedding>> {
         catch_embed_panic(|| texts.iter().map(|t| self.embed_one(t)).collect())
     }
+
+    fn identity(&self) -> &str {
+        self.model_hash()
+    }
 }
 
 /// Convert a tensor's raw little-endian bytes to f32. Only f32 sources

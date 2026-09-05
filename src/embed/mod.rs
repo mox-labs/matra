@@ -33,4 +33,11 @@ use crate::domain;
 pub trait Embedder: Send {
     /// Embed each text into a dense vector.
     fn embed(&self, texts: &[&str]) -> domain::Result<Vec<domain::Embedding>>;
+
+    /// A stable identifier for the model behind this embedder, carried
+    /// into every provenance-bearing result derived from its vectors.
+    /// For file-loaded models this is a digest over the artifacts; the
+    /// point is that scores stay attributable to one geometry, so two
+    /// embedders that can disagree must not share an identity.
+    fn identity(&self) -> &str;
 }

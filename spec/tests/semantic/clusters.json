@@ -1,0 +1,26 @@
+{
+  "name": "semantic-clusters-shape",
+  "description": "The FFI shape fixture (i9 M5, ADR-0008 lockstep): semantic_clusters over hand-built vectors must serialize to exactly this value in every crust. The embeddings are chosen so a~b and b~c clear the 0.92 threshold while a~c does not (the chained-restatement case), index 3 is a zero vector (no geometry, no claim), and index 4 is a singleton.",
+  "embeddings": [
+    [1.0, 0.0],
+    [0.9239, 0.3827],
+    [0.70710678, 0.70710678],
+    [0.0, 0.0],
+    [-1.0, 0.0]
+  ],
+  "threshold": 0.92,
+  "model_hash": "shape-fixture-hash",
+  "expect": {
+    "model_hash": "shape-fixture-hash",
+    "threshold": 0.92,
+    "clusters": [
+      {
+        "members": [0, 1, 2],
+        "edges": [
+          { "a": 0, "b": 1, "score": 0.92387664 },
+          { "a": 1, "b": 2, "score": 0.9238825 }
+        ]
+      }
+    ]
+  }
+}

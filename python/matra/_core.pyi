@@ -11,7 +11,7 @@ Stubs are versioned alongside the Rust code; keep them in lockstep with
 
 from __future__ import annotations
 
-from matra.types import Document, Keyphrase, ScoredSentence
+from matra.types import Document, Keyphrase, ScoredSentence, SemanticClusters
 
 class Matra:
     """Loaded NLP engine. Create once, reuse across calls.
@@ -102,3 +102,63 @@ class Matra:
             RuntimeError: NLP parsing failed.
         """
         ...
+
+    def semantic_clusters(
+        self, text: str, threshold: float, model: Model2Vec
+    ) -> SemanticClusters:
+        """Parse plain text, embed its sentences, cluster at `threshold`.
+
+        Tier 2 output: the clusters reflect `model`'s geometry, and the
+        result carries its identity. See `matra.types.SemanticClusters`
+        for what co-membership does and does not mean.
+
+        Raises:
+            ValueError: input exceeds the size cap (8 MiB), the sentence
+                cap (2,000), or the threshold is not finite.
+            RuntimeError: NLP parsing or embedding failed.
+        """
+        ...
+
+class Model2Vec:
+    """A loaded static embedding model (model2vec artifact format).
+
+    Tier 2: its vectors are model opinion; everything derived from them
+    carries this model's identity.
+    """
+
+    @staticmethod
+    def from_dir(dir: str) -> Model2Vec:
+        """Load from a directory holding model.safetensors,
+        tokenizer.json, and config.json. No network is touched.
+
+        Raises:
+            FileNotFoundError: an artifact file is absent.
+            RuntimeError: the artifact does not parse or is malformed.
+        """
+        ...
+
+    @property
+    def model_hash(self) -> str:
+        """SHA-256 over the three artifact files: the model identity."""
+        ...
+
+    @property
+    def dimensions(self) -> int:
+        """Dimensions of every vector this model produces."""
+        ...
+
+def semantic_clusters(
+    embeddings: list[list[float]], threshold: float, model_hash: str
+) -> SemanticClusters:
+    """Cluster caller-supplied embedding vectors at `threshold`.
+
+    The vectors-in twin of `Matra.semantic_clusters` for consumers who
+    already hold embeddings; indices in the result are positions in
+    `embeddings`, and the scores are attributed to `model_hash`.
+
+    Raises:
+        ValueError: vectors disagree on dimension, contain a non-finite
+            value, exceed the 2,000-vector cap, or the threshold is not
+            finite.
+    """
+    ...

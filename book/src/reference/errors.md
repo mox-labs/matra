@@ -70,7 +70,7 @@ A metric has no gate of its own. The compression ratio skips any paragraph over 
 
 ### InvalidInput
 
-Returned by `semantic_clusters` when a caller breaks its documented contract: `sentences` and `embeddings` differing in length, embeddings disagreeing on dimension, an embedding containing a non-finite value, or a non-finite threshold. The payload names the violation. This variant means the call site is wrong, not the input data; nothing about the analyzed text produces it.
+Returned by `semantic_clusters` when a caller breaks its documented contract (embeddings disagreeing on dimension, an embedding containing a non-finite value, a non-finite threshold), and by `embed_and_cluster` when an embedder violates its own length contract. The payload names the violation. This variant means a call site or a provider implementation is wrong, not the input data; nothing about the analyzed text produces it.
 
 ### UnsupportedFormat
 

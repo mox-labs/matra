@@ -34,7 +34,7 @@ dev = [
 matra = "matra.cli:main"
 
 [tool.maturin]
-features = ["python", "udpipe"]
+features = ["python", "udpipe", "model2vec"]
 python-source = "python"
 module-name = "matra._core"
 include = [

@@ -198,6 +198,45 @@ class Keyphrase(TypedDict):
     score: float
 
 
+class SemanticEdge(TypedDict):
+    """An above-threshold similarity between two sentences, ``a < b``.
+
+    Mirrors ``matra::domain::SemanticEdge``. The score is cosine
+    similarity in the producing model's geometry.
+    """
+
+    a: int
+    b: int
+    score: float
+
+
+class SemanticCluster(TypedDict):
+    """One connected component of the above-threshold similarity graph.
+
+    Mirrors ``matra::domain::SemanticCluster``. Co-membership is
+    transitive: two members can share a cluster without sharing an
+    edge, and must never be read as pairwise similar. The edges list
+    every pair that actually cleared the threshold.
+    """
+
+    members: list[int]
+    edges: list[SemanticEdge]
+
+
+class SemanticClusters(TypedDict):
+    """Semantic-similarity clusters: Tier 2 output, standing alone.
+
+    Mirrors ``matra::domain::SemanticClusters``. Never attached to
+    ``Document`` (ADR-0010); carries the producing model's identity and
+    the caller-supplied threshold as provenance. A sentence with no
+    above-threshold edge appears in no cluster.
+    """
+
+    model_hash: str
+    threshold: float
+    clusters: list[SemanticCluster]
+
+
 __all__ = [
     "Document",
     "Keyphrase",
@@ -207,6 +246,9 @@ __all__ = [
     "Reporting",
     "RootAdverbial",
     "ScoredSentence",
+    "SemanticCluster",
+    "SemanticClusters",
+    "SemanticEdge",
     "Section",
     "Sentence",
     "Token",

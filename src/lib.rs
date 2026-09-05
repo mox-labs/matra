@@ -285,6 +285,36 @@ pub fn standard_decomposers() -> decompose::Decomposers {
     table
 }
 
+/// Embed a document's sentences, then cluster them: the one place both
+/// halves of the semantic pipeline meet (rule 7). The embedder's own
+/// [`identity`](embed::Embedder::identity) travels into the result, so
+/// the scores cannot be attributed to a model that did not produce them.
+///
+/// Sentence text reaching the embedder already passed the pipeline's
+/// size cap on its way through `annotate`; no second cap applies here.
+///
+/// # Errors
+///
+/// Whatever the embedder returns, plus [`domain::Error::InvalidInput`]
+/// if the embedder violates its length contract, plus everything
+/// [`extraction::semantic_clusters`] rejects.
+pub fn embed_and_cluster(
+    doc: &Document,
+    embedder: &dyn embed::Embedder,
+    threshold: f32,
+) -> domain::Result<domain::SemanticClusters> {
+    let texts: Vec<&str> = doc.sentences().map(|s| s.text.as_str()).collect();
+    let embeddings = embedder.embed(&texts)?;
+    if embeddings.len() != texts.len() {
+        return Err(domain::Error::InvalidInput(format!(
+            "embedder returned {} vectors for {} sentences, violating its contract",
+            embeddings.len(),
+            texts.len()
+        )));
+    }
+    extraction::semantic_clusters(&embeddings, threshold, embedder.identity())
+}
+
 // ---------------------------------------------------------------------------
 // PyO3 bindings (behind "python" feature flag)
 // ---------------------------------------------------------------------------
@@ -455,12 +485,85 @@ mod python {
                 crate::extraction::yake_keyphrases(&sentences, max_phrases).map_err(MatraError)?;
             to_dict(py, &result)
         }
+
+        /// Parse plain text, embed its sentences with `model`, and
+        /// cluster them at `threshold`. Returns the serialized
+        /// `SemanticClusters` as a dict.
+        #[cfg(feature = "model2vec")]
+        fn semantic_clusters<'py>(
+            &self,
+            py: Python<'py>,
+            text: &str,
+            threshold: f32,
+            model: &Model2Vec,
+        ) -> PyResult<Bound<'py, PyAny>> {
+            let doc = self.document(text, Format::PlainText)?;
+            let result =
+                crate::embed_and_cluster(&doc, &model.inner, threshold).map_err(MatraError)?;
+            to_dict(py, &result)
+        }
+    }
+
+    /// A loaded static embedding model (model2vec artifact format).
+    /// Tier 2: its vectors are model opinion, and everything derived from
+    /// them carries this model's identity (ADR-0010).
+    #[cfg(feature = "model2vec")]
+    #[pyclass(frozen)]
+    struct Model2Vec {
+        inner: crate::embed::model2vec::Model2Vec,
+    }
+
+    #[cfg(feature = "model2vec")]
+    #[pymethods]
+    impl Model2Vec {
+        /// Load from a directory holding model.safetensors,
+        /// tokenizer.json, and config.json. No network is touched.
+        #[staticmethod]
+        fn from_dir(dir: &str) -> PyResult<Self> {
+            let inner = crate::embed::model2vec::Model2Vec::from_dir(dir).map_err(MatraError)?;
+            Ok(Self { inner })
+        }
+
+        /// SHA-256 over the three artifact files, the identity carried
+        /// into every result derived from this model's vectors.
+        #[getter]
+        fn model_hash(&self) -> &str {
+            self.inner.model_hash()
+        }
+
+        /// Number of dimensions of every vector this model produces.
+        #[getter]
+        fn dimensions(&self) -> usize {
+            self.inner.dimensions()
+        }
+    }
+
+    /// Cluster caller-supplied embedding vectors at `threshold`,
+    /// attributing the scores to `model_hash`. The vectors-in twin of
+    /// `Matra.semantic_clusters` for consumers who already hold
+    /// embeddings; indices in the result are positions in `embeddings`.
+    #[pyfunction]
+    #[allow(unreachable_pub)] // pyo3 macro requirement, same as _core below.
+    pub fn semantic_clusters<'py>(
+        py: Python<'py>,
+        embeddings: Vec<Vec<f32>>,
+        threshold: f32,
+        model_hash: &str,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let embeddings: Vec<domain::Embedding> =
+            embeddings.into_iter().map(domain::Embedding).collect();
+        let result = crate::extraction::semantic_clusters(&embeddings, threshold, model_hash)
+            .map_err(MatraError)?;
+        to_dict(py, &result)
     }
 
     #[pymodule]
     #[allow(unreachable_pub)] // pyo3's #[pymodule] macro requires pub fn even when the module is private.
     pub fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_class::<Matra>()?;
+        #[cfg(feature = "model2vec")]
+        m.add_class::<Model2Vec>()?;
+        m.add_function(pyo3::wrap_pyfunction!(semantic_clusters, m)?)?;
         Ok(())
     }
 }

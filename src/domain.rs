@@ -56,7 +56,7 @@ pub struct Embedding(pub Vec<f32>);
 /// A sentence with no above-threshold edge appears in no cluster:
 /// singletons are excluded by construction, so "not in any cluster" is a
 /// meaningful consumer count, not an artifact.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct SemanticClusters {
     /// Identity of the model whose geometry produced the scores, as the
@@ -72,7 +72,7 @@ pub struct SemanticClusters {
 }
 
 /// One connected component of the above-threshold similarity graph.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct SemanticCluster {
     /// Sentence indices (document order positions) in this component.
@@ -84,7 +84,7 @@ pub struct SemanticCluster {
 }
 
 /// An above-threshold similarity between two sentences, `a < b`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct SemanticEdge {
     /// Lower sentence index.

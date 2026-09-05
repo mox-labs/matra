@@ -36,6 +36,10 @@ The feature is **`model2vec`**, not `embeddings`, and the adapter file is **`emb
 
 Caller-supplied files, SHA-256 verified through the read-then-consume pattern (hash bytes in memory, load from those bytes, never re-read disk between verify and load). The reference model is pinned by hash in `spec/`, part of the conformance contract exactly as the UDPipe model is. The backend stays pure Rust with no C FFI while the WASM path is open; `cargo check --no-default-features --features model2vec --target wasm32-unknown-unknown` becomes a CI gate when the adapter lands.
 
+## Amendments
+
+**2026-09-05 (M5).** Two signature refinements surfaced by the wiring milestone, neither changing any decision above. `Embedder` gains a second required method, `identity(&self) -> &str`: provenance is part of the port contract, because the composition root cannot otherwise attribute scores to the model that produced them, and a caller-carried hash could be the wrong one. And `extraction::semantic_clusters` takes `(embeddings, threshold, model_hash)` rather than also taking the sentence slice: the slice was only ever read for its length, and the document-to-embeddings correspondence check belongs to `embed_and_cluster`, the composition-root function that holds both halves. The plan's sketches are updated in lockstep.
+
 ## Options considered and rejected
 
 - **candle BERT as the first adapter** (the plan's original shape): viable and verified, but loses bit-parity to kernel dispatch, and its closure is the whole inference stack. It remains the designated second adapter.
