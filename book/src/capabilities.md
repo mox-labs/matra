@@ -100,9 +100,9 @@ Each `Sentence` also carries six structural primitives, read off the tree once a
 
 | Field | What it records |
 |---|---|
-| `negations` | negation cues: the arc carrying `not`, `never`, `no` and the token it negates |
+| `negations` | negation cues: the arc carrying `not`, `never`, `no`, `neither`, `nor` and the token it negates |
 | `modals` | modal auxiliaries (`may`, `must`, `could`) with the verb they scope |
-| `bare_assertion` | whether the root clause asserts outright, with no modal and no negation on it |
+| `bare_assertion` | whether the root clause is finite indicative with no modal governing it; negation does not defeat it, so `The sky is not blue` is still a bare assertion carrying a negation |
 | `reportings` | reporting constructions: a verb governing a clausal complement, with the subject when one is present (`the author claims that ...`) |
 | `root_adverbials` | adverbials attached to the root, the position evidential markers occupy (`reportedly`, `clearly`) |
 | `hearst_pairs` | hypernym candidates from the six Hearst patterns (`metrics such as readability`), as span pairs with token ids |
