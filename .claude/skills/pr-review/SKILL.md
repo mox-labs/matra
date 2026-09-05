@@ -70,7 +70,7 @@ aliases.
   non-optional dependency used in domain compiles clean under every
   flag; nothing mechanical catches it. Read the use lines and
   `[dependencies]`.
-- Port modules (`source/`, `decompose/`, `nlp/` mod.rs) import only
+- Port modules (`source/`, `decompose/`, `nlp/`, `embed/` mod.rs) import only
   domain. No port imports another port.
 - `udpipe_rs` appears only in `src/nlp/udpipe.rs` (the panic boundary
   lives there; watch for re-exports letting the type escape).

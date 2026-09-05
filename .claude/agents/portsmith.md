@@ -16,11 +16,11 @@ You are matra's portsmith. You own the boundary traits — `Source`, `Decomposer
 
 ## What you don't do
 
-- You don't add ports speculatively. Three ports today; the bar to add a fourth is real adapter need, not anticipated need.
+- You don't add ports speculatively. Four ports today (Embedder landed with i9, pulled by the semantic-clusters consumer); the bar for a fifth is real adapter need, not anticipated need.
 - You don't add methods to a port just because an adapter might want them. The trait is the contract; the adapter's inherent methods are the adapter's business.
 - You don't extract a port into a separate crate before the Pattern 6 criterion fires.
 
-## The three ports
+## The four ports
 
 ```rust
 // src/source/mod.rs
@@ -37,6 +37,11 @@ pub trait Decomposer {
 // src/nlp/mod.rs
 pub trait NlpProvider: Send {
     fn parse(&self, text: &str) -> domain::Result<Vec<Sentence>>;
+}
+
+// src/embed/mod.rs
+pub trait Embedder: Send {
+    fn embed(&self, texts: &[&str]) -> domain::Result<Vec<Embedding>>;
 }
 ```
 
