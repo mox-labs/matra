@@ -34,6 +34,7 @@ those by hand.
 ### Added
 
 - `embed` port: the `Embedder` trait (one method, `embed`, batch in, vectors out, length- and dimension-uniform by contract) and the `domain::Embedding` carrier, a serde-transparent newtype over `Vec<f32>`. Tier 2 channel discipline per ADR-0010: nothing derived from embeddings becomes a field on the deterministic pipeline's types.
+- `extraction::semantic_clusters` and the `SemanticClusters` / `SemanticCluster` / `SemanticEdge` domain types: connected-component clustering over precomputed sentence embeddings, edges carried in the type so co-membership is never mistaken for pairwise similarity, singletons excluded by construction, model identity and threshold carried as provenance. Pure over domain values; tested without any model. New `Error::InvalidInput` variant for contract violations, routed to Python `ValueError`.
 - `model2vec` feature: a static-embedding adapter loading the model2vec artifact format (safetensors matrix, tokenizer.json, config.json), caller-supplied with no network, hashed on load for provenance. Pure-Rust closure verified on wasm32 (a new CI job holds the line). Inference is a gather, mean pool, and optional L2 normalize, parity-tested against the Python reference; f16/i8 artifacts are rejected loudly (f32 only in this build). Panics in the parsing paths convert to `Error::ModelInvalid` at the adapter boundary.
 
 ## [0.1.0] - 2026-08-21

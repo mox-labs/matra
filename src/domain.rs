@@ -43,6 +43,58 @@ pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Embedding(pub Vec<f32>);
 
+/// Semantic-similarity clusters over a document's sentences: Tier 2
+/// output, standing alone, never attached to [`Document`] (ADR-0010).
+///
+/// Clusters are connected components of the similarity graph whose edges
+/// cleared `threshold`, so co-membership is transitive: two sentences can
+/// share a cluster without sharing an edge, and co-membership must never
+/// be read as pairwise similarity. The above-threshold edges travel in
+/// each cluster precisely so a consumer can see which pairs actually
+/// cleared the bar; a missing edge means no claim, not low similarity.
+///
+/// A sentence with no above-threshold edge appears in no cluster:
+/// singletons are excluded by construction, so "not in any cluster" is a
+/// meaningful consumer count, not an artifact.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct SemanticClusters {
+    /// Identity of the model whose geometry produced the scores, as the
+    /// embed adapter reports it (a digest over the model artifacts).
+    pub model_hash: String,
+    /// The caller-supplied similarity cutoff the edges cleared. matra
+    /// knows no universal threshold; the literature's published values
+    /// span 0.67 to 0.9 with no consensus.
+    pub threshold: f32,
+    /// The clusters, ordered by smallest member index; each cluster's
+    /// members and edges are sorted, so output order is deterministic.
+    pub clusters: Vec<SemanticCluster>,
+}
+
+/// One connected component of the above-threshold similarity graph.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct SemanticCluster {
+    /// Sentence indices (document order positions) in this component.
+    pub members: Vec<usize>,
+    /// Every pair whose cosine similarity cleared the threshold. Pairs of
+    /// members without an edge here did not clear it individually; they
+    /// share the cluster through the chain.
+    pub edges: Vec<SemanticEdge>,
+}
+
+/// An above-threshold similarity between two sentences, `a < b`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct SemanticEdge {
+    /// Lower sentence index.
+    pub a: usize,
+    /// Higher sentence index.
+    pub b: usize,
+    /// Cosine similarity, in the model's geometry.
+    pub score: f32,
+}
+
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
@@ -77,6 +129,11 @@ pub enum Error {
     /// Seen when analyzing a Pdf/Docx file without the relevant adapter.
     #[error("unsupported format: {0:?}")]
     UnsupportedFormat(Format),
+    /// A caller violated a documented API contract (mismatched argument
+    /// lengths, disagreeing dimensions, a non-finite parameter). Names
+    /// the violation; fix the call site, not the input data.
+    #[error("invalid input: {0}")]
+    InvalidInput(String),
     /// File I/O error.
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
