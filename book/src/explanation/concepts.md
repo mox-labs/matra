@@ -90,7 +90,7 @@ The pipeline produces them in this order, and each tier is a different kind of c
 
 ## Structural primitives
 
-A structural primitive is a construction read off the dependency graph and reported as a field. Six of them are computed once, at `Sentence` construction, and travel with the sentence into every language binding. They name an arc shape. They never name a verdict.
+A structural primitive is a construction read off the dependency graph and reported as a field. Six of them are computed once and travel with the sentence into every language binding: five at `Sentence` construction, and `hearst_pairs` at `Engine::annotate`, because its detector lives outside the domain (a `Sentence` built by hand has an empty `hearst_pairs`). They name an arc shape. They never name a verdict.
 
 | Field | The arc shape | Grounded example |
 |---|---|---|
@@ -107,7 +107,7 @@ Two consequences of reporting arcs rather than readings:
 
 **Overlap is intentional.** `never` in the example above is both a `Negation` and a `RootAdverbial`, because it satisfies both arc shapes. Neither field is assigning it a meaning, so neither has to win.
 
-Passive voice is the seventh construction and the one exception to the field shape: `Sentence::is_passive` matches `nsubj:pass` on demand, and its document-level share is materialized as the `passive_ratio` field.
+Passive voice is the seventh construction and the one exception to the field shape: `Sentence::is_passive` matches `nsubj:pass` or `aux:pass` on demand, and its document-level share is materialized as the `passive_ratio` field.
 
 Reporting verbs and root adverbials are open word classes, so matra ships no lexicon for either. `Sentence::reportings_in` and `Sentence::root_adverbials_in` filter by a list you supply.
 
