@@ -39,7 +39,7 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 **The rule.** Each port module imports from `crate::domain` and `std`, and from no other module or crate.
 
-**Scope.** `src/source/mod.rs`, `src/decompose/mod.rs`, `src/nlp/mod.rs`.
+**Scope.** `src/source/mod.rs`, `src/decompose/mod.rs`, `src/nlp/mod.rs`, `src/embed/mod.rs`.
 
 **Why it is drawn there.** A port is a contract. Whatever the contract imports becomes a requirement on everyone who implements it, so a domain-only port stays implementable by someone who has never read matra's adapters.
 
@@ -110,7 +110,7 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 | File touched | Rules in scope |
 |---|---|
 | `src/domain.rs` | 1, 8 |
-| `src/source/mod.rs`, `src/decompose/mod.rs`, `src/nlp/mod.rs` | 2, 3, 8 |
+| `src/source/mod.rs`, `src/decompose/mod.rs`, `src/nlp/mod.rs`, `src/embed/mod.rs` | 2, 3, 8 |
 | `src/nlp/udpipe.rs` | 4, 6 |
 | Other adapters | 6, 7 |
 | `src/metrics/`, `src/extraction/`, `src/hearst.rs` | 5, 6 |

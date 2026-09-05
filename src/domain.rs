@@ -23,6 +23,27 @@ use serde::{Deserialize, Serialize};
 pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;
 
 // ---------------------------------------------------------------------------
+// Embedding carrier (Tier 2)
+// ---------------------------------------------------------------------------
+
+/// A dense vector representation of a text, produced by an implementation
+/// of the embed port's `Embedder` trait.
+///
+/// Model opinion, not verifiable structure: an embedding cannot be checked
+/// against the source bytes, so it never appears as a field on [`Document`]
+/// or any other type the deterministic pipeline returns (ADR-0010). Values
+/// derived from embeddings carry their provenance (model hash, parameters)
+/// in their own standalone types.
+///
+/// Serde treats the newtype transparently, so the wire form is the bare
+/// array. Deliberately not `#[non_exhaustive]`: on a tuple struct that
+/// attribute makes the constructor crate-private, and external `Embedder`
+/// implementors must construct these values; ADR-0010 records the
+/// departure from the convention.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Embedding(pub Vec<f32>);
+
+// ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
 
@@ -1288,6 +1309,17 @@ impl FromIterator<std::result::Result<CorpusEntry, DocumentError>> for CorpusRes
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The wire form ADR-0010 commits to: a newtype serializes as the
+    /// bare array, not an object wrapping one.
+    #[test]
+    fn embedding_serializes_as_bare_array() {
+        let e = Embedding(vec![1.0, -0.5, 0.25]);
+        let json = serde_json::to_string(&e).expect("serialize");
+        assert_eq!(json, "[1.0,-0.5,0.25]");
+        let back: Embedding = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(back, e);
+    }
 
     fn make_token(id: usize, text: &str, pos: &str, dep: &str, head: usize) -> Token {
         Token {
