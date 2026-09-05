@@ -1,191 +1,132 @@
 # What matra gives you
 
-matra turns a document into a typed tree and measures it. Everything below is a value you can read off that tree. Nothing on this page is an opinion about the text.
-
-Four families of output, in the order the pipeline produces them.
+Every value the pipeline returns, by tier. "Crust" says which language surfaces carry it: fields cross to Python, methods do not.
 
 ## 1. Structure
 
-Every word becomes a `Token` carrying the ten CoNLL-U columns:
+Produced by `Engine::annotate`.
 
-| Field | What it holds |
+### `Token`
+
+The ten CoNLL-U columns plus one derived flag. All cross to Python.
+
+| Field | Holds |
 |---|---|
+| `id` | 1-based position in the sentence |
 | `text` | the word as written |
 | `lemma` | dictionary form (`approved` becomes `approve`) |
 | `pos` | universal part of speech (`NOUN`, `VERB`, `ADJ`) |
 | `xpos` | treebank-specific tag, finer grained than `pos` |
 | `feats` | morphology (tense, number, person) |
-| `head` | id of the token this one depends on |
+| `head` | `id` of the token this one depends on, `0` for the root |
 | `dep` | the dependency relation to that head |
-| `deps`, `misc` | secondary dependencies and annotation |
-| `is_punct` | punctuation flag, so you can filter without a regex |
+| `deps` | secondary dependencies |
+| `misc` | annotation |
+| `is_punct` | punctuation flag |
 
-`head` names another token's `id`, and `dep` names the relation between them. Those two columns turn a flat list of tokens into a tree:
+`Token::feat(key)` reads one morphological feature. Rust only.
 
-<svg class="mx-dt" role="img" aria-label="Dependency tree for the sentence: The system was built by the team" viewBox="0 0 720 305" width="720" height="305" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
-<title>Dependency tree for: The system was built by the team</title>
-<style>
-.mx-dt text{fill:currentColor;font-family:inherit}
-.mx-dt .w{font-size:13px;text-anchor:middle}
-.mx-dt .m{font-size:9.5px;text-anchor:middle;opacity:.55;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.mx-dt .rel{font-size:10px;text-anchor:middle;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;paint-order:stroke;stroke:var(--bg,transparent);stroke-width:3.5px;stroke-linejoin:round}
-.mx-dt .ax{font-size:10px;text-anchor:end;opacity:.55}
-.mx-dt .nt{font-size:9.5px;opacity:.55}
-.mx-dt .e{stroke:currentColor;fill:none;opacity:.5;stroke-width:1.1px}
-.mx-dt .p{opacity:1;stroke-width:2.4px}
-.mx-dt .s{stroke:currentColor;opacity:.2;stroke-width:1px}
-.mx-dt .d{fill:currentColor}
-</style>
-<text class="ax" x="76" y="64">root</text>
-<text class="ax" x="76" y="134">depth 1</text>
-<text class="ax" x="76" y="204">depth 2</text>
-<line class="e p" x1="358" y1="60" x2="186" y2="130"/>
-<line class="e p" x1="358" y1="60" x2="272" y2="130"/>
-<line class="e" x1="358" y1="60" x2="616" y2="130"/>
-<line class="e" x1="186" y1="130" x2="100" y2="200"/>
-<line class="e" x1="616" y1="130" x2="444" y2="200"/>
-<line class="e" x1="616" y1="130" x2="530" y2="200"/>
-<line class="s" x1="100" y1="200" x2="100" y2="238"/>
-<line class="s" x1="186" y1="130" x2="186" y2="238"/>
-<line class="s" x1="272" y1="130" x2="272" y2="238"/>
-<line class="s" x1="358" y1="60" x2="358" y2="238"/>
-<line class="s" x1="444" y1="200" x2="444" y2="238"/>
-<line class="s" x1="530" y1="200" x2="530" y2="238"/>
-<line class="s" x1="616" y1="130" x2="616" y2="238"/>
-<circle class="d" cx="100" cy="200" r="3.2"/>
-<circle class="d" cx="186" cy="130" r="3.2"/>
-<circle class="d" cx="272" cy="130" r="3.2"/>
-<circle class="d" cx="358" cy="60" r="4.4"/>
-<circle class="d" cx="444" cy="200" r="3.2"/>
-<circle class="d" cx="530" cy="200" r="3.2"/>
-<circle class="d" cx="616" cy="130" r="3.2"/>
-<text class="nt" x="370" y="50">root, head = 0</text>
-<text class="rel" x="238" y="109">nsubj:pass</text>
-<text class="rel" x="328" y="85">aux:pass</text>
-<text class="rel" x="487" y="95">obl</text>
-<text class="rel" x="143" y="165">det</text>
-<text class="rel" x="530" y="165">case</text>
-<text class="rel" x="573" y="165">det</text>
-<text class="w" x="100" y="252">The</text>
-<text class="w" x="186" y="252">system</text>
-<text class="w" x="272" y="252">was</text>
-<text class="w" x="358" y="252">built</text>
-<text class="w" x="444" y="252">by</text>
-<text class="w" x="530" y="252">the</text>
-<text class="w" x="616" y="252">team</text>
-<text class="m" x="100" y="266">1 DET</text>
-<text class="m" x="186" y="266">2 NOUN</text>
-<text class="m" x="272" y="266">3 AUX</text>
-<text class="m" x="358" y="266">4 VERB</text>
-<text class="m" x="444" y="266">5 ADP</text>
-<text class="m" x="530" y="266">6 DET</text>
-<text class="m" x="616" y="266">7 NOUN</text>
-<text class="nt" x="30" y="292">heavier lines are the two relations is_passive() matches</text>
-</svg>
+### `Sentence`
 
-Words keep their reading order left to right; height is depth in the tree. `built` is the root, everything else hangs off it directly or through one more hop, and nothing sits deeper than that, so `tree_depth()` returns 2. `Sentence` gives you the walks over that tree:
+| Field | Holds |
+|---|---|
+| `text` | verbatim sentence text |
+| `tokens` | `Vec<Token>`, id-sorted |
+| `negations` | `Vec<Negation>`: cue id, cue lemma, head id |
+| `modals` | `Vec<Modal>`: auxiliary id, lemma, head id |
+| `bare_assertion` | `bool`: finite indicative root with no modal governing it |
+| `reportings` | `Vec<Reporting>`: verb id and lemma, `ccomp` head id, subject when present |
+| `root_adverbials` | `Vec<RootAdverbial>`: adverbial id and lemma |
+| `hearst_pairs` | `Vec<HearstPair>`: pattern tag plus hypernym and hyponym `HearstSpan` values |
 
-| Call | Returns |
+All eight cross to Python. The methods below are Rust only.
+
+| Method | Returns |
 |---|---|
 | `root_token()` | the token everything else hangs off |
 | `head_of(id)` | the governor of a token |
 | `children_of(id)` | its direct dependents |
 | `subtree(id)` | the whole clause under it |
 | `tree_depth()` | nesting depth, `usize::MAX` on a malformed cycle |
-| `is_passive()` | whether the sentence carries `nsubj:pass` |
+| `is_passive()` | whether the sentence carries `nsubj:pass` or `aux:pass` |
 | `content_tokens()` | non-punctuation tokens |
 | `word_count()` | count of those |
+| `reportings_in(lexicon)` | the reportings whose verb lemma is in a list you supply |
+| `root_adverbials_in(lexicon)` | the root adverbials whose lemma is in a list you supply |
 
-Each `Sentence` also carries six structural primitives, read off the tree once at parse time and shipped as fields:
+### `Paragraph`, `Section`, `Document`
 
-| Field | What it records |
-|---|---|
-| `negations` | negation cues: the arc carrying `not`, `never`, `no`, `neither`, `nor` and the token it negates |
-| `modals` | modal auxiliaries (`may`, `must`, `could`) with the verb they scope |
-| `bare_assertion` | whether the root clause is finite indicative with no modal governing it; negation does not defeat it, so `The sky is not blue` is still a bare assertion carrying a negation |
-| `reportings` | reporting constructions: a verb governing a clausal complement, with the subject when one is present (`the author claims that ...`) |
-| `root_adverbials` | adverbials attached to the root, the position evidential markers occupy (`reportedly`, `clearly`) |
-| `hearst_pairs` | hypernym candidates from the six Hearst patterns (`metrics such as readability`), as span pairs with token ids |
-
-Same substrate line as everything else: each names a construction, not a judgment. `reportings` and `root_adverbials` match structure for open word classes, so the filtering lexicon is yours to supply.
-
-Above the sentence sit `Paragraph`, `Section`, and `Document`. Sections carry their heading and level, so the document tree mirrors the document's own outline.
+| Type | Fields (cross to Python) | Methods (Rust only) |
+|---|---|---|
+| `Paragraph` | `text`, `in_blockquote`, `sentences`, `readability_grade`, `lexical_density`, `compression_ratio` | `word_count()`, `sentence_count()` |
+| `Section` | `heading`, `level`, `paragraphs` | none |
+| `Document` | `sections`, `vocabulary_ttr`, `nominalization_ratio`, `passive_ratio` | `paragraphs()`, `sentences()`, `tokens()`, `paragraph_count()`, `total_sentences()`, `total_words()`, `passive_ratio()`, `mean_sentence_length()`, `sentence_length_std()` |
 
 ## 2. Metrics
 
-Five numbers computed over that structure. Three are per paragraph, two per document.
+Produced by `Engine::compose`. Each is `Option<f64>`, and `None` means not computed, which is distinct from a computed zero. [Methodology](./reference/methodology.md) gives each formula and the exact condition for `None`.
 
-| Metric | Scope | What it measures |
+| Field | On | Measures |
 |---|---|---|
-| `readability_grade` | paragraph | Flesch-Kincaid grade level, from sentence and syllable length |
-| `lexical_density` | paragraph | content words as a share of all words |
-| `compression_ratio` | paragraph | brotli compressed size over raw size, a proxy for repetition |
-| `vocabulary_ttr` | document | distinct words over total words |
-| `nominalization_ratio` | document | share of nouns formed from verbs (`decide` becoming `decision`) |
+| `readability_grade` | `Paragraph` | Flesch-Kincaid grade level, from sentence and syllable length |
+| `lexical_density` | `Paragraph` | content words as a share of all words |
+| `compression_ratio` | `Paragraph` | brotli compressed size over raw size, a repetition proxy |
+| `vocabulary_ttr` | `Document` | distinct words over total words, and it falls as text grows, so documents of different lengths are not comparable on it |
+| `nominalization_ratio` | `Document` | share of nouns formed from verbs (`decide` becoming `decision`) |
+| `passive_ratio` | `Document` | share of sentences carrying a passive construction |
 
-Each is `Option<f64>`. `None` means the metric could not be computed for that unit, most often because it was too short or exceeded a size cap, and it is distinct from a computed zero. [Methodology](./reference/methodology.md) gives each formula and the exact condition under which it returns `None`.
-
-One caution before you compare documents. `vocabulary_ttr` is a raw type-token ratio, and that measure falls as text grows: a longer document reuses words it has already spent. Two documents of different lengths are therefore not comparable on this field, and the gap you see is partly length rather than voice. Within a fixed length it is sound. Across a corpus, normalize first.
-
-Alongside them, `Document` computes on demand: `total_words`, `total_sentences`, `paragraph_count`, `passive_ratio`, `mean_sentence_length`, and `sentence_length_std`. `Corpus` adds `total_words`, `passive_ratio`, and `mean_readability` across every document in a directory.
+`Corpus` adds three Rust-only aggregates across the documents of a directory: `total_words()`, `passive_ratio()`, `mean_readability()`.
 
 ## 3. Summarization
 
-Two rankers, both returning `ScoredSentence` with the sentence text, its score, and its original position.
+Free functions over a sentence slice. Both return `Vec<ScoredSentence>` (`text`, `score`, `position`) in document order, capped at 2,000 sentences.
 
-`tfidf_summarize` scores each sentence by the rarity of the words in it against the rest of the document. It is fast and it favours sentences carrying distinctive vocabulary.
+| Function | Ranks by |
+|---|---|
+| `tfidf_summarize(sentences, n)` | mean TF-IDF of the sentence's lemmatized terms, each sentence its own document for IDF |
+| `textrank_summarize(sentences, n)` | PageRank over a similarity graph of shared content lemmas normalized by log length |
 
-`textrank_summarize` builds a similarity graph across sentences and runs PageRank over it. It favours sentences that many others resemble, which tends to surface the document's central claim rather than its most unusual one. It is capped at `MAX_SENTENCES` because the graph is quadratic.
+Both are on the Python surface as `Matra.tfidf_summarize` and `Matra.textrank_summarize`, which parse the text and run the extractor in one call.
 
 ## 4. Keyphrases
 
-Two extractors, both returning `Keyphrase` with the phrase and its score.
+Free functions over a sentence slice. Both return `Vec<Keyphrase>` (`phrase`, `score`), highest score first, capped at 200,000 tokens.
 
-`rake_keyphrases` splits on stopwords and scores the runs between them by word degree over frequency. It finds multi-word phrases well and needs no corpus.
+| Function | Ranks by |
+|---|---|
+| `rake_keyphrases(sentences, max)` | co-occurrence degree over frequency, on `NOUN`, `ADJ`, and `PROPN` runs between stop words |
+| `yake_keyphrases(sentences, max)` | per-term position, frequency, and context diversity, assembled into 1-word to 3-word candidates, score inverted so higher is more relevant |
 
-`yake_keyphrases` scores individual terms on position, casing, spread, and sentence frequency, then assembles phrases. It is more selective on single-word terms.
+Both are on the Python surface as `Matra.rake_keyphrases` and `Matra.yake_keyphrases`.
 
-### What these four are not
+## 5. Semantic clusters
 
-All four rank what is already in the text by a statistical measure of importance. None of them produces a claim. A `ScoredSentence` is a sentence the document contained, selected because its vocabulary or its graph position scored well, and nothing about that selection asserts the sentence states something, or that what it states is atomic, or that it is true.
+Behind the `model2vec` feature. Not a field on any type above.
 
-If you need claims rather than salient sentences, that work sits above matra and generally needs a model that reads for meaning. What matra contributes to it is the layer underneath: sentence boundaries, the predicate-argument structure of each one, and the verbatim text to ground a claim back to.
+| Item | Is |
+|---|---|
+| `Embedder` | the port: `embed(&[&str])` returning one `Embedding` per text, plus `identity()` |
+| `Model2Vec` | the adapter, loading `model.safetensors`, `tokenizer.json`, and `config.json` from a directory |
+| `embed_and_cluster(doc, embedder, threshold)` | embeds a document's sentences, then clusters them |
+| `extraction::semantic_clusters(embeddings, threshold, model_hash)` | clusters vectors you already hold |
+| `SemanticClusters` | `model_hash`, `threshold`, and `clusters` |
+| `SemanticCluster` | `members` (sentence indices) plus the `SemanticEdge` values that cleared the threshold |
 
-Used deliberately, the gap is informative. Where these extractors and a semantic extractor agree on what a document is about, that agreement is evidence. Where they diverge is worth looking at.
+Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `Model2Vec`, and the module-level `semantic_clusters`.
 
-## Provenance is preserved
+## The pipeline surface
 
-`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Nothing is normalized, re-wrapped, or rewritten on the way through, and because each paragraph is parsed on its own, the chain from a token up through its sentence, paragraph, and section is unambiguous rather than reconstructed by matching text.
-
-This matters if you store analysis and later have to show which bytes a value came from. Provenance holds by construction, not by convention.
-
-## The surface
-
-One pipeline, two values. `Ingest` says where documents come from; `Engine` says what happens to each one.
-
-| Value | Constructors | What it carries |
+| Value | Constructors | Carries |
 |---|---|---|
-| `Ingest` | `text(string, format)`, `path(file or directory)` | the source variation: a string is a stream of one, a directory is a stream of many |
-| `Engine` | `new(provider, decomposer table)` | the pipeline: `analyze` a stream, `analyze_one` document, or the stages `annotate` and `compose` separately |
+| `Ingest` | `text(string, format)`, `path(file or directory)` | the source: a string is a stream of one, a directory a stream of many |
+| `Engine` | `new(provider, decomposer table)` | `analyze` over a stream, `analyze_one`, or the stages `annotate` and `compose` |
 
-`engine.analyze(ingest)` returns a lazy stream of per-document results; collecting it into `CorpusResult` partitions successes from failures, and nothing in between aborts on one bad file. `annotate` gives you structure and sentences without the metric suite, which is the route when you want the extractors: read the sentences off the tree once and hand the same slice to every extractor. Nothing is parsed twice.
+`engine.analyze(ingest)` returns a lazy iterator of per-document results. Collecting it into `CorpusResult` partitions successes from failures, and one bad file does not abort the stream.
 
-## What this is for
+## Provenance
 
-The output is structure, not verdict. matra tells you a sentence carries `nsubj:pass`; it does not tell you the sentence is weak. That boundary is deliberate, and it is what makes the output reusable.
-
-Some things that fall out of it:
-
-**Retrieval and chunking.** Section and paragraph boundaries come from the document's own outline, so chunks split where the author split rather than every N tokens.
-
-**Corpus comparison.** A directory streamed through the pipeline gives per-document metrics on a shared scale, so drift between documents or across time is measurable rather than felt.
-
-**Rule evaluation.** The dependency tree is queryable. A rule like "flag passive constructions whose agent is omitted" is a walk over `children_of` and `dep`, not a regex over prose.
-
-**Feature extraction.** Every field is serde-serializable and crosses to Python as a plain dict, so the parse can feed a model without a Rust dependency downstream.
+`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Nothing is normalized, re-wrapped, or rewritten, and each paragraph is parsed on its own, so the chain from a token up through its sentence, paragraph, and section holds by construction rather than by text matching.
 
 ## Where to go next
 
-[Domain model](./reference/domain-types.md) is the full type graph: what each type owns, which values are stored and which are computed, and what crosses the language boundary.
-
-[Architecture](./architecture/design.md) is how a call actually runs: what executes in what order, where the expensive state lives, and what can fail.
+[Domain model](./reference/domain-types.md) is the full type graph. [Methodology](./reference/methodology.md) is every formula. [Errors](./reference/errors.md) is every failure.

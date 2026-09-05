@@ -39,6 +39,10 @@ those by hand.
 - Python: `Model2Vec` (load a static model, read its hash and dimensions, `embed` texts directly for the UDPipe-free path), `Matra.semantic_clusters(text, threshold, model)`, and the vectors-in module function `semantic_clusters(embeddings, threshold, model_hash)`; wheels now build with the `model2vec` feature. The FFI shape fixture lands at `spec/tests/semantic/clusters.json` with Rust and Python runners, comparison done in f32 space.
 - `model2vec` feature: a static-embedding adapter loading the model2vec artifact format (safetensors matrix, tokenizer.json, config.json), caller-supplied with no network, hashed on load for provenance. Pure-Rust closure verified on wasm32 (a new CI job holds the line). Inference is a gather, mean pool, and optional L2 normalize, parity-tested against the Python reference; f16/i8 artifacts are rejected loudly (f32 only in this build). Panics in the parsing paths convert to `Error::ModelInvalid` at the adapter boundary.
 
+### Changed
+
+- Docsite: an Explanation section (concepts, situation model, programming model, pragmatics) now precedes the guides; the capabilities page is a straight per-tier reference; architecture and boundary rules move under Contributing. Existing pages lose meta-commentary and restatement without losing facts. The domain-model page now records `passive_ratio` as a stored field that crosses to Python, which it has been since 0.1.0.
+
 ## [0.1.0] - 2026-08-21
 
 First release. The surface this version freezes is the one pipeline

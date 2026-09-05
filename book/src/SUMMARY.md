@@ -2,11 +2,12 @@
 
 [Introduction](introduction.md)
 
-# Understanding matra
+# Explanation
 
-- [What matra gives you](capabilities.md)
-- [Domain model](reference/domain-types.md)
-- [Architecture](architecture/design.md)
+- [Concepts](explanation/concepts.md)
+- [Situation model](explanation/situation-model.md)
+- [Programming model](explanation/programming-model.md)
+- [Pragmatics](explanation/pragmatics.md)
 
 # Using matra
 
@@ -18,8 +19,14 @@
 
 # Reference
 
+- [What matra gives you](capabilities.md)
+- [Domain model](reference/domain-types.md)
 - [Methodology](reference/methodology.md)
 - [Errors](reference/errors.md)
+
+# Contributing
+
+- [Architecture](architecture/design.md)
 - [Boundary rules](reference/boundary-rules.md)
 
 # What is planned

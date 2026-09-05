@@ -1,6 +1,6 @@
 # Use matra from Rust
 
-You already have `matra` in your `Cargo.toml` and a UDPipe model on disk. This guide covers assembling the pipeline, the size gates, the parse-once-use-many pattern, why a metric slot comes back `None`, error handling, and walking a parsed document's dependency trees.
+You already have `matra` in your `Cargo.toml` and a UDPipe model on disk.
 
 Every snippet below assumes it runs inside a function returning `matra::domain::Result<()>`, which is why `?` works.
 

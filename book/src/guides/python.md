@@ -1,6 +1,6 @@
 # Use matra from Python
 
-You installed matra with `uv add matra`. This guide covers loading the model, the six analysis methods, the shape of the dicts they return, why a metric field comes back `None`, and which Python exception each `domain::Error` variant becomes.
+You installed matra with `uv add matra`.
 
 ## Load the model
 
