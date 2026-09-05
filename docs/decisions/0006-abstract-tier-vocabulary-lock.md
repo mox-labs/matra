@@ -94,6 +94,7 @@ If `Finding` lands as an enum, the same five rules apply at the variant level, p
 - **`Paragraph.in_blockquote` → `ParagraphKind` enum.** The boolean's job (gate measure or not) is binary today. The deprecation rustdoc on the field signals the future migration; the field stays in 0.0.x and 0.1.x.
 - **Metric slot grouping into `ParagraphMetrics`.** Phase 2 work, dependent on whether the cost-benefit lands. Outer `Option<ParagraphMetrics>` is **forbidden** (breaks I-P3 independent-metric-gating); inner `Option<f64>` per slot is the only shape that preserves the invariant.
 - **`CorpusEntry` collapse + `RawDocument` disambiguation.** Phase 2 work, paired with the rules iteration.
+- **`CorpusEntry.analysis` field rename.** Found by the i9 naming review (2026-09-04): the field carries the `Analysis` concept this ADR rejected, and post-0.1.0 the rename is SemVer-major. Fold it into the `CorpusEntry` collapse above so the break is paid once. The metric function parameter names (`analysis: &mut Document` in `src/metrics/`) are internal and free to fix any time.
 - **`Finding` shape (trait vs enum).** Phase 2, decided at the first concrete consumer site.
 
 ## Validation criteria
