@@ -79,10 +79,13 @@ install-hooks:
     bash scripts/install-hooks.sh
 
 # ---------------------------------------------------------------------------
-# Run the conformance suite across every crust. Requires the UDPipe model.
+# Run the conformance suite across every crust. Requires the UDPipe model
+# and, for the semantic lane, potion-base-8M at ~/.matra/models (or
+# MATRA_MODEL2VEC_DIR); the library downloads neither.
 conformance:
     cargo test --test conformance -- --ignored
-    uv run pytest python/tests/test_conformance.py -q
+    cargo test --features model2vec --test semantic_conformance -- --include-ignored
+    uv run pytest python/tests/test_conformance.py python/tests/test_semantic_conformance.py -q
 
 
 # ---------------------------------------------------------------------------

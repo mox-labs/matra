@@ -8,6 +8,7 @@ shortest-repr floats and the f32-to-f64 widening the binding performs
 denote the same f32 while differing as f64.
 """
 
+import hashlib
 import json
 import os
 import struct
@@ -65,6 +66,14 @@ def test_reference_model_vectors_and_clusters_are_exact() -> None:
 
     vectors = model.embed(fixture["inputs"])
     assert all(len(v) == model.dimensions for v in vectors)
+
+    # The bit-determinism pin, same bytes the Rust runner hashes:
+    # f32-to-f64 widening is exact, so packing back to "<f" is lossless.
+    digest = hashlib.sha256()
+    for vec in vectors:
+        for v in vec:
+            digest.update(struct.pack("<f", v))
+    assert digest.hexdigest() == fixture["vectors_sha256"]
 
     for case in fixture["cases"]:
         got = semantic_clusters(vectors, case["threshold"], model.model_hash)
