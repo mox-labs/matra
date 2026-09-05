@@ -101,7 +101,7 @@ maturin develop                                # Python local install
 maturin build                                  # Python wheel
 ```
 
-Features are additive: `udpipe` (default), `python`, `cli`. **Do not run `cargo test --all-features`.** It enables `python`, which builds against libpython with symbols deliberately left undefined until the interpreter loads them, so it fails at link with an arm64 symbol error that looks like a regression and is not.
+Features are additive: `udpipe` (default), `model2vec`, `python`, `cli`. **Do not run `cargo test --all-features`.** It enables `python`, which builds against libpython with symbols deliberately left undefined until the interpreter loads them, so it fails at link with an arm64 symbol error that looks like a regression and is not.
 
 ## DAO — practitioner agents
 
