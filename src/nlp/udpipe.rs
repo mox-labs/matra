@@ -239,6 +239,13 @@ const ENGLISH_MODEL_FILENAME: &str = "english-ewt-ud-2.5-191206.udpipe";
 /// an interrupted transfer leaves nothing behind. The bytes returned are
 /// the bytes that satisfied the digest, which is what closes the TOCTOU
 /// window: the loader never reads the disk again.
+///
+/// A cached file that is not the pinned model is removed, but only once
+/// a replacement is in hand. Removing it first cost the user their
+/// working file whenever the refetch then failed, which offline plus a
+/// corrupt cache made a certainty, and bought nothing: [`install`] lands
+/// through a rename and `fs::rename` replaces an existing destination,
+/// so the write never needed the name free.
 fn provision(
     dir: &Path,
     filename: &str,
@@ -251,14 +258,15 @@ fn provision(
     create_model_dir(dir)?;
     let path = dir.join(filename);
 
+    let mut stale_cache = false;
     if path.exists() {
         match read_and_verify(&path, expected_size, expected_hash)? {
             Some(bytes) => return Ok(bytes),
-            // Not the pinned model. Removing it before the fetch keeps
-            // the "download only into a directory that does not hold
-            // this name" shape, and the fetch below replaces it.
-            None => std::fs::remove_file(&path)
-                .map_err(|e| io_at("remove the cached model", &path, &e))?,
+            // Not the pinned model, so it goes. The removal waits for
+            // the fetch below to succeed: this file is the only copy the
+            // user has, and a fetch that fails after it was deleted
+            // leaves them with neither.
+            None => stale_cache = true,
         }
     }
 
@@ -271,6 +279,9 @@ fn provision(
         notice,
         fetch,
     )?;
+    if stale_cache {
+        std::fs::remove_file(&path).map_err(|e| io_at("remove the cached model", &path, &e))?;
+    }
     install(dir, filename, &bytes)?;
     Ok(bytes)
 }
@@ -1033,6 +1044,30 @@ mod tests {
             std::fs::read(dir.path().join(FIXTURE_NAME)).unwrap(),
             FIXTURE
         );
+    }
+
+    /// Regression (review of #77, M1): the replacement is fetched before
+    /// the cached file is removed. The removal used to run first, so a
+    /// user who was offline with a corrupt cache lost the file they had
+    /// and got nothing back, and the removal bought nothing: the install
+    /// lands through a rename, which replaces an existing destination.
+    #[test]
+    fn a_corrupt_cache_outlives_a_failed_refetch() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(FIXTURE_NAME);
+        std::fs::write(&path, b"junk").unwrap();
+
+        let mut rec = recorder();
+        let err = provision_fixture(dir.path(), &mut rec, &|| {
+            Err(Error::Io(std::io::Error::new(
+                std::io::ErrorKind::NotConnected,
+                "download https://models.example/fixture.udpipe: host not found",
+            )))
+        })
+        .unwrap_err();
+
+        assert!(matches!(err, Error::Io(_)), "got {err:?}");
+        assert_eq!(std::fs::read(&path).unwrap(), b"junk");
     }
 
     /// Regression (report H4): a transport failure travels as the error
