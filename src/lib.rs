@@ -1,5 +1,7 @@
 #![doc = include_str!("../README.md")]
 
+#[cfg(feature = "cli")]
+pub mod cli;
 pub mod config;
 pub mod decompose;
 pub mod domain;
@@ -636,6 +638,52 @@ mod python {
         to_dict(py, &result)
     }
 
+    /// Run the matra command line and return its exit code.
+    ///
+    /// `argv` is the argument vector *without* the program name, which
+    /// `cli::run` supplies itself so `--help` reads the same from this
+    /// launcher and from the Rust binary.
+    ///
+    /// The command renders into byte buffers, which are then written to
+    /// Python's own `sys.stdout` and `sys.stderr` and flushed. Handing
+    /// `cli::run` the real file descriptors would interleave badly with
+    /// anything Python has already buffered on the same stream; going
+    /// through `sys` keeps one writer per stream.
+    ///
+    /// A failure writing those buffers out is swallowed rather than
+    /// raised. It is a broken pipe in practice (`matra ... | head`), and
+    /// the Rust launcher treats that as success too; there is nowhere
+    /// left to report it to in any case.
+    #[pyfunction]
+    #[allow(unreachable_pub)] // pyo3 macro requirement, same as _core below.
+    pub fn cli_main(py: Python<'_>, argv: Vec<String>) -> i32 {
+        use std::ffi::OsString;
+
+        let args =
+            std::iter::once(OsString::from("matra")).chain(argv.into_iter().map(OsString::from));
+        let mut out: Vec<u8> = Vec::new();
+        let mut err: Vec<u8> = Vec::new();
+        let code = crate::cli::run(args, &mut out, &mut err);
+
+        let _ = write_stream(py, "stdout", &out);
+        let _ = write_stream(py, "stderr", &err);
+        i32::from(code)
+    }
+
+    /// Write one rendered buffer to the named `sys` stream and flush it.
+    fn write_stream(py: Python<'_>, name: &str, bytes: &[u8]) -> PyResult<()> {
+        if bytes.is_empty() {
+            return Ok(());
+        }
+        let stream = py.import("sys")?.getattr(name)?;
+        // The renderers only emit UTF-8; `from_utf8_lossy` is the belt to
+        // that suspenders, so a surprise byte degrades one character
+        // rather than losing the whole run's output.
+        stream.call_method1("write", (String::from_utf8_lossy(bytes).as_ref(),))?;
+        stream.call_method0("flush")?;
+        Ok(())
+    }
+
     #[pymodule]
     #[allow(unreachable_pub)] // pyo3's #[pymodule] macro requires pub fn even when the module is private.
     pub fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -643,6 +691,7 @@ mod python {
         #[cfg(feature = "model2vec")]
         m.add_class::<Model2Vec>()?;
         m.add_function(pyo3::wrap_pyfunction!(semantic_clusters, m)?)?;
+        m.add_function(pyo3::wrap_pyfunction!(cli_main, m)?)?;
         Ok(())
     }
 }

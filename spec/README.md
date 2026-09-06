@@ -20,15 +20,16 @@ spec/
   tests/semantic/    embedding-tier fixtures: the FFI shape fixture
                      (modelless) and the pinned reference-model
                      conformance (potion-base-8M by artifact digest)
+  tests/cli/         the command line's JSON envelope
 ```
 
 Each crust has a runner that loads every fixture in `spec/tests/` and asserts
 the same expectations:
 
-| Crust | Parse runner | Semantic runner |
-|---|---|---|
-| Rust | `tests/conformance.rs` | `tests/semantic_conformance.rs` |
-| Python | `python/tests/test_conformance.py` | `python/tests/test_semantic_conformance.py` |
+| Crust | Parse runner | Semantic runner | CLI runner |
+|---|---|---|---|
+| Rust | `tests/conformance.rs` | `tests/semantic_conformance.rs` | `tests/cli.rs` |
+| Python | `python/tests/test_conformance.py` | `python/tests/test_semantic_conformance.py` | `python/tests/test_cli.py` |
 
 Run them with `just conformance`. The parse lane needs the UDPipe model
 (downloaded on first use); the semantic reference lane needs
@@ -63,6 +64,22 @@ shape fixture runs everywhere with no model at all.
 ```
 
 `format` is `plain` or `markdown`, selecting which decomposer runs.
+
+## The CLI lane
+
+There is one command line, compiled into the library and reached from two
+launchers: the Rust binary and the Python entry point. They cannot drift in
+behaviour, because there is only one implementation. What they can drift on is
+the handoff: an exit code lost on the way back, output written to the wrong
+stream, a launcher that mangles its arguments.
+
+`tests/cli/envelope.json` pins the `--json` envelope for a fixed input. Each
+runner writes the fixture's `input` to a file named by `filename`, runs the
+`args` against it, and asserts the envelope's four keys, its `format_version`,
+its `command`, its `input` (the path it passed), and the structure of `result`:
+which keys the domain value carries, how many sections, how many sentences.
+`result` is compared structurally rather than byte for byte, because its
+contents are the parse, which the parse fixtures already pin.
 
 Token expectations cover the six fields that carry meaning across every
 binding: `id`, `text`, `lemma`, `pos`, `head`, `dep`. The remaining CoNLL-U
