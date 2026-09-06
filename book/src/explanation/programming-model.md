@@ -35,7 +35,7 @@ That is `Config::resolve()` followed by `Engine::from_config(&cfg)`. Both are ad
 
 `Config` resolves locations and defaults, never behavior. It carries the model directory, the semantic threshold, and the default counts and algorithm names, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped.
 
-Resolution order, per key: an explicit argument, then the environment, then the config file, then the defaults compiled into the crate from `config/default.toml`.
+Resolution order, per key: an explicit argument, then the environment, then the config file, then the defaults compiled into the crate from `config/default.toml`. The argument rung has one producer, `Config::with_model_dir`, which returns the same configuration with the model directory replaced and that one key's source changed. It is the rung a command line's `--model-dir` lands on, so the flag reaches the adapter through `Config` rather than past it.
 
 | Variable | Overrides |
 |---|---|
@@ -51,7 +51,9 @@ Paths follow the XDG conventions on Linux and on macOS.
 | data root | `$XDG_DATA_HOME/matra`, else `~/.local/share/matra` | `MATRA_DATA_DIR` |
 | models | the data root's `models` subdirectory | `MATRA_MODEL_DIR` |
 
-One exception to the model directory rule: if the data root has no `models` subdirectory yet and `~/.matra/models` does exist, that older location is used. It is read only. matra never creates it and never writes into it, so a cache from 0.1.0 keeps working and a fresh install lands in the new place.
+One exception to the model directory rule: if the data root has no `models` subdirectory yet, and `~/.matra/models` exists and is not empty, that older location is used. matra never creates `~/.matra`. When an existing, non-empty legacy cache is selected it is used as the model directory, downloads and re-downloads included, because the resolved directory is the one handed to `Udpipe::english` and that is where it writes. Create the new location, or set `MATRA_MODEL_DIR`, to move off it.
+
+An empty `~/.matra/models` is not selected. There is no cache in it to keep working, and picking it would send every later download into a directory matra would otherwise never create. A fresh install therefore lands in the new place.
 
 A missing config file is not an error; the built-in defaults stand. A malformed one is `Error::InvalidInput` naming the file and the line, and an algorithm name the build does not know is rejected the same way at resolve time rather than at call time. Every resolved value records which rung it came from, readable through `Config::sources` as a `ValueSource`.
 
