@@ -116,7 +116,7 @@ Wraps `std::io::Error`, produced by:
 
 The rule behind the table: `model_invalid` is about bytes that arrived. Anything that stopped a fetch from arriving, or a filesystem from accepting it, is `io` ([ADR-0015](https://github.com/mox-labs/matra/blob/main/docs/decisions/0015-provisioning-failures.md)).
 
-Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a failed download leaves the model directory as it found it and a run killed mid-transfer leaves nothing behind. A temporary directory left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running.
+Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. The one thing a failed run does remove is a cached file that was already there and had already failed verification: `Udpipe::english` deletes that before refetching, because a file under the model's name that is not the pinned model is not a file to keep. A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. `Udpipe::english` leaves a temporary directory and `Model2Vec::potion_base_8m` three temporary files, and each reclaims its own by the same rule.
 
 ### Behind a TLS-intercepting proxy
 
@@ -152,6 +152,8 @@ matra: downloading english-ewt-ud-2.5-191206.udpipe (16.3 MB) into /home/u/.loca
 ```
 
 Standard error, so `--json` output stays a single object on standard output. `--quiet` silences it. A library caller gets the same facts as a `domain::ProvisionNotice` from `Engine::from_config_with_notice`, `Udpipe::english_with_notice` or `Udpipe::from_config_with_notice`, and decides the wording itself.
+
+The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts with no notice form of its own, so the first `matra semantic` run is silent for the length of that download.
 
 ## Per-document failures: `DocumentError` and `CorpusResult`
 

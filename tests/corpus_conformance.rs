@@ -200,12 +200,16 @@ fn a_directory_walk_yields_one_item_per_file() {
     }
 }
 
-/// Regression, and a contract change (ADR-0015): a provisioning failure
-/// that is not about the model's bytes reports `io`, not `model_invalid`.
-/// A directory that cannot be created is the one such failure a runner
-/// can produce with no network and no model, and it also has to name the
-/// operation and the path: `io error: Permission denied (os error 13)`
-/// was the whole message a user got.
+/// The provisioning classification ADR-0015 records, on the one failure
+/// a runner can produce with no network and no model.
+///
+/// This row is not itself the contract change: `create_dir_all` already
+/// converted through `Error::Io` before ADR-0015, so the kind here was
+/// always `io`. The reclassification ADR-0015 records is DNS, TLS and a
+/// full disk, which no runner exercises, and this row is the assertable
+/// neighbour that keeps the vocabulary honest. What is new is the
+/// message: `io error: Permission denied (os error 13)` was the whole of
+/// it, with the directory sitting in a variable one line away.
 #[cfg(feature = "udpipe")]
 #[test]
 fn a_model_directory_that_cannot_be_created_is_an_io_failure() {
