@@ -872,10 +872,62 @@ fn transport_failure(url: &str, error: &ureq::Error) -> Error {
         ureq::Error::ConnectionFailed | ureq::Error::HostNotFound => ErrorKind::NotConnected,
         _ => ErrorKind::Other,
     };
-    Error::Io(std::io::Error::new(
-        kind,
-        format!("download {url}: {error}"),
-    ))
+    Error::Io(std::io::Error::new(kind, download_message(url, error)))
+}
+
+/// What the user reads when an artifact download fails.
+///
+/// A rejected certificate gets a sentence rather than a `Debug`
+/// rendering of a `rustls` enum. matra verifies TLS against root
+/// certificates compiled into the binary and never reads the system
+/// trust store, which is why it needs no `ca-certificates` package and
+/// also why installing a proxy's CA there changes nothing. That is one
+/// fact about matra rather than one about this adapter, so both
+/// provisioning paths say it (ADR-0015); the wording differs only in the
+/// way out, because this model is a directory of three artifacts rather
+/// than one file. The raw failure is kept at the end, because a bug
+/// report needs it.
+#[cfg(not(target_arch = "wasm32"))]
+fn download_message(url: &str, error: &ureq::Error) -> String {
+    let detail = error.to_string();
+    if !is_certificate_rejection(&detail, error) {
+        return format!("download {url}: {detail}");
+    }
+    format!(
+        "download {url}: the TLS certificate offered for {} was rejected. matra verifies \
+         TLS against root certificates compiled into it and never reads the system trust \
+         store, so a proxy that re-signs TLS cannot be trusted by installing its CA. \
+         Fetch the artifacts by hand into a directory of your own and load it with \
+         Model2Vec::from_dir instead. Underlying failure: {detail}",
+        host_of(url),
+    )
+}
+
+/// Whether a transport failure is the peer's certificate being refused.
+///
+/// `ureq` surfaces a `rustls` handshake failure as `Error::Io` wrapping
+/// an `io::Error` whose message is the `rustls` error, so the variant
+/// alone does not say. The rendered text does.
+#[cfg(not(target_arch = "wasm32"))]
+fn is_certificate_rejection(detail: &str, error: &ureq::Error) -> bool {
+    if matches!(error, ureq::Error::Tls(_)) {
+        return true;
+    }
+    let lowered = detail.to_ascii_lowercase();
+    lowered.contains("certificate") || lowered.contains("rustls")
+}
+
+/// The host in an absolute URL, or the whole URL when it has no
+/// recognisable authority. Enough for a message; not a URL parser.
+#[cfg(not(target_arch = "wasm32"))]
+fn host_of(url: &str) -> &str {
+    let after_scheme = url.split_once("://").map_or(url, |(_, rest)| rest);
+    let authority = after_scheme
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or(after_scheme);
+    let host = authority.rsplit_once('@').map_or(authority, |(_, h)| h);
+    host.split(':').next().unwrap_or(host)
 }
 
 /// Convert a tensor's raw little-endian bytes to f32. Only f32 sources
@@ -1542,6 +1594,32 @@ mod provisioning {
 
     /// A download is all three artifacts or none of them. Leaving the
     /// first one behind would be the worst of both: every later call
+    /// Regression: a rejected certificate reads as a sentence naming
+    /// the host, on this path as well as the UDPipe one. Someone behind
+    /// a TLS-intercepting proxy meets both.
+    #[test]
+    fn a_rejected_certificate_reads_as_a_sentence() {
+        let error = ureq::Error::Io(std::io::Error::other(
+            "invalid peer certificate: Other(OtherError(CaUsedAsEndEntity))",
+        ));
+        let message = download_message(POTION_BASE_8M_URLS[0], &error);
+
+        assert!(message.contains("huggingface.co"), "{message}");
+        assert!(message.contains("system trust store"), "{message}");
+        assert!(message.contains("from_dir"), "{message}");
+        assert!(message.contains("CaUsedAsEndEntity"), "{message}");
+        assert_eq!(
+            transport_failure(POTION_BASE_8M_URLS[0], &error).kind(),
+            "io"
+        );
+    }
+
+    #[test]
+    fn a_url_yields_the_host_a_message_should_name() {
+        assert_eq!(host_of(POTION_BASE_8M_URLS[0]), "huggingface.co");
+        assert_eq!(host_of("https://example.org:8443/a?b=c"), "example.org");
+    }
+
     /// refuses a partial set, so one timed-out transfer would wedge the
     /// directory until somebody deleted files by hand.
     #[test]

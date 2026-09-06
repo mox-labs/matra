@@ -11,22 +11,71 @@
     "io"
   ],
   "item_shapes": {
-    "entry": ["path", "analysis"],
-    "error": ["path", "error"],
-    "error_object": ["kind", "message"]
+    "entry": [
+      "path",
+      "analysis"
+    ],
+    "error": [
+      "path",
+      "error"
+    ],
+    "error_object": [
+      "kind",
+      "message"
+    ]
   },
   "directory": {
     "description": "One readable file and one whose bytes are not UTF-8, analyzed as a directory. Two items come back in path order: an entry for the file that read, an error item of kind io for the file that did not, so one unreadable file costs one item rather than the walk. A path is null only for a document that never came from disk, which a directory walk never produces.",
     "files": [
-      { "name": "a.txt", "text": "The committee approved the proposal." },
+      {
+        "name": "a.txt",
+        "text": "The committee approved the proposal."
+      },
       {
         "name": "b.txt",
-        "bytes": [255, 254, 32, 110, 111, 116, 32, 117, 116, 102, 45, 56]
+        "bytes": [
+          255,
+          254,
+          32,
+          110,
+          111,
+          116,
+          32,
+          117,
+          116,
+          102,
+          45,
+          56
+        ]
       }
     ],
     "expect": [
-      { "name": "a.txt", "shape": "entry" },
-      { "name": "b.txt", "shape": "error", "kind": "io" }
+      {
+        "name": "a.txt",
+        "shape": "entry"
+      },
+      {
+        "name": "b.txt",
+        "shape": "error",
+        "kind": "io"
+      }
     ]
+  },
+  "provisioning": {
+    "description": "Which kind a model provisioning failure reports (ADR-0015). A download that never arrived is a transport failure rather than an invalid model, so it is `io` with the URL in the message; a filesystem failure creating or writing the model directory is `io` with the operation and the path in the message; only bytes that arrived and then failed the pinned digest are `model_invalid`. Before 0.2.0 all three were `model_invalid`, so a consumer that branched on it for a DNS failure has to move to `io`. The filesystem row is the one a runner can produce with no network, so it is the one asserted here; the other two state the contract the adapters are written to.",
+    "kinds": {
+      "transport": "io",
+      "filesystem": "io",
+      "digest_mismatch": "model_invalid"
+    },
+    "unwritable_model_dir": {
+      "description": "A model directory whose parent is a regular file. `create_dir_all` fails before anything reaches the network, so this needs neither a model nor a link.",
+      "expect": {
+        "kind": "io",
+        "message_contains": [
+          "create the model directory"
+        ]
+      }
+    }
   }
 }
