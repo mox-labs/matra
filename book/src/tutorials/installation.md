@@ -67,9 +67,9 @@ The second line names the features *this* build was compiled with, so it is not 
 pip install matra    # or: uv add matra
 ```
 
-This installs the library and the `matra` command together. From 0.2.0 the command is the same Rust CLI, reached through the extension module rather than reimplemented in Python, so `uvx matra@0.2.0 analyze essay.md` and the installed binary do the same thing.
+This installs the library and the `matra` command together. From 0.2.0 the command is the same Rust CLI, reached through the extension module rather than reimplemented in Python, so `uvx 'matra>=0.2' analyze essay.md` and the installed binary do the same thing.
 
-The version in that line is deliberate. The claim holds for 0.2.0 and later, not for what an unpinned `uvx matra` resolves to today: 0.1.0 shipped a second CLI written in Python, with a `--json` shape of its own and a model directory hardcoded to the pre-0.2.0 location. Pin the version until 0.2.0 is the release `uvx` picks.
+The version in that line is deliberate. The claim holds for 0.2.0 and later, not for what an unpinned `uvx matra` resolves to today: 0.1.0 shipped a second CLI written in Python, with a `--json` shape of its own and a model directory hardcoded to the pre-0.2.0 location. Pin the floor until 0.2.0 is the release `uvx` picks. A floor rather than an exact pin, because the claim holds for every release from 0.2.0 onward and an exact pin would still be naming 0.2.0 after 0.3.0 ships.
 
 It is not, however, the same *build*. The wheel is compiled with the Python and embedding features on top of the CLI, so its version banner reads:
 
@@ -115,7 +115,7 @@ sections: 1
 vocabulary_ttr: 0.8571428571428571
 ```
 
-That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow, throttled or silently blackholed network can take far longer, because matra sets no timeout on the download: if the command sits there for minutes, it is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
+That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow or throttled network can take longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
 
 If `Matra.english()` raises `RuntimeError`, the download or the hash check failed; check your network connection and run the snippet again. If it raises `OSError`, matra could not create or write to the model directory; run `matra config show` to see which directory it resolved and check the permissions on it.
 

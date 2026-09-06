@@ -191,7 +191,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          count=$(ls dist/matra-*.whl | wc -l | tr -d ' ')
+          # find, not ls: shellcheck's SC2012 flags parsing ls, and with no
+          # match find yields 0 and the guard below says so, where ls fails
+          # with its own message instead.
+          count=$(find dist -maxdepth 1 -name 'matra-*.whl' | wc -l | tr -d ' ')
           [ "$count" = "1" ] || { echo "::error::expected 1 wheel, got $count"; exit 1; }
           name=$(basename dist/matra-*.whl)
           echo "built $name"
