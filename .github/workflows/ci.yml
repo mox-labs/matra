@@ -180,10 +180,19 @@ jobs:
       # would silently narrow that back to cp312 and send 3.13/3.14
       # users to a source build, so the tag is asserted here on every
       # push rather than discovered at release time.
+      #
+      # The count guard is not decoration. `basename dist/matra-*.whl`
+      # with two matches becomes `basename A B`, where B is read as a
+      # suffix to strip rather than a second file, so the tag case below
+      # would inspect only the first wheel and pass with a non-abi3 one
+      # sitting beside it. publish-pypi.yml guards the same contract the
+      # same way.
       - name: The wheel is abi3
         shell: bash
         run: |
           set -euo pipefail
+          count=$(ls dist/matra-*.whl | wc -l | tr -d ' ')
+          [ "$count" = "1" ] || { echo "::error::expected 1 wheel, got $count"; exit 1; }
           name=$(basename dist/matra-*.whl)
           echo "built $name"
           case "$name" in

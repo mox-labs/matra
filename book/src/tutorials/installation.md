@@ -18,7 +18,9 @@ matra ships three ways from one Rust core: a Rust library on [crates.io](https:/
 | Arch | `pacman -S base-devel` |
 | macOS | `xcode-select --install` |
 
-**Python 3.12 or later** for the Python package. Check with `python --version`. Wheels ship for Linux x86_64, Linux aarch64, macOS x86_64 and macOS arm64. They are built against the CPython stable ABI, so one wheel per platform serves 3.12 and every later 3.x rather than only the version it was compiled against. The Linux wheels are manylinux2014, which asks for glibc 2.17 or newer and so reaches back through Debian 11, Ubuntu 20.04, RHEL 8 and Amazon Linux 2. On anything else `pip` builds the sdist, which needs the Rust toolchain and the C++ compiler above.
+**Python 3.12 or later** for the Python package. Check with `python --version`. Wheels ship for Linux x86_64, Linux aarch64, macOS x86_64 and macOS arm64. They are built against the CPython stable ABI, so one wheel per platform serves 3.12 and every later 3.x on GIL-enabled CPython, rather than only the version it was compiled against. The Linux wheels are manylinux2014, which asks for glibc 2.17 or newer and so reaches back through Debian 11, Ubuntu 20.04, RHEL 8 and Amazon Linux 2. On anything else `pip` builds the sdist, which needs the Rust toolchain and the C++ compiler above.
+
+Free-threaded CPython is the exception to "every later 3.x", and it is a real one. A free-threaded interpreter accepts a different ABI tag, `abi3t`, and matra's wheels are tagged `abi3`, so `python3.14t` gets no wheel even on a platform this page promises one for and falls to the sdist. pyo3 gains the free-threaded stable ABI at 3.15, so this closes when matra can build against it; until then the prerequisites above apply to a free-threaded install.
 
 Windows is not a target yet. No wheel ships for it and the UDPipe build under MSVC is unverified, so the sdist route there is untested rather than known to work.
 
@@ -65,7 +67,9 @@ The second line names the features *this* build was compiled with, so it is not 
 pip install matra    # or: uv add matra
 ```
 
-This installs the library and the `matra` command together. The command is the same Rust CLI, reached through the extension module rather than reimplemented in Python, so `uvx matra analyze essay.md` and the installed binary do the same thing.
+This installs the library and the `matra` command together. From 0.2.0 the command is the same Rust CLI, reached through the extension module rather than reimplemented in Python, so `uvx matra@0.2.0 analyze essay.md` and the installed binary do the same thing.
+
+The version in that line is deliberate. The claim holds for 0.2.0 and later, not for what an unpinned `uvx matra` resolves to today: 0.1.0 shipped a second CLI written in Python, with a `--json` shape of its own and a model directory hardcoded to the pre-0.2.0 location. Pin the version until 0.2.0 is the release `uvx` picks.
 
 It is not, however, the same *build*. The wheel is compiled with the Python and embedding features on top of the CLI, so its version banner reads:
 
@@ -76,7 +80,7 @@ features: udpipe model2vec python cli
 
 Both banners are correct for their own build, and every analysis command behaves identically across the two. The Python package has no runtime dependencies of its own.
 
-On the platforms with wheels this downloads a prebuilt binary and installs in seconds, on any CPython from 3.12 up. The verify step further down this page doubles as the check: if `from matra import Matra` fails there, the package did not install correctly.
+On the platforms with wheels this downloads a prebuilt binary and installs in seconds, on any GIL-enabled CPython from 3.12 up. A free-threaded interpreter builds from source instead, for the reason given under Requirements. The verify step further down this page doubles as the check: if `from matra import Matra` fails there, the package did not install correctly.
 
 ---
 
