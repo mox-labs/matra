@@ -38,7 +38,7 @@ Files land in XDG locations: the config at `$XDG_CONFIG_HOME/matra/config.toml` 
 
 ## The commands
 
-`analyze`, `summarize` and `keyphrases` each read one file, or `-` for stdin with `--stdin-filename` naming it. A directory is refused, because a command that reports on one document cannot report on a directory of them. Every `--json` invocation emits the same envelope, four keys at the top level: `format_version` (the integer `1` today), `command`, `input` (the path or the stdin name), and `result`. Pin a consumer to a `format_version` you tested against. See `json` for the field by field shape.
+`analyze`, `summarize` and `keyphrases` each read one file, or `-` for stdin with `--stdin-filename` naming it. A directory is refused, because a command that reports on one document cannot report on a directory of them. Under `--json` each emits the same envelope, and so does `config show`. Four keys at the top level: `format_version` (the integer `1` today), `command`, `input` (the path or the stdin name), and `result`. Pin a consumer to a `format_version` you tested against. See `json` for the field by field shape.
 
 `analyze` parses the document and fills its metric slots. `result` is a `Document`: `sections`, each with `heading`, `level` and `paragraphs`, each paragraph with `text`, `in_blockquote`, `sentences` and three metric slots, plus the document-level `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. Add `--sections` for a per-section table of counts.
 
@@ -70,13 +70,13 @@ $ matra keyphrases notes.md -n 10 --json
 $ matra config show --json
 ```
 
-`completions` prints a shell completion script for `bash`, `zsh` or `fish`.
+`completions` prints a shell completion script for `bash`, `zsh` or `fish`. It emits the script and no envelope, so `--json` has nothing to do there and is ignored.
 
 ```console
 $ matra completions zsh
 ```
 
-Global flags on every command: `--json`, `--model-dir DIR`, `--quiet` (suppresses the human table, leaves `--json` and the exit code alone), `--color auto|always|never` (honors `NO_COLOR`), and `--stdin-filename NAME`.
+Global flags: `--json` (the envelope, on `analyze`, `summarize`, `keyphrases` and `config show`), `--model-dir DIR`, `--quiet` (suppresses the human table, leaves `--json` and the exit code alone), `--color auto|always|never` (honors `NO_COLOR`), and `--stdin-filename NAME`.
 
 ## Exit codes
 
