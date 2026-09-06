@@ -126,6 +126,7 @@ Features are additive: `udpipe` (default), `model2vec`, `python`, `cli`. **Do no
 | `ffi-surface` | PyO3 dual-publish: unsendable/Bound/pythonize/maturin/pin discipline | `.claude/skills/ffi-surface/SKILL.md` |
 | `resilience-floor` | Taleb patterns: catch_unwind, atomic ops, TOCTOU closure, size caps | `.claude/skills/resilience-floor/SKILL.md` |
 | `docs-lockstep` | CHANGELOG, ADRs, arch docs in sync with shipping code | `.claude/skills/docs-lockstep/SKILL.md` |
+| `pr-review` | The gates a pull request is read against before it merges | `.claude/skills/pr-review/SKILL.md` |
 | `e2e-validation` | Verifying a built artifact installs and works for a real user: the mechanical CI gates, and the exploratory pass that produces a report rather than a verdict | `.claude/skills/e2e-validation/SKILL.md` |
 
 ## Docsite
