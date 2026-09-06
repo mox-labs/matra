@@ -5,6 +5,10 @@ the repository is run so that anyone (human contributor, AI collaborator,
 or curious onlooker) can see how decisions are made, where plans live,
 and how to participate.
 
+If you are an agent contributing to matra, [AGENTS.md](./AGENTS.md) is the
+short form of this document: the build and gate commands, the boundary
+rules, and the shape of a pull request.
+
 For the deeper exposition of *how* humans and AI work together on matra
 (roles, discipline, the discourse-to-docs-to-code chain, the
 two-state model), see [docs/collaboration-model.md](./docs/collaboration-model.md).
