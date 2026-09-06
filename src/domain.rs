@@ -23,6 +23,36 @@ use serde::{Deserialize, Serialize};
 pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;
 
 // ---------------------------------------------------------------------------
+// Provisioning
+// ---------------------------------------------------------------------------
+
+/// What a constructor is about to download, reported before the transfer
+/// begins.
+///
+/// A first run fetches a model over a link whose speed matra cannot know.
+/// Measured cold starts ran from 3 to 35 seconds with nothing on screen,
+/// which is indistinguishable from a hung process, and the natural
+/// response to a hung process makes it worse. The library writes to no
+/// terminal, so it hands the facts to whoever does: every constructor
+/// that provisions has a `_with_notice` form that calls a closure once
+/// per fetch, and only when the artifact is not already on disk.
+///
+/// Facts rather than a sentence. The caller decides the wording, the
+/// stream, and whether to say anything at all.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct ProvisionNotice {
+    /// The artifact's filename, as it will appear in `destination`.
+    pub artifact: String,
+    /// The artifact's pinned size in bytes. Known before the fetch
+    /// because the size is a constant in the source, checked against
+    /// what arrives.
+    pub bytes: u64,
+    /// The directory the artifact is being fetched into.
+    pub destination: PathBuf,
+}
+
+// ---------------------------------------------------------------------------
 // Embedding carrier (Tier 2)
 // ---------------------------------------------------------------------------
 

@@ -279,6 +279,33 @@ impl Engine {
         Ok(Engine::new(Box::new(nlp), standard_decomposers()))
     }
 
+    /// [`Engine::from_config`], with `notice` called once before each
+    /// model fetch and not at all when the model is already on disk.
+    ///
+    /// The route from an application that renders to the adapter that
+    /// provisions. A first run downloads 16 MB, and the library writes
+    /// to no terminal, so the facts travel out as a
+    /// [`domain::ProvisionNotice`] and the caller decides the wording.
+    ///
+    /// ```no_run
+    /// let cfg = matra::config::Config::resolve()?;
+    /// let engine = matra::Engine::from_config_with_notice(&cfg, |n| {
+    ///     eprintln!("fetching {} into {}", n.artifact, n.destination.display());
+    /// })?;
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Whatever [`Engine::from_config`] returns.
+    pub fn from_config_with_notice(
+        cfg: &config::Config,
+        notice: impl FnMut(&domain::ProvisionNotice),
+    ) -> domain::Result<Engine> {
+        let nlp = nlp::udpipe::Udpipe::from_config_with_notice(cfg, notice)?;
+        Ok(Engine::new(Box::new(nlp), standard_decomposers()))
+    }
+
     /// [`config::Config::resolve()`] then [`Engine::from_config`]: the no-setup
     /// path, and the only one-liner worth a second name.
     ///
@@ -788,13 +815,42 @@ mod python {
             args.push(os_string_of(bytes));
         }
 
+        // stdout is buffered and written at the end, so the rendered
+        // result arrives as one piece. stderr is written through as it
+        // is produced, because the first thing a cold run writes there
+        // is "downloading the model", and a diagnostic that explains a
+        // twenty-second wait is worthless once the wait is over.
         let mut out: Vec<u8> = Vec::new();
-        let mut err: Vec<u8> = Vec::new();
+        let mut err = PyStream { py, name: "stderr" };
         let code = crate::cli::run(args, &mut out, &mut err);
 
         let _ = write_stream(py, "stdout", &out);
-        let _ = write_stream(py, "stderr", &err);
         Ok(i32::from(code))
+    }
+
+    /// A [`std::io::Write`] that forwards each write straight to a `sys`
+    /// stream instead of accumulating it.
+    ///
+    /// The GIL is held for the whole of `cli_main`, so calling back into
+    /// Python here is the same access the surrounding function already
+    /// has.
+    struct PyStream<'py> {
+        py: Python<'py>,
+        name: &'static str,
+    }
+
+    impl std::io::Write for PyStream<'_> {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            write_stream(self.py, self.name, buf)
+                .map(|()| buf.len())
+                .map_err(|e| std::io::Error::other(e.to_string()))
+        }
+
+        /// `write_stream` flushes the Python stream on every write, so
+        /// there is nothing held here to flush.
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
     }
 
     /// The bytes `os.fsencode` produced, as an `OsString`.

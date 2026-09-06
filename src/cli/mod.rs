@@ -92,7 +92,7 @@ pub fn run(
         }
     };
 
-    match execute(&cli, out) {
+    match execute(&cli, out, err) {
         Ok(Outcome::Found) => EXIT_FOUND,
         Ok(Outcome::Empty) => EXIT_EMPTY,
         Err(e) => {
@@ -369,7 +369,7 @@ impl Input {
     }
 }
 
-fn execute(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
+fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outcome> {
     // `--skill` is a property of the program rather than an action on a
     // document, so it outranks a subcommand: `matra analyze x --skill`
     // prints the skill and ignores the analysis. Dispatching it first is
@@ -426,7 +426,7 @@ fn execute(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
     }
 
     let cfg = resolve_config(cli)?;
-    let engine = crate::Engine::from_config(&cfg)?;
+    let engine = build_engine(cli, &cfg, err)?;
     let doc = document_of(&input, &cli.stdin_filename, &engine)?;
     let label = input.label(&cli.stdin_filename);
     let style = render::Style::new(colorize(cli.color));
@@ -480,6 +480,52 @@ fn execute(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
             Ok(outcome(phrases.is_empty()))
         }
         Command::Config { .. } | Command::Completions { .. } => unreachable!("dispatched above"),
+    }
+}
+
+/// The standard pipeline, saying so on stderr before it downloads a
+/// model it does not have.
+///
+/// The first run fetches 16 MB from a university server in Prague.
+/// Measured cold starts ran from 3 to 35 seconds, and until this line
+/// existed every one of them wrote zero bytes to either stream before
+/// the result: a blank terminal, indistinguishable from a hung process,
+/// under a README section titled "No setup". The notice fires only when
+/// the model is not already on disk, so a warm run is as quiet as it
+/// ever was.
+///
+/// It goes to stderr, which keeps `--json` stdout a single object, and
+/// `--quiet` silences it: that flag means "no human-readable output",
+/// and this is human-readable output.
+fn build_engine(cli: &Cli, cfg: &Config, err: &mut dyn Write) -> domain::Result<crate::Engine> {
+    if cli.quiet {
+        return crate::Engine::from_config(cfg);
+    }
+    crate::Engine::from_config_with_notice(cfg, |notice| {
+        // A diagnostic that cannot be written is not worth failing a
+        // run over, and there is nowhere left to report it to.
+        let _ = writeln!(
+            err,
+            "matra: downloading {} ({}) into {}",
+            notice.artifact,
+            human_bytes(notice.bytes),
+            notice.destination.display()
+        );
+        let _ = err.flush();
+    })
+}
+
+/// A byte count as a person reads a download size, in decimal units,
+/// which is what a browser, `curl` and every hosting page report.
+fn human_bytes(bytes: u64) -> String {
+    #[allow(clippy::cast_precision_loss)]
+    let n = bytes as f64;
+    if bytes >= 1_000_000 {
+        format!("{:.1} MB", n / 1_000_000.0)
+    } else if bytes >= 1_000 {
+        format!("{:.1} kB", n / 1_000.0)
+    } else {
+        format!("{bytes} bytes")
     }
 }
 
@@ -785,6 +831,39 @@ mod tests {
         let err = read_capped(&mut &b"ok\xff\xfe"[..]).expect_err("not utf8");
         assert!(err.downcast_ref::<domain::Error>().is_none());
         assert!(err.to_string().contains("utf-8"), "{err}");
+    }
+
+    /// Regression: the notice a first run prints names the artifact, a
+    /// size a person can read, and the directory it is going into. Every
+    /// user meets that line on their first command, and before it
+    /// existed they met 3 to 35 seconds of a blank terminal instead.
+    #[test]
+    fn the_download_notice_names_the_artifact_size_and_destination() {
+        let notice = domain::ProvisionNotice {
+            artifact: "english-ewt-ud-2.5-191206.udpipe".to_string(),
+            bytes: 16_309_608,
+            destination: PathBuf::from("/home/u/.local/share/matra/models"),
+        };
+        let line = format!(
+            "matra: downloading {} ({}) into {}",
+            notice.artifact,
+            human_bytes(notice.bytes),
+            notice.destination.display()
+        );
+        assert_eq!(
+            line,
+            "matra: downloading english-ewt-ud-2.5-191206.udpipe (16.3 MB) \
+into /home/u/.local/share/matra/models"
+        );
+    }
+
+    #[test]
+    fn byte_counts_read_the_way_a_download_size_reads() {
+        assert_eq!(human_bytes(16_309_608), "16.3 MB");
+        assert_eq!(human_bytes(1_000_000), "1.0 MB");
+        assert_eq!(human_bytes(2_048), "2.0 kB");
+        assert_eq!(human_bytes(999), "999 bytes");
+        assert_eq!(human_bytes(0), "0 bytes");
     }
 
     /// The full precedence table, since NO_COLOR is the one rule a

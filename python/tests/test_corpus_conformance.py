@@ -75,3 +75,30 @@ def test_a_directory_walk_yields_the_items_the_fixture_expects(
             assert set(item["error"]) == set(FIXTURE["item_shapes"]["error_object"])
             assert item["error"]["kind"] == expect["kind"]
             assert item["error"]["message"]
+
+
+def test_every_provisioning_kind_is_in_the_vocabulary() -> None:
+    """A row naming a string no variant reports would pin a contract
+    nothing can satisfy."""
+    for condition, kind in FIXTURE["provisioning"]["kinds"].items():
+        assert kind in FIXTURE["error_kinds"], f"{condition} names {kind}"
+
+
+def test_a_model_directory_that_cannot_be_created_is_an_os_error(tmp_path: Path) -> None:
+    """Regression, and a contract change (ADR-0015): a provisioning
+    failure that is not about the model's bytes is ``io``, which crosses
+    into Python as ``OSError``, not ``RuntimeError``. Needs no model and
+    no network: ``create_dir_all`` fails first."""
+    expect = FIXTURE["provisioning"]["unwritable_model_dir"]["expect"]
+    assert expect["kind"] == "io"
+
+    blocked = tmp_path / "not-a-directory"
+    blocked.write_bytes(b"x")
+
+    with pytest.raises(OSError) as caught:
+        Matra.english(str(blocked / "models"))
+
+    message = str(caught.value)
+    for fragment in expect["message_contains"]:
+        assert fragment in message, f"{fragment!r} missing from {message!r}"
+    assert str(blocked) in message

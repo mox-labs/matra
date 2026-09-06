@@ -9,12 +9,12 @@ Every fallible function in matra returns `domain::Result<T>`, which is `std::res
 | Variant | Payload | Returned when |
 |---|---|---|
 | `ModelNotFound` | `PathBuf` | A model file does not exist at the given path |
-| `ModelInvalid` | `String` | A model file exists but could not be loaded, downloaded, or verified |
+| `ModelInvalid` | `String` | Bytes that arrived could not be verified against the pin, or could not be loaded |
 | `ParseFailed` | `String` | The NLP provider failed on the input, or panicked, or produced an unusable token id |
 | `InputTooLarge` | `{ limit: usize, actual: usize, what: &'static str }` | A size gate rejected the input. `what` names the gate |
 | `UnsupportedFormat` | `Format` | The document's format has no registered decomposer |
 | `InvalidInput` | `String` | A caller violated a documented API contract |
-| `Io` | `std::io::Error` | A filesystem operation failed |
+| `Io` | `std::io::Error` | A filesystem operation failed, or a download did not arrive |
 
 `Error` implements `std::error::Error` and `Display` through `thiserror`, and `From<std::io::Error>`, so `?` converts I/O failures automatically.
 
@@ -27,13 +27,14 @@ Returned by `Udpipe::from_path` when the path does not exist, and by `Model2Vec:
 Returned by:
 
 - `Udpipe::from_path` and `Udpipe::from_bytes` when the loader rejects the bytes. The payload is the loader's message.
-- `Udpipe::english` when the download fails. The payload is the download error's message.
-- `Udpipe::english` when the file still fails SHA-256 verification after one delete and re-download. The payload is `SHA-256 mismatch after re-download: <path>`.
+- `Udpipe::english` when the bytes it downloaded still fail SHA-256 verification after one refetch. The payload is `SHA-256 mismatch after re-download from <url>`. Nothing that failed verification is written, so the model directory is left as the call found it.
 - `Model2Vec::from_dir` when an artifact does not parse, uses an embedding dtype other than f32, or panics the loader.
 - `Model2Vec::potion_base_8m` when the directory already holds all three artifacts and their digest is not the pinned one, or holds only some of them. The payload names the directory and the ways out; nothing there is downloaded over or removed.
 - `Model2Vec::potion_base_8m` when artifacts it downloaded still fail the digest after one removal and re-download. The payload names the directory and the expected digest.
 
 A file whose hash does not match the pinned constant is treated as untrusted and is never loaded.
+
+`ModelInvalid` is about bytes that arrived. A download that never arrived, a server that answered about the request rather than with a model, and a filesystem that refused the write are `Io`, not `ModelInvalid` ([ADR-0015](https://github.com/mox-labs/matra/blob/main/docs/decisions/0015-provisioning-failures.md)). Before 0.2.0 the UDPipe download funnelled all three here, so a DNS failure reported `model_invalid`; a consumer that branched on that reads the [provisioning failures](#provisioning-failures) section below.
 
 ### ParseFailed
 
@@ -45,7 +46,7 @@ Returned by the UDPipe adapter's `parse` in three situations:
 
 ### InputTooLarge
 
-Nine gate labels produce this variant. The `what` field carries the label so a caller can route each gate differently.
+Ten gate labels produce this variant. The `what` field carries the label so a caller can route each gate differently.
 
 | `what` | Gate | Limit | Measured over |
 |---|---|---|---|
@@ -56,12 +57,13 @@ Nine gate labels produce this variant. The `what` field carries the label so a c
 | `"rake"` | `rake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
 | `"yake"` | `yake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
 | `"semantic_clusters"` | `semantic_clusters` | 2,000 | Number of sentences in the slice |
+| `"udpipe_download"` | `Udpipe::english` | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
 | `"embedding_download"` | `Model2Vec::potion_base_8m`, per artifact | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
 | `"config_file"` | `Config::resolve`, reading the user's config file | 64 KiB (65,536) | File size reported by the filesystem, checked before any read |
 
 `limit` carries the cap and `actual` carries the measured size, so an error message can be built without hardcoding the constants.
 
-The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens. The download cap is the one gate whose input is not the caller's: it bounds what a redirected or misbehaving server can make the process hold, and the read stops at the bound rather than continuing, so `actual` reports the bound that was breached rather than the response's full length.
+The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens. The two download caps are the gates whose input is not the caller's: they bound what a redirected or misbehaving server can make the process hold, and the read stops at the bound rather than continuing, so `actual` reports the bound that was breached rather than the response's full length. Both are 64 MiB against pinned artifacts of 16.3 MB and 30.2 MB, which is headroom for a later version and still finite.
 
 A document from disk crosses both text gates in sequence: `"file_source"` when `Ingest` reads it, `"input"` inside `annotate`. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
@@ -90,9 +92,66 @@ Wraps `std::io::Error`, produced by:
 - `FileSource` rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`.
 - `FileSource` rejecting a path that is not a regular file, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`.
 - Any read, directory listing, directory creation, file removal, or rename that fails.
+- `Udpipe::english` when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise.
+- `Udpipe::english` when the model directory cannot be created, when a cached file that failed verification cannot be removed, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads `cannot write the model to <path>: No space left on device (os error 28)` rather than `Permission denied (os error 13)` with nothing to act on.
 - `Model2Vec::potion_base_8m` when a download fails at the transport or answers with a non-2xx status. The message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise. Bytes that arrived and then failed the digest are `ModelInvalid` instead; this variant is for the ones that never arrived.
 - `Model2Vec::potion_base_8m` when the temporary file an artifact lands through cannot be created, with the kind the open reported (`AlreadyExists` when something is already sitting at that path). The temporary is opened exclusively, so a path already there, symlink or not, fails the open rather than being written through.
 - `Ingest` when a source yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
+
+## Provisioning failures
+
+`Udpipe::english` and `Model2Vec::potion_base_8m` obtain a pinned artifact over the network. Both fetch through matra's own client, under the same bounds, and both classify a failure the same way.
+
+| Condition | Variant | Kind | What the message carries |
+|---|---|---|---|
+| DNS failure, unreachable host, refused connection | `Io`, `ErrorKind::NotConnected` | `io` | The URL |
+| Connect budget exceeded (30 seconds) | `Io`, `ErrorKind::TimedOut` | `io` | The URL |
+| Fetch budget exceeded (300 seconds, lookup through last byte) | `Io`, `ErrorKind::TimedOut` | `io` | The URL |
+| TLS certificate rejected | `Io` | `io` | The host, why matra cannot be made to trust it, the way out, then the underlying failure |
+| Non-2xx status | `Io` | `io` | The URL and the status |
+| Response past 64 MiB | `InputTooLarge` | `input_too_large` | `what` is `"udpipe_download"` or `"embedding_download"` |
+| Directory, write, remove or rename failed | `Io` | `io` | The operation and the path |
+| Bytes arrived and failed the pinned digest, twice | `ModelInvalid` | `model_invalid` | The URL, or the directory and the expected digest |
+| Bytes arrived, passed the digest, and did not load | `ModelInvalid` | `model_invalid` | The loader's message |
+
+The rule behind the table: `model_invalid` is about bytes that arrived. Anything that stopped a fetch from arriving, or a filesystem from accepting it, is `io` ([ADR-0015](https://github.com/mox-labs/matra/blob/main/docs/decisions/0015-provisioning-failures.md)).
+
+Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a failed download leaves the model directory as it found it and a run killed mid-transfer leaves nothing behind. A temporary directory left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running.
+
+### Behind a TLS-intercepting proxy
+
+matra verifies TLS against root certificates compiled into the binary and never reads the system trust store. That is why it needs no `ca-certificates` package, on any platform, and it is also why a proxy that re-signs TLS cannot be trusted by installing its CA anywhere on the machine. The failure reads:
+
+```text
+matra: io error: download https://lindat.mff.cuni.cz/...: the TLS certificate offered for
+lindat.mff.cuni.cz was rejected. matra verifies TLS against root certificates compiled into
+it and never reads the system trust store, so a proxy that re-signs TLS cannot be trusted by
+installing its CA. Fetch english-ewt-ud-2.5-191206.udpipe by hand and put it in the model
+directory instead. Underlying failure: io: invalid peer certificate: ...
+```
+
+Place the model by hand. `matra config show` prints the model directory this machine resolves, and the artifact is pinned by name, size and SHA-256, so a hand-placed file is exactly as trustworthy as a fetched one: it goes through the same verification on load, and a file that is not the pinned model is removed rather than used.
+
+```bash
+mkdir -p "$(matra config show | awk -F\" '/^model_dir/ {print $2}')"
+curl -L -o english-ewt-ud-2.5-191206.udpipe \
+  "https://lindat.mff.cuni.cz/repository/server/api/core/bitstreams/handle/11234/1-3131/english-ewt-ud-2.5-191206.udpipe?sequence=17&isAllowed=y"
+shasum -a 256 english-ewt-ud-2.5-191206.udpipe
+# 784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957
+mv english-ewt-ud-2.5-191206.udpipe "<the model_dir above>/"
+```
+
+`MATRA_MODEL_DIR` points at a directory of your own if the resolved one is not writable. The reference embedding model has the same route, three artifacts into a directory loaded with `Model2Vec::from_dir`, described in [semantic clusters](../guides/semantic-clusters.md).
+
+### The first run says so
+
+A cold run has to fetch 16.3 MB before it can answer, and how long that takes is the link's business rather than matra's. The command line writes one line to standard error before the transfer and nothing at all when the model is already there:
+
+```text
+matra: downloading english-ewt-ud-2.5-191206.udpipe (16.3 MB) into /home/u/.local/share/matra/models
+```
+
+Standard error, so `--json` output stays a single object on standard output. `--quiet` silences it. A library caller gets the same facts as a `domain::ProvisionNotice` from `Engine::from_config_with_notice`, `Udpipe::english_with_notice` or `Udpipe::from_config_with_notice`, and decides the wording itself.
 
 ## Per-document failures: `DocumentError` and `CorpusResult`
 
