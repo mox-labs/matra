@@ -152,6 +152,44 @@ matra completions zsh > ~/.zfunc/_matra
 matra completions bash > /etc/bash_completion.d/matra
 ```
 
+## For an agent
+
+`matra --skill` prints the agent skill: what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not mean, the limits, and the errors. It is the whole hand-off. If you are pointing an agent at matra, `uvx matra --skill` is the line to give it.
+
+```bash
+matra --skill                 # the skill itself
+matra --skill -r              # the references, one per line: name, then summary
+matra --skill -r json         # one reference
+```
+
+The text is compiled into the program with `include_str!` from `skills/matra/SKILL.md` and `skills/matra/references/*.md`, so what you read is what the installed version does, not a copy of the docs that may have moved on. The same files are what the repository ships as a plugin. Every command in them is executed against the command line by the test suite, so an incantation that no longer runs fails CI.
+
+`--skill` outranks a subcommand: `matra analyze essay.md --skill` prints the skill and never looks at the file. `-r` without `--skill` is an error that says so, and an unknown reference name exits `2` naming the ones that exist. Everything else exits `0`. `--quiet` does not apply, as it does not to `completions`: the text is the command's output, not a rendering of a result.
+
+Under `--json` the skill uses the same envelope every other command uses, with `input` null because the command reads no document:
+
+```json
+{
+  "format_version": 1,
+  "command": "skill",
+  "input": null,
+  "result": { "name": "SKILL", "body": "---\nname: matra\n..." }
+}
+```
+
+`result.name` is `SKILL` for the top level and the reference's own name for `matra --skill -r <name> --json`. The list replaces `result` with one key:
+
+```json
+{
+  "format_version": 1,
+  "command": "skill",
+  "input": null,
+  "result": { "references": [{ "name": "json", "summary": "The JSON envelope every command emits, ..." }] }
+}
+```
+
+The list is every file under `references/`, in file-name order, and each summary is read from that file's own frontmatter rather than from a second list that could drift from it.
+
 ## Reading from stdin
 
 `-` in place of the path reads stdin. `--stdin-filename` gives that input a name, which is the label in the output and the envelope, and whose extension selects the decomposer. Without it the input is read as plain text and labelled `<stdin>`.
@@ -189,7 +227,7 @@ features: udpipe model2vec python cli
 }
 ```
 
-`command` is `analyze`, `summarize`, `keyphrases`, or `config`. `input` is the path that was read, or the name `--stdin-filename` gave it. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`.
+`command` is `analyze`, `summarize`, `keyphrases`, `config`, or `skill`. `input` is the path that was read, or the name `--stdin-filename` gave it, and it is null for `skill`, which reads no document. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`.
 
 Stability: `format_version` increments on any change to the envelope or to a field's meaning; the `result` value is the serde form of the documented domain types. That is the same promise cargo makes for `cargo metadata --format-version`, and it is the whole promise. Pin your consumer to a `format_version` you have tested against.
 

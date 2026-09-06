@@ -8,6 +8,8 @@ NLP library. Text in, structured analysis out.
 
 UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.
 
+If you are an agent, run `uvx matra --skill`.
+
 A pure, performant NLP library, built to be adaptable, composable, and extensible. Hex architecture, domain has zero internal dependencies, public enums and structs with public fields are `#[non_exhaustive]`. The library is small and stable; the interpretation lives in your code.
 
 ## No setup

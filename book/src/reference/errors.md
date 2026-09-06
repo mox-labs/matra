@@ -188,4 +188,6 @@ One program is installed under the name `matra`, by either of two routes. The Ru
 
 On exit code 2 the command writes `matra: ` followed by the error's `Display` string to standard error. A broken pipe, which is what happens when the reading end of `matra analyze file.md | head` goes away, exits 0 and prints nothing.
 
+The table is the whole contract, and no command narrows it. Two cases are worth naming because they are usage failures rather than failures of the text: `matra --skill -r <name>` with a name no reference answers to exits 2 and names the ones that exist, and `-r` without `--skill` exits 2 and says which flag is missing. `matra --skill` in any of its accepted forms exits 0; it reads no document, so it has nothing to find and never exits 1.
+
 The exception classes in the table above belong to the library surface, not to the command line. A `domain::Error` reaching the command line is rendered and turned into an exit code; it never surfaces as a Python exception, whichever launcher started it.
