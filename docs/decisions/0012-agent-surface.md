@@ -71,12 +71,19 @@ We choose Option C.
 **The flag.** `--skill` is a global flag on the CLI. Alone it prints
 `SKILL.md`. With `-r` (`--reference`) and no name it prints the list of
 references, one per line with a one-line summary; with `-r <name>` it
-prints that reference. `--json` gives the same content as an object
-(`{"format_version": 1, "command": "skill", "name", "body"}` or the
-list). `--help` is untouched and stays the human reference clap
-generates. A subcommand (`matra skill get <name>`) was considered and
-rejected because the owner's hand-off is `uvx matra --skill`, and a
-flag reads as a property of the program rather than an action.
+prints that reference. `--json` keeps the one envelope every `--json`
+invocation emits (`format_version`, `command`, `input`, `result`):
+`command` is `"skill"`, `input` is `null` because no document is read,
+and `result` is `{"name": "SKILL" | "<reference>", "body": "<text>"}`
+for the top level or one reference and `{"references": [{"name",
+"summary"}, ...]}` for the list. `--help` is untouched and stays the
+human reference clap generates. Two behaviors are pinned: bare `matra`
+with no flag and no subcommand keeps its usage error and exit code 2,
+and when `--skill` is combined with a subcommand the flag wins and the
+subcommand is ignored, since the flag is a property of the program. A
+subcommand (`matra skill get <name>`) was considered and rejected
+because the owner's hand-off is `uvx matra --skill`, and a flag reads
+as a property of the program rather than an action.
 
 **The content.** `skills/matra/SKILL.md` (frontmatter `name`,
 `description`, `version` equal to the crate version, body under 150
