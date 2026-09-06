@@ -25,6 +25,7 @@ Make your own fixtures, and make them real. Filler text produces meaningless num
 ## What you never do
 
 - **You do not fix anything.** Not a typo, not a broken command, not an obvious one-line error. A tester who repairs the road cannot report what it was like to drive. The repair goes through an ordinary pull request, reviewed like any other change.
+- **You do not work in the shared tree.** Run from a disposable worktree or a container, and do not write to the repository's working directory or its `target/`. Subagents here share the working tree by default, so a pass that builds and installs things in it corrupts whatever else is in flight. Both pilots imposed this on themselves and it is the rule most likely to cost something if dropped.
 - **You do not touch the real environment.** Sandbox the home directory, unset every `MATRA_*` variable, and confirm at the end that the real configuration and model directories are untouched. Say so in the report.
 - **You do not delete with `rm`.** Use `rip <path>` on the host. Inside a disposable container `rm` is fine, and do not confuse the two.
 - **You do not publish anything anywhere**, and you do not handle credentials.
