@@ -25,7 +25,11 @@
 set -uo pipefail
 
 ROOT="$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd -P)"
-SCRIPT="$ROOT/scripts/e2e-sandbox.sh"
+# Overridable so the suite can be pointed at an older copy of the script and
+# shown to fail. A test suite nobody has watched fail is not evidence, and this
+# one exists because three review rounds argued about prose instead. Run
+# `SANDBOX_SCRIPT=<old copy> bash scripts/test-e2e-sandbox.sh` to check it.
+SCRIPT="${SANDBOX_SCRIPT:-$ROOT/scripts/e2e-sandbox.sh}"
 
 if [ ! -f "$SCRIPT" ]; then
     echo "FAIL: cannot find $SCRIPT" >&2
@@ -404,6 +408,54 @@ case_symlinked_target() {
     fi
 }
 
+case_symlink_inside_a_target() {
+    local name="snapshot: a leak through a symlink inside a target shows in the diff"
+    local r="$WORK/symlink-nested"
+    make_fixture "$r"
+    # The shape src/config.rs names, at the depth it actually occurs: the
+    # config file is one level inside the target, not the target itself.
+    mkdir -p "$r/dotfiles"
+    printf 'a = 1\n' > "$r/dotfiles/matra.toml"
+    if ! ln -s "$r/dotfiles/matra.toml" "$r/xdgconfig/matra/config.toml"; then
+        fail "$name" "could not create the nested symlink fixture"
+        return
+    fi
+    local before after
+    before="$(fixture_snapshot "$r" 2>/dev/null)"
+    printf 'leaked = true\n' >> "$r/dotfiles/matra.toml"
+    after="$(fixture_snapshot "$r" 2>/dev/null)"
+    if [ "$before" = "$after" ]; then
+        fail "$name" "the pair is identical, so a write through a nested link is invisible"
+    else
+        pass "$name"
+    fi
+}
+
+case_exports_survive_eval() {
+    local name="new: the exports survive eval, and MATRA_* is swept"
+    # Two things nothing else covers. A path with a space proves the %q
+    # quoting: without it, eval sets HOME to the first word and runs the
+    # rest as a command. And a MATRA_* variable in the environment proves
+    # the unset loop, which is the sandbox's whole answer to the tier the
+    # resolvers consult first.
+    local r="$WORK/eval home"
+    mkdir -p "$r"
+    local got_home got_matra
+    if ! out="$(MATRA_MODEL_DIR=/somewhere/real bash "$SCRIPT" new "$r" 2>/dev/null)"; then
+        fail "$name" "new failed on a directory whose name contains a space"
+        return
+    fi
+    got_home="$(MATRA_MODEL_DIR=/somewhere/real bash -c "eval \"\$1\"; printf '%s' \"\$HOME\"" _ "$out")"
+    got_matra="$(MATRA_MODEL_DIR=/somewhere/real bash -c "eval \"\$1\"; printf '%s' \"\${MATRA_MODEL_DIR-unset}\"" _ "$out")"
+    if [ "$got_home" != "$r/home" ]; then
+        fail "$name" "HOME came back as '$got_home', wanted '$r/home'"
+    elif [ "$got_matra" != "unset" ]; then
+        fail "$name" "MATRA_MODEL_DIR survived the sweep as '$got_matra'"
+    else
+        pass "$name"
+    fi
+}
+
 case_dangling_symlink_target() {
     local name="snapshot: a dangling symlink at a target is not reported ABSENT"
     local r="$WORK/dangling"
@@ -470,6 +522,8 @@ case_guard_environment_route
 case_guard_marker_route
 case_union_targets
 case_symlinked_target
+case_symlink_inside_a_target
+case_exports_survive_eval
 case_dangling_symlink_target
 case_unreadable_target
 
