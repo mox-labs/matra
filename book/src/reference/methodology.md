@@ -330,6 +330,8 @@ parameters: tfidf_summarize(sentences, 5)
 
 Cite the algorithm publications listed above for the methods themselves, and the UDPipe and Universal Dependencies references for the parse layer.
 
+Cite matra separately from the methods. The `CITATION.cff` file at the repository root carries the software entry, and it identifies the implementation and its version. The publications identify the method. Because matra departs from several published methods in the ways recorded on this page, a reader who has only the method citation does not know which values you produced, and a reader who has only the software citation does not know what the values are meant to measure. Both are needed.
+
 ## General limitations
 
 These hold for every number on this page.

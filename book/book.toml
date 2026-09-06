@@ -1,7 +1,7 @@
 [book]
 title = "matra"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction"
-authors = ["yzavyas"]
+authors = ["mox labs"]
 language = "en"
 src = "src"
 
