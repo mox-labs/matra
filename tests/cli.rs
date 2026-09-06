@@ -90,6 +90,16 @@ fn help_lists_every_command() {
     }
 }
 
+/// The two agent flags are on the help, because a flag nobody can find
+/// is a flag nobody runs.
+#[test]
+fn help_lists_the_agent_flags() {
+    let (code, out, _) = run(&["--help"]);
+    assert_eq!(code, 0);
+    assert!(out.contains("--skill"), "{out}");
+    assert!(out.contains("--reference"), "{out}");
+}
+
 /// `--help` must read the same from either launcher, which is why the
 /// program name is set explicitly rather than taken from `argv[0]`.
 #[test]
@@ -181,6 +191,176 @@ fn completions_generate_for_every_supported_shell() {
 fn an_unknown_shell_is_rejected() {
     let (code, _, _) = run(&["completions", "powershell"]);
     assert_eq!(code, 2);
+}
+
+// ---------------------------------------------------------------------------
+// The agent skill. `--skill` reads no document, so none of this needs a
+// model.
+// ---------------------------------------------------------------------------
+
+/// Where the skill files live, read at test time so the assertions are
+/// against the files rather than against a second copy of them.
+fn skill_dir() -> std::path::PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("skills/matra")
+}
+
+/// Every reference name, alphabetical, which is the order `--skill -r`
+/// promises.
+fn reference_names() -> Vec<String> {
+    let dir = skill_dir().join("references");
+    let mut names: Vec<String> = std::fs::read_dir(&dir)
+        .unwrap_or_else(|e| panic!("read {}: {e}", dir.display()))
+        .map(|entry| entry.expect("dir entry").path())
+        .filter(|path| path.extension().is_some_and(|e| e == "md"))
+        .map(|path| {
+            path.file_stem()
+                .and_then(|s| s.to_str())
+                .expect("utf8 name")
+                .to_string()
+        })
+        .collect();
+    names.sort();
+    names
+}
+
+/// The verbatim promise, from the Rust launcher. `python/tests/test_cli.py`
+/// asserts the same file through `cli_main`, and the two together are what
+/// make "the binary prints its own skill" a statement about both launchers.
+#[test]
+fn the_skill_is_the_file_verbatim() {
+    let on_disk = std::fs::read_to_string(skill_dir().join("SKILL.md")).expect("read SKILL.md");
+    let (code, out, err) = run(&["--skill"]);
+    assert_eq!(code, 0, "{err}");
+    assert_eq!(out, on_disk);
+}
+
+#[test]
+fn every_reference_prints_its_file_verbatim() {
+    for name in reference_names() {
+        let path = skill_dir().join("references").join(format!("{name}.md"));
+        let on_disk = std::fs::read_to_string(&path).expect("read the reference");
+        let (code, out, err) = run(&["--skill", "-r", &name]);
+        assert_eq!(code, 0, "{name}: {err}");
+        assert_eq!(out, on_disk, "{name} did not print its own file");
+    }
+}
+
+/// The list is every file under `references/`, in file-name order, with
+/// the summary each file declares. A reference added to the directory and
+/// not to the binary fails here as well as in the unit test that reads the
+/// same directory.
+#[test]
+fn the_reference_list_names_every_file_in_order() {
+    let (code, out, err) = run(&["--skill", "-r"]);
+    assert_eq!(code, 0, "{err}");
+
+    let listed: Vec<&str> = out
+        .lines()
+        .map(|line| line.split_whitespace().next().expect("a name"))
+        .collect();
+    assert_eq!(listed, reference_names());
+
+    for line in out.lines() {
+        let (_, summary) = line.split_once("  ").expect("a name then its summary");
+        assert!(!summary.trim().is_empty(), "no summary on: {line}");
+    }
+}
+
+#[test]
+fn an_unknown_reference_exits_two_and_names_the_known_ones() {
+    let (code, out, err) = run(&["--skill", "-r", "jsn"]);
+    assert_eq!(code, 2);
+    assert!(out.is_empty(), "{out}");
+    for name in reference_names() {
+        assert!(err.contains(&name), "{err} omits `{name}`");
+    }
+}
+
+/// `-r` alone is half an incantation, and the message says which half is
+/// missing rather than reporting the absent subcommand.
+#[test]
+fn a_reference_without_the_skill_flag_is_refused_by_name() {
+    for args in [vec!["-r"], vec!["-r", "json"], vec!["--reference", "json"]] {
+        let (code, out, err) = run(&args);
+        assert_eq!(code, 2, "{args:?}");
+        assert!(out.is_empty(), "{out}");
+        assert!(err.contains("--skill"), "{err}");
+    }
+}
+
+/// `--skill` is a property of the program, not an action on a document,
+/// so it outranks a subcommand. The path here does not exist and is never
+/// looked at.
+#[test]
+fn the_skill_outranks_a_subcommand() {
+    let on_disk = std::fs::read_to_string(skill_dir().join("SKILL.md")).expect("read SKILL.md");
+    let (code, out, err) = run(&["analyze", "/nonexistent/path/to/file.md", "--skill"]);
+    assert_eq!(code, 0, "{err}");
+    assert_eq!(out, on_disk);
+}
+
+/// The three `--json` shapes, against the one envelope every command
+/// emits. `input` is null because the command reads no document, and the
+/// key is present rather than absent so a consumer reads four keys
+/// whatever it ran.
+#[test]
+fn the_skill_json_is_the_envelope() {
+    for (args, expect_list) in [
+        (vec!["--skill", "--json"], false),
+        (vec!["--skill", "-r", "--json"], true),
+        (vec!["--skill", "-r", "json", "--json"], false),
+    ] {
+        let (code, out, err) = run(&args);
+        assert_eq!(code, 0, "{args:?}: {err}");
+
+        let parsed: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
+        let mut keys: Vec<&str> = parsed
+            .as_object()
+            .expect("an object")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        keys.sort_unstable();
+        assert_eq!(keys, ["command", "format_version", "input", "result"]);
+        assert_eq!(parsed["format_version"], 1);
+        assert_eq!(parsed["command"], "skill");
+        assert!(parsed["input"].is_null(), "{args:?}: input is not null");
+
+        let result = &parsed["result"];
+        if expect_list {
+            let references = result["references"].as_array().expect("a list");
+            let listed: Vec<&str> = references
+                .iter()
+                .map(|entry| entry["name"].as_str().expect("a name"))
+                .collect();
+            assert_eq!(listed, reference_names());
+            for entry in references {
+                assert!(
+                    !entry["summary"].as_str().expect("a summary").is_empty(),
+                    "an empty summary in the list"
+                );
+            }
+        } else {
+            assert!(result["name"].is_string(), "{args:?}");
+            assert!(result["body"].is_string(), "{args:?}");
+        }
+    }
+    // The name reported for a reference is the reference, not the top
+    // level.
+    let (_, out, _) = run(&["--skill", "-r", "json", "--json"]);
+    let parsed: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
+    assert_eq!(parsed["result"]["name"], "json");
+}
+
+/// The subcommand became optional so `--skill` could stand alone. A bare
+/// invocation must still be the usage failure it has always been.
+#[test]
+fn a_bare_invocation_is_still_a_usage_failure() {
+    let (code, out, err) = run(&[]);
+    assert_eq!(code, 2);
+    assert!(out.is_empty(), "usage errors do not go to stdout: {out}");
+    assert!(err.contains("Usage: matra"), "{err}");
+    assert!(err.contains("analyze"), "{err}");
 }
 
 // ---------------------------------------------------------------------------

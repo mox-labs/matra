@@ -52,8 +52,11 @@ const SKILL_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/skills/matra");
 const FIXTURE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/skill");
 
 /// The floor the plan sets. Fewer than this and the skill is not
-/// documenting the command line.
-const MINIMUM_INCANTATIONS: usize = 8;
+/// documenting the command line. Raised from 8 to 12 when `--skill -r`
+/// landed and the references section gained its own incantation: a floor
+/// that sits well below what the files carry stops catching a section
+/// deleted wholesale.
+const MINIMUM_INCANTATIONS: usize = 12;
 
 /// The body cap from ADR-0012: SKILL.md is the top level and stays small
 /// enough to read in one pass.
