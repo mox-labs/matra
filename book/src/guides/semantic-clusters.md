@@ -98,7 +98,7 @@ Already hold embeddings? The module-level function clusters raw vectors: `semant
 
 `Matra.semantic_clusters` and `embed_and_cluster` both work over the sentences of one document. There is no cross-document primitive. Build one out of the two pieces above: embed each document as a single text, then cluster the resulting vectors.
 
-One bound decides what the answer means. `Model2Vec` caps every text at 512 tokens (`DEFAULT_MAX_TOKENS`), pre-truncating on bytes and then truncating the token ids, so "embed each document as a single text" embeds roughly the first 512 tokens of it and nothing after. Two 1600-word texts that agree for their first 512 words embed to byte-identical vectors. That cuts both ways: documents sharing a boilerplate opening score as near-duplicates on the opening alone, and two real paraphrases that diverge inside their first few hundred tokens never get compared on the part that matters. If the tail carries the content, split each document into chunks under the cap and compare the chunks.
+One bound decides what the answer means. `Model2Vec` caps every text at 512 tokens (`DEFAULT_MAX_TOKENS`), pre-truncating on bytes and then truncating the token ids, so "embed each document as a single text" embeds roughly the first 512 tokens of it and nothing after. Tokens are not words, and ordinary English markdown runs well over one token per word: measured over the prose pages of this book, 512 tokens ran out somewhere between 220 and 350 words. So two long texts that agree for as few as their first 220 words can already embed to byte-identical vectors. That cuts both ways: documents sharing a boilerplate opening score as near-duplicates on the opening alone, and two real paraphrases that diverge inside their first few hundred words never get compared on the part that matters. If the tail carries the content, split each document into chunks and compare the chunks; size the chunks from a token count, or from a word count of 200 or under, which stayed inside the cap on every page measured.
 
 Pass a threshold of `-1.0` and every pair emits an edge, because a cosine is never below it. That turns the call into a way of reading the raw pairwise scores off `edges`, which is how you calibrate before choosing a real cutoff:
 
@@ -127,7 +127,7 @@ On three documents, two of them near-paraphrases of each other and one unrelated
 
 The separation is decisive, and the sentence-level starting point does not carry over: the same vectors at `0.85` produce zero clusters, so the near-duplicate pair would have been reported as unrelated. This is what "the threshold does not travel" costs when it is taken on faith. Calibrate on scores you have read.
 
-Two things this route does not change. The vectors still carry a `model_hash`, so a cross-document score is as attributable as a sentence one. And a zero-magnitude vector, which is what an empty document embeds to, still gets no edge at any threshold.
+Two things this route does not change. Attribution still travels: the vectors do not carry the model identity, you hand `model.model_hash` to `semantic_clusters` and it comes back on the result, so a cross-document score is as attributable as a sentence one. And a zero-magnitude vector, which is what an empty document embeds to, still gets no edge at any threshold.
 
 ## Bounds and failure
 

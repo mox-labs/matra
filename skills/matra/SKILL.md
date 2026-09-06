@@ -26,7 +26,7 @@ Do not reach for it to score quality, detect authorship, or judge an argument. I
 
 ## Install and first run
 
-The Python package ships the command, so `uvx 'matra>=0.2' --version` runs it with nothing installed and nothing configured. Pin the floor: a bare `uvx matra` resolves to whatever release is newest, and the command line before 0.2.0 was a different program without `--skill`. `cargo install matra --features cli` installs the Rust binary instead, and `uv add matra` puts the same command on a project.
+The Python package ships the command, so `uvx 'matra>=0.2' --version` runs it with nothing installed and nothing configured. Pin the floor: a bare `uvx matra` resolves to whatever release is newest, and the command line before 0.2.0 was a different program without `--skill`. The pinned line resolves once 0.2.0 is on PyPI; before that, run the `matra` already in hand. `cargo install matra --features cli` installs the Rust binary instead, and `uv add matra` puts the same command on a project.
 
 ```console
 $ matra --version
@@ -100,7 +100,7 @@ A slot is null when the metric stage has not run, and null where the paragraph d
 | `vocabulary_ttr` | Distinct lemmas over total lemmas, per document | Richness. It falls as documents grow, so two documents of different lengths are not comparable on it |
 | `nominalization_ratio` | Nouns ending in six suffixes over all words | A noun count. Plurals are missed, false positives are counted, and the denominator is every word, not every noun |
 | `passive_ratio` | Sentences carrying a passive relation over all sentences | Bad writing. It counts sentences, not clauses, so three passives in one sentence count once |
-| `score` on `Keyphrase` | Rank order among phrases, within one document, under one method | A magnitude. RAKE sums per-word ratios that are each at least 1, so it rises with phrase length; YAKE returns a reciprocal, unbounded above with no unit. The two scales are unrelated, and the top phrase is routinely not what the document is about |
+| `score` on `Keyphrase` | Rank order among phrases, within one document, under one method | A magnitude. RAKE sums per-word ratios that are each at least 1, so a phrase of k words scores at least k, a floor per length and not an order across lengths; YAKE returns a reciprocal, unbounded above with no unit. The two scales are unrelated, and the top phrase is routinely not what the document is about |
 
 ## Limits and errors
 

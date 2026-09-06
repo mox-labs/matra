@@ -40,7 +40,7 @@ Seven types nest, each owning the next. Nothing is owned twice.
 <text class="mem" x="462" y="67">mean_readability</text>
 <text class="mem" x="206" y="109">path · analysis</text>
 <text class="mem" x="206" y="153">sections · vocabulary_ttr ·</text>
-<text class="mem" x="206" y="165">nominalization_ratio</text>
+<text class="mem" x="206" y="165">nominalization_ratio · passive_ratio</text>
 <text class="mem" x="462" y="153">paragraph_count · total_sentences ·</text>
 <text class="mem" x="462" y="165">total_words · passive_ratio ·</text>
 <text class="mem" x="462" y="177">mean_sentence_length · sentence_length_std</text>
@@ -55,7 +55,7 @@ Seven types nest, each owning the next. Nothing is owned twice.
 <text class="mem" x="206" y="387">the ten CoNLL-U columns · is_punct</text>
 </svg>
 
-The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree, and `vocabulary_ttr` and `nominalization_ratio` are the only two document-level numbers that are stored rather than derived.
+The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree, and the document-level numbers stored rather than derived are `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. `passive_ratio` is the one name in both columns: the measure stage stores the method's result in the field, which is how the aggregate crosses the language boundary.
 
 Five more types sit outside the nest:
 

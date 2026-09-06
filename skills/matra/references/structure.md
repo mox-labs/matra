@@ -55,7 +55,7 @@ For "The system was built by the team." the shipped English model produces:
 
 Words keep their reading order in the token table; height in the drawing is depth in the tree. Everything hangs off `built` directly or through one more hop, so the nesting depth is 2.
 
-`nsubj:pass` and `aux:pass` are the two relations passive detection matches, along with the older Stanford spelling `nsubjpass`. A sentence carrying any of the three counts as passive, once, however many passives it contains.
+Passive detection matches three labels: `nsubj:pass`, `nsubjpass` and `aux:pass`. The first two are the Universal Dependencies and older Stanford spellings of a passive subject; the third is a passive auxiliary. A sentence carrying any of the three counts as passive, once, however many passives it contains.
 
 ## Reading arcs without matra's helpers
 
