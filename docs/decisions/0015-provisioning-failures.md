@@ -141,6 +141,16 @@ the write are all `io`. The `io::ErrorKind` is preserved where `ureq`
 knows it, so a caller separates a timeout from an unreachable host
 without reading a message, and the message names the URL.
 
+Preserving it takes one deliberate step on the body-read path. `ureq`'s
+body reader converts its own failure with `Error::into_io`, which returns
+the inner error only for `Error::Io` and wraps everything else, a
+`Timeout` included, in `io::Error::other`; reading the kind straight off
+that yields `Other`. Both adapters pass the read error back through
+`From<io::Error> for ureq::Error`, which unwraps it, before classifying.
+Without that step the `TimedOut` row above is false for a transfer that
+stalls after the response has begun, and a certificate rejected
+mid-stream misses the sentence the connect phase gets.
+
 **We reject Option D, and document hand-placement instead.** The pinned
 UDPipe model gets the documented manual path
 `book/src/guides/semantic-clusters.md` already gives the embedding model,
@@ -163,6 +173,12 @@ all stay with the application. The command line writes one line to
 stderr, which keeps `--json` stdout a single object, and `--quiet`
 silences it.
 
+The three forms are the UDPipe path's. `Model2Vec::potion_base_8m`
+provisions 30.2 MB across three artifacts and has no notice form, so a
+semantic first run is still silent. Giving it one is additive and
+unblocked; it is not part of this decision, and the docsite says so
+rather than implying the notice is universal.
+
 **Staleness is measured in time, not in process identity.** A temporary
 download directory older than twice the fetch budget cannot belong to a
 live call, so it is reclaimed. Anything younger is left alone, which is
@@ -171,6 +187,15 @@ other's directories as seconds old. Fetching into memory before writing
 shrinks the exposure that produced the orphan from the length of a
 download to the length of one write.
 
+Process identity is not usable for naming either. The temporary used to
+carry the process id alone and be removed by name just before it was
+created, which is safe only where a pid is unique. In a container every
+process is pid 1, so two cold starts sharing a bind-mounted model
+directory pick the same name, and the removal deletes a live peer's
+transfer. The name now carries the pid, a nanosecond timestamp and a
+counter, and nothing is removed for looking like this call's own: age is
+the only rule that reclaims anything.
+
 **The two adapters still do not share a provisioning module.** They share
 a discipline, described here, and each implements it. That is the call
 `embed/model2vec.rs` already recorded for the temp-then-rename pattern,
@@ -178,6 +203,20 @@ and the reason is unchanged: a utility module both imported would put a
 third file into the wiring to save a few dozen lines, and the two
 adapters differ in the ways that matter (one artifact against three, one
 file against a directory).
+
+Sharing a discipline meant bringing `embed/model2vec.rs` up to it, which
+the first version of this change did not do. It fetched each artifact
+into a temporary, renamed all three onto the artifact names, and only
+then read them back to check the digest, so unverified bytes reached the
+model directory under their real names. And its temporaries,
+`.tmp.<name>.<pid>` opened with `create_new`, had no reclaim at all, so
+one interrupt wedged every later embedding provision until somebody
+deleted the file by hand, which in a container is every interrupt because
+every process is pid 1. Both are closed here: the set is verified in
+memory before anything is written, and a temporary older than twice the
+fetch budget is reclaimed by the next install. That is the same defect
+class as the UDPipe orphan this ADR already answers, on the path the
+docsite now recommends.
 
 ## Consequences
 
@@ -193,6 +232,14 @@ file against a directory).
   digest or loader verdict. Both kinds already existed, so no consumer
   meets a string it has never seen; a consumer that matched exhaustively
   still matches.
+- Positive: the embedding provisioner verifies before writing and
+  reclaims aged temporaries, so the two adapters implement one discipline
+  rather than one and a half. An interrupted embedding provision no
+  longer wedges every later one.
+- Neutral: the download client sets `https_only`. `ureq` follows up to
+  ten redirects, so an `https` URL that redirected to `http` would
+  otherwise be fetched in cleartext. The digest pin means integrity was
+  never at stake here; this is confidentiality.
 - Negative: `ureq` is now named in the `udpipe` feature. It was already
   in the tree through `udpipe-rs`, so the dependency graph is unchanged
   and only the declaration is new.

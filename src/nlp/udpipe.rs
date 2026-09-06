@@ -3,6 +3,7 @@
 
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime};
 
 use sha2::{Digest, Sha256};
@@ -199,6 +200,16 @@ impl Udpipe {
     /// [`Udpipe::from_config`] with the say-so
     /// [`Udpipe::english_with_notice`] takes.
     ///
+    /// ```no_run
+    /// use matra::nlp::udpipe::Udpipe;
+    ///
+    /// let cfg = matra::config::Config::resolve()?;
+    /// let nlp = Udpipe::from_config_with_notice(&cfg, |n| {
+    ///     eprintln!("fetching {} ({} bytes)", n.artifact, n.bytes);
+    /// })?;
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    ///
     /// # Errors
     ///
     /// Whatever [`Udpipe::english`] returns.
@@ -358,12 +369,7 @@ fn install(dir: &Path, filename: &str, bytes: &[u8]) -> crate::domain::Result<()
 fn fetch_capped(url: &str) -> crate::domain::Result<Vec<u8>> {
     use std::io::Read;
 
-    let agent: ureq::Agent = ureq::Agent::config_builder()
-        .timeout_global(Some(FETCH_TIMEOUT))
-        .timeout_connect(Some(CONNECT_TIMEOUT))
-        .build()
-        .into();
-    let response = agent
+    let response = download_agent()
         .get(url)
         .call()
         .map_err(|e| transport_failure(url, &e))?;
@@ -373,13 +379,43 @@ fn fetch_capped(url: &str) -> crate::domain::Result<Vec<u8>> {
         .into_reader()
         .take(MAX_MODEL_BYTES as u64 + 1)
         .read_to_end(&mut bytes)
-        .map_err(|e| {
-            Error::Io(std::io::Error::new(
-                e.kind(),
-                format!("download {url}: {e}"),
-            ))
-        })?;
+        .map_err(|e| body_failure(url, e))?;
     Ok(bytes)
+}
+
+/// The client [`fetch_capped`] downloads through.
+///
+/// A function rather than an inline builder so a test can assert the
+/// configuration without a network. `https_only` is the part worth
+/// asserting: `ureq` follows up to ten redirects by default, so without
+/// it an `https` URL that redirects to `http` is fetched in cleartext.
+/// The pinned digest means that cannot change which bytes load, so this
+/// is confidentiality rather than integrity, but a redirect is not the
+/// user's decision to make and the pinned URLs are all `https`.
+fn download_agent() -> ureq::Agent {
+    ureq::Agent::config_builder()
+        .timeout_global(Some(FETCH_TIMEOUT))
+        .timeout_connect(Some(CONNECT_TIMEOUT))
+        .https_only(true)
+        .build()
+        .into()
+}
+
+/// Map a failure part-way through reading the response body.
+///
+/// The body reader hands back an `io::Error`, and `ureq` builds that one
+/// with `Error::into_io`, which returns the inner error only for
+/// `Error::Io` and wraps everything else, `Timeout` included, in
+/// `io::Error::other`. Reading `kind()` straight off it therefore gives
+/// `Other`, so a fetch that ran past [`FETCH_TIMEOUT`] mid-transfer
+/// reported `Other` where `book/src/reference/errors.md` and ADR-0015
+/// both promise `TimedOut`. `From<io::Error> for ureq::Error` unwraps
+/// the wrapped error again, which recovers the kind and also gives a
+/// mid-stream certificate rejection the sentence [`download_message`]
+/// writes. An `io::Error` that was never a `ureq::Error` comes back as
+/// `Error::Io` and keeps its own kind.
+fn body_failure(url: &str, error: std::io::Error) -> Error {
+    transport_failure(url, &ureq::Error::from(error))
 }
 
 /// Map a `ureq` failure to [`Error::Io`].
@@ -486,8 +522,8 @@ fn verified(bytes: &[u8], expected_size: u64, expected_hash: &str) -> bool {
 
 /// Run a closure with a temporary subdirectory inside `parent`, removing
 /// the subdirectory on scope exit (success or panic). The subdirectory
-/// name includes the current process id so concurrent calls in different
-/// processes do not collide.
+/// name is unique per call ([`temp_stamp`]), so concurrent calls cannot
+/// collide even when they share a process id.
 ///
 /// `Drop` does not run on `SIGINT`, so cleanup on scope exit cannot be
 /// the whole answer: a run killed between the create and the rename
@@ -511,15 +547,38 @@ where
 
     reclaim_stale_temp_dirs(parent, SystemTime::now());
 
-    let tmp_name = format!("{TEMP_DIR_PREFIX}{}", std::process::id());
-    let tmp_dir = parent.join(&tmp_name);
-    // This pid is this process, so whatever is under its name is this
-    // process's own leftover and is removed whatever its age.
-    let _ = std::fs::remove_dir_all(&tmp_dir);
-    std::fs::create_dir_all(&tmp_dir)
+    let tmp_dir = parent.join(format!("{TEMP_DIR_PREFIX}{}", temp_stamp()));
+    // `create_dir`, not `create_dir_all`: this name is this call's alone,
+    // so anything already sitting under it is a surprise to fail on
+    // rather than a directory to write into. Nothing is removed by name
+    // here either, because a name that looks like this call's may be a
+    // peer's: age is the only thing that says a directory is a leftover.
+    std::fs::create_dir(&tmp_dir)
         .map_err(|e| io_at("create the temporary directory", &tmp_dir, &e))?;
     let _cleanup = Cleanup(&tmp_dir);
     f(&tmp_dir)
+}
+
+/// A name fragment no call in flight will pick twice: the process id,
+/// the wall clock in nanoseconds, and a counter for two calls in one
+/// process that read the same nanosecond.
+///
+/// The process id alone was the previous answer and it is not unique. In
+/// a container every process is pid 1, so two cold starts sharing a
+/// bind-mounted model directory choose the same name, and the removal
+/// that used to precede the create would delete a live peer's download.
+/// Uniqueness here is what leaves age as the only rule that reclaims
+/// anything.
+fn temp_stamp() -> String {
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let nanos = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos() as u64);
+    format!(
+        "{}.{nanos:x}.{:x}",
+        std::process::id(),
+        COUNTER.fetch_add(1, Ordering::Relaxed)
+    )
 }
 
 /// Remove every temporary download directory in `parent` that is too old
@@ -1173,6 +1232,117 @@ mod tests {
             Error::Io(e) => assert_eq!(e.kind(), std::io::ErrorKind::NotConnected),
             other => panic!("expected Io, got {other:?}"),
         }
+    }
+
+    /// Regression (review of #77): a timeout while reading the body
+    /// reports `TimedOut`, which is what `book/src/reference/errors.md`
+    /// and ADR-0015's decision table both promise. `ureq`'s body reader
+    /// builds its `io::Error` with `Error::into_io`, which wraps
+    /// everything that is not already an `io::Error` in
+    /// `io::Error::other`, so reading `kind()` off it gave `Other` for
+    /// every body-phase failure. The connect phase was always right;
+    /// only this one was wrong.
+    #[test]
+    fn a_timeout_while_reading_the_body_is_reported_as_a_timeout() {
+        // Exactly the shape `ureq` hands the body reader for a transfer
+        // that runs past the global budget after the response begins.
+        let from_ureq = std::io::Error::other(ureq::Error::Timeout(ureq::Timeout::Global));
+        assert_eq!(
+            from_ureq.kind(),
+            std::io::ErrorKind::Other,
+            "the wrapping this test exists to undo"
+        );
+
+        match body_failure(ENGLISH_MODEL_URL, from_ureq) {
+            Error::Io(e) => {
+                assert_eq!(e.kind(), std::io::ErrorKind::TimedOut);
+                assert!(e.to_string().contains(ENGLISH_MODEL_URL), "{e}");
+                assert!(e.to_string().contains("timeout"), "{e}");
+            }
+            other => panic!("expected Io(TimedOut), got {other:?}"),
+        }
+    }
+
+    /// The other half: an `io::Error` that never was a `ureq::Error`
+    /// keeps its own kind, so unwrapping costs nothing on the ordinary
+    /// path.
+    #[test]
+    fn a_plain_body_read_failure_keeps_its_own_kind() {
+        let raw = std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "peer disconnected");
+
+        match body_failure(ENGLISH_MODEL_URL, raw) {
+            Error::Io(e) => {
+                assert_eq!(e.kind(), std::io::ErrorKind::UnexpectedEof);
+                assert!(e.to_string().contains(ENGLISH_MODEL_URL), "{e}");
+            }
+            other => panic!("expected Io(UnexpectedEof), got {other:?}"),
+        }
+    }
+
+    /// A mid-stream certificate rejection reaches the same sentence the
+    /// connect phase gets. It used to be wrapped by hand and lost it.
+    #[test]
+    fn a_certificate_rejected_mid_stream_still_reads_as_a_sentence() {
+        let from_ureq = std::io::Error::other(ureq::Error::Io(std::io::Error::other(
+            "invalid peer certificate: Other(OtherError(CaUsedAsEndEntity))",
+        )));
+
+        match body_failure(ENGLISH_MODEL_URL, from_ureq) {
+            Error::Io(e) => {
+                let message = e.to_string();
+                assert!(message.contains("lindat.mff.cuni.cz"), "{message}");
+                assert!(message.contains("system trust store"), "{message}");
+            }
+            other => panic!("expected Io, got {other:?}"),
+        }
+    }
+
+    /// `ureq` follows up to ten redirects, so without `https_only` an
+    /// `https` URL that redirects to `http` is fetched in cleartext. The
+    /// digest pin keeps that from changing which bytes load, so this is
+    /// confidentiality only, and it is still not the redirect's call.
+    #[test]
+    fn the_download_agent_refuses_to_leave_https() {
+        let agent = download_agent();
+        assert!(agent.config().https_only());
+        assert!(
+            agent.config().max_redirects() > 0,
+            "the redirect following that makes https_only load-bearing"
+        );
+    }
+
+    /// Regression (review of #77): a temporary directory carrying this
+    /// process's own pid may be a live peer's. In a container every
+    /// process is pid 1, so two cold starts sharing a bind-mounted model
+    /// directory pick the same pid, and the unconditional removal that
+    /// used to precede the create deleted the peer's download.
+    #[test]
+    fn a_peer_temp_directory_bearing_this_pid_is_left_alone() {
+        let dir = tempfile::tempdir().unwrap();
+        let peer = dir
+            .path()
+            .join(format!("{TEMP_DIR_PREFIX}{}", std::process::id()));
+        std::fs::create_dir_all(&peer).unwrap();
+        std::fs::write(peer.join("partial.udpipe"), b"in flight").unwrap();
+
+        let mut rec = recorder();
+        provision_fixture(dir.path(), &mut rec, &|| Ok(FIXTURE.to_vec())).unwrap();
+
+        assert!(
+            peer.exists(),
+            "a fresh directory under this pid is a peer's, not this call's"
+        );
+        assert_eq!(
+            std::fs::read(peer.join("partial.udpipe")).unwrap(),
+            b"in flight"
+        );
+    }
+
+    /// And the name that makes that hold: two calls in one process never
+    /// choose the same temporary.
+    #[test]
+    fn two_temporary_names_in_one_process_differ() {
+        assert_ne!(temp_stamp(), temp_stamp());
     }
 
     #[test]

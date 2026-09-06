@@ -95,6 +95,11 @@ pub struct Config {
     keyphrases_n: usize,
     keyphrases_algorithm: String,
     sources: Vec<(&'static str, ValueSource)>,
+    /// The config file this configuration's own environment names, or
+    /// `None` when that environment names none. Carried rather than
+    /// recomputed, so a caller asking about this configuration is never
+    /// answered from the process environment instead.
+    config_file: Option<PathBuf>,
 }
 
 impl Config {
@@ -139,7 +144,13 @@ impl Config {
     ) -> domain::Result<Config> {
         let env: &dyn Fn(&str) -> Option<String> = &env;
 
-        let file_path = config_file_path_from(env).unwrap_or_else(|| PathBuf::from("config.toml"));
+        let config_file = config_file_path_from(env);
+        // The attribution path for messages about the file's contents.
+        // A configuration with no file still needs a name to hang a
+        // parse error on, and nothing reads this one.
+        let file_path = config_file
+            .clone()
+            .unwrap_or_else(|| PathBuf::from("config.toml"));
         let from_file = match file {
             Some(text) => parse_toml(text, &file_path)?,
             None => FileConfig::default(),
@@ -247,6 +258,7 @@ impl Config {
             keyphrases_n,
             keyphrases_algorithm,
             sources,
+            config_file,
         })
     }
 
@@ -291,6 +303,20 @@ impl Config {
     /// exist.
     pub fn config_file_path() -> Option<PathBuf> {
         config_file_path_from(&|key: &str| std::env::var(key).ok())
+    }
+
+    /// The config file *this* configuration's environment named, or
+    /// `None` when it named none. The path is not read here and need not
+    /// exist.
+    ///
+    /// The instance counterpart to [`Config::config_file_path`], and the
+    /// one to reach for whenever a `Config` is in hand. The static reads
+    /// the process environment, so a caller holding a configuration
+    /// built through [`Config::from_sources`] with an injected
+    /// environment would otherwise be answered about a different
+    /// machine's files.
+    pub fn config_file(&self) -> Option<&Path> {
+        self.config_file.as_deref()
     }
 
     /// The data root: `MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`,
