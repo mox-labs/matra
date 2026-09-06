@@ -16,8 +16,13 @@ name: Publish to PyPI
 #     - Workflow filename: publish-pypi.yml
 #     - Environment: pypi
 #
-# Windows wheels are deliberately absent for 0.1.x: the UDPipe C++
-# build under MSVC is unverified. Add the target when it is.
+# The wheel matrix and the abi3 choice are ADR-0014. Four wheels cover
+# the published surface: Linux x86_64, Linux aarch64, macOS x86_64,
+# macOS arm64, each one abi3 so a single wheel serves CPython 3.12 and
+# every later 3.x.
+#
+# Windows wheels are deliberately absent: the UDPipe C++ build under
+# MSVC is unverified. Add the target when it is.
 #
 # pypa/gh-action-pypi-publish is the one third-party action here; pypa
 # is a verified creator, which the org policy admits, and the ref is a
@@ -72,13 +77,17 @@ jobs:
             exit 1
           fi
 
-  # Wheels build with pip-installed maturin rather than a third-party
-  # build action: the org Actions policy validates every `uses` ref at
-  # workflow start, and keeping the build to `actions/*` plus shell
-  # removes that variable entirely. Cost: linux wheels carry the
-  # runner's glibc tag rather than broad manylinux, and no linux
-  # aarch64 wheel ships for 0.1.x. Restore PyO3/maturin-action (SHA
-  # pinned, org-allowlisted) when broader targets matter.
+  # No third-party build action: the org Actions policy validates every
+  # `uses` ref at workflow start, and keeping the build to `actions/*`
+  # plus shell removes that variable. The Linux half is built inside
+  # ghcr.io/pyo3/maturin instead, which is the same manylinux2014 base
+  # PyO3/maturin-action would have used, reached with plain `docker run`
+  # and pinned by index digest the way the policy pins action SHAs.
+  #
+  # Building on the runner rather than in that image is what produced a
+  # manylinux_2_34 wheel for 0.1.x, which pip rejects on Debian 11,
+  # Ubuntu 20.04, RHEL 8 and Amazon Linux 2. The container drops the
+  # floor to glibc 2.17. See ADR-0014.
   wheels:
     name: Wheel ${{ matrix.platform.name }}
     needs: [verify]
@@ -90,26 +99,50 @@ jobs:
       fail-fast: false
       matrix:
         platform:
+          # ubuntu-24.04-arm is a GitHub-hosted arm64 runner, free for
+          # public repositories. It exists so the Linux aarch64 wheel is
+          # built natively rather than under QEMU, which would push the
+          # job past its timeout.
+          #
           # macos-x86_64 cross-compiles from the arm64 runner: GitHub
           # is retiring the Intel macos-13 runners and jobs targeting
           # them starve in the queue. Cross-built wheels cannot smoke
-          # test on the arm host, so that step is linux/arm-native only.
-          - { name: linux-x86_64, runner: ubuntu-latest, target: "" }
-          - { name: macos-x86_64, runner: macos-14, target: x86_64-apple-darwin }
-          - { name: macos-aarch64, runner: macos-14, target: "" }
+          # test on the arm host, so those steps are native-only.
+          - { name: linux-x86_64, runner: ubuntu-latest, manylinux: true, target: "" }
+          - { name: linux-aarch64, runner: ubuntu-24.04-arm, manylinux: true, target: "" }
+          - { name: macos-x86_64, runner: macos-14, manylinux: false, target: x86_64-apple-darwin }
+          - { name: macos-aarch64, runner: macos-14, manylinux: false, target: "" }
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: ${{ env.PUBLISH_TAG }}
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9  # master
-        with:
-          toolchain: stable
-          targets: ${{ matrix.platform.target }}
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.12"
-      - name: Build wheel
+      # RUSTUP_PERMIT_COPY_RENAME is not optional. rust-toolchain.toml
+      # makes rustup re-sync the channel inside the container, and the
+      # rename it does to swap a component crosses the overlay boundary
+      # between the image layer and the container, which fails with
+      # "Invalid cross-device link (os error 18)".
+      - name: Build wheel in the manylinux container (Linux)
+        if: matrix.platform.manylinux
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD:/io" -w /io \
+            -e RUSTUP_PERMIT_COPY_RENAME=1 \
+            -e CARGO_TARGET_DIR=/build-target \
+            ghcr.io/pyo3/maturin:v1.14.1@sha256:2665227312dd1eab1c29c70a001dc8aac53155a2d048bede3b2df7f1691c8e38 \
+            build --release --out dist
+          sudo chown -R "$(id -u):$(id -g)" dist
+      - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9  # master
+        if: ${{ !matrix.platform.manylinux }}
+        with:
+          toolchain: stable
+          targets: ${{ matrix.platform.target }}
+      - name: Build wheel on the runner (macOS)
+        if: ${{ !matrix.platform.manylinux }}
         env:
           BUILD_TARGET: ${{ matrix.platform.target }}
         run: |
@@ -120,15 +153,46 @@ jobs:
           else
             maturin build --release --out dist
           fi
-      - name: Smoke test the wheel (native builds only)
+      # The abi3 contract, checked rather than assumed: one wheel per
+      # platform, tagged cp312-abi3, and Linux wheels no higher than the
+      # manylinux2014 floor. A dropped `abi3-py312` feature or a build
+      # that escaped the container fails here, not on a user's machine.
+      - name: The wheel is abi3, and Linux wheels are manylinux2014
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=$(ls dist/*.whl | wc -l | tr -d ' ')
+          [ "$count" = "1" ] || { echo "::error::expected 1 wheel, got $count"; exit 1; }
+          name=$(basename dist/*.whl)
+          echo "built $name"
+          case "$name" in
+            *-cp312-abi3-*) ;;
+            *) echo "::error::$name is not an abi3 wheel"; exit 1 ;;
+          esac
+          if [ "${{ matrix.platform.manylinux }}" = "true" ]; then
+            case "$name" in
+              *manylinux2014_*) ;;
+              *) echo "::error::$name is not manylinux2014"; exit 1 ;;
+            esac
+          fi
+      # Native builds only: a cross-built wheel cannot run on the host.
+      # The interpreter here is deliberately newer than the one the
+      # wheel was built against, so this proves the abi3 wheel installs
+      # without a source build on a later CPython. --only-binary :all:
+      # makes pip fail rather than quietly fall back to building.
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        if: matrix.platform.target == ''
+        with:
+          python-version: "3.13"
+      - name: Smoke test on a newer CPython than the wheel was built for
         if: matrix.platform.target == ''
         run: |
           set -euo pipefail
           python -m venv /tmp/smoke
-          # The wheel comes from dist. The package has no runtime
-          # dependencies, so --find-links is enough on its own.
-          /tmp/smoke/bin/pip install --no-index --find-links dist matra
-          /tmp/smoke/bin/python -c "import matra; print(matra.Matra)"
+          # The package has no runtime dependencies, so --find-links
+          # plus --no-index is enough on its own.
+          /tmp/smoke/bin/pip install --no-index --only-binary :all: --find-links dist matra
+          /tmp/smoke/bin/python -c "import sys, matra; assert sys.version_info[:2] == (3, 13), sys.version_info; print(matra.Matra)"
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: wheels-${{ matrix.platform.name }}
