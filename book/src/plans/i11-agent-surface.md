@@ -26,8 +26,10 @@ Every `matra ...` command in the skill is executed by the test suite through `cl
 matra --skill                 SKILL.md (frontmatter + body under 150 lines)
 matra --skill -r              the references, one per line: name, one-line summary
 matra --skill -r <name>       one reference
-matra --skill --json          {"format_version": 1, "command": "skill", "name": "SKILL", "body": "..."}
-matra --skill -r --json       {"format_version": 1, "command": "skill", "references": [{"name", "summary"}, ...]}
+matra --skill --json          {"format_version": 1, "command": "skill", "input": null, "result": {"name": "SKILL", "body": "..."}}
+matra --skill -r --json       {"format_version": 1, "command": "skill", "input": null, "result": {"references": [{"name", "summary"}, ...]}}
+matra                         unchanged: usage error, exit 2
+matra analyze x --skill       the flag wins; the subcommand is ignored
 ```
 
 ```text
@@ -64,7 +66,7 @@ ADR-0012 accepted; roadmap entry points here; plans index and `SUMMARY.md` carry
 
 `--skill`, `-r` / `--reference [NAME]`, and their `--json` shapes in `src/cli/`, content embedded with `include_str!`; the reference list and summaries come from each reference's frontmatter, not a second list. Unknown reference name: exit 2 naming the known ones. `python/tests/test_cli.py` asserts `--skill` output is byte-identical between the Rust binary and `cli_main`. CLI guide gains the flag; the errors page's exit-code table if anything changes.
 
-**Rubric.** `uvx --from . matra --skill` prints the same bytes as the binary; `--skill -r` lists exactly the files under `references/`; the crate's `include` list ships `skills/matra/`; `cargo package --list` shows it.
+**Rubric.** `uvx --from . matra --skill` prints the same bytes as the binary; `--skill -r` lists exactly the files under `references/`; `cargo package --list` shows every file under `skills/matra/` (the manifest uses an `exclude` list, so the check is that nothing excludes them); bare `matra` still exits 2 with the usage error, and `--skill` beside a subcommand wins, both asserted in `tests/cli.rs`; every `--json` shape is the one envelope with the payload under `result` and `input` null.
 
 ### M4: alongside the flag
 

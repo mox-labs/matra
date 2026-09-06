@@ -61,3 +61,5 @@ supersede old ones. The full lineage is preserved.
 | [0008](0008-structural-primitives-are-fields.md) | Structural primitives are fields | accepted |
 | [0009](0009-feats-lookup-accessor.md) | Feats lookup accessor, Rust-only | accepted |
 | [0010](0010-embeddings-adapter.md) | Embeddings: a Tier-2 channel behind an Embedder port, static adapter first | accepted |
+| [0011](0011-out-of-the-box.md) | Out of the box: a Config resolver for locations and defaults, XDG paths, pinned downloads as one discipline, one CLI with two launchers | accepted |
+| [0012](0012-agent-surface.md) | The agent surface: a skill the binary prints, with references, an executed-incantation test, llms.txt, AGENTS.md, the plugin layout | accepted |
