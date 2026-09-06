@@ -64,3 +64,4 @@ supersede old ones. The full lineage is preserved.
 | [0011](0011-out-of-the-box.md) | Out of the box: a Config resolver for locations and defaults, XDG paths, pinned downloads as one discipline, one CLI with two launchers | accepted |
 | [0012](0012-agent-surface.md) | The agent surface: a skill the binary prints, with references, an executed-incantation test, llms.txt, AGENTS.md, the plugin layout | accepted |
 | [0013](0013-attribution-and-citation.md) | Attribution and citation: mox labs as the one author and copyright holder, CITATION.cff at the root | accepted |
+| [0014](0014-distribution-matrix.md) | The distribution matrix: four abi3 wheels built in manylinux, and a from-source path that names its C++ toolchain | accepted |
