@@ -126,8 +126,8 @@ The repository is built on two non-negotiable disciplines:
   verification, cycle-safe graph walks. See
   [`.claude/skills/resilience-floor/SKILL.md`](https://github.com/mox-labs/matra/blob/main/.claude/skills/resilience-floor/SKILL.md).
 
-The agent organization in [`.claude/agents/`](https://github.com/mox-labs/matra/tree/main/.claude/agents) (6 practitioner
-agents) and skill library in [`.claude/skills/`](https://github.com/mox-labs/matra/tree/main/.claude/skills) (7 skills)
+The agent organization in [`.claude/agents/`](https://github.com/mox-labs/matra/tree/main/.claude/agents)
+and skill library in [`.claude/skills/`](https://github.com/mox-labs/matra/tree/main/.claude/skills)
 operationalize these disciplines so any contributor, human or AI, can
 participate without re-deriving the design.
 

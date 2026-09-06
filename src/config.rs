@@ -471,6 +471,12 @@ fn check_algorithm(
     )))
 }
 
+// The three resolvers below are the whole of matra's environment surface, and
+// `scripts/e2e-sandbox.sh` transcribes the variables they read by hand so an
+// end-to-end pass can fingerprint every location any tier could name.
+// `tests/sandbox_env_parity.rs` asserts the two sets are equal, so a tier added
+// here fails a gate rather than silently narrowing what that script watches.
+
 fn config_file_path_from(env: &dyn Fn(&str) -> Option<String>) -> Option<PathBuf> {
     if let Some(path) = non_empty(env("MATRA_CONFIG_FILE")) {
         return Some(PathBuf::from(path));
