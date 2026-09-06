@@ -20,7 +20,7 @@ cargo install matra --features cli
 uv add matra          # then: matra --help
 ```
 
-Every route caches the model at the resolved model directory (about 16 MB) and downloads it the first time any command needs it. No flag and no environment variable is required to make that happen. If the cached file fails its SHA-256 check, matra removes it and downloads once more before giving up.
+Every route caches the model at the resolved model directory (about 16 MB) and downloads it the first time any command needs it. No flag and no environment variable is required to make that happen. If the cached file fails its SHA-256 check, matra downloads a replacement and only then removes it, so a fetch that fails leaves the file you had.
 
 ## Where matra keeps things
 

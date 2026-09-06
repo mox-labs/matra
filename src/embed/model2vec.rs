@@ -166,9 +166,10 @@ impl Model2Vec {
                 return Err(Error::ModelNotFound(p.clone()));
             }
         }
-        let model_bytes = fs::read(&model_path)?;
-        let tokenizer_bytes = fs::read(&tokenizer_path)?;
-        let config_bytes = fs::read(&config_path)?;
+        let model_bytes = fs::read(&model_path).map_err(|e| io_at("read", &model_path, &e))?;
+        let tokenizer_bytes =
+            fs::read(&tokenizer_path).map_err(|e| io_at("read", &tokenizer_path, &e))?;
+        let config_bytes = fs::read(&config_path).map_err(|e| io_at("read", &config_path, &e))?;
         catch_embed_panic(|| Self::from_bytes(&model_bytes, &tokenizer_bytes, &config_bytes))
     }
 
@@ -314,7 +315,7 @@ impl Model2Vec {
         // Before the download rather than after it, so a directory that
         // cannot be created fails in milliseconds instead of after
         // 30 MB has travelled. `nlp/udpipe.rs` orders it the same way.
-        fs::create_dir_all(dir)?;
+        fs::create_dir_all(dir).map_err(|e| io_at("create the model directory", dir, &e))?;
         let paths: [PathBuf; 3] = ARTIFACT_FILES.map(|f| dir.join(f));
         let present = paths.iter().filter(|p| p.exists()).count();
 
@@ -619,11 +620,10 @@ fn read_verify_load(
     paths: &[PathBuf; 3],
     expected_digest: &str,
 ) -> domain::Result<Option<Model2Vec>> {
-    let artifacts = [
-        fs::read(&paths[0])?,
-        fs::read(&paths[1])?,
-        fs::read(&paths[2])?,
-    ];
+    let mut artifacts: [Vec<u8>; 3] = Default::default();
+    for (slot, path) in artifacts.iter_mut().zip(paths) {
+        *slot = fs::read(path).map_err(|e| io_at("read", path, &e))?;
+    }
 
     if !digest_of(&artifacts).eq_ignore_ascii_case(expected_digest) {
         return Ok(None);
@@ -665,6 +665,21 @@ fn not_the_pinned_model(dir: &Path, reason: &str, expected_digest: &str) -> Erro
          or point MATRA_MODEL_DIR or the configured embedding model name at another \
          directory.",
         dir.display()
+    ))
+}
+
+/// A filesystem failure that names the operation and the path.
+///
+/// The counterpart of the function of the same name in `nlp/udpipe.rs`,
+/// and it exists for the same reason: `io error: No space left on device
+/// (os error 28)` was the whole message an embedding install produced,
+/// with the path sitting in a variable one line away. ADR-0015 says the
+/// two provisioners share a discipline rather than a module, so this is
+/// the discipline implemented twice, not a helper imported twice.
+fn io_at(operation: &str, path: &Path, error: &std::io::Error) -> Error {
+    Error::Io(std::io::Error::new(
+        error.kind(),
+        format!("cannot {operation} {}: {error}", path.display()),
     ))
 }
 
@@ -749,7 +764,8 @@ impl Transaction {
         // Registered only once the file is this call's own, so a path
         // that was already there is never this call's to remove.
         self.temps.push(tmp.to_path_buf());
-        file.write_all(bytes)?;
+        file.write_all(bytes)
+            .map_err(|e| io_at("write the artifact to", tmp, &e))?;
         Ok(())
     }
 
@@ -762,7 +778,8 @@ impl Transaction {
     /// temporary name is that call's alone ([`temp_stamp`]) and the
     /// rename is the only operation that touches the final path.
     fn rename_into_place(&mut self, tmp: &Path, final_path: &Path) -> domain::Result<()> {
-        fs::rename(tmp, final_path)?;
+        fs::rename(tmp, final_path)
+            .map_err(|e| io_at("move the artifact into place at", final_path, &e))?;
         self.landed.push(final_path.to_path_buf());
         Ok(())
     }
@@ -1999,6 +2016,13 @@ mod provisioning {
     /// it, so an unwritable one fails in milliseconds instead of after
     /// 30 MB has travelled. `Serves::Nothing` makes being asked for a
     /// byte the failure.
+    ///
+    /// Regression (report H6, unfixed on this adapter until the second
+    /// review of #77): the failure names the operation and the path.
+    /// `io error: No space left on device (os error 28)` was the whole
+    /// message an install produced, with the directory one line away in
+    /// a variable, while `book/src/reference/errors.md` said both
+    /// adapters carry the operation and the path.
     #[test]
     fn a_model_directory_that_cannot_be_created_fails_before_the_download() {
         let fixture = Fixture::new();
@@ -2017,6 +2041,43 @@ mod provisioning {
             "expected an Io failure, got {err:?}"
         );
         assert!(fetcher.calls().is_empty());
+        let message = err.to_string();
+        assert!(
+            message.contains("create the model directory"),
+            "names the operation: {message}"
+        );
+        assert!(
+            message.contains(&dir.display().to_string()),
+            "names the path: {message}"
+        );
+    }
+
+    /// Regression (report H6): a read that fails names the operation and
+    /// the path too, on the constructor that loads a caller's own
+    /// directory. A directory sitting where an artifact file belongs
+    /// exists, so it passes the presence check and fails the read.
+    #[test]
+    fn an_artifact_that_cannot_be_read_names_the_operation_and_the_path() {
+        let dir = tempfile::tempdir().unwrap();
+        for name in ARTIFACT_FILES {
+            fs::write(dir.path().join(name), b"x").unwrap();
+        }
+        let blocked = dir.path().join(ARTIFACT_FILES[0]);
+        fs::remove_file(&blocked).unwrap();
+        fs::create_dir(&blocked).unwrap();
+
+        let err = expect_err(Model2Vec::from_dir(dir.path()));
+
+        assert_eq!(err.kind(), "io");
+        let message = err.to_string();
+        assert!(
+            message.contains("cannot read"),
+            "names the operation: {message}"
+        );
+        assert!(
+            message.contains(&blocked.display().to_string()),
+            "names the path: {message}"
+        );
     }
 
     /// Regression (review of #77): a temporary left by a killed process

@@ -27,7 +27,7 @@ v = Matra.english(model_dir)
 
 Pass a real path, not a shell shorthand. The string goes straight to Rust's `create_dir_all`, which does not expand `~`. `Matra.english("~/.matra/models")` creates a directory literally named `~` under your current working directory and caches a 16 MB model inside it.
 
-`Matra.english` downloads the English UDPipe model into that directory on first use, verifies it against a pinned SHA-256 hash, and loads from the cache on every call after that. A download or verification failure raises `RuntimeError`. If you already have a model file, load it directly; a missing path raises `FileNotFoundError`, a corrupt file raises `RuntimeError`:
+`Matra.english` downloads the English UDPipe model into that directory on first use, verifies it against a pinned SHA-256 hash, and loads from the cache on every call after that. The two ways that can fail raise different exceptions, and the split is the one the [errors reference](../reference/errors.md#provisioning-failures) describes: a download that never arrived, or a directory that could not be written, raises `OSError`; bytes that arrived and then failed the hash raise `RuntimeError`. A bootstrap that wants to survive both catches both. Before 0.2.0 a failed download also raised `RuntimeError`, so an `except RuntimeError` written against an older version stops catching network failures. If you already have a model file, load it directly; a missing path raises `FileNotFoundError`, a corrupt file raises `RuntimeError`:
 
 ```python
 v = Matra.from_path("/path/to/english-ewt-ud-2.5-191206.udpipe")
@@ -223,8 +223,8 @@ Every `domain::Error` variant crosses the FFI boundary as a specific Python exce
 | Input exceeds the 8 MiB cap, or a per-extractor cap | `InputTooLarge` | `ValueError` |
 | Input format has no decomposer | `UnsupportedFormat` | `ValueError` |
 | A caller broke a documented contract, such as an embedder returning the wrong number of vectors | `InvalidInput` | `ValueError` |
-| File I/O error | `Io` | `OSError` |
-| Model file corrupt, wrong format, or download failed | `ModelInvalid` | `RuntimeError` |
+| File I/O error, or a download that did not arrive | `Io` | `OSError` |
+| Model file corrupt or wrong format, or bytes that arrived and failed the pinned hash | `ModelInvalid` | `RuntimeError` |
 | NLP parsing failed, including a panic caught at the UDPipe boundary | `ParseFailed` | `RuntimeError` |
 
 ```python

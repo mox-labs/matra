@@ -117,7 +117,7 @@ vocabulary_ttr: 0.8571428571428571
 
 That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow or throttled network can take longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
 
-If `Matra.english()` raises `RuntimeError`, the download or the hash check failed; check your network connection and run the snippet again. If it raises `OSError`, matra could not create or write to the model directory; run `matra config show` to see which directory it resolved and check the permissions on it.
+If `Matra.english()` raises `OSError`, either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path. Check your network connection first; then run `matra config show` to see which directory matra resolved and check the permissions on it. If it raises `RuntimeError`, bytes did arrive and then failed the pinned hash check; run the snippet again.
 
 ---
 
