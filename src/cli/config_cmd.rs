@@ -45,7 +45,7 @@ fn show(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
                 }),
             );
         }
-        write_envelope(out, "config", &path, Value::Object(object))?;
+        write_envelope(out, "config", Some(&path), Value::Object(object))?;
         return Ok(Outcome::Found);
     }
 
@@ -147,7 +147,7 @@ fn init(cli: &Cli, force: bool, out: &mut dyn Write) -> Fallible<Outcome> {
 
     let shown = path.display().to_string();
     if cli.json {
-        write_envelope(out, "config", &shown, json!({ "path": shown }))?;
+        write_envelope(out, "config", Some(&shown), json!({ "path": shown }))?;
     } else if !cli.quiet {
         writeln!(out, "{shown}")?;
     }

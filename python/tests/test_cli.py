@@ -22,7 +22,9 @@ import pytest
 
 cli_main = pytest.importorskip("matra._core", reason="matra wheel not built").cli_main
 
-SPEC = Path(__file__).resolve().parents[2] / "spec" / "tests" / "cli" / "envelope.json"
+ROOT = Path(__file__).resolve().parents[2]
+SPEC = ROOT / "spec" / "tests" / "cli" / "envelope.json"
+SKILL = ROOT / "skills" / "matra" / "SKILL.md"
 
 
 def test_version_names_the_version_then_the_compiled_features(
@@ -35,6 +37,34 @@ def test_version_names_the_version_then_the_compiled_features(
     assert lines[1].startswith("features:")
     assert "udpipe" in lines[1]
     assert "python" in lines[1]
+
+
+def test_the_skill_is_the_file_verbatim(capsys: pytest.CaptureFixture[str]) -> None:
+    """The parity claim, on the text an agent is handed.
+
+    `tests/cli.rs` asserts the same file through `cli::run`. Both
+    launchers printing the file itself is what makes `uvx matra --skill`
+    and the Rust binary interchangeable in a hand-off, and it is why the
+    text is embedded rather than fetched.
+    """
+    assert cli_main(["--skill"]) == 0
+    assert capsys.readouterr().out == SKILL.read_text()
+
+
+def test_a_reference_is_the_file_verbatim(capsys: pytest.CaptureFixture[str]) -> None:
+    reference = SKILL.parent / "references" / "json.md"
+    assert cli_main(["--skill", "-r", "json"]) == 0
+    assert capsys.readouterr().out == reference.read_text()
+
+
+def test_an_unknown_reference_exits_two_and_names_the_known_ones(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert cli_main(["--skill", "-r", "jsn"]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    for name in sorted(path.stem for path in (SKILL.parent / "references").glob("*.md")):
+        assert name in captured.err
 
 
 def test_a_missing_file_exits_two_on_stderr(

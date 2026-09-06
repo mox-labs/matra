@@ -20,6 +20,7 @@
 
 mod config_cmd;
 mod render;
+mod skill;
 
 use std::ffi::OsString;
 use std::io::{self, IsTerminal, Read, Write};
@@ -137,8 +138,24 @@ struct Cli {
     #[arg(long, global = true, value_name = "NAME", default_value = "<stdin>")]
     stdin_filename: String,
 
+    /// Print the agent skill: what matra is for, every command with its
+    /// JSON shape, and how to read the numbers. Outranks a subcommand.
+    #[arg(long, global = true)]
+    skill: bool,
+
+    /// With `--skill`: print one reference, or list them all when no name
+    /// is given.
+    #[arg(
+        long,
+        short = 'r',
+        global = true,
+        value_name = "NAME",
+        num_args = 0..=1,
+    )]
+    reference: Option<Option<String>>,
+
     #[command(subcommand)]
-    command: Command,
+    command: Option<Command>,
 }
 
 #[derive(Subcommand)]
@@ -240,14 +257,34 @@ fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Cli, EarlyExit> {
     // Color is off in clap's own output because the two launchers must
     // produce the same bytes, and the Python launcher renders into a
     // buffer where a terminal check would be meaningless.
-    let command = Cli::command()
+    let mut command = Cli::command()
         .name("matra")
         .bin_name("matra")
         .version(version_line())
         .color(clap::ColorChoice::Never);
 
-    let matches = command.try_get_matches_from(args).map_err(early_exit)?;
-    Cli::from_arg_matches(&matches).map_err(early_exit)
+    let matches = command.try_get_matches_from_mut(args).map_err(early_exit)?;
+    let cli = Cli::from_arg_matches(&matches).map_err(early_exit)?;
+
+    // The subcommand is optional in the derive because `--skill` is a
+    // whole invocation on its own. It is still required of every other
+    // run, and the refusal is the one clap gave when the field was not an
+    // `Option`: the short help on stderr, exit 2. Rebuilding it here
+    // rather than letting a `None` fall through keeps `matra` with no
+    // arguments printing what it has always printed.
+    //
+    // A bare `-r` is exempt so that it reaches the one message that says
+    // what it is missing. Answering "you gave me no subcommand" to
+    // someone who reached for the skill and forgot half the incantation
+    // would be true and useless.
+    if cli.command.is_none() && !cli.skill && cli.reference.is_none() {
+        return Err(EarlyExit {
+            text: command.render_help().to_string(),
+            to_stderr: true,
+            code: EXIT_ERROR,
+        });
+    }
+    Ok(cli)
 }
 
 fn early_exit(e: clap::Error) -> EarlyExit {
@@ -333,10 +370,32 @@ impl Input {
 }
 
 fn execute(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
+    // `--skill` is a property of the program rather than an action on a
+    // document, so it outranks a subcommand: `matra analyze x --skill`
+    // prints the skill and ignores the analysis. Dispatching it first is
+    // what makes that true, and it is also what lets the flag stand alone
+    // with no subcommand at all.
+    if cli.skill {
+        return skill::run(cli, out);
+    }
+    if cli.reference.is_some() {
+        return Err(
+            "--reference names a section of the agent skill; pass --skill with it, \
+             or run `matra --skill -r` to list the references"
+                .into(),
+        );
+    }
+
+    // `parse` refuses a run with neither a subcommand nor `--skill`, so
+    // there is one by the time execution reaches here.
+    let Some(command) = &cli.command else {
+        return Err("no command given; run `matra --help` for the list".into());
+    };
+
     // The two config actions and the completion script touch neither the
     // model nor any input, so they are dispatched before anything is
     // loaded.
-    match &cli.command {
+    match command {
         Command::Config { action } => return config_cmd::run(cli, action, out),
         Command::Completions { shell } => {
             let shell = match shell {
@@ -351,7 +410,7 @@ fn execute(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
         _ => {}
     }
 
-    let path = match &cli.command {
+    let path = match command {
         Command::Analyze { path, .. }
         | Command::Summarize { path, .. }
         | Command::Keyphrases { path, .. } => path,
@@ -372,10 +431,10 @@ fn execute(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
     let label = input.label(&cli.stdin_filename);
     let style = render::Style::new(colorize(cli.color));
 
-    match &cli.command {
+    match command {
         Command::Analyze { sections, .. } => {
             if cli.json {
-                write_envelope(out, "analyze", &label, &doc)?;
+                write_envelope(out, "analyze", Some(&label), &doc)?;
             } else if !cli.quiet {
                 render::metrics(out, &label, &doc, style)?;
                 if *sections {
@@ -396,7 +455,7 @@ fn execute(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
                 SummaryMethod::Textrank => crate::extraction::textrank_summarize(&sentences, n)?,
             };
             if cli.json {
-                write_envelope(out, "summarize", &label, &picked)?;
+                write_envelope(out, "summarize", Some(&label), &picked)?;
             } else if !cli.quiet {
                 render::sentences(out, &picked)?;
             }
@@ -414,7 +473,7 @@ fn execute(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
                 KeyphraseMethod::Yake => crate::extraction::yake_keyphrases(&sentences, n)?,
             };
             if cli.json {
-                write_envelope(out, "keyphrases", &label, &phrases)?;
+                write_envelope(out, "keyphrases", Some(&label), &phrases)?;
             } else if !cli.quiet {
                 render::phrases(out, &phrases)?;
             }
@@ -560,18 +619,23 @@ fn read_capped(source: &mut dyn Read) -> Fallible<String> {
 /// `result` is the serde form of the domain value, unchanged. Everything
 /// that identifies the run sits beside it rather than inside it, so a
 /// consumer can dispatch on `command` without inspecting `result` first.
+///
+/// `input` is null rather than absent for a command that reads no
+/// document, which `--skill` is. The four keys are the envelope, and a
+/// consumer that reads them positionally should not have to discover that
+/// one of them is sometimes missing.
 #[derive(serde::Serialize)]
 struct Envelope<'a, T> {
     format_version: u32,
     command: &'a str,
-    input: &'a str,
+    input: Option<&'a str>,
     result: T,
 }
 
 fn write_envelope<T: serde::Serialize>(
     out: &mut dyn Write,
     command: &str,
-    input: &str,
+    input: Option<&str>,
     result: T,
 ) -> Fallible<()> {
     let envelope = Envelope {

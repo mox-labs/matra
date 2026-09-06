@@ -21,11 +21,11 @@ summary: The JSON envelope the commands with JSON output emit, and the Document 
 | Key | Type | Holds |
 |---|---|---|
 | `format_version` | integer | `1` today. It increments on any change to the envelope or to the meaning of a field inside `result` |
-| `command` | string | `analyze`, `summarize`, `keyphrases`, or `config` |
-| `input` | string | The path that was read, or the name `--stdin-filename` gave stdin. For `config show` it is the config file path |
+| `command` | string | `analyze`, `summarize`, `keyphrases`, `config`, or `skill` |
+| `input` | string or null | The path that was read, or the name `--stdin-filename` gave stdin. For `config show` it is the config file path. Null for `skill`, which reads no document |
 | `result` | varies | The serde form of the value the command produced |
 
-`result` is a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`, and a map of resolved keys for `config show`. Pin a consumer to a `format_version` it was tested against; that is the whole stability promise, and it is the same one cargo makes for `cargo metadata --format-version`.
+`result` is a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`, a map of resolved keys for `config show`, and for `skill` either `{"name", "body"}` or `{"references": [{"name", "summary"}]}`. Pin a consumer to a `format_version` it was tested against; that is the whole stability promise, and it is the same one cargo makes for `cargo metadata --format-version`.
 
 <!-- needs: model -->
 
