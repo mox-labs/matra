@@ -34,7 +34,7 @@ impl Config {
     pub fn data_dir(&self) -> &Path;                 // $XDG_DATA_HOME/matra or ~/.local/share/matra
     pub fn model_dir(&self) -> PathBuf;              // data_dir/models, or ~/.matra/models if only that exists
     pub fn semantic_threshold(&self) -> f32;
-    pub fn sources(&self) -> impl Iterator<Item = (&str, Source)>; // key -> where its value came from
+    pub fn sources(&self) -> impl Iterator<Item = (&str, ValueSource)>; // key -> Argument | Environment | File | Default
 }
 impl Engine {
     pub fn from_config(cfg: &Config) -> Result<Engine>;
