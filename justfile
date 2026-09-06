@@ -12,10 +12,10 @@ default:
 # ---------------------------------------------------------------------------
 
 # Run the local gate suite: the Rust gates CI runs, plus the Python lint,
-# the boundary check and the docsite floor, which CI does not run. CI
-# additionally runs cargo-deny, cargo-semver-checks, the wheel build and
-# mypy.
-check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary docs-floor version-sync
+# the boundary check, the end-to-end sandbox test and the docsite floor,
+# which CI does not run. CI additionally runs cargo-deny,
+# cargo-semver-checks, the wheel build and mypy.
+check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary test-sandbox docs-floor version-sync
     @echo ""
     @echo "all gates pass"
 
@@ -68,6 +68,12 @@ test-no-default:
 # Boundary check: hex-architecture rules from CLAUDE.md (3, 4, 8).
 boundary:
     bash scripts/check-boundaries.sh
+
+# The end-to-end sandbox script cannot report a clean result for a tree it did
+# not examine. Needs an unprivileged user for the unreadable and unwritable
+# cases; under uid 0 it skips those and says so.
+test-sandbox:
+    bash scripts/test-e2e-sandbox.sh
 
 # Every version-carrying file agrees, and CITATION.cff's release date matches
 # the CHANGELOG heading for that version (ADR-0013).
