@@ -1,5 +1,13 @@
 # matra 0.2.0, clean-Linux install and first-run verification
 
+> **Point-in-time record.** This is the report of one exploratory pass against
+> commit `7197ca0`, kept as the evidence behind
+> `.claude/skills/e2e-validation/SKILL.md`. It describes what matra was on
+> 2026-09-06, not what it is now, and several findings below were fixed in the
+> release that followed. Read the `[0.2.0]` section of `CHANGELOG.md`, and
+> decisions 0014 and 0015, for what was done about them. Nothing here should be
+> read as a description of current behaviour.
+
 **Subject:** worktree at commit `7197ca0` (main), `<worktree>`
 **Date:** 2026-09-06
 **Scope:** Linux only. Nothing was published anywhere. No repo file was modified. `cargo` was never run on the host and nothing was written to the host `target/`.

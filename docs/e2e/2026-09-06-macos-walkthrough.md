@@ -1,5 +1,13 @@
 # matra 0.2.0, cold-start user experience report
 
+> **Point-in-time record.** This is the report of one exploratory pass against
+> commit `7197ca0`, kept as the evidence behind
+> `.claude/skills/e2e-validation/SKILL.md`. It describes what matra was on
+> 2026-09-06, not what it is now, and several findings below were fixed in the
+> release that followed. Read the `[0.2.0]` section of `CHANGELOG.md`, and
+> decisions 0014 and 0015, for what was done about them. Nothing here should be
+> read as a description of current behaviour.
+
 **Scope.** A first-time user installs matra from nothing, follows every shipping
 document literally, then hands only `matra --skill` to a fresh agent and asks it
 to do a real task. Report only; nothing in the repo was edited.
@@ -22,7 +30,7 @@ still do not exist; `~/.matra/models` mtimes unchanged (`english-ewt-...udpipe`
 2 Aug 12:22, `potion-base-8M` 4 Sep 22:40); no `matra` in the real
 `~/.cargo/bin`. All deletions used `rip`.
 
-The running first-person log is at `scratchpad/e2e-journal.md`. This file is the
+The running first-person log kept during the pass was not retained. This file is the
 findings.
 
 ---
