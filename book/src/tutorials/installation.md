@@ -123,7 +123,7 @@ If `Matra.english()` raises `RuntimeError`, the download or the hash check faile
 
 ## What you have
 
-- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same published 0.2.0 core.
+- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.2.0 core. Until 0.2.0 is the release the registries hand out, every line on this page needs the version floor the Python section describes, for the reason it gives there.
 - The English UDPipe model cached under the resolved model directory, verified against a pinned hash.
 - A confirmed working call from `Matra.english()` through `analyze()` to a result.
 
