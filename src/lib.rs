@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 
+pub mod config;
 pub mod decompose;
 pub mod domain;
 pub mod embed;
@@ -250,6 +251,48 @@ impl Engine {
     }
 }
 
+#[cfg(feature = "udpipe")]
+impl Engine {
+    /// Wire the standard pipeline from a resolved [`config::Config`]: the UDPipe
+    /// adapter over the configured model directory, plus
+    /// [`standard_decomposers()`].
+    ///
+    /// Additive to [`Engine::new`], which still takes any provider and
+    /// any decomposer table. This is the wiring most callers want, named
+    /// once instead of rewritten per call site.
+    ///
+    /// ```no_run
+    /// let cfg = matra::config::Config::resolve()?;
+    /// let engine = matra::Engine::from_config(&cfg)?;
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Whatever [`nlp::udpipe::Udpipe::from_config`] returns: the model
+    /// download or its hash verification failed, or the model directory
+    /// is not writable.
+    pub fn from_config(cfg: &config::Config) -> domain::Result<Engine> {
+        let nlp = nlp::udpipe::Udpipe::from_config(cfg)?;
+        Ok(Engine::new(Box::new(nlp), standard_decomposers()))
+    }
+
+    /// [`config::Config::resolve()`] then [`Engine::from_config`]: the no-setup
+    /// path, and the only one-liner worth a second name.
+    ///
+    /// ```no_run
+    /// let engine = matra::Engine::with_defaults()?;
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Whatever [`config::Config::resolve`] or [`Engine::from_config`] returns.
+    pub fn with_defaults() -> domain::Result<Engine> {
+        Engine::from_config(&config::Config::resolve()?)
+    }
+}
+
 /// The decomposer this build ships for `format`, or `None` for formats
 /// that are reserved but unimplemented.
 ///
@@ -423,10 +466,23 @@ mod python {
             Ok(Self::from_nlp(Box::new(nlp)))
         }
 
+        /// Download (if absent) and load the English UDPipe model.
+        ///
+        /// With no argument the directory is resolved through
+        /// `Config`: `MATRA_MODEL_DIR`, else the data root's `models`
+        /// subdirectory, else a pre-existing `~/.matra/models`.
         #[staticmethod]
         #[cfg(feature = "udpipe")]
-        fn english(model_dir: &str) -> PyResult<Self> {
-            let nlp = crate::nlp::udpipe::Udpipe::english(model_dir).map_err(MatraError)?;
+        #[pyo3(signature = (model_dir=None))]
+        fn english(model_dir: Option<&str>) -> PyResult<Self> {
+            let nlp = match model_dir {
+                Some(dir) => crate::nlp::udpipe::Udpipe::english(dir),
+                None => {
+                    let cfg = crate::config::Config::resolve().map_err(MatraError)?;
+                    crate::nlp::udpipe::Udpipe::from_config(&cfg)
+                }
+            }
+            .map_err(MatraError)?;
             Ok(Self::from_nlp(Box::new(nlp)))
         }
 
