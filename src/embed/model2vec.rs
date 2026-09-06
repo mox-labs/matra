@@ -176,9 +176,12 @@ impl Model2Vec {
     ///    otherwise lose them, and a partial set has no provenance worth
     ///    trusting either.
     /// 3. None of the three present: all three are downloaded into
-    ///    `dir` (created if needed). Each lands through a temporary file
-    ///    in the same directory and a rename, so no reader ever sees a
-    ///    partial artifact, and a download is capped at 64 MiB.
+    ///    `dir` (created if needed), as one transaction. Each lands
+    ///    through a temporary file in the same directory, and the renames
+    ///    onto the artifact names run only once all three have arrived,
+    ///    so no reader ever sees a partial artifact or a partial set. A
+    ///    failure anywhere in the sequence removes every file the call
+    ///    made and returns the error. A download is capped at 64 MiB.
     /// 4. A mismatch over files this call downloaded removes them and
     ///    downloads once more. A second mismatch removes them again and
     ///    returns [`Error::ModelInvalid`].
@@ -265,6 +268,16 @@ impl Model2Vec {
     /// that a test can pin a three-file fixture of its own. A test that
     /// could vary only the fetcher would be testing the fetcher; the
     /// behavior worth pinning is what the digest decides.
+    ///
+    /// Every path out of here leaves `dir` holding either the full pinned
+    /// set or none of the three names. [`download_artifacts`] is one
+    /// transaction, so a fetch that fails partway leaves nothing behind,
+    /// and a digest mismatch over files this call downloaded clears them
+    /// with [`remove_artifacts`] before the retry and again if the retry
+    /// mismatches too. The alternative is a directory left holding one
+    /// artifact, which every later call refuses as a partial set: a
+    /// transient timeout would become a permanent failure that only a
+    /// hand deletion clears.
     #[cfg(not(target_arch = "wasm32"))]
     fn provision<F>(
         dir: &Path,
@@ -628,17 +641,134 @@ fn not_the_pinned_model(dir: &Path, reason: &str, expected_digest: &str) -> Erro
     ))
 }
 
-/// Remove all three artifacts, ignoring failures. A file that is already
+/// Remove the named paths, ignoring failures. A file that is already
 /// gone is the state this wants; one that cannot be removed surfaces at
 /// the next verify, which is the loud place for it.
+///
+/// The one cleanup in this file. [`Transaction`] unwinds a failed
+/// download with it, and [`Model2Vec::provision`] clears the artifacts of
+/// a mismatched download with it before the retry.
 #[cfg(not(target_arch = "wasm32"))]
-fn remove_artifacts(paths: &[PathBuf; 3]) {
+fn remove_artifacts(paths: &[PathBuf]) {
     for path in paths {
         let _ = fs::remove_file(path);
     }
 }
 
-/// Fetch all three artifacts and put them in place.
+/// The paths one download created, removed together unless every step of
+/// that download succeeded.
+///
+/// A download is all three artifacts or none of them. The three names
+/// appearing one at a time would leave a window in which the directory
+/// holds a partial set, and a partial set is what
+/// [`Model2Vec::provision`] refuses on the next call: a fetch that timed
+/// out on the second artifact would otherwise wedge the directory until
+/// somebody deleted files by hand. So every fetch and every write happens
+/// first, into temporaries, and the renames start only once nothing is
+/// left that can fail on a fetch.
+///
+/// Cleanup runs from `Drop`, so a panic between the first write and the
+/// commit removes what this call made, exactly as an error does. It only
+/// ever names paths this call created: a temporary whose open failed was
+/// never registered, so a file somebody else put at that name is left
+/// exactly as it was found.
+#[cfg(not(target_arch = "wasm32"))]
+struct Transaction {
+    /// Temporaries this call opened.
+    temps: Vec<PathBuf>,
+    /// Artifacts this call renamed into place.
+    landed: Vec<PathBuf>,
+    committed: bool,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Transaction {
+    fn new() -> Transaction {
+        Transaction {
+            temps: Vec::new(),
+            landed: Vec::new(),
+            committed: false,
+        }
+    }
+
+    /// Write `bytes` to `tmp`, which must not already exist.
+    ///
+    /// The temporary is opened with `create_new`, which is `O_EXCL`: a
+    /// path that already exists fails the open, symlink or not. A
+    /// predictable name in a directory somebody else can write to is
+    /// otherwise a place to plant a symlink, and a plain write would
+    /// follow it and put 30 MB through to whatever it points at. Failing
+    /// is the right answer and the message names the path, because what
+    /// to do about a leftover temporary from a killed process is remove
+    /// it, which is not a decision this code gets to make on its own.
+    fn write_temp(&mut self, tmp: &Path, bytes: &[u8]) -> domain::Result<()> {
+        use std::io::Write;
+
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(tmp)
+            .map_err(|e| {
+                std::io::Error::new(
+                    e.kind(),
+                    format!(
+                        "cannot create the temporary file {}: {e} (a leftover from a killed \
+                         process, or one planted there; remove it and try again)",
+                        tmp.display()
+                    ),
+                )
+            })?;
+        // Registered only once the file is this call's own, so a path
+        // that was already there is never this call's to remove.
+        self.temps.push(tmp.to_path_buf());
+        file.write_all(bytes)?;
+        Ok(())
+    }
+
+    /// Move one written temporary onto its artifact name.
+    ///
+    /// `std::fs::rename` is atomic on one filesystem (POSIX `rename(2)`,
+    /// Windows `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING`), so no
+    /// reader sees a half-written artifact, and two processes
+    /// provisioning into the same directory cannot interleave: the
+    /// temporary name carries the process id and the rename is the only
+    /// operation that touches the final path.
+    fn rename_into_place(&mut self, tmp: &Path, final_path: &Path) -> domain::Result<()> {
+        fs::rename(tmp, final_path)?;
+        self.landed.push(final_path.to_path_buf());
+        Ok(())
+    }
+
+    /// All three artifacts are in place. Nothing is removed from here on.
+    fn commit(&mut self) {
+        self.committed = true;
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Drop for Transaction {
+    fn drop(&mut self) {
+        if self.committed {
+            return;
+        }
+        remove_artifacts(&self.temps);
+        remove_artifacts(&self.landed);
+    }
+}
+
+/// Fetch all three artifacts and put them in place, all of them or none.
+///
+/// One transaction: every artifact is fetched and written to a temporary
+/// in `dir` first, and only when all three have arrived does a rename put
+/// any of them under an artifact name. A failure at any point (a fetch,
+/// the size cap, a temporary that cannot be opened, a rename) removes
+/// every temporary and every artifact this call had already renamed, then
+/// returns the error, so the directory is left as this call found it.
+///
+/// This is deliberately a second implementation of the temp-then-rename
+/// pattern `nlp/udpipe.rs` uses rather than a shared helper. The two
+/// adapters share no module by design, and a utility module both imported
+/// would put a third file into the wiring to save twenty lines.
 #[cfg(not(target_arch = "wasm32"))]
 fn download_artifacts<F>(
     dir: &Path,
@@ -650,6 +780,10 @@ where
     F: Fn(&str) -> domain::Result<Vec<u8>>,
 {
     fs::create_dir_all(dir)?;
+    let temps: [PathBuf; 3] =
+        ARTIFACT_FILES.map(|name| dir.join(format!(".tmp.{name}.{}", std::process::id())));
+    let mut transaction = Transaction::new();
+
     for i in 0..ARTIFACT_FILES.len() {
         let bytes = fetch(urls[i])?;
         // The cap is enforced here, at the one place every artifact
@@ -662,67 +796,15 @@ where
                 what: "embedding_download",
             });
         }
-        atomic_write(dir, ARTIFACT_FILES[i], &paths[i], &bytes)?;
-    }
-    Ok(())
-}
-
-/// Write `bytes` to `final_path` through a temporary file in the same
-/// directory, then rename.
-///
-/// `std::fs::rename` is atomic on one filesystem (POSIX `rename(2)`,
-/// Windows `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING`), so no reader
-/// sees a half-written artifact, and two processes provisioning into the
-/// same directory cannot interleave: the temporary name carries the
-/// process id and the rename is the only operation that touches
-/// `final_path`.
-///
-/// The temporary is opened with `create_new`, which is `O_EXCL`: a path
-/// that already exists fails the open, symlink or not. A predictable
-/// name in a directory somebody else can write to is otherwise a place
-/// to plant a symlink, and a plain write would follow it and put 30 MB
-/// through to whatever it points at. Failing is the right answer and the
-/// message names the path, because what to do about a leftover temporary
-/// from a killed process is remove it, which is not a decision this
-/// function gets to make on its own. Once the file is this call's, it is
-/// removed on scope exit either way, including on panic.
-///
-/// This is deliberately a second implementation of the pattern
-/// `nlp/udpipe.rs` uses rather than a shared helper. The two adapters
-/// share no module by design, and a utility module both imported would
-/// put a third file into the wiring to save twenty lines.
-#[cfg(not(target_arch = "wasm32"))]
-fn atomic_write(dir: &Path, name: &str, final_path: &Path, bytes: &[u8]) -> domain::Result<()> {
-    use std::io::Write;
-
-    struct Cleanup<'a>(&'a Path);
-    impl Drop for Cleanup<'_> {
-        fn drop(&mut self) {
-            let _ = fs::remove_file(self.0);
-        }
+        transaction.write_temp(&temps[i], &bytes)?;
     }
 
-    let tmp = dir.join(format!(".tmp.{name}.{}", std::process::id()));
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&tmp)
-        .map_err(|e| {
-            std::io::Error::new(
-                e.kind(),
-                format!(
-                    "cannot create the temporary file {}: {e} (a leftover from a killed \
-                     process, or one planted there; remove it and try again)",
-                    tmp.display()
-                ),
-            )
-        })?;
-    // The guard is taken only once the file is this call's own, so a path
-    // that was already there is left exactly as it was found.
-    let _cleanup = Cleanup(&tmp);
-    file.write_all(bytes)?;
-    drop(file);
-    fs::rename(&tmp, final_path)?;
+    // Past this line nothing fetches, so every rename runs against bytes
+    // already on disk and the set becomes visible as a set.
+    for i in 0..ARTIFACT_FILES.len() {
+        transaction.rename_into_place(&temps[i], &paths[i])?;
+    }
+    transaction.commit();
     Ok(())
 }
 
@@ -1272,6 +1354,12 @@ mod provisioning {
         GarbageThenTheModel,
         /// One byte past the cap.
         TooMuch,
+        /// The fixture for the first request and a transport failure for
+        /// every one after it: a download that dies partway through.
+        TheFirstThenAFailure,
+        /// The fixture for the first two requests and one byte past the
+        /// cap for the third: the cap firing on the last of the set.
+        TooMuchOnTheLast,
         /// Nothing: being called at all is the failure.
         Nothing,
     }
@@ -1307,6 +1395,23 @@ mod provisioning {
                     }
                 }
                 Serves::TooMuch => Ok(vec![0u8; MAX_ARTIFACT_BYTES + 1]),
+                Serves::TheFirstThenAFailure => {
+                    if round == 1 {
+                        Ok(self.fixture.bytes[index].clone())
+                    } else {
+                        Err(Error::Io(std::io::Error::new(
+                            std::io::ErrorKind::TimedOut,
+                            format!("download {url}: the transfer stalled"),
+                        )))
+                    }
+                }
+                Serves::TooMuchOnTheLast => {
+                    if round < ARTIFACT_FILES.len() {
+                        Ok(self.fixture.bytes[index].clone())
+                    } else {
+                        Ok(vec![0u8; MAX_ARTIFACT_BYTES + 1])
+                    }
+                }
                 Serves::Nothing => {
                     panic!("the fetcher was called for {url}, and should not have been")
                 }
@@ -1340,6 +1445,20 @@ mod provisioning {
         ARTIFACT_FILES
             .into_iter()
             .filter(|name| dir.join(name).exists())
+            .collect()
+    }
+
+    /// The temporaries left in `dir`. Every artifact lands through one,
+    /// and none of them outlives the call that opened it, so anything
+    /// this returns is a leak. A directory that was never created counts
+    /// as empty.
+    fn temporaries(dir: &Path) -> Vec<String> {
+        let Ok(entries) = fs::read_dir(dir) else {
+            return Vec::new();
+        };
+        entries
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+            .filter(|name| name.starts_with(".tmp."))
             .collect()
     }
 
@@ -1413,6 +1532,59 @@ mod provisioning {
         }
         // The cap fires before anything is written.
         assert_eq!(present(dir.path()), Vec::<&str>::new());
+    }
+
+    /// A download is all three artifacts or none of them. Leaving the
+    /// first one behind would be the worst of both: every later call
+    /// refuses a partial set, so one timed-out transfer would wedge the
+    /// directory until somebody deleted files by hand.
+    #[test]
+    fn a_fetch_that_fails_partway_leaves_no_artifacts() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+
+        let fetcher = Fetcher::new(&fixture, Serves::TheFirstThenAFailure);
+        let err = expect_err(provision(dir.path(), &fixture, &fetcher));
+
+        // The fetcher's own error, not a digest verdict on bytes that
+        // never arrived.
+        match err {
+            Error::Io(e) => assert_eq!(e.kind(), std::io::ErrorKind::TimedOut),
+            other => panic!("expected the fetcher's Io error, got {other:?}"),
+        }
+        // A transport failure is not retried, so the second URL is the
+        // last one asked for, and the first artifact does not survive it.
+        assert_eq!(fetcher.calls(), URLS[..2].to_vec());
+        assert_eq!(present(dir.path()), Vec::<&str>::new());
+        assert_eq!(temporaries(dir.path()), Vec::<String>::new());
+    }
+
+    /// The cap firing on the last of the three is the same transaction:
+    /// the two that already arrived are temporaries rather than
+    /// artifacts, and they go with it.
+    #[test]
+    fn an_oversized_last_artifact_leaves_no_artifacts() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+
+        let fetcher = Fetcher::new(&fixture, Serves::TooMuchOnTheLast);
+        let err = expect_err(provision(dir.path(), &fixture, &fetcher));
+
+        match err {
+            Error::InputTooLarge {
+                limit,
+                actual,
+                what,
+            } => {
+                assert_eq!(limit, MAX_ARTIFACT_BYTES);
+                assert_eq!(actual, MAX_ARTIFACT_BYTES + 1);
+                assert_eq!(what, "embedding_download");
+            }
+            other => panic!("expected InputTooLarge, got {other:?}"),
+        }
+        assert_eq!(fetcher.calls(), URLS.to_vec());
+        assert_eq!(present(dir.path()), Vec::<&str>::new());
+        assert_eq!(temporaries(dir.path()), Vec::<String>::new());
     }
 
     /// The names are the artifact format's, not this model's, so a full
@@ -1548,12 +1720,7 @@ mod provisioning {
         assert_eq!(model.model_hash(), fixture.digest);
         assert_eq!(present(&dir).len(), 3);
         // The temporary each artifact landed through is gone.
-        let leftovers: Vec<_> = fs::read_dir(&dir)
-            .unwrap()
-            .map(|e| e.unwrap().file_name())
-            .filter(|name| name.to_string_lossy().starts_with(".tmp."))
-            .collect();
-        assert!(leftovers.is_empty(), "temporary files left: {leftovers:?}");
+        assert_eq!(temporaries(&dir), Vec::<String>::new());
     }
 
     #[test]
