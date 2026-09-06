@@ -111,7 +111,9 @@ impl Udpipe {
     /// written: nothing that failed the digest ever reaches the model
     /// directory, and a run interrupted during the transfer leaves
     /// nothing behind at all. A cached file that fails verification is
-    /// removed and refetched once; a second mismatch returns
+    /// refetched once and replaced only when the new bytes verify, so a
+    /// refetch that cannot reach the network leaves the cached file
+    /// where it was rather than leaving nothing; a second mismatch returns
     /// [`Error::ModelInvalid`] without loading anything, because a
     /// mismatched model is untrusted.
     ///
@@ -258,15 +260,19 @@ fn provision(
     create_model_dir(dir)?;
     let path = dir.join(filename);
 
-    let mut stale_cache = false;
     if path.exists() {
-        match read_and_verify(&path, expected_size, expected_hash)? {
-            Some(bytes) => return Ok(bytes),
-            // Not the pinned model, so it goes. The removal waits for
-            // the fetch below to succeed: this file is the only copy the
-            // user has, and a fetch that fails after it was deleted
-            // leaves them with neither.
-            None => stale_cache = true,
+        // A cached file that is not the pinned model is not removed here.
+        // `install` lands through a rename, which replaces the destination,
+        // so an unlink first would buy nothing and cost three things: it
+        // would falsify the guarantee below that the rename is the only
+        // operation touching the final path, it would let a failed remove
+        // abort a run whose fetch had already succeeded, and it would open
+        // a window in which the file does not exist, so a concurrent
+        // process would see no cache and pay a redundant 16 MB fetch.
+        // Leaving it also means a refetch that cannot reach the network
+        // leaves the user their old file rather than nothing.
+        if let Some(bytes) = read_and_verify(&path, expected_size, expected_hash)? {
+            return Ok(bytes);
         }
     }
 
@@ -279,9 +285,6 @@ fn provision(
         notice,
         fetch,
     )?;
-    if stale_cache {
-        std::fs::remove_file(&path).map_err(|e| io_at("remove the cached model", &path, &e))?;
-    }
     install(dir, filename, &bytes)?;
     Ok(bytes)
 }
