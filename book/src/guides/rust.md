@@ -16,7 +16,18 @@ let engine = Engine::with_defaults()?;
 
 `Engine::with_defaults` resolves a `Config` (the environment, then your config file, then the defaults compiled into the crate), downloads the English UDPipe model into the resolved directory if it is not already there, and wires the standard decomposer table. The directory is `MATRA_MODEL_DIR` if you set it, otherwise the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`. [Programming model](../explanation/programming-model.md#configuration) has the full resolution order.
 
-Everything below is the explicit path, which still works and still wins over the resolved one. Take it when you want the model somewhere specific, or a provider matra does not ship.
+When you want the resolved values but not all of them, hold the `Config` yourself:
+
+```rust
+use matra::config::Config;
+
+let cfg = Config::resolve()?.with_model_dir("/opt/matra/models");
+let engine = Engine::from_config(&cfg)?;
+```
+
+`with_model_dir` puts the directory on the `Argument` rung, which outranks the environment and the file, and `cfg.sources()` reports where every other value came from. `Config` is also what `Udpipe::from_config` and `Model2Vec::from_config` read.
+
+Everything below is the explicit path, which still works and still wins over the resolved one. Take it when you want a provider matra does not ship, or a model file you already hold.
 
 ## Construct a provider
 

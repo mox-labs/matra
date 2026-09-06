@@ -4,7 +4,13 @@
 
 ## Install
 
-The command ships two ways, and both run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took.
+Nothing installed, nothing configured:
+
+```bash
+uvx matra analyze essay.md
+```
+
+The command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took.
 
 ```bash
 # Rust binary, no Python involved
@@ -12,10 +18,9 @@ cargo install matra --features cli
 
 # or through the Python package
 uv add matra          # then: matra --help
-uvx matra --help      # or without installing anything
 ```
 
-Both cache the model at the resolved model directory (about 16 MB) and download it the first time any command needs it. If the cached file fails its SHA-256 check, matra removes it and downloads once more before giving up.
+Every route caches the model at the resolved model directory (about 16 MB) and downloads it the first time any command needs it. No flag and no environment variable is required to make that happen. If the cached file fails its SHA-256 check, matra removes it and downloads once more before giving up.
 
 ## Where matra keeps things
 

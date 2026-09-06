@@ -10,32 +10,53 @@ UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency tre
 
 A pure, performant NLP library, built to be adaptable, composable, and extensible. Hex architecture, domain has zero internal dependencies, public enums and structs with public fields are `#[non_exhaustive]`. The library is small and stable; the interpretation lives in your code.
 
+## No setup
+
+Nothing installed, nothing configured, no flags. Each of these resolves the model directory and downloads the English model (~16MB) on first use.
+
+```bash
+uvx matra analyze essay.md
+```
+
+```python
+from matra import Matra
+
+Matra.english().analyze("The report was filed without comment.")
+```
+
+```rust,ignore
+let engine = matra::Engine::with_defaults()?;
+```
+
+The directory is `MATRA_MODEL_DIR` if set, else your config file, else `$XDG_DATA_HOME/matra/models`. `matra config show` prints every resolved value and where it came from. Every constructor also takes the directory explicitly when you want it somewhere specific.
+
 ## Install
 
 ```bash
-# Rust
+# Rust library
 cargo add matra
 
-# Python
+# Rust CLI
+cargo install matra --features cli
+
+# Python library and the matra command
 pip install matra
 ```
 
-Wheels ship for Linux x86_64 and macOS (Intel and Apple Silicon). Anything else builds from the sdist, which needs a Rust toolchain.
+The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output and the exit codes are the same either way. Wheels ship for Linux x86_64 and macOS (Intel and Apple Silicon). Anything else builds from the sdist, which needs a Rust toolchain.
 
 ## Usage (Rust)
 
 ```rust,ignore
-use matra::{Engine, Ingest, standard_decomposers, nlp::udpipe::Udpipe};
+use matra::{Engine, Ingest};
 
-// Downloads the English model on first call (~16MB)
-let nlp = Udpipe::english("./models").unwrap();
-let engine = Engine::new(Box::new(nlp), standard_decomposers());
+let engine = Engine::with_defaults()?;
 
 let analysis = engine
-    .analyze(Ingest::path("essay.md").unwrap())
+    .analyze(Ingest::path("essay.md")?)
     .next()
     .unwrap()
-    .unwrap()
+    .map_err(|e| e.error)?
     .analysis;
 
 println!("Sentences: {}", analysis.total_sentences());
@@ -43,26 +64,29 @@ println!("Mean length: {:.1}", analysis.mean_sentence_length());
 println!("Passive: {:.1}%", analysis.passive_ratio() * 100.0);
 ```
 
+`Engine::new(Box::new(Udpipe::english(dir)?), standard_decomposers())` is the explicit form, and it is what you reach for with your own provider or decomposer table.
+
 ## Usage (Python)
 
 ```python
 from pathlib import Path
 from matra import Matra
 
-# Downloads the English model on first call (~16MB)
-model_dir = str(Path.home() / ".matra" / "models")
-v = Matra.english(model_dir)
+v = Matra.english()
 
 result = v.analyze_markdown(Path("essay.md").read_text())
+
+for item in v.analyze_path("docs/"):        # a whole directory
+    print(item["path"])
 ```
 
 ## Usage (CLI)
 
 ```bash
-# Auto-downloads model on first use
 matra analyze essay.md
 matra analyze essay.md --json
-matra analyze essay.md -s    # section breakdown
+matra analyze essay.md -s      # section breakdown
+matra config show              # every resolved value, with its origin
 ```
 
 ## Metrics

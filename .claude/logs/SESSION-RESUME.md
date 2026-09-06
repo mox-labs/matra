@@ -4,6 +4,20 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 
 ---
 
+## 2026-09-05 (later): I10 complete, pending merge
+
+**I10 is done, all six milestones.** M1 as PR #62 (ADR-0011, the plan, the conventions survey), M2 as #59 (`Config`, `ValueSource`, the `from_config` constructors, `Engine::with_defaults`), M3 as #61 (`matra::cli` with two launchers, `config show` / `config init`, completions, color and quiet and stdin, the `--json` envelope with `format_version`), M4 as #64 (the pinned reference embedding model provisions itself), M5 as #63 (the Python `Embedder` extension point and `analyze_path`), M6 as the docs-lockstep PR on `i10/m6-docs-lockstep`. The whole stack is open, not merged: the PRs are stacked in that order and land in it.
+
+**What M6 landed.** ADR-0011 gained a "Surface added by I10" section naming every public Rust and Python item M2 to M5 added plus the three new dependencies, which closes M1's rubric. CHANGELOG `[Unreleased]` gained a Highlights section (out of the box on every surface, one CLI with two launchers, pinned downloads as one discipline) and its Added entries are ordered newest-first. Every docs page now leads with the no-setup path. The architecture module map carries `src/cli/` and `src/config.rs`. The plan carries its shipped banner and the roadmap's configuration entry is marked shipped.
+
+**Owner decision still open, and it blocks nothing else.** The canonical author and copyright form across `Cargo.toml`, `pyproject.toml`, `LICENSE` and the README (today: `yzavyas`, `mox.nexus`, org `mox-labs`). M6 deliberately left all four unchanged rather than guessing. This is the last item in I10's stated scope that has not landed.
+
+**Two follow-ups recorded in ADR-0011's Consequences, neither decided.**
+- `cli::run` returns a `u8` rather than an `ExitCode`, because `ExitCode` cannot be read back for the Python launcher. The type is public surface now; whether `u8` is the right permanent shape is not settled.
+- `Error::Io` routes to `OSError` whatever the wrapped `ErrorKind` is, so a missing directory handed to `Matra.analyze_path` is a plain `OSError` rather than `FileNotFoundError`, while `Error::ModelNotFound` does map to `FileNotFoundError`. Routing on the wrapped kind is closer to the Python idiom but changes a shipped mapping, so it needs its own decision.
+
+**Next: the I11 agent surface plan.** The `--skill` flag (SKILL.md top level, `--skill -r <ref>` for one deeper reference, an executed-incantation CI test, the JSON schema, the marketplace entry), planned now that the CLI contract I10 froze is final. The TUI for the Rust CLI follows I11.
+
 ## 2026-09-05 (late): the transformation program
 
 Owner direction, verbatim in spirit: "get this polished/architected well, aces, and then make it accessible to agents, top notch ax/dx", with a TUI for the Rust CLI after the foundations are polished. Standing rules recorded in memory: Rust is the core and every CLI; Python and TypeScript are thin reach layers (API plus extension points, no behavior); plain pre-LLM vocabulary in everything that ships; no references to anything outside this repository; implementation is delegated to opus/sonnet subagents, planning and correctness judgment stay in the main window; merge via the owner's gh CLI is authorized under the PR ritual.

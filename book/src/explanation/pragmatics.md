@@ -45,11 +45,13 @@ Start around 0.85 with the reference model and calibrate on your own corpus.
 
 Both models work the same way, and the constructor you reach for is what decides whether anything is fetched.
 
-**Downloading is pinned, or it does not happen.** `Udpipe::english(dir)` and `Model2Vec::potion_base_8m(dir)` fetch from URLs written in the source and load nothing whose digest does not equal a constant written in the source next to them. Verification happens before the bytes are parsed, and the bytes that were verified are the bytes that get parsed, with no second read of the disk in between. A mismatch over files the call fetched removes them and fetches once more; a second mismatch raises and removes them again, so a failed attempt leaves nothing behind for a later call to pick up. Exactly one artifact set can arrive this way, which is what makes "matra downloads a model" a bounded claim rather than an open one.
+**Ask for nothing and you get the pinned model in the resolved place.** `Engine::with_defaults()`, `Udpipe::from_config(cfg)` and `Model2Vec::from_config(cfg)` resolve the directory through [`Config`](programming-model.md) and fetch the pinned model when it is absent. In Python that is `Matra.english()` and `Model2Vec.potion_base_8m()` with no argument. This is the path to take unless you have a reason not to.
+
+**Naming the directory changes where, not what.** `Udpipe::english(dir)` and `Model2Vec::potion_base_8m(dir)` fetch the same pinned artifacts into the directory you name. Take them when the model belongs somewhere specific.
+
+**Downloading is pinned, or it does not happen.** Either form fetches from URLs written in the source and loads nothing whose digest does not equal a constant written in the source next to them. Verification happens before the bytes are parsed, and the bytes that were verified are the bytes that get parsed, with no second read of the disk in between. A mismatch over files the call fetched removes them and fetches once more; a second mismatch raises and removes them again, so a failed attempt leaves nothing behind for a later call to pick up. Exactly one artifact set can arrive this way, which is what makes "matra downloads a model" a bounded claim rather than an open one.
 
 **A provisioner never deletes what it did not write.** The embedding artifacts are named for their format (`model.safetensors`, `tokenizer.json`, `config.json`) rather than for one model, so a directory can already hold somebody else's. `Model2Vec::potion_base_8m(dir)` therefore downloads only into a directory holding none of the three. Finding all three with a digest that does not match, or finding only some of them, it raises and names the directory, having downloaded nothing and removed nothing. The UDPipe model file is named for its own release, so `Udpipe::english(dir)` has no such collision to guard against.
-
-**The no-argument form.** `Engine::with_defaults()`, `Udpipe::from_config(cfg)`, and `Model2Vec::from_config(cfg)` resolve the directory through [`Config`](programming-model.md) and then do exactly the above. In Python, `Matra.english()` and `Model2Vec.potion_base_8m()` with no argument.
 
 **Bringing your own.** `Udpipe::from_path(path)` and `Model2Vec::from_dir(dir)` load what you supply and never reach the network, whatever the directory holds. That is the path for a model this build does not pin: a different UDPipe language, a different model2vec artifact. Nothing verifies it, so the `model_hash` on a result is identity rather than proof: it tells you which artifacts produced a score, not that they are the ones you meant to fetch.
 
@@ -65,6 +67,7 @@ The pinned model is part of the contract in every case. A different model produc
 | sentences into clustering | 2,000 | `InputTooLarge` with `what` set to `"semantic_clusters"`, checked before the embedding pass runs |
 | tokens into either keyphrase extractor | 200,000 | `InputTooLarge` with `what` set to `"rake"` or `"yake"` |
 | one embedding artifact being downloaded | 64 MiB | `InputTooLarge` with `what` set to `"embedding_download"`, the read stopping at the bound rather than continuing |
+| the config file matra is about to read | 64 KiB | `InputTooLarge` with `what` set to `"config_file"`, checked against the file's metadata before any read |
 
 In Python every one of them surfaces as `ValueError`. [Errors](../reference/errors.md) has the full routing table.
 
