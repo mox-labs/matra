@@ -251,8 +251,8 @@ every push, so losing the pyo3 feature is caught long before a release.
 ## Validation
 
 This decision is right if, after publishing 0.2.0, a reader on any of the four
-platforms and any GIL-enabled CPython from 3.12 up gets a prebuilt wheel, and the next
-CPython release requires no change to `publish-pypi.yml`. It is right about the
+platforms and any GIL-enabled CPython from 3.12 up gets a prebuilt wheel, and
+the next CPython release requires no change to `publish-pypi.yml`. It is right about the
 documentation if a container carrying exactly the prerequisites the installation
 page names can build matra from source without adding anything.
 
