@@ -74,7 +74,7 @@ Inside a sentence, exactly one token has `head` equal to `0`: the root. Every ot
 <text class="m" x="444" y="266">5 ADP</text>
 <text class="m" x="530" y="266">6 DET</text>
 <text class="m" x="616" y="266">7 NOUN</text>
-<text class="nt" x="30" y="292">heavier lines are the two relations is_passive() matches</text>
+<text class="nt" x="30" y="292">heavier lines are the arcs is_passive() matches</text>
 </svg>
 
 Words keep their reading order left to right; height is depth in the tree. `built` is the root, everything else hangs off it directly or through one more hop, so `tree_depth()` returns 2.
@@ -84,7 +84,7 @@ Words keep their reading order left to right; height is depth in the tree. `buil
 The pipeline produces them in this order, and each is a different kind of result.
 
 1. **Structure**, from `Engine::annotate`. Sections, paragraphs, sentences, tokens, and the structural primitive fields. Derived from the parse, checkable against the source bytes.
-2. **Measures**, from `Engine::compose`. Five `Option<f64>` slots filled by the metric suite: three per paragraph, two per document, plus the materialized `passive_ratio`. `None` means not computed, which is distinct from a computed zero.
+2. **Measures**, from `Engine::compose`. Six `Option<f64>` slots filled by the metric suite: three per paragraph, two per document, plus the materialized `passive_ratio`. `None` means not computed, which is distinct from a computed zero.
 3. **Extraction**, from standalone functions over a sentence slice: `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`. They return `ScoredSentence` and `Keyphrase` values, never fields on the tree.
 4. **Semantic**, behind the `model2vec` feature. `embed_and_cluster` returns a `SemanticClusters` value carrying the model hash and the threshold you supplied. This tier depends on the model, so by design it never becomes a field on `Document` or `Sentence`.
 
