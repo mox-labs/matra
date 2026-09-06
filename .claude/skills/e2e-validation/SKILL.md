@@ -7,7 +7,7 @@ description: How matra verifies that a built artifact actually installs and work
 
 Everything else in this repository tests matra against its own source tree. This skill covers the one question that cannot be answered there: does the thing we published work for someone who has none of what we have.
 
-The evidence for the whole approach is in `docs/surveys/2026-09-06-release-validation.md`, which read nine comparable projects, and in the two pilot passes run on 2026-09-06.
+The evidence for the whole approach is in `docs/surveys/2026-09-06-release-validation.md`, which read nine comparable projects, and in the two pilot passes at `docs/e2e/2026-09-06-macos-walkthrough.md` and `docs/e2e/2026-09-06-linux-cleanroom.md`. Those reports are kept in the repository because this skill's own evidence rule applies to itself: a method whose grounding has evaporated is a method nobody can check.
 
 ## The two layers, and why they must not be confused
 
@@ -20,7 +20,17 @@ The evidence for the whole approach is in `docs/surveys/2026-09-06-release-valid
 
 Conflating them is the failure mode. A gate that depends on judgment is a gate that gets disabled the first time someone disagrees with it. A judgment pass dressed up as a gate teaches people to argue with a red check instead of reading the finding.
 
-The survey establishes that all nine comparable projects run the first layer and **none of them runs the second**. That is a cost fact, not a value fact: a chartered exploratory pass used to cost a person an afternoon per release. It does not any more. Treat the second layer as this project's own practice, cite it as such, and never let it block a merge.
+What the survey establishes is narrower than it first looks, and the narrow version is the stronger argument.
+
+**None of the nine runs the second layer.** No chartered exploratory pass, no judgment step, anywhere in release engineering. That half is flat.
+
+The first layer is not universal either. mdBook builds a release binary per target and never executes it, not even a version check. cargo-release is a tool other crates use rather than a project shipping its own artifact, so it is barely one of the nine. And by the bar set immediately below, several of the rest only half qualify: ruff checks with `ruff --help` and ripgrep with a version and a completion dump, which prove the entry point resolves and not that the program works.
+
+So the accurate reading is that every project which checks at all checks mechanically, in CI, and never asks a person to judge the result, while one checks nothing and several check only that the binary starts.
+
+**Why keep the second layer anyway.** The survey prices a chartered session at 45 minutes to two hours, so two charters was most of someone's afternoon, every release. That is the cost that used to make this uneconomic, and it is not the cost any more. The survey explicitly declines to say whether the second layer is worth having, and it is right to decline, because it gathered no data on that question. So this is matra's own call rather than a conclusion borrowed from anyone, and the evidence it rests on is that the two pilots found six blocking defects a fully green CI matrix had passed.
+
+Never let the second layer block a merge, and never make it a CI job. If it becomes one, that is the signal it has been misunderstood.
 
 ## Layer one: what CI must prove
 
@@ -32,6 +42,8 @@ The gate installs the built artifact the way a user would and then uses it. Impo
 4. **Execute the documented commands.** Rust doctests already do this for the library. `tests/skill.rs` already does it for the agent skill, extracting every `matra` command and running it, with a count law so a command written outside a fence cannot escape the runner. That pattern is the model; the gap is the docsite.
 
 Absences are findings. When a lane does not exist, say so rather than assuming coverage.
+
+**Where matra stands against this.** Point 1 holds for the wheel, and point 4 holds for the library and the agent skill. Point 2 does not: the release smoke test installs the wheel and then runs an import, which is the check point 2 rules out. Point 3 became true only with ADR-0014, and the missing Linux ARM wheel is what its absence cost. The docsite's own commands are executed nowhere.
 
 ## Layer two: the exploratory pass
 
@@ -83,7 +95,7 @@ The middle group is where the value concentrates and where a pass-or-fail gate w
 The environment is the experiment. A pass run in a polluted environment proves nothing and is worse than no pass, because it produces a clean report.
 
 - **Scrub the home directory.** Point `HOME`, `XDG_CONFIG_HOME` and `XDG_DATA_HOME` inside a temporary tree and unset every `MATRA_*` variable. `scripts/e2e-sandbox.sh` does this. Confirm at the end that the real locations are untouched, and say so in the report.
-- **Use a container for the install claim.** The maintainer's machine has a Rust toolchain, a C++ compiler, uv, certificates and cached models, so it structurally cannot answer whether a clean machine works. The pilot that found the missing ARM wheel, the glibc floor and the undocumented C++ requirement found all three in containers and none of them on the host.
+- **Use a container for the install claim.** The maintainer's machine has a Rust toolchain, a C++ compiler, uv, certificates and cached models, so it structurally cannot answer whether a clean machine works. The pilot that found the glibc floor and the undocumented C++ requirement found both in containers, and the host could not have found either, because it has a C++ compiler and a glibc far newer than the floor. The missing ARM wheel is a weaker example and worth being honest about, because it was inferable from reading the publish workflow and the host pass read that same file and did not notice. The container is what made it impossible to overlook, not what made it findable.
 - **State the architecture.** On Apple Silicon, containers are ARM by default. Emulated timings are not user timings, so say which you ran.
 - **Hunt what a developer machine hides.** No certificates, no network, no writable home, a read-only filesystem, a full disk, an interrupt mid-download, a second run sharing a model directory, and a filesystem diff of everything the program created. That list is where the pilots' best findings came from.
 
