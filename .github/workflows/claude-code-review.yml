@@ -56,7 +56,7 @@ jobs:
 
             Review criteria: this repository defines its own review
             gates in .claude/skills/pr-review/SKILL.md (boundary rules
-            with grep-blind spellings, pipeline laws L1-L7, substrate
+            with grep-blind spellings, pipeline laws L1-L7, the structure-over-interpretation
             discipline, FFI exposure criterion, security gate, pit of
             success). Load that skill and apply its gates as the
             primary criteria; generic review heuristics are secondary.
