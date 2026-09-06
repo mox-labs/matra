@@ -8,7 +8,19 @@ matra ships three ways from one Rust core: a Rust library on [crates.io](https:/
 
 **Rust 1.85 or later (MSRV)** for the Rust library and the CLI. Check with `rustc --version`.
 
-**Python 3.12 or later** for the Python package. Check with `python --version`. Wheels ship for Linux x86_64 and macOS (Intel and Apple Silicon); on any other platform `pip` builds the sdist, which additionally needs the Rust toolchain.
+**A C++ compiler** for anything that compiles from source: the Rust library, the CLI, and the Python package on a platform with no wheel. matra parses through UDPipe, which is a C++ library that `udpipe-rs` builds during the cargo build. A C compiler on its own is not enough. Without a C++ compiler the build stops with `error occurred in cc-rs: failed to find tool "c++"`, whichever route you took.
+
+| Platform | Package |
+| --- | --- |
+| Debian, Ubuntu | `apt install build-essential` |
+| Fedora, RHEL, Rocky, Alma | `dnf install gcc-c++` |
+| Alpine | `apk add g++` |
+| Arch | `pacman -S base-devel` |
+| macOS | `xcode-select --install` |
+
+**Python 3.12 or later** for the Python package. Check with `python --version`. Wheels ship for Linux x86_64, Linux aarch64, macOS x86_64 and macOS arm64. They are built against the CPython stable ABI, so one wheel per platform serves 3.12 and every later 3.x rather than only the version it was compiled against. The Linux wheels are manylinux2014, which asks for glibc 2.17 or newer and so reaches back through Debian 11, Ubuntu 20.04, RHEL 8 and Amazon Linux 2. On anything else `pip` builds the sdist, which needs the Rust toolchain and the C++ compiler above.
+
+Windows is not a target yet. No wheel ships for it and the UDPipe build under MSVC is unverified, so the sdist route there is untested rather than known to work.
 
 ---
 
@@ -36,12 +48,14 @@ Confirm it landed:
 matra --version
 ```
 
-Expected output, with the second line naming the features this build was compiled with:
+Expected output:
 
 ```
 matra 0.2.0
 features: udpipe cli
 ```
+
+The second line names the features *this* build was compiled with, so it is not the same on every install route. `cargo install matra --features cli` prints the line above. The Python package is compiled with more features and prints a longer one; see below.
 
 ---
 
@@ -51,9 +65,18 @@ features: udpipe cli
 pip install matra    # or: uv add matra
 ```
 
-This installs the library and the `matra` command together. The command is the same Rust CLI `cargo install` gives you, reached through the extension module rather than reimplemented in Python, so `uvx matra analyze essay.md` and the installed binary do the same thing. The Python package has no runtime dependencies of its own.
+This installs the library and the `matra` command together. The command is the same Rust CLI, reached through the extension module rather than reimplemented in Python, so `uvx matra analyze essay.md` and the installed binary do the same thing.
 
-On the platforms with wheels this downloads a prebuilt binary and installs in seconds. The verify step further down this page doubles as the check: if `from matra import Matra` fails there, the package did not install correctly.
+It is not, however, the same *build*. The wheel is compiled with the Python and embedding features on top of the CLI, so its version banner reads:
+
+```
+matra 0.2.0
+features: udpipe model2vec python cli
+```
+
+Both banners are correct for their own build, and every analysis command behaves identically across the two. The Python package has no runtime dependencies of its own.
+
+On the platforms with wheels this downloads a prebuilt binary and installs in seconds, on any CPython from 3.12 up. The verify step further down this page doubles as the check: if `from matra import Matra` fails there, the package did not install correctly.
 
 ---
 
@@ -88,7 +111,7 @@ sections: 1
 vocabulary_ttr: 0.8571428571428571
 ```
 
-That first run downloads about 16 MB and can take several seconds depending on your connection. Every run after that loads the cached file and touches no network.
+That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow, throttled or silently blackholed network can take far longer, because matra sets no timeout on the download: if the command sits there for minutes, it is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
 
 If `Matra.english()` raises `RuntimeError`, the download or the hash check failed; check your network connection and run the snippet again. If it raises `OSError`, matra could not create or write to the model directory; run `matra config show` to see which directory it resolved and check the permissions on it.
 
