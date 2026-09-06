@@ -15,7 +15,7 @@ default:
 # the boundary check and the docsite floor, which CI does not run. CI
 # additionally runs cargo-deny, cargo-semver-checks, the wheel build and
 # mypy.
-check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary docs-floor
+check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary docs-floor version-sync
     @echo ""
     @echo "all gates pass"
 
@@ -68,6 +68,11 @@ test-no-default:
 # Boundary check: hex-architecture rules from CLAUDE.md (3, 4, 8).
 boundary:
     bash scripts/check-boundaries.sh
+
+# Every version-carrying file agrees, and CITATION.cff's release date matches
+# the CHANGELOG heading for that version (ADR-0013).
+version-sync:
+    bash scripts/check-version-sync.sh
 
 # Requires mdbook + mdbook-mermaid (install: `cargo install mdbook mdbook-mermaid`).
 # lychee is optional locally (skip-with-warning); CI installs it and sets
@@ -156,7 +161,8 @@ release VERSION:
     @echo "  - git log/diff matches what you expect"
     @echo "  - cargo publish --dry-run --features udpipe is clean"
     @echo "  - the [{{VERSION}}] section of CHANGELOG.md is correct"
-    @echo "  - Cargo.toml + pyproject.toml versions == {{VERSION}}"
+    @echo "  - just version-sync is clean and reports {{VERSION}}"
+    @echo "  - CITATION.cff date-released is the date you are actually releasing"
     @echo ""
     @echo "When ready, push the tag:"
     @echo "  git tag -s v{{VERSION}} -m 'v{{VERSION}}'"

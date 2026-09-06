@@ -139,7 +139,23 @@ participate without re-deriving the design.
 | [`CHANGELOG.md`](CHANGELOG.md) | What changed and why, per release |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to participate, commit conventions, decision flow |
 | [`SECURITY.md`](SECURITY.md) | Vulnerability disclosure policy |
+| [`CITATION.cff`](CITATION.cff) | How to cite matra |
+
+## Citing matra
+
+If you report matra's numbers in published work, cite two things. Cite the
+software with the entry in [`CITATION.cff`](CITATION.cff), which identifies
+the implementation and its version. Then cite the publication behind each
+measure you used, which identifies the method. matra implements published
+methods with documented departures, so neither citation substitutes for the
+other. The per-measure references, and the departures, are in
+[the methodology reference](https://mox-labs.github.io/matra/reference/methodology.html).
+
+To make a result reproducible, record the matra version, the model file name
+and its SHA-256, the format the document was analyzed under, and the parameters
+you passed. The methodology page gives the exact form.
 
 ## License
 
-MIT
+MIT, Copyright (c) 2026 mox labs. See
+[`LICENSE`](https://github.com/mox-labs/matra/blob/main/LICENSE).

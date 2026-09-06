@@ -8,7 +8,7 @@ version = "0.2.0"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction."
 readme = "README.md"
 license = { text = "MIT" }
-authors = [{ name = "yzavyas" }]
+authors = [{ name = "mox labs", email = "yza.v@moxlabs.org" }]
 requires-python = ">=3.12"
 # No runtime dependencies. The command line is the Rust binary reached
 # through the extension module, the way ruff and uv ship theirs.

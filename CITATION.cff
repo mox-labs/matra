@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+title: matra
+message: >-
+  If you use matra in work you publish, cite the software with the entry
+  below, and separately cite the publication behind each measure you
+  report. matra implements published methods with documented departures,
+  so the software citation identifies the implementation and the method
+  citation identifies the method. Both are needed. The per-measure
+  references are listed in the methodology page of the documentation.
+type: software
+authors:
+  - name: mox labs
+    email: yza.v@moxlabs.org
+    website: 'https://github.com/mox-labs'
+abstract: >-
+  An NLP library that parses text into a typed structure tree, measures
+  it, and ranks what is in it. It provides a UDPipe structured parse in
+  full CoNLL-U, base text metrics covering readability, lexical density,
+  compression, vocabulary type-token ratio, nominalization and passive
+  ratio, extractive summarization by TF-IDF and TextRank, and keyphrase
+  extraction by RAKE and YAKE. The core is Rust, with Python bindings and
+  a command line interface. It reports structure and numbers and makes no
+  judgment about the text.
+version: 0.2.0
+date-released: '2026-09-06'
+license: MIT
+repository-code: 'https://github.com/mox-labs/matra'
+url: 'https://mox-labs.github.io/matra/'
+keywords:
+  - nlp
+  - udpipe
+  - dependency parsing
+  - summarization
+  - keyphrase extraction
+  - readability
