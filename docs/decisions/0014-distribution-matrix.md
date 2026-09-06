@@ -223,7 +223,8 @@ every push, so losing the pyo3 feature is caught long before a release.
   superseding-ADR decision, and the CI assertion exists so it cannot happen by
   accident.
 - Negative: `RUSTUP_TOOLCHAIN=stable` is now load-bearing in the release
-  workflow. `rust-toolchain.toml` asks for components the image does not carry,
+  workflow. `rust-toolchain.toml` asks for a component the image does not
+  carry, `llvm-tools-preview`,
   so rustup re-syncs the channel inside the container, and the rename it
   performs crosses the overlay boundary between the image layer and the
   container, failing with `Invalid cross-device link (os error 18)`.
@@ -234,7 +235,7 @@ every push, so losing the pyo3 feature is caught long before a release.
 - Neutral: the consequence of that override is that the Linux wheels are built
   on whatever stable the pinned maturin image ships, not on the newest stable,
   and without the `llvm-tools-preview` component that `rust-toolchain.toml`
-  requests. A `maturin build` needs none of it, and
+  requests. A `maturin build` needs neither, and
   the compiler version becomes a property of the image digest rather than of the
   day the release ran, which is the more reproducible of the two. If the image
   ever ships a stable below the MSRV the build fails at compile time, loudly.
@@ -264,7 +265,8 @@ every push, so losing the pyo3 feature is caught long before a release.
   image's compiler plus a component", it was "whichever stable exists on
   release day", chosen by the calendar rather than by anyone. Against the
   status quo before either variable the comparison is different and simpler:
-  the build fails outright, as recorded above. Pinning to a reviewed digest is the more
+  the build fails outright, as recorded above. Pinning to a reviewed
+  digest is the more
   deliberate of the two, which is the argument for this decision rather than a
   side effect of it.
 
@@ -272,7 +274,8 @@ every push, so losing the pyo3 feature is caught long before a release.
 
 This decision is right if, after publishing 0.2.0, a reader on any of the four
 platforms and any GIL-enabled CPython from 3.12 up gets a prebuilt wheel, and
-the next CPython release requires no change to `publish-pypi.yml`. It is right about the
+the next CPython release requires no change to `publish-pypi.yml`. It is
+right about the
 documentation if a container carrying exactly the prerequisites the installation
 page names can build matra from source without adding anything.
 
