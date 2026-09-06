@@ -1,6 +1,6 @@
 # Use matra from Python
 
-You installed matra with `uv add matra`.
+You installed matra with `uv add matra`. That gave you two things: the library described on this page, and the `matra` command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the [CLI guide](cli.md); the Python package adds no behavior to it.
 
 ## The no-setup path
 

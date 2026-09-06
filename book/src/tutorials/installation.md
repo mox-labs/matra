@@ -36,10 +36,11 @@ Confirm it landed:
 matra --version
 ```
 
-Expected output:
+Expected output, with the second line naming the features this build was compiled with:
 
 ```
 matra 0.1.0
+features: udpipe cli
 ```
 
 ---
@@ -50,13 +51,15 @@ matra 0.1.0
 pip install matra    # or: uv add matra
 ```
 
+This installs the library and the `matra` command together. The command is the same Rust CLI `cargo install` gives you, reached through the extension module rather than reimplemented in Python, so `uvx matra analyze essay.md` and the installed binary do the same thing. The Python package has no runtime dependencies of its own.
+
 On the platforms with wheels this downloads a prebuilt binary and installs in seconds. The verify step further down this page doubles as the check: if `from matra import Matra` fails there, the package did not install correctly.
 
 ---
 
 ## The English model
 
-matra parses through UDPipe. None of the three install paths bundle the English model: the library, the binary, and the Python package each download it independently on first use and cache it on disk. The Rust and Python APIs take the model directory as an explicit argument or resolve one themselves when you leave it out: `Engine::with_defaults()` and `Matra.english()` use `MATRA_MODEL_DIR`, else the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`. The CLI's own default is still `~/.matra/models`, which is also the fallback the resolved path uses when that directory already exists and is not empty.
+matra parses through UDPipe. None of the three install paths bundle the English model: the library, the CLI, and the Python package each download it on first use and cache it on disk. Every surface resolves the directory the same way. `Engine::with_defaults()`, `Matra.english()`, and the CLI all use `MATRA_MODEL_DIR`, else the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`, falling back to a pre-existing, non-empty `~/.matra/models` from an older install when the new location does not exist yet (matra never creates `~/.matra`, but a selected legacy cache is used as the model directory, downloads included). The Rust and Python APIs also take the directory as an explicit argument, and the CLI takes `--model-dir`.
 
 matra writes the download (about 16 MB) to a temporary location first, then moves it into place, and checks the bytes against a fixed hash before loading them. If a file fails that check, matra deletes it and re-downloads once; if the second attempt still does not match, matra returns an error instead of loading an unverified file.
 
@@ -94,7 +97,7 @@ If `Matra.english()` raises `RuntimeError`, the download or the hash check faile
 ## What you have
 
 - matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same published 0.1.0 core.
-- The English UDPipe model cached at `~/.matra/models`, verified against a pinned hash.
+- The English UDPipe model cached under the resolved model directory, verified against a pinned hash.
 - A confirmed working call from `Matra.english()` through `analyze()` to a result.
 
 Next: [Rust](../guides/rust.md), [Python](../guides/python.md), or [CLI](../guides/cli.md), depending on which surface you are calling from.
