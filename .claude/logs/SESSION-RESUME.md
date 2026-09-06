@@ -4,6 +4,14 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 
 ---
 
+## 2026-09-06 (later): I11 merged; 0.2.0 approved on main; publish pending
+
+**I11 is on `main`, all five milestones**, as PRs #66 (ADR-0012, plan), #67 (the skill and the executed-incantation test; CI gained its `cli` lane and the em-dash gate was fixed on the way), #68 (`--skill`, `--skill -r`, one envelope, launcher parity), #69 (`llms.txt` with a currency gate, `AGENTS.md`, the plugin manifest), #70 (lockstep audit, release dry runs, the 0.2.0 bump with the changelog rolled). `main` says `version = "0.2.0"` and `CHANGELOG.md` has `## [0.2.0] - 2026-09-06`. Nothing is tagged or published: that is the owner's call, through the environment-gated publish workflows (`crates-io` and `pypi` required reviewers), after a `--dry-run` per the project rule.
+
+**Next, in the approved order.** (1) The owner's publish decision for 0.2.0. (2) The docs track for humans: research citations per measure (`CITATION.cff` once the author form is settled) and readable benchmark pages with methodology, per the conventions survey. (3) The deterministic redundancy and information-density metric families under one shared ADR (roadmap entries fired 2026-09-04). (4) The TUI for the Rust CLI, whose trigger (I10 and I11 accepted) has now fired; write its ADR and plan before any code. (5) Rules (`src/rules/`, ADR-0006 vocabulary).
+
+**Owner decisions open.** The canonical author and copyright form (blocks `CITATION.cff` and attribution alignment); whether to publish the plugin to a marketplace and which; the 0.2.0 publish itself.
+
 ## 2026-09-06: I10 merged; I11 planned
 
 **I10 is on `main`, all six milestones**, as PRs #62, #59, #61, #64, #63, #65, merged in that order after each passed a real review pass with its findings applied (the harness caught, among others: a legacy-cache write claim that was false, a data-loss path in the embedding provisioner, a partial-download trap, a non-UTF-8 filename abort in `analyze_path`, a false protocol claim on `Model2Vec`). Merged branches deleted; docs deployed; dependabot #13 and #15 closed as obsolete (click and rich are gone).
