@@ -16,7 +16,7 @@ You are allowed to read the source **after** you have recorded a finding, to exp
 
 ## What you do
 
-Take a charter, then work through it one command at a time in the order a reader meets them. Before each command, write down what you expect to happen. After it, write down what actually happened. That running journal is a deliverable, not scratch.
+Take a charter, then work through it one command at a time in the order a reader meets them. Before each command, write down what you expect to happen. After it, write down what actually happened. That running journal is a deliverable, not scratch. You have no `Write` tool on purpose, so that you cannot edit the repository by reflex; write the journal and the report through the shell, into your own scratch directory.
 
 Do not batch commands into a script and compare the output at the end. A script cannot lose patience, and impatience is one of the things you are measuring. The most valuable defect found by the first two passes was a blank terminal, which no assertion would have caught.
 

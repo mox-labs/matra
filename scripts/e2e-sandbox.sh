@@ -62,20 +62,31 @@ new)
     # Every MATRA_* the environment carries, not a hardcoded three, so a
     # variable added later cannot leak into a pass unnoticed.
     while IFS='=' read -r name _; do
-        case "$name" in MATRA_*) printf 'unset %s\n' "$name" ;; esac
+        case "$name" in MATRA_*) printf 'unset %q\n' "$name" ;; esac
     done < <(env)
+    # A marker inside the sandbox home as well as the variable. The variable
+    # can fail to be inherited; $HOME is the thing that moved, so a marker
+    # living in it travels with the sandbox no matter how it was entered.
+    : > "$dir/home/.e2e-sandbox"
     printf 'export E2E_SANDBOX_ROOT=%q\n' "$dir"
     printf '# sandbox at %s\n' "$dir" >&2
     ;;
 snapshot)
-    if [ -n "$E2E_SANDBOX_ROOT" ]; then
+    if [ -n "$E2E_SANDBOX_ROOT" ] || [ -e "${HOME}/.e2e-sandbox" ]; then
         echo "refusing: snapshot must run outside the sandbox, but" \
-             "E2E_SANDBOX_ROOT is set to $E2E_SANDBOX_ROOT." \
+             "this is a sandbox (E2E_SANDBOX_ROOT=${E2E_SANDBOX_ROOT:-unset}," \
+             "marker $( [ -e "${HOME}/.e2e-sandbox" ] && echo present || echo absent ))." \
              "In here \$HOME is the sandbox, so this would fingerprint" \
              "the wrong tree and report a false all-clear." >&2
         exit 3
     fi
-    for p in "${HOME}/.config/matra" "${HOME}/.local/share/matra" "${HOME}/.matra"; do
+    # matra resolves XDG_CONFIG_HOME and XDG_DATA_HOME ahead of $HOME, so
+    # deriving these from $HOME alone missed a real config file whenever the
+    # operator's XDG variables point outside home. That is the same false
+    # all-clear the guard above exists to stop, reachable without a sandbox.
+    for p in "${XDG_CONFIG_HOME:-$HOME/.config}/matra" \
+             "${XDG_DATA_HOME:-$HOME/.local/share}/matra" \
+             "$HOME/.matra"; do
         if [ -e "$p" ]; then
             # Errors are not suppressed. An unreadable subdirectory used to
             # abort the loop with the reason sent to /dev/null, leaving a
