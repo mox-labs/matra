@@ -18,6 +18,7 @@ Each iteration has one plan. The plans are agent-legible: every task names the f
 | [i7-structural-primitives.md](i7-structural-primitives.md) | rule-substrate | Negation, typed feats, modality, evidentiality, Hearst patterns |
 | [i8-pipeline-surface.md](i8-pipeline-surface.md) | **pre-publish surface freeze** | One pipeline replacing six entry points |
 | [i9-embeddings-adapter.md](i9-embeddings-adapter.md) | post-publish, additive only | Embedder port, model2vec adapter, semantic clusters |
+| [i10-foundations.md](i10-foundations.md) | post-publish, additive only | Config and paths, default constructors, one CLI with two launchers, pinned embedding download, Python extension points |
 
 **Strict ordering.** No iteration starts until the previous one has met its acceptance gate. K's strategic verdict on this is non-negotiable: rename a stable surface before structure moves; install the resilience floor before the error contract; ship the error contract before the streaming surface that consumes it.
 

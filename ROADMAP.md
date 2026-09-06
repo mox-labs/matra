@@ -163,7 +163,22 @@ matra reports the clusters and the numbers; whether they constitute fluff is the
 
 That last question is the real one. matra's discipline is that the library returns typed data and the binary decides presentation. A config format that reaches into the library risks putting policy where the composition root belongs.
 
-**Trigger condition.** A caller running matra repeatedly with the same non-default selection, where passing flags each time is the friction. Agent-driven use is the likely first instance, since an agent benefits from declaring intent once rather than reconstructing an invocation.
+**Trigger condition. FIRED, 2026-09-05.** The condition was a caller running matra repeatedly with the same non-default selection, with agent-driven use the likely first instance. It fired as owner direction: matra works with no setup on every surface, follows developer-tool conventions for config and paths, and keeps Rust as the core with Python and TypeScript as thin reach layers. [ADR-0011](https://github.com/mox-labs/matra/blob/main/docs/decisions/0011-out-of-the-box.md) settles the library-or-application question the paragraph above asks (a resolver for locations and defaults in the library, behavior selection in the application), and [`book/src/plans/i10-foundations.md`](https://github.com/mox-labs/matra/blob/main/book/src/plans/i10-foundations.md) carries the milestones.
+
+## Agent surface
+
+**What it is.** A `--skill` flag on the CLI that prints a self-contained description of matra's semantics for an agent: what it is for, when to reach for it, the incantations with their JSON shapes, how to read the numbers, and the limits. Progressive disclosure follows the shape of a skill on disk: `--skill` prints the short top level, `--skill -r <name>` prints one deeper reference. `--help` stays the framework-generated reference for humans. The same file is what a plugin marketplace distributes.
+
+**Why a flag and not only a docs page.** Human attention is the scarce input. The people who would read the whole docsite are few; the agents that will run matra on their behalf are many, and an agent that can print the semantics it needs, from the tool it is about to run, needs no link and no prior knowledge. The docs stay for human comprehension, with citations and readable benchmarks; the skill is the other door, derived from the same code and tested against it.
+
+**Trigger condition. FIRED, 2026-09-05**, by owner direction, sequenced after I10: the skill documents the CLI contract, so the CLI has to be one implementation with a pinned JSON shape first.
+
+## Terminal UI for the Rust CLI
+
+**What it is.** An interactive terminal interface over the same `cli` module: browse a parsed document, its sections, sentences, and dependency trees, and the metrics beside them, without leaving the terminal.
+
+**Trigger condition.** I10 and the agent surface have met their acceptance gates. The TUI is a renderer over a contract that has to be stable first; building it before that means re-doing it.
+
 
 ## Record traceability accessor
 
