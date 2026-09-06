@@ -65,7 +65,7 @@ The cached file is then checked against a size constant, 16,309,608 bytes, and a
 
 The verify step returns the bytes it hashed, and those exact bytes go to the loader. Nothing re-reads the disk in between. That ordering is the whole point: a hash-then-reopen sequence leaves a window in which an attacker with write access to the model directory can swap the file after the check and before the read.
 
-`Udpipe::from_path` and `Udpipe::from_bytes` verify nothing. They load what you name. Provenance for those two paths belongs to the caller.
+`Udpipe::from_path` and `Udpipe::from_bytes` verify nothing. They load what you name. Traceability for those two paths belongs to the caller.
 
 **Load once, reuse.** After construction, the model is a live handle to a C++ object. Parsing does not reload it. The `Engine` owns the provider, so a service builds one engine and keeps it for its lifetime.
 
@@ -167,7 +167,7 @@ Each carries its own applicability condition, and this is where unexplained `Non
 
 `None` is not zero. A three-word paragraph has no meaningful Flesch-Kincaid grade, and the slot says so rather than reporting a number nobody should use. The compression cap is a CPU bound: the brotli window is 2^18 bytes, and a paragraph larger than one window is skipped instead of pegging a core on adversarial input.
 
-Summarization and keyphrase extraction are not part of this. The pipeline never calls them. They take `&[Sentence]` and are invoked directly by the consumer, on sentences read back off the tree:
+Summarization and keyphrase extraction are not part of this. The pipeline never calls them. They take `&[Sentence]` and are invoked directly by the caller, on sentences read back off the tree:
 
 ```rust
 let mut doc = engine.annotate(&raw)?;
@@ -231,9 +231,9 @@ Every guard sits at the earliest point where the check is still cheap.
 
 Three separate lanes, because these are three separate call paths. Only the middle one runs during a pipeline call. The model check fires once when you construct the provider, and the extractor caps fire only when you call an extractor, which is why neither shows up in a pipeline stack trace.
 
-The `catch_unwind` is the load-bearing one. A panic crossing an FFI boundary does not unwind into your code, it aborts the process: interpreter death in Python, a trap in WASM, from a library that promised typed errors.
+The `catch_unwind` is the one that matters. A panic crossing an FFI boundary does not unwind into your code, it aborts the process: interpreter death in Python, a trap in WASM, from a library that promised typed errors.
 
-The seam that converts such a panic into an `Error` lives in `nlp/udpipe.rs`, and that file is the only one permitted to import the UDPipe crate. A second import path would be a second process-abort surface with no boundary in front of it. The seam covers parsing only; model loading translates the loader's own error and is not wrapped.
+The boundary that converts such a panic into an `Error` lives in `nlp/udpipe.rs`, and that file is the only one permitted to import the UDPipe crate. A second import path would be a second process-abort surface with no boundary in front of it. That boundary covers parsing only; model loading translates the loader's own error and is not wrapped.
 
 Two guards live in the domain types rather than at an edge, because a parse arrives from outside and its shape is not guaranteed. `Sentence::tree_depth` walks head references with a visited set and returns `usize::MAX` when they form a cycle. `Sentence::subtree` carries the same visited set so it terminates. The sentinel is deliberate: an earlier version capped depth at a magic 20, which silently truncated malformed parses and legitimate deep ones alike.
 
@@ -257,7 +257,7 @@ Directory reads fail differently. The stream yields successes and per-document f
 <defs><marker id="mx-mod-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
 <rect class="box" x="20" y="8" width="200" height="30" rx="4"/>
 <text class="fp" x="120" y="22">src/bin/matra.rs</text>
-<text class="sub" x="120" y="33">consumer of the public API, feature: cli</text>
+<text class="sub" x="120" y="33">caller of the public API, feature: cli</text>
 <line class="dep" x1="120" y1="38" x2="120" y2="54" marker-end="url(#mx-mod-a)"/>
 <rect class="band" x="16" y="58" width="700" height="36" rx="4"/>
 <text class="fp" x="366" y="74">src/lib.rs</text>
@@ -328,7 +328,7 @@ Directory reads fail differently. The stream yields successes and per-document f
 
 Every arrow points down, and that is the rule: a module imports from the row below it, never the row above. The one arrow that runs sideways is `source/directory.rs` reaching into `source/file.rs`, inside a single port, so a directory read inherits the same symlink and size guards rather than reimplementing them.
 
-Three seams are dispatched at runtime. `NlpProvider` has a single method, and the engine holds it as `Box<dyn NlpProvider>`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. `Embedder` is the same shape one tier over: `embed_and_cluster` takes it as `&dyn Embedder`, and its `identity` travels into every result so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library. And `Decomposer` dispatch is a value: the engine's `Decomposers` table maps each `Format` to a boxed decomposer, `standard_decomposers()` is merely the table this build ships, and `Decomposers::new().with(format, decomposer)` builds a different one. Registering a format is data flow, not a code change.
+Three extension points are dispatched at runtime. `NlpProvider` has a single method, and the engine holds it as `Box<dyn NlpProvider>`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. `Embedder` is the same shape one tier over: `embed_and_cluster` takes it as `&dyn Embedder`, and its `identity` travels into every result so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library. And `Decomposer` dispatch is a value: the engine's `Decomposers` table maps each `Format` to a boxed decomposer, `standard_decomposers()` is merely the table this build ships, and `Decomposers::new().with(format, decomposer)` builds a different one. Registering a format is data flow, not a code change.
 
 `Source` stays static: `Ingest`'s constructors name the file and directory adapters. To ingest from somewhere else, construct `RawDocument` values yourself and feed them to `Engine::analyze` as `Ok` items; the pipeline does not care where they came from.
 

@@ -47,7 +47,7 @@ Start around 0.85 with the reference model and calibrate on your own corpus.
 
 **model2vec.** Nothing is downloaded, ever. Place `model.safetensors`, `tokenizer.json`, and `config.json` in a directory and point `Model2Vec::from_dir` at it. The digest over those three files is the `model_hash`, and it appears on every `SemanticClusters` result. Check it after downloading: the hash is identity, so it tells you which artifacts produced a score, not that the artifacts are the ones you meant to fetch. The [semantic clusters guide](../guides/semantic-clusters.md) records the digest the conformance suite pins.
 
-The pinned model is part of the contract in both cases. A different model produces a different parse or a different geometry, and the conformance fixtures will fail, correctly.
+The pinned model is part of the contract in both cases. A different model produces a different parse or a different vector space, and the conformance fixtures will fail, correctly.
 
 ## Cost and limits
 

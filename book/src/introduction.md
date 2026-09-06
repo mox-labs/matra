@@ -1,6 +1,6 @@
 # matra
 
-matra illuminates the internal structural makeup of text. It parses a document into a typed tree of sections, paragraphs, sentences, and tokens, measures that tree, and ranks what is in it. Every value it returns is structure or a number over structure. What any of it means for your purpose is your code's decision, which is what makes the output reusable across purposes.
+matra reports the structure of text and measurements over it. It parses a document into a typed tree of sections, paragraphs, sentences, and tokens, measures that tree, and ranks what is in it. Every value it returns is structure or a number over structure. What any of it means for your purpose is your code's decision, which is what makes the output reusable across purposes.
 
 ## Four tiers of output
 

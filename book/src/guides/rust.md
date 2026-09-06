@@ -62,7 +62,7 @@ let many: CorpusResult = engine.analyze(Ingest::path("./corpus")?).collect();
 
 Format comes from the extension for `Ingest::path` (`.md` and `.markdown` route to the markdown decomposer, everything else to plain text) and from the argument for `Ingest::text`. Reads are lazy: `Ingest::path` on a directory lists entries up front but touches no file until the stream is pulled, and a per-file failure (unreadable, oversized, a symlink) becomes an `Err` item carrying its path rather than an abort.
 
-`Engine` exposes the pipeline at three grains:
+`Engine` exposes the pipeline at three levels:
 
 | Method | Takes | Returns | Use it when |
 |---|---|---|---|
@@ -71,7 +71,7 @@ Format comes from the extension for `Ingest::path` (`.md` and `.markdown` route 
 | `annotate` | `&RawDocument` | `Result<Document>` | you want structure and sentences without the metric suite |
 | `compose` | `&mut Document` | nothing | run the metric suite over an annotated document; total, no failure path |
 
-The three grains agree by construction: `analyze` is `analyze_one` mapped over the stream, and `analyze_one` is `annotate` followed by `compose`. The library's test suite pins that agreement as equivalence laws, so the grains cannot drift apart silently.
+The three levels always agree: `analyze` is `analyze_one` mapped over the stream, and `analyze_one` is `annotate` followed by `compose`. The library's test suite pins that agreement as equivalence laws, so the levels cannot drift apart silently.
 
 `standard_decomposers()` is the format table this build ships: markdown and plain text. `Error::UnsupportedFormat` means exactly "no entry in the table", and `Pdf`/`Docx` are reserved variants with no entry today. A caller can build a different table with `Decomposers::new().with(format, decomposer)` and hand it to `Engine::new`, which is also how you plug in your own `Decomposer`.
 
@@ -189,7 +189,7 @@ for err in &result.errors {
 }
 ```
 
-`Ingest::path` is `Err` only when the listing itself fails, such as the directory not existing. Everything else lands in `errors`: an unreadable file as `Io`, a file over the cap as `InputTooLarge` with `what = "file_source"`, a non-UTF-8 file as `Io` with kind `InvalidData`, a `.pdf` or `.docx` name that happens to hold UTF-8 as `UnsupportedFormat`, and a provider failure as `ParseFailed`. The partition holds by construction: entries plus errors equals documents consumed.
+`Ingest::path` is `Err` only when the listing itself fails, such as the directory not existing. Everything else lands in `errors`: an unreadable file as `Io`, a file over the cap as `InputTooLarge` with `what = "file_source"`, a non-UTF-8 file as `Io` with kind `InvalidData`, a `.pdf` or `.docx` name that happens to hold UTF-8 as `UnsupportedFormat`, and a provider failure as `ParseFailed`. The partition always holds: entries plus errors equals documents consumed.
 
 Two kinds of entry are skipped without an error entry, so they will not appear in either list: subdirectories, because the walk is one level deep, and symlinks, which are filtered out with `symlink_metadata` so a link cannot redirect the read elsewhere. Files are attempted in sorted path order, and `Corpus` gives you `total_words()`, `passive_ratio()`, and `mean_readability()` across the whole set.
 

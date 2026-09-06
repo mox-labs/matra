@@ -31,7 +31,7 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 **Scope.** One file, plus the non-optional entries in `[dependencies]`.
 
-**Why it is drawn there.** Domain types are what every language surface serializes. A dependency added here enters the closure of every consumer on every target. Changing the set takes an ADR. `thiserror` was admitted that way: it emits no public API and replaced roughly 35 lines of hand-written `Display` and `Error` implementations.
+**Why it is drawn there.** Domain types are what every language surface serializes. A dependency added here enters the closure of every caller on every target. Changing the set takes an ADR. `thiserror` was admitted that way: it emits no public API and replaced roughly 35 lines of hand-written `Display` and `Error` implementations.
 
 **Enforcement.** Review. Read the `use` lines at the top of `src/domain.rs`, new non-optional entries in `[dependencies]`, and any domain field whose type comes from outside the three allowed crates.
 
@@ -61,7 +61,7 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 **Scope.** All of `src/`.
 
-**Why it is drawn there.** This is a resilience rule. UDPipe is C++ across an FFI boundary holding state that is not `Send`, and a panic on the C side aborts the host process rather than unwinding, which means interpreter death in Python. The `catch_unwind` seam in `nlp/udpipe.rs` converts that into a `domain::Error`. Confining the import is what makes the seam the only entrance rather than one entrance among several. A second NLP backend gets its own adapter file with its own panic boundary, which is the pattern working rather than an exception to it.
+**Why it is drawn there.** This is a resilience rule. UDPipe is C++ across an FFI boundary holding state that is not `Send`, and a panic on the C side aborts the host process rather than unwinding, which means interpreter death in Python. The `catch_unwind` boundary in `nlp/udpipe.rs` converts that into a `domain::Error`. Confining the import is what makes that boundary the only entrance rather than one entrance among several. A second NLP backend gets its own adapter file with its own panic boundary, which is the pattern working rather than an exception to it.
 
 **Enforcement.** `scripts/check-boundaries.sh` searches `src/` for `use udpipe_rs` and `udpipe_rs::`, excluding `src/nlp/udpipe.rs`. It cannot see re-exports: a `pub use udpipe_rs::Model;` inside the adapter would let any other file name the C-backed type while the check stays green. Review reads for re-exports and for any `udpipe_rs` type appearing in a signature outside that file.
 
@@ -83,7 +83,7 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 **Scope.** The whole crate.
 
-**Why it is drawn there.** This is the mechanical proxy for features being additive and the core standing alone. It proves that the domain and the ports compile with no UDPipe, which is the configuration a type-only consumer needs.
+**Why it is drawn there.** This is the mechanical proxy for features being additive and the core standing alone. It proves that the domain and the ports compile with no UDPipe, which is the configuration a type-only caller needs.
 
 **Enforcement.** CI, as described above. Code that only compiles with `udpipe` enabled belongs behind `#[cfg(feature = "udpipe")]`.
 

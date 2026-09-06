@@ -8,7 +8,7 @@ NLP library. Text in, structured analysis out.
 
 UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.
 
-A pure, performant, ACE-aligned NLP library: **A**daptable, **C**omposable, **E**xtensible. Hex architecture, domain has zero internal dependencies, public enums and structs with public fields are `#[non_exhaustive]`. The substrate is small and stable; opinions live in consumer code.
+A pure, performant NLP library, built to be adaptable, composable, and extensible. Hex architecture, domain has zero internal dependencies, public enums and structs with public fields are `#[non_exhaustive]`. The library is small and stable; the interpretation lives in your code.
 
 ## Install
 
@@ -103,7 +103,7 @@ The repository is built on two non-negotiable disciplines:
 The agent organization in [`.claude/agents/`](.claude/agents/) (6 practitioner
 agents) and skill library in [`.claude/skills/`](.claude/skills/) (7 skills)
 operationalize these disciplines so any contributor — human or AI — can
-participate without re-deriving the substrate.
+participate without re-deriving the design.
 
 | Where to look | What's there |
 |---|---|

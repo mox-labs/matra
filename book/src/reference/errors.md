@@ -37,7 +37,7 @@ A file whose hash does not match the pinned constant is treated as untrusted and
 Returned by the UDPipe adapter's `parse` in three situations:
 
 - The underlying parser returns an error. The payload is that error's message.
-- The underlying parser panics. The payload is `udpipe panicked: <message>`. The `catch_unwind` seam that produces this lives in `nlp/udpipe.rs`, and it exists because an unhandled panic crossing the C++ boundary aborts the host process instead of unwinding.
+- The underlying parser panics. The payload is `udpipe panicked: <message>`. The `catch_unwind` boundary that produces this lives in `nlp/udpipe.rs`, and it exists because an unhandled panic crossing the C++ boundary aborts the host process instead of unwinding.
 - A token id or head value cannot be represented as `usize`. The payload names the token and its sentence.
 
 ### InputTooLarge

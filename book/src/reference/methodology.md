@@ -22,7 +22,7 @@ The English model is pinned in `src/nlp/udpipe.rs`.
 
 Verification belongs to that constructor alone. `Udpipe::from_path` and `Udpipe::from_bytes` load whatever you hand them without checking size or hash, so a result produced through either one is only as identifiable as the file you supplied.
 
-Changing the model means editing the pinned constants, which makes the change visible in version control and in any consumer that pins a matra version.
+Changing the model means editing the pinned constants, which makes the change visible in version control and in any caller that pins a matra version.
 
 ### What the parse produces
 
@@ -49,7 +49,7 @@ Silveira, N., Dozat, T., de Marneffe, M.-C., Bowman, S., Connor, M., Bauer, J., 
 
 Zeman, D., et al. (2019). *Universal Dependencies 2.5*. LINDAT/CLARIAH-CZ digital library, Institute of Formal and Applied Linguistics, Charles University.
 
-### Non-claims
+### Limitations
 
 UDPipe is a statistical syntactic parser. It performs no named entity recognition, no coreference resolution, and no semantic role labeling. Tags and relations are predictions, not ground truth, and error rates on text unlike the training corpus are higher than on text like it. The shipped configuration is English only.
 
@@ -75,7 +75,7 @@ The syllable estimate for one word: keep only alphabetic characters, lowercase t
 
 **Citation.** Kincaid, J.P., Fishburne, R.P., Rogers, R.L., & Chisholm, B.S. (1975). *Derivation of New Readability Formulas for Navy Enlisted Personnel*. Research Branch Report 8-75, Naval Technical Training Command.
 
-**Non-claims.** The formula was fitted to Navy training material in 1975 and predicts nothing about conceptual difficulty, argument quality, or required background knowledge. Two paragraphs with the same syllable and length profile score the same whatever they assert. The original publication specifies no syllable-counting algorithm, so grade values from different tools are not comparable; the heuristic above miscounts many words, and non-ASCII letters register as consonants. Counting sentence-ending characters treats abbreviations, decimals, and ellipses as sentence boundaries.
+**Limitations.** The formula was fitted to Navy training material in 1975 and predicts nothing about conceptual difficulty, argument quality, or required background knowledge. Two paragraphs with the same syllable and length profile score the same whatever they assert. The original publication specifies no syllable-counting algorithm, so grade values from different tools are not comparable; the heuristic above miscounts many words, and non-ASCII letters register as consonants. Counting sentence-ending characters treats abbreviations, decimals, and ellipses as sentence boundaries.
 
 ### Lexical density
 
@@ -94,7 +94,7 @@ A piece made only of punctuation counts in the denominator and never in the nume
 
 **Citation.** Ure, J. (1971). Lexical density and register differentiation. In G. Perren & J.L.M. Trim (Eds.), *Applications of Linguistics*. Cambridge University Press.
 
-**Non-claims.** The value depends entirely on the stop word list, which is matra's own list of 105 English words, not a standard one. Ure's definition counts lexical items by part of speech; matra approximates that with a stop word list over whitespace pieces. Density says nothing about whether the content words are used well, or at all correctly.
+**Limitations.** The value depends entirely on the stop word list, which is matra's own list of 105 English words, not a standard one. Ure's definition counts lexical items by part of speech; matra approximates that with a stop word list over whitespace pieces. Density says nothing about whether the content words are used well, or at all correctly.
 
 ### Compression ratio
 
@@ -111,7 +111,7 @@ compression_ratio = compressed_bytes / original_bytes
 
 **Citation.** Alakuijala, J., & Szabadka, Z. (2016). *Brotli Compressed Data Format*. RFC 7932, Internet Engineering Task Force.
 
-**Non-claims.** This is a redundancy proxy over bytes, not a measure of meaning, quality, or novelty. Precise technical prose that reuses terminology compresses much like repetitive filler. The number is a property of one encoder at two specific parameter settings: a different compressor, or a different version of this one, gives different values.
+**Limitations.** This is a redundancy proxy over bytes, not a measure of meaning, quality, or novelty. Precise technical prose that reuses terminology compresses much like repetitive filler. The number is a property of one encoder at two specific parameter settings: a different compressor, or a different version of this one, gives different values.
 
 ## Document metrics
 
@@ -132,7 +132,7 @@ vocabulary_ttr = distinct_lemmas / total_lemmas
 
 **Citation.** Johnson, W. (1944). Studies in language behavior: A program of research. *Psychological Monographs*, 56(2), 1-15.
 
-**Non-claims.** Type-token ratio falls as documents get longer, because repetition accumulates. Values from documents of different lengths are not comparable without a length correction, and matra applies none. Because lemmas are compared exactly, a provider that emits case-varying lemmas inflates the distinct count.
+**Limitations.** Type-token ratio falls as documents get longer, because repetition accumulates. Values from documents of different lengths are not comparable without a length correction, and matra applies none. Because lemmas are compared exactly, a provider that emits case-varying lemmas inflates the distinct count.
 
 ### Nominalization ratio
 
@@ -149,7 +149,7 @@ The suffix test reads the surface form, not the lemma, so a plural nominalizatio
 
 **Applied to** the whole slice. Stored in `Document::nominalization_ratio`, which stays `None` when the slice contains no non-punctuation token.
 
-**Non-claims.** Six suffixes are a heuristic, not a morphological analysis. Words that end in those letters without being nominalizations count as false positives, and nominalizations formed otherwise, such as `growth` or `failure`, are missed. The test depends on the POS tagger having assigned `NOUN`, so tagging errors propagate. The denominator counts every running word rather than every noun, so the value is a share of the text, not a share of the nouns in it.
+**Limitations.** Six suffixes are a heuristic, not a morphological analysis. Words that end in those letters without being nominalizations count as false positives, and nominalizations formed otherwise, such as `growth` or `failure`, are missed. The test depends on the POS tagger having assigned `NOUN`, so tagging errors propagate. The denominator counts every running word rather than every noun, so the value is a share of the text, not a share of the nouns in it.
 
 ### Passive ratio
 
@@ -159,11 +159,11 @@ passive_ratio = passive_sentences / total_sentences
 
 A sentence counts as passive when any of its tokens carries a `dep` of `nsubj:pass`, `nsubjpass`, or `aux:pass`. The first two are the Universal Dependencies and older Stanford spellings of a passive subject; the third is a passive auxiliary.
 
-**Computed on demand** by `Document::passive_ratio()` and `Corpus::passive_ratio()`, and per sentence by `Sentence::is_passive()`. It is not stored in a field, so it does not cross to Python or another language surface. A consumer on the far side of the binding reconstructs it from the `dep` values on each token. Returns 0.0 when there are no sentences.
+**Computed on demand** by `Document::passive_ratio()` and `Corpus::passive_ratio()`, and per sentence by `Sentence::is_passive()`. It is not stored in a field, so it does not cross to Python or another language surface. A caller on the far side of the binding reconstructs it from the `dep` values on each token. Returns 0.0 when there are no sentences.
 
 **Citation.** de Marneffe, M.-C., Manning, C.D., Nivre, J., & Zeman, D. (2021). Universal Dependencies. *Computational Linguistics*, 47(2), 255-308.
 
-**Non-claims.** This counts sentences that contain a passive construction, not passive clauses, so a sentence with three passives counts once. Detection is only as good as the parser's relation labels. Nothing here judges whether a passive is appropriate.
+**Limitations.** This counts sentences that contain a passive construction, not passive clauses, so a sentence with three passives counts once. Detection is only as good as the parser's relation labels. Nothing here judges whether a passive is appropriate.
 
 ### Sentence length statistics
 
@@ -207,7 +207,7 @@ A sentence with no terms scores 0.0. The mean divides by the number of distinct 
 
 **Citation.** Luhn, H.P. (1958). The Automatic Creation of Literature Abstracts. *IBM Journal of Research and Development*, 2(2), 159-165. Spärck Jones, K. (1972). A statistical interpretation of term specificity and its application in retrieval. *Journal of Documentation*, 28(1), 11-21. Salton, G., & Buckley, C. (1988). Term-weighting approaches in automatic text retrieval. *Information Processing and Management*, 24(5), 513-523.
 
-**Non-claims.** Treating sentences as documents is an adaptation of a corpus-level weighting scheme, and the resulting weights are not the weights you would get from a real document collection. Scores measure term rarity within one text, not informativeness. Selected sentences are not guaranteed to read coherently together, and nothing checks for redundancy between them.
+**Limitations.** Treating sentences as documents is an adaptation of a corpus-level weighting scheme, and the resulting weights are not the weights you would get from a real document collection. Scores measure term rarity within one text, not informativeness. Selected sentences are not guaranteed to read coherently together, and nothing checks for redundancy between them.
 
 ### TextRank
 
@@ -236,7 +236,7 @@ All scores start at `1 / N`. Iteration stops after 50 passes, or earlier when th
 
 **Citation.** Mihalcea, R., & Tarau, P. (2004). TextRank: Bringing Order into Text. *Proceedings of the 2004 Conference on Empirical Methods in Natural Language Processing*, 404-411. Page, L., Brin, S., Motwani, R., & Winograd, T. (1999). *The PageRank Citation Ranking: Bringing Order to the Web*. Stanford InfoLab Technical Report 1999-66.
 
-**Non-claims.** Similarity here is lemma overlap. Two sentences expressing one idea in different words have similarity 0. The normalization by the logarithm of distinct-term counts is matra's, not the one in the 2004 paper, so scores are not comparable with other TextRank implementations. Reaching the iteration ceiling without converging is possible and is not reported.
+**Limitations.** Similarity here is lemma overlap. Two sentences expressing one idea in different words have similarity 0. The normalization by the logarithm of distinct-term counts is matra's, not the one in the 2004 paper, so scores are not comparable with other TextRank implementations. Reaching the iteration ceiling without converging is possible and is not reported.
 
 ## Keyphrase extraction
 
@@ -261,7 +261,7 @@ When the same phrase string occurs more than once, the highest score is kept. Ph
 
 **Citation.** Rose, S., Engel, D., Cramer, N., & Cowley, W. (2010). Automatic Keyword Extraction from Individual Documents. In M.W. Berry & J. Kogan (Eds.), *Text Mining: Applications and Theory*. John Wiley and Sons.
 
-**Non-claims.** Published RAKE delimits candidates with stop words and punctuation over surface words. matra adds a part-of-speech filter and works over lemmas, so scores and candidate sets differ from a reference implementation. A high degree over frequency ratio means a word appears in long phrases relative to how often it appears at all; that is a structural property, not evidence of topical centrality.
+**Limitations.** Published RAKE delimits candidates with stop words and punctuation over surface words. matra adds a part-of-speech filter and works over lemmas, so scores and candidate sets differ from a reference implementation. A high degree over frequency ratio means a word appears in long phrases relative to how often it appears at all; that is a structural property, not evidence of topical centrality.
 
 ### YAKE
 
@@ -290,7 +290,7 @@ Candidates whose score is not strictly positive, or is not finite, are dropped b
 
 **Citation.** Campos, R., Mangaravite, V., Pasquali, A., Jorge, A., Nunes, C., & Jatowt, A. (2020). YAKE! Keyword extraction from single documents using multiple local features. *Information Sciences*, 509, 257-289.
 
-**Non-claims.** Published YAKE combines five features, including casing and sentence spread, and applies deduplication over similar candidates. matra implements three features, no deduplication, and a different combination formula. Scores are not comparable with the reference implementation, and the two will not agree on rankings. The inversion means output scores are unbounded above and have no interpretable unit; use them for ordering, not as magnitudes.
+**Limitations.** Published YAKE combines five features, including casing and sentence spread, and applies deduplication over similar candidates. matra implements three features, no deduplication, and a different combination formula. Scores are not comparable with the reference implementation, and the two will not agree on rankings. The inversion means output scores are unbounded above and have no interpretable unit; use them for ordering, not as magnitudes.
 
 ## Determinism and reproducibility
 
@@ -330,7 +330,7 @@ parameters: tfidf_summarize(sentences, 5)
 
 Cite the algorithm publications listed above for the methods themselves, and the UDPipe and Universal Dependencies references for the parse layer.
 
-## Standing non-claims
+## General limitations
 
 These hold for every number on this page.
 
