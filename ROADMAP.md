@@ -153,7 +153,7 @@ matra reports the clusters and the numbers; whether they constitute fluff is the
 
 **What stays out, and why.** Hedging and booster density need a lexicon, and no canonical machine-readable hedge list exists; per the open-class precedent (`reportings_in`), any such lexicon is caller-supplied data, never shipped as if authoritative. Surprisal needs frequency norms or a language model, and sycophancy detection has no deterministic path at all; both gaps are recorded rather than simulated.
 
-**Trigger condition. FIRED, 2026-09-04.** The same LLM-output-auditing caller pattern that fired the redundancy entry names low density as the second failure mode, and the 2026-09-04 landscape survey (filed in the maintainer's research drafts) established implementability from matra's existing parse output. Design together with the redundancy family; the same ADR should place both.
+**Trigger condition. FIRED, 2026-09-04.** The same LLM-output-auditing caller pattern that fired the redundancy entry names low density as the second failure mode, and the 2026-09-04 landscape survey (internal, not in this repository) established implementability from matra's existing parse output. Design together with the redundancy family; the same ADR should place both.
 
 ## Configuration-driven invocation
 
