@@ -31,11 +31,14 @@ the same expectations:
 | Rust | `tests/conformance.rs` | `tests/semantic_conformance.rs` | `tests/cli.rs` |
 | Python | `python/tests/test_conformance.py` | `python/tests/test_semantic_conformance.py` | `python/tests/test_cli.py` |
 
-Run them with `just conformance`. The parse lane needs the UDPipe model
-(downloaded on first use); the semantic reference lane needs
-potion-base-8M placed at `~/.matra/models/potion-base-8M` by hand,
-because the library never downloads embedding models. The semantic
-shape fixture runs everywhere with no model at all.
+Run them with `just conformance`. Both model lanes fetch on first use and
+load from disk after: the parse lane the UDPipe model, the semantic
+reference lane potion-base-8M through `Model2Vec::potion_base_8m`, into
+the resolved model directory or into `MATRA_MODEL2VEC_DIR` when that is
+set. Each download is pinned by a digest in the source and verified
+before anything loads, so what a lane can obtain is exactly the artifact
+its fixture names. The semantic shape fixture runs everywhere with no
+model at all.
 
 ## Fixture format
 

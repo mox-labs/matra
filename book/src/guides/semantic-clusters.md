@@ -21,29 +21,48 @@ Three things the shape means, stated once here and again in the type docs:
 
 ## The model
 
-The adapter loads static embedding models in the model2vec artifact format: an embedding matrix (`model.safetensors`), a `tokenizer.json`, and a `config.json` in one directory. matra never downloads models; you supply the files. The reference model is [potion-base-8M](https://huggingface.co/minishlab/potion-base-8M) (about 30 MB):
+The adapter loads static embedding models in the model2vec artifact format: an embedding matrix (`model.safetensors`), a `tokenizer.json`, and a `config.json` in one directory. The reference model is [potion-base-8M](https://huggingface.co/minishlab/potion-base-8M), about 30 MB, and you do not have to fetch it yourself:
+
+```rust,ignore
+use matra::config::Config;
+use matra::embed::model2vec::Model2Vec;
+
+let model = Model2Vec::from_config(&Config::resolve()?)?;
+```
+
+```python
+from matra import Model2Vec
+
+model = Model2Vec.potion_base_8m()
+```
+
+On the first call the three artifacts are downloaded into the configured model directory. On every later call they load from there. Name a directory instead of taking the configured one with `Model2Vec::potion_base_8m(dir)` or `Model2Vec.potion_base_8m(dir)`.
+
+What arrives is one specific artifact set and nothing else. The SHA-256 over all three files, concatenated in the order above, must equal a constant compiled into the library: `81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4`, the same digest `spec/tests/semantic/reference-model.json` pins and the same value `model_hash` reports once the model is loaded. Verification happens before anything is parsed. A mismatch removes the files and downloads once more; a second mismatch removes them again and raises, so a partly-trusted model is never loaded and nothing is left behind for a later call to find.
+
+Already have the files, or using a different model2vec artifact? `Model2Vec::from_dir(dir)` loads what is there and never reaches the network, whatever the directory holds:
 
 ```console
-$ mkdir -p ~/.matra/models/potion-base-8M && cd ~/.matra/models/potion-base-8M
+$ mkdir -p ~/models/potion-base-8M && cd ~/models/potion-base-8M
 $ for f in model.safetensors tokenizer.json config.json; do
     curl -sSfLO "https://huggingface.co/minishlab/potion-base-8M/resolve/main/$f"
   done
 ```
 
-A static model is a lookup table, not a transformer: inference is a row gather, a mean, and a normalize. That costs roughly ten percent of a small transformer's benchmark quality and buys bit-identical vectors on every platform and in every language binding, which is what lets the conformance suite pin exact vectors rather than tolerances. The adapter hashes all three files on load, and that digest is the `model_hash` in every result. The hash is identity, not verification, so check your download yourself: for the release the conformance suite pins, `model_hash` reads `81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4` (also recorded in `spec/tests/semantic/reference-model.json`).
+For a hand-placed model the hash is identity rather than verification: it tells you which artifacts produced a score, not that they are the ones you meant to fetch. Compare it against the digest above if you care which you got.
+
+A static model is a lookup table, not a transformer: inference is a row gather, a mean, and a normalize. That costs roughly ten percent of a small transformer's benchmark quality and buys bit-identical vectors on every platform and in every language binding, which is what lets the conformance suite pin exact vectors rather than tolerances.
 
 ## Rust
 
 ```rust,ignore
+use matra::config::Config;
 use matra::embed::model2vec::Model2Vec;
-use matra::{embed_and_cluster, Engine, Ingest, standard_decomposers};
-use matra::nlp::udpipe::Udpipe;
+use matra::{embed_and_cluster, Engine};
 
-let nlp = Udpipe::english("/tmp/matra-models")?;
-let engine = Engine::new(Box::new(nlp), standard_decomposers());
-// Rust does not expand `~`; build the path from $HOME.
-let home = std::env::var("HOME").expect("HOME");
-let model = Model2Vec::from_dir(format!("{home}/.matra/models/potion-base-8M"))?;
+let cfg = Config::resolve()?;
+let engine = Engine::from_config(&cfg)?;
+let model = Model2Vec::from_config(&cfg)?;
 
 let raw = matra::domain::RawDocument::new(text, None, matra::domain::Format::PlainText);
 let doc = engine.annotate(&raw)?;
@@ -59,11 +78,10 @@ for c in &clusters.clusters {
 ## Python
 
 ```python
-from matra import Matra, Model2Vec, semantic_clusters
-from pathlib import Path
+from matra import Matra, Model2Vec
 
-model = Model2Vec.from_dir(str(Path.home() / ".matra" / "models" / "potion-base-8M"))
-v = Matra.english(str(Path.home() / ".matra" / "models"))
+model = Model2Vec.potion_base_8m()
+v = Matra.english()
 
 result = v.semantic_clusters(text, 0.85, model)
 for cluster in result["clusters"]:

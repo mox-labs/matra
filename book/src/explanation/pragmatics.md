@@ -43,11 +43,15 @@ Start around 0.85 with the reference model and calibrate on your own corpus.
 
 ## Provisioning models
 
-**UDPipe.** `Udpipe::english(dir)` downloads the pinned English model into `dir` on first use, verifies it against a pinned SHA-256, and re-downloads once on mismatch. Later calls with the same directory load the cached file. `Udpipe::from_path` skips the download entirely.
+Both models work the same way, and the constructor you reach for is what decides whether anything is fetched.
 
-**model2vec.** Nothing is downloaded, ever. Place `model.safetensors`, `tokenizer.json`, and `config.json` in a directory and point `Model2Vec::from_dir` at it. The digest over those three files is the `model_hash`, and it appears on every `SemanticClusters` result. Check it after downloading: the hash is identity, so it tells you which artifacts produced a score, not that the artifacts are the ones you meant to fetch. The [semantic clusters guide](../guides/semantic-clusters.md) records the digest the conformance suite pins.
+**Downloading is pinned, or it does not happen.** `Udpipe::english(dir)` and `Model2Vec::potion_base_8m(dir)` fetch from URLs written in the source and load nothing whose digest does not equal a constant written in the source next to them. Verification happens before the bytes are parsed, and the bytes that were verified are the bytes that get parsed, with no second read of the disk in between. A mismatch removes the files and fetches once more; a second mismatch raises and removes them again, so a failed attempt leaves nothing behind for a later call to pick up. Exactly one artifact set can arrive this way, which is what makes "matra downloads a model" a bounded claim rather than an open one.
 
-The pinned model is part of the contract in both cases. A different model produces a different parse or a different vector space, and the conformance fixtures will fail, correctly.
+**The no-argument form.** `Engine::with_defaults()`, `Udpipe::from_config(cfg)`, and `Model2Vec::from_config(cfg)` resolve the directory through [`Config`](programming-model.md) and then do exactly the above. In Python, `Matra.english()` and `Model2Vec.potion_base_8m()` with no argument.
+
+**Bringing your own.** `Udpipe::from_path(path)` and `Model2Vec::from_dir(dir)` load what you supply and never reach the network, whatever the directory holds. That is the path for a model this build does not pin: a different UDPipe language, a different model2vec artifact. Nothing verifies it, so the `model_hash` on a result is identity rather than proof: it tells you which artifacts produced a score, not that they are the ones you meant to fetch.
+
+The pinned model is part of the contract in every case. A different model produces a different parse or a different vector space, and the conformance fixtures will fail, correctly. The [semantic clusters guide](../guides/semantic-clusters.md) records the embedding digest the conformance suite pins.
 
 ## Cost and limits
 
@@ -58,8 +62,9 @@ The pinned model is part of the contract in both cases. A different model produc
 | sentences into either summarizer | 2,000 | `InputTooLarge` with `what` set to `"tfidf"` or `"textrank"` |
 | sentences into clustering | 2,000 | `InputTooLarge` with `what` set to `"semantic_clusters"`, checked before the embedding pass runs |
 | tokens into either keyphrase extractor | 200,000 | `InputTooLarge` with `what` set to `"rake"` or `"yake"` |
+| one embedding artifact being downloaded | 64 MiB | `InputTooLarge` with `what` set to `"embedding_download"`, the read stopping at the bound rather than continuing |
 
-In Python all five surface as `ValueError`. [Errors](../reference/errors.md) has the full routing table.
+In Python every one of them surfaces as `ValueError`. [Errors](../reference/errors.md) has the full routing table.
 
 `InvalidInput` is the other one worth recognizing: it means the call site is wrong, not the text. Vectors that disagree on dimension, a non-finite threshold, an `Embedder` returning the wrong number of vectors.
 
