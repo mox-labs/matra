@@ -295,7 +295,7 @@ echo "=== Gate 5: no em dashes in prose ==="
 # The pattern is the literal U+2014 byte sequence. It used to be written
 # '\u2014', which grep reads as the letter u followed by 2014: the gate
 # had never matched an em dash in its life.
-offenders=$(grep -rn '—' book/src skills --include='*.md' | grep -v '"' || true)
+offenders=$(grep -rn '—' book/src skills --include='*.md' --include='llms.txt' | grep -v '"' || true)
 if [ -n "$offenders" ]; then
     echo "FAIL (gate 5): em dashes found in documentation prose:"
     echo "$offenders" | sed 's/^/  /'
