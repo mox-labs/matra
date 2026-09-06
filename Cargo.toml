@@ -54,10 +54,13 @@ clap_complete = { version = "4", optional = true }
 serde_json = { version = "1", optional = true }
 toml = { version = "1", default-features = false, features = ["parse", "serde", "std"] }
 
-# The pinned-download client, already in the tree because udpipe-rs pulls
-# it. Declared under a target predicate so `model2vec` on wasm32 keeps the
-# pure-Rust, no-network closure ADR-0010 asks for: the download half of the
-# embedding adapter is `model2vec` plus `not(target_arch = "wasm32")`.
+# The pinned-download client. Both provisioning adapters fetch through it
+# directly, so both size caps, both timeout budgets and both transport
+# error classifications live in matra rather than in a dependency
+# (ADR-0015). Declared under a target predicate so `model2vec` on wasm32
+# keeps the pure-Rust, no-network closure ADR-0010 asks for: the download
+# half of the embedding adapter is `model2vec` plus
+# `not(target_arch = "wasm32")`.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 ureq = { version = "3.3", optional = true }
 
@@ -69,7 +72,7 @@ predicates = "3"
 
 [features]
 default = ["udpipe"]
-udpipe = ["dep:udpipe-rs", "dep:sha2"]
+udpipe = ["dep:udpipe-rs", "dep:sha2", "dep:ureq"]
 model2vec = ["dep:safetensors", "dep:tokenizers", "dep:serde_json", "dep:sha2", "dep:ureq"]
 python = ["dep:pyo3", "dep:pythonize", "cli"]
 cli = ["dep:clap", "dep:clap_complete", "dep:serde_json", "udpipe"]
