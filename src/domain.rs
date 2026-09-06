@@ -139,6 +139,32 @@ pub enum Error {
     Io(#[from] std::io::Error),
 }
 
+impl Error {
+    /// The stable kind string for this variant: the key a consumer
+    /// branches on instead of matching against a message.
+    ///
+    /// The vocabulary is part of the public contract. A binding that
+    /// cannot carry a Rust enum across (`DocumentError` has no serde
+    /// form, because it wraps `std::io::Error`) materializes this string
+    /// instead, so every crust names a failure the same way.
+    /// `spec/tests/corpus/items.json` pins the list.
+    ///
+    /// Exhaustive with no wildcard: a new variant fails to compile until
+    /// someone names it here, which is what stops a new failure mode
+    /// from quietly inheriting another one's key.
+    pub fn kind(&self) -> &'static str {
+        match self {
+            Error::ModelNotFound(_) => "model_not_found",
+            Error::ModelInvalid(_) => "model_invalid",
+            Error::ParseFailed(_) => "parse_failed",
+            Error::InputTooLarge { .. } => "input_too_large",
+            Error::UnsupportedFormat(_) => "unsupported_format",
+            Error::InvalidInput(_) => "invalid_input",
+            Error::Io(_) => "io",
+        }
+    }
+}
+
 /// Result type for matra operations.
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -2666,5 +2692,47 @@ mod tests {
             ],
         );
         assert_eq!(sent.tree_depth(), usize::MAX);
+    }
+
+    /// The kind vocabulary is a contract every crust reads, so it is
+    /// pinned here as well as in `spec/tests/corpus/items.json`: one
+    /// string per variant, all seven distinct.
+    #[test]
+    fn error_kind_names_every_variant_distinctly() {
+        let cases: [(Error, &str); 7] = [
+            (
+                Error::ModelNotFound(PathBuf::from("m.udpipe")),
+                "model_not_found",
+            ),
+            (
+                Error::ModelInvalid("truncated".to_string()),
+                "model_invalid",
+            ),
+            (Error::ParseFailed("no parse".to_string()), "parse_failed"),
+            (
+                Error::InputTooLarge {
+                    limit: 1,
+                    actual: 2,
+                    what: "input",
+                },
+                "input_too_large",
+            ),
+            (Error::UnsupportedFormat(Format::Pdf), "unsupported_format"),
+            (
+                Error::InvalidInput("bad argument".to_string()),
+                "invalid_input",
+            ),
+            (
+                Error::Io(std::io::Error::from(std::io::ErrorKind::NotFound)),
+                "io",
+            ),
+        ];
+
+        let mut seen: Vec<&'static str> = Vec::new();
+        for (error, expected) in &cases {
+            assert_eq!(error.kind(), *expected, "{error}");
+            assert!(!seen.contains(expected), "duplicate kind {expected}");
+            seen.push(expected);
+        }
     }
 }

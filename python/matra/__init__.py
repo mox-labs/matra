@@ -13,6 +13,7 @@ except ImportError as _exc:  # pragma: no cover
         "source builds use: maturin develop --features python,udpipe,model2vec)"
     ) from _exc
 from matra.types import (
+    ERROR_KINDS,
     CorpusEntry,
     CorpusItem,
     Document,
@@ -31,6 +32,7 @@ from matra.types import (
 )
 
 __all__ = [
+    "ERROR_KINDS",
     "CorpusEntry",
     "CorpusItem",
     "Document",

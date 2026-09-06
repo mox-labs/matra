@@ -1,0 +1,32 @@
+{
+  "name": "corpus-items",
+  "description": "The corpus item shapes (i10 M5): what one document's result looks like when it crosses a binding, and the kind vocabulary a consumer branches on instead of reading a message. DocumentError has no serde form, because it wraps std::io::Error, so every binding materializes these fields by hand, which is the drift this fixture makes loud. The directory expectation needs no model: ingestion and its failure path both run before any parse.",
+  "error_kinds": [
+    "model_not_found",
+    "model_invalid",
+    "parse_failed",
+    "input_too_large",
+    "unsupported_format",
+    "invalid_input",
+    "io"
+  ],
+  "item_shapes": {
+    "entry": ["path", "analysis"],
+    "error": ["path", "error"],
+    "error_object": ["kind", "message"]
+  },
+  "directory": {
+    "description": "One readable file and one whose bytes are not UTF-8, analyzed as a directory. Two items come back in path order: an entry for the file that read, an error item of kind io for the file that did not, so one unreadable file costs one item rather than the walk. A path is null only for a document that never came from disk, which a directory walk never produces.",
+    "files": [
+      { "name": "a.txt", "text": "The committee approved the proposal." },
+      {
+        "name": "b.txt",
+        "bytes": [255, 254, 32, 110, 111, 116, 32, 117, 116, 102, 45, 56]
+      }
+    ],
+    "expect": [
+      { "name": "a.txt", "shape": "entry" },
+      { "name": "b.txt", "shape": "error", "kind": "io" }
+    ]
+  }
+}

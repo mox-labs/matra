@@ -11,6 +11,8 @@ Stubs are versioned alongside the Rust code; keep them in lockstep with
 
 from __future__ import annotations
 
+import os
+
 from matra.types import (
     CorpusItem,
     Document,
@@ -30,7 +32,7 @@ class Matra:
     """
 
     @staticmethod
-    def from_path(model_path: str) -> Matra:
+    def from_path(model_path: str | os.PathLike[str]) -> Matra:
         """Load a UDPipe model from a local file.
 
         Raises:
@@ -40,7 +42,7 @@ class Matra:
         ...
 
     @staticmethod
-    def english(model_dir: str | None = None) -> Matra:
+    def english(model_dir: str | os.PathLike[str] | None = None) -> Matra:
         """Download (if absent) and load the English UDPipe model.
 
         With no argument the directory is resolved the way every matra
@@ -120,15 +122,15 @@ class Matra:
         """
         ...
 
-    def semantic_clusters(
-        self, text: str, threshold: float, model: Model2Vec | Embedder
-    ) -> SemanticClusters:
+    def semantic_clusters(self, text: str, threshold: float, model: Embedder) -> SemanticClusters:
         """Parse plain text, embed its sentences, cluster at `threshold`.
 
-        `model` is either a `Model2Vec` or any object satisfying the
-        `Embedder` protocol: two methods, `embed` and `identity`. Your
-        own object is held across the call and asked for its identity
-        once, when it is handed over.
+        `model` is any object satisfying the `Embedder` protocol: two
+        methods, `embed` and `identity`. `Model2Vec` is one of them, and
+        it takes a fast path that calls no Python. Your own object is
+        held across the call and asked for its identity once, when it is
+        handed over, so a broken embedder is refused before the text is
+        parsed.
 
         Tier 2 output: the clusters reflect `model`'s geometry, and the
         result carries its identity. See `matra.types.SemanticClusters`
@@ -144,11 +146,13 @@ class Matra:
         """
         ...
 
-    def analyze_path(self, path: str) -> list[CorpusItem]:
+    def analyze_path(self, path: str | os.PathLike[str]) -> list[CorpusItem]:
         """Analyze every document a path names.
 
         One item for a file; one per regular file for a directory, in
-        path order. Symlinks and subdirectories are skipped, not
+        path order. A returned `path` is decoded with `os.fsdecode`, so
+        `os.fsencode` on it names the same file even when the name is not
+        valid UTF-8. Symlinks and subdirectories are skipped, not
         followed. Each item is a `CorpusEntry` (`path`, `analysis`) for a
         document that analyzed or a `DocumentError` (`path`, `error`) for
         one that did not, so one unreadable file costs one item rather
@@ -168,7 +172,9 @@ class Model2Vec:
     """
 
     @staticmethod
-    def from_dir(dir: str) -> Model2Vec:  # noqa: A002 - the published keyword name
+    def from_dir(
+        dir: str | os.PathLike[str],  # noqa: A002 - the published keyword name
+    ) -> Model2Vec:
         """Load from a directory holding model.safetensors,
         tokenizer.json, and config.json. No network is touched.
 
@@ -180,7 +186,7 @@ class Model2Vec:
 
     @staticmethod
     def potion_base_8m(
-        dir: str | None = None,  # noqa: A002 - the published keyword name
+        dir: str | os.PathLike[str] | None = None,  # noqa: A002 - the published keyword name
     ) -> Model2Vec:
         """Download (if absent) and load the pinned reference model.
 
@@ -220,6 +226,15 @@ class Model2Vec:
 
         Raises:
             RuntimeError: embedding failed.
+        """
+        ...
+
+    def identity(self) -> str:
+        """The geometry these vectors live in: the same string
+        `model_hash` carries.
+
+        With `embed`, this is what makes a `Model2Vec` an `Embedder`, so
+        one annotation covers it and a caller's own object alike.
         """
         ...
 

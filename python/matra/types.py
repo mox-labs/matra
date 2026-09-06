@@ -10,7 +10,25 @@ Keep in lockstep with `python/matra/_core.pyi`.
 
 from __future__ import annotations
 
-from typing import Literal, Protocol, TypedDict
+from typing import Final, Literal, Protocol, TypedDict
+
+ERROR_KINDS: Final[tuple[str, ...]] = (
+    "model_not_found",
+    "model_invalid",
+    "parse_failed",
+    "input_too_large",
+    "unsupported_format",
+    "invalid_input",
+    "io",
+)
+"""Every value ``ErrorInfo["kind"]`` can take, in the order the Rust
+enum declares them.
+
+Mirrors ``matra::domain::Error::kind``, the one place the vocabulary is
+written on the Rust side. ``spec/tests/corpus/items.json`` pins the list
+and both crusts assert against it, so a kind added on one side and not
+the other fails the corpus conformance lane.
+"""
 
 
 class Token(TypedDict):
@@ -252,11 +270,9 @@ class CorpusEntry(TypedDict):
 class ErrorInfo(TypedDict):
     """One failure, projected for consumers. Mirrors ``matra::domain::Error``.
 
-    ``kind`` is a stable string naming the variant (``model_not_found``,
-    ``model_invalid``, ``parse_failed``, ``input_too_large``,
-    ``unsupported_format``, ``invalid_input``, ``io``). Branch on it;
-    ``message`` is the Rust error's own text, meant for a human and not
-    a contract.
+    ``kind`` is a stable string naming the variant; ``ERROR_KINDS`` holds
+    the whole vocabulary. Branch on it. ``message`` is the Rust error's
+    own text, meant for a human and not a contract.
     """
 
     kind: str
@@ -313,6 +329,7 @@ class Embedder(Protocol):
 
 
 __all__ = [
+    "ERROR_KINDS",
     "CorpusEntry",
     "CorpusItem",
     "Document",

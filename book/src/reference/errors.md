@@ -97,21 +97,21 @@ Collecting the stream into `CorpusResult` partitions it: every success into `cor
 
 Two kinds of entry never appear on either side. The directory listing skips symlinks, so a symlink produces no document and no error. It also skips anything that is not a regular file, and the walk is one level deep, so a subdirectory is skipped the same way.
 
-Neither `DocumentError` nor `CorpusResult` is `Serialize`, because `Error` wraps `std::io::Error`. Crossing a language boundary needs a projection with stable kind strings, which does not exist yet; the types stay Rust-side until it does.
+Neither `DocumentError` nor `CorpusResult` is `Serialize`, because `Error` wraps `std::io::Error`. What crosses a language boundary is a projection instead: `Error::kind` names the variant with a stable string, and a binding pairs that with the `Display` message. `Matra.analyze_path` is the first consumer, and `spec/tests/corpus/items.json` pins the vocabulary so every crust spells a failure the same way.
 
-## Display strings
+## Display strings and kinds
 
-These are the strings `Display` produces, and the strings Python's `str(exc)` returns.
+These are the strings `Display` produces, which are also the strings Python's `str(exc)` returns, alongside the kind `Error::kind` reports for each variant. A message is for a human to read; a kind is what code branches on.
 
-| Variant | Format |
-|---|---|
-| `ModelNotFound(path)` | `model not found: {path}` |
-| `ModelInvalid(s)` | `invalid model: {s}` |
-| `ParseFailed(s)` | `parse failed: {s}` |
-| `InputTooLarge { limit, actual, what }` | `{what} input too large: {actual} > limit {limit}` |
-| `UnsupportedFormat(format)` | `unsupported format: {format:?}` |
-| `InvalidInput(s)` | `invalid input: {s}` |
-| `Io(e)` | `io error: {e}` |
+| Variant | Format | Kind |
+|---|---|---|
+| `ModelNotFound(path)` | `model not found: {path}` | `model_not_found` |
+| `ModelInvalid(s)` | `invalid model: {s}` | `model_invalid` |
+| `ParseFailed(s)` | `parse failed: {s}` | `parse_failed` |
+| `InputTooLarge { limit, actual, what }` | `{what} input too large: {actual} > limit {limit}` | `input_too_large` |
+| `UnsupportedFormat(format)` | `unsupported format: {format:?}` | `unsupported_format` |
+| `InvalidInput(s)` | `invalid input: {s}` | `invalid_input` |
+| `Io(e)` | `io error: {e}` | `io` |
 
 `UnsupportedFormat` renders the variant name, so the string reads `unsupported format: Pdf`.
 
