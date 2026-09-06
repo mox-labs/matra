@@ -12,8 +12,13 @@ fail=0
 note() { printf '  %s\n' "$1"; }
 bad() { printf 'FAIL: %s\n' "$1"; fail=1; }
 
-canonical=$(grep -m1 '^version = ' Cargo.toml | sed 's/.*"\(.*\)".*/\1/')
-[ -n "$canonical" ] || { echo "FAIL: no version in Cargo.toml"; exit 1; }
+# `|| true` on each plain assignment: under `set -e` with `pipefail`, an
+# assignment takes its pipeline's status, so a grep that matches nothing would
+# exit here silently and the diagnostics below would never print. A missing
+# CHANGELOG heading is the routine mid-release state this check exists to
+# catch, so it has to fail loudly rather than just fail.
+canonical=$(grep -m1 '^version = ' Cargo.toml | sed 's/.*"\(.*\)".*/\1/' || true)
+[ -n "$canonical" ] || { echo "FAIL: no version line in Cargo.toml"; exit 1; }
 echo "Cargo.toml version: $canonical"
 
 check() {
@@ -37,10 +42,12 @@ check skills/matra/SKILL.md \
 # The citation file is the only place carrying a release date. It must agree
 # with the CHANGELOG heading for the same version, or a citation will name a
 # date the changelog contradicts.
-cff_date=$(grep -m1 '^date-released: ' CITATION.cff | sed "s/^date-released: *'\{0,1\}//; s/'\{0,1\}$//")
-log_date=$(grep -m1 "^## \[$canonical\]" CHANGELOG.md | sed 's/.* - //')
+cff_date=$(grep -m1 '^date-released: ' CITATION.cff | sed "s/^date-released: *'\{0,1\}//; s/'\{0,1\}$//" || true)
+log_date=$(grep -m1 "^## \[$canonical\]" CHANGELOG.md | sed 's/.* - //' || true)
 
-if [ -z "$log_date" ]; then
+if [ -z "$cff_date" ]; then
+    bad "CITATION.cff has no date-released"
+elif [ -z "$log_date" ]; then
     bad "CHANGELOG.md has no '## [$canonical]' heading"
 elif [ "$cff_date" != "$log_date" ]; then
     bad "CITATION.cff date-released is '$cff_date', CHANGELOG.md says '$log_date'"
