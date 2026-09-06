@@ -2,7 +2,19 @@
 
 You installed matra with `uv add matra`.
 
-## Load the model
+## The no-setup path
+
+No argument, no model on disk yet:
+
+```python
+from matra import Matra
+
+v = Matra.english()
+```
+
+With no argument the model directory is resolved the way every matra surface resolves it: `MATRA_MODEL_DIR` if you set it, otherwise the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`. A pre-existing `~/.matra/models` is used instead when the new location does not exist yet, so a cache from 0.1.0 keeps working. [Programming model](../explanation/programming-model.md#configuration) has the full resolution order.
+
+## Load the model from a directory you choose
 
 ```python
 from pathlib import Path
