@@ -355,7 +355,7 @@ What you gain from the arrangement is concrete and mostly shows up in test suite
 
 The Rust side runs the same pipeline, then hands the `Document` to `pythonize`, which walks the serde representation and builds a Python dict. That is a full deep copy. Every token becomes a dict of eleven keys. For a document with seven thousand tokens, that is seven thousand dicts allocated on the Python heap.
 
-Fields cross. Methods do not. `Document::passive_ratio()`, `mean_sentence_length()`, and every other computed value is a Rust method with no serde representation, so it has nothing to cross with. A Python caller recomputes them from the `sections` data already in hand. [Domain types](../reference/domain-types.md#what-crosses-the-language-boundary) draws that boundary member by member.
+Fields cross. Methods do not. `Document::mean_sentence_length()`, `total_words()`, and every other computed value is a Rust method with no serde representation, so it has nothing to cross with. A Python caller recomputes those from the `sections` data already in hand. `passive_ratio` is the one aggregate that does cross, because the measure stage stores the method's result in the field of the same name (ADR-0008), so a Python caller reads it rather than recomputing it. [Domain types](../reference/domain-types.md#what-crosses-the-language-boundary) draws that boundary member by member.
 
 Errors cross by type. The conversion is a match with no wildcard arm, so adding a variant to `domain::Error` fails to compile until someone decides which Python exception class it becomes. A wildcard would let new failure modes fall through to `RuntimeError` unnoticed.
 

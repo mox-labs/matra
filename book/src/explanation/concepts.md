@@ -107,7 +107,7 @@ Two consequences of reporting arcs rather than readings:
 
 **Overlap is intentional.** `never` in the example above is both a `Negation` and a `RootAdverbial`, because it satisfies both arc shapes. Neither field is assigning it a meaning, so neither has to win.
 
-Passive voice is the seventh construction and the one exception to the field shape: `Sentence::is_passive` matches `nsubj:pass` or `aux:pass` on demand, and its document-level share is materialized as the `passive_ratio` field.
+Passive voice is the seventh construction and the one exception to the field shape: `Sentence::is_passive` matches `nsubj:pass`, `nsubjpass`, or `aux:pass` on demand, and its document-level share is materialized as the `passive_ratio` field.
 
 Reporting verbs and root adverbials are open word classes, so matra ships no lexicon for either. `Sentence::reportings_in` and `Sentence::root_adverbials_in` filter by a list you supply.
 

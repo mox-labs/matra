@@ -98,6 +98,8 @@ Already hold embeddings? The module-level function clusters raw vectors: `semant
 
 `Matra.semantic_clusters` and `embed_and_cluster` both work over the sentences of one document. There is no cross-document primitive. Build one out of the two pieces above: embed each document as a single text, then cluster the resulting vectors.
 
+One bound decides what the answer means. `Model2Vec` caps every text at 512 tokens (`DEFAULT_MAX_TOKENS`), pre-truncating on bytes and then truncating the token ids, so "embed each document as a single text" embeds roughly the first 512 tokens of it and nothing after. Two 1600-word texts that agree for their first 512 words embed to byte-identical vectors. That cuts both ways: documents sharing a boilerplate opening score as near-duplicates on the opening alone, and two real paraphrases that diverge inside their first few hundred tokens never get compared on the part that matters. If the tail carries the content, split each document into chunks under the cap and compare the chunks.
+
 Pass a threshold of `-1.0` and every pair emits an edge, because a cosine is never below it. That turns the call into a way of reading the raw pairwise scores off `edges`, which is how you calibrate before choosing a real cutoff:
 
 ```python
@@ -129,4 +131,4 @@ Two things this route does not change. The vectors still carry a `model_hash`, s
 
 ## Bounds and failure
 
-The count cap is 2,000 sentences (the similarity matrix is quadratic), checked before the embedding pass runs, and it raises with the `"semantic_clusters"` gate label. Contract violations (vectors disagreeing on dimension, non-finite values, a non-finite threshold) raise `InvalidInput` in Rust and `ValueError` in Python; they mean the call site is wrong, never the text. A zero-magnitude vector (an empty sentence embeds to zero) has no defined cosine with anything, so it gets no edges and no cluster: no claim rather than a fabricated score. [Errors](../reference/errors.md) has the full table.
+The count cap is 2,000 sentences (the similarity matrix is quadratic), checked before the embedding pass runs, and it raises with the `"semantic_clusters"` gate label. It counts whatever the vectors stand for, so on the cross-document route above it caps the corpus at 2,000 documents. Contract violations (vectors disagreeing on dimension, non-finite values, a non-finite threshold) raise `InvalidInput` in Rust and `ValueError` in Python; they mean the call site is wrong, never the text. A zero-magnitude vector (an empty sentence embeds to zero) has no defined cosine with anything, so it gets no edges and no cluster: no claim rather than a fabricated score. [Errors](../reference/errors.md) has the full table.

@@ -132,7 +132,7 @@ score(i) at k+1  = (1 - d) / N + d * sum over j != i of ( similarity(j, i) / out
 
 Both take a sentence slice and a maximum, return highest score first, and cap at 200,000 tokens counted with punctuation included.
 
-The two scores live on unrelated scales and neither is a magnitude. A RAKE word score is at least 1, so a phrase of k words scores at least k and longer phrases outrank shorter ones by construction; a YAKE score is a reciprocal, unbounded above with no unit, and rises with phrase length too. Order phrases within one document under one method, and do not put a RAKE number beside a YAKE one.
+The two scores live on unrelated scales and neither is a magnitude. A RAKE word score is at least 1, so a phrase of k words scores at least k, which sets a floor per length and not an order across lengths; a YAKE score is a reciprocal, unbounded above with no unit, and phrase length does not predict it. Order phrases within one document under one method, and do not put a RAKE number beside a YAKE one.
 
 ### `rake`
 

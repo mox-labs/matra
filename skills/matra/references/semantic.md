@@ -90,6 +90,8 @@ From Python, `Matra.semantic_clusters(text, threshold, model)` takes a `Model2Ve
 
 **Every clustering call above is over the sentences of one document. There is no cross-document primitive, and matra has no per-document redundancy number at all.** Build the comparison out of the two pieces you already have: embed each document as one text with `Model2Vec.embed`, then cluster those vectors with the module-level `semantic_clusters`.
 
+**The embedder caps every text at 512 tokens, so a whole-document vector is a vector of roughly the document's first 512 tokens.** Truncation happens twice, on bytes before tokenizing and on the token ids after, and nothing past the cap reaches the mean. Two 1600-word texts agreeing for their first 512 words embed to byte-identical vectors. So documents with a shared boilerplate opening report as near-duplicates on the opening alone, and paraphrases that diverge early are never compared on the rest. Say which part of the document a cross-document score covers, and chunk under the cap when the tail is the content. The 2,000 cap also still applies, and on this route it counts documents rather than sentences.
+
 Pass a threshold of `-1.0` and every pair emits an edge, because a cosine is never below it. That is the sanctioned way to read raw pairwise scores, and it is what calibration looks like: read the scores first, choose the cutoff second.
 
 ```python
