@@ -175,6 +175,21 @@ jobs:
         run: uv pip install --system maturin
       - name: Build wheel
         run: maturin build --release --out dist
+      # The published wheels are abi3 so one build serves 3.12 and every
+      # later CPython (ADR-0014). Losing the pyo3 `abi3-py312` feature
+      # would silently narrow that back to cp312 and send 3.13/3.14
+      # users to a source build, so the tag is asserted here on every
+      # push rather than discovered at release time.
+      - name: The wheel is abi3
+        shell: bash
+        run: |
+          set -euo pipefail
+          name=$(basename dist/matra-*.whl)
+          echo "built $name"
+          case "$name" in
+            *-cp312-abi3-*) ;;
+            *) echo "::error::$name is not an abi3 wheel"; exit 1 ;;
+          esac
       - name: Install and import
         shell: bash
         run: |

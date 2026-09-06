@@ -31,7 +31,10 @@ path = "src/bin/matra.rs"
 required-features = ["cli"]
 
 [dependencies]
-pyo3 = { version = "0.29", features = ["extension-module"], optional = true }
+# abi3-py312 builds against the stable ABI, so one wheel per platform
+# covers CPython 3.12 and every later 3.x. Without it the wheel is tagged
+# cp312 and pip on 3.13 or 3.14 falls through to a source build (ADR-0014).
+pyo3 = { version = "0.29", features = ["extension-module", "abi3-py312"], optional = true }
 pythonize = { version = "0.29", optional = true }
 udpipe-rs = { version = "0.2", optional = true }
 sha2 = { version = "0.10", optional = true }
