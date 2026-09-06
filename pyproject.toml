@@ -62,7 +62,7 @@ testpaths = ["python/tests"]
 # Conformance tests need the UDPipe model. Deselect them where it is absent:
 #   uv run pytest -m "not model"
 markers = [
-    "model: requires a locally present model (UDPipe, downloadable on first use; potion-base-8M for the semantic reference lane, hand-placed because the library never downloads embedding models)",
+    "model: requires a model in the resolved directory (UDPipe and potion-base-8M, each downloaded from a pinned, digest-verified artifact on first use)",
 ]
 addopts = "-q --strict-markers --strict-config"
 
