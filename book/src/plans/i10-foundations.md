@@ -107,7 +107,7 @@ ADR-0011 accepted; roadmap entry marked fired with a pointer here; the survey fi
 
 `Model2Vec::potion_base_8m(dir)` downloads `model.safetensors`, `tokenizer.json`, and `config.json` from the pinned release, verifies the three-file digest against the constant already in `spec/tests/semantic/reference-model.json`, and loads from the verified bytes. `Model2Vec::from_config` resolves the directory through `Config` and calls it. ADR-0010 decision 6 amended in place with a dated note. Python `Model2Vec.potion_base_8m(dir=None)`. The `just conformance` semantic lane stops needing a hand-placed model.
 
-**Rubric.** A digest mismatch removes the files and retries once, then fails with `Error::ModelInvalid`; no second disk read between verify and load (the resilience skill's TOCTOU rule). The download is behind the `model2vec` feature and is never triggered by `from_dir`.
+**Rubric.** The provisioner removes only files it downloaded itself: a digest mismatch over those removes them and retries once, then fails with `Error::ModelInvalid`, while a directory that already holds a full artifact set under a different digest, or part of one, is refused without anything being downloaded over or deleted. No second disk read between verify and load (the resilience skill's TOCTOU rule). A transport or non-2xx failure is `Error::Io`, and the fetch is bounded in time as well as in size. The download is behind the `model2vec` feature and is never triggered by `from_dir`.
 
 ### M5: the Python extension points
 
