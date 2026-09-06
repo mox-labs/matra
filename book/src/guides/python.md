@@ -90,7 +90,7 @@ The two summarizers return their selection in document order, not score order. R
 
 Keyphrases come back as lowercased lemmas joined with spaces, not as the surface text. A document about "Dependency Parses" yields the phrase `dependency parse`. Phrases with identical scores can also change relative order between runs, and a tie straddling the `max_phrases` cutoff can change which phrase is included, because the internal candidate map has no stable iteration order. Sort or filter on your side if you need a reproducible list.
 
-The `score` on a `Keyphrase` is an ordering key and nothing more. RAKE's is a sum of per-word ratios that are each at least 1, so a phrase of k words scores at least k; YAKE's is the reciprocal of a product of per-word scores, so it is unbounded above and carries no unit. Both therefore rise with phrase length, the two scales are unrelated to each other, and neither is comparable across documents or with another tool's. Do not surface either number to a reader as a strength without saying which method produced it. The [CLI guide](cli.md#reading-the-scores) works through what the ranking does and does not tell you, and [Methodology](../reference/methodology.md) carries the formulas.
+The `score` on a `Keyphrase` is an ordering key and nothing more. RAKE's is a sum of per-word ratios that are each at least 1, so a phrase of k words scores at least k, which is a floor per length and not an order across lengths; YAKE's is the reciprocal of a product of per-word scores, so it is unbounded above, carries no unit, and does not track phrase length in either direction. The two scales are unrelated to each other, and neither is comparable across documents or with another tool's. Do not surface either number to a reader as a strength without saying which method produced it. The [CLI guide](cli.md#reading-the-scores) works through what the ranking does and does not tell you, and [Methodology](../reference/methodology.md) carries the formulas.
 
 ## Analyze a directory
 
@@ -182,6 +182,7 @@ Each metric declines to run below its own threshold, and a `None` records that d
 | `compression_ratio` | the paragraph has more than 50 words, `in_blockquote` is false, and the paragraph text is at most 256 KiB |
 | `vocabulary_ttr` | the document has at least one non-punctuation token |
 | `nominalization_ratio` | the same condition as `vocabulary_ttr` |
+| `passive_ratio` | the document has at least one sentence |
 
 "Words" means the count of tokens with `is_punct` false across the paragraph's sentences. Blockquote paragraphs are never parsed at all: their `sentences` list is empty, their three metric fields are `None`, and they contribute nothing to any document total.
 
@@ -189,13 +190,13 @@ Each metric declines to run below its own threshold, and a `None` records that d
 
 ## The document-level aggregates
 
-Three of them arrive as fields, and `passive_ratio` is one of them. Read it, do not recompute it:
+Three document-level aggregates arrive in the dict as fields: `vocabulary_ttr`, `nominalization_ratio`, and `passive_ratio`. Read them rather than recomputing them:
 
 ```python
 result = v.analyze("The report was filed. The committee met.")
 print(sorted(result.keys()))
 # ['nominalization_ratio', 'passive_ratio', 'sections', 'vocabulary_ttr']
-print(result["passive_ratio"])   # a float, or None when the metric stage did not run
+print(result["passive_ratio"])   # a float, or None when there were no sentences to measure
 ```
 
 Rust's `Document` carries `passive_ratio` twice: as the method that computes the ratio, and as the field the metric suite fills with what that method returned. The field exists exactly so the aggregate crosses the boundary as data instead of being re-derived once per language binding (ADR-0008), which is why it is in the dict above.

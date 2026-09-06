@@ -7,10 +7,12 @@
 Nothing installed, nothing configured:
 
 ```bash
-uvx matra analyze essay.md
+uvx 'matra>=0.2' analyze essay.md
 ```
 
-The command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took.
+The version floor is load-bearing, and it needs 0.2.0 on PyPI before it resolves. A bare `uvx matra` takes whatever release is newest, which until then is 0.1.0, and 0.1.0's `analyze` is a separate Python implementation rather than this one missing a flag: `--json` prints a bare document with no envelope, the human table is a different renderer, and the model cache lands in `~/.matra/models` instead of the resolved model directory. It does not fail, it succeeds and gives you something else, so pin it.
+
+With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took.
 
 ```bash
 # Rust binary, no Python involved
@@ -114,7 +116,7 @@ Phrases are printed as lowercased lemmas, not as the surface text of the documen
 
 #### Reading the scores
 
-Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k and longer phrases outrank shorter ones by construction. YAKE multiplies its words' term scores, which are usually below 1, and returns the reciprocal, so it is unbounded above with no interpretable unit and rises with phrase length too. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.
+Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word `lexical density` scores `5.667` and the three-word `model file name` scores `5.080`. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.
 
 Expect the top phrase not to be the document's topic. On a document about database indexes, RAKE ranks `full business cycle` first at `9.000` and puts `index` ninth at `1.100`, while YAKE's first is `use planner scan` at `39.734`. Both are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
 
