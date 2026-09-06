@@ -39,7 +39,7 @@ matra --version
 Expected output, with the second line naming the features this build was compiled with:
 
 ```
-matra 0.1.0
+matra 0.2.0
 features: udpipe cli
 ```
 
@@ -96,7 +96,7 @@ If `Matra.english()` raises `RuntimeError`, the download or the hash check faile
 
 ## What you have
 
-- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same published 0.1.0 core.
+- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same published 0.2.0 core.
 - The English UDPipe model cached under the resolved model directory, verified against a pinned hash.
 - A confirmed working call from `Matra.english()` through `analyze()` to a result.
 
