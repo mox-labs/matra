@@ -168,8 +168,10 @@ matra from source, by any route, requires a Rust toolchain at 1.85 or later
 ### Getting rustup through the container
 
 Running the build inside the image costs one thing that running it on the runner
-did not. `rust-toolchain.toml` names components (`rustfmt`, `clippy`,
-`llvm-tools-preview`) the image does not carry, so rustup re-syncs the channel
+did not. `rust-toolchain.toml` names a component the image does not carry. Only
+`llvm-tools-preview` is missing: `rustup component list --installed` inside the
+pinned digest reports cargo, clippy, rust-docs, rust-std, rustc and rustfmt on
+both architectures, so that one absent component is what triggers the re-sync
 before cargo runs, and the rename it performs to swap a component crosses the
 overlay boundary between the image layer and the container. It fails with
 `Invalid cross-device link (os error 18)` and the build stops before it starts.
@@ -231,7 +233,7 @@ every push, so losing the pyo3 feature is caught long before a release.
   future contributor who tidies away the env var breaks every Linux wheel.
 - Neutral: the consequence of that override is that the Linux wheels are built
   on whatever stable the pinned maturin image ships, not on the newest stable,
-  and without the `rustfmt`, `clippy` and `llvm-tools-preview` components
+  and without the `llvm-tools-preview` component
   `rust-toolchain.toml` requests. A `maturin build` needs none of the three, and
   the compiler version becomes a property of the image digest rather than of the
   day the release ran, which is the more reproducible of the two. If the image
@@ -247,6 +249,22 @@ every push, so losing the pyo3 feature is caught long before a release.
 - Neutral: macOS wheels are still built on the runner rather than in a container,
   because macOS deployment targets are set by the SDK, not by a base image. Only
   the Linux half needed to move.
+
+- Negative: nothing watches the image digest. `.github/dependabot.yml` covers
+  cargo, github-actions and pip, and even a docker ecosystem entry would not see
+  a digest written inline in a `run:` step. So the compiler that builds the
+  Linux wheels is frozen until a person edits that line, and no automation will
+  ever suggest it. That is the price of the pin rather than an argument against
+  it, but it has to be somebody's job, so it belongs on the release checklist.
+- Neutral: the re-sync the override avoids was never only about components.
+  Reproduced on linux/amd64 with no override, rustup reports
+  `syncing channel updates for stable-x86_64-unknown-linux-gnu` and
+  `latest update on 2026-09-03 for version 1.98.1` before failing on the rename.
+  So the behaviour being replaced was not "the image's compiler plus three
+  components", it was "whichever stable exists on release day", chosen by the
+  calendar rather than by anyone. Pinning to a reviewed digest is the more
+  deliberate of the two, which is the argument for this decision rather than a
+  side effect of it.
 
 ## Validation
 

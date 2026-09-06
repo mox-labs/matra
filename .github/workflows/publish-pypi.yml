@@ -19,7 +19,8 @@ name: Publish to PyPI
 # The wheel matrix and the abi3 choice are ADR-0014. Four wheels cover
 # the published surface: Linux x86_64, Linux aarch64, macOS x86_64,
 # macOS arm64, each one abi3 so a single wheel serves CPython 3.12 and
-# every later 3.x.
+# every later GIL-enabled 3.x. Free-threaded builds take a different ABI tag
+# and fall to the sdist until the free-threaded stable ABI lands in 3.15.
 #
 # Windows wheels are deliberately absent: the UDPipe C++ build under
 # MSVC is unverified. Add the target when it is.
@@ -170,7 +171,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          count=$(ls dist/*.whl | wc -l | tr -d ' ')
+          count=$(find dist -maxdepth 1 -name '*.whl' | wc -l | tr -d ' ')
           [ "$count" = "1" ] || { echo "::error::expected 1 wheel, got $count"; exit 1; }
           name=$(basename dist/*.whl)
           echo "built $name"
