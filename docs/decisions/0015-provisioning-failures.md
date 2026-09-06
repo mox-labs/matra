@@ -237,8 +237,18 @@ kept the "download only into a directory that does not hold this name"
 shape. It bought nothing: `install` lands through `fs::rename`, which
 replaces an existing destination, so the write never needed the name
 free. And it cost a user offline with a corrupt cache the only copy they
-had, leaving an empty directory and a transport error. The removal now
-waits until `fetch_verified` has returned a verified replacement.
+had, leaving an empty directory and a transport error.
+
+A later review took that one step further and it was right. Moving the
+removal after the fetch left it strictly redundant, and a redundant
+unlink is not free. It falsified the guarantee stated on `install` that
+the rename is the only operation touching the final path. It let a
+failed removal, reached with `?`, abort a run whose download had already
+succeeded. And it opened a window in which the file did not exist, so a
+concurrent process saw no cache and paid a redundant 16 MB fetch. There
+is no removal on this path now. A cached file that is not the pinned
+model is simply replaced when a verified one arrives, and left alone
+when none does.
 
 Sharing a discipline meant bringing `embed/model2vec.rs` up to it, which
 the first version of this change did not do. It fetched each artifact
