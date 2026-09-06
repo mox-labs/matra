@@ -30,7 +30,7 @@ Returned by:
 - `Udpipe::english` when the bytes it downloaded still fail SHA-256 verification after one refetch. The payload is `SHA-256 mismatch after re-download from <url>`. Nothing that failed verification is written, so the model directory is left as the call found it.
 - `Model2Vec::from_dir` when an artifact does not parse, uses an embedding dtype other than f32, or panics the loader.
 - `Model2Vec::potion_base_8m` when the directory already holds all three artifacts and their digest is not the pinned one, or holds only some of them. The payload names the directory and the ways out; nothing there is downloaded over or removed.
-- `Model2Vec::potion_base_8m` when artifacts it downloaded still fail the digest after one removal and re-download. The payload names the directory and the expected digest.
+- `Model2Vec::potion_base_8m` when the artifacts it downloaded still fail the digest after one re-download. Both attempts verify in memory, so neither writes anything, and the directory is left exactly as the call found it. The payload names the directory and the expected digest.
 
 A file whose hash does not match the pinned constant is treated as untrusted and is never loaded.
 
@@ -95,6 +95,7 @@ Wraps `std::io::Error`, produced by:
 - `Udpipe::english` when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise.
 - `Udpipe::english` when the model directory cannot be created, when a cached file that failed verification cannot be removed, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads `cannot write the model to <path>: No space left on device (os error 28)` rather than `Permission denied (os error 13)` with nothing to act on.
 - `Model2Vec::potion_base_8m` when a download fails at the transport or answers with a non-2xx status. The message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise. Bytes that arrived and then failed the digest are `ModelInvalid` instead; this variant is for the ones that never arrived.
+- `Model2Vec::potion_base_8m` when the model directory cannot be created, when an artifact cannot be read, or when a verified artifact cannot be written or renamed into place. The message names the operation and the path, exactly as the UDPipe path's does. `Model2Vec::from_dir` reports an unreadable artifact the same way.
 - `Model2Vec::potion_base_8m` when the temporary file an artifact lands through cannot be created, with the kind the open reported (`AlreadyExists` when something is already sitting at that path). The temporary is opened exclusively, so a path already there, symlink or not, fails the open rather than being written through.
 - `Ingest` when a source yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
 
@@ -116,7 +117,9 @@ Wraps `std::io::Error`, produced by:
 
 The rule behind the table: `model_invalid` is about bytes that arrived. Anything that stopped a fetch from arriving, or a filesystem from accepting it, is `io` ([ADR-0015](https://github.com/mox-labs/matra/blob/main/docs/decisions/0015-provisioning-failures.md)).
 
-Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. The one thing a failed run does remove is a cached file that was already there and had already failed verification: `Udpipe::english` deletes that before refetching, because a file under the model's name that is not the pinned model is not a file to keep. A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. `Udpipe::english` leaves a temporary directory and `Model2Vec::potion_base_8m` three temporary files, and each reclaims its own by the same rule.
+The rule has a consequence in Python that is easy to miss, because it changes which `except` clause fires rather than only which string a message carries. `Io` routes to `OSError` and `ModelInvalid` routes to `RuntimeError`, so from 0.2.0 a DNS failure, a rejected certificate, a timeout or a non-2xx status raises `OSError` from `Matra.english()` where it used to raise `RuntimeError`. A caller that wrapped a bootstrap in `except RuntimeError` catches nothing now and the `OSError` propagates past it. Catch both, or catch `Exception` and branch on the message.
+
+Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. The one thing a failed run does remove is a cached file that was already there and had already failed verification: `Udpipe::english` deletes that once the replacement is in hand, because a file under the model's name that is not the pinned model is not a file to keep, and deleting it before the fetch would cost an offline user the only copy they had. `Model2Vec::potion_base_8m` removes nothing at all, because its three filenames belong to the artifact format rather than to this one model and so may be a caller's own ([ADR-0015](https://github.com/mox-labs/matra/blob/main/docs/decisions/0015-provisioning-failures.md)). A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. `Udpipe::english` leaves a temporary directory and `Model2Vec::potion_base_8m` three temporary files, and each reclaims its own by the same rule.
 
 ### Behind a TLS-intercepting proxy
 
@@ -219,6 +222,8 @@ The PyO3 binding converts `Error` into a Python exception class. The conversion 
 | `Io` | `OSError` |
 | `ModelInvalid` | `RuntimeError` |
 | `ParseFailed` | `RuntimeError` |
+
+The table is unchanged from 0.1.0, but which row a provisioning failure lands on is not. Transport failures moved from `ModelInvalid` to `Io` in 0.2.0, so a failed download from `Matra.english()` or `Model2Vec.potion_base_8m()` now raises `OSError` rather than `RuntimeError`. See [provisioning failures](#provisioning-failures).
 
 `ModelNotFound` maps to `FileNotFoundError` so that the conventional Python idiom works:
 

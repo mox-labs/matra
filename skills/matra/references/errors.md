@@ -12,7 +12,7 @@ Seven kinds exist. The kind string is the stable key a consumer branches on; the
 | Kind | Display | Python exception | Means |
 |---|---|---|---|
 | `model_not_found` | `model not found: {path}` | `FileNotFoundError` | A model file does not exist at the path given |
-| `model_invalid` | `invalid model: {s}` | `RuntimeError` | A model file exists but could not be loaded, downloaded, or verified |
+| `model_invalid` | `invalid model: {s}` | `RuntimeError` | Bytes that arrived could not be verified against the pin, or could not be loaded |
 | `parse_failed` | `parse failed: {s}` | `RuntimeError` | The parser failed on the input, panicked, or produced an unusable token id |
 | `input_too_large` | `{what} input too large: {actual} > limit {limit}` | `ValueError` | A size gate rejected the input. `what` names the gate |
 | `unsupported_format` | `unsupported format: {format}` | `ValueError` | The document's format has no decomposer in this build |
@@ -23,7 +23,7 @@ Seven kinds exist. The kind string is the stable key a consumer branches on; the
 
 **`model_not_found`.** You named a path that is not there. The constructors that download (the no-argument English engine, the pinned embedding model) never produce this: they fetch instead. Check the path, or switch to the downloading constructor.
 
-**`model_invalid`.** Either the bytes do not load, or they do not match the pinned digest. A file that fails SHA-256 verification is deleted and fetched once more; a second failure produces this and nothing is loaded. For the embedding model it also fires when the directory already holds three artifacts that are not the pinned set, or holds only some of them, in which case nothing there was downloaded over or removed. Do not work around it by loading the file anyway. A model whose hash does not match is untrusted, and every number downstream inherits it.
+**`model_invalid`.** Either the bytes do not load, or they do not match the pinned digest. A download that fails the digest is fetched once more, in memory, and a second failure produces this. Nothing that failed verification is ever written, so a failed provision leaves the model directory as it found it. A download that never arrived is `io`, not this. For the embedding model this also fires when the directory already holds three artifacts that are not the pinned set, or holds only some of them, in which case nothing there was downloaded over or removed. Do not work around it by loading the file anyway. A model whose hash does not match is untrusted, and every number downstream inherits it.
 
 **`parse_failed`.** The parser failed on this text. Retrying the same bytes will fail the same way. Reduce the input to find the failing paragraph if it matters; otherwise skip the document. In a directory walk it arrives as one item and the rest of the walk continues.
 
@@ -51,7 +51,9 @@ The four ranking extractors check their caps after their empty-result checks, so
 
 **`invalid_input`.** This one means the call site is wrong, not the document. Nothing about the analyzed text produces it. It fires for embeddings that disagree on dimension, an embedding containing a non-finite value, a non-finite threshold, an embedder that broke its own length contract, and for a configuration that cannot be honored: a config file that does not parse, an unknown key, an algorithm name the build does not know, a config file that is not valid text, or an environment naming no home directory at all. Fix the call or the config. A config file that is simply absent is not an error; the built-in defaults stand.
 
-**`io`.** A read, listing, directory creation, removal, or rename failed, or a download failed at the transport or answered with a non-2xx status. It is also what a refused input looks like: a symlink is refused rather than followed, and a path that is not a regular file is refused. Bytes that arrived and then failed their digest are `model_invalid` instead; this kind is for the ones that never arrived.
+**`io`.** A read, listing, directory creation, removal, or rename failed, or a download failed at the transport or answered with a non-2xx status. A filesystem failure names the operation and the path; a transport failure names the URL. It is also what a refused input looks like: a symlink is refused rather than followed, and a path that is not a regular file is refused. Bytes that arrived and then failed their digest are `model_invalid` instead; this kind is for the ones that never arrived.
+
+In Python this kind is `OSError`. From 0.2.0 that includes every failed download, which raised `RuntimeError` before, so a caller catching `RuntimeError` around a first run needs `OSError` as well.
 
 ## Per-document failures
 

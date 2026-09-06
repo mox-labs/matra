@@ -141,6 +141,21 @@ the write are all `io`. The `io::ErrorKind` is preserved where `ureq`
 knows it, so a caller separates a timeout from an unreachable host
 without reading a message, and the message names the URL.
 
+**In Python the change is larger than a kind string.** `Error::kind` is
+not the only thing keyed off the variant: `From<MatraError> for PyErr`
+routes `Io` to `PyOSError` and `ModelInvalid` to `PyRuntimeError`, and
+neither the routing nor `kind` is touched by this decision. The
+consequence is that a DNS failure, a rejected certificate, a timeout or
+a non-2xx status now raises `OSError` from `Matra.english()` where it
+raised `RuntimeError`. That is not a caller reading a different string.
+A bootstrap wrapped in `except RuntimeError`, which is exactly the shape
+`book/src/guides/python.md` taught, silently stops catching network
+failures: the handler goes quiet and the `OSError` propagates past it.
+The migration is to catch both. Every page that named an exception class
+for a provisioning failure is corrected with this decision, and
+`tests/error_tables.rs` now holds those tables to the routing in
+`src/lib.rs` so the next reclassification cannot leave them behind.
+
 Preserving it takes one deliberate step on the body-read path. `ureq`'s
 body reader converts its own failure with `Error::into_io`, which returns
 the inner error only for `Error::Io` and wraps everything else, a
@@ -204,6 +219,27 @@ third file into the wiring to save a few dozen lines, and the two
 adapters differ in the ways that matter (one artifact against three, one
 file against a directory).
 
+**One divergence survives, and it is deliberate.** `Udpipe::english`
+removes a cached file that fails verification; `Model2Vec::potion_base_8m`
+removes nothing at all. The asymmetry follows from what the two names
+mean. `english-ewt-ud-2.5-191206.udpipe` names one pinned release, so a
+file sitting under it that is not that release is matra's own stale
+cache and nothing else it could plausibly be. `model.safetensors`,
+`tokenizer.json` and `config.json` are the artifact format's names rather
+than this model's, so a directory holding them may be a caller's own
+model, which is why the embedding provisioner refuses a directory it did
+not fill instead of clearing it. Removing where the name is unambiguous
+and refusing where it is not is one rule, not two.
+
+The ordering is a second thing, and the review of #77 corrected it. The
+UDPipe removal used to run before the refetch, on the reasoning that it
+kept the "download only into a directory that does not hold this name"
+shape. It bought nothing: `install` lands through `fs::rename`, which
+replaces an existing destination, so the write never needed the name
+free. And it cost a user offline with a corrupt cache the only copy they
+had, leaving an empty directory and a transport error. The removal now
+waits until `fetch_verified` has returned a verified replacement.
+
 Sharing a discipline meant bringing `embed/model2vec.rs` up to it, which
 the first version of this change did not do. It fetched each artifact
 into a temporary, renamed all three onto the artifact names, and only
@@ -217,6 +253,33 @@ memory before anything is written, and a temporary older than twice the
 fetch budget is reclaimed by the next install. That is the same defect
 class as the UDPipe orphan this ADR already answers, on the path the
 docsite now recommends.
+
+Finding 6 above needed the same treatment and did not get it the first
+time. `nlp/udpipe.rs` routes every filesystem failure through `io_at`,
+which names the operation and the path; `embed/model2vec.rs` propagated
+four of its own bare, so a full disk during an embedding install still
+produced `io error: No space left on device (os error 28)` while this
+decision and `book/src/reference/errors.md` both said the two adapters
+classify a failure the same way. It now has an `io_at` of its own, which
+is the discipline implemented twice rather than a helper imported twice,
+exactly as the temp-then-rename pattern is.
+
+**The sweep's directory is validated where it is configured.** The
+embedding provisioner sweeps aged temporaries in
+`cfg.model_dir().join(cfg.embedding_model())`, and `models.embedding` was
+a free string, so `"../.."` pointed a delete-by-pattern operation at a
+directory the operator did not name. The sweep only unlinks `.tmp.`
+entries older than ten minutes and the configuration is the operator's
+own, so this is hardening rather than a hole; it is also the first
+delete-by-pattern operation matra runs in a directory configuration
+chooses, and refusing a name that is not a single ordinary path component
+costs one function. The check lives in `config.rs` rather than in the
+adapter, because that is where a bad value can be reported once, against
+the key and the file it came from, in the shape the resolver already uses
+for an unknown algorithm name. `models.udpipe` gets no such check: the
+UDPipe filename is pinned in the adapter beside its digest and nothing
+joins the configured value to a path, so validating it would refuse
+configurations that harm nobody.
 
 ## Consequences
 
@@ -232,10 +295,21 @@ docsite now recommends.
   digest or loader verdict. Both kinds already existed, so no consumer
   meets a string it has never seen; a consumer that matched exhaustively
   still matches.
-- Positive: the embedding provisioner verifies before writing and
-  reclaims aged temporaries, so the two adapters implement one discipline
-  rather than one and a half. An interrupted embedding provision no
-  longer wedges every later one.
+- Positive: the embedding provisioner verifies before writing, reclaims
+  aged temporaries, and names the operation and the path on a filesystem
+  failure, so the two adapters implement one discipline rather than one
+  and a half. An interrupted embedding provision no longer wedges every
+  later one.
+- Negative: a Python caller catching `RuntimeError` around a first run
+  catches nothing when the network is the problem, because that failure
+  is now `OSError`. The exception classes are unchanged and no new one
+  appears, so a caller catching `Exception` is unaffected; a caller
+  catching the narrower class adds `OSError` beside it.
+- Neutral: `tests/error_tables.rs` reads the routing out of `src/lib.rs`
+  and the kind strings out of `src/domain.rs` and holds three documented
+  tables to them. It pins which arm a variant sits in, which is what a
+  reclassification changes; it cannot pin prose, so a page that describes
+  a failure wrongly in a sentence is still a review finding.
 - Neutral: the download client sets `https_only`. `ureq` follows up to
   ten redirects, so an `https` URL that redirected to `http` would
   otherwise be fetched in cleartext. The digest pin means integrity was
