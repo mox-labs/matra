@@ -11,10 +11,11 @@ default:
 # Quality gates — same commands CI runs.
 # ---------------------------------------------------------------------------
 
-# Run the local gate suite: the Rust gates CI runs, plus the boundary
-# check and docsite floor, which CI does not run. CI additionally runs
-# cargo-deny, cargo-semver-checks, the wheel build and mypy.
-check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-no-default boundary docs-floor
+# Run the local gate suite: the Rust gates CI runs, plus the Python lint,
+# the boundary check and the docsite floor, which CI does not run. CI
+# additionally runs cargo-deny, cargo-semver-checks, the wheel build and
+# mypy.
+check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary docs-floor
     @echo ""
     @echo "all gates pass"
 
@@ -54,6 +55,11 @@ doc:
 # Unit + doctest under default features.
 test:
     cargo test --features udpipe
+
+# Unit + the CLI's own tests. The `cli` feature is not in the default
+# set, so `just test` alone never compiles src/cli/.
+test-cli:
+    cargo test --features cli
 
 # Unit + doctest with no default features.
 test-no-default:

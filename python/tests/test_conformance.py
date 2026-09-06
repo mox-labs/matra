@@ -91,7 +91,9 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
         if "reportings" in want:
             assert got["reportings"] == want["reportings"], f"sentence {i} reportings"
         if "root_adverbials" in want:
-            assert got["root_adverbials"] == want["root_adverbials"], f"sentence {i} root_adverbials"
+            assert got["root_adverbials"] == want["root_adverbials"], (
+                f"sentence {i} root_adverbials"
+            )
         if "hearst_pairs" in want:
             assert got["hearst_pairs"] == want["hearst_pairs"], f"sentence {i} hearst_pairs"
         assert len(got["tokens"]) == want["token_count"], f"sentence {i} token count"

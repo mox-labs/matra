@@ -40,7 +40,7 @@ def _model_dir() -> str:
 def engine() -> Matra:
     try:
         return Matra.english(_model_dir())
-    except Exception as exc:  # noqa: BLE001 - the model is an external artifact
+    except Exception as exc:
         pytest.skip(f"UDPipe model unavailable: {exc}")
 
 

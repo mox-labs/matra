@@ -15,7 +15,6 @@ import struct
 from pathlib import Path
 
 import pytest
-
 from matra import Model2Vec, semantic_clusters
 
 SPEC = Path(__file__).resolve().parents[2] / "spec" / "tests" / "semantic" / "clusters.json"
@@ -27,18 +26,16 @@ def as_f32(x: float) -> float:
 
 def test_semantic_clusters_matches_the_shape_fixture() -> None:
     fixture = json.loads(SPEC.read_text())
-    got = semantic_clusters(
-        fixture["embeddings"], fixture["threshold"], fixture["model_hash"]
-    )
+    got = semantic_clusters(fixture["embeddings"], fixture["threshold"], fixture["model_hash"])
     expect = fixture["expect"]
 
     assert got["model_hash"] == expect["model_hash"]
     assert as_f32(got["threshold"]) == as_f32(expect["threshold"])
     assert len(got["clusters"]) == len(expect["clusters"])
-    for g, e in zip(got["clusters"], expect["clusters"]):
+    for g, e in zip(got["clusters"], expect["clusters"], strict=True):
         assert g["members"] == e["members"]
         assert len(g["edges"]) == len(e["edges"])
-        for ge, ee in zip(g["edges"], e["edges"]):
+        for ge, ee in zip(g["edges"], e["edges"], strict=True):
             assert ge["a"] == ee["a"]
             assert ge["b"] == ee["b"]
             assert as_f32(ge["score"]) == as_f32(ee["score"])
@@ -79,9 +76,9 @@ def test_reference_model_vectors_and_clusters_are_exact() -> None:
         got = semantic_clusters(vectors, case["threshold"], model.model_hash)
         expect = case["clusters"]
         assert len(got["clusters"]) == len(expect)
-        for g, e in zip(got["clusters"], expect):
+        for g, e in zip(got["clusters"], expect, strict=True):
             assert g["members"] == e["members"]
             assert len(g["edges"]) == len(e["edges"])
-            for ge, ee in zip(g["edges"], e["edges"]):
+            for ge, ee in zip(g["edges"], e["edges"], strict=True):
                 assert (ge["a"], ge["b"]) == (ee["a"], ee["b"])
                 assert as_f32(ge["score"]) == as_f32(ee["score"])
