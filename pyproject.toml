@@ -10,10 +10,9 @@ readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "yzavyas" }]
 requires-python = ">=3.12"
-dependencies = [
-    "click>=8",
-    "rich>=13",
-]
+# No runtime dependencies. The command line is the Rust binary reached
+# through the extension module, the way ruff and uv ship theirs.
+dependencies = []
 
 [project.optional-dependencies]
 typecheck = [
@@ -49,12 +48,6 @@ files = ["python/matra"]
 # The PyO3 extension is described by a stub file; mypy resolves it via
 # the package's own py.typed marker.
 mypy_path = "python"
-
-[[tool.mypy.overrides]]
-# rich and click ship their own stubs in newer versions; if a transitive
-# dep lacks them we still want strict mode on our code.
-module = ["rich.*", "click.*"]
-ignore_missing_imports = false
 
 [tool.ruff]
 line-length = 100

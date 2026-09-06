@@ -113,9 +113,7 @@ class Matra:
         """
         ...
 
-    def semantic_clusters(
-        self, text: str, threshold: float, model: Model2Vec
-    ) -> SemanticClusters:
+    def semantic_clusters(self, text: str, threshold: float, model: Model2Vec) -> SemanticClusters:
         """Parse plain text, embed its sentences, cluster at `threshold`.
 
         Tier 2 output: the clusters reflect `model`'s geometry, and the
@@ -137,7 +135,7 @@ class Model2Vec:
     """
 
     @staticmethod
-    def from_dir(dir: str) -> Model2Vec:
+    def from_dir(dir: str) -> Model2Vec:  # noqa: A002 - the published keyword name
         """Load from a directory holding model.safetensors,
         tokenizer.json, and config.json. No network is touched.
 
@@ -165,6 +163,20 @@ class Model2Vec:
             RuntimeError: embedding failed.
         """
         ...
+
+def cli_main(argv: list[str]) -> int:
+    """Run the matra command line and return its exit code.
+
+    `argv` excludes the program name; the Rust side supplies it, so
+    `--help` reads the same from this launcher and from the Rust binary.
+    Output is rendered in Rust and then written to `sys.stdout` and
+    `sys.stderr`, so it interleaves correctly with anything Python has
+    already written. A failure writing it out (a broken pipe) is
+    swallowed, matching the binary, which exits 0 on one.
+
+    Exit codes: 0 found, 1 nothing found, 2 error.
+    """
+    ...
 
 def semantic_clusters(
     embeddings: list[list[float]], threshold: float, model_hash: str
