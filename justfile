@@ -93,7 +93,7 @@ conformance:
     cargo test --test conformance -- --ignored
     cargo test --features model2vec --test semantic_conformance -- --include-ignored
     cargo test --test corpus_conformance
-    uv run pytest python/tests/test_conformance.py python/tests/test_semantic_conformance.py python/tests/test_corpus_conformance.py -q
+    uv run --extra test pytest python/tests/test_conformance.py python/tests/test_semantic_conformance.py python/tests/test_corpus_conformance.py -q
 
 
 # ---------------------------------------------------------------------------
