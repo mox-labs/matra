@@ -26,9 +26,10 @@ name: Publish to PyPI
 # Windows wheels are deliberately absent: the UDPipe C++ build under
 # MSVC is unverified. Add the target when it is.
 #
-# pypa/gh-action-pypi-publish is the one third-party action here; pypa
-# is a verified creator, which the org policy admits, and the ref is a
-# commit SHA, which the policy requires.
+# There is no third-party publishing action here. The Trusted Publishing
+# exchange is done with curl and twine directly, for the reason given at
+# the publish step below. Every action this workflow does use is pinned
+# to a commit SHA, which the org policy requires.
 
 on:
   push:
@@ -127,7 +128,7 @@ jobs:
         with:
           python-version: "3.12"
       # RUSTUP_TOOLCHAIN is not optional. rust-toolchain.toml asks for
-      # components the image does not carry, so rustup re-syncs the
+      # a component the image does not carry, so rustup re-syncs the
       # channel inside the container, and the rename it does to swap a
       # component crosses the overlay boundary between the image layer
       # and the container, which fails with "Invalid cross-device link
