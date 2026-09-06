@@ -11,7 +11,14 @@ Stubs are versioned alongside the Rust code; keep them in lockstep with
 
 from __future__ import annotations
 
-from matra.types import Document, Keyphrase, ScoredSentence, SemanticClusters
+from matra.types import (
+    CorpusItem,
+    Document,
+    Embedder,
+    Keyphrase,
+    ScoredSentence,
+    SemanticClusters,
+)
 
 class Matra:
     """Loaded NLP engine. Create once, reuse across calls.
@@ -113,8 +120,15 @@ class Matra:
         """
         ...
 
-    def semantic_clusters(self, text: str, threshold: float, model: Model2Vec) -> SemanticClusters:
+    def semantic_clusters(
+        self, text: str, threshold: float, model: Model2Vec | Embedder
+    ) -> SemanticClusters:
         """Parse plain text, embed its sentences, cluster at `threshold`.
+
+        `model` is either a `Model2Vec` or any object satisfying the
+        `Embedder` protocol: two methods, `embed` and `identity`. Your
+        own object is held across the call and asked for its identity
+        once, when it is handed over.
 
         Tier 2 output: the clusters reflect `model`'s geometry, and the
         result carries its identity. See `matra.types.SemanticClusters`
@@ -122,8 +136,27 @@ class Matra:
 
         Raises:
             ValueError: input exceeds the size cap (8 MiB), the sentence
-                cap (2,000), or the threshold is not finite.
+                cap (2,000), the threshold is not finite, or the
+                embedder broke its contract (raised, returned something
+                other than a sequence of vectors, or returned the wrong
+                number of them).
             RuntimeError: NLP parsing or embedding failed.
+        """
+        ...
+
+    def analyze_path(self, path: str) -> list[CorpusItem]:
+        """Analyze every document a path names.
+
+        One item for a file; one per regular file for a directory, in
+        path order. Symlinks and subdirectories are skipped, not
+        followed. Each item is a `CorpusEntry` (`path`, `analysis`) for a
+        document that analyzed or a `DocumentError` (`path`, `error`) for
+        one that did not, so one unreadable file costs one item rather
+        than the whole walk. Test `"error" in item` to tell them apart.
+
+        Raises:
+            OSError: the path does not exist, or the directory could not
+                be listed. Both are `Error::Io`, which routes here.
         """
         ...
 

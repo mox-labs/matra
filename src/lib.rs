@@ -558,21 +558,56 @@ mod python {
         /// Parse plain text, embed its sentences with `model`, and
         /// cluster them at `threshold`. Returns the serialized
         /// `SemanticClusters` as a dict.
-        #[cfg(feature = "model2vec")]
+        ///
+        /// `model` is either a `Model2Vec` or any Python object with
+        /// `embed` and `identity`. The built-in adapter is tried first
+        /// and used directly; anything else is wrapped in
+        /// [`PyEmbedder`]. The second arm needs only the `embed` port,
+        /// so a build without the `model2vec` feature still accepts a
+        /// caller's own embedder.
         fn semantic_clusters<'py>(
             &self,
             py: Python<'py>,
             text: &str,
             threshold: f32,
-            model: &Model2Vec,
+            model: &Bound<'py, PyAny>,
         ) -> PyResult<Bound<'py, PyAny>> {
             // Annotated structure suffices; running compose would fill a
             // metric suite this method immediately discards.
             let raw = RawDocument::new(text.to_string(), None, Format::PlainText);
             let doc = self.engine.annotate(&raw).map_err(MatraError)?;
+            #[cfg(feature = "model2vec")]
+            if let Ok(loaded) = model.cast::<Model2Vec>() {
+                let result = crate::embed_and_cluster(&doc, &loaded.get().inner, threshold)
+                    .map_err(MatraError)?;
+                return to_dict(py, &result);
+            }
+            let embedder = PyEmbedder::new(model)?;
             let result =
-                crate::embed_and_cluster(&doc, &model.inner, threshold).map_err(MatraError)?;
+                crate::embed_and_cluster(&doc, &embedder, threshold).map_err(MatraError)?;
             to_dict(py, &result)
+        }
+
+        /// Analyze every document a path names: one for a file, one per
+        /// regular file for a directory.
+        ///
+        /// Returns a list in ingestion order (sorted by path for a
+        /// directory). Each item is a `CorpusEntry` dict for a document
+        /// that analyzed, or a `DocumentError` dict for one that did
+        /// not, so one unreadable file is one error item rather than an
+        /// aborted walk. A failure listing the path itself is raised
+        /// instead: there is no per-document result to carry it.
+        fn analyze_path<'py>(&self, py: Python<'py>, path: &str) -> PyResult<Bound<'py, PyAny>> {
+            let ingest = crate::Ingest::path(path).map_err(MatraError)?;
+            let items = pyo3::types::PyList::empty(py);
+            for item in self.engine.analyze(ingest) {
+                let entry = match item {
+                    Ok(entry) => to_dict(py, &entry)?,
+                    Err(err) => document_error_dict(py, &err)?,
+                };
+                items.append(entry)?;
+            }
+            Ok(items.into_any())
         }
     }
 
@@ -747,6 +782,149 @@ mod python {
         stream.call_method1("write", (String::from_utf8_lossy(bytes).as_ref(),))?;
         stream.call_method0("flush")?;
         Ok(())
+    }
+
+    /// A Python object standing in for an [`Embedder`](crate::embed::Embedder).
+    ///
+    /// The port is a trait, so the extension point was already there;
+    /// this is the adapter that lets a Python object reach it. A caller
+    /// who has embeddings from a service, a cache, or a library matra
+    /// does not ship passes an object with `embed` and `identity` and
+    /// gets the same clustering the built-in adapter gets.
+    ///
+    /// [`Embedder`](crate::embed::Embedder) requires `Send`. The object
+    /// is held as `Py<PyAny>`, which is `Send` because it carries no GIL
+    /// attachment: it is a reference the interpreter owns, not a pointer
+    /// into interpreter state. Every access below re-attaches with
+    /// [`Python::attach`] before touching it, so moving this value
+    /// between threads never moves an attachment with it.
+    ///
+    /// The identity is read once, at construction. The trait's promise
+    /// is that an identity names one geometry, and a Python object could
+    /// return a different string on every call; reading it once keeps
+    /// the promise on the object's behalf rather than trusting it.
+    struct PyEmbedder {
+        obj: Py<PyAny>,
+        identity: String,
+    }
+
+    impl PyEmbedder {
+        /// Wrap `obj`, reading its `identity()` now.
+        ///
+        /// # Errors
+        ///
+        /// `ValueError` if `identity()` is missing, raises, or returns
+        /// something other than a string.
+        fn new(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
+            let raw = obj.call_method0("identity").map_err(|e| {
+                MatraError(domain::Error::InvalidInput(format!(
+                    "calling identity() on the embedder failed: {e}"
+                )))
+            })?;
+            let identity = raw.extract::<String>().map_err(|e| {
+                MatraError(domain::Error::InvalidInput(format!(
+                    "the embedder's identity() must return a str: {e}"
+                )))
+            })?;
+            Ok(Self {
+                obj: obj.clone().unbind(),
+                identity,
+            })
+        }
+    }
+
+    impl crate::embed::Embedder for PyEmbedder {
+        fn embed(&self, texts: &[&str]) -> domain::Result<Vec<domain::Embedding>> {
+            Python::attach(|py| {
+                let returned = self
+                    .obj
+                    .bind(py)
+                    .call_method1("embed", (texts.to_vec(),))
+                    .map_err(|e| {
+                        domain::Error::InvalidInput(format!("the embedder's embed() raised {e}"))
+                    })?;
+                // Two stages rather than one `Vec<Vec<f64>>` extraction,
+                // so the message names which level of the shape was
+                // wrong and which vector went astray.
+                let rows = returned.extract::<Vec<Bound<'_, PyAny>>>().map_err(|e| {
+                    domain::Error::InvalidInput(format!(
+                        "the embedder's embed() must return a sequence of vectors: {e}"
+                    ))
+                })?;
+                rows.iter()
+                    .enumerate()
+                    .map(|(i, row)| {
+                        // Python floats are f64 and matra's carrier is
+                        // f32, so every vector narrows here. The count
+                        // and dimension contract is checked once, in
+                        // `embed_and_cluster` and `semantic_clusters`,
+                        // and is not restated here.
+                        let values = row.extract::<Vec<f64>>().map_err(|e| {
+                            domain::Error::InvalidInput(format!(
+                                "the embedder's embed() returned a vector at index {i} that is not a sequence of numbers: {e}"
+                            ))
+                        })?;
+                        Ok(domain::Embedding(
+                            values.into_iter().map(|v| v as f32).collect(),
+                        ))
+                    })
+                    .collect()
+            })
+        }
+
+        fn identity(&self) -> &str {
+            &self.identity
+        }
+    }
+
+    /// The stable kind string for an error variant: the key a consumer
+    /// branches on instead of matching against a message.
+    ///
+    /// Exhaustive with no wildcard, for the same reason the `PyErr`
+    /// routing above is: a new `domain::Error` variant fails to compile
+    /// until someone names it here.
+    fn error_kind(e: &domain::Error) -> &'static str {
+        use domain::Error::*;
+        match e {
+            ModelNotFound(_) => "model_not_found",
+            ModelInvalid(_) => "model_invalid",
+            ParseFailed(_) => "parse_failed",
+            InputTooLarge { .. } => "input_too_large",
+            UnsupportedFormat(_) => "unsupported_format",
+            InvalidInput(_) => "invalid_input",
+            Io(_) => "io",
+        }
+    }
+
+    /// Project a [`domain::DocumentError`] into a dict.
+    ///
+    /// `DocumentError` is deliberately not `Serialize`: it wraps
+    /// `domain::Error`, which wraps `std::io::Error`, and no stable wire
+    /// shape exists for that. The two fields are materialized instead,
+    /// the error as a `kind` a consumer can branch on plus the `Display`
+    /// text a human reads.
+    ///
+    /// The path goes through `to_string_lossy` rather than serde, which
+    /// refuses a non-UTF-8 path. A file whose name is not valid UTF-8 is
+    /// exactly the kind of file that lands here, and losing a byte of
+    /// its name is better than losing the report that it failed.
+    fn document_error_dict<'py>(
+        py: Python<'py>,
+        err: &domain::DocumentError,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        use pyo3::types::PyDict;
+
+        let error = PyDict::new(py);
+        error.set_item("kind", error_kind(&err.error))?;
+        error.set_item("message", err.error.to_string())?;
+
+        let item = PyDict::new(py);
+        item.set_item(
+            "path",
+            err.path.as_ref().map(|p| p.to_string_lossy().into_owned()),
+        )?;
+        item.set_item("error", error)?;
+        Ok(item.into_any())
     }
 
     #[pymodule]

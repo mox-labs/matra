@@ -1,16 +1,16 @@
-"""Runtime-available TypedDict shapes for matra's domain types.
+"""Runtime-available type shapes for matra's domain types.
 
 These mirror the Rust types in `src/domain.rs` and the wire shapes
 produced by `pythonize`. Defined here (not in `_core.pyi`) so they
-can be imported at runtime — TypedDicts in a stub file would only
-exist at type-check time.
+can be imported at runtime — TypedDicts and protocols in a stub file
+would only exist at type-check time.
 
 Keep in lockstep with `python/matra/_core.pyi`.
 """
 
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+from typing import Literal, Protocol, TypedDict
 
 
 class Token(TypedDict):
@@ -237,8 +237,88 @@ class SemanticClusters(TypedDict):
     clusters: list[SemanticCluster]
 
 
+class CorpusEntry(TypedDict):
+    """One analyzed document from a path. Mirrors ``matra::domain::CorpusEntry``.
+
+    ``path`` is the file the document was read from, or ``None`` for
+    text that never came from disk. ``analysis`` is the same
+    ``Document`` shape ``analyze`` returns.
+    """
+
+    path: str | None
+    analysis: Document
+
+
+class ErrorInfo(TypedDict):
+    """One failure, projected for consumers. Mirrors ``matra::domain::Error``.
+
+    ``kind`` is a stable string naming the variant (``model_not_found``,
+    ``model_invalid``, ``parse_failed``, ``input_too_large``,
+    ``unsupported_format``, ``invalid_input``, ``io``). Branch on it;
+    ``message`` is the Rust error's own text, meant for a human and not
+    a contract.
+    """
+
+    kind: str
+    message: str
+
+
+class DocumentError(TypedDict):
+    """One document that failed. Mirrors ``matra::domain::DocumentError``.
+
+    A failure reading or parsing one file does not abort a directory
+    walk: it arrives as one of these, in the position the document would
+    have held. ``path`` is ``None`` only for input that never came from
+    disk.
+    """
+
+    path: str | None
+    error: ErrorInfo
+
+
+type CorpusItem = CorpusEntry | DocumentError
+"""One item from ``Matra.analyze_path``: a document that analyzed, or one
+that failed.
+
+The two are told apart by their keys, and a type checker narrows the
+union on that test: ``"error" in item`` selects the failure,
+``"analysis" in item`` the success.
+"""
+
+
+class Embedder(Protocol):
+    """Any object matra will accept where an embedding model is asked for.
+
+    Mirrors the Rust ``matra::embed::Embedder`` port, and carries the
+    same contract: ``embed`` returns exactly one vector per input text,
+    in input order, every vector the same length. Violating it raises
+    ``ValueError`` from the call that used the embedder, with the same
+    message a Rust implementor would get.
+
+    ``identity`` names the geometry the vectors live in, and travels
+    into every result derived from them so scores stay attributable. It
+    is read once, when the object is handed over. Two embedders that can
+    disagree must not return the same string.
+
+    ``Model2Vec`` satisfies this protocol; so does any class you write.
+    """
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        """Embed each text into a vector: one per text, in order."""
+        ...
+
+    def identity(self) -> str:
+        """A stable identifier for the model behind this embedder."""
+        ...
+
+
 __all__ = [
+    "CorpusEntry",
+    "CorpusItem",
     "Document",
+    "DocumentError",
+    "Embedder",
+    "ErrorInfo",
     "Keyphrase",
     "Modal",
     "Negation",
