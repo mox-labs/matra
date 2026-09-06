@@ -843,7 +843,13 @@ fn fetch_capped(url: &str) -> domain::Result<Vec<u8>> {
         .into_body()
         .into_reader()
         .take(MAX_ARTIFACT_BYTES as u64 + 1)
-        .read_to_end(&mut bytes)?;
+        .read_to_end(&mut bytes)
+        .map_err(|e| {
+            Error::Io(std::io::Error::new(
+                e.kind(),
+                format!("download {url}: {e}"),
+            ))
+        })?;
     Ok(bytes)
 }
 
