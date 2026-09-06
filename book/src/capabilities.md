@@ -48,7 +48,7 @@ All eight cross to Python. The methods below are Rust only.
 | `children_of(id)` | its direct dependents |
 | `subtree(id)` | the whole clause under it |
 | `tree_depth()` | nesting depth, `usize::MAX` on a malformed cycle |
-| `is_passive()` | whether the sentence carries `nsubj:pass` or `aux:pass` |
+| `is_passive()` | whether the sentence carries `nsubj:pass`, `nsubjpass`, or `aux:pass` |
 | `content_tokens()` | non-punctuation tokens |
 | `word_count()` | count of those |
 | `reportings_in(lexicon)` | the reportings whose verb lemma is in a list you supply |
