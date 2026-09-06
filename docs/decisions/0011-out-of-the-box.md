@@ -140,7 +140,8 @@ tool.
 
 **One CLI, two launchers.** The CLI moves into the library as
 `src/cli/` behind the `cli` feature, with one entry point
-`cli::run(args, stdout, stderr) -> ExitCode`. `src/bin/matra.rs`
+`cli::run(args, stdout, stderr) -> u8` (a plain exit code rather than
+`ExitCode`, which cannot be read back for the Python launcher). `src/bin/matra.rs`
 becomes a launcher. The Python extension exposes the same function as
 `_core.cli_main(argv) -> int`, and `python/matra/cli.py` becomes a
 launcher of a few lines: pass `sys.argv`, exit with the code. `click`
@@ -153,6 +154,77 @@ feature enables `cli`.
 default algorithms) and nothing that changes what a call computes
 beyond what the caller could pass as an argument. Suite selection and
 output shape remain application-tier.
+
+## Surface added by I10
+
+Every public item M2 through M5 added, so a later reviewer can diff the
+shipped surface against this decision. Nothing below existed at 0.1.0,
+and no 0.1.0 signature changed.
+
+### Rust, composition root (`src/config.rs`, M2)
+
+- `config::ValueSource`, `#[non_exhaustive]`, with `Argument`,
+  `Environment(String)`, `File(PathBuf)` and `Default`.
+- `config::Config`, `#[non_exhaustive]`, with `Config::resolve`,
+  `Config::from_sources` (environment and file contents injected, which
+  is how the tests avoid the developer's home), `Config::with_model_dir`
+  (M3: puts `--model-dir` on the `Argument` rung), the associated
+  `Config::config_file_path`, the readers `data_dir`, `model_dir`,
+  `udpipe_model`, `embedding_model`, `semantic_threshold`,
+  `summarize_n`, `summarize_algorithm`, `keyphrases_n` and
+  `keyphrases_algorithm`, and `Config::sources` returning
+  `(key, ValueSource)` pairs.
+- `config/default.toml`, embedded with `include_str!`. The file schema is
+  public surface from here on.
+
+### Rust, constructors (M2, M4)
+
+- `Engine::from_config(&Config)` and `Engine::with_defaults()`.
+- `Udpipe::from_config(&Config)` (M2).
+- `Model2Vec::potion_base_8m(dir)` and `Model2Vec::from_config(&Config)`
+  (M4). `Model2Vec::from_dir` is unchanged and still never downloads.
+
+### Rust, the command line (`src/cli/`, M3)
+
+- `pub mod cli` behind the `cli` feature, whose whole surface is
+  `cli::run(args, out, err) -> u8`.
+- New subcommands: `matra config show`, `matra config init [--force]`,
+  and `matra completions <bash|zsh|fish>`.
+- New global flags: `--model-dir <DIR>`, `--quiet` / `-q`,
+  `--color <auto|always|never>`, `--stdin-filename <NAME>`. New on
+  `analyze`: `--sections` / `-s`. New input form: `-` for stdin. New
+  behavior on `--version`: the features the build was compiled with.
+  `NO_COLOR` is honored when present and not empty.
+- The `--json` envelope, one shape for every command:
+  `format_version` (integer, `1` today), `command`, `input`, `result`.
+  Pinned by `spec/tests/cli/envelope.json`.
+
+### Python (M2 to M5)
+
+- `Matra.english(model_dir=None)`: the argument goes optional (M2).
+- `Model2Vec.potion_base_8m(dir=None)` (M4).
+- `_core.cli_main(argv) -> int`, which `python/matra/cli.py` launches
+  (M3).
+- `Matra.analyze_path(path) -> list[CorpusItem]` (M5).
+- `matra.types`: the `Embedder` protocol, `CorpusEntry`, `DocumentError`,
+  `ErrorInfo`, and the `CorpusItem` union, all exported from the package
+  root and typed in `python/matra/_core.pyi` (M5).
+- `Matra.semantic_clusters` accepts any object satisfying `Embedder`,
+  not only a `Model2Vec` (M5). The signature is unchanged; what widened
+  is the third argument's accepted type.
+
+### Dependencies
+
+- `toml` 1, `default-features = false`, features `parse`, `serde`,
+  `std`. Default tree, all targets (M2).
+- `clap_complete` 4, optional, pulled in by the `cli` feature (M3).
+- `ureq` 3.3, optional, declared under
+  `[target.'cfg(not(target_arch = "wasm32"))'.dependencies]` and pulled
+  in by `model2vec` (M4). It was already in the tree through
+  `udpipe-rs`.
+
+Feature-graph changes: `python` now implies `cli`; `cli` now pulls
+`clap_complete`; `model2vec` now pulls `ureq` off wasm32.
 
 ## Consequences
 
@@ -171,6 +243,23 @@ output shape remain application-tier.
 - Negative: two more constructors per adapter to keep in lockstep with
   the Python stubs.
 - Neutral: `~/.matra` remains readable; nothing is migrated or deleted.
+
+Two observations from the milestones, recorded as open follow-ups rather
+than as decisions taken here.
+
+- **The exit code is a `u8`, not an `ExitCode` (M3).** `ExitCode` is
+  opaque, so the Python launcher could not read the number back out of
+  one to return an `int`. `src/bin/matra.rs` converts with
+  `ExitCode::from`. The type is public surface now, and widening or
+  narrowing it later is a break; whether `u8` is the right permanent
+  shape is not settled here.
+- **`Error::Io` routes to `OSError` whatever its kind (M5).** A missing
+  directory handed to `Matra.analyze_path` arrives as a plain `OSError`
+  rather than `FileNotFoundError`, even though the underlying
+  `std::io::ErrorKind` is `NotFound` and `Error::ModelNotFound` does map
+  to `FileNotFoundError`. Routing on the wrapped kind would be closer to
+  the Python idiom. It is a behavior change to a shipped mapping, so it
+  needs its own decision.
 
 ## Validation
 
