@@ -288,7 +288,7 @@ Both extractors return phrases in descending score order. `Keyphrase::new(phrase
 
 ## Format
 
-Which decomposer a document needs. `FileSource` assigns the variant from the file extension.
+Which decomposer a document needs.
 
 | Variant | Assigned to |
 |---|---|
@@ -296,6 +296,8 @@ Which decomposer a document needs. `FileSource` assigns the variant from the fil
 | `PlainText` | Every other extension, and a file with no extension |
 | `Pdf` | Extension `.pdf` |
 | `Docx` | Extension `.docx` |
+
+`Format::from_path(path: impl AsRef<Path>) -> Format` is that table, and it is the only copy of it. `FileSource` reads it for a file on disk and the command line reads it for the name given to `--stdin-filename`, so a name means the same thing on both routes.
 
 `Pdf` and `Docx` have no entry in the standard decomposer table, so analyzing such a file returns `Error::UnsupportedFormat`. `Ingest::text` takes the format as an argument; `Ingest::path` assigns one from the extension. `Format` derives `PartialEq` and `Eq`, which is what the decomposer table keys on.
 

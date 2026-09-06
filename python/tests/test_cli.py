@@ -46,6 +46,40 @@ def test_a_missing_file_exits_two_on_stderr(
     assert "no such file" in captured.err
 
 
+def test_a_directory_is_refused_by_name(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """The refusal reaches the launcher as an exit code, not an exception."""
+    assert cli_main(["analyze", str(tmp_path)]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "is a directory" in captured.err
+    assert "pass a file" in captured.err
+
+
+def test_a_non_utf8_argument_survives_the_crossing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An undecodable path is a path, not a crash.
+
+    On unix a filename is bytes, and Python surfaces one it cannot decode
+    with surrogate escapes. The launcher re-encodes with `os.fsencode`, so
+    the command line sees the bytes the Rust binary would have seen. The
+    file does not exist, so the run stops at the existence check with no
+    model in sight, and what this asserts is that it got that far at all:
+    an argument rejected at the boundary would raise instead.
+    """
+    path = str(tmp_path / "caf\udcff.txt")
+    assert cli_main(["analyze", path]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "no such file" in captured.err
+
+
+def test_an_argument_that_is_not_a_path_is_a_type_error() -> None:
+    """A silently dropped argument would run a different command."""
+    with pytest.raises(TypeError):
+        cli_main(["analyze", 7])  # type: ignore[list-item]
+
+
 @pytest.mark.model
 def test_envelope_matches_the_conformance_fixture(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]

@@ -49,7 +49,7 @@ impl Source for FileSource {
         }
 
         let text = std::fs::read_to_string(input)?;
-        let format = detect_format(input);
+        let format = Format::from_path(input);
         Ok(vec![RawDocument {
             text,
             path: Some(input.to_path_buf()),
@@ -59,15 +59,6 @@ impl Source for FileSource {
 
     fn accepts(&self, input: &Path) -> bool {
         input.is_file()
-    }
-}
-
-fn detect_format(path: &Path) -> Format {
-    match path.extension().and_then(|e| e.to_str()) {
-        Some("md" | "markdown") => Format::Markdown,
-        Some("pdf") => Format::Pdf,
-        Some("docx") => Format::Docx,
-        _ => Format::PlainText,
     }
 }
 

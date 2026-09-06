@@ -1,7 +1,7 @@
 //! Domain types. The core model that everything else depends on.
 //! Dependencies are bounded to serde, thiserror, and std.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -1183,6 +1183,35 @@ pub enum Format {
     Pdf,
     /// DOCX (reserved; no decomposer ships today).
     Docx,
+}
+
+impl Format {
+    /// The format a path's extension implies.
+    ///
+    /// The mapping lives here, on the type it produces, because two
+    /// callers need it and a second copy is a second answer waiting to
+    /// happen: the file source assigns a format to a file on disk, and
+    /// the command line assigns one to the name given for stdin. Both
+    /// read this function, so `notes.md` cannot mean markdown on one
+    /// route and plain text on the other.
+    ///
+    /// An extension this build does not know, and a path carrying no
+    /// extension at all, are [`Format::PlainText`]. The format selects a
+    /// decomposer, and plain text is the decomposer that reads anything.
+    ///
+    /// ```
+    /// # use matra::domain::Format;
+    /// assert_eq!(Format::from_path("notes.md"), Format::Markdown);
+    /// assert_eq!(Format::from_path("notes"), Format::PlainText);
+    /// ```
+    pub fn from_path(path: impl AsRef<Path>) -> Format {
+        match path.as_ref().extension().and_then(|e| e.to_str()) {
+            Some("md" | "markdown") => Format::Markdown,
+            Some("pdf") => Format::Pdf,
+            Some("docx") => Format::Docx,
+            _ => Format::PlainText,
+        }
+    }
 }
 
 /// A raw document before decomposition. Output of Source, input to Decomposer.
@@ -2589,6 +2618,37 @@ mod tests {
     fn format_equality() {
         assert_eq!(Format::Markdown, Format::Markdown);
         assert_ne!(Format::Markdown, Format::PlainText);
+    }
+
+    /// The whole extension table, in one place, because it is the one
+    /// place. Both the file source and the command line read it, so a
+    /// change here changes both routes at once and this test is what
+    /// says which change was intended.
+    #[test]
+    fn format_from_path_reads_the_extension() {
+        for (path, expected) in [
+            ("notes.md", Format::Markdown),
+            ("notes.markdown", Format::Markdown),
+            ("report.pdf", Format::Pdf),
+            ("report.docx", Format::Docx),
+            ("notes.txt", Format::PlainText),
+            ("notes.rs", Format::PlainText),
+            ("/tmp/deep/notes.md", Format::Markdown),
+            ("archive.md.gz", Format::PlainText),
+        ] {
+            assert_eq!(Format::from_path(path), expected, "{path}");
+        }
+    }
+
+    /// No extension, and no name at all, are plain text rather than an
+    /// error: the format picks a decomposer, and every byte sequence has
+    /// one that will read it.
+    #[test]
+    fn format_from_path_falls_back_to_plain_text() {
+        assert_eq!(Format::from_path("README"), Format::PlainText);
+        assert_eq!(Format::from_path("<stdin>"), Format::PlainText);
+        assert_eq!(Format::from_path(".gitignore"), Format::PlainText);
+        assert_eq!(Format::from_path(""), Format::PlainText);
     }
 
     #[test]

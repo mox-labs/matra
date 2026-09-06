@@ -31,6 +31,8 @@ A pre-existing `~/.matra/models` from an older install is still read when the ne
 
 ## Commands
 
+`analyze`, `summarize`, and `keyphrases` each read one document. The path they take is a file or `-` for stdin; a directory is refused, because a command that reports on one document cannot report on a directory of them, and picking one file out of it would be an answer to a question nobody asked. Analyzing a directory is a library call today (`Engine::analyze` over `Ingest::path`).
+
 ### `matra analyze`
 
 Analyzes a file and reports its metrics.
@@ -188,7 +190,7 @@ Stability: `format_version` increments on any change to the envelope or to a fie
 
 ## Exit codes
 
-`0` on success when the command found something, `1` on success when it found nothing (an empty summary, no keyphrases, a file with zero sentences), and `2` when an error occurred. Model load failure, a missing or unreadable file, input over the size cap, a bad argument, and a parse failure all land on `2`, with the message on stderr prefixed `matra:`. A broken pipe, which is what you get piping into `head`, is treated as success and exits `0`.
+`0` on success when the command found something, `1` on success when it found nothing (an empty summary, no keyphrases, a file with zero sentences), and `2` when an error occurred. Model load failure, a missing or unreadable file, a directory where a file was expected, input over the size cap, a bad argument, and a parse failure all land on `2`, with the message on stderr prefixed `matra:`. A broken pipe, which is what you get piping into `head`, is treated as success and exits `0`.
 
 ```bash
 matra keyphrases notes.txt > /dev/null

@@ -200,6 +200,12 @@ and no 0.1.0 signature changed.
 - The `--json` envelope, one shape for every command:
   `format_version` (integer, `1` today), `command`, `input`, `result`.
   Pinned by `spec/tests/cli/envelope.json`.
+- `domain::Format::from_path(path: impl AsRef<Path>) -> Format` (M3).
+  Not a command-line item, but M3 is what added the second caller and so
+  what forced the mapping into one home. `FileSource` and the command
+  line both read it; the private copies in `src/source/file.rs` and
+  `src/cli/mod.rs` are gone. The domain gains no dependency: the function
+  is `std` only.
 
 ### Python (M2 to M5)
 
