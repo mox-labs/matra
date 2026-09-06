@@ -145,6 +145,27 @@ class Model2Vec:
         """
         ...
 
+    @staticmethod
+    def potion_base_8m(
+        dir: str | None = None,  # noqa: A002 - the published keyword name
+    ) -> Model2Vec:
+        """Download (if absent) and load the pinned reference model.
+
+        The three artifact files are verified against a digest compiled
+        into the library before anything is loaded, so exactly one
+        artifact set can arrive this way. A mismatch removes the files
+        and retries once. With no argument the directory is resolved
+        through the configuration: the model directory joined with the
+        configured embedding model name.
+
+        Raises:
+            OSError: the directory cannot be created, read, or written.
+            ValueError: a download exceeded the artifact size cap.
+            RuntimeError: the digest still mismatched after one retry,
+                or the verified bytes do not parse.
+        """
+        ...
+
     @property
     def model_hash(self) -> str:
         """SHA-256 over the three artifact files: the model identity."""

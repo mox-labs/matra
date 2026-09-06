@@ -49,15 +49,16 @@ def test_reference_model_vectors_and_clusters_are_exact() -> None:
     """Reference-model conformance (i9 M6): the Python crust reproduces
     the pinned potion-base-8M expectations exactly. The adapter is
     bit-deterministic, so cluster scores compare exactly in f32 space.
-    Requires the model at ~/.matra/models/potion-base-8M (or
-    MATRA_MODEL2VEC_DIR).
+
+    Since i10 M4 the model arrives through ``potion_base_8m``, which
+    downloads it into the resolved directory on the first run and
+    verifies the same digest this fixture asserts. ``MATRA_MODEL2VEC_DIR``
+    still names the directory when set; without it the directory comes
+    from the resolved configuration. Marked ``model`` because the first
+    run needs a network.
     """
     fixture = json.loads(REF.read_text())
-    model_dir = os.environ.get(
-        "MATRA_MODEL2VEC_DIR",
-        str(Path.home() / ".matra" / "models" / "potion-base-8M"),
-    )
-    model = Model2Vec.from_dir(model_dir)
+    model = Model2Vec.potion_base_8m(os.environ.get("MATRA_MODEL2VEC_DIR"))
     assert model.model_hash == fixture["model"]["artifact_hash"]
     assert model.dimensions == fixture["model"]["dimensions"]
 

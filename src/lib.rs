@@ -596,6 +596,27 @@ mod python {
             Ok(Self { inner })
         }
 
+        /// Download (if absent) and load the pinned reference embedding
+        /// model, verifying its three-file digest against a constant in
+        /// the source before anything is loaded.
+        ///
+        /// With no argument the directory is resolved through `Config`:
+        /// the model directory joined with the configured embedding
+        /// model name.
+        #[staticmethod]
+        #[pyo3(signature = (dir=None))]
+        fn potion_base_8m(dir: Option<&str>) -> PyResult<Self> {
+            let inner = match dir {
+                Some(dir) => crate::embed::model2vec::Model2Vec::potion_base_8m(dir),
+                None => {
+                    let cfg = crate::config::Config::resolve().map_err(MatraError)?;
+                    crate::embed::model2vec::Model2Vec::from_config(&cfg)
+                }
+            }
+            .map_err(MatraError)?;
+            Ok(Self { inner })
+        }
+
         /// SHA-256 over the three artifact files, the identity carried
         /// into every result derived from this model's vectors.
         #[getter]
