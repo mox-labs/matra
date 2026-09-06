@@ -33,14 +33,24 @@ class Matra:
         ...
 
     @staticmethod
-    def english(model_dir: str) -> Matra:
+    def english(model_dir: str | None = None) -> Matra:
         """Download (if absent) and load the English UDPipe model.
+
+        With no argument the directory is resolved the way every matra
+        surface resolves it: `MATRA_MODEL_DIR`, else the `models`
+        subdirectory of the data root (`MATRA_DATA_DIR`, else
+        `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`), except that
+        a pre-existing `~/.matra/models` wins when the new location does
+        not exist yet.
 
         The download is atomic and SHA-256-verified against a pinned
         hash. Concurrent processes calling this with the same `model_dir`
         cannot corrupt each other's downloads.
 
         Raises:
+            ValueError: the config file is malformed, or the environment
+                names no home directory at all.
+            OSError: the config file could not be read.
             RuntimeError: download or load failed.
         """
         ...

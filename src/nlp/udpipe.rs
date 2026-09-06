@@ -7,6 +7,7 @@ use std::path::Path;
 use sha2::{Digest, Sha256};
 use udpipe_rs::Model;
 
+use crate::config::Config;
 use crate::domain::Error;
 use crate::domain::{Sentence, Token};
 
@@ -96,6 +97,27 @@ impl Udpipe {
                 path.display()
             ))),
         }
+    }
+
+    /// [`Udpipe::english`] over the model directory a [`Config`] resolved.
+    ///
+    /// Additive: the explicit-directory constructors are unchanged, and
+    /// this one exists so a caller who has no opinion about where models
+    /// live does not have to invent one.
+    ///
+    /// ```no_run
+    /// use matra::nlp::udpipe::Udpipe;
+    ///
+    /// let cfg = matra::config::Config::resolve()?;
+    /// let nlp = Udpipe::from_config(&cfg)?;
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Whatever [`Udpipe::english`] returns.
+    pub fn from_config(cfg: &Config) -> crate::domain::Result<Self> {
+        Self::english(cfg.model_dir())
     }
 }
 

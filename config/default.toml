@@ -1,0 +1,16 @@
+[models]
+# Model directory defaults to $XDG_DATA_HOME/matra/models (~/.local/share/matra/models).
+# Override with MATRA_MODEL_DIR, or MATRA_DATA_DIR for the whole data root.
+udpipe = "english-ewt-ud-2.5-191206"
+embedding = "potion-base-8M"
+
+[semantic]
+threshold = 0.85
+
+[summarize]
+n = 3
+algorithm = "tfidf"
+
+[keyphrases]
+n = 10
+algorithm = "rake"
