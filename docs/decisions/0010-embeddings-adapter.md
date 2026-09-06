@@ -70,4 +70,4 @@ The decisions rest on falsifiable claims, and each has a check:
 - [ADR-0006](0006-abstract-tier-vocabulary-lock.md): the vocabulary lock this ADR's naming review extends, and the deferred list that gained `CorpusEntry.analysis`
 - [ADR-0007](0007-one-pipeline.md): the pipeline whose annotate/compose split the embed-then-cluster shape mirrors
 - [ADR-0008](0008-structural-primitives-are-fields.md): the FFI channel rule this ADR scopes to parse derivations
-- Landscape survey, 2026-09-04, filed in the maintainer's research drafts (`matra-substrate/2026-09-04-redundancy-density-inference-survey.md`): the verified wasm32 compilation results, the static-vs-transformer evidence, and the threshold-spread literature
+- Landscape survey, 2026-09-04 (an internal survey, not in this repository): the verified wasm32 compilation results, the static-vs-transformer evidence, and the threshold-spread literature

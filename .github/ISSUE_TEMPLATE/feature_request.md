@@ -11,8 +11,8 @@ labels: ["type:feature", "status:triage"]
 
 ## Why matra should have it
 
-<!-- Is this part of matra's substrate role, or does it belong in a downstream
-     consumer? See book/src/architecture/design.md for the boundary. -->
+<!-- Does this belong in matra itself, or in downstream
+     code? See book/src/architecture/design.md for the boundary. -->
 
 ## Proposed shape
 
