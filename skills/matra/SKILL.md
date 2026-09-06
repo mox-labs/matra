@@ -90,7 +90,7 @@ Branch on the code, not on the text. Exit 1 is not an error, and treating it as 
 
 ## Reading the numbers
 
-A slot is null when the metric stage has not run, and null where the paragraph did not meet the metric's threshold. Null is not zero. Formulas and citations are in `metrics`.
+Every metric row below names a slot on the result. A slot is null when the metric stage has not run, and null where the paragraph did not meet the metric's threshold. Null is not zero. The last row is not a slot: `score` is the ordering number on a `Keyphrase`, never null and never a measurement of the text. Formulas and citations are in `metrics`.
 
 | Field | Measures | Does not mean |
 |---|---|---|

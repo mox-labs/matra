@@ -367,7 +367,7 @@ The partition of a per-document result stream: entries plus errors equals docume
 
 The Python surface serializes values with pythonize. Fields have a serde representation and cross with their names unchanged. Methods have none, so there is nothing for them to cross with.
 
-<svg class="mx-ffi" role="img" aria-label="Document fields cross the FFI boundary into a Python dict; Document methods stop at the boundary" viewBox="0 0 720 300" width="720" height="300" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
+<svg class="mx-ffi" role="img" aria-label="Document fields cross the FFI boundary into a Python dict; Document methods stop at the boundary" viewBox="0 0 720 340" width="720" height="340" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
 <title>Fields cross the FFI boundary, methods stop at it</title>
 <style>
 .mx-ffi text{fill:currentColor}
@@ -385,7 +385,7 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 <defs><marker id="mx-ffi-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
 <text class="hd" x="16" y="30">Rust</text>
 <text class="hd" x="452" y="30">Python</text>
-<rect class="box" x="16" y="40" width="272" height="232" rx="5"/>
+<rect class="box" x="16" y="40" width="272" height="268" rx="5"/>
 <rect class="box" x="452" y="40" width="252" height="142" rx="5"/>
 <text class="ty" x="30" y="64">Document</text>
 <text class="ty" x="466" y="64">Document</text>
@@ -400,9 +400,11 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 <text class="mem" x="466" y="140">nominalization_ratio</text>
 <text class="mem" x="466" y="158">passive_ratio</text>
 <text class="hd" x="30" y="190">methods</text>
-<text class="mem" x="30" y="208">mean_sentence_length()</text>
-<text class="mem" x="30" y="226">sentence_length_std()</text>
+<text class="mem" x="30" y="208">paragraph_count()</text>
+<text class="mem" x="30" y="226">total_sentences()</text>
 <text class="mem" x="30" y="244">total_words()</text>
+<text class="mem" x="30" y="262">mean_sentence_length()</text>
+<text class="mem" x="30" y="280">sentence_length_std()</text>
 <line class="cross" x1="294" y1="100" x2="444" y2="100" marker-end="url(#mx-ffi-a)"/>
 <line class="cross" x1="294" y1="118" x2="444" y2="118" marker-end="url(#mx-ffi-a)"/>
 <line class="cross" x1="294" y1="136" x2="444" y2="136" marker-end="url(#mx-ffi-a)"/>
@@ -410,15 +412,19 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 <line class="stop" x1="176" y1="204" x2="386" y2="204"/>
 <line class="stop" x1="176" y1="222" x2="386" y2="222"/>
 <line class="stop" x1="176" y1="240" x2="386" y2="240"/>
+<line class="stop" x1="176" y1="258" x2="386" y2="258"/>
+<line class="stop" x1="176" y1="276" x2="386" y2="276"/>
 <line class="bar" x1="388" y1="197" x2="388" y2="211"/>
 <line class="bar" x1="388" y1="215" x2="388" y2="229"/>
 <line class="bar" x1="388" y1="233" x2="388" y2="247"/>
+<line class="bar" x1="388" y1="251" x2="388" y2="265"/>
+<line class="bar" x1="388" y1="269" x2="388" y2="283"/>
 <text class="hd" x="401" y="14" text-anchor="middle">FFI boundary</text>
 <text class="hd" x="401" y="26" text-anchor="middle">pythonize + serde</text>
-<line class="wall" x1="398" y1="32" x2="398" y2="288"/>
-<line class="wall" x1="404" y1="32" x2="404" y2="288"/>
-<text class="nt" x="462" y="220">a Python caller computes these</text>
-<text class="nt" x="462" y="236">from the sections it already has</text>
+<line class="wall" x1="398" y1="32" x2="398" y2="324"/>
+<line class="wall" x1="404" y1="32" x2="404" y2="324"/>
+<text class="nt" x="462" y="228">a Python caller computes these</text>
+<text class="nt" x="462" y="244">from the sections it already has</text>
 </svg>
 
 `Token::feat`, `Document::mean_sentence_length`, `Corpus::total_words`, `Sentence::tree_depth`, and every other method in the tables above are available to Rust callers only. `passive_ratio` is the one aggregate that crosses: the measure stage stores the method's result in the field of the same name.

@@ -201,19 +201,16 @@ print(result["passive_ratio"])   # a float, or None when there were no sentences
 
 Rust's `Document` carries `passive_ratio` twice: as the method that computes the ratio, and as the field the metric suite fills with what that method returned. The field exists exactly so the aggregate crosses the boundary as data instead of being re-derived once per language binding (ADR-0008), which is why it is in the dict above.
 
-Methods do not cross the FFI boundary, only fields do, so the four aggregates that exist only as methods are absent: `mean_sentence_length()`, `total_sentences()`, `total_words()`, and `sentence_length_std()`. Those four you compute from the fields you already have:
+Methods do not cross the FFI boundary, only fields do, so the five aggregates that exist only as methods are absent: `paragraph_count()`, `total_sentences()`, `total_words()`, `mean_sentence_length()`, and `sentence_length_std()`. Those five you compute from the fields you already have:
 
 ```python
 from statistics import stdev
 
-sentences = [
-    s
-    for sec in result["sections"]
-    for para in sec["paragraphs"]
-    for s in para["sentences"]
-]
+paragraphs = [para for sec in result["sections"] for para in sec["paragraphs"]]
+sentences = [s for para in paragraphs for s in para["sentences"]]
 lengths = [sum(1 for t in s["tokens"] if not t["is_punct"]) for s in sentences]
 
+paragraph_count = len(paragraphs)
 total_sentences = len(sentences)
 total_words = sum(lengths)
 mean_sentence_length = total_words / total_sentences if total_sentences else 0.0

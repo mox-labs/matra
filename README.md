@@ -8,7 +8,7 @@ NLP library. Text in, structured analysis out.
 
 UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.
 
-If you are an agent, run `matra --skill`. The program prints [`skills/matra/SKILL.md`](https://github.com/mox-labs/matra/blob/main/skills/matra/SKILL.md) out of its own binary, so the text always matches the version you are running. With nothing installed, `uvx 'matra>=0.2' --skill` does the same. Pin the version: `--skill` arrived in 0.2.0, and a bare `uvx matra` takes whatever release is newest, which before 0.2.0 was a different command line that does not have the flag.
+If you are an agent, run `uvx 'matra>=0.2' --skill`, which needs nothing installed, or `matra --skill` if you already have the binary. Either way the program prints [`skills/matra/SKILL.md`](https://github.com/mox-labs/matra/blob/main/skills/matra/SKILL.md) out of its own binary, so the text always matches the version you are running. Keep the version floor: `--skill` arrived in 0.2.0, and a bare `uvx matra` takes whatever release is newest, which before 0.2.0 was a different command line that does not have the flag.
 
 A pure, performant NLP library, built to be adaptable, composable, and extensible. Hex architecture, domain has zero internal dependencies, public enums and structs with public fields are `#[non_exhaustive]`. The library is small and stable; the interpretation lives in your code.
 
