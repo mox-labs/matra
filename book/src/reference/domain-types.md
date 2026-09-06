@@ -432,7 +432,11 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 | `Document` | `Document` |
 | `ScoredSentence` | `ScoredSentence` |
 | `Keyphrase` | `Keyphrase` |
-| `Format`, `RawDocument`, `CorpusEntry`, `Corpus` | no Python shape |
+| `CorpusEntry` | `CorpusEntry` |
+| `DocumentError` | `DocumentError` |
+| `Format`, `RawDocument`, `Corpus`, `CorpusResult` | no Python shape |
+
+`CorpusEntry` and `DocumentError` are the two items `Matra.analyze_path` returns, and the Python package names their union `matra.types.CorpusItem`. `CorpusEntry` crosses through serde like every shape above it. `DocumentError` does not: it wraps `Error`, which wraps `std::io::Error`, and there is no stable wire shape for that. The binding materializes its two fields instead, the error as `{"kind": str, "message": str}`, where `kind` is a stable string (`model_not_found`, `model_invalid`, `parse_failed`, `input_too_large`, `unsupported_format`, `invalid_input`, `io`) a consumer branches on and `message` is the Rust error's own `Display` text.
 
 The Python shapes are `TypedDict` declarations available at runtime. They are declared in `matra.types` and re-exported from the package root, so either import works:
 

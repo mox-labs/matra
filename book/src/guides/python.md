@@ -67,7 +67,7 @@ with ProcessPoolExecutor(initializer=_init) as pool:
 
 Concurrent `Matra.english` calls against the same model directory are safe. Each process downloads into its own temporary subdirectory and moves the file into place with a single rename.
 
-## The six methods
+## The six text methods
 
 | Method | Takes | Returns |
 |---|---|---|
@@ -84,11 +84,52 @@ summary = v.tfidf_summarize(text, 3)
 phrases = v.rake_keyphrases(text, 10)
 ```
 
+Two more methods take something other than a string: `analyze_path` takes a path, and `semantic_clusters` takes text plus an embedding model. Both are below.
+
 There is no standalone parse method on the Python surface. Each of the four extraction methods runs the text it is given through the pipeline on its own, treating it as plain text. Calling `analyze` and then `tfidf_summarize` on the same string parses that string twice, and there is no parse-once-use-many path from Python today. If the second parse matters for your workload, do that work in Rust and expose the result through your own binding.
 
 The two summarizers return their selection in document order, not score order. Read `position` to see where a sentence sits in the source and `score` to see how it ranked. The two keyphrase methods return score order, highest first, because `Keyphrase` has no position to sort back into.
 
 Keyphrases come back as lowercased lemmas joined with spaces, not as the surface text. A document about "Dependency Parses" yields the phrase `dependency parse`. Phrases with identical scores can also change relative order between runs, and a tie straddling the `max_phrases` cutoff can change which phrase is included, because the internal candidate map has no stable iteration order. Sort or filter on your side if you need a reproducible list.
+
+## Analyze a directory
+
+`analyze_path` takes a file or a directory and returns one item per document, in path order:
+
+```python
+for item in v.analyze_path("docs/"):
+    if "error" in item:
+        print(f"{item['path']}: {item['error']['kind']}: {item['error']['message']}")
+    else:
+        print(item["path"], item["analysis"]["vocabulary_ttr"])
+```
+
+One unreadable file costs one item, not the walk. A document that analyzed arrives as a `CorpusEntry` (`path`, `analysis`, where `analysis` is the same shape `analyze` returns); one that did not arrives as a `DocumentError` (`path`, `error`), holding the position the document would have had. The `error` object carries a `kind` you can branch on (`io`, `input_too_large`, `parse_failed`, `unsupported_format`, `model_invalid`, `model_not_found`, `invalid_input`) and a `message` for a human to read. Testing `"error" in item` is also what narrows the union for a type checker.
+
+The walk is not recursive, and symlinks and subdirectories are skipped rather than followed. Only a failure listing the path itself raises: a missing directory is `OSError`, because there is no per-document result for it to travel in.
+
+## Bring your own embeddings
+
+`semantic_clusters` accepts a `Model2Vec`, or any object with two methods:
+
+```python
+class MyEmbedder:
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        return my_service.encode(texts)     # one vector per text, in order
+
+    def identity(self) -> str:
+        return "my-service/v3"              # names the geometry, not the run
+
+
+clusters = v.semantic_clusters(text, 0.85, MyEmbedder())
+assert clusters["model_hash"] == "my-service/v3"
+```
+
+`Embedder` in `matra.types` is the protocol those two methods satisfy; importing it is optional and buys you a type checker's opinion, not a runtime check.
+
+The contract is the one the Rust port carries: exactly one vector per input text, in input order, every vector the same length. Break it and the call raises `ValueError` with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your `embed` arrives as `ValueError` too, with your exception's own text inside the message.
+
+`identity` is read once, when the object is handed over, and travels into the result as `model_hash`. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.
 
 ## Size limits
 
@@ -179,6 +220,7 @@ Every `domain::Error` variant crosses the FFI boundary as a specific Python exce
 | Model path does not exist | `ModelNotFound` | `FileNotFoundError` |
 | Input exceeds the 8 MiB cap, or a per-extractor cap | `InputTooLarge` | `ValueError` |
 | Input format has no decomposer | `UnsupportedFormat` | `ValueError` |
+| A caller broke a documented contract, such as an embedder returning the wrong number of vectors | `InvalidInput` | `ValueError` |
 | File I/O error | `Io` | `OSError` |
 | Model file corrupt, wrong format, or download failed | `ModelInvalid` | `RuntimeError` |
 | NLP parsing failed, including a panic caught at the UDPipe boundary | `ParseFailed` | `RuntimeError` |
