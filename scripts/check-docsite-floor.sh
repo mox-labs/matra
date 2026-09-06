@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Floor gates for the docsite. Runs in CI; can be invoked locally via `just docs-floor`.
 #
-# Four gates protect against the cheap-to-introduce, expensive-to-find regressions:
+# Six gates protect against the cheap-to-introduce, expensive-to-find regressions:
 #
 #   1. Link integrity     — lychee verifies all in-book Markdown links resolve.
 #   2. Orphan detect      — every page under book/src/ is referenced in SUMMARY.md
@@ -17,6 +17,11 @@
 #   4. mdbook clean build — `mdbook build` runs without warnings or errors.
 #   5. No em dashes       — project prose convention, exempting quoted material.
 #                            Covers book/src/ and skills/.
+#   6. llms.txt currency  — book/src/llms.txt is what scripts/gen-llms-txt.sh
+#                            writes today. The file is generated from SUMMARY.md
+#                            and from the opening line of each page, so a page
+#                            added, retitled, or reworded leaves it stale, and
+#                            a stale map is worse for an agent than none.
 #
 # Local invocation: lychee is optional locally (skip-with-warning); CI installs it.
 # mdbook is required (this script fails gate 4 if missing).
@@ -303,6 +308,38 @@ else
     echo "PASS (gate 5): no em dashes outside quoted material"
 fi
 echo ""
+
+# ---------------------------------------------------------------------------
+# Gate 6: llms.txt currency
+# ---------------------------------------------------------------------------
+# book/src/llms.txt is the agent-facing map of the docsite: the H1, the
+# blockquote summary and the H2 link sections the llms.txt proposal fixes.
+# Every line of it is derived, so the file is generated rather than written,
+# and it is committed so that a reader of the repository sees what the site
+# serves. This gate regenerates it into a temporary file and diffs. A page
+# added to SUMMARY.md, retitled, or whose opening sentence changed leaves the
+# committed copy stale, and a map that points somewhere the site does not go
+# is worse for an agent than no map at all.
+echo "=== Gate 6: llms.txt currency ==="
+llms_expected=$(mktemp)
+if gen_out=$(bash scripts/gen-llms-txt.sh "$llms_expected" 2>&1); then
+    if llms_diff=$(diff -u book/src/llms.txt "$llms_expected" 2>&1); then
+        echo "PASS (gate 6): book/src/llms.txt is current"
+    else
+        echo "FAIL (gate 6): book/src/llms.txt is stale"
+        echo "$llms_diff" | sed 's/^/  /'
+        echo ""
+        echo "        run scripts/gen-llms-txt.sh"
+        fail=$((fail + 1))
+    fi
+else
+    echo "FAIL (gate 6): scripts/gen-llms-txt.sh did not run"
+    echo "$gen_out" | sed 's/^/  /'
+    fail=$((fail + 1))
+fi
+rm -f "$llms_expected"
+echo ""
+
 # ---------------------------------------------------------------------------
 # Gate 4: mdbook clean build
 # ---------------------------------------------------------------------------
