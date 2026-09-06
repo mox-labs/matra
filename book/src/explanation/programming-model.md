@@ -23,6 +23,38 @@ Reads are lazy. `Ingest::path` on a directory lists entries up front, and a list
 
 `compose` is total. It reads what is attached and skips what is not, so it has no failure path.
 
+## Configuration
+
+`Engine::new` takes a provider and a decomposer table, which means the caller decides where the UDPipe model lives. `Config` answers that question once so no caller has to invent a path.
+
+```rust
+let engine = Engine::with_defaults()?;
+```
+
+That is `Config::resolve()` followed by `Engine::from_config(&cfg)`. Both are additive: `Engine::new`, `Udpipe::english` and `Udpipe::from_path` are unchanged, and an explicit path still wins over everything below.
+
+`Config` resolves locations and defaults, never behavior. It carries the model directory, the semantic threshold, and the default counts and algorithm names, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped.
+
+Resolution order, per key: an explicit argument, then the environment, then the config file, then the defaults compiled into the crate from `config/default.toml`.
+
+| Variable | Overrides |
+|---|---|
+| `MATRA_CONFIG_FILE` | the config file path |
+| `MATRA_DATA_DIR` | the data root |
+| `MATRA_MODEL_DIR` | the model directory |
+
+Paths follow the XDG conventions on Linux and on macOS.
+
+| What | Default | Env override |
+|---|---|---|
+| config file | `$XDG_CONFIG_HOME/matra/config.toml`, else `~/.config/matra/config.toml` | `MATRA_CONFIG_FILE` |
+| data root | `$XDG_DATA_HOME/matra`, else `~/.local/share/matra` | `MATRA_DATA_DIR` |
+| models | the data root's `models` subdirectory | `MATRA_MODEL_DIR` |
+
+One exception to the model directory rule: if the data root has no `models` subdirectory yet and `~/.matra/models` does exist, that older location is used. It is read only. matra never creates it and never writes into it, so a cache from 0.1.0 keeps working and a fresh install lands in the new place.
+
+A missing config file is not an error; the built-in defaults stand. A malformed one is `Error::InvalidInput` naming the file and the line, and an algorithm name the build does not know is rejected the same way at resolve time rather than at call time. Every resolved value records which rung it came from, readable through `Config::sources` as a `ValueSource`.
+
 ## `annotate` is the only route to the parser
 
 `Engine::annotate` runs the size check, then hands each non-blockquote paragraph to `NlpProvider::parse`. Nothing else in the library calls the parser. That is what makes the 8 MiB cap a property of the pipeline rather than of each entry point: no text over `MAX_INPUT_BYTES` can reach a provider, whichever call you started from.
@@ -74,7 +106,7 @@ When an aggregate needs to be visible cross-language it is materialized as a fie
 
 | Python | Rust equivalent |
 |---|---|
-| `Matra.from_path`, `Matra.english` | `Udpipe::from_path`, `Udpipe::english` wired into an `Engine` |
+| `Matra.from_path`, `Matra.english` | `Udpipe::from_path`, `Udpipe::english` wired into an `Engine`; `Matra.english()` with no argument is `Udpipe::from_config` |
 | `Matra.analyze`, `Matra.analyze_markdown` | `analyze_one` on a `RawDocument` of that format |
 | `Matra.tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases` | `annotate`, then the matching extraction function |
 | `Matra.semantic_clusters` | `annotate`, then `embed_and_cluster` |

@@ -1,8 +1,22 @@
 # Use matra from Rust
 
-You already have `matra` in your `Cargo.toml` and a UDPipe model on disk.
+You already have `matra` in your `Cargo.toml`.
 
 Every snippet below assumes it runs inside a function returning `matra::domain::Result<()>`, which is why `?` works.
+
+## The no-setup path
+
+One line, no arguments, no model on disk yet:
+
+```rust
+use matra::Engine;
+
+let engine = Engine::with_defaults()?;
+```
+
+`Engine::with_defaults` resolves a `Config` (the environment, then your config file, then the defaults compiled into the crate), downloads the English UDPipe model into the resolved directory if it is not already there, and wires the standard decomposer table. The directory is `MATRA_MODEL_DIR` if you set it, otherwise the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`. [Programming model](../explanation/programming-model.md#configuration) has the full resolution order.
+
+Everything below is the explicit path, which still works and still wins over the resolved one. Take it when you want the model somewhere specific, or a provider matra does not ship.
 
 ## Construct a provider
 
