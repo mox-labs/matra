@@ -12,7 +12,7 @@ Analysis returns one nested value. Each level owns the level below it and carrie
 | sentence | `Sentence` | verbatim `text`, id-sorted tokens, and the structural primitive fields |
 | token | `Token` | the ten CoNLL-U columns (`text`, `lemma`, `pos`, `xpos`, `feats`, `head`, `dep`, `deps`, `misc`, plus `id`) and the derived `is_punct` |
 
-`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Each non-blockquote paragraph is parsed on its own, so a sentence belongs to exactly one paragraph by construction rather than by matching text back.
+`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Each non-blockquote paragraph is parsed on its own, so a sentence always belongs to exactly one paragraph, rather than being matched back by text.
 
 Inside a sentence, exactly one token has `head` equal to `0`: the root. Every other token names its governor in `head` and the relation in `dep`. Those two columns are what turn a flat token list into a tree.
 
@@ -81,16 +81,16 @@ Words keep their reading order left to right; height is depth in the tree. `buil
 
 ## The four output tiers
 
-The pipeline produces them in this order, and each tier is a different kind of claim.
+The pipeline produces them in this order, and each is a different kind of result.
 
 1. **Structure**, from `Engine::annotate`. Sections, paragraphs, sentences, tokens, and the structural primitive fields. Derived from the parse, checkable against the source bytes.
 2. **Measures**, from `Engine::compose`. Five `Option<f64>` slots filled by the metric suite: three per paragraph, two per document, plus the materialized `passive_ratio`. `None` means not computed, which is distinct from a computed zero.
 3. **Extraction**, from standalone functions over a sentence slice: `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`. They return `ScoredSentence` and `Keyphrase` values, never fields on the tree.
-4. **Semantic**, behind the `model2vec` feature. `embed_and_cluster` returns a `SemanticClusters` value carrying the model hash and the threshold you supplied. This tier is a model's opinion, so by design it never becomes a field on `Document` or `Sentence`.
+4. **Semantic**, behind the `model2vec` feature. `embed_and_cluster` returns a `SemanticClusters` value carrying the model hash and the threshold you supplied. This tier depends on the model, so by design it never becomes a field on `Document` or `Sentence`.
 
 ## Structural primitives
 
-A structural primitive is a construction read off the dependency graph and reported as a field. Six of them are computed once and travel with the sentence into every language binding: five at `Sentence` construction, and `hearst_pairs` at `Engine::annotate`, because its detector lives outside the domain (a `Sentence` built by hand has an empty `hearst_pairs`). They name an arc shape. They never name a verdict.
+A structural primitive is a construction read off the dependency graph and reported as a field. Six of them are computed once and travel with the sentence into every language binding: five at `Sentence` construction, and `hearst_pairs` at `Engine::annotate`, because its detector lives outside the domain (a `Sentence` built by hand has an empty `hearst_pairs`). They name an arc shape. They never name a judgment.
 
 | Field | The arc shape | Grounded example |
 |---|---|---|

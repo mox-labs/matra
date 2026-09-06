@@ -1,14 +1,14 @@
 # Semantic clusters
 
-Everything else matra returns is deterministic structure, checkable against the source bytes. This page's output is not: semantic clusters come from a model's opinion about meaning, they cannot be verified against the text, and matra treats that difference structurally. Clusters arrive as a standalone `SemanticClusters` value from a separate call, never as a field on `Document`, and they carry the identity of the model that produced them plus the threshold you chose.
+Everything else matra returns is deterministic structure, checkable against the source bytes. This page's output is not: semantic clusters depend on a model's representation of meaning, they cannot be verified against the text, and matra treats that difference structurally. Clusters arrive as a standalone `SemanticClusters` value from a separate call, never as a field on `Document`, and they carry the identity of the model that produced them plus the threshold you chose.
 
 ## What you get
 
-Feed a document and an embedding model, get connected components of sentences whose pairwise cosine similarity cleared your threshold. The intended consumer pattern is auditing LLM output for restatement: the model catches paraphrase (same claim, different words) that lexical overlap cannot see.
+Feed a document and an embedding model, get connected components of sentences whose pairwise cosine similarity cleared your threshold. The intended use is auditing LLM output for restatement: the model catches paraphrase (same claim, different words) that lexical overlap cannot see.
 
 ```text
 SemanticClusters
-  model_hash   identity of the model whose geometry produced the scores
+  model_hash   identity of the model whose vector space produced the scores
   threshold    the cutoff you supplied
   clusters     each: member sentence indices + the edges that cleared
 ```
@@ -16,7 +16,7 @@ SemanticClusters
 Three things the shape means, stated once here and again in the type docs:
 
 - **Co-membership is transitive, not pairwise.** Clusters are connected components, so sentence A and sentence C can share a cluster because both resemble B, without resembling each other. The edges travel in the result precisely so you can see which pairs actually cleared the bar. A missing edge is no claim, not a low score.
-- **Singletons are excluded by construction.** A sentence with no above-threshold edge appears in no cluster, so "not in any cluster" is a meaningful count.
+- **Singletons are always excluded.** A sentence with no above-threshold edge appears in no cluster, so "not in any cluster" is a meaningful count.
 - **The threshold is yours.** Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus; the working value depends on the model, the domain, and the text length. Start around 0.85 with the reference model and calibrate on your own corpus.
 
 ## The model
@@ -30,7 +30,7 @@ $ for f in model.safetensors tokenizer.json config.json; do
   done
 ```
 
-A static model is a lookup table, not a transformer: inference is a row gather, a mean, and a normalize. That costs roughly ten percent of a small transformer's benchmark quality and buys bit-identical vectors on every platform and in every crust, which is what lets the conformance suite pin exact vectors rather than tolerances. The adapter hashes all three files on load, and that digest is the `model_hash` in every result. The hash is identity, not verification, so check your download yourself: for the release the conformance suite pins, `model_hash` reads `81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4` (also recorded in `spec/tests/semantic/reference-model.json`).
+A static model is a lookup table, not a transformer: inference is a row gather, a mean, and a normalize. That costs roughly ten percent of a small transformer's benchmark quality and buys bit-identical vectors on every platform and in every language binding, which is what lets the conformance suite pin exact vectors rather than tolerances. The adapter hashes all three files on load, and that digest is the `model_hash` in every result. The hash is identity, not verification, so check your download yourself: for the release the conformance suite pins, `model_hash` reads `81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4` (also recorded in `spec/tests/semantic/reference-model.json`).
 
 ## Rust
 

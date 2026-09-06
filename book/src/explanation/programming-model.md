@@ -56,7 +56,7 @@ Every gate returns a typed variant of `Error`. There is no `Result<T, String>` a
 | `embed_and_cluster`, `semantic_clusters` | 2,000 sentences | `InputTooLarge`, `what` is `"semantic_clusters"` |
 | `rake_keyphrases`, `yake_keyphrases` | 200,000 tokens | `InputTooLarge`, `what` is `"rake"` or `"yake"` |
 
-The `what` discriminator names which gate fired, so a consumer can route a document-too-big differently from a corpus-too-big.
+The `what` discriminator names which gate fired, so a caller can route a document-too-big differently from a corpus-too-big.
 
 Cycle safety is a sentinel, not a ceiling: `Sentence::tree_depth` returns `usize::MAX` on a malformed parse containing a cycle rather than silently truncating.
 

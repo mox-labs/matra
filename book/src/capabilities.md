@@ -1,6 +1,6 @@
 # What matra gives you
 
-Every value the pipeline returns, by tier. "Crust" says which language surfaces carry it: fields cross to Python, methods do not.
+Every value the pipeline returns, by tier. The tables say which language surfaces carry each value: fields cross to Python, methods do not.
 
 ## 1. Structure
 
@@ -123,9 +123,9 @@ Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `
 
 `engine.analyze(ingest)` returns a lazy iterator of per-document results. Collecting it into `CorpusResult` partitions successes from failures, and one bad file does not abort the stream.
 
-## Provenance
+## Traceability
 
-`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Nothing is normalized, re-wrapped, or rewritten, and each paragraph is parsed on its own, so the chain from a token up through its sentence, paragraph, and section holds by construction rather than by text matching.
+`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Nothing is normalized, re-wrapped, or rewritten, and each paragraph is parsed on its own, so the chain from a token up through its sentence, paragraph, and section always holds, rather than depending on text matching.
 
 ## Where to go next
 

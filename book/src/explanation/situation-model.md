@@ -2,9 +2,9 @@
 
 ## What matra is for
 
-matra illuminates the internal structural makeup of text. Text goes in; a typed tree, a set of measures, and a set of ranked extractions come out. Everything it returns is a value your code can read, store, and reason over.
+matra reports the structure of text and measurements over it. Text goes in; a typed tree, a set of measures, and a set of ranked extractions come out. Everything it returns is a value your code can read, store, and reason over.
 
-It is a substrate. The higher-order reasoning is built on top of it, by you.
+It is a library, not an application. The analysis on top of it is yours to write.
 
 ## What it reports and what it leaves to you
 
@@ -20,7 +20,7 @@ That split runs through every tier:
 | `modals` names `must` on an `aux` arc | whether that `must` is obligation or inference |
 | a `SemanticCluster` groups sentences whose vectors cleared your threshold | whether those sentences say the same thing |
 
-The reason for the split is reuse. A verdict is fitted to one purpose and is dead weight to the next consumer; the arc it was computed from is not.
+The reason for the split is reuse. A judgment is fitted to one purpose and is dead weight to the next caller; the arc it was computed from is not.
 
 ## Where it sits in a pipeline
 
