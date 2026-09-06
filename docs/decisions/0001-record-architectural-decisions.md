@@ -6,7 +6,7 @@
 
 ## Context
 
-matra is a substrate library: its public API surface and architectural
+matra is a library: its public API surface and architectural
 choices will be inherited by every downstream consumer. Once 0.1.0
 ships, the surface binds. Future contributors (including future
 versions of the maintainers) need to understand *why* a particular

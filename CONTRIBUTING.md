@@ -110,7 +110,7 @@ every downstream consumer; it deserves an explicit human moment.
 
 - Bug: `.github/ISSUE_TEMPLATE/bug_report.md` (auto-applied).
 - Feature: `.github/ISSUE_TEMPLATE/feature_request.md`. Ask whether the
-  feature belongs in matra's substrate role or in a downstream consumer.
+  feature belongs in matra itself or in a downstream caller.
 - Architectural decision: `.github/ISSUE_TEMPLATE/decision_record.md`.
 
 ### Open a discussion

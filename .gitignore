@@ -40,9 +40,6 @@ book/book/
 # belongs in git history either.
 scratch/
 
-# Rhetoric workspace (working artifacts)
-.rhet/
-
 # Generated-docs archive (snapshots of prior docsite content; not tracked)
 .archive/
 

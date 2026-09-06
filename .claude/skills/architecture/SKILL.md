@@ -1,11 +1,11 @@
 ---
 name: architecture
-description: Matra's architectural disciplines — hex boundary rules, port design, composition root, adapter pattern, applying the canonical patterns (deployment-shape, trait-substrate-stability, orthogonal-dispatch). Use when adding modules, creating adapters, or making structural changes.
+description: Matra's architectural disciplines — hex boundary rules, port design, composition root, adapter pattern, applying the canonical patterns (deployment-shape, trait-stability, orthogonal-dispatch). Use when adding modules, creating adapters, or making structural changes.
 ---
 
 # architecture
 
-Architectural disciplines for matra. This skill codifies the hex layout, the boundary rules, and the canonical patterns from the rust-mastery corpus that apply at matra's scale.
+Architectural disciplines for matra. This skill codifies the hex layout, the boundary rules, and the canonical patterns that apply at matra's scale.
 
 ## When to invoke
 
@@ -87,7 +87,7 @@ Matra is library-shaped, capability-composition flavor. Two feature flags (`udpi
 
 Watch for the lancedb leakage failure mode: external dep's default features pulling in unwanted backends (issues #2865, #2567 in lancedb). Matra's deps are small enough today that this isn't an active risk, but audit `default-features = false` discipline on any new dep that could transitively pull in optional backends.
 
-### Pattern 6 — trait-substrate-stability via separately published minimal crate
+### Pattern 6 — trait-stability via separately published minimal crate
 
 Criterion: separate a port trait into its own minimal crate IFF an **external implementor ecosystem** exists who needs to pin the contract independently.
 
@@ -103,7 +103,7 @@ This is appropriate at matra's scale. The corpus shows N=4 axes only at search-e
 
 ### Pattern 11 — incremental computation
 
-Not applicable. Matra is a one-shot pipeline (annotate → compose → return), not an incremental system. Memoizing parse results across calls is fine at the consumer level (and is what annotate-once, read-the-tree enables), but the substrate is stateless.
+Not applicable. Matra is a one-shot pipeline (annotate → compose → return), not an incremental system. Memoizing parse results across calls is fine at the consumer level (and is what annotate-once, read-the-tree enables), but the library is stateless.
 
 ## Cross-language considerations
 

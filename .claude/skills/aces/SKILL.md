@@ -1,6 +1,6 @@
 ---
 name: aces
-description: ACES — Adaptable, Composable, Extensible. The non-negotiable design philosophy for matra. Every system decays through three endogenous forces (stasis, drag, opacity); ACE is the discipline that resists them. Use when making any structural decision, designing an interface, or evaluating whether a change preserves long-term substrate value.
+description: ACES — Adaptable, Composable, Extensible. The non-negotiable design philosophy for matra. Every system decays through three endogenous forces (stasis, drag, opacity); ACE is the discipline that resists them. Use when making any structural decision, designing an interface, or evaluating whether a change preserves the library's long-term value.
 ---
 
 # aces
@@ -131,4 +131,4 @@ ACES is the philosophy matra is built on. A change that's good engineering but v
 - A change that blurs boundaries (adapter imports another adapter, port imports another port, domain.rs grows a new dep beyond serde/thiserror/std) — **reject** unless there's an ADR.
 - A change that grows opacity (removes rustdoc, adds a workaround without explaining, deletes an ADR's context) — **reject** in review.
 
-These rejections are not personal; they are the substrate's self-defense.
+These rejections are not personal; they are the library's self-defense.

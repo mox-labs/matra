@@ -72,7 +72,7 @@ Non-obvious gotchas. Each is a behavior plus the failure mode if you violate it.
 - **No `Result<T, String>` anywhere in the library.** Library callers match on concrete `domain::Error` variants. `anyhow` belongs in caller code (a CLI, a service) where erasure is ergonomic; matra itself stays on enums via `thiserror`.
 - **PyErr routing is exhaustive at compile time.** Adding a variant to `domain::Error` will fail to compile until you wire it into `From<MatraError> for PyErr` with a specific Python exception class. The no-wildcard match exists so new variants do not silently route to `PyRuntimeError`.
 - **Methods do not cross FFI. Only fields do.** Aggregate Rust methods (`Document::passive_ratio()`, `Corpus::total_words()`) are invisible to Python and (future) WASM consumers. If a value needs to be visible cross-language, materialize it as a field on a summary type, not a method.
-- **Em dashes get rejected.** Project convention forbids them in documentation prose. The orwell voice pass catches them in book content; reviewers catch them elsewhere.
+- **Em dashes get rejected.** Project convention forbids them in documentation prose. `scripts/check-docsite-floor.sh` gate 5 rejects em dashes in `book/src/`; reviewers catch them elsewhere.
 - **Publishing is hand-gated.** `cargo publish` and `maturin publish` are always preceded by `--dry-run`. The publish step itself requires explicit per-publish approval per the project memory. Do not script away the gate; it exists because publishing is irreversible and visible to every downstream consumer.
 
 ## Conventions

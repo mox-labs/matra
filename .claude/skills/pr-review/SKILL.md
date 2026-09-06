@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: matra's project-specific PR review. Use when reviewing a pull request in CI or locally. Encodes the boundary rules with their grep-blind spellings, the pipeline laws, the substrate discipline, and the FFI exposure criterion. The reviewer is the falsifier, they look for what is wrong, not what is right.
+description: matra's project-specific PR review. Use when reviewing a pull request in CI or locally. Encodes the boundary rules with their grep-blind spellings, the pipeline laws, the structure-over-interpretation discipline, and the FFI exposure criterion. The reviewer is the falsifier, they look for what is wrong, not what is right.
 ---
 
 # matra PR review
@@ -101,7 +101,7 @@ finding; so is a new field that merely restates wire data. If a field
 crosses: `python/matra/types.py`, `_core.pyi`, and a `spec/tests/`
 fixture must move in the same PR.
 
-## Gate 4: substrate discipline
+## Gate 4: structure-over-interpretation discipline
 
 matra reports structure and never interpretation. Any output assigning
 an interpretive category (epistemic/deontic, hedged, weak, credible,

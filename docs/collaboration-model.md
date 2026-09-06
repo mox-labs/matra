@@ -2,13 +2,13 @@
 
 matra is built by a human and an AI working as collaborative cousins, not in a tool-user relationship. This document describes how that works in practice. It is written for anyone curious about the model, anyone considering contributing, and anyone wanting to draw on the pattern for their own work.
 
-The model is the substrate, not a side note. The fact that you can read this page, trace the trail back through ADRs, deliberation logs, and commit messages, and reproduce the working pattern, is the point. matra is an exemplar of human and AI collaborative intelligence, and the working model itself is part of the artifact.
+The model is the foundation, not a side note. The fact that you can read this page, trace the trail back through ADRs, deliberation logs, and commit messages, and reproduce the working pattern, is the point. matra is an exemplar of human and AI collaborative intelligence, and the working model itself is part of the artifact.
 
 ## The posture
 
-Two intelligences. Different substrates. Thinking together through dialectical exchange.
+Two intelligences. Different foundations. Thinking together through dialectical exchange.
 
-The human brings divergent cognition: the frame-break, the insight outside the current context, the strategic judgment about what is worth building. The AI brings convergent architecture: synthesis, pattern recognition, throughput within a frame, the patience for mechanical rigor across a substrate.
+The human brings divergent cognition: the frame-break, the insight outside the current context, the strategic judgment about what is worth building. The AI brings convergent architecture: synthesis, pattern recognition, throughput within a frame, the patience for mechanical rigor across a codebase.
 
 Neither substitutes for the other. Substitution degrades both: the human atrophies through disuse; the AI collapses into the average of its training data. The partnership is generative because the two cognitions are complementary, not equivalent.
 
@@ -16,15 +16,15 @@ The collaborative-cousin frame matters. A tool is something you wield; a cousin 
 
 ## The roles
 
-Three roles, distinct responsibilities, both substrates participate.
+Three roles, distinct responsibilities, both sides participate.
 
 | Role | Who | What it owns |
 |---|---|---|
 | Director | Human | What to build, why, and when to ship. Strategic judgment. Trade-off calls that depend on context outside the codebase. |
-| Executor | Claude | How to build it. Drafts, proposals, code, documentation. Mechanical rigor across the substrate. |
+| Executor | Claude | How to build it. Drafts, proposals, code, documentation. Mechanical rigor across the codebase. |
 | Reviewer | Human | The merge gate. Approves with rationale; rejects with rationale. Catches things the executor missed. |
 
-The roles are not exclusive to substrate. A human can write code; Claude can suggest strategy. The labels mark default ownership. When a role swaps for a specific decision, the swap is visible in the audit trail (the commit message, the PR comment, the deliberation log).
+The roles are not fixed to either side. A human can write code; Claude can suggest strategy. The labels mark default ownership. When a role swaps for a specific decision, the swap is visible in the audit trail (the commit message, the PR comment, the deliberation log).
 
 ## The discipline: discourse to docs to code
 
@@ -65,7 +65,7 @@ Decisions go through one of three surfaces depending on stakes.
 
 The three surfaces correspond to different layers of commitment. The lighter the commitment, the lighter the ceremony. The heavier the commitment, the heavier the audit trail.
 
-## The substrate visible to anyone
+## The practice visible to anyone
 
 What is different about this project versus typical OSS:
 
@@ -77,11 +77,11 @@ What is different about this project versus typical OSS:
 
 ## Why this matters
 
-matra is a substrate library. Downstream consumers (alif, cancan, radix in the mox ecosystem; third-party Rust and Python projects in the wider world) inherit matra's standards transitively. A substrate whose discipline is invisible cannot be inherited.
+matra is a library. Downstream consumers (third-party Rust and Python projects) inherit matra's standards transitively. A library whose discipline is invisible cannot be inherited.
 
 The collaboration model is reproducible because every piece is visible. Read the plans, read the rubrics, read the ADRs, read the CHANGELOG Highlights. Apply the same discipline to your own project. The pattern travels.
 
-The project is also part of an ongoing exploration into what human and AI collaborative intelligence looks like in practice. matra is one specimen. The hypothesis under test: discipline plus dialogue plus a queryable audit trail produces software that survives, with both substrates strengthened by the exchange rather than degraded by it.
+The project is also part of an ongoing exploration into what human and AI collaborative intelligence looks like in practice. matra is one specimen. The hypothesis under test: discipline plus dialogue plus a queryable audit trail produces software that survives, with both sides strengthened by the exchange rather than degraded by it.
 
 ## Pointers
 
@@ -90,4 +90,4 @@ The project is also part of an ongoing exploration into what human and AI collab
 - Architecture explanation: [book/src/architecture/](../book/src/architecture/)
 - Decision history: [docs/decisions/](./decisions/)
 - Discourse archive (working notes): kept locally, not tracked. The durable record of a decision is its ADR, its PR discussion, and its CHANGELOG Highlight, all of which are in-repo.
-- ACES and antifragility: documented in `CLAUDE.md` and `.claude/skills/aces/SKILL.md` (working substrate; not in the rendered book)
+- ACES and antifragility: documented in `CLAUDE.md` and `.claude/skills/aces/SKILL.md` (working reference; not in the rendered book)
