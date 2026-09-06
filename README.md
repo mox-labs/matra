@@ -120,31 +120,31 @@ The repository is built on two non-negotiable disciplines:
 
 - **ACES**: Adaptable, Composable, Extensible. The structural design
   philosophy that resists the stasis/drag/opacity decay cycle every long-lived
-  library faces. See [`.claude/skills/aces/SKILL.md`](.claude/skills/aces/SKILL.md).
+  library faces. See [`.claude/skills/aces/SKILL.md`](https://github.com/mox-labs/matra/blob/main/.claude/skills/aces/SKILL.md).
 - **Antifragility**: the operational discipline. Size caps at the gate,
   panic boundaries at the C/C++ FFI, atomic file writes, TOCTOU-closed hash
   verification, cycle-safe graph walks. See
-  [`.claude/skills/resilience-floor/SKILL.md`](.claude/skills/resilience-floor/SKILL.md).
+  [`.claude/skills/resilience-floor/SKILL.md`](https://github.com/mox-labs/matra/blob/main/.claude/skills/resilience-floor/SKILL.md).
 
-The agent organization in [`.claude/agents/`](.claude/agents/) (6 practitioner
-agents) and skill library in [`.claude/skills/`](.claude/skills/) (7 skills)
+The agent organization in [`.claude/agents/`](https://github.com/mox-labs/matra/tree/main/.claude/agents) (6 practitioner
+agents) and skill library in [`.claude/skills/`](https://github.com/mox-labs/matra/tree/main/.claude/skills) (7 skills)
 operationalize these disciplines so any contributor, human or AI, can
 participate without re-deriving the design.
 
 | Where to look | What's there |
 |---|---|
-| [`.claude/arch/`](.claude/arch/) | Architecture docs |
-| [`book/src/plans/`](book/src/plans/) | Iteration plans (current + future) |
-| [`docs/decisions/`](docs/decisions/) | Architecture Decision Records (ADRs) |
-| [`CHANGELOG.md`](CHANGELOG.md) | What changed and why, per release |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to participate, commit conventions, decision flow |
-| [`SECURITY.md`](SECURITY.md) | Vulnerability disclosure policy |
-| [`CITATION.cff`](CITATION.cff) | How to cite matra |
+| [`.claude/arch/`](https://github.com/mox-labs/matra/tree/main/.claude/arch) | Architecture docs |
+| [`book/src/plans/`](https://github.com/mox-labs/matra/tree/main/book/src/plans) | Iteration plans (current + future) |
+| [`docs/decisions/`](https://github.com/mox-labs/matra/tree/main/docs/decisions) | Architecture Decision Records (ADRs) |
+| [`CHANGELOG.md`](https://github.com/mox-labs/matra/blob/main/CHANGELOG.md) | What changed and why, per release |
+| [`CONTRIBUTING.md`](https://github.com/mox-labs/matra/blob/main/CONTRIBUTING.md) | How to participate, commit conventions, decision flow |
+| [`SECURITY.md`](https://github.com/mox-labs/matra/blob/main/SECURITY.md) | Vulnerability disclosure policy |
+| [`CITATION.cff`](https://github.com/mox-labs/matra/blob/main/CITATION.cff) | How to cite matra |
 
 ## Citing matra
 
 If you report matra's numbers in published work, cite two things. Cite the
-software with the entry in [`CITATION.cff`](CITATION.cff), which identifies
+software with the entry in [`CITATION.cff`](https://github.com/mox-labs/matra/blob/main/CITATION.cff), which identifies
 the implementation and its version. Then cite the publication behind each
 measure you used, which identifies the method. matra implements published
 methods with documented departures, so neither citation substitutes for the
