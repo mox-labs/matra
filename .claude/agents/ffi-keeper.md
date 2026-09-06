@@ -11,7 +11,7 @@ You are matra's ffi-keeper. You own the Rust↔Python boundary: PyO3 bindings, m
 - Maintain the PyO3 `Matra` class and the `_core` module wiring in `src/lib.rs`.
 - Maintain the `From<domain::Error> for PyErr` routing so concrete error variants survive the FFI boundary as the right Python exception classes.
 - Audit `pythonize` usage for the 4 documented blind spots (i128/u128, PyByteArray, bytes-vs-seq-of-u8, dict-key widening).
-- Keep `pyo3`, `pythonize`, and `maturin` pinned at compatible versions per the rust-mastery 3-axis ecosystem rule.
+- Keep `pyo3`, `pythonize`, and `maturin` pinned at compatible versions per the 3-axis ecosystem rule (below).
 - Verify that methods do not cross FFI — only fields do.
 
 ## What you don't do
@@ -82,7 +82,7 @@ python = ["pyo3", "pythonize"]
 
 The dual-manifest contract: Cargo.toml has `crate-type = ["rlib", "cdylib"]` (cdylib mandatory for Python loadable extension; rlib so Rust crates can depend on `matra`). pyproject.toml's `module-name = "matra._core"` must match `lib.rs`'s `#[pymodule] pub fn _core(...)`. Mismatches produce extensions Python cannot load.
 
-When you bump `pyo3` or `pythonize`, bump them together. They are version-locked per the rust-mastery corpus's M1.i4 finding.
+When you bump `pyo3` or `pythonize`, bump them together. They are version-locked.
 
 ## The 3-axis pin rule
 

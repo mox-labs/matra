@@ -58,7 +58,8 @@ runnable = false
 #
 # which re-vendors mermaid.min.js and mermaid-init.js and re-adds the
 # additional-js and [preprocessor.mermaid] entries this comment replaces.
-# The rule for choosing between them is in .rhet/voice.md feature 8.
+# The rule: hand-authored SVG when position carries meaning, mermaid for
+# sequences, state machines, and decision trees.
 
 # linkcheck deferred: mdbook-linkcheck 0.7.7 is incompatible with mdbook 0.5.3
 # (RenderContext schema drift). Phase 0 floor uses lychee for link verification;

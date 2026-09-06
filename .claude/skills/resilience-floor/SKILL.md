@@ -5,7 +5,7 @@ description: Antifragile operational discipline for matra — size caps at the e
 
 # resilience-floor
 
-The antifragile operational discipline for matra. This skill codifies the patterns that emerged from the i2 iteration's resilience work and from the rust-mastery corpus's resilience-floor Frames.
+The antifragile operational discipline for matra. This skill codifies the patterns that emerged from the i2 iteration's resilience work.
 
 ACES (`.claude/skills/aces/SKILL.md`) is the **structural** discipline (adaptability/composability/extensibility resisting stasis/drag/opacity). This skill is the **operational** discipline that complements it: when a process gets a hostile input, when a C library panics, when two processes race on the same file, the system survives loudly, not silently. ACES designs the system to evolve; resilience-floor designs it to fail well.
 

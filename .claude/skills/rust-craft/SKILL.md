@@ -43,7 +43,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 **Why thiserror, not anyhow:** The decision rule is: if a caller may *match* on the error variant, the crate is library-tier and concrete enums (thiserror) preserve variant identity. If only the application's top-level handler will display/log/exit, type erasure (anyhow) is ergonomic.
 
-matra is a substrate library. Its callers will match on `InputTooLarge` (route to PyValueError, retry with smaller input, etc.), `ModelNotFound` (prompt for path, download, etc.), `Io(_)` (filesystem-specific recovery). Type preservation is required; thiserror is correct.
+matra is a library. Its callers will match on `InputTooLarge` (route to PyValueError, retry with smaller input, etc.), `ModelNotFound` (prompt for path, download, etc.), `Io(_)` (filesystem-specific recovery). Type preservation is required; thiserror is correct.
 
 **Why not anyhow at any layer:** matra has no lib/app boundary inside its Rust surface — it is a single crate. The PyO3 boundary in `lib.rs::python` routes variants to PyErr subclasses via an exhaustive match (no wildcard). A new variant becomes a compile error there — exactly what we want.
 
@@ -87,7 +87,7 @@ Three principles:
 
 Every public enum and every public struct with public fields in `domain.rs` has `#[non_exhaustive]`. This is non-negotiable for matra because:
 
-- matra is a substrate; downstream code reads every public field path as a contract.
+- matra is a library; downstream code reads every public field path as a contract.
 - Adding a variant or field later without `#[non_exhaustive]` is a breaking change. With it, additive changes are minor-version bumps.
 - Pattern-matches on `#[non_exhaustive]` enums must include `_` (the additive variant escape hatch) — forces consumers to write code that survives variant additions.
 

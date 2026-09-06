@@ -83,7 +83,7 @@ The `NlpProvider` trait requires no change to support a WASM implementation. Any
 
 ## Separate `matra-nlp-api` port crate
 
-**What it is.** Extraction of the `NlpProvider` trait into a separately published minimal crate, so third-party NLP provider implementors can depend on the port contract without depending on all of matra. This follows the Pattern 6 criterion from the rust-mastery corpus: separately publish a minimal port crate if and only if an external implementor ecosystem exists that needs to pin the contract independently of the main crate's version churn.
+**What it is.** Extraction of the `NlpProvider` trait into a separately published minimal crate, so third-party NLP provider implementors can depend on the port contract without depending on all of matra. This follows the Pattern 6 criterion: separately publish a minimal port crate if and only if an external implementor ecosystem exists that needs to pin the contract independently of the main crate's version churn.
 
 **What is blocking it.** No third-party NLP provider implementor crate exists today. The criterion is ecosystem size, not architectural elegance. Extracting `matra-nlp-api` before any external implementor exists would add a publishing burden (two crates to version, two changelogs, two sets of CI) for zero current benefit.
 

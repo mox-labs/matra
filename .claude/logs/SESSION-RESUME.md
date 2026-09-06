@@ -10,7 +10,7 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 - **Repo:** `mox-labs/matra`. Branch protection on `main`: 13 required checks, `enforce_admins`, linear history. Everything lands via PR, including this file.
 - **The docsite is live** at mox-labs.github.io/matra (book + rustdoc under `/api/`) after fixing a never-deployed docs workflow (mdbook 0.5.3 for edition 2024; PR #46) and a consumer-docs comprehension pass (install paths for the published packages, I7 primitives on the capabilities page; PRs #47/#48).
 - **Claude review CI works end to end** (PR #45 granted the posting channel: the two comment MCP tools plus track_progress). Its first day caught a design contradiction, a wrong Rust fact, an ADR-lockstep gap, a shipped-behavior error, and a merge-order dependency. Treat it as a real gate.
-- **The i9 plan is merged** (`book/src/plans/i9-embeddings-adapter.md`): Embedder port, static-first adapter (model2vec-format loader over safetensors + tokenizers unstable_wasm, bit-parity across crusts as a tested property), candle BERT later behind the same port, `semantic_clusters` as proving consumer. Grounded by the 2026-09-04 three-lane landscape survey, filed at `~/mox/research/drafts/matra-substrate/2026-09-04-redundancy-density-inference-survey.md`.
+- **The i9 plan is merged** (`book/src/plans/i9-embeddings-adapter.md`): Embedder port, static-first adapter (model2vec-format loader over safetensors + tokenizers unstable_wasm, bit-parity across crusts as a tested property), candle BERT later behind the same port, `semantic_clusters` as proving consumer. Grounded by an internal survey, not in this repository (2026-09-04, three-lane landscape survey).
 - **ROADMAP carries the LLM-audit program:** redundancy entry extended (CR-POS, syntactic template rate, span recurrence, slop-paper negative result, threshold-spread citation) and a new information-density entry (CPIDR-from-xpos English-only caveat, DEPID-equivalent with UD mapping, contested rules routed to an ADR). Both triggers fired.
 - **Branch:** `main`, clean.
 
@@ -22,7 +22,7 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 
 Documentation is in lockstep: book pages, README, CHANGELOG, CLAUDE.md, the agent/skill files, the ADR index, evolution.md. I5 is retired (I8 subsumed Tasks A through D; Task E, `pub mod prelude`, waits for the 0.1.0 release pass).
 
-**A domain survey landed 2026-08-21** (filed at `~/mox/research/drafts/matra-substrate/2026-08-21-domain-cartography-inquiry-hermeneutics-semiosis.md`). Its consequence for matra is a scoping principle now recorded on the roadmap: matra stays at the deterministic, verifiable tier; pragmatic enrichment and claim/fallacy certification stay out with the gap recorded, and coreference is specialist-adapter work above UDPipe, not a parse extension.
+**A domain survey landed 2026-08-21** (an internal survey, not in this repository). Its consequence for matra is a scoping principle now recorded on the roadmap: matra stays at the deterministic, verifiable tier; pragmatic enrichment and claim/fallacy certification stay out with the gap recorded, and coreference is specialist-adapter work above UDPipe, not a parse extension.
 
 ### Known traps, carried forward
 
@@ -48,7 +48,7 @@ Sequence agreed with the maintainer 2026-08-21, publish and plan gates cleared 2
 ## Open, not blocking
 
 - **`Error` is neither `Serialize` nor `Clone`.** `DocumentError`/`CorpusResult` therefore stay Rust-side; crossing to Python needs a projection with stable kind strings. Documented in the book (errors page). Needed before any Python corpus surface.
-- The docsite is gated but not voiced: it has not been through orwell, sagan, jobs, or ebert.
+- The docsite is gated but not voiced: it has not had a voice/editing pass.
 - `rumi-nlp` is named in the published plans. Already public via ADR-0003, but worth deciding before release.
 - Floor gate 1 should gain `--include-fragments`. I5 Task E (`prelude`) waits for the 0.1.0 pass.
 

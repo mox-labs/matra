@@ -21,7 +21,7 @@ These are commitments, not preferences. Once locked, they hold:
 
 - **Domain purity.** `domain.rs` imports only `serde`, `thiserror`, and `std`. No further crates without an ADR.
 - **Single UDPipe importer.** Only `nlp/udpipe.rs` imports `udpipe_rs`. Adding a second site is a boundary failure. Enforced by `scripts/check-boundaries.sh`.
-- **`#[non_exhaustive]` on every public enum and every public struct with public fields.** Forward compatibility is non-negotiable; matra is a substrate.
+- **`#[non_exhaustive]` on every public enum and every public struct with public fields.** Forward compatibility is non-negotiable; matra is a library.
 - **Hex layout.** Adapters do not import each other. Ports do not import each other. The composition root is the only file that knows the whole pipeline.
 - **No publish without explicit approval.** `cargo publish` and `maturin publish` always run with `--dry-run` first; explicit per-publish approval per the project memory.
 - **Conventional commits.** Commit messages follow the conventional-commit grammar so the CHANGELOG generator works without per-commit editing.
@@ -38,13 +38,13 @@ These are commitments, not preferences. Once locked, they hold:
 
 ### Workspace split (`matra-core` + sibling matcher-bridge crate)
 
-Proposed in ADR-0003. The proposal was to split matra into a substrate crate plus a sibling crate for rule-based pattern matching over parsed sentences. Superseded by ADR-0004 (2026-05-20) on the grounds that the rule-evaluation capability is part of matra's own surface, not a peer crate, and the workspace-split criterion (Pattern 6 from the rust-mastery corpus: separately publish a minimal port crate when an external implementor ecosystem exists) has not fired.
+Proposed in ADR-0003. The proposal was to split matra into a core crate plus a sibling crate for rule-based pattern matching over parsed sentences. Superseded by ADR-0004 (2026-05-20) on the grounds that the rule-evaluation capability is part of matra's own surface, not a peer crate, and the workspace-split criterion (Pattern 6: separately publish a minimal port crate when an external implementor ecosystem exists) has not fired.
 
 If and when external NLP backends emerge as published crates (`matra-stanza`, `matra-spacy`, etc.), extract `matra-nlp-api` as a minimal port crate and keep `matra` as the consumer-facing crate. Until then, single-crate is correct.
 
 ### Built-in extractors for specific patterns (SVO, copular, prepositional, passive, nominal modifier)
 
-Considered as part of matra-core's surface. Rejected by user direction earlier in the project. Pattern extractors are opinions; matra is a substrate that provides parse trees and aggregate metrics, not opinions about which patterns matter. Pattern extraction lands as consumer code or as a separate sub-module behind a clear "opinionated" boundary; it does not enter the default surface.
+Considered as part of matra-core's surface. Rejected by user direction earlier in the project. Pattern extractors are opinions; matra is a library that provides parse trees and aggregate metrics, not opinions about which patterns matter. Pattern extraction lands as consumer code or as a separate sub-module behind a clear "opinionated" boundary; it does not enter the default surface.
 
 ### A four-port model with a separate `Ingest` trait
 

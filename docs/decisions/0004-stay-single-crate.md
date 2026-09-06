@@ -50,7 +50,7 @@ Any of these conditions, write a new ADR and supersede this one.
 
 ## Validation
 
-This decision is correct if at 0.2.0 matra still ships as a single crate, no external implementor ecosystem has appeared.claude/arch/rust-mastery-audit.md`) shows no new gaps from the single-crate shape, and no third-party `NlpProvider` implementor has emerged demanding a separate port crate.
+This decision is correct if at 0.2.0 matra still ships as a single crate, no external implementor ecosystem has appeared, a repeat boundary audit shows no new gaps from the single-crate shape, and no third-party `NlpProvider` implementor has emerged demanding a separate port crate.
 
 Falsified if one of the re-open conditions fires before then, in which case we extract the right boundary and supersede this ADR.
 
