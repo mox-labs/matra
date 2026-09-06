@@ -171,6 +171,8 @@ That last question is the real one. matra's discipline is that the library retur
 
 **Why a flag and not only a docs page.** Human attention is the scarce input. The people who would read the whole docsite are few; the agents that will run matra on their behalf are many, and an agent that can print the semantics it needs, from the tool it is about to run, needs no link and no prior knowledge. The docs stay for human comprehension, with citations and readable benchmarks; the skill is the other door, derived from the same code and tested against it.
 
+**Precedent.** A survey of seventeen tools (`docs/surveys/2026-09-05-conventions.md`) found one that prints its own agent-facing instructions with a second tier of detail, Vercel Labs' `agent-browser`, whose stated reason is that instructions served from the installed binary always match its version. The same survey records the surrounding conventions this entry adopts alongside the flag: an `llms.txt` on the docsite, an `AGENTS.md` in the repository, and a `CITATION.cff` so the research behind each measure is citable from the repository page.
+
 **Trigger condition. FIRED, 2026-09-05**, by owner direction, sequenced after I10: the skill documents the CLI contract, so the CLI has to be one implementation with a pinned JSON shape first.
 
 ## Terminal UI for the Rust CLI
