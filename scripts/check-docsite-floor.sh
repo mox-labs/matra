@@ -7,14 +7,16 @@
 #   2. Orphan detect      — every page under book/src/ is referenced in SUMMARY.md
 #                            (with a small allowlist for include-only fragments).
 #   3. Type-name parity   — every backtick-inline PascalCase identifier in book/src/
-#                          EXCEPT under book/src/plans/. A plan describes types
-#                          that do not exist yet; that is what makes it a plan.
-#                          Gate 3 keeps reference pages honest about what ships,
-#                          and applying it to plans would invert their purpose.
+#                          and skills/, EXCEPT under book/src/plans/. A plan
+#                          describes types that do not exist yet; that is what
+#                          makes it a plan. Gate 3 keeps reference pages and the
+#                          agent skill honest about what ships, and applying it to
+#                          plans would invert their purpose.
 #                            either exists as an identifier in src/, or is on the
 #                            external-types allowlist below. Catches rename drift.
 #   4. mdbook clean build — `mdbook build` runs without warnings or errors.
 #   5. No em dashes       — project prose convention, exempting quoted material.
+#                            Covers book/src/ and skills/.
 #
 # Local invocation: lychee is optional locally (skip-with-warning); CI installs it.
 # mdbook is required (this script fails gate 4 if missing).
@@ -259,12 +261,12 @@ while IFS= read -r name; do
         continue
     fi
     unknown+=("$name")
-done < <(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' book/src/ --glob '!**/plans/**' | sort -u)
+done < <(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' book/src/ skills/ --glob '!**/plans/**' | sort -u)
 
 if [ ${#unknown[@]} -eq 0 ]; then
     echo "PASS (gate 3): every backtick-inline type name resolves in src/ or allowlist"
 else
-    echo "FAIL (gate 3): backtick-inline identifiers in book/src/ not found in src/:"
+    echo "FAIL (gate 3): backtick-inline identifiers in book/src/ or skills/ not found in src/:"
     printf '  %s\n' "${unknown[@]}"
     echo ""
     echo "        Fix one of: rename the doc reference, add the type to src/,"
@@ -285,7 +287,10 @@ echo ""
 # silently editing an attributed quote to satisfy a house style rule would be a
 # worse fault than the em dash.
 echo "=== Gate 5: no em dashes in prose ==="
-offenders=$(grep -rn '\u2014' book/src --include='*.md' | grep -v '"' || true)
+# The pattern is the literal U+2014 byte sequence. It used to be written
+# '\u2014', which grep reads as the letter u followed by 2014: the gate
+# had never matched an em dash in its life.
+offenders=$(grep -rn '—' book/src skills --include='*.md' | grep -v '"' || true)
 if [ -n "$offenders" ]; then
     echo "FAIL (gate 5): em dashes found in documentation prose:"
     echo "$offenders" | sed 's/^/  /'
