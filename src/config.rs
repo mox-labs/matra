@@ -9,8 +9,10 @@
 //!
 //! Resolution order, per key: an explicit argument, then the `MATRA_*`
 //! environment, then the config file, then the defaults compiled into
-//! the crate from `config/default.toml`. Every resolved value records
-//! which rung it came from, readable through [`Config::sources`].
+//! the crate from `config/default.toml`. The argument rung is
+//! [`Config::with_model_dir`], which is the only thing that produces
+//! it. Every resolved value records which rung it came from, readable
+//! through [`Config::sources`].
 //!
 //! Three environment variables name the thing they override:
 //!
@@ -24,8 +26,10 @@
 //! is `$XDG_CONFIG_HOME/matra/config.toml`, defaulting to
 //! `~/.config/matra/config.toml`; the data root is
 //! `$XDG_DATA_HOME/matra`, defaulting to `~/.local/share/matra`, with
-//! models under `models/`. A pre-existing `~/.matra/models` cache stays
-//! readable as a fallback; nothing is ever written there.
+//! models under `models/`. matra never creates `~/.matra`; when an
+//! existing, non-empty legacy cache is selected it is used as the model
+//! directory, downloads and re-downloads included. Create the new
+//! location, or set `MATRA_MODEL_DIR`, to move off it.
 
 use std::path::{Path, PathBuf};
 
@@ -56,7 +60,8 @@ const KEYPHRASE_ALGORITHMS: [&str; 2] = ["rake", "yake"];
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ValueSource {
-    /// Passed explicitly by the caller, outranking every other rung.
+    /// Passed explicitly by the caller through
+    /// [`Config::with_model_dir`], outranking every other rung.
     Argument,
     /// Read from the named environment variable.
     Environment(String),
@@ -245,6 +250,37 @@ impl Config {
         })
     }
 
+    /// The same configuration with the model directory taken from an
+    /// explicit argument.
+    ///
+    /// [`ValueSource::Argument`] is the top rung of the resolution order
+    /// (ADR-0011: "A directory passed explicitly wins over all three"),
+    /// so a caller that was handed a directory can layer it on without
+    /// losing the provenance of every other value. A command line's
+    /// `--model-dir` is the case this exists for: the flag reaches the
+    /// adapter through `Config` rather than past it into the NLP port.
+    ///
+    /// Only `model_dir` changes rung; every other key keeps the source
+    /// it resolved from.
+    ///
+    /// ```
+    /// # let cfg = matra::config::Config::from_sources(
+    /// #     |k| (k == "HOME").then(|| "/tmp/matra-doctest".to_string()), None)?;
+    /// let cfg = cfg.with_model_dir("/opt/models");
+    /// assert_eq!(cfg.model_dir(), std::path::Path::new("/opt/models"));
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    #[must_use]
+    pub fn with_model_dir(mut self, dir: impl AsRef<Path>) -> Config {
+        self.model_dir = dir.as_ref().to_path_buf();
+        for (key, source) in &mut self.sources {
+            if *key == "model_dir" {
+                *source = ValueSource::Argument;
+            }
+        }
+        self
+    }
+
     /// The config file this process would read: `MATRA_CONFIG_FILE`,
     /// else `$XDG_CONFIG_HOME/matra/config.toml`, else
     /// `~/.config/matra/config.toml`.
@@ -264,12 +300,23 @@ impl Config {
     }
 
     /// The model directory: `MATRA_MODEL_DIR`, else `data_dir/models`,
-    /// except that a pre-existing `~/.matra/models` wins when
-    /// `data_dir/models` does not exist. matra never creates or writes
-    /// anything under `~/.matra`; the fallback exists so a cache from
-    /// 0.1.0 keeps working.
-    pub fn model_dir(&self) -> PathBuf {
-        self.model_dir.clone()
+    /// except that an existing, non-empty `~/.matra/models` wins when
+    /// `data_dir/models` does not exist.
+    ///
+    /// matra never creates `~/.matra`. When an existing, non-empty
+    /// legacy cache is selected it is used as the model directory,
+    /// downloads and re-downloads included: `Udpipe::english` writes
+    /// into whichever directory it is handed. Create the new location,
+    /// or set `MATRA_MODEL_DIR`, to move off it.
+    ///
+    /// An empty `~/.matra/models` is not selected. There is no cache in
+    /// it to keep working, and picking it would capture every later
+    /// download into a directory matra would otherwise never touch.
+    ///
+    /// Resolved once, at construction: the directory this returns does
+    /// not change under the process's feet when the filesystem does.
+    pub fn model_dir(&self) -> &Path {
+        &self.model_dir
     }
 
     /// The UDPipe model name from `[models] udpipe`.
@@ -484,11 +531,27 @@ fn resolve_model_dir(
         && let Some(home) = non_empty(env("HOME"))
     {
         let legacy = PathBuf::from(home).join(".matra").join("models");
-        if legacy.exists() {
+        if holds_something(&legacy) {
             return (legacy, ValueSource::Default);
         }
     }
     (current, ValueSource::Default)
+}
+
+/// Whether `dir` is a directory with at least one entry in it.
+///
+/// The legacy fallback exists to keep an existing cache working, and an
+/// empty directory is not a cache. Selecting one anyway would hand the
+/// adapter a directory to download into, permanently, in a location
+/// matra would otherwise never create. Existence alone is therefore not
+/// the test: something has to be in there.
+///
+/// Deliberately blind to what the entries are called. Which files a
+/// model cache holds is the adapter's knowledge, not this module's, and
+/// a filename list here would go stale the first time an adapter
+/// changed one.
+fn holds_something(dir: &Path) -> bool {
+    std::fs::read_dir(dir).is_ok_and(|mut entries| entries.next().is_some())
 }
 
 /// An environment variable set to the empty string carries no path, and
@@ -700,21 +763,49 @@ mod tests {
 
     // -- the ~/.matra/models fallback ---------------------------------
 
-    #[test]
-    fn model_dir_falls_back_to_dot_matra_when_only_that_exists() {
-        let home = tempfile::tempdir().unwrap();
-        let legacy = home.path().join(".matra").join("models");
+    /// A legacy cache with something in it, which is the only shape the
+    /// fallback exists for.
+    fn legacy_cache_in(home: &Path) -> PathBuf {
+        let legacy = home.join(".matra").join("models");
         std::fs::create_dir_all(&legacy).unwrap();
+        std::fs::write(legacy.join("english-ewt.udpipe"), b"not a real model").unwrap();
+        legacy
+    }
+
+    #[test]
+    fn model_dir_falls_back_to_a_non_empty_dot_matra_when_only_that_exists() {
+        let home = tempfile::tempdir().unwrap();
+        let legacy = legacy_cache_in(home.path());
 
         let cfg =
             Config::from_sources(env_of(&[("HOME", home.path().to_str().unwrap())]), None).unwrap();
         assert_eq!(cfg.model_dir(), legacy);
     }
 
+    /// An empty `~/.matra/models` is a leftover, not a cache. Selecting
+    /// it would send every future download into a directory matra
+    /// would otherwise never create, and it would keep doing so.
+    #[test]
+    fn model_dir_ignores_an_empty_dot_matra_directory() {
+        let home = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(home.path().join(".matra").join("models")).unwrap();
+
+        let cfg =
+            Config::from_sources(env_of(&[("HOME", home.path().to_str().unwrap())]), None).unwrap();
+        assert_eq!(
+            cfg.model_dir(),
+            home.path()
+                .join(".local")
+                .join("share")
+                .join("matra")
+                .join("models")
+        );
+    }
+
     #[test]
     fn model_dir_prefers_the_data_directory_when_both_exist() {
         let home = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(home.path().join(".matra").join("models")).unwrap();
+        legacy_cache_in(home.path());
         let current = home
             .path()
             .join(".local")
@@ -731,7 +822,7 @@ mod tests {
     #[test]
     fn model_dir_ignores_dot_matra_when_the_environment_names_a_directory() {
         let home = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(home.path().join(".matra").join("models")).unwrap();
+        legacy_cache_in(home.path());
 
         let cfg = Config::from_sources(
             env_of(&[
@@ -742,6 +833,57 @@ mod tests {
         )
         .unwrap();
         assert_eq!(cfg.model_dir(), Path::new("/models"));
+    }
+
+    // -- the argument rung --------------------------------------------
+
+    #[test]
+    fn with_model_dir_puts_the_model_directory_on_the_argument_rung() {
+        let cfg = Config::from_sources(env_of(&[("HOME", "/home/tester")]), None)
+            .unwrap()
+            .with_model_dir("/opt/models");
+        assert_eq!(cfg.model_dir(), Path::new("/opt/models"));
+        assert_eq!(source_of(&cfg, "model_dir"), ValueSource::Argument);
+    }
+
+    #[test]
+    fn with_model_dir_beats_the_environment_rung() {
+        let cfg = Config::from_sources(
+            env_of(&[("MATRA_MODEL_DIR", "/models"), ("HOME", "/home/tester")]),
+            None,
+        )
+        .unwrap()
+        .with_model_dir("/opt/models");
+        assert_eq!(cfg.model_dir(), Path::new("/opt/models"));
+        assert_eq!(source_of(&cfg, "model_dir"), ValueSource::Argument);
+    }
+
+    #[test]
+    fn with_model_dir_leaves_every_other_key_and_its_source_alone() {
+        let file = "[semantic]\nthreshold = 0.5\n";
+        let before = Config::from_sources(env_of(&[("HOME", "/home/tester")]), Some(file)).unwrap();
+        let before_sources: Vec<(&'static str, ValueSource)> = before.sources().collect();
+        let after = before.clone().with_model_dir("/opt/models");
+
+        // The data root and every value are untouched.
+        assert_eq!(
+            after.data_dir(),
+            Path::new("/home/tester/.local/share/matra")
+        );
+        assert_eq!(after.semantic_threshold(), 0.5);
+        assert_eq!(after.summarize_algorithm(), "tfidf");
+
+        // Only the model_dir key changed rung.
+        let after_sources: Vec<(&'static str, ValueSource)> = after.sources().collect();
+        assert_eq!(after_sources.len(), before_sources.len());
+        for ((key, before), (after_key, after)) in before_sources.iter().zip(&after_sources) {
+            assert_eq!(key, after_key, "key order changed");
+            if *key == "model_dir" {
+                assert_eq!(*after, ValueSource::Argument);
+            } else {
+                assert_eq!(before, after, "{key} changed rung");
+            }
+        }
     }
 
     // -- the config file path -----------------------------------------

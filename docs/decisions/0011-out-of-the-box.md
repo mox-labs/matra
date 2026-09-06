@@ -96,8 +96,9 @@ defaulting to `~/.local/share/matra`, with models under `models/`.
 The same layout on macOS: uv documents that it "follows the XDG
 conventions on Linux and macOS" and gh resolves `$XDG_CONFIG_HOME/gh`
 before `~/.config/gh` on both; matra is driven from terminals and
-agents, not from Finder. `~/.matra/models` stays readable as a
-fallback so an existing cache keeps working. Environment overrides
+agents, not from Finder. An existing, non-empty `~/.matra/models` stays
+in use as a fallback so an existing cache keeps working, downloads into
+it included; matra never creates one. Environment overrides
 name the thing they override, as `UV_CONFIG_FILE`, `UV_CACHE_DIR`, and
 `OLLAMA_MODELS` do: `MATRA_CONFIG_FILE` (the file), `MATRA_DATA_DIR`
 (the data root), and the existing `MATRA_MODEL_DIR` (the UDPipe model
@@ -168,7 +169,8 @@ and no 0.1.0 signature changed.
 - `config::Config`, `#[non_exhaustive]`, with `Config::resolve`,
   `Config::from_sources` (environment and file contents injected, which
   is how the tests avoid the developer's home), `Config::with_model_dir`
-  (M3: puts `--model-dir` on the `Argument` rung), the associated
+  (M2, the only producer of the `Argument` rung; `--model-dir` reaches
+  it in M3), the associated
   `Config::config_file_path`, the readers `data_dir`, `model_dir`,
   `udpipe_model`, `embedding_model`, `semantic_threshold`,
   `summarize_n`, `summarize_algorithm`, `keyphrases_n` and
@@ -242,7 +244,8 @@ Feature-graph changes: `python` now implies `cli`; `cli` now pulls
   the crate; the `python` feature now builds `clap`.
 - Negative: two more constructors per adapter to keep in lockstep with
   the Python stubs.
-- Neutral: `~/.matra` remains readable; nothing is migrated or deleted.
+- Neutral: an existing `~/.matra` cache stays in use; nothing is
+  migrated or deleted, and matra never creates one.
 
 Two observations from the milestones, recorded as open follow-ups rather
 than as decisions taken here.
