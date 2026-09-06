@@ -40,3 +40,4 @@
   - [I8 Pipeline surface](plans/i8-pipeline-surface.md)
   - [I9 Embeddings adapter](plans/i9-embeddings-adapter.md)
   - [I10 Out of the box](plans/i10-foundations.md)
+  - [I11 Agent surface](plans/i11-agent-surface.md)

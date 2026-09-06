@@ -4,6 +4,16 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 
 ---
 
+## 2026-09-06: I10 merged; I11 planned
+
+**I10 is on `main`, all six milestones**, as PRs #62, #59, #61, #64, #63, #65, merged in that order after each passed a real review pass with its findings applied (the harness caught, among others: a legacy-cache write claim that was false, a data-loss path in the embedding provisioner, a partial-download trap, a non-UTF-8 filename abort in `analyze_path`, a false protocol claim on `Model2Vec`). Merged branches deleted; docs deployed; dependabot #13 and #15 closed as obsolete (click and rich are gone).
+
+**Process facts worth keeping.** Stacked PRs: never `--delete-branch` on a base; rebase each branch onto `main` after its base merges (`git rebase --onto <new-base> <old-base-tip>`); the review action skips branches whose workflow file differs from `main`'s. Implementation agents run in isolated worktrees; the main tree stays detached while they run. The CI review token belongs to one account; when it hits its limit the review fails instantly with zero cost.
+
+**Now: I11, the agent surface.** ADR-0012 and `book/src/plans/i11-agent-surface.md` (M1, this PR). Next M2: the skill content and its executed-incantation test, then M3 the `--skill` flag, M4 `llms.txt`/`AGENTS.md`/plugin manifest, M5 lockstep and release readiness (0.2.0 proposed, publishing owner-approved).
+
+**Owner decisions open.** The canonical author and copyright form (blocks `CITATION.cff` and the attribution alignment). Whether to publish the plugin to a marketplace, and which.
+
 ## 2026-09-05 (later): I10 complete, pending merge
 
 **I10 is done, all six milestones.** M1 as PR #62 (ADR-0011, the plan, the conventions survey), M2 as #59 (`Config`, `ValueSource`, the `from_config` constructors, `Engine::with_defaults`), M3 as #61 (`matra::cli` with two launchers, `config show` / `config init`, completions, color and quiet and stdin, the `--json` envelope with `format_version`), M4 as #64 (the pinned reference embedding model provisions itself), M5 as #63 (the Python `Embedder` extension point and `analyze_path`), M6 as the docs-lockstep PR on `i10/m6-docs-lockstep`. The whole stack is open, not merged: the PRs are stacked in that order and land in it.

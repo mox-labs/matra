@@ -175,7 +175,7 @@ That last question is the real one. matra's discipline is that the library retur
 
 **Precedent.** A survey of seventeen tools (`docs/surveys/2026-09-05-conventions.md`) found one that prints its own agent-facing instructions with a second tier of detail, Vercel Labs' `agent-browser`, whose stated reason is that instructions served from the installed binary always match its version. The same survey records the surrounding conventions this entry adopts alongside the flag: an `llms.txt` on the docsite, an `AGENTS.md` in the repository, and a `CITATION.cff` so the research behind each measure is citable from the repository page.
 
-**Trigger condition. FIRED, 2026-09-05**, by owner direction, sequenced after I10: the skill documents the CLI contract, so the CLI has to be one implementation with a pinned JSON shape first.
+**Trigger condition. FIRED, 2026-09-05**, by owner direction, sequenced after I10: the skill documents the CLI contract, so the CLI had to be one implementation with a pinned JSON shape first. I10 landed on 2026-09-06; [ADR-0012](https://github.com/mox-labs/matra/blob/main/docs/decisions/0012-agent-surface.md) records the decisions and [`book/src/plans/i11-agent-surface.md`](https://github.com/mox-labs/matra/blob/main/book/src/plans/i11-agent-surface.md) carries the milestones.
 
 ## Terminal UI for the Rust CLI
 
