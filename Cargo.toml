@@ -12,6 +12,9 @@ documentation = "https://docs.rs/matra"
 readme = "README.md"
 keywords = ["nlp", "udpipe", "parsing", "summarization", "readability"]
 categories = ["text-processing", "science"]
+# An exclude list, so anything not named here ships. `skills/matra/**` must
+# keep shipping: it is the agent-facing skill, and the crate is where it is
+# distributed from. Adding it here would remove public surface, not weight.
 exclude = ["scratch/*", ".claude/*", "target/*", "book/*", "*.udpipe"]
 
 [package.metadata.docs.rs]

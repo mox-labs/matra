@@ -1,0 +1,7 @@
+The system was built by the team over eighteen months. Documentation was
+written last, and the decisions that shaped the design were recorded nowhere
+except in the commit history.
+
+Every measurement here counts a surface pattern. Nothing in the output reads
+the text or judges whether the writing is good, and no number here should be
+presented to anyone as a quality score.
