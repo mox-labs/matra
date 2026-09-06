@@ -600,6 +600,11 @@ mod python {
         /// model, verifying its three-file digest against a constant in
         /// the source before anything is loaded.
         ///
+        /// Only files this call downloads are ever removed. A directory
+        /// already holding all three artifacts under a different digest,
+        /// or holding only some of them, is refused without anything
+        /// being downloaded over or deleted.
+        ///
         /// With no argument the directory is resolved through `Config`:
         /// the model directory joined with the configured embedding
         /// model name.

@@ -29,6 +29,9 @@ Returned by:
 - `Udpipe::from_path` and `Udpipe::from_bytes` when the loader rejects the bytes. The payload is the loader's message.
 - `Udpipe::english` when the download fails. The payload is the download error's message.
 - `Udpipe::english` when the file still fails SHA-256 verification after one delete and re-download. The payload is `SHA-256 mismatch after re-download: <path>`.
+- `Model2Vec::from_dir` when an artifact does not parse, uses an embedding dtype other than f32, or panics the loader.
+- `Model2Vec::potion_base_8m` when the directory already holds all three artifacts and their digest is not the pinned one, or holds only some of them. The payload names the directory and the ways out; nothing there is downloaded over or removed.
+- `Model2Vec::potion_base_8m` when artifacts it downloaded still fail the digest after one removal and re-download. The payload names the directory and the expected digest.
 
 A file whose hash does not match the pinned constant is treated as untrusted and is never loaded.
 
@@ -82,6 +85,8 @@ Wraps `std::io::Error`, produced by:
 - `FileSource` rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`.
 - `FileSource` rejecting a path that is not a regular file, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`.
 - Any read, directory listing, directory creation, file removal, or rename that fails.
+- `Model2Vec::potion_base_8m` when a download fails at the transport or answers with a non-2xx status. The message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise. Bytes that arrived and then failed the digest are `ModelInvalid` instead; this variant is for the ones that never arrived.
+- `Model2Vec::potion_base_8m` when the temporary file an artifact lands through cannot be created, with the kind the open reported (`AlreadyExists` when something is already sitting at that path). The temporary is opened exclusively, so a path already there, symlink or not, fails the open rather than being written through.
 - `Ingest` when a source yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
 
 ## Per-document failures: `DocumentError` and `CorpusResult`

@@ -153,16 +153,21 @@ class Model2Vec:
 
         The three artifact files are verified against a digest compiled
         into the library before anything is loaded, so exactly one
-        artifact set can arrive this way. A mismatch removes the files
+        artifact set can arrive this way. Downloading happens only into
+        a directory holding none of the three, and only files this call
+        downloaded are ever removed: a mismatch over those removes them
         and retries once. With no argument the directory is resolved
         through the configuration: the model directory joined with the
         configured embedding model name.
 
         Raises:
-            OSError: the directory cannot be created, read, or written.
+            OSError: the directory cannot be created, read, or written,
+                or a download failed at the transport or answered with a
+                non-2xx status.
             ValueError: a download exceeded the artifact size cap.
-            RuntimeError: the digest still mismatched after one retry,
-                or the verified bytes do not parse.
+            RuntimeError: the directory already holds artifacts that are
+                not the pinned set, the digest still mismatched after one
+                retry, or the verified bytes do not parse.
         """
         ...
 

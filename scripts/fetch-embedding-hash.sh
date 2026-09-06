@@ -8,16 +8,27 @@
 # moving to a new revision; paste the output into both.
 #
 # Usage: scripts/fetch-embedding-hash.sh [revision]
-#   revision defaults to the one currently pinned in the adapter.
-#   Find a revision with:
+#   revision defaults to the one the adapter's URL constants name, read
+#   out of the source rather than repeated here: a pin written twice is a
+#   pin that drifts the first time only one copy is updated.
+#   Find a newer revision with:
 #     curl -s https://huggingface.co/api/models/minishlab/potion-base-8M \
 #       | python3 -c 'import json,sys; print(json.load(sys.stdin)["sha"])'
 
 set -euo pipefail
 
 REPO="minishlab/potion-base-8M"
-REVISION="${1:-bf8b056651a2c21b8d2565580b8569da283cab23}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ADAPTER="${SCRIPT_DIR}/../src/embed/model2vec.rs"
 FILES=(model.safetensors tokenizer.json config.json)
+
+PINNED=$(sed -n "s|.*huggingface.co/${REPO}/resolve/\([0-9a-f]\{40\}\)/.*|\1|p" \
+  "${ADAPTER}" | head -1)
+REVISION="${1:-${PINNED}}"
+if [ -z "${REVISION}" ]; then
+  echo "cannot read the pinned revision out of ${ADAPTER}; pass one as an argument" >&2
+  exit 1
+fi
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -28,7 +39,13 @@ for f in "${FILES[@]}"; do
 done
 
 cd "$TMP"
-HASH=$(cat "${FILES[@]}" | shasum -a 256 | awk '{print $1}')
+# sha256sum on GNU userlands, shasum on macOS, which ships neither
+# sha256sum nor a GNU coreutils by default.
+if command -v sha256sum >/dev/null 2>&1; then
+  HASH=$(cat "${FILES[@]}" | sha256sum | awk '{print $1}')
+else
+  HASH=$(cat "${FILES[@]}" | shasum -a 256 | awk '{print $1}')
+fi
 
 echo
 echo "Revision: ${REVISION}"
