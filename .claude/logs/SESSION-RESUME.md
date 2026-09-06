@@ -12,7 +12,7 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 
 **Now: I11, the agent surface.** ADR-0012 and `book/src/plans/i11-agent-surface.md` (M1, this PR). Next M2: the skill content and its executed-incantation test, then M3 the `--skill` flag, M4 `llms.txt`/`AGENTS.md`/plugin manifest, M5 lockstep and release readiness (0.2.0 proposed, publishing owner-approved).
 
-**Owner decisions open.** The canonical author and copyright form (blocks `CITATION.cff` and the attribution alignment). Whether to publish the plugin to a marketplace, and which.
+**Owner decisions open.** The canonical author and copyright form (blocks `CITATION.cff` and the attribution alignment). I11 M4 landed `llms.txt`, `AGENTS.md` and `.claude-plugin/plugin.json` and deliberately did **not** create `CITATION.cff`: it names the author, so it waits on this decision rather than guessing. The plugin manifest ships the organization as author (`mox labs`, `https://github.com/mox-labs`) for the same reason, and gains the personal form when the decision lands. Whether to publish the plugin to a marketplace, and which.
 
 ## 2026-09-05 (later): I10 complete, pending merge
 

@@ -190,6 +190,8 @@ Under `--json` the skill uses the same envelope every other command uses, with `
 
 The list is every file under `references/`, in file-name order, and each summary is read from that file's own frontmatter rather than from a second list that could drift from it.
 
+The same files install as a plugin: `claude --plugin-dir <checkout>` over a clone of the repository picks up `skills/matra/`, which is where plugin discovery looks. And this documentation site serves [`llms.txt`](https://mox-labs.github.io/matra/llms.txt) at its root, the map of every page with its one-line summary, for an agent reading the human door instead.
+
 ## Reading from stdin
 
 `-` in place of the path reads stdin. `--stdin-filename` gives that input a name, which is the label in the output and the envelope, and whose extension selects the decomposer. Without it the input is read as plain text and labelled `<stdin>`.

@@ -42,7 +42,7 @@ skills/matra/references/python.md     the API when the agent writes Python; the 
 skills/matra/references/errors.md     every error, its Python exception, what to do
 .claude-plugin/plugin.json            the repository as a plugin; skills auto-discovered under skills/
 AGENTS.md                             for contributing agents; points at CLAUDE.md
-book/llms.txt                         generated from SUMMARY.md; gate checks it is current
+book/src/llms.txt                     generated from SUMMARY.md; gate checks it is current
 CITATION.cff                          lands when the author form is settled
 ```
 
@@ -70,7 +70,7 @@ ADR-0012 accepted; roadmap entry points here; plans index and `SUMMARY.md` carry
 
 ### M4: alongside the flag
 
-`scripts/gen-llms-txt.sh` writes `book/llms.txt` from `SUMMARY.md` (H1, one-paragraph summary, H2 per section with links to the deployed pages); a docs-floor gate fails when the file is stale. `AGENTS.md` at the root: build, gates, boundary rules, PR ritual, in under 60 lines, pointing at `CLAUDE.md` for detail. `.claude-plugin/plugin.json` with name, description, version; `claude plugin validate` (or the equivalent check) passes; the plugin installs with `--plugin-dir .` and the skill triggers on a matra question. `CITATION.cff` is written when the owner settles the author form; until then this milestone records it as blocked, not done.
+`scripts/gen-llms-txt.sh` writes `book/src/llms.txt` from `SUMMARY.md` (H1, one-paragraph summary, H2 per section with links to the deployed pages); a docs-floor gate fails when the file is stale. The file sits under `book/src/` rather than `book/`, because mdbook copies every non-chapter file there into the built site, which puts it at the site root with no step in the deploy workflow to keep in sync with the script. `AGENTS.md` at the root: build, gates, boundary rules, PR ritual, in under 60 lines, pointing at `CLAUDE.md` for detail. `.claude-plugin/plugin.json` with name, description, version; `claude plugin validate` (or the equivalent check) passes; the plugin installs with `--plugin-dir .` and the skill triggers on a matra question. `CITATION.cff` is written when the owner settles the author form; until then this milestone records it as blocked, not done.
 
 **Rubric.** `just docs-floor` includes the llms.txt gate; `AGENTS.md` restates nothing `CLAUDE.md` says (links instead); the plugin validates.
 
