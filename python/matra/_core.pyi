@@ -150,9 +150,10 @@ class Matra:
         """Analyze every document a path names.
 
         One item for a file; one per regular file for a directory, in
-        path order. A returned `path` is decoded with `os.fsdecode`, so
-        `os.fsencode` on it names the same file even when the name is not
-        valid UTF-8. Symlinks and subdirectories are skipped, not
+        path order. On Unix a returned `path` is decoded with
+        `os.fsdecode`, so `os.fsencode` on it names the same file even
+        when the name is not valid UTF-8; elsewhere an undecodable name
+        is decoded lossily. Symlinks and subdirectories are skipped, not
         followed. Each item is a `CorpusEntry` (`path`, `analysis`) for a
         document that analyzed or a `DocumentError` (`path`, `error`) for
         one that did not, so one unreadable file costs one item rather
