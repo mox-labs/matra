@@ -41,6 +41,10 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
+/// The repository root, which is also the plugin root: `skills/` sits
+/// directly under it, which is where plugin discovery looks.
+const MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
+
 /// Where the skill files live.
 const SKILL_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/skills/matra");
 
@@ -538,6 +542,37 @@ fn the_skill_version_is_the_crate_version() {
         "the description is {} characters, over the 200 cap",
         description.len()
     );
+}
+
+/// The plugin manifest names the same crate. `skills/matra/` is both the
+/// text the binary prints and the skill the repository distributes as a
+/// plugin, so `.claude-plugin/plugin.json` and the frontmatter beside it
+/// must agree on the name, the version and the description. A manifest
+/// that claims 0.1.0 while the crate has moved on hands an installer a
+/// version it cannot check.
+#[test]
+fn the_plugin_manifest_matches_the_crate_and_the_skill() {
+    let path = Path::new(MANIFEST_DIR).join(".claude-plugin/plugin.json");
+    let manifest: serde_json::Value = serde_json::from_str(&read(&path))
+        .unwrap_or_else(|e| panic!("{} is not valid JSON: {e}", path.display()));
+
+    let skill = skill_path();
+    let (pairs, _) = frontmatter(&skill, &read(&skill));
+
+    for (key, expected) in [
+        ("version", env!("CARGO_PKG_VERSION")),
+        ("name", value(&pairs, "name").expect("a skill name")),
+        (
+            "description",
+            value(&pairs, "description").expect("a skill description"),
+        ),
+    ] {
+        assert_eq!(
+            manifest.get(key).and_then(|v| v.as_str()),
+            Some(expected),
+            "plugin.json `{key}` must equal `{expected}`"
+        );
+    }
 }
 
 /// Every reference declares the two keys the flag reads in M3, and its
