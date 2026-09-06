@@ -45,7 +45,7 @@ impl Model2Vec { pub fn from_config(cfg: &Config) -> Result<Self>;     // pinned
                  pub fn potion_base_8m(dir: impl AsRef<Path>) -> Result<Self>; }  // explicit directory
 
 // cli feature
-pub mod cli { pub fn run(args: impl IntoIterator<Item = OsString>, out: &mut dyn Write, err: &mut dyn Write) -> ExitCode; }
+pub mod cli { pub fn run(args: impl IntoIterator<Item = OsString>, out: &mut dyn Write, err: &mut dyn Write) -> u8; }  // a plain exit code; ExitCode cannot be read back by the Python launcher
 ```
 
 ```python

@@ -190,7 +190,7 @@ and no 0.1.0 signature changed.
   `cli::run(args, out, err) -> u8`.
 - New subcommands: `matra config show`, `matra config init [--force]`,
   and `matra completions <bash|zsh|fish>`.
-- New global flags: `--model-dir <DIR>`, `--quiet` / `-q`,
+- New global flags (`--model-dir <DIR>` already shipped in 0.1.0 and now resolves through `Config`): `--quiet` / `-q`,
   `--color <auto|always|never>`, `--stdin-filename <NAME>`. New on
   `analyze`: `--sections` / `-s`. New input form: `-` for stdin. New
   behavior on `--version`: the features the build was compiled with.
