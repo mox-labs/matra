@@ -59,8 +59,13 @@ class Matra:
         Raises:
             ValueError: the config file is malformed, or the environment
                 names no home directory at all.
-            OSError: the config file could not be read.
-            RuntimeError: download or load failed.
+            OSError: the config file could not be read, the model
+                directory could not be created or written, or the
+                download did not arrive (DNS, TLS, a timeout, or a
+                non-2xx status). Before 0.2.0 the download half of this
+                raised RuntimeError.
+            RuntimeError: bytes arrived and then failed the pinned hash,
+                or the verified bytes did not load.
         """
         ...
 
@@ -181,6 +186,8 @@ class Model2Vec:
 
         Raises:
             FileNotFoundError: an artifact file is absent.
+            OSError: an artifact is present but cannot be read. The
+                message names the operation and the path.
             RuntimeError: the artifact does not parse or is malformed.
         """
         ...
@@ -194,16 +201,17 @@ class Model2Vec:
         The three artifact files are verified against a digest compiled
         into the library before anything is loaded, so exactly one
         artifact set can arrive this way. Downloading happens only into
-        a directory holding none of the three, and only files this call
-        downloaded are ever removed: a mismatch over those removes them
-        and retries once. With no argument the directory is resolved
-        through the configuration: the model directory joined with the
-        configured embedding model name.
+        a directory holding none of the three, and the set is verified in
+        memory before anything is written, so a mismatch retries once and
+        leaves the directory as it was found. With no argument the
+        directory is resolved through the configuration: the model
+        directory joined with the configured embedding model name.
 
         Raises:
             OSError: the directory cannot be created, read, or written,
                 or a download failed at the transport or answered with a
-                non-2xx status.
+                non-2xx status. A filesystem failure names the operation
+                and the path; a transport failure names the URL.
             ValueError: a download exceeded the artifact size cap.
             RuntimeError: the directory already holds artifacts that are
                 not the pinned set, the digest still mismatched after one

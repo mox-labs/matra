@@ -20,7 +20,7 @@ cargo install matra --features cli
 uv add matra          # then: matra --help
 ```
 
-Every route caches the model at the resolved model directory (about 16 MB) and downloads it the first time any command needs it. No flag and no environment variable is required to make that happen. If the cached file fails its SHA-256 check, matra removes it and downloads once more before giving up.
+Every route caches the model at the resolved model directory (about 16 MB) and downloads it the first time any command needs it. No flag and no environment variable is required to make that happen. If the cached file fails its SHA-256 check, matra downloads a replacement and only then removes it, so a fetch that fails leaves the file you had.
 
 ## Where matra keeps things
 
@@ -207,7 +207,7 @@ The 8 MiB cap applies to stdin as it does to a file, and it is enforced while re
 
 `--color` takes `auto` (the default), `always`, or `never`. Under `auto`, matra colors an interactive terminal and nothing else, and honors `NO_COLOR`: if that variable is present and not empty, color is off whatever its value. `--color always` and `--color never` are explicit requests and outrank `NO_COLOR` in both directions.
 
-`--quiet` suppresses the human-readable output while leaving the exit code alone, so a script can branch on "found something" without collecting the table. It has no effect on `--json`.
+`--quiet` suppresses the human-readable output while leaving the exit code alone, so a script can branch on "found something" without collecting the table. It has no effect on `--json`. It also silences the one line the command prints to standard error before it downloads a model, which names the artifact, its size and where it is going. That line is the only output a first run produces during a wait that can reach half a minute, so silence it deliberately rather than by habit.
 
 `--version` prints the version and then the features this build was compiled with:
 

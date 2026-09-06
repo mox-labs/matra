@@ -52,7 +52,7 @@ Provisioning rules, in the order they are checked:
 
 1. **All three files present.** The SHA-256 over the three, concatenated in the order above, must equal the constant compiled into the library: `81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4`. On a match it loads. On a mismatch it fails and names the directory, having downloaded nothing and deleted nothing.
 2. **Some but not all three present.** It fails: a partial set carries no provenance. Nothing is downloaded over and nothing is removed.
-3. **None of the three present.** The directory is this call's to fill. All three are fetched from URLs pinned in the source at an immutable revision, verified, and loaded. A mismatch over files this call downloaded removes them and fetches once more; a second mismatch removes them again and fails.
+3. **None of the three present.** The directory is this call's to fill. All three are fetched from URLs pinned in the source at an immutable revision, verified, and loaded. The set is verified in memory before anything is written, so a mismatch fetches once more and a second mismatch fails with the directory untouched.
 
 The rule underneath all three: a provisioner never deletes what it did not write. Those three filenames belong to the artifact format rather than to this one model, so the directory may already hold a model of yours.
 

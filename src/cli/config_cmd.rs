@@ -4,7 +4,7 @@
 //! both are dispatched before the engine is built.
 
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde_json::{Value, json};
 
@@ -30,8 +30,13 @@ pub(super) fn run(cli: &Cli, action: &ConfigAction, out: &mut dyn Write) -> Fall
 
 fn show(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
     let cfg = super::resolve_config(cli)?;
-    let path = Config::config_file_path().unwrap_or_else(|| PathBuf::from("config.toml"));
-    let path = path.display().to_string();
+    // `input` names the document the command read. A config file that
+    // is not there was not read, and naming it anyway asserts a file
+    // this run never saw: `config show --json` reported
+    // `/root/.config/matra/config.toml` in a container where nothing had
+    // ever created it. The per-key origins already say which values came
+    // from a file, so a null here loses nothing and claims nothing.
+    let read_from = config_file_read(&cfg);
 
     if cli.json {
         let mut object = serde_json::Map::new();
@@ -45,7 +50,7 @@ fn show(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
                 }),
             );
         }
-        write_envelope(out, "config", Some(&path), Value::Object(object))?;
+        write_envelope(out, "config", read_from.as_deref(), Value::Object(object))?;
         return Ok(Outcome::Found);
     }
 
@@ -64,6 +69,32 @@ fn show(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
         )?;
     }
     Ok(Outcome::Found)
+}
+
+/// The config file this run actually read, if it read one.
+///
+/// A path that resolves is where a file would go, not evidence that one
+/// is there. The question `config show` answers is what happened, so the
+/// file has to exist to be named. A value sourced from the file is
+/// stronger evidence still, and is checked first: the file was read if
+/// something in the resolved configuration came out of it.
+///
+/// The fallback path comes off the configuration rather than off
+/// `Config::config_file_path`, which reads the process environment. The
+/// static answered about the machine the process is on rather than about
+/// the configuration in hand, so this reported whatever
+/// `~/.config/matra/config.toml` happened to exist even for a `Config`
+/// built from an injected environment.
+fn config_file_read(cfg: &Config) -> Option<String> {
+    if let Some(path) = cfg.sources().find_map(|(_, source)| match source {
+        ValueSource::File(path) => Some(path),
+        _ => None,
+    }) {
+        return Some(path.display().to_string());
+    }
+    cfg.config_file()
+        .filter(|path| path.exists())
+        .map(|path| path.display().to_string())
 }
 
 /// The effective value behind one of [`Config::sources`]'s keys.
@@ -267,6 +298,89 @@ mod tests {
         )
         .expect("defaults resolve");
         assert!(value_of(&cfg, "not.a.key").is_err());
+    }
+
+    /// Regression (review of #77): the fallback path comes off the
+    /// configuration, not off `Config::config_file_path`, which reads
+    /// the process environment. A file at the injected environment's
+    /// path is named even when it supplied no value; before this, the
+    /// answer was about whatever file the machine running the test
+    /// happened to have, so this test passed on a clean machine and
+    /// failed for anyone who had run `matra config init`.
+    #[test]
+    fn the_named_file_is_the_one_this_configuration_would_read() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let expected = dir.path().join(".config").join("matra").join("config.toml");
+        std::fs::create_dir_all(expected.parent().expect("a parent")).expect("config dir");
+        // Empty, so it exists and supplies nothing: the fallback is the
+        // only branch that can name it.
+        std::fs::write(&expected, b"").expect("config file");
+
+        let cfg = Config::from_sources(
+            |key| match key {
+                "HOME" => Some(dir.path().display().to_string()),
+                _ => None,
+            },
+            Some(""),
+        )
+        .expect("defaults resolve");
+
+        assert!(
+            cfg.sources()
+                .all(|(_, source)| !matches!(source, ValueSource::File(_))),
+            "an empty file supplies no value, so only the fallback can name it"
+        );
+        assert_eq!(config_file_read(&cfg), Some(expected.display().to_string()));
+    }
+
+    /// Regression: `config show --json` used to put the resolved config
+    /// path in `input` whether or not a file was there, so a container
+    /// that had never run `config init` was told it had a config file at
+    /// a path nothing had created. `input` names what was read. The
+    /// injected `HOME` is the whole environment this consults, so the
+    /// answer does not depend on the machine running the test.
+    #[test]
+    fn no_config_file_means_no_config_file_in_the_envelope() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let home = dir.path().join("home");
+        std::fs::create_dir_all(&home).expect("home");
+        let cfg = Config::from_sources(
+            |key| match key {
+                "HOME" => Some(home.display().to_string()),
+                _ => None,
+            },
+            None,
+        )
+        .expect("defaults resolve");
+
+        assert_eq!(
+            config_file_read(&cfg),
+            None,
+            "nothing was read, so nothing is named"
+        );
+    }
+
+    /// The other half: a file that did supply a value is named, and it
+    /// is named as the file that supplied it rather than as the path
+    /// where one could live.
+    #[test]
+    fn a_config_file_that_supplied_a_value_is_named() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let expected = dir.path().join(".config").join("matra").join("config.toml");
+        let cfg = Config::from_sources(
+            |key| match key {
+                "HOME" => Some(dir.path().display().to_string()),
+                _ => None,
+            },
+            Some("[summarize]\nn = 7\n"),
+        )
+        .expect("resolve with a file");
+
+        assert_eq!(
+            config_file_read(&cfg),
+            Some(expected.display().to_string()),
+            "the file that supplied a value is the file that was read"
+        );
     }
 
     #[test]

@@ -31,7 +31,7 @@
 //! directory, downloads and re-downloads included. Create the new
 //! location, or set `MATRA_MODEL_DIR`, to move off it.
 
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use crate::domain::{self, Error};
 
@@ -95,6 +95,11 @@ pub struct Config {
     keyphrases_n: usize,
     keyphrases_algorithm: String,
     sources: Vec<(&'static str, ValueSource)>,
+    /// The config file this configuration's own environment names, or
+    /// `None` when that environment names none. Carried rather than
+    /// recomputed, so a caller asking about this configuration is never
+    /// answered from the process environment instead.
+    config_file: Option<PathBuf>,
 }
 
 impl Config {
@@ -139,7 +144,13 @@ impl Config {
     ) -> domain::Result<Config> {
         let env: &dyn Fn(&str) -> Option<String> = &env;
 
-        let file_path = config_file_path_from(env).unwrap_or_else(|| PathBuf::from("config.toml"));
+        let config_file = config_file_path_from(env);
+        // The attribution path for messages about the file's contents.
+        // A configuration with no file still needs a name to hang a
+        // parse error on, and nothing reads this one.
+        let file_path = config_file
+            .clone()
+            .unwrap_or_else(|| PathBuf::from("config.toml"));
         let from_file = match file {
             Some(text) => parse_toml(text, &file_path)?,
             None => FileConfig::default(),
@@ -235,6 +246,7 @@ impl Config {
             &sources,
             &file_path,
         )?;
+        check_path_component("models.embedding", &embedding_model, &sources, &file_path)?;
 
         Ok(Config {
             data_dir,
@@ -247,6 +259,7 @@ impl Config {
             keyphrases_n,
             keyphrases_algorithm,
             sources,
+            config_file,
         })
     }
 
@@ -291,6 +304,20 @@ impl Config {
     /// exist.
     pub fn config_file_path() -> Option<PathBuf> {
         config_file_path_from(&|key: &str| std::env::var(key).ok())
+    }
+
+    /// The config file *this* configuration's environment named, or
+    /// `None` when it named none. The path is not read here and need not
+    /// exist.
+    ///
+    /// The instance counterpart to [`Config::config_file_path`], and the
+    /// one to reach for whenever a `Config` is in hand. The static reads
+    /// the process environment, so a caller holding a configuration
+    /// built through [`Config::from_sources`] with an injected
+    /// environment would otherwise be answered about a different
+    /// machine's files.
+    pub fn config_file(&self) -> Option<&Path> {
+        self.config_file.as_deref()
     }
 
     /// The data root: `MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`,
@@ -468,6 +495,47 @@ fn check_algorithm(
         "{}: {key} is `{value}`, which is not one of {}",
         origin_of(key, sources, file_path),
         known.join(", "),
+    )))
+}
+
+/// Reject a configured name that is not a single ordinary path
+/// component.
+///
+/// `models.embedding` is joined onto the model directory, and the
+/// directory that results is where the embedding provisioner writes its
+/// temporaries and sweeps aged ones. A free string reaching a
+/// delete-by-pattern sweep is the reason this check exists: `"../.."`
+/// resolves to a directory the operator never named, and while the sweep
+/// only unlinks `.tmp.` entries older than ten minutes, a delete
+/// operation whose directory comes from configuration should be told
+/// where it may not go rather than trusted not to wander.
+///
+/// A single component is the whole rule: no separator, no `..`, no `.`,
+/// no root, and not empty. A backslash is refused as well, so the same
+/// string is accepted or refused whatever the platform, rather than
+/// being one component on Unix and two on Windows.
+///
+/// `models.udpipe` gets no such check because nothing joins it to a
+/// path: the UDPipe artifact's filename is pinned in the adapter beside
+/// its digest, and this value is only ever printed. Validating a value
+/// nothing resolves would refuse configurations that harm nobody.
+fn check_path_component(
+    key: &'static str,
+    value: &str,
+    sources: &[(&'static str, ValueSource)],
+    file_path: &Path,
+) -> domain::Result<()> {
+    let mut components = Path::new(value).components();
+    let single =
+        matches!(components.next(), Some(Component::Normal(_))) && components.next().is_none();
+    if single && !value.contains('\\') {
+        return Ok(());
+    }
+    Err(Error::InvalidInput(format!(
+        "{}: {key} is `{value}`, which is not a single path component. It names a directory \
+         inside the model directory, so it cannot be empty, absolute, or contain `/`, `\\`, \
+         `.` or `..`",
+        origin_of(key, sources, file_path),
     )))
 }
 
@@ -1006,6 +1074,46 @@ mod tests {
             message.contains("keyphrases.algorithm") && message.contains("rake, yake"),
             "message is not actionable: {message}"
         );
+    }
+
+    /// Regression (review of #77, L1): `models.embedding` is joined onto
+    /// the model directory and the result is where the embedding
+    /// provisioner sweeps aged temporaries, so a value that escapes the
+    /// model directory points a delete-by-pattern operation somewhere the
+    /// operator did not name. The check runs at resolve time, so it fires
+    /// once rather than at whichever call first reaches for the value.
+    #[test]
+    fn an_embedding_name_that_is_not_a_path_component_is_rejected() {
+        for value in ["../..", "..", ".", "", "/etc", "a/b", "a\\b"] {
+            let err = Config::from_sources(
+                env_of(&[("HOME", "/home/tester")]),
+                Some(&format!("[models]\nembedding = '{value}'\n")),
+            )
+            .unwrap_err();
+            let Error::InvalidInput(message) = err else {
+                panic!("expected InvalidInput for {value:?}, got {err:?}");
+            };
+            assert!(
+                message.contains("models.embedding")
+                    && message.contains("/home/tester/.config/matra/config.toml"),
+                "message names neither the key nor the file for {value:?}: {message}"
+            );
+        }
+    }
+
+    /// The rejection is narrow. An ordinary directory name still
+    /// resolves, including one carrying the dots and dashes a model
+    /// revision name uses.
+    #[test]
+    fn an_ordinary_embedding_name_resolves() {
+        for value in ["potion-base-8M", "potion.base.8M", "my_model", "..leading"] {
+            let cfg = Config::from_sources(
+                env_of(&[("HOME", "/home/tester")]),
+                Some(&format!("[models]\nembedding = '{value}'\n")),
+            )
+            .unwrap_or_else(|e| panic!("{value:?} should resolve, got {e:?}"));
+            assert_eq!(cfg.embedding_model(), value);
+        }
     }
 
     #[test]

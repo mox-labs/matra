@@ -19,6 +19,30 @@ struct Fixture {
     error_kinds: Vec<String>,
     item_shapes: ItemShapes,
     directory: Directory,
+    provisioning: Provisioning,
+}
+
+#[derive(serde::Deserialize)]
+struct Provisioning {
+    kinds: std::collections::BTreeMap<String, String>,
+    // Read only by the udpipe-gated test below: the condition it
+    // reproduces is a model directory that cannot be created, and there
+    // is no model constructor to call without that feature.
+    #[cfg_attr(not(feature = "udpipe"), allow(dead_code))]
+    unwritable_model_dir: UnwritableModelDir,
+}
+
+#[derive(serde::Deserialize)]
+#[cfg_attr(not(feature = "udpipe"), allow(dead_code))]
+struct UnwritableModelDir {
+    expect: ProvisioningExpect,
+}
+
+#[derive(serde::Deserialize)]
+#[cfg_attr(not(feature = "udpipe"), allow(dead_code))]
+struct ProvisioningExpect {
+    kind: String,
+    message_contains: Vec<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -173,5 +197,65 @@ fn a_directory_walk_yields_one_item_per_file() {
                 }
             ),
         }
+    }
+}
+
+/// The provisioning classification ADR-0015 records, on the one failure
+/// a runner can produce with no network and no model.
+///
+/// This row is not itself the contract change: `create_dir_all` already
+/// converted through `Error::Io` before ADR-0015, so the kind here was
+/// always `io`. The reclassification ADR-0015 records is DNS, TLS and a
+/// full disk, which no runner exercises, and this row is the assertable
+/// neighbour that keeps the vocabulary honest. What is new is the
+/// message: `io error: Permission denied (os error 13)` was the whole of
+/// it, with the directory sitting in a variable one line away.
+#[cfg(feature = "udpipe")]
+#[test]
+fn a_model_directory_that_cannot_be_created_is_an_io_failure() {
+    let fixture = fixture();
+    let expect = &fixture.provisioning.unwritable_model_dir.expect;
+    assert_eq!(
+        fixture
+            .provisioning
+            .kinds
+            .get("filesystem")
+            .map(String::as_str),
+        Some(expect.kind.as_str()),
+        "the fixture's own rows have to agree with each other"
+    );
+
+    let parent = tempfile::tempdir().expect("tempdir");
+    let blocked = parent.path().join("not-a-directory");
+    fs::write(&blocked, b"x").expect("write");
+
+    let err = matra::nlp::udpipe::Udpipe::english(blocked.join("models"))
+        .expect_err("a model directory under a regular file cannot be created");
+
+    assert_eq!(err.kind(), expect.kind, "{err}");
+    let message = err.to_string();
+    for fragment in &expect.message_contains {
+        assert!(
+            message.contains(fragment),
+            "{fragment:?} missing from {message}"
+        );
+    }
+    assert!(
+        message.contains(&blocked.display().to_string()),
+        "the message names the path: {message}"
+    );
+}
+
+/// The kinds the fixture names are kinds the vocabulary actually has. A
+/// row naming a string no `Error` variant reports would pin a contract
+/// nothing can satisfy.
+#[test]
+fn every_provisioning_kind_is_in_the_vocabulary() {
+    let fixture = fixture();
+    for (condition, kind) in &fixture.provisioning.kinds {
+        assert!(
+            fixture.error_kinds.contains(kind),
+            "{condition} names {kind}, which is not one of the published kinds"
+        );
     }
 }

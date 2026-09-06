@@ -18,7 +18,9 @@ use std::path::Path;
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
 #[cfg(not(target_arch = "wasm32"))]
-use std::time::Duration;
+use std::sync::atomic::{AtomicU64, Ordering};
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::{Duration, SystemTime};
 
 use safetensors::SafeTensors;
 use safetensors::tensor::Dtype;
@@ -91,6 +93,25 @@ const FETCH_TIMEOUT: Duration = Duration::from_secs(300);
 #[cfg(not(target_arch = "wasm32"))]
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
 
+/// Prefix of the temporary an artifact lands through. Shared by the
+/// creation and the reclaim, so the sweep cannot look for a name the
+/// writer does not use.
+#[cfg(not(target_arch = "wasm32"))]
+const TEMP_FILE_PREFIX: &str = ".tmp.";
+
+/// Age past which a temporary cannot belong to a live provisioning call,
+/// so it is a leftover and the next call reclaims it.
+///
+/// Twice [`FETCH_TIMEOUT`], the same rule and the same number
+/// `nlp/udpipe.rs` uses. All three artifacts are fetched and verified
+/// before any of them is written, so a temporary's modification time is
+/// within milliseconds of the write that follows it, and anything older
+/// than ten minutes is an orphan from a killed process rather than a
+/// peer. The margin is what protects a concurrent cold start: racing
+/// processes see each other's temporaries as seconds old.
+#[cfg(not(target_arch = "wasm32"))]
+const STALE_TEMP_AGE: Duration = Duration::from_secs(600);
+
 /// A loaded static embedding model in the model2vec artifact format.
 ///
 /// Construct with [`Model2Vec::from_dir`]. Each artifact's bytes are
@@ -145,9 +166,10 @@ impl Model2Vec {
                 return Err(Error::ModelNotFound(p.clone()));
             }
         }
-        let model_bytes = fs::read(&model_path)?;
-        let tokenizer_bytes = fs::read(&tokenizer_path)?;
-        let config_bytes = fs::read(&config_path)?;
+        let model_bytes = fs::read(&model_path).map_err(|e| io_at("read", &model_path, &e))?;
+        let tokenizer_bytes =
+            fs::read(&tokenizer_path).map_err(|e| io_at("read", &tokenizer_path, &e))?;
+        let config_bytes = fs::read(&config_path).map_err(|e| io_at("read", &config_path, &e))?;
         catch_embed_panic(|| Self::from_bytes(&model_bytes, &tokenizer_bytes, &config_bytes))
     }
 
@@ -176,15 +198,17 @@ impl Model2Vec {
     ///    otherwise lose them, and a partial set has no provenance worth
     ///    trusting either.
     /// 3. None of the three present: all three are downloaded into
-    ///    `dir` (created if needed), as one transaction. Each lands
-    ///    through a temporary file in the same directory, and the renames
-    ///    onto the artifact names run only once all three have arrived,
-    ///    so no reader ever sees a partial artifact or a partial set. A
-    ///    failure anywhere in the sequence removes every file the call
+    ///    memory and checked against the pinned digest there. Only a set
+    ///    that matched is written, as one transaction: each artifact
+    ///    lands through a temporary file in `dir` (created if needed),
+    ///    and the renames onto the artifact names run only once all
+    ///    three temporaries are written. So no reader ever sees a
+    ///    partial artifact, a partial set, or bytes that failed the pin.
+    ///    A failure anywhere in the sequence removes every file the call
     ///    made and returns the error. A download is capped at 64 MiB.
-    /// 4. A mismatch over files this call downloaded removes them and
-    ///    downloads once more. A second mismatch removes them again and
-    ///    returns [`Error::ModelInvalid`].
+    /// 4. A set that fails the digest is downloaded once more, and a
+    ///    second mismatch returns [`Error::ModelInvalid`]. Neither
+    ///    attempt wrote anything, so there is nothing to remove.
     ///
     /// So a caller either gets the pinned model or gets an error. A
     /// half-verified or partially-written model is never loaded, a
@@ -270,14 +294,14 @@ impl Model2Vec {
     /// behavior worth pinning is what the digest decides.
     ///
     /// Every path out of here leaves `dir` holding either the full pinned
-    /// set or none of the three names. [`download_artifacts`] is one
-    /// transaction, so a fetch that fails partway leaves nothing behind,
-    /// and a digest mismatch over files this call downloaded clears them
-    /// with [`remove_artifacts`] before the retry and again if the retry
-    /// mismatches too. The alternative is a directory left holding one
-    /// artifact, which every later call refuses as a partial set: a
-    /// transient timeout would become a permanent failure that only a
-    /// hand deletion clears.
+    /// set or none of the three names. The set is fetched into memory
+    /// and checked against the pin there ([`fetch_verified`]), so a
+    /// mismatch is refused before the directory is touched at all, and
+    /// [`install_artifacts`] is one transaction, so a write that fails
+    /// partway leaves nothing behind. The alternative is a directory
+    /// left holding one artifact, which every later call refuses as a
+    /// partial set: a transient timeout would become a permanent failure
+    /// that only a hand deletion clears.
     #[cfg(not(target_arch = "wasm32"))]
     fn provision<F>(
         dir: &Path,
@@ -288,6 +312,10 @@ impl Model2Vec {
     where
         F: Fn(&str) -> domain::Result<Vec<u8>>,
     {
+        // Before the download rather than after it, so a directory that
+        // cannot be created fails in milliseconds instead of after
+        // 30 MB has travelled. `nlp/udpipe.rs` orders it the same way.
+        fs::create_dir_all(dir).map_err(|e| io_at("create the model directory", dir, &e))?;
         let paths: [PathBuf; 3] = ARTIFACT_FILES.map(|f| dir.join(f));
         let present = paths.iter().filter(|p| p.exists()).count();
 
@@ -315,28 +343,15 @@ impl Model2Vec {
 
         // None of the three names is taken, so the directory is this
         // call's to fill, and what lands in it is this call's to remove.
-        download_artifacts(dir, &paths, urls, fetch)?;
-        if let Some(model) = read_verify_load(&paths, expected_digest)? {
-            return Ok(model);
-        }
-
-        // One retry, over the files this call just downloaded. The
-        // likely cause of a mismatch is a truncated or interrupted
-        // transfer, and that heals. Removal comes first so a second
-        // failure can never leave bytes behind that a later call would
-        // find and refuse.
-        remove_artifacts(&paths);
-        download_artifacts(dir, &paths, urls, fetch)?;
-        match read_verify_load(&paths, expected_digest)? {
-            Some(model) => Ok(model),
-            None => {
-                remove_artifacts(&paths);
-                Err(Error::ModelInvalid(format!(
-                    "artifact digest mismatch after re-download in {}: expected {expected_digest}",
-                    dir.display()
-                )))
-            }
-        }
+        // The set is verified in memory first, so nothing that failed
+        // the pin ever carries an artifact's name, not even for the
+        // length of a rename, and a mismatch costs the directory
+        // nothing.
+        let artifacts = fetch_verified(dir, expected_digest, urls, fetch)?;
+        install_artifacts(dir, &paths, &artifacts)?;
+        // The bytes that satisfied the digest are the bytes that parse.
+        // Nothing re-reads the directory between the two.
+        catch_embed_panic(|| Model2Vec::from_bytes(&artifacts[0], &artifacts[1], &artifacts[2]))
     }
 
     /// Parse a model from in-memory artifact bytes. The identity hash is
@@ -605,21 +620,33 @@ fn read_verify_load(
     paths: &[PathBuf; 3],
     expected_digest: &str,
 ) -> domain::Result<Option<Model2Vec>> {
-    let model_bytes = fs::read(&paths[0])?;
-    let tokenizer_bytes = fs::read(&paths[1])?;
-    let config_bytes = fs::read(&paths[2])?;
+    let mut artifacts: [Vec<u8>; 3] = Default::default();
+    for (slot, path) in artifacts.iter_mut().zip(paths) {
+        *slot = fs::read(path).map_err(|e| io_at("read", path, &e))?;
+    }
 
-    let mut hasher = Sha256::new();
-    hasher.update(&model_bytes);
-    hasher.update(&tokenizer_bytes);
-    hasher.update(&config_bytes);
-    let got = format!("{:x}", hasher.finalize());
-    if !got.eq_ignore_ascii_case(expected_digest) {
+    if !digest_of(&artifacts).eq_ignore_ascii_case(expected_digest) {
         return Ok(None);
     }
 
-    catch_embed_panic(|| Model2Vec::from_bytes(&model_bytes, &tokenizer_bytes, &config_bytes))
+    catch_embed_panic(|| Model2Vec::from_bytes(&artifacts[0], &artifacts[1], &artifacts[2]))
         .map(Some)
+}
+
+/// The pin's subject: SHA-256 over the three artifacts, concatenated in
+/// [`ARTIFACT_FILES`] order.
+///
+/// One digest over the set rather than three, because a model is the
+/// set: a tokenizer from one release beside a matrix from another is not
+/// a model anybody pinned. One function so the disk path and the
+/// download path cannot disagree about what the pin covers.
+#[cfg(not(target_arch = "wasm32"))]
+fn digest_of(artifacts: &[Vec<u8>; 3]) -> String {
+    let mut hasher = Sha256::new();
+    for bytes in artifacts {
+        hasher.update(bytes);
+    }
+    format!("{:x}", hasher.finalize())
 }
 
 /// The refusal for a directory the provisioner did not fill itself.
@@ -641,13 +668,28 @@ fn not_the_pinned_model(dir: &Path, reason: &str, expected_digest: &str) -> Erro
     ))
 }
 
+/// A filesystem failure that names the operation and the path.
+///
+/// The counterpart of the function of the same name in `nlp/udpipe.rs`,
+/// and it exists for the same reason: `io error: No space left on device
+/// (os error 28)` was the whole message an embedding install produced,
+/// with the path sitting in a variable one line away. ADR-0015 says the
+/// two provisioners share a discipline rather than a module, so this is
+/// the discipline implemented twice, not a helper imported twice.
+fn io_at(operation: &str, path: &Path, error: &std::io::Error) -> Error {
+    Error::Io(std::io::Error::new(
+        error.kind(),
+        format!("cannot {operation} {}: {error}", path.display()),
+    ))
+}
+
 /// Remove the named paths, ignoring failures. A file that is already
 /// gone is the state this wants; one that cannot be removed surfaces at
 /// the next verify, which is the loud place for it.
 ///
-/// The one cleanup in this file. [`Transaction`] unwinds a failed
-/// download with it, and [`Model2Vec::provision`] clears the artifacts of
-/// a mismatched download with it before the retry.
+/// The one cleanup in this file: [`Transaction`] unwinds a failed
+/// install with it. A mismatched download needs no cleanup, because the
+/// digest is checked before anything is written.
 #[cfg(not(target_arch = "wasm32"))]
 fn remove_artifacts(paths: &[PathBuf]) {
     for path in paths {
@@ -694,13 +736,14 @@ impl Transaction {
     /// Write `bytes` to `tmp`, which must not already exist.
     ///
     /// The temporary is opened with `create_new`, which is `O_EXCL`: a
-    /// path that already exists fails the open, symlink or not. A
-    /// predictable name in a directory somebody else can write to is
-    /// otherwise a place to plant a symlink, and a plain write would
-    /// follow it and put 30 MB through to whatever it points at. Failing
-    /// is the right answer and the message names the path, because what
-    /// to do about a leftover temporary from a killed process is remove
-    /// it, which is not a decision this code gets to make on its own.
+    /// path that already exists fails the open, symlink or not. A name
+    /// in a directory somebody else can write to is otherwise a place to
+    /// plant a symlink, and a plain write would follow it and put 30 MB
+    /// through to whatever it points at. Failing is the right answer and
+    /// the message names the path. A leftover from a killed process is
+    /// no longer how this is normally met: [`reclaim_stale_temps`]
+    /// clears one that is too old to be live, and [`temp_stamp`] keeps
+    /// two calls from choosing one name.
     fn write_temp(&mut self, tmp: &Path, bytes: &[u8]) -> domain::Result<()> {
         use std::io::Write;
 
@@ -721,7 +764,8 @@ impl Transaction {
         // Registered only once the file is this call's own, so a path
         // that was already there is never this call's to remove.
         self.temps.push(tmp.to_path_buf());
-        file.write_all(bytes)?;
+        file.write_all(bytes)
+            .map_err(|e| io_at("write the artifact to", tmp, &e))?;
         Ok(())
     }
 
@@ -731,10 +775,11 @@ impl Transaction {
     /// Windows `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING`), so no
     /// reader sees a half-written artifact, and two processes
     /// provisioning into the same directory cannot interleave: the
-    /// temporary name carries the process id and the rename is the only
-    /// operation that touches the final path.
+    /// temporary name is that call's alone ([`temp_stamp`]) and the
+    /// rename is the only operation that touches the final path.
     fn rename_into_place(&mut self, tmp: &Path, final_path: &Path) -> domain::Result<()> {
-        fs::rename(tmp, final_path)?;
+        fs::rename(tmp, final_path)
+            .map_err(|e| io_at("move the artifact into place at", final_path, &e))?;
         self.landed.push(final_path.to_path_buf());
         Ok(())
     }
@@ -756,39 +801,53 @@ impl Drop for Transaction {
     }
 }
 
-/// Fetch all three artifacts and put them in place, all of them or none.
+/// Fetch all three artifacts into memory and return them only if they
+/// are the pinned set.
 ///
-/// One transaction: every artifact is fetched and written to a temporary
-/// in `dir` first, and only when all three have arrived does a rename put
-/// any of them under an artifact name. A failure at any point (a fetch,
-/// the size cap, a temporary that cannot be opened, a rename) removes
-/// every temporary and every artifact this call had already renamed, then
-/// returns the error, so the directory is left as this call found it.
+/// Two attempts. The likely cause of a first mismatch is a truncated or
+/// intercepted transfer rather than a changed upstream, and one retry
+/// costs a bounded read; a second failure is not a transient, so it
+/// returns [`Error::ModelInvalid`]. Nothing has been written at any
+/// point, so a mismatch leaves the model directory exactly as it was.
 ///
-/// This is deliberately a second implementation of the temp-then-rename
-/// pattern `nlp/udpipe.rs` uses rather than a shared helper. The two
-/// adapters share no module by design, and a utility module both imported
-/// would put a third file into the wiring to save twenty lines.
+/// The digest covers the three artifacts as a set, so a mismatch
+/// condemns the set: the retry refetches all three rather than the one
+/// that might have drifted.
 #[cfg(not(target_arch = "wasm32"))]
-fn download_artifacts<F>(
+fn fetch_verified<F>(
     dir: &Path,
-    paths: &[PathBuf; 3],
+    expected_digest: &str,
     urls: &[&str; 3],
     fetch: &F,
-) -> domain::Result<()>
+) -> domain::Result<[Vec<u8>; 3]>
 where
     F: Fn(&str) -> domain::Result<Vec<u8>>,
 {
-    fs::create_dir_all(dir)?;
-    let temps: [PathBuf; 3] =
-        ARTIFACT_FILES.map(|name| dir.join(format!(".tmp.{name}.{}", std::process::id())));
-    let mut transaction = Transaction::new();
+    for _ in 0..2 {
+        let artifacts = fetch_all(urls, fetch)?;
+        if digest_of(&artifacts).eq_ignore_ascii_case(expected_digest) {
+            return Ok(artifacts);
+        }
+    }
+    Err(Error::ModelInvalid(format!(
+        "artifact digest mismatch after re-download in {}: expected {expected_digest}",
+        dir.display()
+    )))
+}
 
-    for i in 0..ARTIFACT_FILES.len() {
-        let bytes = fetch(urls[i])?;
-        // The cap is enforced here, at the one place every artifact
-        // passes through, rather than inside the fetcher: the fetcher is
-        // replaceable and the bound is not.
+/// One round of three fetches, held in memory.
+///
+/// The size cap is enforced here rather than inside the fetcher, at the
+/// one place every artifact passes through: the fetcher is replaceable
+/// and the bound is not.
+#[cfg(not(target_arch = "wasm32"))]
+fn fetch_all<F>(urls: &[&str; 3], fetch: &F) -> domain::Result<[Vec<u8>; 3]>
+where
+    F: Fn(&str) -> domain::Result<Vec<u8>>,
+{
+    let mut artifacts: [Vec<u8>; 3] = Default::default();
+    for (slot, url) in artifacts.iter_mut().zip(urls) {
+        let bytes = fetch(url)?;
         if bytes.len() > MAX_ARTIFACT_BYTES {
             return Err(Error::InputTooLarge {
                 limit: MAX_ARTIFACT_BYTES,
@@ -796,16 +855,122 @@ where
                 what: "embedding_download",
             });
         }
-        transaction.write_temp(&temps[i], &bytes)?;
+        *slot = bytes;
+    }
+    Ok(artifacts)
+}
+
+/// Put three verified artifacts in place, all of them or none.
+///
+/// One transaction: each lands in a temporary in `dir` first, and only
+/// when all three are written does a rename put any of them under an
+/// artifact name, so the set becomes visible as a set. A failure at any
+/// point (a temporary that cannot be opened, a write, a rename) removes
+/// every temporary and every artifact this call had already renamed,
+/// then returns the error, so the directory is left as this call found
+/// it.
+///
+/// The bytes arriving here have already satisfied the pin. Until the
+/// review of #77 the order was the other way round: all three were
+/// written and renamed onto the artifact names and the digest was
+/// consulted only afterwards, so unverified bytes reached the model
+/// directory under their real names.
+///
+/// This is deliberately a second implementation of the temp-then-rename
+/// pattern `nlp/udpipe.rs` uses rather than a shared helper. The two
+/// adapters share no module by design, and a utility module both imported
+/// would put a third file into the wiring to save twenty lines.
+#[cfg(not(target_arch = "wasm32"))]
+fn install_artifacts(
+    dir: &Path,
+    paths: &[PathBuf; 3],
+    artifacts: &[Vec<u8>; 3],
+) -> domain::Result<()> {
+    reclaim_stale_temps(dir, SystemTime::now());
+
+    let stamp = temp_stamp();
+    let temps: [PathBuf; 3] =
+        ARTIFACT_FILES.map(|name| dir.join(format!("{TEMP_FILE_PREFIX}{name}.{stamp}")));
+    let mut transaction = Transaction::new();
+
+    for (tmp, bytes) in temps.iter().zip(artifacts) {
+        transaction.write_temp(tmp, bytes)?;
     }
 
-    // Past this line nothing fetches, so every rename runs against bytes
-    // already on disk and the set becomes visible as a set.
-    for i in 0..ARTIFACT_FILES.len() {
-        transaction.rename_into_place(&temps[i], &paths[i])?;
+    // Past this line nothing can fail on a fetch or a write, so every
+    // rename runs against bytes already on disk.
+    for (tmp, final_path) in temps.iter().zip(paths) {
+        transaction.rename_into_place(tmp, final_path)?;
     }
     transaction.commit();
     Ok(())
+}
+
+/// A name fragment no call in flight will pick twice: the process id,
+/// the wall clock in nanoseconds, and a counter for two calls in one
+/// process that read the same nanosecond.
+///
+/// The process id alone was the previous answer and it is not unique. In
+/// a container every process is pid 1, so two cold starts sharing a
+/// bind-mounted model directory choose the same temporary names, and
+/// `create_new` refuses the second one. `nlp/udpipe.rs` names its
+/// temporary directory the same way and for the same reason.
+#[cfg(not(target_arch = "wasm32"))]
+fn temp_stamp() -> String {
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let nanos = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos() as u64);
+    format!(
+        "{}.{nanos:x}.{:x}",
+        std::process::id(),
+        COUNTER.fetch_add(1, Ordering::Relaxed)
+    )
+}
+
+/// Remove every temporary in `dir` too old to belong to a running
+/// provisioning call.
+///
+/// `now` is a parameter so the rule is testable without touching
+/// modification times on disk. A file whose modification time is in the
+/// future (a clock that moved, a copied tree) is left alone: an
+/// unexplained timestamp is a reason not to delete, not a reason to.
+///
+/// Without this, a run killed between the first write and the last
+/// rename left a temporary that `create_new` would refuse for ever
+/// after. The name carried the process id, and in a container every
+/// process is pid 1, so one interrupt wedged every later embedding
+/// provision on that machine until somebody deleted the file by hand.
+/// `nlp/udpipe.rs` reclaims its own temporaries by the same rule and the
+/// same threshold.
+///
+/// Failures are ignored throughout. Reclaiming a leftover is tidying,
+/// and a file that cannot be listed or removed must not turn a working
+/// download into an error.
+#[cfg(not(target_arch = "wasm32"))]
+fn reclaim_stale_temps(dir: &Path, now: SystemTime) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else { continue };
+        if !name.starts_with(TEMP_FILE_PREFIX) {
+            continue;
+        }
+        // `DirEntry::metadata` does not follow a symlink, and
+        // `remove_file` removes the link rather than its target, so a
+        // planted link is reclaimed as itself or not at all.
+        let stale = entry
+            .metadata()
+            .and_then(|m| m.modified())
+            .ok()
+            .and_then(|modified| now.duration_since(modified).ok())
+            .is_some_and(|age| age >= STALE_TEMP_AGE);
+        if stale {
+            let _ = fs::remove_file(entry.path());
+        }
+    }
 }
 
 /// Fetch one URL into memory, reading at most one byte past
@@ -829,12 +994,7 @@ where
 fn fetch_capped(url: &str) -> domain::Result<Vec<u8>> {
     use std::io::Read;
 
-    let agent: ureq::Agent = ureq::Agent::config_builder()
-        .timeout_global(Some(FETCH_TIMEOUT))
-        .timeout_connect(Some(CONNECT_TIMEOUT))
-        .build()
-        .into();
-    let response = agent
+    let response = download_agent()
         .get(url)
         .call()
         .map_err(|e| transport_failure(url, &e))?;
@@ -844,13 +1004,45 @@ fn fetch_capped(url: &str) -> domain::Result<Vec<u8>> {
         .into_reader()
         .take(MAX_ARTIFACT_BYTES as u64 + 1)
         .read_to_end(&mut bytes)
-        .map_err(|e| {
-            Error::Io(std::io::Error::new(
-                e.kind(),
-                format!("download {url}: {e}"),
-            ))
-        })?;
+        .map_err(|e| body_failure(url, e))?;
     Ok(bytes)
+}
+
+/// The client [`fetch_capped`] downloads through.
+///
+/// A function rather than an inline builder so a test can assert the
+/// configuration without a network. `https_only` is the part worth
+/// asserting: `ureq` follows up to ten redirects by default, so without
+/// it an `https` URL that redirects to `http` is fetched in cleartext.
+/// The pinned digest means that cannot change which bytes load, so this
+/// is confidentiality rather than integrity, but a redirect is not the
+/// user's decision to make and the pinned URLs are all `https`.
+#[cfg(not(target_arch = "wasm32"))]
+fn download_agent() -> ureq::Agent {
+    ureq::Agent::config_builder()
+        .timeout_global(Some(FETCH_TIMEOUT))
+        .timeout_connect(Some(CONNECT_TIMEOUT))
+        .https_only(true)
+        .build()
+        .into()
+}
+
+/// Map a failure part-way through reading the response body.
+///
+/// The body reader hands back an `io::Error`, and `ureq` builds that one
+/// with `Error::into_io`, which returns the inner error only for
+/// `Error::Io` and wraps everything else, `Timeout` included, in
+/// `io::Error::other`. Reading `kind()` straight off it therefore gives
+/// `Other`, so a fetch that ran past [`FETCH_TIMEOUT`] mid-transfer
+/// reported `Other` where `book/src/reference/errors.md` and ADR-0015
+/// both promise `TimedOut`. `From<io::Error> for ureq::Error` unwraps
+/// the wrapped error again, which recovers the kind and also gives a
+/// mid-stream certificate rejection the sentence [`download_message`]
+/// writes. An `io::Error` that was never a `ureq::Error` comes back as
+/// `Error::Io` and keeps its own kind.
+#[cfg(not(target_arch = "wasm32"))]
+fn body_failure(url: &str, error: std::io::Error) -> Error {
+    transport_failure(url, &ureq::Error::from(error))
 }
 
 /// Map a `ureq` failure to [`Error::Io`].
@@ -872,10 +1064,62 @@ fn transport_failure(url: &str, error: &ureq::Error) -> Error {
         ureq::Error::ConnectionFailed | ureq::Error::HostNotFound => ErrorKind::NotConnected,
         _ => ErrorKind::Other,
     };
-    Error::Io(std::io::Error::new(
-        kind,
-        format!("download {url}: {error}"),
-    ))
+    Error::Io(std::io::Error::new(kind, download_message(url, error)))
+}
+
+/// What the user reads when an artifact download fails.
+///
+/// A rejected certificate gets a sentence rather than a `Debug`
+/// rendering of a `rustls` enum. matra verifies TLS against root
+/// certificates compiled into the binary and never reads the system
+/// trust store, which is why it needs no `ca-certificates` package and
+/// also why installing a proxy's CA there changes nothing. That is one
+/// fact about matra rather than one about this adapter, so both
+/// provisioning paths say it (ADR-0015); the wording differs only in the
+/// way out, because this model is a directory of three artifacts rather
+/// than one file. The raw failure is kept at the end, because a bug
+/// report needs it.
+#[cfg(not(target_arch = "wasm32"))]
+fn download_message(url: &str, error: &ureq::Error) -> String {
+    let detail = error.to_string();
+    if !is_certificate_rejection(&detail, error) {
+        return format!("download {url}: {detail}");
+    }
+    format!(
+        "download {url}: the TLS certificate offered for {} was rejected. matra verifies \
+         TLS against root certificates compiled into it and never reads the system trust \
+         store, so a proxy that re-signs TLS cannot be trusted by installing its CA. \
+         Fetch the artifacts by hand into a directory of your own and load it with \
+         Model2Vec::from_dir instead. Underlying failure: {detail}",
+        host_of(url),
+    )
+}
+
+/// Whether a transport failure is the peer's certificate being refused.
+///
+/// `ureq` surfaces a `rustls` handshake failure as `Error::Io` wrapping
+/// an `io::Error` whose message is the `rustls` error, so the variant
+/// alone does not say. The rendered text does.
+#[cfg(not(target_arch = "wasm32"))]
+fn is_certificate_rejection(detail: &str, error: &ureq::Error) -> bool {
+    if matches!(error, ureq::Error::Tls(_)) {
+        return true;
+    }
+    let lowered = detail.to_ascii_lowercase();
+    lowered.contains("certificate") || lowered.contains("rustls")
+}
+
+/// The host in an absolute URL, or the whole URL when it has no
+/// recognisable authority. Enough for a message; not a URL parser.
+#[cfg(not(target_arch = "wasm32"))]
+fn host_of(url: &str) -> &str {
+    let after_scheme = url.split_once("://").map_or(url, |(_, rest)| rest);
+    let authority = after_scheme
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or(after_scheme);
+    let host = authority.rsplit_once('@').map_or(authority, |(_, h)| h);
+    host.split(':').next().unwrap_or(host)
 }
 
 /// Convert a tensor's raw little-endian bytes to f32. Only f32 sources
@@ -1481,11 +1725,13 @@ mod provisioning {
         assert!(fetcher.calls().is_empty());
     }
 
+    /// A first set that fails the digest is refetched, and the heal is
+    /// invisible to the directory: the mismatching bytes were never
+    /// written, so there is nothing to take back.
     #[test]
-    fn a_corrupted_download_is_removed_and_downloaded_again() {
+    fn a_corrupted_download_is_refetched_and_the_second_set_lands() {
         let fixture = Fixture::new();
-        // Empty, so every byte in it came from this call's fetcher and
-        // removing it on a mismatch destroys nothing of the caller's.
+        // Empty, so every byte that ends up in it came from this call.
         let dir = tempfile::tempdir().unwrap();
 
         let fetcher = Fetcher::new(&fixture, Serves::GarbageThenTheModel);
@@ -1496,6 +1742,7 @@ mod provisioning {
         // what gets replaced.
         assert_eq!(fetcher.calls(), [URLS, URLS].concat());
         assert_eq!(model.model_hash(), fixture.digest);
+        assert_eq!(temporaries(dir.path()), Vec::<String>::new());
     }
 
     #[test]
@@ -1538,6 +1785,32 @@ mod provisioning {
         }
         // The cap fires before anything is written.
         assert_eq!(present(dir.path()), Vec::<&str>::new());
+    }
+
+    /// Regression: a rejected certificate reads as a sentence naming
+    /// the host, on this path as well as the UDPipe one. Someone behind
+    /// a TLS-intercepting proxy meets both.
+    #[test]
+    fn a_rejected_certificate_reads_as_a_sentence() {
+        let error = ureq::Error::Io(std::io::Error::other(
+            "invalid peer certificate: Other(OtherError(CaUsedAsEndEntity))",
+        ));
+        let message = download_message(POTION_BASE_8M_URLS[0], &error);
+
+        assert!(message.contains("huggingface.co"), "{message}");
+        assert!(message.contains("system trust store"), "{message}");
+        assert!(message.contains("from_dir"), "{message}");
+        assert!(message.contains("CaUsedAsEndEntity"), "{message}");
+        assert_eq!(
+            transport_failure(POTION_BASE_8M_URLS[0], &error).kind(),
+            "io"
+        );
+    }
+
+    #[test]
+    fn a_url_yields_the_host_a_message_should_name() {
+        assert_eq!(host_of(POTION_BASE_8M_URLS[0]), "huggingface.co");
+        assert_eq!(host_of("https://example.org:8443/a?b=c"), "example.org");
     }
 
     /// A download is all three artifacts or none of them. Leaving the
@@ -1657,36 +1930,287 @@ mod provisioning {
         );
     }
 
-    /// The temporary each artifact lands through has a predictable name,
-    /// which is a place to plant a symlink in a directory somebody else
-    /// can write to. `create_new` is `O_EXCL`, so the open fails and the
-    /// 30 MB never travels through the link to whatever it points at.
+    /// A temporary in a directory somebody else can write to is a place
+    /// to plant a symlink, and a plain write would follow it and put
+    /// 30 MB through to whatever it points at. `create_new` is `O_EXCL`,
+    /// so the open fails instead.
+    ///
+    /// This drives [`Transaction::write_temp`] rather than a whole
+    /// provision, because the name now carries a per-call stamp and a
+    /// test cannot predict it. Predicting the name was never the
+    /// guarantee; `O_EXCL` is.
     #[cfg(unix)]
     #[test]
     fn a_planted_temporary_is_not_written_through() {
         let victim_bytes: &[u8] = b"the caller's bytes";
-        let fixture = Fixture::new();
         let dir = tempfile::tempdir().unwrap();
         let victim = dir.path().join("victim");
         fs::write(&victim, victim_bytes).unwrap();
 
-        let planted = dir
-            .path()
-            .join(format!(".tmp.model.safetensors.{}", std::process::id()));
+        let planted = dir.path().join(".tmp.model.safetensors.planted");
         std::os::unix::fs::symlink(&victim, &planted).unwrap();
 
-        let fetcher = Fetcher::new(&fixture, Serves::TheModel);
-        let err = expect_err(provision(dir.path(), &fixture, &fetcher));
+        let mut transaction = Transaction::new();
+        let err = transaction
+            .write_temp(&planted, b"thirty megabytes")
+            .expect_err("a path already there fails the open");
 
         match err {
-            Error::Io(e) => assert_eq!(e.kind(), std::io::ErrorKind::AlreadyExists),
+            Error::Io(e) => {
+                assert_eq!(e.kind(), std::io::ErrorKind::AlreadyExists);
+                assert!(e.to_string().contains(".tmp.model.safetensors"), "{e}");
+            }
             other => panic!("expected Io(AlreadyExists), got {other:?}"),
         }
         assert_eq!(fs::read(&victim).unwrap(), victim_bytes);
-        // The plant is left where it was found, like any other file this
-        // call did not create.
+
+        // The plant was never this call's, so unwinding leaves it and
+        // its target alone.
+        drop(transaction);
         assert!(fs::symlink_metadata(&planted).is_ok());
-        assert_eq!(present(dir.path()), Vec::<&str>::new());
+        assert_eq!(fs::read(&victim).unwrap(), victim_bytes);
+    }
+
+    /// Regression (review of #77): not one byte of a download is on disk
+    /// while the rest of the set is still in flight, and nothing is
+    /// written at all until the whole set has satisfied the pin. Before
+    /// this, each artifact was written to a temporary as it arrived and
+    /// all three were renamed onto the artifact names before the digest
+    /// was consulted, so unverified bytes reached the model directory
+    /// under their real names.
+    ///
+    /// The fetcher is the observer: it photographs the directory on
+    /// every call, which is the only place from which the ordering is
+    /// visible from outside.
+    #[test]
+    fn nothing_is_written_until_the_whole_set_has_satisfied_the_pin() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+        let seen: RefCell<Vec<(Vec<&'static str>, Vec<String>)>> = RefCell::new(Vec::new());
+
+        let model = Model2Vec::provision(dir.path(), &fixture.digest, &URLS, &|url| {
+            seen.borrow_mut()
+                .push((present(dir.path()), temporaries(dir.path())));
+            let index = URLS.iter().position(|u| *u == url).expect("known url");
+            Ok(fixture.bytes[index].clone())
+        })
+        .unwrap();
+
+        assert_eq!(model.model_hash(), fixture.digest);
+        assert_eq!(seen.borrow().len(), ARTIFACT_FILES.len());
+        for (artifacts, temps) in seen.borrow().iter() {
+            assert!(
+                artifacts.is_empty(),
+                "an artifact name existed mid-download: {artifacts:?}"
+            );
+            assert!(
+                temps.is_empty(),
+                "a temporary existed mid-download: {temps:?}"
+            );
+        }
+        assert_eq!(present(dir.path()).len(), ARTIFACT_FILES.len());
+        assert_eq!(temporaries(dir.path()), Vec::<String>::new());
+    }
+
+    /// The directory is created before the download rather than after
+    /// it, so an unwritable one fails in milliseconds instead of after
+    /// 30 MB has travelled. `Serves::Nothing` makes being asked for a
+    /// byte the failure.
+    ///
+    /// Regression (report H6, unfixed on this adapter until the second
+    /// review of #77): the failure names the operation and the path.
+    /// `io error: No space left on device (os error 28)` was the whole
+    /// message an install produced, with the directory one line away in
+    /// a variable, while `book/src/reference/errors.md` said both
+    /// adapters carry the operation and the path.
+    #[test]
+    fn a_model_directory_that_cannot_be_created_fails_before_the_download() {
+        let fixture = Fixture::new();
+        let parent = tempfile::tempdir().unwrap();
+        // A file where a directory would have to be, so `create_dir_all`
+        // cannot succeed under it for root either.
+        let blocker = parent.path().join("not-a-directory");
+        fs::write(&blocker, b"x").unwrap();
+        let dir = blocker.join("models");
+
+        let fetcher = Fetcher::new(&fixture, Serves::Nothing);
+        let err = expect_err(provision(&dir, &fixture, &fetcher));
+
+        assert!(
+            matches!(err, Error::Io(_)),
+            "expected an Io failure, got {err:?}"
+        );
+        assert!(fetcher.calls().is_empty());
+        let message = err.to_string();
+        assert!(
+            message.contains("create the model directory"),
+            "names the operation: {message}"
+        );
+        assert!(
+            message.contains(&dir.display().to_string()),
+            "names the path: {message}"
+        );
+    }
+
+    /// Regression (report H6): a read that fails names the operation and
+    /// the path too, on the constructor that loads a caller's own
+    /// directory. A directory sitting where an artifact file belongs
+    /// exists, so it passes the presence check and fails the read.
+    #[test]
+    fn an_artifact_that_cannot_be_read_names_the_operation_and_the_path() {
+        let dir = tempfile::tempdir().unwrap();
+        for name in ARTIFACT_FILES {
+            fs::write(dir.path().join(name), b"x").unwrap();
+        }
+        let blocked = dir.path().join(ARTIFACT_FILES[0]);
+        fs::remove_file(&blocked).unwrap();
+        fs::create_dir(&blocked).unwrap();
+
+        let err = expect_err(Model2Vec::from_dir(dir.path()));
+
+        assert_eq!(err.kind(), "io");
+        let message = err.to_string();
+        assert!(
+            message.contains("cannot read"),
+            "names the operation: {message}"
+        );
+        assert!(
+            message.contains(&blocked.display().to_string()),
+            "names the path: {message}"
+        );
+    }
+
+    /// Regression (review of #77): a temporary left by a killed process
+    /// is reclaimed once it is too old to belong to a live call. Without
+    /// this there was no reclaim at all, and `create_new` refused that
+    /// name for ever. In a container every process is pid 1, so one
+    /// interrupt wedged every later embedding provision on the machine
+    /// until somebody deleted the file by hand.
+    #[test]
+    fn an_aged_orphan_temporary_is_reclaimed() {
+        let dir = tempfile::tempdir().unwrap();
+        let orphan = dir.path().join(".tmp.model.safetensors.424242.0");
+        fs::write(&orphan, b"half an artifact").unwrap();
+
+        // The clock is a parameter, so the rule is exercised without
+        // touching modification times on disk.
+        reclaim_stale_temps(dir.path(), SystemTime::now());
+        assert!(orphan.exists(), "nothing is old yet");
+
+        reclaim_stale_temps(
+            dir.path(),
+            SystemTime::now() + STALE_TEMP_AGE + Duration::from_secs(1),
+        );
+        assert!(!orphan.exists(), "an aged leftover is reclaimed");
+    }
+
+    /// The constraint on that sweep: a temporary from a live peer is
+    /// seconds old, and a container hands every process the same pid, so
+    /// nothing may be removed for looking like this call's own.
+    #[test]
+    fn a_fresh_peer_temporary_survives_a_provision() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+        let peer = dir
+            .path()
+            .join(format!(".tmp.model.safetensors.{}", std::process::id()));
+        fs::write(&peer, b"in flight").unwrap();
+
+        let fetcher = Fetcher::new(&fixture, Serves::TheModel);
+        let model = provision(dir.path(), &fixture, &fetcher).unwrap();
+
+        assert_eq!(model.model_hash(), fixture.digest);
+        assert!(peer.exists(), "a fresh peer is not this call's to remove");
+        assert_eq!(fs::read(&peer).unwrap(), b"in flight");
+        assert_eq!(present(dir.path()).len(), ARTIFACT_FILES.len());
+    }
+
+    /// A modification time in the future is not a reason to delete. An
+    /// unexplained timestamp is a reason not to.
+    #[test]
+    fn a_temporary_from_the_future_is_left_alone() {
+        let dir = tempfile::tempdir().unwrap();
+        let odd = dir.path().join(".tmp.config.json.7.0");
+        fs::write(&odd, b"scratch").unwrap();
+
+        reclaim_stale_temps(dir.path(), SystemTime::now() - Duration::from_secs(3600));
+        assert!(odd.exists());
+    }
+
+    /// The sweep only ever looks at its own names. A hand-placed model
+    /// in the same directory is untouched however old it looks.
+    #[test]
+    fn the_sweep_only_matches_its_own_temporary_names() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+        fixture.write_into(dir.path());
+        let temp = dir.path().join(".tmp.config.json.7.0");
+        fs::write(&temp, b"scratch").unwrap();
+
+        reclaim_stale_temps(
+            dir.path(),
+            SystemTime::now() + STALE_TEMP_AGE + Duration::from_secs(1),
+        );
+
+        assert_eq!(present(dir.path()).len(), ARTIFACT_FILES.len());
+        assert!(!temp.exists());
+    }
+
+    /// The name that keeps two calls apart. A process id is not enough:
+    /// in a container it is 1 for everybody.
+    #[test]
+    fn two_temporary_names_in_one_process_differ() {
+        assert_ne!(temp_stamp(), temp_stamp());
+    }
+
+    /// Regression (review of #77): a timeout while reading the body
+    /// reports `TimedOut`, which is what `book/src/reference/errors.md`
+    /// and ADR-0015's decision table both promise. `ureq`'s body reader
+    /// builds its `io::Error` with `Error::into_io`, which wraps
+    /// everything that is not already an `io::Error` in
+    /// `io::Error::other`, so reading `kind()` off it gave `Other`.
+    #[test]
+    fn a_timeout_while_reading_the_body_is_reported_as_a_timeout() {
+        let from_ureq = std::io::Error::other(ureq::Error::Timeout(ureq::Timeout::Global));
+        assert_eq!(
+            from_ureq.kind(),
+            std::io::ErrorKind::Other,
+            "the wrapping this test exists to undo"
+        );
+
+        match body_failure(POTION_BASE_8M_URLS[0], from_ureq) {
+            Error::Io(e) => {
+                assert_eq!(e.kind(), std::io::ErrorKind::TimedOut);
+                assert!(e.to_string().contains("huggingface.co"), "{e}");
+            }
+            other => panic!("expected Io(TimedOut), got {other:?}"),
+        }
+    }
+
+    /// An `io::Error` that never was a `ureq::Error` keeps its own kind,
+    /// so the unwrapping costs nothing on the ordinary path.
+    #[test]
+    fn a_plain_body_read_failure_keeps_its_own_kind() {
+        let raw = std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "peer disconnected");
+
+        match body_failure(POTION_BASE_8M_URLS[0], raw) {
+            Error::Io(e) => assert_eq!(e.kind(), std::io::ErrorKind::UnexpectedEof),
+            other => panic!("expected Io(UnexpectedEof), got {other:?}"),
+        }
+    }
+
+    /// `ureq` follows up to ten redirects, so without `https_only` an
+    /// `https` URL that redirects to `http` is fetched in cleartext. The
+    /// digest pin keeps that from changing which bytes load, so this is
+    /// confidentiality only, and it is still not the redirect's call.
+    #[test]
+    fn the_download_agent_refuses_to_leave_https() {
+        let agent = download_agent();
+        assert!(agent.config().https_only());
+        assert!(
+            agent.config().max_redirects() > 0,
+            "the redirect following that makes https_only load-bearing"
+        );
     }
 
     /// The pin lives in two places by necessity: this file compiles it

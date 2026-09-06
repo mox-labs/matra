@@ -88,7 +88,7 @@ On the platforms with wheels this downloads a prebuilt binary and installs in se
 
 matra parses through UDPipe. None of the three install paths bundle the English model: the library, the CLI, and the Python package each download it on first use and cache it on disk. Every surface resolves the directory the same way. `Engine::with_defaults()`, `Matra.english()`, and the CLI all use `MATRA_MODEL_DIR`, else the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`, falling back to a pre-existing, non-empty `~/.matra/models` from an older install when the new location does not exist yet (matra never creates `~/.matra`, but a selected legacy cache is used as the model directory, downloads included). The Rust and Python APIs also take the directory as an explicit argument, and the CLI takes `--model-dir`.
 
-matra writes the download (about 16 MB) to a temporary location first, then moves it into place, and checks the bytes against a fixed hash before loading them. If a file fails that check, matra deletes it and re-downloads once; if the second attempt still does not match, matra returns an error instead of loading an unverified file.
+matra holds the download (about 16 MB) in memory, checks it against a fixed hash there, and writes it only if it matches, so nothing unverified ever reaches the model directory and an interrupted transfer leaves nothing behind. If the check fails, matra downloads once more; if the second attempt still does not match, it returns an error instead of loading an unverified file. A cached file that fails the check is replaced only when new bytes verify, so a re-download that cannot reach the network leaves you the file you had.
 
 ---
 
@@ -115,9 +115,9 @@ sections: 1
 vocabulary_ttr: 0.8571428571428571
 ```
 
-That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow or throttled network can take longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
+That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. The command line does print a line naming the artifact and where it is going, because it opts into the notice; the library call above does not, so that a program embedding matra chooses its own reporting. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow or throttled network can take longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
 
-If `Matra.english()` raises `RuntimeError`, the download or the hash check failed; check your network connection and run the snippet again. If it raises `OSError`, matra could not create or write to the model directory; run `matra config show` to see which directory it resolved and check the permissions on it.
+If `Matra.english()` raises `OSError`, either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path. Check your network connection first; then run `matra config show` to see which directory matra resolved and check the permissions on it. If it raises `RuntimeError`, bytes did arrive and then failed the pinned hash check; run the snippet again.
 
 ---
 
