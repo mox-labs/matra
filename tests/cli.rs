@@ -145,6 +145,28 @@ fn missing_input_file_exits_two_without_loading_the_model() {
     assert!(err.contains("no such file"), "{err}");
 }
 
+/// A directory used to be ingested and then silently reduced to whatever
+/// file the walk yielded first, printed under the directory's name.
+/// Three commands share the path argument, so all three are checked. The
+/// refusal happens before the engine is built, which is why this needs
+/// no model.
+#[test]
+fn a_directory_is_refused_by_every_command_that_takes_a_path() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    std::fs::write(dir.path().join("a.txt"), PROSE).expect("write");
+    std::fs::write(dir.path().join("b.txt"), PROSE).expect("write");
+    let path = dir.path().to_str().expect("utf8 path");
+
+    for command in ["analyze", "summarize", "keyphrases"] {
+        let (code, out, err) = run(&[command, path]);
+        assert_eq!(code, 2, "{command}: {err}");
+        assert!(out.is_empty(), "{command} printed: {out}");
+        assert!(err.contains(path), "{command} names the path: {err}");
+        assert!(err.contains("is a directory"), "{command}: {err}");
+        assert!(err.contains("pass a file"), "{command}: {err}");
+    }
+}
+
 #[test]
 fn completions_generate_for_every_supported_shell() {
     for shell in ["bash", "zsh", "fish"] {

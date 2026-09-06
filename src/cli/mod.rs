@@ -362,10 +362,8 @@ fn execute(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
     // Validate the input before touching the model. Downloading 16 MB to
     // then report that the file does not exist is a poor trade for the
     // reader.
-    if let Input::Path(p) = &input
-        && !p.exists()
-    {
-        return Err(format!("no such file: {}", p.display()).into());
+    if let Input::Path(p) = &input {
+        check_input(p)?;
     }
 
     let cfg = resolve_config(cli)?;
@@ -426,6 +424,31 @@ fn execute(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
     }
 }
 
+/// What `analyze`, `summarize` and `keyphrases` can read from a path.
+///
+/// Both refusals happen before the engine is built, so neither costs a
+/// model load or a download.
+///
+/// A directory is refused rather than ingested. `Ingest::path` accepts
+/// one and yields every file in it, and these three commands report on a
+/// single document, so taking the first entry would analyze one
+/// arbitrary file and print the answer under the directory's name. That
+/// is a wrong answer wearing the shape of a right one. Refusing says the
+/// same thing out loud.
+fn check_input(path: &Path) -> Fallible<()> {
+    if !path.exists() {
+        return Err(format!("no such file: {}", path.display()).into());
+    }
+    if path.is_dir() {
+        return Err(format!(
+            "{} is a directory; pass a file. Directory analysis is on the roadmap.",
+            path.display()
+        )
+        .into());
+    }
+    Ok(())
+}
+
 /// The resolved configuration, with `--model-dir` layered on top.
 ///
 /// An explicit directory is the [`crate::config::ValueSource::Argument`]
@@ -470,6 +493,10 @@ fn keyphrase_method(name: &str) -> Fallible<KeyphraseMethod> {
 /// `summarize` on a README would return its headings. Going through the
 /// pipeline applies the right decomposer for the extension and skips
 /// blockquotes.
+///
+/// The path is a readable file by the time this runs: [`check_input`]
+/// has already refused a missing one and a directory, so the stream a
+/// path opens here is a stream of one.
 fn document_of(input: &Input, stdin_filename: &str, engine: &crate::Engine) -> Fallible<Document> {
     match input {
         Input::Path(path) => {
@@ -482,42 +509,46 @@ fn document_of(input: &Input, stdin_filename: &str, engine: &crate::Engine) -> F
         }
         Input::Stdin => {
             let text = read_stdin()?;
-            let raw = RawDocument::new(text, None, format_of(Path::new(stdin_filename)));
+            let raw = RawDocument::new(text, None, Format::from_path(stdin_filename));
             Ok(engine.analyze_one(raw)?.analysis)
         }
     }
 }
 
-/// Read stdin, refusing more than the pipeline's own cap.
+/// Read the process's stdin, capped.
+///
+/// The process is read here and the decision is made in [`read_capped`],
+/// which takes the stream as an argument so the cap is testable without
+/// a subprocess.
+fn read_stdin() -> Fallible<String> {
+    read_capped(&mut io::stdin().lock())
+}
+
+/// Read `source`, refusing more than the pipeline's own cap.
 ///
 /// The cap is checked while reading rather than after it: a stream is
-/// unbounded by construction, and `read_to_string` on one would allocate
+/// unbounded by construction, and reading one to the end would allocate
 /// without limit before any gate could fire.
-fn read_stdin() -> Fallible<String> {
-    let mut text = String::new();
-    io::stdin()
-        .lock()
+///
+/// The bytes are counted before they are decoded, and that order is the
+/// whole point. Reading straight into a `String` truncates at the cap
+/// and then fails on the half character sitting at the cut, so an input
+/// that is merely too large is reported as one that is not valid UTF-8:
+/// a true statement about the truncated prefix and a misleading one
+/// about what the user piped in.
+fn read_capped(source: &mut dyn Read) -> Fallible<String> {
+    let mut bytes: Vec<u8> = Vec::new();
+    source
         .take(MAX_INPUT_BYTES as u64 + 1)
-        .read_to_string(&mut text)?;
-    if text.len() > MAX_INPUT_BYTES {
+        .read_to_end(&mut bytes)?;
+    if bytes.len() > MAX_INPUT_BYTES {
         return Err(Box::new(domain::Error::InputTooLarge {
             limit: MAX_INPUT_BYTES,
-            actual: text.len(),
+            actual: bytes.len(),
             what: "input",
         }));
     }
-    Ok(text)
-}
-
-/// The format a name implies. Mirrors what the file source does with a
-/// path on disk, so `--stdin-filename notes.md` is read as markdown.
-fn format_of(name: &Path) -> Format {
-    match name.extension().and_then(|e| e.to_str()) {
-        Some("md" | "markdown") => Format::Markdown,
-        Some("pdf") => Format::Pdf,
-        Some("docx") => Format::Docx,
-        _ => Format::PlainText,
-    }
+    Ok(String::from_utf8(bytes)?)
 }
 
 // ---------------------------------------------------------------------------
@@ -615,14 +646,81 @@ mod tests {
         assert!(matches!(Input::of(Path::new("notes.md")), Input::Path(_)));
     }
 
+    /// The command line reads the extension table from `domain`, the
+    /// same function the file source reads. This pins the route, not the
+    /// table: the table's own cases are tested in `src/domain.rs`.
     #[test]
     fn stdin_filename_selects_the_decomposer() {
-        assert!(matches!(format_of(Path::new("notes.md")), Format::Markdown));
-        assert!(matches!(
-            format_of(Path::new("notes.markdown")),
-            Format::Markdown
-        ));
-        assert!(matches!(format_of(Path::new("<stdin>")), Format::PlainText));
+        assert_eq!(Format::from_path("notes.md"), Format::Markdown);
+        assert_eq!(Format::from_path("<stdin>"), Format::PlainText);
+    }
+
+    /// A missing path and a directory are both refused before the engine
+    /// is built, and each says which of the two it is.
+    #[test]
+    fn a_missing_path_and_a_directory_are_both_refused() {
+        let dir = tempfile::tempdir().expect("temp dir");
+
+        let missing = check_input(&dir.path().join("absent.txt")).expect_err("missing is refused");
+        assert!(missing.to_string().contains("no such file"), "{missing}");
+
+        let is_dir = check_input(dir.path()).expect_err("a directory is refused");
+        let message = is_dir.to_string();
+        assert!(message.contains("is a directory"), "{message}");
+        assert!(message.contains("pass a file"), "{message}");
+        assert!(
+            message.contains(&dir.path().display().to_string()),
+            "the message names the path: {message}"
+        );
+
+        let file = dir.path().join("notes.txt");
+        std::fs::write(&file, "text").expect("write");
+        check_input(&file).expect("a regular file is accepted");
+    }
+
+    /// Regression: an oversized input whose cap-sized prefix ends inside
+    /// a multi-byte character used to be reported as invalid UTF-8,
+    /// because the read decoded before it counted. `é` is two bytes and
+    /// the read stops after an odd number of them, so the cut lands
+    /// mid-character every time. The size is what the user can act on.
+    #[test]
+    fn oversized_input_is_too_large_not_invalid_utf8() {
+        let text = "é".repeat(MAX_INPUT_BYTES / 2 + 1);
+        assert!(text.len() > MAX_INPUT_BYTES);
+
+        let err = read_capped(&mut text.as_bytes()).expect_err("over the cap");
+        let too_large = err
+            .downcast_ref::<domain::Error>()
+            .expect("a domain error, not an io error");
+        assert!(
+            matches!(
+                too_large,
+                domain::Error::InputTooLarge {
+                    limit: MAX_INPUT_BYTES,
+                    what: "input",
+                    ..
+                }
+            ),
+            "{too_large}"
+        );
+    }
+
+    /// An input exactly at the cap is read, and its bytes come back
+    /// unchanged. The cap is an upper bound, not an exclusive one.
+    #[test]
+    fn input_at_the_cap_is_read_whole() {
+        let text = "a".repeat(MAX_INPUT_BYTES);
+        let read = read_capped(&mut text.as_bytes()).expect("at the cap");
+        assert_eq!(read.len(), MAX_INPUT_BYTES);
+    }
+
+    /// Invalid UTF-8 under the cap is still a UTF-8 failure. The fix
+    /// reorders the two checks; it does not remove one.
+    #[test]
+    fn invalid_utf8_under_the_cap_still_reports_utf8() {
+        let err = read_capped(&mut &b"ok\xff\xfe"[..]).expect_err("not utf8");
+        assert!(err.downcast_ref::<domain::Error>().is_none());
+        assert!(err.to_string().contains("utf-8"), "{err}");
     }
 
     /// The full precedence table, since NO_COLOR is the one rule a

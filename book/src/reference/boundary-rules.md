@@ -99,6 +99,8 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 `src/config.rs` sits in this tier alongside `lib.rs`. It imports `domain`, `std`, `serde` and `toml`, and it imports no port and no adapter. The traffic runs the other way: an adapter may import `Config` to offer a `from_config` constructor (ADR-0011), which is why `Udpipe::from_config` lives in `src/nlp/udpipe.rs` and not in the composition root. That import gives the adapter a default, not a second opinion about the wiring, so rule 7 still holds: `lib.rs` remains the only file that knows every adapter and every port.
 
+`src/cli/` sits above that tier: it is the application, compiled into the library so both launchers run one program. It imports `config` and `domain` and nothing else from the crate, reaching the pipeline through `Engine::from_config`, so rule 7 holds there too. Read for a `use crate::nlp::` or `use crate::embed::` appearing in `src/cli/`: that would put adapter selection in the command line, which is the composition root's job.
+
 ## Rule 8: no `tracing` in the domain or the ports
 
 **The rule.** `tracing` is forbidden in `src/domain.rs` and in the four port modules.
@@ -118,6 +120,7 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 | `src/nlp/udpipe.rs` | 4, 6 |
 | Other adapters | 6, 7 |
 | `src/config.rs` | 6, 7 |
+| `src/cli/` | 7 |
 | `src/metrics/`, `src/extraction/`, `src/hearst.rs` | 5, 6 |
 | `src/lib.rs` | 6, 7 |
 | `Cargo.toml` | 1, 6 |

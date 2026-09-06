@@ -207,7 +207,7 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
     let arrived = if force {
         std::fs::rename(&temp, path)
     } else {
-        std::fs::hard_link(&temp, path).and_then(|()| std::fs::remove_file(&temp))
+        std::fs::hard_link(&temp, path)
     };
     if let Err(e) = arrived {
         let _ = std::fs::remove_file(&temp);
@@ -219,6 +219,17 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
             .into());
         }
         return Err(Box::new(e));
+    }
+
+    // `rename` consumed the temp; `hard_link` left it behind as a second
+    // name for the same inode. Removing it is tidying after the fact,
+    // not part of the arrival: the config is already at `path` and
+    // already correct. Reporting a failure here would tell the caller
+    // the write failed when it succeeded, which is the one thing an exit
+    // code must never do. The cost of ignoring it is a stray dotfile
+    // beside a working config, and `--force` overwrites it.
+    if !force {
+        let _ = std::fs::remove_file(&temp);
     }
     Ok(())
 }

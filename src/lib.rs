@@ -654,20 +654,59 @@ mod python {
     /// raised. It is a broken pipe in practice (`matra ... | head`), and
     /// the Rust launcher treats that as success too; there is nowhere
     /// left to report it to in any case.
+    ///
+    /// The arguments arrive as arbitrary Python objects and go through
+    /// `os.fsencode`, not through `String`. A `sys.argv` entry is not
+    /// guaranteed to be text: on unix a path is bytes, and Python decodes
+    /// an undecodable one with surrogate escapes rather than failing.
+    /// Extracting a `String` would reject exactly those arguments, so a
+    /// file the Rust binary opens without comment would be unreachable
+    /// through this launcher. `os.fsencode` reverses the escape and hands
+    /// back the original bytes, which become an `OsString` unchanged. A
+    /// conversion failure is raised rather than swallowed: an argument
+    /// that is not a string, bytes, or a path is a caller's error, and
+    /// silently dropping it would run a different command than the one
+    /// that was asked for.
     #[pyfunction]
     #[allow(unreachable_pub)] // pyo3 macro requirement, same as _core below.
-    pub fn cli_main(py: Python<'_>, argv: Vec<String>) -> i32 {
+    pub fn cli_main(py: Python<'_>, argv: Vec<Bound<'_, PyAny>>) -> PyResult<i32> {
         use std::ffi::OsString;
 
-        let args =
-            std::iter::once(OsString::from("matra")).chain(argv.into_iter().map(OsString::from));
+        let fsencode = py.import("os")?.getattr("fsencode")?;
+        let mut args: Vec<OsString> = Vec::with_capacity(argv.len() + 1);
+        args.push(OsString::from("matra"));
+        for arg in argv {
+            let bytes: Vec<u8> = fsencode.call1((arg,))?.extract()?;
+            args.push(os_string_of(bytes));
+        }
+
         let mut out: Vec<u8> = Vec::new();
         let mut err: Vec<u8> = Vec::new();
         let code = crate::cli::run(args, &mut out, &mut err);
 
         let _ = write_stream(py, "stdout", &out);
         let _ = write_stream(py, "stderr", &err);
-        i32::from(code)
+        Ok(i32::from(code))
+    }
+
+    /// The bytes `os.fsencode` produced, as an `OsString`.
+    ///
+    /// On unix an `OsString` is bytes and the filesystem is bytes, so
+    /// this is exact: the argument reaches `cli::run` as the same bytes
+    /// `std::env::args_os` would have delivered to the Rust binary.
+    #[cfg(unix)]
+    fn os_string_of(bytes: Vec<u8>) -> std::ffi::OsString {
+        use std::os::unix::ffi::OsStringExt;
+        std::ffi::OsString::from_vec(bytes)
+    }
+
+    /// Elsewhere there is no lossless byte route into an `OsString`, so
+    /// an argument that is not valid UTF-8 loses the offending bytes to
+    /// the replacement character rather than reaching the command line
+    /// intact. Naming the limit here is the honest version of it.
+    #[cfg(not(unix))]
+    fn os_string_of(bytes: Vec<u8>) -> std::ffi::OsString {
+        std::ffi::OsString::from(String::from_utf8_lossy(&bytes).into_owned())
     }
 
     /// Write one rendered buffer to the named `sys` stream and flush it.

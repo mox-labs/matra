@@ -174,7 +174,16 @@ def cli_main(argv: list[str]) -> int:
     already written. A failure writing it out (a broken pipe) is
     swallowed, matching the binary, which exits 0 on one.
 
+    Arguments are passed through with the filesystem encoding
+    (`os.fsencode`), so a `sys.argv` entry that is not valid text reaches
+    the command line as the bytes it came from. A path Python decoded
+    with surrogate escapes names the same file here that it names for the
+    Rust binary.
+
     Exit codes: 0 found, 1 nothing found, 2 error.
+
+    Raises:
+        TypeError: an argument is not a string, bytes, or a path.
     """
     ...
 
