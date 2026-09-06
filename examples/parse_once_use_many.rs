@@ -19,15 +19,15 @@ fn main() -> matra::domain::Result<()> {
     let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
 
     let text = "\
-# Substrate libraries
+# Core libraries
 
-A substrate library is one that other libraries are built on. \
+A core library is one that other code is built on. \
 It owns the data types, the boundary traits, and the discipline. \
-Downstream consumers compose against the substrate; they do not \
-modify it. The substrate is small and stable; opinions live in \
-consumer code.
+Downstream code composes against the core; it does not \
+modify it. The core is small and stable; interpretation lives in \
+the caller's code.
 
-# Why hex for a substrate
+# Why hex for a core library
 
 Three forces pushed the hex shape. Variable I/O needs mean a CLI \
 batch tool wants different ingestion than an editor streaming \
