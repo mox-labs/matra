@@ -1,5 +1,9 @@
 # Pragmatics
 
+## For an agent
+
+Run `matra --skill`. It prints, from the installed program itself, what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not license you to conclude, the limits, and the errors. `matra --skill -r` lists the deeper references and `matra --skill -r <name>` prints one. The text ships inside the binary and the wheel, so it matches the version that is running rather than a page that may have moved on, and every command in it is executed against the command line by the test suite. The [CLI guide](../guides/cli.md) has the flag's JSON shapes; the rest of this page is the same reasoning written for a person.
+
 ## Choosing a summarizer
 
 Both return the top N sentences in document order, as `ScoredSentence` values carrying the score and the original position.
