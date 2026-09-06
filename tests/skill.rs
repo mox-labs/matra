@@ -19,9 +19,22 @@
 //!
 //!     cargo test --features cli --test skill -- --ignored
 //!
-//! The block count is asserted against a line-oriented scan of the same
-//! files, so an incantation written outside a fence cannot hide from the
-//! runner: it would raise the scan count without raising the block count.
+//! A block takes one of two routes. Any block whose first argument is
+//! `config` is run as a subprocess with `MATRA_CONFIG_FILE`,
+//! `MATRA_DATA_DIR`, `MATRA_MODEL_DIR`, `XDG_CONFIG_HOME` and
+//! `XDG_DATA_HOME` removed and `HOME` pointed at an empty temporary
+//! directory, because `config show` resolves its answer out of the
+//! process environment and would otherwise report the contributor's own
+//! config file. Every other block runs in process through
+//! [`matra::cli::run`]. Both routes are held to the same exit code and
+//! the same `format_version` rule.
+//!
+//! The block count is asserted against a fence-aware scan of the same
+//! files, so an incantation written outside a block the runner reads
+//! cannot hide from it. The scan trims leading whitespace, so an
+//! indented `matra ...` line counts, and a command-shaped line that no
+//! fence encloses fails the law by name rather than by an off-by-one in
+//! the totals.
 
 #![cfg(feature = "cli")]
 
@@ -142,9 +155,54 @@ struct Incantation {
 
 /// True for a line that a scanner should count as a command: the same
 /// shape the extractor accepts, judged without knowing about fences.
+///
+/// Leading whitespace is trimmed first. Four spaces in front of a
+/// command is an indented code block in markdown, which renders as code
+/// and runs as nothing; before the trim such a line raised neither half
+/// of the count law and the two agreed while the command went unrun.
 fn looks_like_a_command(line: &str) -> bool {
+    let line = line.trim_start();
     let line = line.strip_prefix("$ ").unwrap_or(line);
     line.starts_with("matra ")
+}
+
+/// One command-shaped line the scan found, and whether a fence encloses
+/// it. The scan is the `grep -c` half of the count law: it knows only
+/// that a fence opens and closes, never which fences the extractor
+/// accepts.
+struct CommandLine {
+    source: String,
+    /// 1-based, for the failure message.
+    line: usize,
+    text: String,
+    fenced: bool,
+}
+
+/// Every command-shaped line in one file, fenced or loose.
+fn scan(path: &Path, text: &str) -> Vec<CommandLine> {
+    let name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("<unnamed>")
+        .to_string();
+
+    let mut found = Vec::new();
+    let mut inside = false;
+    for (index, line) in text.lines().enumerate() {
+        if line.trim_start().starts_with("```") {
+            inside = !inside;
+            continue;
+        }
+        if looks_like_a_command(line) {
+            found.push(CommandLine {
+                source: name.clone(),
+                line: index + 1,
+                text: line.trim().to_string(),
+                fenced: inside,
+            });
+        }
+    }
+    found
 }
 
 /// Every fenced `console` or `bash` block whose first line is a command.
@@ -252,23 +310,81 @@ fn argv(incantation: &Incantation) -> Vec<OsString> {
         .collect()
 }
 
-fn run(incantation: &Incantation) {
-    let args = argv(incantation);
+/// The subcommand a block names: the first argument after the program.
+fn subcommand(incantation: &Incantation) -> Option<&str> {
+    incantation.command.split_whitespace().nth(1)
+}
+
+/// The in-process route. The library module is the program, so a failure
+/// points at a function rather than at a subprocess.
+fn in_process(args: Vec<OsString>) -> (u8, String, String) {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = matra::cli::run(args, &mut out, &mut err);
+    (
+        code,
+        String::from_utf8(out).expect("stdout is utf8"),
+        String::from_utf8(err).expect("stderr is utf8"),
+    )
+}
 
-    let stdout = String::from_utf8(out).expect("stdout is utf8");
-    let stderr = String::from_utf8(err).expect("stderr is utf8");
+/// The subprocess route, for the blocks that read the environment.
+///
+/// `config show` answers out of `MATRA_CONFIG_FILE`, the XDG variables
+/// and `HOME`. In process it would read the contributor's own
+/// `~/.config/matra/config.toml`, so an unparsable file there would fail
+/// this lane for a reason that has nothing to do with the skill. The
+/// child gets those variables removed and an empty `HOME`, which is the
+/// same scrub `tests/cli.rs` gives its config tests.
+fn spawn_scrubbed(args: Vec<OsString>) -> (u8, String, String) {
+    let home = tempfile::tempdir().expect("temp dir");
+    let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_matra"));
+    command.args(&args[1..]);
+    for key in [
+        "MATRA_CONFIG_FILE",
+        "MATRA_DATA_DIR",
+        "MATRA_MODEL_DIR",
+        "XDG_CONFIG_HOME",
+        "XDG_DATA_HOME",
+    ] {
+        command.env_remove(key);
+    }
+    command.env("HOME", home.path());
+
+    let output = command.output().expect("spawn the matra binary");
+    let code = output
+        .status
+        .code()
+        .expect("the child exited rather than being signalled");
+    (
+        u8::try_from(code).expect("an exit code in 0..=255"),
+        String::from_utf8(output.stdout).expect("stdout is utf8"),
+        String::from_utf8(output.stderr).expect("stderr is utf8"),
+    )
+}
+
+fn run(incantation: &Incantation) {
+    let args = argv(incantation);
+    let (code, stdout, stderr) = if subcommand(incantation) == Some("config") {
+        spawn_scrubbed(args)
+    } else {
+        in_process(args)
+    };
+
     assert_eq!(
         code, incantation.expect,
         "{}:{} `{}` exited {code}, expected {}\nstdout: {stdout}\nstderr: {stderr}",
         incantation.source, incantation.line, incantation.command, incantation.expect
     );
 
-    // A `--json` block that succeeded promises the envelope. Exit 2 writes
-    // nothing to stdout by design, so there is no object to parse.
-    if incantation.command.contains("--json") && code != 2 {
+    // A `--json` block that succeeded promises the envelope, on either
+    // route. `completions` is the exception: it prints a shell script and
+    // ignores the flag. Exit 2 writes nothing to stdout by design, so
+    // there is no object to parse.
+    if incantation.command.contains("--json")
+        && code != 2
+        && subcommand(incantation) != Some("completions")
+    {
         let value: serde_json::Value = serde_json::from_str(&stdout).unwrap_or_else(|e| {
             panic!(
                 "{}:{} `{}` did not emit JSON: {e}\nstdout: {stdout}",
@@ -299,31 +415,84 @@ fn all_incantations() -> Vec<Incantation> {
 
 /// The runner sees every command the files contain.
 ///
-/// The scan is the `grep -c` half: it counts command-shaped lines without
-/// knowing about fences, so a command written in prose, in an indented
-/// block, or inside a fence the extractor skips raises this count and not
-/// the other. The two agreeing is what makes "every incantation runs" a
-/// statement about the files rather than about the extractor.
+/// Two things are held. First, no command-shaped line sits outside a
+/// fence: prose that names a command, and the four-space indented block
+/// that markdown renders as code, are both rejected by name and told to
+/// use a fence. Second, the number of command-shaped lines equals the
+/// number the extractor reads, so a command inside a fence the extractor
+/// skips (a `text` block, or a second line in a `console` one) raises the
+/// scan count and not the block count. The scan knows only where fences
+/// open and close; the two halves agreeing is what makes "every
+/// incantation runs" a statement about the files rather than about the
+/// extractor.
 #[test]
 fn every_command_in_the_files_is_inside_a_block_the_runner_reads() {
-    let scanned: usize = every_path()
+    let scanned: Vec<CommandLine> = every_path()
         .iter()
-        .map(|path| {
-            read(path)
-                .lines()
-                .filter(|line| looks_like_a_command(line))
-                .count()
-        })
-        .sum();
-    let extracted = all_incantations().len();
+        .flat_map(|path| scan(path, &read(path)))
+        .collect();
 
+    let loose: Vec<String> = scanned
+        .iter()
+        .filter(|line| !line.fenced)
+        .map(|line| format!("{}:{} {}", line.source, line.line, line.text))
+        .collect();
+    assert!(
+        loose.is_empty(),
+        "command lines that no fence encloses, so the runner never executes them; \
+         put each in a ```console block:\n  {}",
+        loose.join("\n  ")
+    );
+
+    let extracted = all_incantations().len();
     assert_eq!(
-        extracted, scanned,
-        "{scanned} command lines in the skill files, {extracted} inside blocks the runner reads"
+        extracted,
+        scanned.len(),
+        "{} command lines in the skill files, {extracted} inside blocks the runner reads",
+        scanned.len()
     );
     assert!(
         extracted >= MINIMUM_INCANTATIONS,
         "the skill documents {extracted} commands, fewer than the {MINIMUM_INCANTATIONS} floor"
+    );
+}
+
+/// Regression: an indented command used to escape both halves of the law.
+///
+/// `looks_like_a_command` did not trim, so `    matra --version` inside a
+/// four-space block raised neither the scan count nor the block count.
+/// The two agreed, the law passed, and the command the reader is told to
+/// type was never run. The scan trims now, and an unfenced line is named.
+#[test]
+fn an_indented_command_is_caught_rather_than_counted_as_absent() {
+    let planted = [
+        "---",
+        "name: planted",
+        "summary: a fixture for the count law.",
+        "---",
+        "",
+        "Four spaces, which markdown renders as code and the runner cannot read:",
+        "",
+        "    matra --version",
+        "",
+        "```console",
+        "$ matra completions zsh",
+        "```",
+    ]
+    .join("\n");
+    let path = Path::new("planted.md");
+
+    let scanned = scan(path, &planted);
+    assert_eq!(scanned.len(), 2, "the trim makes the indented line count");
+    let loose: Vec<&CommandLine> = scanned.iter().filter(|line| !line.fenced).collect();
+    assert_eq!(loose.len(), 1, "the indented line is outside every fence");
+    assert_eq!(loose[0].line, 8);
+    assert_eq!(loose[0].text, "matra --version");
+
+    assert_eq!(
+        extract(path, &planted).len(),
+        1,
+        "the extractor reads the fenced block and nothing else"
     );
 }
 

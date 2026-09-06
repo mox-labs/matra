@@ -1,13 +1,13 @@
 ---
 name: json
-summary: The JSON envelope every command emits, and the Document shape field by field.
+summary: The JSON envelope the commands with JSON output emit, and the Document shape field by field.
 ---
 
 # The JSON envelope and the Document shape
 
 ## The envelope
 
-`--json` on any command emits exactly one object with four keys, and nothing else on stdout.
+`--json` on `analyze`, `summarize`, `keyphrases` or `config show` emits exactly one object with four keys, and nothing else on stdout. `completions` is the one command it does not reach: that prints a shell script and ignores the flag.
 
 ```json
 {
