@@ -4,6 +4,19 @@ Run the OODA loop below at the start of every session in this directory. Then ac
 
 ---
 
+## 2026-09-05 (late): the transformation program
+
+Owner direction, verbatim in spirit: "get this polished/architected well, aces, and then make it accessible to agents, top notch ax/dx", with a TUI for the Rust CLI after the foundations are polished. Standing rules recorded in memory: Rust is the core and every CLI; Python and TypeScript are thin reach layers (API plus extension points, no behavior); plain pre-LLM vocabulary in everything that ships; no references to anything outside this repository; implementation is delegated to opus/sonnet subagents, planning and correctness judgment stay in the main window; merge via the owner's gh CLI is authorized under the PR ritual.
+
+**In flight.**
+- PR #57 (docs/explanation-layer): explanation layer, plain vocabulary, no outside references. CI green; the review job failed at startup (is_error, zero cost, one turn) from 02:30Z on after two successes minutes earlier; rerunning. Merge on green.
+- PR #58 (plan/i10-foundations, stacked on #57): ADR-0011 and the I10 plan; roadmap entries for the agent surface and the TUI.
+- Exemplar-conventions survey (opus subagent, read-only): CLI, config and paths, agent-facing surfaces, Rust-core-plus-Python exemplars, docs conventions. Its evidence settles the two open names in I10 M1 (`Engine::with_defaults`, `MATRA_DATA_DIR`).
+
+**Next actions, in order.** Merge #57, rebase and merge #58 once the survey settles the names (M1). Then I10 M2 to M6 as one PR each, each implemented by an opus subagent from the plan's rubric and hardened by the review harness. Then the I11 plan (the `--skill` agent surface: SKILL.md top level, `--skill -r <ref>` references, executed-incantation CI test, JSON schema, marketplace entry). Docs track in parallel: research citations and readable benchmarks on the human pages. TUI after I10 and I11 are accepted.
+
+**Owner decisions still open.** Canonical author and copyright form across Cargo.toml, pyproject.toml, LICENSE, and README (today: `yzavyas`, `mox.nexus`, org `mox-labs`).
+
 ## State (2026-09-04, evening)
 
 - **0.1.0 is published everywhere.** crates.io (maintainer-run `cargo publish`, 2026-08-23), PyPI (2026-09-04, all four artifacts), GitHub release v0.1.0. crates.io Trusted Publishing is configured (`publish.yml`, environment `crates-io`, required reviewers) and the maintainer was advised to enable require-trusted-publishing and revoke the bootstrap tokens.
