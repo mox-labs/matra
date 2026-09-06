@@ -1,0 +1,19 @@
+{
+  "name": "envelope",
+  "filename": "sample.txt",
+  "input": "The committee approved the proposal. Three amendments were submitted by the working group.",
+  "args": ["analyze", "--json"],
+  "expect": {
+    "envelope_keys": ["command", "format_version", "input", "result"],
+    "format_version": 1,
+    "command": "analyze",
+    "result_keys": [
+      "nominalization_ratio",
+      "passive_ratio",
+      "sections",
+      "vocabulary_ttr"
+    ],
+    "result_sections": 1,
+    "result_sentences": 2
+  }
+}
