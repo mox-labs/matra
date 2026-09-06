@@ -42,7 +42,7 @@ Returned by the UDPipe adapter's `parse` in three situations:
 
 ### InputTooLarge
 
-Seven gate labels produce this variant. The `what` field carries the label so a caller can route each gate differently.
+Eight gate labels produce this variant. The `what` field carries the label so a caller can route each gate differently.
 
 | `what` | Gate | Limit | Measured over |
 |---|---|---|---|
@@ -53,10 +53,11 @@ Seven gate labels produce this variant. The `what` field carries the label so a 
 | `"rake"` | `rake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
 | `"yake"` | `yake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
 | `"semantic_clusters"` | `semantic_clusters` | 2,000 | Number of sentences in the slice |
+| `"embedding_download"` | `Model2Vec::potion_base_8m`, per artifact | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
 
 `limit` carries the cap and `actual` carries the measured size, so an error message can be built without hardcoding the constants.
 
-The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens.
+The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens. The download cap is the one gate whose input is not the caller's: it bounds what a redirected or misbehaving server can make the process hold, and the read stops at the bound rather than continuing, so `actual` reports the bound that was breached rather than the response's full length.
 
 A document from disk crosses both text gates in sequence: `"file_source"` when `Ingest` reads it, `"input"` inside `annotate`. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
