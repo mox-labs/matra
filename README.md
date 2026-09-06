@@ -17,7 +17,7 @@ A pure, performant NLP library, built to be adaptable, composable, and extensibl
 Nothing installed, nothing configured, no flags. Each of these resolves the model directory and downloads the English model (~16MB) on first use.
 
 ```bash
-uvx matra analyze essay.md
+uvx 'matra>=0.2' analyze essay.md
 ```
 
 ```python
@@ -29,6 +29,8 @@ Matra.english().analyze("The report was filed without comment.")
 ```rust,ignore
 let engine = matra::Engine::with_defaults()?;
 ```
+
+The `uvx` line carries a version floor for the same reason the `--skill` line above does, and like that one it needs 0.2.0 on PyPI before it resolves. A bare `uvx matra` takes the newest release, which until then is 0.1.0, whose `analyze` is a separate Python implementation and not this one missing a flag: `--json` prints a bare document with no envelope, the table is a different renderer, and the model cache is hardcoded to `~/.matra/models`. That line does not fail, it succeeds and hands you something else.
 
 The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file names which models to use (`[models] udpipe`, `embedding`), not where they live. Every constructor takes the directory explicitly when you want it somewhere specific, and `matra config show` prints every resolved value and where it came from.
 
