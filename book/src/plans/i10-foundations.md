@@ -40,9 +40,9 @@ impl Engine {
     pub fn from_config(cfg: &Config) -> Result<Engine>;
     pub fn with_defaults() -> Result<Engine>;        // Config::resolve() then from_config
 }
-impl Udpipe   { pub fn english_default() -> Result<Self>; }
-impl Model2Vec { pub fn potion_base_8m(dir: impl AsRef<Path>) -> Result<Self>;   // pinned download into dir
-                 pub fn potion_base_8m_default() -> Result<Self>; }
+impl Udpipe    { pub fn from_config(cfg: &Config) -> Result<Self>; }   // pinned English model, downloaded if absent
+impl Model2Vec { pub fn from_config(cfg: &Config) -> Result<Self>;     // pinned reference embedding model, same
+                 pub fn potion_base_8m(dir: impl AsRef<Path>) -> Result<Self>; }  // explicit directory
 
 // cli feature
 pub mod cli { pub fn run(args: impl IntoIterator<Item = OsString>, out: &mut dyn Write, err: &mut dyn Write) -> ExitCode; }
@@ -79,7 +79,7 @@ n = 10
 algorithm = "rake"
 ```
 
-Names are forever. Two are open until M1 closes them: `Engine::with_defaults` against `Engine::default_english`, and `MATRA_DATA_DIR` against `MATRA_HOME`. M1 takes the exemplar survey's evidence and settles both in the ADR.
+Names are forever, and M1 settled the two that were open with the [conventions survey](https://github.com/mox-labs/matra/blob/main/docs/surveys/2026-09-05-conventions.md). Constructors share one name across adapters, `from_config`, with `Engine::with_defaults` as the single one-liner. Environment variables name the thing they override, as `UV_CONFIG_FILE`, `UV_CACHE_DIR`, and `OLLAMA_MODELS` do: `MATRA_CONFIG_FILE`, `MATRA_DATA_DIR`, and the existing `MATRA_MODEL_DIR`.
 
 ## Milestones
 
@@ -87,25 +87,25 @@ Each milestone is one PR, review-hardened by the CI harness before merge. Strict
 
 ### M1: the ADR, the roadmap, the names
 
-ADR-0011 accepted; roadmap entry marked fired with a pointer here; the two open names settled with the survey's evidence cited; plans index and `SUMMARY.md` carry this page.
+ADR-0011 accepted; roadmap entry marked fired with a pointer here; the survey filed in `docs/surveys/` and the two open names settled with its evidence; plans index and `SUMMARY.md` carry this page.
 
 **Rubric.** `just docs-floor` passes. ADR-0011 names every new public item that M2 to M5 add, so a later reviewer can diff the surface against the decision.
 
 ### M2: `Config` and the default constructors
 
-`src/config.rs` at the composition-root layer. Resolution order: explicit argument, `MATRA_*` environment, the config file, `include_str!("../config/default.toml")`. Path resolution honors `XDG_CONFIG_HOME` and `XDG_DATA_HOME`, defaults to `~/.config` and `~/.local/share`, and falls back to `~/.matra/models` for the model directory when that exists and the new location does not. `Engine::from_config`, `Engine::with_defaults`, `Udpipe::english_default`. Python `Matra.english(model_dir=None)`.
+`src/config.rs` at the composition-root layer. Resolution order: explicit argument, `MATRA_*` environment, the config file, `include_str!("../config/default.toml")`. Path resolution honors `XDG_CONFIG_HOME` and `XDG_DATA_HOME`, defaults to `~/.config` and `~/.local/share`, and falls back to `~/.matra/models` for the model directory when that exists and the new location does not. `Udpipe::from_config`, `Engine::from_config`, `Engine::with_defaults`. Python `Matra.english(model_dir=None)`.
 
 **Rubric.** Every resolved value knows its source, and a test asserts each rung of the order with the environment isolated (no test reads the developer's real home). A malformed config file is `Error::InvalidInput` naming the key, never a panic and never silently ignored. `cargo check --no-default-features` and the wasm32 job still pass with `toml` in the tree. `python/matra/_core.pyi` and `types.py` updated in the same PR.
 
 ### M3: one CLI, two launchers
 
-`src/cli/` (behind `cli`): the clap definition, the renderers, exit codes, and `run(args, out, err)`. `src/bin/matra.rs` calls it. `--sections` ported from the Python CLI. New `config show` (effective values with sources) and `config init` (atomic write, refuses to overwrite without `--force`). `_core.cli_main(argv)`; `python/matra/cli.py` becomes a launcher; `click` and `rich` removed from `pyproject.toml`; the `python` feature enables `cli`.
+`src/cli/` (behind `cli`): the clap definition, the renderers, exit codes, and `run(args, out, err)`. `src/bin/matra.rs` calls it. `--sections` ported from the Python CLI. New `config show` (effective values with sources, as `cargo config get --show-origin` does) and `config init` (atomic write, refuses to overwrite without `--force`). The survey's remaining CLI gaps close here because clap makes them cheap: `NO_COLOR` and `--color`, `--quiet`, `-` for stdin with `--stdin-filename`, `completions <shell>` via `clap_complete`, and `--version` listing the compiled features. The JSON payload gets a one-line stability statement in the CLI guide and a `format_version` field on the envelope, cargo's precedent over a published schema. `_core.cli_main(argv)`; `python/matra/cli.py` becomes a launcher; `click` and `rich` removed from `pyproject.toml`; the `python` feature enables `cli`.
 
 **Rubric.** `tests/cli.rs` drives `cli::run` directly with captured output, so the CLI's tests no longer need a built binary. The JSON emitted by `--json` is the serde form of the domain types and a conformance fixture pins it. `python/matra/cli.py` is under ten lines. `uvx --from . matra analyze README.md` and the Rust binary produce byte-identical output for the same input and flags, asserted by a test.
 
 ### M4: the pinned embedding download
 
-`Model2Vec::potion_base_8m(dir)` downloads `model.safetensors`, `tokenizer.json`, and `config.json` from the pinned release, verifies the three-file digest against the constant already in `spec/tests/semantic/reference-model.json`, and loads from the verified bytes. `potion_base_8m_default` resolves the directory through `Config`. ADR-0010 decision 6 amended in place with a dated note. Python `Model2Vec.potion_base_8m(dir=None)`. The `just conformance` semantic lane stops needing a hand-placed model.
+`Model2Vec::potion_base_8m(dir)` downloads `model.safetensors`, `tokenizer.json`, and `config.json` from the pinned release, verifies the three-file digest against the constant already in `spec/tests/semantic/reference-model.json`, and loads from the verified bytes. `Model2Vec::from_config` resolves the directory through `Config` and calls it. ADR-0010 decision 6 amended in place with a dated note. Python `Model2Vec.potion_base_8m(dir=None)`. The `just conformance` semantic lane stops needing a hand-placed model.
 
 **Rubric.** A digest mismatch removes the files and retries once, then fails with `Error::ModelInvalid`; no second disk read between verify and load (the resilience skill's TOCTOU rule). The download is behind the `model2vec` feature and is never triggered by `from_dir`.
 
