@@ -10,7 +10,7 @@
 
 **Origin:** the self-similarity roadmap entry (trigger fired 2026-08-21) names two halves. The deterministic half (lexical clusters, redundancy ratio, rep-n, skeleton repetition) needs no new capability. The semantic half, paraphrase restatement with different vocabulary, is out of reach of lexical overlap by design and needs sentence embeddings, which sit above the verifiable tier. The roadmap's scoping principle already states the only acceptable arrival: a specialist adapter behind its own feature flag, with its tier stated plainly.
 
-**Amended 2026-09-04** after a three-lane landscape survey (redundancy metrics, information density, pure-Rust inference; filed in the research drafts). The port and consumer are unchanged; the first adapter changed from a candle BERT model to a static embedding model, for reasons recorded below.
+**Amended 2026-09-04** after a three-lane landscape survey (redundancy metrics, information density, pure-Rust inference; internal, not in this repository). The port and consumer are unchanged; the first adapter changed from a candle BERT model to a static embedding model, for reasons recorded below.
 
 ---
 
