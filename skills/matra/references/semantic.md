@@ -42,7 +42,7 @@ Members are positions in the sentence list you passed, so a result re-anchors ag
 
 **Singletons are excluded by construction.** A sentence with no above-threshold edge appears in no cluster, so "in no cluster" is a meaningful count rather than an artifact.
 
-**The threshold is yours, and it does not travel.** The library knows no universal cutoff. Published values for paraphrase detection span 0.67 to 0.9 with no consensus, and the working value depends on the model, the domain, and text length. Raising it admits fewer edges: smaller clusters, more of them, more sentences in none. Lowering it merges components through chains. Start at 0.85 with the reference model **on sentences**, and calibrate on the corpus in front of you. That number is calibrated for sentences and is wrong at any other granularity: see "Comparing whole documents" below, where a near-duplicate pair of documents scores 0.74 and 0.85 would have called them unrelated.
+**The threshold is yours, and it does not travel.** The library knows no universal cutoff. Published values for paraphrase detection span 0.67 to 0.9 with no consensus, and the working value depends on the model, the domain, and text length. Raising it admits fewer edges: smaller clusters, more of them, more sentences in none. Lowering it merges components through chains. Start at 0.85 with the reference model **on sentences**, and calibrate on the corpus in front of you. That number is calibrated for sentences and is wrong at any other granularity: see "Comparing whole documents" below, where a near-duplicate pair of documents scores below 0.85 and that cutoff would have called them unrelated.
 
 ## The model and how it arrives
 
