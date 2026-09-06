@@ -179,6 +179,13 @@ and no 0.1.0 signature changed.
 - `config/default.toml`, embedded with `include_str!`. The file schema is
   public surface from here on.
 
+### Rust, the domain (M5)
+
+- `domain::Error::kind() -> &'static str`: the stable kind string per
+  variant, `std` only, exhaustive with no wildcard. The vocabulary is
+  what a binding materializes when it cannot carry the enum across, and
+  `spec/tests/corpus/items.json` pins it for every crust.
+
 ### Rust, constructors (M2, M4)
 
 - `Engine::from_config(&Config)` and `Engine::with_defaults()`.
@@ -214,9 +221,17 @@ and no 0.1.0 signature changed.
 - `_core.cli_main(argv) -> int`, which `python/matra/cli.py` launches
   (M3).
 - `Matra.analyze_path(path) -> list[CorpusItem]` (M5).
+- `Model2Vec.identity() -> str` (M5): the model hash under the name the
+  `Embedder` protocol asks for, so the built-in adapter satisfies the
+  protocol rather than standing beside it.
+- Every path argument accepts `str | os.PathLike[str]` (M5):
+  `Matra.analyze_path`, `Matra.english`, `Matra.from_path`,
+  `Model2Vec.from_dir`, `Model2Vec.potion_base_8m`. Additive; a `str`
+  still works.
 - `matra.types`: the `Embedder` protocol, `CorpusEntry`, `DocumentError`,
-  `ErrorInfo`, and the `CorpusItem` union, all exported from the package
-  root and typed in `python/matra/_core.pyi` (M5).
+  `ErrorInfo`, the `CorpusItem` union, and the `ERROR_KINDS` vocabulary,
+  all exported from the package root and typed in
+  `python/matra/_core.pyi` (M5).
 - `Matra.semantic_clusters` accepts any object satisfying `Embedder`,
   not only a `Model2Vec` (M5). The signature is unchanged; what widened
   is the third argument's accepted type.

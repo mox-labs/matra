@@ -377,8 +377,10 @@ pub fn embed_and_cluster(
 
 #[cfg(feature = "python")]
 mod python {
+    use std::path::{Path, PathBuf};
+
     use pyo3::prelude::*;
-    use pyo3::types::PyAny;
+    use pyo3::types::{PyAny, PyDict, PyList, PyString};
 
     use crate::domain;
     use crate::nlp::NlpProvider;
@@ -450,20 +452,31 @@ mod python {
                 .map_err(|e| MatraError(e.error))
         }
 
+        /// Annotated structure for one in-memory plain-text document.
+        ///
+        /// Parse only: compose would fill a metric suite the callers of
+        /// this helper immediately discard.
+        fn annotated(&self, text: &str) -> Result<domain::Document, MatraError> {
+            let raw = RawDocument::new(text.to_string(), None, Format::PlainText);
+            self.engine.annotate(&raw).map_err(MatraError)
+        }
+
         /// Pipeline-routed sentences for the extractors: same size gate,
         /// same decomposition, same blockquote skipping as `analyze`.
         fn sentences(&self, text: &str) -> Result<Vec<domain::Sentence>, MatraError> {
-            let raw = RawDocument::new(text.to_string(), None, Format::PlainText);
-            let doc = self.engine.annotate(&raw).map_err(MatraError)?;
-            Ok(doc.sentences().cloned().collect())
+            Ok(self.annotated(text)?.sentences().cloned().collect())
         }
     }
 
     #[pymethods]
     impl Matra {
+        /// Load a UDPipe model from a local file.
+        ///
+        /// The argument is anything Python calls a path: a `str`, or an
+        /// object implementing `os.PathLike` such as a `pathlib.Path`.
         #[staticmethod]
         #[cfg(feature = "udpipe")]
-        fn from_path(model_path: &str) -> PyResult<Self> {
+        fn from_path(model_path: PathBuf) -> PyResult<Self> {
             let nlp = crate::nlp::udpipe::Udpipe::from_path(model_path).map_err(MatraError)?;
             Ok(Self::from_nlp(Box::new(nlp)))
         }
@@ -473,10 +486,13 @@ mod python {
         /// With no argument the directory is resolved through
         /// `Config`: `MATRA_MODEL_DIR`, else the data root's `models`
         /// subdirectory, else a pre-existing `~/.matra/models`.
+        ///
+        /// A directory given explicitly is anything Python calls a path:
+        /// a `str`, or an `os.PathLike` such as a `pathlib.Path`.
         #[staticmethod]
         #[cfg(feature = "udpipe")]
         #[pyo3(signature = (model_dir=None))]
-        fn english(model_dir: Option<&str>) -> PyResult<Self> {
+        fn english(model_dir: Option<PathBuf>) -> PyResult<Self> {
             let nlp = match model_dir {
                 Some(dir) => crate::nlp::udpipe::Udpipe::english(dir),
                 None => {
@@ -559,12 +575,16 @@ mod python {
         /// cluster them at `threshold`. Returns the serialized
         /// `SemanticClusters` as a dict.
         ///
-        /// `model` is either a `Model2Vec` or any Python object with
-        /// `embed` and `identity`. The built-in adapter is tried first
-        /// and used directly; anything else is wrapped in
-        /// [`PyEmbedder`]. The second arm needs only the `embed` port,
-        /// so a build without the `model2vec` feature still accepts a
-        /// caller's own embedder.
+        /// `model` is any Python object with `embed` and `identity`,
+        /// `Model2Vec` included. Anything that is not the built-in
+        /// adapter is wrapped in [`PyEmbedder`], which needs only the
+        /// `embed` port, so a build without the `model2vec` feature
+        /// still accepts a caller's own embedder.
+        ///
+        /// The embedder is settled before the parse runs. Wrapping reads
+        /// `identity()`, and an object that cannot name its geometry is
+        /// refused there; doing that first costs one method call instead
+        /// of a whole document's parse.
         fn semantic_clusters<'py>(
             &self,
             py: Python<'py>,
@@ -572,17 +592,17 @@ mod python {
             threshold: f32,
             model: &Bound<'py, PyAny>,
         ) -> PyResult<Bound<'py, PyAny>> {
-            // Annotated structure suffices; running compose would fill a
-            // metric suite this method immediately discards.
-            let raw = RawDocument::new(text.to_string(), None, Format::PlainText);
-            let doc = self.engine.annotate(&raw).map_err(MatraError)?;
+            // Fast path: the built-in adapter is used directly, so the
+            // embedding route makes no Python call at all.
             #[cfg(feature = "model2vec")]
             if let Ok(loaded) = model.cast::<Model2Vec>() {
+                let doc = self.annotated(text)?;
                 let result = crate::embed_and_cluster(&doc, &loaded.get().inner, threshold)
                     .map_err(MatraError)?;
                 return to_dict(py, &result);
             }
             let embedder = PyEmbedder::new(model)?;
+            let doc = self.annotated(text)?;
             let result =
                 crate::embed_and_cluster(&doc, &embedder, threshold).map_err(MatraError)?;
             to_dict(py, &result)
@@ -597,12 +617,23 @@ mod python {
         /// not, so one unreadable file is one error item rather than an
         /// aborted walk. A failure listing the path itself is raised
         /// instead: there is no per-document result to carry it.
-        fn analyze_path<'py>(&self, py: Python<'py>, path: &str) -> PyResult<Bound<'py, PyAny>> {
-            let ingest = crate::Ingest::path(path).map_err(MatraError)?;
-            let items = pyo3::types::PyList::empty(py);
+        ///
+        /// `path` is anything Python calls a path: a `str`, or an
+        /// `os.PathLike` such as a `pathlib.Path`.
+        ///
+        /// Both item shapes are assembled here rather than serialized.
+        /// `CorpusEntry` is `Serialize`, but its `path` is a `PathBuf`,
+        /// and serde refuses a non-UTF-8 one: a single file with an
+        /// undecodable name would end the whole walk with a
+        /// `RuntimeError`, which is the failure this method exists to
+        /// prevent. Every path here goes through [`fs_path_str`]
+        /// instead, and only the `Document` is serialized.
+        fn analyze_path<'py>(&self, py: Python<'py>, path: PathBuf) -> PyResult<Bound<'py, PyAny>> {
+            let ingest = crate::Ingest::path(&path).map_err(MatraError)?;
+            let items = PyList::empty(py);
             for item in self.engine.analyze(ingest) {
                 let entry = match item {
-                    Ok(entry) => to_dict(py, &entry)?,
+                    Ok(entry) => corpus_entry_dict(py, &entry)?,
                     Err(err) => document_error_dict(py, &err)?,
                 };
                 items.append(entry)?;
@@ -625,8 +656,11 @@ mod python {
     impl Model2Vec {
         /// Load from a directory holding model.safetensors,
         /// tokenizer.json, and config.json. No network is touched.
+        ///
+        /// The argument is anything Python calls a path: a `str`, or an
+        /// `os.PathLike` such as a `pathlib.Path`.
         #[staticmethod]
-        fn from_dir(dir: &str) -> PyResult<Self> {
+        fn from_dir(dir: PathBuf) -> PyResult<Self> {
             let inner = crate::embed::model2vec::Model2Vec::from_dir(dir).map_err(MatraError)?;
             Ok(Self { inner })
         }
@@ -642,10 +676,12 @@ mod python {
         ///
         /// With no argument the directory is resolved through `Config`:
         /// the model directory joined with the configured embedding
-        /// model name.
+        /// model name. A directory given explicitly is anything Python
+        /// calls a path: a `str`, or an `os.PathLike` such as a
+        /// `pathlib.Path`.
         #[staticmethod]
         #[pyo3(signature = (dir=None))]
-        fn potion_base_8m(dir: Option<&str>) -> PyResult<Self> {
+        fn potion_base_8m(dir: Option<PathBuf>) -> PyResult<Self> {
             let inner = match dir {
                 Some(dir) => crate::embed::model2vec::Model2Vec::potion_base_8m(dir),
                 None => {
@@ -668,6 +704,17 @@ mod python {
         #[getter]
         fn dimensions(&self) -> usize {
             self.inner.dimensions()
+        }
+
+        /// The geometry this model's vectors live in, as the `Embedder`
+        /// protocol asks for it: the same string `model_hash` carries.
+        ///
+        /// It is a method, not a getter, because the protocol a caller's
+        /// own object satisfies declares a method. With it, `Model2Vec`
+        /// satisfies that protocol rather than merely being accepted
+        /// alongside it, and one annotation covers both.
+        fn identity(&self) -> String {
+            self.inner.model_hash().to_string()
         }
 
         /// Embed each text into a vector. One vector per text, in
@@ -877,23 +924,57 @@ mod python {
         }
     }
 
-    /// The stable kind string for an error variant: the key a consumer
-    /// branches on instead of matching against a message.
+    /// A path as the `str` Python itself would name it by.
     ///
-    /// Exhaustive with no wildcard, for the same reason the `PyErr`
-    /// routing above is: a new `domain::Error` variant fails to compile
-    /// until someone names it here.
-    fn error_kind(e: &domain::Error) -> &'static str {
-        use domain::Error::*;
-        match e {
-            ModelNotFound(_) => "model_not_found",
-            ModelInvalid(_) => "model_invalid",
-            ParseFailed(_) => "parse_failed",
-            InputTooLarge { .. } => "input_too_large",
-            UnsupportedFormat(_) => "unsupported_format",
-            InvalidInput(_) => "invalid_input",
-            Io(_) => "io",
-        }
+    /// serde refuses a non-UTF-8 `Path`, and a file whose name is not
+    /// valid UTF-8 is exactly the file a corpus walk has to report on.
+    /// So the bytes go through `os.fsdecode`, which is Python's own
+    /// filesystem decoding: an undecodable byte becomes a surrogate
+    /// escape rather than an error or a replacement character, and
+    /// `os.fsencode` on the result hands back the bytes this path came
+    /// from. A caller can open what the walk names.
+    #[cfg(unix)]
+    fn fs_path_str<'py>(py: Python<'py>, path: &Path) -> PyResult<Bound<'py, PyString>> {
+        use std::os::unix::ffi::OsStrExt;
+
+        let bytes = pyo3::types::PyBytes::new(py, path.as_os_str().as_bytes());
+        let decoded = py.import("os")?.getattr("fsdecode")?.call1((bytes,))?;
+        Ok(decoded.cast_into::<PyString>()?)
+    }
+
+    /// Elsewhere there is no lossless byte route out of an `OsStr`, the
+    /// same limit `os_string_of` names on the way in, so an undecodable
+    /// name loses the offending bytes to the replacement character
+    /// rather than round-tripping.
+    #[cfg(not(unix))]
+    fn fs_path_str<'py>(py: Python<'py>, path: &Path) -> PyResult<Bound<'py, PyString>> {
+        Ok(PyString::new(py, &path.to_string_lossy()))
+    }
+
+    /// The `path` field of either corpus item: a `str` for a document
+    /// that came from disk, `None` for one that never did.
+    fn fs_path_item<'py>(
+        py: Python<'py>,
+        path: Option<&Path>,
+    ) -> PyResult<Option<Bound<'py, PyString>>> {
+        path.map(|p| fs_path_str(py, p)).transpose()
+    }
+
+    /// Project a [`domain::CorpusEntry`] into a dict.
+    ///
+    /// Assembled field by field rather than serialized whole, because
+    /// serde would refuse the `PathBuf` on a non-UTF-8 name and take the
+    /// analysis down with it. The `Document` still goes through serde:
+    /// it is the shape `analyze` returns, and there is one wire form of
+    /// it, not two.
+    fn corpus_entry_dict<'py>(
+        py: Python<'py>,
+        entry: &domain::CorpusEntry,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let item = PyDict::new(py);
+        item.set_item("path", fs_path_item(py, entry.path.as_deref())?)?;
+        item.set_item("analysis", to_dict(py, &entry.analysis)?)?;
+        Ok(item.into_any())
     }
 
     /// Project a [`domain::DocumentError`] into a dict.
@@ -901,28 +982,18 @@ mod python {
     /// `DocumentError` is deliberately not `Serialize`: it wraps
     /// `domain::Error`, which wraps `std::io::Error`, and no stable wire
     /// shape exists for that. The two fields are materialized instead,
-    /// the error as a `kind` a consumer can branch on plus the `Display`
-    /// text a human reads.
-    ///
-    /// The path goes through `to_string_lossy` rather than serde, which
-    /// refuses a non-UTF-8 path. A file whose name is not valid UTF-8 is
-    /// exactly the kind of file that lands here, and losing a byte of
-    /// its name is better than losing the report that it failed.
+    /// the error as the `kind` [`domain::Error::kind`] names plus the
+    /// `Display` text a human reads.
     fn document_error_dict<'py>(
         py: Python<'py>,
         err: &domain::DocumentError,
     ) -> PyResult<Bound<'py, PyAny>> {
-        use pyo3::types::PyDict;
-
         let error = PyDict::new(py);
-        error.set_item("kind", error_kind(&err.error))?;
+        error.set_item("kind", err.error.kind())?;
         error.set_item("message", err.error.to_string())?;
 
         let item = PyDict::new(py);
-        item.set_item(
-            "path",
-            err.path.as_ref().map(|p| p.to_string_lossy().into_owned()),
-        )?;
+        item.set_item("path", fs_path_item(py, err.path.as_deref())?)?;
         item.set_item("error", error)?;
         Ok(item.into_any())
     }

@@ -104,13 +104,15 @@ for item in v.analyze_path("docs/"):
         print(item["path"], item["analysis"]["vocabulary_ttr"])
 ```
 
-One unreadable file costs one item, not the walk. A document that analyzed arrives as a `CorpusEntry` (`path`, `analysis`, where `analysis` is the same shape `analyze` returns); one that did not arrives as a `DocumentError` (`path`, `error`), holding the position the document would have had. The `error` object carries a `kind` you can branch on (`io`, `input_too_large`, `parse_failed`, `unsupported_format`, `model_invalid`, `model_not_found`, `invalid_input`) and a `message` for a human to read. Testing `"error" in item` is also what narrows the union for a type checker.
+One unreadable file costs one item, not the walk. A document that analyzed arrives as a `CorpusEntry` (`path`, `analysis`, where `analysis` is the same shape `analyze` returns); one that did not arrives as a `DocumentError` (`path`, `error`), holding the position the document would have had. The `error` object carries a `kind` you can branch on and a `message` for a human to read. `matra.ERROR_KINDS` is the whole vocabulary, in the order the Rust enum declares it: `model_not_found`, `model_invalid`, `parse_failed`, `input_too_large`, `unsupported_format`, `invalid_input`, `io`. Testing `"error" in item` is also what narrows the union for a type checker.
+
+`path` is a `str` decoded the way Python decodes any filesystem path, so `os.fsencode` on it hands back the bytes the name came from and opens the file even when the name is not valid UTF-8. Every path argument on the surface goes the other way through the same encoding: `analyze_path`, `Matra.english`, `Matra.from_path`, `Model2Vec.from_dir` and `Model2Vec.potion_base_8m` take a `str` or a `pathlib.Path` alike.
 
 The walk is not recursive, and symlinks and subdirectories are skipped rather than followed. Only a failure listing the path itself raises: a missing directory is `OSError`, because there is no per-document result for it to travel in.
 
 ## Bring your own embeddings
 
-`semantic_clusters` accepts a `Model2Vec`, or any object with two methods:
+`semantic_clusters` takes any object with two methods. `Model2Vec` is one of them, and so is anything you write:
 
 ```python
 class MyEmbedder:
@@ -125,7 +127,9 @@ clusters = v.semantic_clusters(text, 0.85, MyEmbedder())
 assert clusters["model_hash"] == "my-service/v3"
 ```
 
-`Embedder` in `matra.types` is the protocol those two methods satisfy; importing it is optional and buys you a type checker's opinion, not a runtime check.
+`Embedder` in `matra.types` is the protocol those two methods satisfy, and it is what `semantic_clusters` is annotated with. Importing it is optional and buys you a type checker's opinion, not a runtime check.
+
+The object is asked for its identity before the text is parsed, so an embedder that cannot name its geometry is refused for the price of one method call.
 
 The contract is the one the Rust port carries: exactly one vector per input text, in input order, every vector the same length. Break it and the call raises `ValueError` with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your `embed` arrives as `ValueError` too, with your exception's own text inside the message.
 

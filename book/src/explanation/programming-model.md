@@ -114,10 +114,10 @@ When an aggregate needs to be visible cross-language it is materialized as a fie
 | `Matra.semantic_clusters` | `annotate`, then `embed_and_cluster` |
 | `Matra.analyze_path` | `Ingest::path` into `Engine::analyze`, collected in order |
 | `semantic_clusters(vectors, threshold, model_hash)` | `extraction::semantic_clusters` |
-| `Model2Vec.from_dir`, `.model_hash`, `.dimensions`, `.embed` | `Model2Vec` behind the `Embedder` port |
+| `Model2Vec.from_dir`, `.model_hash`, `.dimensions`, `.embed`, `.identity` | `Model2Vec` behind the `Embedder` port |
 | any object with `embed` and `identity` | an `Embedder` implementor, wrapped by an adapter in the binding |
 
-Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `CorpusEntry` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`, not only a `Model2Vec`: the `Embedder` port was always the extension point, and the binding now reaches it. That arm needs no embedding adapter compiled in, so a build without `model2vec` still clusters with vectors the caller brings.
+Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `CorpusEntry` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. That arm needs no embedding adapter compiled in, so a build without `model2vec` still clusters with vectors the caller brings.
 
 Still not on the Python surface: the separate `annotate` and `compose` stages, the remaining corpus types (`Corpus`, `CorpusResult`), a custom `NlpProvider`, and a replaceable metric suite. Parsing is the one thing the caller cannot substitute, because the size cap and the panic boundary live behind it.
 

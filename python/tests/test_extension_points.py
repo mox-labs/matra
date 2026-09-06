@@ -147,6 +147,10 @@ def test_a_shape_violation_names_the_level_that_was_wrong(engine: Matra) -> None
 def test_an_embedder_without_identity_is_refused_before_any_work(
     engine: Matra,
 ) -> None:
+    """Before any work means before the parse too: the embedder is
+    settled first, so an object that cannot name its geometry costs one
+    method call rather than a document's parse."""
+
     class Nameless:
         def embed(self, texts: list[str]) -> list[list[float]]:
             raise AssertionError("embed must not be called")
@@ -199,6 +203,73 @@ def test_analyze_path_on_one_file_is_a_stream_of_one(engine: Matra, tmp_path: Pa
 
 
 @pytest.mark.model
+@pytest.mark.skipif(os.name != "posix", reason="only posix filenames carry raw bytes")
+def test_a_file_whose_name_is_not_utf_8_is_analyzed_and_round_trips(
+    engine: Matra, tmp_path: Path
+) -> None:
+    """The success item is assembled rather than serialized, because
+    serde refuses a non-UTF-8 path and one such file would have taken the
+    whole walk down with a `RuntimeError`. The name crosses through
+    `os.fsdecode`, so `os.fsencode` hands back the bytes it came from and
+    a caller can open what the walk named.
+
+    Not every filesystem can hold such a name: APFS rejects a filename
+    that is not valid UTF-8 outright, so this skips on macOS and runs on
+    the Linux side of the matrix."""
+    name = b"weird-\xff.txt"
+    raw = os.path.join(os.fsencode(str(tmp_path)), name)
+    try:
+        with open(raw, "wb") as f:
+            f.write(b"The committee approved the proposal.")
+    except OSError as exc:
+        pytest.skip(f"this filesystem refuses a non-UTF-8 filename: {exc}")
+
+    items = engine.analyze_path(tmp_path)
+
+    assert len(items) == 1
+    assert "analysis" in items[0]
+    assert os.fsencode(items[0]["path"]).endswith(name)
+    assert items[0]["analysis"]["sections"][0]["paragraphs"][0]["sentences"]
+
+
+@pytest.mark.model
+def test_a_non_ascii_filename_round_trips(engine: Matra, tmp_path: Path) -> None:
+    """The same decoding on a name every filesystem accepts, so the route
+    through `os.fsdecode` is exercised where APFS will not hold the
+    undecodable case above."""
+    name = "rapport-financiér-ü.txt"
+    (tmp_path / name).write_text("The committee approved the proposal.")
+
+    items = engine.analyze_path(tmp_path)
+
+    assert len(items) == 1
+    assert items[0]["path"].endswith(name)
+    assert os.fsencode(items[0]["path"]) == os.fsencode(str(tmp_path / name))
+
+
+@pytest.mark.model
+def test_analyze_path_takes_a_pathlib_path(engine: Matra, tmp_path: Path) -> None:
+    """Every path argument on the surface extracts as a `PathBuf`, which
+    pyo3 fills from a `str` or from anything implementing `os.PathLike`.
+    A caller holding a `pathlib.Path` does not have to stringify it."""
+    (tmp_path / "only.txt").write_text("The committee approved the proposal.")
+
+    items = engine.analyze_path(tmp_path / "only.txt")
+
+    assert len(items) == 1
+    assert Path(items[0]["path"]).name == "only.txt"
+
+
+def test_model2vec_takes_a_pathlib_path(tmp_path: Path) -> None:
+    """The same extraction on the embedding adapter. No model needed: a
+    missing directory is `Error::ModelNotFound`, which routes to
+    `FileNotFoundError`, and reaching that error at all proves the
+    argument was accepted."""
+    with pytest.raises(FileNotFoundError):
+        matra.Model2Vec.from_dir(tmp_path / "no-such-model")
+
+
+@pytest.mark.model
 def test_analyze_path_on_a_missing_directory_raises(engine: Matra, tmp_path: Path) -> None:
     """A listing failure has no per-document result to travel in, so it
     is raised rather than returned. `Error::Io` routes to `OSError`, the
@@ -224,3 +295,11 @@ def test_the_new_shapes_are_importable_from_the_package_root() -> None:
     assert set(ErrorInfo.__annotations__) == {"kind", "message"}
     assert callable(Embedder.embed) and callable(Embedder.identity)
     assert CorpusItem is not None
+
+
+def test_the_builtin_adapter_satisfies_the_embedder_protocol() -> None:
+    """The docs say `Model2Vec` is an `Embedder`, and the annotation on
+    `semantic_clusters` is the protocol alone. Both are only true while
+    the class carries both methods; no model is needed to check that."""
+    assert callable(matra.Model2Vec.embed)
+    assert callable(matra.Model2Vec.identity)

@@ -20,16 +20,17 @@ spec/
   tests/semantic/    embedding-tier fixtures: the FFI shape fixture
                      (modelless) and the pinned reference-model
                      conformance (potion-base-8M by artifact digest)
+  tests/corpus/      the corpus item shapes and the error kind vocabulary
   tests/cli/         the command line's JSON envelope
 ```
 
 Each crust has a runner that loads every fixture in `spec/tests/` and asserts
 the same expectations:
 
-| Crust | Parse runner | Semantic runner | CLI runner |
-|---|---|---|---|
-| Rust | `tests/conformance.rs` | `tests/semantic_conformance.rs` | `tests/cli.rs` |
-| Python | `python/tests/test_conformance.py` | `python/tests/test_semantic_conformance.py` | `python/tests/test_cli.py` |
+| Crust | Parse runner | Semantic runner | Corpus runner | CLI runner |
+|---|---|---|---|---|
+| Rust | `tests/conformance.rs` | `tests/semantic_conformance.rs` | `tests/corpus_conformance.rs` | `tests/cli.rs` |
+| Python | `python/tests/test_conformance.py` | `python/tests/test_semantic_conformance.py` | `python/tests/test_corpus_conformance.py` | `python/tests/test_cli.py` |
 
 Run them with `just conformance`. Both model lanes fetch on first use and
 load from disk after: the parse lane the UDPipe model, the semantic
@@ -90,6 +91,24 @@ columns are passed through unmodified and are not asserted, because a model
 upgrade may legitimately change them without any binding being at fault.
 
 Floating-point expectations compare within `1e-6`.
+
+## The corpus lane
+
+`tests/corpus/items.json` pins what one document's result looks like when it
+crosses a binding: the two item shapes a walk yields, and the kind vocabulary a
+consumer branches on instead of reading a message. `DocumentError` has no serde
+form, because it wraps `std::io::Error`, so every binding materializes those
+fields by hand, and hand-written projections are exactly where a key gets
+renamed on one side only.
+
+Each runner asserts the vocabulary against its own surface, `Error::kind` in
+Rust and `matra.ERROR_KINDS` in Python, and then walks a directory holding one
+readable file and one whose bytes are not UTF-8. The Rust runner stubs the
+parser with a provider that returns no sentences, so it needs no model; what it
+pins is the shape and the order, not the parse, which the parse fixtures
+already cover. The Python runner reaches the walk through `analyze_path`, a
+method on a loaded engine, so its directory expectation carries the `model`
+marker while the vocabulary and shape assertions run everywhere.
 
 ## The model is part of the contract
 
