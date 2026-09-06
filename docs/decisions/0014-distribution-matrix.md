@@ -233,8 +233,8 @@ every push, so losing the pyo3 feature is caught long before a release.
   future contributor who tidies away the env var breaks every Linux wheel.
 - Neutral: the consequence of that override is that the Linux wheels are built
   on whatever stable the pinned maturin image ships, not on the newest stable,
-  and without the `llvm-tools-preview` component
-  `rust-toolchain.toml` requests. A `maturin build` needs none of the three, and
+  and without the `llvm-tools-preview` component that `rust-toolchain.toml`
+  requests. A `maturin build` needs none of it, and
   the compiler version becomes a property of the image digest rather than of the
   day the release ran, which is the more reproducible of the two. If the image
   ever ships a stable below the MSRV the build fails at compile time, loudly.
@@ -260,9 +260,11 @@ every push, so losing the pyo3 feature is caught long before a release.
   Reproduced on linux/amd64 with no override, rustup reports
   `syncing channel updates for stable-x86_64-unknown-linux-gnu` and
   `latest update on 2026-09-03 for version 1.98.1` before failing on the rename.
-  So the behaviour being replaced was not "the image's compiler plus three
-  components", it was "whichever stable exists on release day", chosen by the
-  calendar rather than by anyone. Pinning to a reviewed digest is the more
+  So what `RUSTUP_PERMIT_COPY_RENAME=1` would have given us was not "the
+  image's compiler plus a component", it was "whichever stable exists on
+  release day", chosen by the calendar rather than by anyone. Against the
+  status quo before either variable the comparison is different and simpler:
+  the build fails outright, as recorded above. Pinning to a reviewed digest is the more
   deliberate of the two, which is the argument for this decision rather than a
   side effect of it.
 

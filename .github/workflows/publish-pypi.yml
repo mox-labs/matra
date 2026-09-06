@@ -19,7 +19,8 @@ name: Publish to PyPI
 # The wheel matrix and the abi3 choice are ADR-0014. Four wheels cover
 # the published surface: Linux x86_64, Linux aarch64, macOS x86_64,
 # macOS arm64, each one abi3 so a single wheel serves CPython 3.12 and
-# every later GIL-enabled 3.x. Free-threaded builds take a different ABI tag
+# every later GIL-enabled 3.x. Free-threaded builds take a different
+# ABI tag
 # and fall to the sdist until the free-threaded stable ABI lands in 3.15.
 #
 # Windows wheels are deliberately absent: the UDPipe C++ build under
@@ -73,7 +74,11 @@ jobs:
             exit 1
           fi
           git fetch --no-tags origin main
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" "origin/main"; then
+          # HEAD, not GITHUB_SHA. The checkout above takes the tag, but on a
+          # workflow_dispatch GITHUB_SHA is the ref the run was dispatched
+          # from, which is main by default. So this asserted that main is an
+          # ancestor of main and said nothing about the tag being published.
+          if ! git merge-base --is-ancestor "$(git rev-parse HEAD)" "origin/main"; then
             echo "::error::tag $TAG_REF is not on main; refusing to publish"
             exit 1
           fi
