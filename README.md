@@ -28,7 +28,7 @@ Matra.english().analyze("The report was filed without comment.")
 let engine = matra::Engine::with_defaults()?;
 ```
 
-The directory is `MATRA_MODEL_DIR` if set, else your config file, else `$XDG_DATA_HOME/matra/models`. `matra config show` prints every resolved value and where it came from. Every constructor also takes the directory explicitly when you want it somewhere specific.
+The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file names which models to use (`[models] udpipe`, `embedding`), not where they live. Every constructor takes the directory explicitly when you want it somewhere specific, and `matra config show` prints every resolved value and where it came from.
 
 ## Install
 
@@ -116,17 +116,17 @@ trail), and reversibility (every change can be backed out cleanly).
 
 The repository is built on two non-negotiable disciplines:
 
-- **ACES** — Adaptable, Composable, Extensible. The structural design
+- **ACES**: Adaptable, Composable, Extensible. The structural design
   philosophy that resists the stasis/drag/opacity decay cycle every long-lived
   library faces. See [`.claude/skills/aces/SKILL.md`](.claude/skills/aces/SKILL.md).
-- **Antifragility** — the operational discipline. Size caps at the gate,
+- **Antifragility**: the operational discipline. Size caps at the gate,
   panic boundaries at the C/C++ FFI, atomic file writes, TOCTOU-closed hash
   verification, cycle-safe graph walks. See
   [`.claude/skills/resilience-floor/SKILL.md`](.claude/skills/resilience-floor/SKILL.md).
 
 The agent organization in [`.claude/agents/`](.claude/agents/) (6 practitioner
 agents) and skill library in [`.claude/skills/`](.claude/skills/) (7 skills)
-operationalize these disciplines so any contributor — human or AI — can
+operationalize these disciplines so any contributor, human or AI, can
 participate without re-deriving the design.
 
 | Where to look | What's there |

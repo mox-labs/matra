@@ -53,7 +53,7 @@ For how a call actually runs through those layers, read `book/src/architecture/d
 4. `nlp/udpipe.rs` is the ONLY file that imports `udpipe_rs`.
 5. `metrics/` and `extraction/` import only from `domain` and `stopwords`.
 6. `cargo check --no-default-features` must compile.
-7. Composition root (`lib.rs`) is the only place that knows all adapters and ports. `src/cli/` imports only `config` and `domain`, never a port or an adapter.
+7. Composition root (`lib.rs`) is the only place that knows all adapters and ports. `src/cli/` uses the public surface (`Engine`, `Ingest`), `extraction`, `config` and `domain`, never a port module or an adapter.
 8. `tracing` is forbidden in `domain.rs` and port modules (Burner amendment, 2026-04-28).
 
 **Motivation for each rule, what breaks when it is violated, and what to read for when reviewing: [`book/src/reference/boundary-rules.md`](book/src/reference/boundary-rules.md).** That file is canonical; this list is the summary.

@@ -25,7 +25,7 @@ let cfg = Config::resolve()?.with_model_dir("/opt/matra/models");
 let engine = Engine::from_config(&cfg)?;
 ```
 
-`with_model_dir` puts the directory on the `Argument` rung, which outranks the environment and the file, and `cfg.sources()` reports where every other value came from. `Config` is also what `Udpipe::from_config` and `Model2Vec::from_config` read.
+`with_model_dir` puts the directory on the `Argument` rung, which outranks the environment and the defaults, and `cfg.sources()` reports where every other value came from. `Config` is also what `Udpipe::from_config` and `Model2Vec::from_config` read.
 
 Everything below is the explicit path, which still works and still wins over the resolved one. Take it when you want a provider matra does not ship, or a model file you already hold.
 

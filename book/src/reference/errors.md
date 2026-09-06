@@ -49,7 +49,7 @@ Nine gate labels produce this variant. The `what` field carries the label so a c
 
 | `what` | Gate | Limit | Measured over |
 |---|---|---|---|
-| `"input"` | `Engine::annotate`, the only route from text to the parser | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | UTF-8 byte length of the text |
+| `"input"` | `Engine::annotate`, the only route from text to the parser, and the CLI's stdin read, which applies the same cap first | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | UTF-8 byte length of the text; the CLI counts the bytes as they arrive, before decoding them |
 | `"file_source"` | `FileSource::read`, which `Ingest::path` reads through | 8,388,608 bytes | File size reported by the filesystem, checked before any read |
 | `"tfidf"` | `tfidf_summarize` | 2,000 | Number of sentences in the slice |
 | `"textrank"` | `textrank_summarize` | 2,000 | Number of sentences in the slice |
@@ -66,6 +66,8 @@ The caps bound worst-case memory and time. TextRank builds a dense similarity ma
 A document from disk crosses both text gates in sequence: `"file_source"` when `Ingest` reads it, `"input"` inside `annotate`. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
 Calling a provider's `parse` directly bypasses the `"input"` gate. The gate belongs to `Engine::annotate`, not to the `NlpProvider` trait.
+
+The label has a second producer. The CLI reads stdin through `read_capped` in `src/cli/mod.rs`, which reads at most one byte past `MAX_INPUT_BYTES` and returns `InputTooLarge` with `what` set to `"input"` before the text ever reaches `annotate`. Same limit, same label, so a caller sees one gate however the text arrived. Two details differ and neither is visible in the value: the CLI counts bytes before decoding them, so an oversized pipe is reported as too large rather than as invalid UTF-8, and the CLI renders the error on stderr and turns it into an exit code rather than returning it.
 
 The four ranking extractors check their caps after their empty-result checks. `tfidf_summarize(sentences, 0)`, `textrank_summarize(sentences, 0)`, `rake_keyphrases(sentences, 0)`, and `yake_keyphrases(sentences, 0)` return an empty vector without evaluating the cap, whatever the size of the slice. The same holds for an empty slice. `semantic_clusters` has no count parameter; its contract checks run first, then its cap, and an empty slice returns empty clusters.
 

@@ -30,9 +30,9 @@ Every route caches the model at the resolved model directory (about 16 MB) and d
 | data root | `$XDG_DATA_HOME/matra`, else `~/.local/share/matra` | `MATRA_DATA_DIR` |
 | models | the data root's `models` directory | `MATRA_MODEL_DIR`, or `--model-dir` on the command line |
 
-A pre-existing `~/.matra/models` from an older install is still read when the new location does not exist yet. matra never writes there.
+A pre-existing `~/.matra/models` from an older install is still used when the new location does not exist yet. matra never creates `~/.matra`; when a non-empty legacy cache is selected it is the resolved model directory, downloads and re-downloads included. Create the new location, or set `MATRA_MODEL_DIR`, to move off it.
 
-`--model-dir` outranks every environment variable, which outranks the config file, which outranks the defaults compiled into the crate. `matra config show` prints which rung each value actually came from.
+Per key, `--model-dir` outranks every environment variable, which outranks the config file, which outranks the defaults compiled into the crate. The config file has no key for the model directory, so that value comes from the flag, the environment, or the defaults. `matra config show` prints which rung each value actually came from.
 
 ## Commands
 
