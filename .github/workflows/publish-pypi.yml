@@ -120,18 +120,27 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.12"
-      # RUSTUP_PERMIT_COPY_RENAME is not optional. rust-toolchain.toml
-      # makes rustup re-sync the channel inside the container, and the
-      # rename it does to swap a component crosses the overlay boundary
-      # between the image layer and the container, which fails with
-      # "Invalid cross-device link (os error 18)".
+      # RUSTUP_TOOLCHAIN is not optional. rust-toolchain.toml asks for
+      # components the image does not carry, so rustup re-syncs the
+      # channel inside the container, and the rename it does to swap a
+      # component crosses the overlay boundary between the image layer
+      # and the container, which fails with "Invalid cross-device link
+      # (os error 18)". RUSTUP_TOOLCHAIN sits above rust-toolchain.toml
+      # in rustup's override precedence, so this builds on the toolchain
+      # the image already ships and never re-syncs at all. Remove it and
+      # every Linux wheel fails.
+      #
+      # The other way out is RUSTUP_PERMIT_COPY_RENAME=1, which rustup
+      # documents as unstable, says sacrifices some transaction
+      # protections, and says may be removed at any point. ADR-0014
+      # records why this branch was taken instead.
       - name: Build wheel in the manylinux container (Linux)
         if: matrix.platform.manylinux
         run: |
           set -euo pipefail
           docker run --rm \
             -v "$PWD:/io" -w /io \
-            -e RUSTUP_PERMIT_COPY_RENAME=1 \
+            -e RUSTUP_TOOLCHAIN=stable \
             -e CARGO_TARGET_DIR=/build-target \
             ghcr.io/pyo3/maturin:v1.14.1@sha256:2665227312dd1eab1c29c70a001dc8aac53155a2d048bede3b2df7f1691c8e38 \
             build --release --out dist
