@@ -1,5 +1,16 @@
 # I10: Out of the box
 
+> **Shipped, 2026-09-05.** All six milestones landed: M1 as PR #62, M2 as
+> #59, M3 as #61, M4 as #64, M5 as #63, and M6 (this PR).
+> [ADR-0011](https://github.com/mox-labs/matra/blob/main/docs/decisions/0011-out-of-the-box.md)
+> records the decisions and names every public item M2 through M5 added;
+> its Consequences carry the two open follow-ups (the `u8` exit code,
+> and `Error::Io` routing to `OSError` whatever its kind). The one item
+> in M6's scope that did not land is the attribution alignment across
+> `Cargo.toml`, `pyproject.toml`, `LICENSE` and the README: the owner
+> has not yet chosen the canonical author and copyright form, so those
+> four files are unchanged. This plan stays as the reasoning trail.
+
 **Boundary:** post-publish, additive to the 0.1.0 surface. No existing signature changes. The Python CLI's implementation is replaced, its command line is not.
 
 **Origin:** the roadmap's "Configuration-driven invocation" trigger fired on 2026-09-05 with the owner's direction: matra works with no setup on every surface, follows developer-tool conventions for config and paths, keeps Rust as the core with Python and TypeScript as thin reach layers, and is consumable by an agent. [ADR-0011](https://github.com/mox-labs/matra/blob/main/docs/decisions/0011-out-of-the-box.md) records the decisions; this plan is how they land.

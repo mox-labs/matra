@@ -61,6 +61,8 @@ Everything above assumes `nlp` already exists. Constructing it is the one genuin
 
 `Udpipe::english(dir)` looks for the English UD-EWT model in the directory you name. If it is absent, the download goes to a per-process temporary subdirectory and is then moved into place with a single `rename`, so two processes pointing at the same directory cannot leave each other a half-written file.
 
+`Udpipe::from_config(&cfg)` is the same call with the directory resolved rather than named, and `Engine::with_defaults()` is `Config::resolve()` followed by that. `Config` is read once, at construction; nothing in the call path above consults it, which is why configuration cannot change what a call computes. `Model2Vec::potion_base_8m(dir)` and `Model2Vec::from_config(&cfg)` do the same for the reference embedding model, against a three-file digest rather than a single one.
+
 The cached file is then checked against a size constant, 16,309,608 bytes, and a SHA-256 constant pinned in `nlp/udpipe.rs`. A size mismatch fails before the file is hashed. A hash mismatch deletes the file, downloads once more, and gives up with `Error::ModelInvalid` on a second failure. An unverified model is never loaded.
 
 The verify step returns the bytes it hashed, and those exact bytes go to the loader. Nothing re-reads the disk in between. That ordering is the whole point: a hash-then-reopen sequence leaves a window in which an attacker with write access to the model directory can swap the file after the check and before the read.
@@ -241,7 +243,7 @@ Directory reads fail differently. The stream yields successes and per-document f
 
 ## What you can replace
 
-<svg class="mx-mod" role="img" aria-label="Module map of the matra crate: lib.rs above the adapters, adapters above the ports, ports above domain.rs, with every dependency arrow pointing down" viewBox="0 0 720 345" width="720" height="345" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
+<svg class="mx-mod" role="img" aria-label="Module map of the matra crate: the launchers and the command line above lib.rs and config.rs, those above the adapters, adapters above the ports, ports above domain.rs, with every dependency arrow pointing down" viewBox="0 0 720 345" width="720" height="345" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
 <title>Which module may import which, in the matra crate</title>
 <style>
 .mx-mod text{fill:currentColor}
@@ -255,14 +257,23 @@ Directory reads fail differently. The stream yields successes and per-document f
 .mx-mod marker path{fill:currentColor;opacity:.6}
 </style>
 <defs><marker id="mx-mod-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
-<rect class="box" x="20" y="8" width="200" height="30" rx="4"/>
-<text class="fp" x="120" y="22">src/bin/matra.rs</text>
-<text class="sub" x="120" y="33">caller of the public API, feature: cli</text>
-<line class="dep" x1="120" y1="38" x2="120" y2="54" marker-end="url(#mx-mod-a)"/>
+<rect class="box" x="16" y="8" width="196" height="30" rx="4"/>
+<text class="fp" x="114" y="22">src/bin/matra.rs</text>
+<text class="sub" x="114" y="33">launcher, feature: cli</text>
+<text class="nt" x="215" y="19">calls run()</text>
+<line class="dep" x1="212" y1="23" x2="264" y2="23" marker-end="url(#mx-mod-a)"/>
+<rect class="box" x="268" y="8" width="212" height="30" rx="4"/>
+<text class="fp" x="374" y="22">src/cli/</text>
+<text class="sub" x="374" y="33">the command line, feature: cli</text>
+<line class="dep" x1="114" y1="38" x2="114" y2="54" marker-end="url(#mx-mod-a)"/>
+<line class="dep" x1="374" y1="38" x2="374" y2="54" marker-end="url(#mx-mod-a)"/>
 <rect class="band" x="16" y="58" width="700" height="36" rx="4"/>
-<text class="fp" x="366" y="74">src/lib.rs</text>
-<text class="sub" x="366" y="87">declares every module, and is the only file that names every adapter and every port</text>
-<line class="dep" x1="366" y1="94" x2="366" y2="102"/>
+<text class="fp" x="264" y="73">src/lib.rs</text>
+<text class="sub" x="264" y="85">declares every module, and is the only file that names every adapter and every port</text>
+<rect class="box" x="524" y="60" width="188" height="32" rx="4"/>
+<text class="fp" x="618" y="73">src/config.rs</text>
+<text class="sub" x="618" y="85">locations and defaults, never behavior</text>
+<line class="dep" x1="264" y1="94" x2="264" y2="102"/>
 <line class="dep" x1="80" y1="102" x2="648" y2="102"/>
 <line class="dep" x1="80" y1="102" x2="80" y2="116" marker-end="url(#mx-mod-a)"/>
 <line class="dep" x1="222" y1="102" x2="222" y2="116" marker-end="url(#mx-mod-a)"/>
@@ -326,7 +337,11 @@ Directory reads fail differently. The stream yields successes and per-document f
 <text class="sub" x="366" y="319">serde · thiserror · std, and nothing else</text>
 </svg>
 
-Every arrow points down, and that is the rule: a module imports from the row below it, never the row above. The one arrow that runs sideways is `source/directory.rs` reaching into `source/file.rs`, inside a single port, so a directory read inherits the same symlink and size guards rather than reimplementing them.
+Every arrow points down, and that is the rule: a module imports from the row below it, never the row above. Two arrows run sideways. `source/directory.rs` reaches into `source/file.rs`, inside a single port, so a directory read inherits the same symlink and size guards rather than reimplementing them. And `src/bin/matra.rs` reaches into `src/cli/`, which is the whole of that file: the command line lives in the library so both launchers run one program, and the binary only collects arguments, locks the streams, and returns the code.
+
+`src/config.rs` sits in the composition-root row beside `lib.rs`, and it is the one box an adapter is allowed to import from the row above. `Udpipe::from_config` and `Model2Vec::from_config` take a `&Config`, which is the traffic ADR-0011 intends and [boundary rule 7](../reference/boundary-rules.md) records: `Config` imports no port and no adapter, so nothing travels back down with it, and an adapter that reads it is reading a resolved path rather than reaching for the environment itself.
+
+`Config` is not one of the extension points below, and the distinction is worth keeping. An extension point substitutes an implementation; `Config` only supplies values a caller could have passed as arguments. That is why it carries locations and defaults and never behavior: the moment a file selects which metrics run, configuration stops being adaptability and becomes dispatch that nothing type-checks.
 
 Three extension points are dispatched at runtime. `NlpProvider` has a single method, and the engine holds it as `Box<dyn NlpProvider>`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. `Embedder` is the same shape one tier over: `embed_and_cluster` takes it as `&dyn Embedder`, and its `identity` travels into every result so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library. And `Decomposer` dispatch is a value: the engine's `Decomposers` table maps each `Format` to a boxed decomposer, `standard_decomposers()` is merely the table this build ships, and `Decomposers::new().with(format, decomposer)` builds a different one. Registering a format is data flow, not a code change.
 

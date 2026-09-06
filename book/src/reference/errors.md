@@ -20,7 +20,7 @@ Every fallible function in matra returns `domain::Result<T>`, which is `std::res
 
 ### ModelNotFound
 
-Returned by `Udpipe::from_path` when the path does not exist. The payload is the path as given. `Udpipe::english` does not return this variant: it downloads the model when the file is absent.
+Returned by `Udpipe::from_path` when the path does not exist, and by `Model2Vec::from_dir` when any of the three artifacts is absent. The payload is the path as given. Neither `Udpipe::english` nor `Model2Vec::potion_base_8m` returns this variant: both download the model when the file is absent.
 
 ### ModelInvalid
 
@@ -45,7 +45,7 @@ Returned by the UDPipe adapter's `parse` in three situations:
 
 ### InputTooLarge
 
-Eight gate labels produce this variant. The `what` field carries the label so a caller can route each gate differently.
+Nine gate labels produce this variant. The `what` field carries the label so a caller can route each gate differently.
 
 | `what` | Gate | Limit | Measured over |
 |---|---|---|---|
@@ -57,6 +57,7 @@ Eight gate labels produce this variant. The `what` field carries the label so a 
 | `"yake"` | `yake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
 | `"semantic_clusters"` | `semantic_clusters` | 2,000 | Number of sentences in the slice |
 | `"embedding_download"` | `Model2Vec::potion_base_8m`, per artifact | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
+| `"config_file"` | `Config::resolve`, reading the user's config file | 64 KiB (65,536) | File size reported by the filesystem, checked before any read |
 
 `limit` carries the cap and `actual` carries the measured size, so an error message can be built without hardcoding the constants.
 
@@ -73,6 +74,8 @@ A metric has no gate of its own. The compression ratio skips any paragraph over 
 ### InvalidInput
 
 Returned by `semantic_clusters` when a caller breaks its documented contract (embeddings disagreeing on dimension, an embedding containing a non-finite value, a non-finite threshold), and by `embed_and_cluster` when an embedder violates its own length contract. The payload names the violation. This variant means a call site or a provider implementation is wrong, not the input data; nothing about the analyzed text produces it.
+
+`Config::resolve` uses the same variant for a configuration that cannot be honored: a config file that does not parse, an unknown key, an algorithm name this build does not know, a config file that is not valid UTF-8, or an environment with none of `MATRA_DATA_DIR`, `XDG_DATA_HOME` or `HOME` set. The payload names the file and the offending key or line. A config file that is simply absent is not an error; the built-in defaults stand.
 
 ### UnsupportedFormat
 
@@ -97,7 +100,7 @@ Collecting the stream into `CorpusResult` partitions it: every success into `cor
 
 Two kinds of entry never appear on either side. The directory listing skips symlinks, so a symlink produces no document and no error. It also skips anything that is not a regular file, and the walk is one level deep, so a subdirectory is skipped the same way.
 
-Neither `DocumentError` nor `CorpusResult` is `Serialize`, because `Error` wraps `std::io::Error`. What crosses a language boundary is a projection instead: `Error::kind` names the variant with a stable string, and a binding pairs that with the `Display` message. `Matra.analyze_path` is the first consumer, and `spec/tests/corpus/items.json` pins the vocabulary so every crust spells a failure the same way.
+Neither `DocumentError` nor `CorpusResult` is `Serialize`, because `Error` wraps `std::io::Error`. Crossing a language boundary therefore needs a projection rather than serde. `Matra.analyze_path` has one: each failed document arrives as `{"path": str | None, "error": {"kind": str, "message": str}}`, where `kind` is the stable string `Error::kind` names for the variant, and the table below carries all seven. `Error::kind` is a match with no wildcard arm, so a new `Error` variant fails to compile until someone names it, and `spec/tests/corpus/items.json` pins the vocabulary with a runner per crust, so every crust spells a failure the same way. Both item shapes are assembled field by field rather than serialized, and a `path` is decoded with `os.fsdecode`, so `os.fsencode` on it names the file the walk read even when that name is not valid UTF-8. `CorpusResult` itself does not cross: the Python call returns the items in order and the caller partitions them, testing `"error" in item`.
 
 ## Display strings and kinds
 
@@ -173,7 +176,7 @@ One further failure has no `Error` variant behind it. The `Matra` class is `#[py
 
 ## At the command line
 
-Two programs are installed under the name `matra`. The Rust binary comes from `cargo install matra --features cli`. The Python console script comes from the wheel and wraps the same engine through the binding. The exit-code contract below belongs to the Rust binary.
+One program is installed under the name `matra`, by either of two routes. The Rust binary comes from `cargo install matra --features cli`; the Python console script comes from the wheel and calls the same `matra::cli::run` through the extension module. The exit-code contract below is the program's, so it holds on both.
 
 | Exit code | Meaning |
 |---|---|
@@ -181,6 +184,6 @@ Two programs are installed under the name `matra`. The Rust binary comes from `c
 | 1 | The command succeeded and found nothing |
 | 2 | An error occurred |
 
-On exit code 2 the binary writes `matra: ` followed by the error's `Display` string to standard error. A broken pipe, which is what happens when the reading end of `matra analyze file.md | head` goes away, exits 0 and prints nothing.
+On exit code 2 the command writes `matra: ` followed by the error's `Display` string to standard error. A broken pipe, which is what happens when the reading end of `matra analyze file.md | head` goes away, exits 0 and prints nothing.
 
-The Python console script does not implement that contract. It exits 1 when the model cannot be loaded, and otherwise surfaces the exception classes from the table above.
+The exception classes in the table above belong to the library surface, not to the command line. A `domain::Error` reaching the command line is rendered and turned into an exit code; it never surfaces as a Python exception, whichever launcher started it.

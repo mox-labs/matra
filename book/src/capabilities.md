@@ -106,22 +106,25 @@ Behind the `model2vec` feature. Not a field on any type above.
 | Item | Is |
 |---|---|
 | `Embedder` | the port: `embed(&[&str])` returning one `Embedding` per text, plus `identity()` |
-| `Model2Vec` | the adapter, loading `model.safetensors`, `tokenizer.json`, and `config.json` from a directory |
+| `Model2Vec` | the adapter, reading `model.safetensors`, `tokenizer.json`, and `config.json` from a directory. `from_dir(dir)` loads what is there; `potion_base_8m(dir)` and `from_config(cfg)` fetch the pinned reference model when it is absent |
 | `embed_and_cluster(doc, embedder, threshold)` | embeds a document's sentences, then clusters them |
 | `extraction::semantic_clusters(embeddings, threshold, model_hash)` | clusters vectors you already hold |
 | `SemanticClusters` | `model_hash`, `threshold`, and `clusters` |
 | `SemanticCluster` | `members` (sentence indices) plus the `SemanticEdge` values that cleared the threshold |
 
-Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `Model2Vec`, and the module-level `semantic_clusters`.
+Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `Model2Vec` (including `Model2Vec.potion_base_8m`), and the module-level `semantic_clusters`. `Matra.semantic_clusters` takes a `Model2Vec` or any object with `embed` and `identity`.
 
 ## The pipeline surface
 
 | Value | Constructors | Carries |
 |---|---|---|
 | `Ingest` | `text(string, format)`, `path(file or directory)` | the source: a string is a stream of one, a directory a stream of many |
-| `Engine` | `new(provider, decomposer table)` | `analyze` over a stream, `analyze_one`, or the stages `annotate` and `compose` |
+| `Engine` | `with_defaults()`, `from_config(cfg)`, `new(provider, decomposer table)` | `analyze` over a stream, `analyze_one`, or the stages `annotate` and `compose` |
+| `Config` | `resolve()`, `from_sources(...)`, `with_model_dir(dir)` | where models live and what the defaults are, plus the `ValueSource` each value came from |
 
-`engine.analyze(ingest)` returns a lazy iterator of per-document results. Collecting it into `CorpusResult` partitions successes from failures, and one bad file does not abort the stream.
+`Engine::with_defaults()` is the no-setup constructor: resolve a `Config`, then build the standard pipeline from it, fetching the pinned English model if it is not on disk. `Engine::new` is the explicit one, and it is what you reach for with your own provider or decomposer table.
+
+`engine.analyze(ingest)` returns a lazy iterator of per-document results. Collecting it into `CorpusResult` partitions successes from failures, and one bad file does not abort the stream. On the Python surface the same walk is `Matra.analyze_path(path)`, which returns the items in order for the caller to partition.
 
 ## Traceability
 

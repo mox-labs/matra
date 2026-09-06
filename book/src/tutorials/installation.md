@@ -67,19 +67,19 @@ matra writes the download (about 16 MB) to a temporary location first, then move
 
 ## Verify the install
 
-Run this once. It downloads and caches the model on this first run, then parses a sentence through it and prints two results:
+Run this once. No arguments and no environment: it resolves the model directory, downloads and caches the model on this first run, then parses a sentence through it and prints two results:
 
 ```python
-from pathlib import Path
 from matra import Matra
 
-model_dir = str(Path.home() / ".matra" / "models")
-v = Matra.english(model_dir)
+v = Matra.english()
 
 result = v.analyze("The committee approved the proposal without debate.")
 print("sections:", len(result["sections"]))
 print("vocabulary_ttr:", result["vocabulary_ttr"])
 ```
+
+`Matra.english("/some/directory")` is the same call with the directory named explicitly, which is what you want when the model belongs somewhere specific. Pass a real path: the string goes straight to Rust's `create_dir_all`, which does not expand `~`.
 
 Expected output:
 
@@ -90,7 +90,7 @@ vocabulary_ttr: 0.8571428571428571
 
 That first run downloads about 16 MB and can take several seconds depending on your connection. Every run after that loads the cached file and touches no network.
 
-If `Matra.english()` raises `RuntimeError`, the download or the hash check failed; check your network connection and run the snippet again. If it raises `OSError`, matra could not create or write to the model directory; check permissions on the path you passed.
+If `Matra.english()` raises `RuntimeError`, the download or the hash check failed; check your network connection and run the snippet again. If it raises `OSError`, matra could not create or write to the model directory; run `matra config show` to see which directory it resolved and check the permissions on it.
 
 ---
 

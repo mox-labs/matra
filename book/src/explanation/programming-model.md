@@ -7,7 +7,7 @@
 | Value | Constructors | Meaning |
 |---|---|---|
 | `Ingest` | `text(string, format)`, `path(file or directory)` | a string is a stream of one, a file is a stream of one, a directory is a stream of many |
-| `Engine` | `new(provider, decomposer table)` | the assembled pipeline |
+| `Engine` | `with_defaults()`, `from_config(cfg)`, `new(provider, decomposer table)` | the assembled pipeline |
 
 Source variation lives in the data, not in the function namespace, which is why `Engine::analyze` is one function rather than six.
 
@@ -74,7 +74,7 @@ The domain depends on port traits. Adapters implement them.
 | `nlp/` | `NlpProvider` | `Udpipe` | `udpipe` (default) |
 | `embed/` | `Embedder` | `Model2Vec` | `model2vec` |
 
-Features are additive. Enabling `udpipe` adds UDPipe; disabling it removes UDPipe and nothing else. `cargo check --no-default-features` compiles. The other two features are `python` (the PyO3 bindings) and `cli` (the binary, which implies `udpipe`).
+Features are additive. Enabling `udpipe` adds UDPipe; disabling it removes UDPipe and nothing else. `cargo check --no-default-features` compiles. The other two features are `cli` (the command line, which implies `udpipe`) and `python` (the PyO3 bindings, which implies `cli` so that a wheel carries the command).
 
 Your own adapter is a trait implementation plus a change at the call site. `Engine::new` takes any `Box<dyn NlpProvider>`; `Decomposers::with` builds a table other than `standard_decomposers()`; `embed_and_cluster` takes any `&dyn Embedder`, and with your own implementation it needs no feature flag at all.
 
@@ -89,6 +89,8 @@ Every gate returns a typed variant of `Error`. There is no `Result<T, String>` a
 | `tfidf_summarize`, `textrank_summarize` | 2,000 sentences | `InputTooLarge`, `what` is `"tfidf"` or `"textrank"` |
 | `embed_and_cluster`, `semantic_clusters` | 2,000 sentences | `InputTooLarge`, `what` is `"semantic_clusters"` |
 | `rake_keyphrases`, `yake_keyphrases` | 200,000 tokens | `InputTooLarge`, `what` is `"rake"` or `"yake"` |
+| one pinned embedding artifact being downloaded | 64 MiB | `InputTooLarge`, `what` is `"embedding_download"` |
+| the config file, checked against its metadata | 64 KiB | `InputTooLarge`, `what` is `"config_file"` |
 
 The `what` discriminator names which gate fired, so a caller can route a document-too-big differently from a corpus-too-big.
 
@@ -104,7 +106,7 @@ When an aggregate needs to be visible cross-language it is materialized as a fie
 
 ## What Python exposes
 
-`Matra`, `Model2Vec`, and one module-level function.
+`Matra`, `Model2Vec`, one module-level function, and the entry point the `matra` console script launches.
 
 | Python | Rust equivalent |
 |---|---|
@@ -115,7 +117,9 @@ When an aggregate needs to be visible cross-language it is materialized as a fie
 | `Matra.analyze_path` | `Ingest::path` into `Engine::analyze`, collected in order |
 | `semantic_clusters(vectors, threshold, model_hash)` | `extraction::semantic_clusters` |
 | `Model2Vec.from_dir`, `.model_hash`, `.dimensions`, `.embed`, `.identity` | `Model2Vec` behind the `Embedder` port |
+| `Model2Vec.potion_base_8m` | `Model2Vec::potion_base_8m`; with no argument it is `Model2Vec::from_config` |
 | any object with `embed` and `identity` | an `Embedder` implementor, wrapped by an adapter in the binding |
+| `_core.cli_main(argv)` | `cli::run`, which is what the `matra` console script launches |
 
 Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `CorpusEntry` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. That arm needs no embedding adapter compiled in, so a build without `model2vec` still clusters with vectors the caller brings.
 

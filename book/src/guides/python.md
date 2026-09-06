@@ -43,17 +43,15 @@ Separate processes are fine, because each process gets its own model state. Buil
 
 ```python
 from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 
 from matra import Matra
 
-MODEL_DIR = str(Path.home() / ".matra" / "models")
 _engine: Matra | None = None
 
 
 def _init() -> None:
     global _engine
-    _engine = Matra.english(MODEL_DIR)
+    _engine = Matra.english()
 
 
 def analyze_chunk(text: str) -> dict:

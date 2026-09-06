@@ -37,10 +37,12 @@ Two properties make it usable that far downstream. Every value is serde-serializ
 
 ## What it needs from the environment
 
-**Models are supplied, not bundled.** The UDPipe English model is downloaded on the first call to `Udpipe::english` (or `Matra.english` in Python) into a directory you name, then verified against a pinned SHA-256. A cached file that fails verification is removed and downloaded again. `Udpipe::from_path` loads a model you already have and touches no network.
+**Nothing has to be set up first.** `Engine::with_defaults()` in Rust, `Matra.english()` in Python, and any `matra` command resolve where models live and fetch what is missing. The directory comes from `MATRA_MODEL_DIR`, else your config file, else the `models` subdirectory of `$XDG_DATA_HOME/matra`. [Programming model](programming-model.md#configuration) has the resolution order.
 
-**Embedding models are placed by hand.** `Model2Vec::from_dir` reads `model.safetensors`, `tokenizer.json`, and `config.json` from a directory. It never downloads. The SHA-256 over those three files is the model identity that every derived result carries.
+**Models are fetched, not bundled, and only against a pinned digest.** The UDPipe English model arrives on the first call to `Udpipe::english`, `Udpipe::from_config` or `Matra.english`; the reference embedding model arrives on the first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config`. Both fetch from URLs written in the source and load nothing whose SHA-256 does not equal a constant written beside them. A file that fails verification is removed and fetched once more, and a second failure raises. Exactly one artifact set can arrive this way for each.
+
+**Bringing your own is a first-class path.** `Udpipe::from_path` and `Model2Vec::from_dir` load what you supply and touch no network, whatever the directory holds. For those, the digest is identity rather than proof: it says which artifacts produced a value, not that they are the ones you meant to fetch.
 
 **Verification and load share one read.** Bytes are hashed in memory and the model is loaded from those same bytes. Nothing re-reads the disk between the two.
 
-That first-use UDPipe download is the only network access anywhere in the library.
+Those pinned model fetches are the only network access anywhere in the library.
