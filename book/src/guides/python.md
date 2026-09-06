@@ -90,6 +90,8 @@ The two summarizers return their selection in document order, not score order. R
 
 Keyphrases come back as lowercased lemmas joined with spaces, not as the surface text. A document about "Dependency Parses" yields the phrase `dependency parse`. Phrases with identical scores can also change relative order between runs, and a tie straddling the `max_phrases` cutoff can change which phrase is included, because the internal candidate map has no stable iteration order. Sort or filter on your side if you need a reproducible list.
 
+The `score` on a `Keyphrase` is an ordering key and nothing more. RAKE's is a sum of per-word ratios that are each at least 1, so a phrase of k words scores at least k; YAKE's is the reciprocal of a product of per-word scores, so it is unbounded above and carries no unit. Both therefore rise with phrase length, the two scales are unrelated to each other, and neither is comparable across documents or with another tool's. Do not surface either number to a reader as a strength without saying which method produced it. The [CLI guide](cli.md#reading-the-scores) works through what the ranking does and does not tell you, and [Methodology](../reference/methodology.md) carries the formulas.
+
 ## Analyze a directory
 
 `analyze_path` takes a file or a directory and returns one item per document, in path order:
@@ -185,33 +187,49 @@ Each metric declines to run below its own threshold, and a `None` records that d
 
 `analyze_markdown` also drops content before parsing. YAML frontmatter, fenced code blocks, and table rows beginning with `|` are removed, and a line reading `## References` or `*References*` ends decomposition for the rest of the document. Use `analyze` if your markdown uses that heading for something other than a trailing bibliography.
 
-## Compute the document-level metrics yourself
+## The document-level aggregates
 
-Methods do not cross the FFI boundary, only fields do. Rust's `Document` has `passive_ratio()`, `mean_sentence_length()`, `total_sentences()`, `total_words()`, and `sentence_length_std()` as methods, and none of them are reachable from Python. Compute what you need from the fields you already have. The shipped CLI does exactly this, and the same shape works in your code:
+Three of them arrive as fields, and `passive_ratio` is one of them. Read it, do not recompute it:
 
 ```python
+result = v.analyze("The report was filed. The committee met.")
+print(sorted(result.keys()))
+# ['nominalization_ratio', 'passive_ratio', 'sections', 'vocabulary_ttr']
+print(result["passive_ratio"])   # a float, or None when the metric stage did not run
+```
+
+Rust's `Document` carries `passive_ratio` twice: as the method that computes the ratio, and as the field the metric suite fills with what that method returned. The field exists exactly so the aggregate crosses the boundary as data instead of being re-derived once per language binding (ADR-0008), which is why it is in the dict above.
+
+Methods do not cross the FFI boundary, only fields do, so the four aggregates that exist only as methods are absent: `mean_sentence_length()`, `total_sentences()`, `total_words()`, and `sentence_length_std()`. Those four you compute from the fields you already have:
+
+```python
+from statistics import stdev
+
 sentences = [
     s
     for sec in result["sections"]
     for para in sec["paragraphs"]
     for s in para["sentences"]
 ]
+lengths = [sum(1 for t in s["tokens"] if not t["is_punct"]) for s in sentences]
 
-total = len(sentences)
-total_words = sum(
-    sum(1 for t in s["tokens"] if not t["is_punct"]) for s in sentences
-)
-passive = sum(
-    1
-    for s in sentences
-    if any(t["dep"] in ("nsubj:pass", "nsubjpass", "aux:pass") for t in s["tokens"])
-)
-
-passive_ratio = passive / total if total else 0.0
-mean_sentence_length = total_words / total if total else 0.0
+total_sentences = len(sentences)
+total_words = sum(lengths)
+mean_sentence_length = total_words / total_sentences if total_sentences else 0.0
+sentence_length_std = stdev(lengths) if len(lengths) > 1 else 0.0
 ```
 
-The passive test matches the Rust definition exactly: a sentence counts as passive when any of its tokens carries `nsubj:pass`, `nsubjpass`, or `aux:pass`. Keep the tuple in sync if you copy this into your own code.
+`statistics.stdev` is the sample standard deviation, which is the one `Document::sentence_length_std` computes; both return `0.0` below two sentences, the Rust method by definition and the line above by the guard.
+
+There is no per-sentence passive flag either, because `Sentence::is_passive()` is a method too. Its definition is one test over the tokens you already have: a sentence is passive when any of them carries `nsubj:pass`, `nsubjpass`, or `aux:pass`.
+
+```python
+passive = [
+    s
+    for s in sentences
+    if any(t["dep"] in ("nsubj:pass", "nsubjpass", "aux:pass") for t in s["tokens"])
+]
+```
 
 ## Exceptions
 

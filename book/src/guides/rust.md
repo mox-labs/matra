@@ -193,7 +193,31 @@ for outcome in engine.analyze(matra::Ingest::path("notes.txt")?) {
 
 `domain::Error` is `#[non_exhaustive]`, so a trailing `_ =>` (or a named catch-all binding, as above) is required even once you have named every variant that exists today. A future variant becomes a compile requirement for code that matches without a wildcard, and a routed catch-all for code that has one.
 
-The domain structs carry `#[non_exhaustive]` for the same reason. From outside the crate you cannot write `Token { .. }` or `Sentence { .. }` as struct literals. Use `Token::builder(id, text, lemma, pos, head, dep).build()` and `Sentence::new(text, tokens)`, which matters most when you are building fixtures for tests.
+The domain structs carry `#[non_exhaustive]` for the same reason. From outside the crate you cannot write `Token { .. }` or `Sentence { .. }` as struct literals. Use the constructors, which matters most when you are building fixtures for tests:
+
+```text
+Token::builder(id: usize, text: String, lemma: String, pos: String, head: usize, dep: String) -> TokenBuilder
+Sentence::new(text: String, tokens: Vec<Token>) -> Sentence
+```
+
+Every string argument is an owned `String`, not a `&str`, so a literal needs `.to_string()` on the way in. `TokenBuilder` takes the remaining CoNLL-U columns through `xpos`, `feats`, `deps` and `misc`, each also a `String`, plus `is_punct` for the derived flag, and `build()` hands back the `Token`:
+
+```rust
+use matra::domain::Token;
+
+let token = Token::builder(
+    1,
+    "approved".to_string(),
+    "approve".to_string(),
+    "VERB".to_string(),
+    0,
+    "root".to_string(),
+)
+.feats("Mood=Ind|Tense=Past".to_string())
+.build();
+
+assert_eq!(token.feat("Tense"), Some("Past"));
+```
 
 ## Analyze a directory
 

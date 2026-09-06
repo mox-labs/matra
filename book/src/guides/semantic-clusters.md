@@ -9,15 +9,17 @@ Feed a document and an embedding model, get connected components of sentences wh
 ```text
 SemanticClusters
   model_hash   identity of the model whose vector space produced the scores
-  threshold    the cutoff you supplied
+  threshold    the cutoff you supplied, narrowed to f32
   clusters     each: member sentence indices + the edges that cleared
 ```
+
+`threshold` is an `f32`, because that is the precision the whole similarity computation runs at. An `f64` you passed comes back as the nearest `f32`, so a Python caller who passed `0.85` reads `0.8500000238418579` out of the result, and the equality `result["threshold"] == 0.85` does not hold. Echo back the value you passed, or compare with a tolerance. Values that are exact in binary, `0.5` and `0.75` among them, round-trip unchanged, which is what makes the surprise intermittent.
 
 Three things the shape means, stated once here and again in the type docs:
 
 - **Co-membership is transitive, not pairwise.** Clusters are connected components, so sentence A and sentence C can share a cluster because both resemble B, without resembling each other. The edges travel in the result precisely so you can see which pairs actually cleared the bar. A missing edge is no claim, not a low score.
 - **Singletons are always excluded.** A sentence with no above-threshold edge appears in no cluster, so "not in any cluster" is a meaningful count.
-- **The threshold is yours.** Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus; the working value depends on the model, the domain, and the text length. Start around 0.85 with the reference model and calibrate on your own corpus.
+- **The threshold is yours, and it does not travel.** Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus; the working value depends on the model, the domain, and the text length. Start around 0.85 with the reference model on sentences, and calibrate on your own corpus. A cutoff calibrated on sentences is not the cutoff for whole documents: a document vector is the mean over far more tokens, so unrelated documents sit well above zero and near-duplicates need not reach the sentence band. Read the raw scores at the granularity you are clustering before you pick a number.
 
 ## The model
 
@@ -91,6 +93,39 @@ for cluster in result["clusters"]:
 ```
 
 Already hold embeddings? The module-level function clusters raw vectors: `semantic_clusters(vectors, 0.85, model.model_hash)`. And `model.embed(texts)` returns the raw vectors when you want to do something else with them.
+
+## Comparing whole documents
+
+`Matra.semantic_clusters` and `embed_and_cluster` both work over the sentences of one document. There is no cross-document primitive. Build one out of the two pieces above: embed each document as a single text, then cluster the resulting vectors.
+
+Pass a threshold of `-1.0` and every pair emits an edge, because a cosine is never below it. That turns the call into a way of reading the raw pairwise scores off `edges`, which is how you calibrate before choosing a real cutoff:
+
+```python
+from pathlib import Path
+
+from matra import Model2Vec, semantic_clusters
+
+model = Model2Vec.potion_base_8m()
+docs = sorted(Path("corpus").glob("*.md"))
+vectors = model.embed([p.read_text() for p in docs])
+
+pairs = semantic_clusters(vectors, -1.0, model.model_hash)
+for cluster in pairs["clusters"]:
+    for edge in cluster["edges"]:
+        print(f"{edge['score']:.4f}  {docs[edge['a']].name} <-> {docs[edge['b']].name}")
+```
+
+On three documents, two of them near-paraphrases of each other and one unrelated, that prints:
+
+```text
+0.3563  index-design.md <-> oncall-rotation.md
+0.3888  index-design.md <-> paging-policy.md
+0.7426  oncall-rotation.md <-> paging-policy.md
+```
+
+The separation is decisive, and the sentence-level starting point does not carry over: the same vectors at `0.85` produce zero clusters, so the near-duplicate pair would have been reported as unrelated. This is what "the threshold does not travel" costs when it is taken on faith. Calibrate on scores you have read.
+
+Two things this route does not change. The vectors still carry a `model_hash`, so a cross-document score is as attributable as a sentence one. And a zero-magnitude vector, which is what an empty document embeds to, still gets no edge at any threshold.
 
 ## Bounds and failure
 

@@ -1,6 +1,6 @@
 ---
 name: python
-summary: The Python API when the agent writes Python: every method, the Embedder protocol, analyze_path, and exception mapping.
+summary: The Python API when the agent writes Python: every method, the Embedder protocol, Model2Vec.embed for raw vectors, analyze_path, and exception mapping.
 ---
 
 # The Python API
