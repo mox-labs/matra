@@ -51,8 +51,12 @@ USAGE
 # is precisely the signal being looked for, and reads do not touch it.
 if stat -f '%N %z %m' . >/dev/null 2>&1; then
     STAT=(stat -f '%N %z %m')
+    # -L for the referent pass: size and mtime of what a link points at, with
+    # the name dropped because the link's own name is printed beside it.
+    STAT_L=(stat -Lf '%z %m')
 else
     STAT=(stat -c '%n %s %Y')
+    STAT_L=(stat -Lc '%s %Y')
 fi
 
 if [ -z "${HOME:-}" ]; then
@@ -124,6 +128,13 @@ new)
     printf 'export XDG_CONFIG_HOME=%q\n' "$sandbox_home/.config"
     printf 'export XDG_DATA_HOME=%q\n' "$sandbox_home/.local/share"
     printf 'export XDG_CACHE_HOME=%q\n' "$sandbox_home/.cache"
+    # CARGO_HOME as well. Moving HOME relocates cargo's default, but rustup
+    # and asdf setups routinely export an absolute one, and then a pass that
+    # builds or installs runs against the operator's real cargo home while
+    # the snapshot diffs clean, because ~/.cargo is not a matra location and
+    # never will be. The launcher the macOS pilot used moved it; this script
+    # replaced that launcher, so it moves it too.
+    printf 'export CARGO_HOME=%q\n' "$sandbox_home/.cargo"
     # Every MATRA_* the environment carries, not a hardcoded three, so a
     # variable added later cannot leak into a pass unnoticed.
     while IFS='=' read -r name _; do
@@ -191,21 +202,39 @@ snapshot)
         # was created, and -e alone calls it ABSENT in both snapshots of a
         # pair, which is a false all-clear of the same family.
         if [ -e "$p" ] || [ -L "$p" ]; then
-            # -H follows the command-line argument only. Without it, find
-            # stats a symlinked target and stops, so a leak written behind the
-            # link moved the target's mtime and not the link's and the
-            # fingerprint did not change. src/config.rs notes in its own
-            # comment that a config file under a home directory is routinely a
-            # symlink into a dotfiles repository, and a model cache pointed at
-            # another volume is the same shape. -H rather than -L, so there is
-            # no cycle risk from links met during the walk.
+            # Two passes, and the second is the one that took four rounds to
+            # get right. The walk uses -H, which follows the command-line
+            # argument only, so a symlinked target is descended without any
+            # cycle risk from links met further down. But stat then records
+            # every link inside the tree as the link: its own name, its own
+            # size (the length of the target path) and its own mtime. Writing
+            # through such a link moves nothing this listing carries.
             #
-            # The listing is buffered before it is printed: `find | sort` emits
+            # That is not a special case, it is every symlink in the tree, and
+            # matra's own layout puts the two shapes src/config.rs names one
+            # level inside a target rather than at it: the config file is
+            # `<config target>/config.toml` and the models live in
+            # `<data target>/models`. Fixing the target alone fixed a depth,
+            # not the defect. So the second pass records what each link points
+            # at, at any depth, and a dangling one is recorded as dangling
+            # rather than dropped.
+            #
+            # Both listings are buffered before printing: `find | sort` emits
             # partial output before failing, and a partial listing followed by
             # an UNREADABLE line reads as though the part before the failure
             # had been examined.
-            if listing="$(find -H "$p" -exec "${STAT[@]}" {} + | sort)"; then
+            listing=""
+            referents=""
+            if listing="$(find -H "$p" -exec "${STAT[@]}" {} + | sort)" &&
+               referents="$(find -H "$p" -type l -print | sort | while IFS= read -r link; do
+                   if target="$("${STAT_L[@]}" "$link" 2>/dev/null)"; then
+                       printf '%s -> %s\n' "$link" "$target"
+                   else
+                       printf '%s -> DANGLING\n' "$link"
+                   fi
+               done)"; then
                 [ -z "$listing" ] || printf '%s\n' "$listing"
+                [ -z "$referents" ] || printf '%s\n' "$referents"
             else
                 printf '%s UNREADABLE\n' "$p"
                 failed=1
