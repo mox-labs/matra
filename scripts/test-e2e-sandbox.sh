@@ -37,9 +37,21 @@ WORK="$(mktemp -d "${TMPDIR:-/tmp}/matra-e2e-test.XXXXXX")"
 # and on macOS $TMPDIR sits behind /var -> /private/var. Comparing an
 # exported path against an unresolved fixture path fails for the wrong reason.
 WORK="$(CDPATH='' cd -- "$WORK" && pwd -P)"
-# u+rwX first: several cases leave a directory unreadable or unwritable on
-# purpose, and a cleanup that cannot descend leaves the scratch tree behind.
-trap 'chmod -R u+rwX "$WORK" 2>/dev/null; rm -rf "$WORK"' EXIT
+# The cleanup refuses anything that is not the scratch tree this run created.
+# It is a recursive delete in a trap, so it checks rather than trusts: a name
+# this script made with mktemp, still a directory, and not the root.
+cleanup() {
+    case "$WORK" in
+        */matra-e2e-test.??????) ;;
+        *) echo "refusing to clean an unexpected path: ${WORK:-empty}" >&2; return ;;
+    esac
+    [ -d "$WORK" ] || return
+    # u+rwX first: several cases leave a directory unreadable or unwritable on
+    # purpose, and a cleanup that cannot descend leaves the scratch tree behind.
+    chmod -R u+rwX "$WORK" 2>/dev/null || true
+    rm -rf "$WORK"
+}
+trap cleanup EXIT
 
 passed=0
 failed=0
