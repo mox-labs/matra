@@ -246,10 +246,10 @@ __all__ = [
     "Reporting",
     "RootAdverbial",
     "ScoredSentence",
+    "Section",
     "SemanticCluster",
     "SemanticClusters",
     "SemanticEdge",
-    "Section",
     "Sentence",
     "Token",
 ]
