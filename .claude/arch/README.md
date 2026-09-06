@@ -21,6 +21,6 @@ That is the one thing the book cannot carry. The book describes what matra is; a
 
 Five files here duplicated the pages above: `architecture.md`, `ports.md`, `adapters.md`, `domain-model.md`, `boundary-rules.md`. Duplication is not free. Nothing under `.claude/` is gated, so the copies drifted silently and one of them still carried the project's previous name three months after the rename.
 
-The book is gated by `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quotations. Architecture prose that lives there gets checked. Architecture prose that lives here does not.
+The book is gated by `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quotations, and `book/src/llms.txt` current with `SUMMARY.md`. Architecture prose that lives there gets checked. Architecture prose that lives here does not.
 
 So the rule is: if a fact about the architecture is worth writing down, it goes in the book. This directory holds only what the book has no place for.

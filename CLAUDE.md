@@ -96,7 +96,7 @@ cargo test                                     # unit + doctests
 cargo test --features cli                      # + the binary's own tests
 cargo test --test integration -- --ignored     # integration (needs model)
 just conformance                               # every crust against spec/tests/
-just docs-floor                                # the five docsite gates
+just docs-floor                                # the six docsite gates
 maturin develop                                # Python local install
 maturin build                                  # Python wheel
 ```
@@ -130,7 +130,7 @@ Features are additive: `udpipe` (default), `model2vec`, `python`, `cli`. **Do no
 
 Content lives in `book/src/`. Every page describes what ships today; `book/src/roadmap.md` is the only page describing what does not, and `book/src/plans/` holds the plan for anything whose trigger has fired.
 
-Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/` (plans exempt, since a plan names types that do not exist yet), every link resolving, a clean build, and no em dashes outside quoted material.
+Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/` (plans exempt, since a plan names types that do not exist yet), every link resolving, a clean build, no em dashes outside quoted material, and `book/src/llms.txt` current with `SUMMARY.md` (regenerate with `scripts/gen-llms-txt.sh`).
 
 Live preview: `cd book && mdbook serve --port 3000`. `create-missing = false`, so a `SUMMARY.md` entry without a file on disk fails the build loudly rather than creating a stub.
 

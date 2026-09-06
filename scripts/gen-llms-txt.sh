@@ -61,8 +61,9 @@ fi
 #
 # A sentence ends at a period, question mark, or exclamation followed by a
 # space and a capital letter, or by the end of the line. The lookbehinds
-# exempt an abbreviation and a version number, so "e.g. Foo" and "0.1.0" do
-# not end a sentence early. A sentence shorter than the floor takes the next
+# exempt a capital-letter abbreviation ("U.S. Navy"), a version number
+# ("0.1.0"), and "e.g." and "i.e.", so none of those ends a sentence early.
+# Other lowercase abbreviations are not exempt. A sentence shorter than the floor takes the next
 # one with it, because "Run `matra --skill`." names a page without describing
 # it.
 first_sentence() {
@@ -94,7 +95,7 @@ first_sentence() {
         my $out = "";
         my $rest = $line;
         while (length($out) < 40 && length($rest)) {
-            if ($rest =~ /^(.*?(?<![A-Z])(?<!\d)[.!?])(?:(\s+[A-Z(`"].*)|$)/) {
+            if ($rest =~ /^(.*?(?<![A-Z])(?<!\d)(?<!\be\.g)(?<!\bi\.e)[.!?])(?:(\s+[A-Z(`"].*)|$)/) {
                 $out .= ($out eq "" ? "" : " ") . $1;
                 $rest = defined($2) ? $2 : "";
                 $rest =~ s/^\s+//;
