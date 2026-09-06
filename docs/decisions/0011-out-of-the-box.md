@@ -93,24 +93,32 @@ implementation with two launchers.
 at `$XDG_CONFIG_HOME/matra/config.toml`, defaulting to
 `~/.config/matra/config.toml`; data at `$XDG_DATA_HOME/matra`,
 defaulting to `~/.local/share/matra`, with models under `models/`.
-The same layout on macOS: this is what developer CLIs do on that
-platform, and matra is driven from terminals and agents, not from
-Finder. `~/.matra/models` stays readable as a fallback so an existing
-cache keeps working. Environment overrides are `MATRA_CONFIG` (the
-file) and `MATRA_DATA_DIR` (the data root); a model directory passed
-explicitly wins over both.
+The same layout on macOS: uv documents that it "follows the XDG
+conventions on Linux and macOS" and gh resolves `$XDG_CONFIG_HOME/gh`
+before `~/.config/gh` on both; matra is driven from terminals and
+agents, not from Finder. `~/.matra/models` stays readable as a
+fallback so an existing cache keeps working. Environment overrides
+name the thing they override, as `UV_CONFIG_FILE`, `UV_CACHE_DIR`, and
+`OLLAMA_MODELS` do: `MATRA_CONFIG_FILE` (the file), `MATRA_DATA_DIR`
+(the data root), and the existing `MATRA_MODEL_DIR` (the UDPipe model
+directory, already honored by the Rust CLI). A directory passed
+explicitly wins over all three.
 
 **Defaults ship inside the crate.** `config/default.toml` is embedded
 with `include_str!` and parsed at resolution; a user file overrides it
 key by key. `Config::resolve()` records the source of every value so
 `matra config show` can print where each came from.
 
-**Constructors that consult the resolver are additive.** Existing
-signatures do not change (0.1.0 froze them). New forms:
-`Engine::from_config(&Config)`, `Engine::with_defaults()`,
-`Udpipe::english_default()`, `Model2Vec::potion_base_8m_default()`, and
-in Python `Matra.english(model_dir=None)` and
-`Model2Vec.potion_base_8m(dir=None)`.
+**Constructors that consult the resolver are additive, and share one
+name.** Existing signatures do not change (0.1.0 froze them). Every
+adapter gains `from_config(&Config)`: `Udpipe::from_config` loads or
+downloads the pinned English model into the resolved directory,
+`Model2Vec::from_config` does the same for the pinned reference
+embedding model, and `Engine::from_config` assembles the standard
+pipeline. `Engine::with_defaults()` is the one-liner
+(`Config::resolve()` then `from_config`), the only place a second name
+is worth its cost. In Python the argument goes optional:
+`Matra.english(model_dir=None)`, `Model2Vec.potion_base_8m(dir=None)`.
 
 **Pinned downloads are the same discipline for every model.** ADR-0010
 decision 6 is amended: the library performs no *unpinned* network
@@ -120,6 +128,15 @@ discipline already in the tree (`src/nlp/udpipe.rs:60-100`), and the
 reference embedding model gets the same treatment. Model identity
 (the three-file digest) is unchanged; what changes is that the library
 can fetch the pinned artifact when asked.
+
+**The launcher shape is the one maturin recommends.** ruff and uv
+ship their Rust CLI to `uvx` users with `bindings = "bin"`, which
+packages the binary as the wheel's script. matra also ships a Python
+extension, and maturin's own guidance for that case is to expose a CLI
+function through the library and use a Python entry point rather than
+double the wheel with both. So the Python launcher is not a compromise;
+it is the documented shape for a crate that is both a library and a
+tool.
 
 **One CLI, two launchers.** The CLI moves into the library as
 `src/cli/` behind the `cli` feature, with one entry point
@@ -172,3 +189,7 @@ than growing this file's schema.
   extend
 - [ADR-0010](0010-embeddings-adapter.md): decision 6, amended here
 - `book/src/plans/i10-foundations.md`: the execution plan
+- [Conventions survey, 2026-09-05](../surveys/2026-09-05-conventions.md):
+  the exemplar evidence behind the path, naming, and launcher decisions
+- maturin, "Bindings": https://www.maturin.rs/bindings
+- uv, "Storage": https://docs.astral.sh/uv/reference/storage/
