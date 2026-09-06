@@ -45,6 +45,12 @@ else
     STAT=(stat -c '%n %s %Y')
 fi
 
+if [ -z "${HOME:-}" ]; then
+    echo "FAIL: HOME is unset, and every location this script reasons about" \
+         "is resolved relative to it. Set HOME and try again." >&2
+    exit 6
+fi
+
 case "${1:-}" in
 new)
     dir="${2:-$(mktemp -d "${TMPDIR:-/tmp}/matra-e2e.XXXXXX")}"
@@ -53,6 +59,19 @@ new)
     # actually landed rather than wherever the tester happened to be.
     dir="$(cd "$dir" && pwd)"
     mkdir -p "$dir/home/.config" "$dir/home/.local/share"
+    # The marker is written BEFORE anything reaches stdout, and this ordering is
+    # load-bearing. The documented entry is `eval "$(... new)"`, whose exit
+    # status is the status of the exports it evaluates, not of this script. So
+    # if the marker write failed after the exports had already been printed,
+    # HOME moved into a sandbox that snapshot could not recognise, and the next
+    # snapshot returned a clean all-clear for the wrong tree. Failing here means
+    # stdout is empty, eval is a no-op, and HOME never moves.
+    if ! : > "$dir/home/.e2e-sandbox"; then
+        echo "FAIL: cannot write the sandbox marker at $dir/home/.e2e-sandbox." \
+             "Refusing to print exports, because a sandbox snapshot cannot" \
+             "recognise is worse than no sandbox." >&2
+        exit 5
+    fi
     # HOME moves too. The legacy model cache resolves from $HOME, so setting
     # the XDG variables alone leaves the pass warm and proves nothing.
     printf 'export HOME=%q\n' "$dir/home"
@@ -64,10 +83,6 @@ new)
     while IFS='=' read -r name _; do
         case "$name" in MATRA_*) printf 'unset %q\n' "$name" ;; esac
     done < <(env)
-    # A marker inside the sandbox home as well as the variable. The variable
-    # can fail to be inherited; $HOME is the thing that moved, so a marker
-    # living in it travels with the sandbox no matter how it was entered.
-    : > "$dir/home/.e2e-sandbox"
     printf 'export E2E_SANDBOX_ROOT=%q\n' "$dir"
     printf '# sandbox at %s\n' "$dir" >&2
     ;;
@@ -80,13 +95,26 @@ snapshot)
              "the wrong tree and report a false all-clear." >&2
         exit 3
     fi
-    # matra resolves XDG_CONFIG_HOME and XDG_DATA_HOME ahead of $HOME, so
-    # deriving these from $HOME alone missed a real config file whenever the
-    # operator's XDG variables point outside home. That is the same false
-    # all-clear the guard above exists to stop, reachable without a sandbox.
-    for p in "${XDG_CONFIG_HOME:-$HOME/.config}/matra" \
-             "${XDG_DATA_HOME:-$HOME/.local/share}/matra" \
-             "$HOME/.matra"; do
+    # matra resolves each location through three tiers, MATRA_* over XDG over
+    # HOME (see the resolvers in src/config.rs). This has now been got wrong
+    # twice by following that precedence and stopping one tier short, each time
+    # producing exactly the false all-clear the guard above exists to prevent.
+    #
+    # So do not follow the precedence. Fingerprint the UNION of every location
+    # any tier could name. Precedence answers "which one would matra use", and
+    # the question here is the different and strictly wider one: "is there
+    # anywhere matra might have written". A union cannot be wrong by missing a
+    # tier, only by naming a directory that was never going to be touched, and
+    # a spurious ABSENT line costs nothing.
+    targets=()
+    [ -n "${MATRA_CONFIG_FILE:-}" ] && targets+=("$MATRA_CONFIG_FILE")
+    [ -n "${MATRA_DATA_DIR:-}" ] && targets+=("$MATRA_DATA_DIR")
+    [ -n "${MATRA_MODEL_DIR:-}" ] && targets+=("$MATRA_MODEL_DIR")
+    [ -n "${XDG_CONFIG_HOME:-}" ] && targets+=("$XDG_CONFIG_HOME/matra")
+    [ -n "${XDG_DATA_HOME:-}" ] && targets+=("$XDG_DATA_HOME/matra")
+    targets+=("$HOME/.config/matra" "$HOME/.local/share/matra" "$HOME/.matra")
+
+    for p in "${targets[@]}"; do
         if [ -e "$p" ]; then
             # Errors are not suppressed. An unreadable subdirectory used to
             # abort the loop with the reason sent to /dev/null, leaving a
