@@ -8,7 +8,7 @@ NLP library. Text in, structured analysis out.
 
 UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.
 
-If you are an agent, run `uvx matra --skill`.
+If you are an agent, run `uvx 'matra>=0.2' --skill`, which needs nothing installed, or `matra --skill` if you already have the binary. Either way the program prints [`skills/matra/SKILL.md`](https://github.com/mox-labs/matra/blob/main/skills/matra/SKILL.md) out of its own binary, so the text always matches the version you are running. Keep the version floor: `--skill` arrived in 0.2.0, and a bare `uvx matra` takes whatever release is newest, which before 0.2.0 was a different command line that does not have the flag.
 
 A pure, performant NLP library, built to be adaptable, composable, and extensible. Hex architecture, domain has zero internal dependencies, public enums and structs with public fields are `#[non_exhaustive]`. The library is small and stable; the interpretation lives in your code.
 
@@ -17,7 +17,7 @@ A pure, performant NLP library, built to be adaptable, composable, and extensibl
 Nothing installed, nothing configured, no flags. Each of these resolves the model directory and downloads the English model (~16MB) on first use.
 
 ```bash
-uvx matra analyze essay.md
+uvx 'matra>=0.2' analyze essay.md
 ```
 
 ```python
@@ -29,6 +29,8 @@ Matra.english().analyze("The report was filed without comment.")
 ```rust,ignore
 let engine = matra::Engine::with_defaults()?;
 ```
+
+The `uvx` line carries a version floor for the same reason the `--skill` line above does, and like that one it resolves once 0.2.0 is on PyPI. A bare `uvx matra` takes the newest release, and 0.1.0's `analyze` is a separate Python implementation and not this one missing a flag: `--json` prints a bare document with no envelope, the table is a different renderer, and the model cache is hardcoded to `~/.matra/models`. That line does not fail, it succeeds and hands you something else.
 
 The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file names which models to use (`[models] udpipe`, `embedding`), not where they live. Every constructor takes the directory explicitly when you want it somewhere specific, and `matra config show` prints every resolved value and where it came from.
 

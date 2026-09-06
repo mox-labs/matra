@@ -1,6 +1,6 @@
 ---
 name: semantic
-summary: Similarity clusters over sentences, the threshold you must choose, and how the embedding model is provisioned.
+summary: Similarity clusters over the sentences of one document, the threshold you must choose and why it does not travel, how to compare whole documents, and how the embedding model is provisioned.
 ---
 
 # Semantic clusters
@@ -22,9 +22,11 @@ Feed a document and an embedding model, get connected components of sentences wh
 ```text
 SemanticClusters
   model_hash   identity of the model whose vector space produced the scores
-  threshold    the cutoff you supplied
+  threshold    the cutoff you supplied, narrowed to f32
   clusters     each: member sentence indices, plus the edges that cleared
 ```
+
+`threshold` is an `f32`, the precision the similarity computation runs at, so a Python caller who passes `0.85` reads `0.8500000238418579` back, and the equality `result["threshold"] == 0.85` does not hold. Report the number the caller asked for, not the value the field hands back. Values exact in binary, such as `0.5` and `0.75`, round-trip unchanged, which is what makes the surprise intermittent.
 
 | Type | Fields |
 |---|---|
@@ -40,7 +42,7 @@ Members are positions in the sentence list you passed, so a result re-anchors ag
 
 **Singletons are excluded by construction.** A sentence with no above-threshold edge appears in no cluster, so "in no cluster" is a meaningful count rather than an artifact.
 
-**The threshold is yours.** The library knows no universal cutoff. Published values for paraphrase detection span 0.67 to 0.9 with no consensus, and the working value depends on the model, the domain, and sentence length. Raising it admits fewer edges: smaller clusters, more of them, more sentences in none. Lowering it merges components through chains. Start at 0.85 with the reference model and calibrate on the corpus in front of you.
+**The threshold is yours, and it does not travel.** The library knows no universal cutoff. Published values for paraphrase detection span 0.67 to 0.9 with no consensus, and the working value depends on the model, the domain, and text length. Raising it admits fewer edges: smaller clusters, more of them, more sentences in none. Lowering it merges components through chains. Start at 0.85 with the reference model **on sentences**, and calibrate on the corpus in front of you. That number is calibrated for sentences and is wrong at any other granularity: see "Comparing whole documents" below, where a near-duplicate pair of documents scores below 0.85 and that cutoff would have called them unrelated.
 
 ## The model and how it arrives
 
@@ -76,4 +78,47 @@ Contract violations are `invalid_input`, which means the call site is wrong and 
 
 From Rust, `embed_and_cluster(document, embedder, threshold)` embeds a document's sentences and clusters them, and `extraction::semantic_clusters(embeddings, threshold, model_hash)` clusters vectors you already hold. The first needs no feature flag with your own `Embedder` implementation; only the shipped adapter sits behind the `model2vec` feature.
 
-From Python, `Matra.semantic_clusters(text, threshold, model)` takes a `Model2Vec` or any object with `embed` and `identity`, and the module-level `semantic_clusters(embeddings, threshold, model_hash)` is the vectors-in twin. See `python` for the signatures.
+That feature is not in the default set and `cli` does not pull it in, so check before promising a user this works. A Rust caller needs `cargo add matra --features model2vec`, and a binary installed with `cargo install matra --features cli` reports `features: udpipe cli` with no embedding adapter compiled in. The published Python wheel is built with it, so from Python `Model2Vec` is always there. `--version` prints the feature list of the binary in front of you on its second line.
+
+```console
+$ matra --version
+```
+
+From Python, `Matra.semantic_clusters(text, threshold, model)` takes a `Model2Vec` or any object with `embed` and `identity`, and the module-level `semantic_clusters(embeddings, threshold, model_hash)` is the vectors-in twin. `Model2Vec.embed(texts)` is where the vectors for that twin come from: it returns one vector per text, in order, each of `model.dimensions` length. See `python` for the signatures.
+
+## Comparing whole documents
+
+**Every clustering call above is over the sentences of one document. There is no cross-document primitive, and matra has no per-document redundancy number at all.** Build the comparison out of the two pieces you already have: embed each document as one text with `Model2Vec.embed`, then cluster those vectors with the module-level `semantic_clusters`.
+
+**The embedder caps every text at 512 tokens, so a whole-document vector is a vector of roughly the document's first 512 tokens.** Truncation happens twice, on bytes before tokenizing and on the token ids after, and nothing past the cap reaches the mean. Tokens are not words, and the ratio depends on what the file holds, so name the basis with any figure. Swept over the 27 markdown pages of matra's own book by the recipe below, which embeds the raw file text, 512 tokens ran out between 141 and 368 words; swept over the same pages with the markup stripped first, it ran out between 231 and 351. Diagrams, code fences and tables pull the low end down, and a route that reads files off disk gets the low end. Two long texts agreeing for as few as their first 141 words can already embed to byte-identical vectors, so documents with a shared boilerplate opening report as near-duplicates on the opening alone, and paraphrases that diverge early are never compared on the rest. Say which part of the document a cross-document score covers. When the tail is the content, chunk, and size chunks from a token count: a word count is not a safe proxy on raw markup, where a 54-word window inside an inline SVG block already filled the cap. The 2,000 cap also still applies, and on this route it counts documents rather than sentences.
+
+Pass a threshold of `-1.0` and every pair emits an edge, because a cosine is never below it. That is the sanctioned way to read raw pairwise scores, and it is what calibration looks like: read the scores first, choose the cutoff second.
+
+```python
+from pathlib import Path
+
+from matra import Model2Vec, semantic_clusters
+
+model = Model2Vec.potion_base_8m()
+docs = [
+    Path("book/src/guides/cli.md"),
+    Path("book/src/guides/rust.md"),
+    Path("book/src/roadmap.md"),
+]
+vectors = model.embed([p.read_text() for p in docs])
+
+pairs = semantic_clusters(vectors, -1.0, model.model_hash)
+for cluster in pairs["clusters"]:
+    for edge in cluster["edges"]:
+        print(f"{edge['score']:.4f}  {docs[edge['a']].name} <-> {docs[edge['b']].name}")
+```
+
+Three pages of matra's own book, run from a checkout: two covering the same ground for different surfaces, and one unrelated. Reproducible, unlike a corpus nobody else has.
+
+```text
+0.8334  cli.md <-> rust.md
+0.5917  cli.md <-> roadmap.md
+0.6035  rust.md <-> roadmap.md
+```
+
+The pair separates decisively, and the shipped 0.85 does not carry over: the same vectors at `0.85` yield zero clusters, so an agent that took the starting value on faith would have reported the near-duplicates as unrelated. Document vectors are means over far more tokens than sentence vectors, so the whole scale shifts: unrelated documents sit well above zero, and near-duplicates need not reach the sentence band. Report the raw edge scores and the `model_hash`, and say which granularity produced them.

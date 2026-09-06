@@ -26,7 +26,7 @@ Do not reach for it to score quality, detect authorship, or judge an argument. I
 
 ## Install and first run
 
-The Python package ships the command, so `uvx matra --version` runs it with nothing installed and nothing configured. `cargo install matra --features cli` installs the Rust binary instead, and `uv add matra` puts the same command on a project.
+The Python package ships the command, so `uvx 'matra>=0.2' --version` runs it with nothing installed and nothing configured. Pin the floor: a bare `uvx matra` resolves to whatever release is newest, and the command line before 0.2.0 was a different program without `--skill`. The pinned line resolves once 0.2.0 is on PyPI; before that, run the `matra` already in hand. `cargo install matra --features cli` installs the Rust binary instead, and `uv add matra` puts the same command on a project.
 
 ```console
 $ matra --version
@@ -48,7 +48,7 @@ Files land in XDG locations: the config at `$XDG_CONFIG_HOME/matra/config.toml` 
 $ matra analyze notes.md --json
 ```
 
-`summarize` ranks the sentences and returns the top N, re-sorted into document order. `result` is a list of `ScoredSentence`: `text`, `score`, `position`. `-n` defaults to the configured `summarize.n`, `3` as shipped; `--method` takes `tfidf` (the default) or `textrank`.
+`summarize` ranks the sentences and returns the top N, re-sorted into document order. `result` is a list of `ScoredSentence`: `text`, `score`, `position`. `-n` defaults to the configured `summarize.n`, `3` as shipped; `--method` takes `tfidf` (the default) or `textrank`. The human table rounds each score to three decimals, so scores that differ in the fourth print identically and the ranker can look broken when it is not; read `--json` when the ordering matters.
 
 <!-- needs: model -->
 
@@ -90,7 +90,7 @@ Branch on the code, not on the text. Exit 1 is not an error, and treating it as 
 
 ## Reading the numbers
 
-A slot is null when the metric stage has not run, and null where the paragraph did not meet the metric's threshold. Null is not zero. Formulas and citations are in `metrics`.
+Every metric row below names a slot on the result. A slot is null when the metric stage has not run, and null where the paragraph did not meet the metric's threshold. Null is not zero. The last row is not a slot: `score` is the ordering number on a `Keyphrase`, never null and never a measurement of the text. Formulas and citations are in `metrics`.
 
 | Field | Measures | Does not mean |
 |---|---|---|
@@ -100,6 +100,7 @@ A slot is null when the metric stage has not run, and null where the paragraph d
 | `vocabulary_ttr` | Distinct lemmas over total lemmas, per document | Richness. It falls as documents grow, so two documents of different lengths are not comparable on it |
 | `nominalization_ratio` | Nouns ending in six suffixes over all words | A noun count. Plurals are missed, false positives are counted, and the denominator is every word, not every noun |
 | `passive_ratio` | Sentences carrying a passive relation over all sentences | Bad writing. It counts sentences, not clauses, so three passives in one sentence count once |
+| `score` on `Keyphrase` | Rank order among phrases, within one document, under one method | A magnitude. RAKE sums per-word ratios that are each at least 1, so a phrase of k words scores at least k, a floor per length and not an order across lengths; YAKE returns a reciprocal, unbounded above with no unit. The two scales are unrelated, and the top phrase is routinely not what the document is about |
 
 ## Limits and errors
 
@@ -130,6 +131,6 @@ $ matra --skill -r json
 | `json` | The envelope and the `Document` JSON, field by field, including the six `Sentence` structural fields |
 | `structure` | Tokens, dependency arcs, the tree, and what each structural field reports |
 | `metrics` | Each measure's formula, its applicability condition, and its limitation |
-| `semantic` | Clusters, the threshold, model provisioning, and what `model_hash` is for |
-| `python` | The Python API, the `Embedder` protocol, `analyze_path`, and exception mapping |
+| `semantic` | Clusters, the threshold and why it does not travel, comparing whole documents, model provisioning, and what `model_hash` is for |
+| `python` | The Python API, the `Embedder` protocol, `Model2Vec.embed` for raw vectors, `analyze_path`, and exception mapping |
 | `errors` | Every failure kind, its Python exception, and what to do about it |

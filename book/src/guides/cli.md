@@ -7,10 +7,12 @@
 Nothing installed, nothing configured:
 
 ```bash
-uvx matra analyze essay.md
+uvx 'matra>=0.2' analyze essay.md
 ```
 
-The command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took.
+The version floor is load-bearing. A bare `uvx matra` takes whatever release is newest, and 0.1.0's `analyze` is a separate Python implementation rather than this one missing a flag: `--json` prints a bare document with no envelope, the human table is a different renderer, and the model cache lands in `~/.matra/models` instead of the resolved model directory. It does not fail, it succeeds and gives you something else, so pin it. The pinned line resolves once 0.2.0 is on PyPI.
+
+With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. `cargo install matra --features cli` reports `features: udpipe cli`, while the published wheel reports `features: udpipe model2vec python cli`, so the embedding adapter is present on the Python route and absent from a `--features cli` build. `matra --version` prints the list of the binary in front of you on its second line.
 
 ```bash
 # Rust binary, no Python involved
@@ -85,6 +87,8 @@ TF-IDF scores each sentence by term frequency against the document. TextRank sco
 
 Both methods select their top-N sentences by score internally, then return that selection re-sorted into document order, not score order. The `score` field tells you how each sentence ranked; the list order tells you where each sentence sits in the source text.
 
+The human table prints each score at three decimals. Two sentences whose scores differ in the fourth therefore print the same number, and a summary of three sentences can arrive looking as though the ranker scored them identically when it did not. `--json` carries the full float, so reach for it whenever the ordering has to be defended rather than read.
+
 ```bash
 matra summarize essay.md --json | jq '.result[0]'
 # {"text": "...", "score": 0.312, "position": 4}
@@ -109,6 +113,12 @@ RAKE splits on stop words and scores the remaining word runs by a co-occurrence 
 Unlike `summarize`, `keyphrases` output stays in score order, highest first. `Keyphrase` has no position field to sort back into, because a phrase is not tied to one location the way a sentence is.
 
 Phrases are printed as lowercased lemmas, not as the surface text of the document. "Dependency Parses" appears as `dependency parse`. Phrases with equal scores can swap order between runs, and a tie at the `-n` boundary can change which phrase makes the list, so do not diff raw keyphrase output across runs without sorting it first.
+
+#### Reading the scores
+
+Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word `lexical density` scores `5.667` and the three-word `model file name` scores `5.467`. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.
+
+Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE ranks `dense similarity matrix` first at `9.000` and scores the bare `error` at `1.154`, while YAKE's first is `serde move copy` at `1390.768`. What is near the bottom there is the score, not the position: `1.154` sits just above `1.000`, the floor any single word scores, and 151 of the 342 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
 
 ```bash
 matra keyphrases essay.md --json | jq -S '.result[0:3]'
@@ -136,6 +146,12 @@ keyphrases.algorithm = "rake" # default
 
 The origin is `default` for a value compiled into the crate, a path for one read from your config file, `environment variable ...` for one an environment variable set, and `command line` for one a flag set. With `--json`, each key carries its value, the rung, and what the rung pointed at.
 
+What that listing does not carry is the config file path. Every key whose origin is `default` names no file, so a run with no config file on disk prints no path at all, and "where is my config" is not a question the human table answers. Two commands do answer it. `matra config show --json` puts the resolved path in the envelope's `input` field, whether or not the file exists; `matra config init` prints the path it wrote to.
+
+```bash
+matra config show --json | jq -r .input
+```
+
 `matra config init` writes the shipped defaults to the resolved config path and prints where it wrote them. It creates the parent directories, writes through a temporary file in the same directory so a reader never sees a half-written config, and refuses to overwrite an existing file unless you pass `--force`.
 
 ```bash
@@ -154,7 +170,7 @@ matra completions bash > /etc/bash_completion.d/matra
 
 ## For an agent
 
-`matra --skill` prints the agent skill: what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not mean, the limits, and the errors. It is the whole hand-off. If you are pointing an agent at matra, `uvx matra --skill` is the line to give it.
+`matra --skill` prints the agent skill: what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not mean, the limits, and the errors. It is the whole hand-off. If you are pointing an agent at matra and it has nothing installed, `uvx 'matra>=0.2' --skill` is the line to give it. Pin the version: `--skill` arrived in 0.2.0, and a bare `uvx matra` takes whatever release is newest, which before 0.2.0 was a different command line that does not have the flag.
 
 ```bash
 matra --skill                 # the skill itself
