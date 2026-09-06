@@ -12,10 +12,9 @@ matra reports the structure of text and measurements over it. It parses a docume
 ## End to end
 
 ```python
-from pathlib import Path
 from matra import Matra
 
-v = Matra.english(str(Path.home() / ".matra" / "models"))
+v = Matra.english()
 text = (
     "The committee approved the proposal without debate. "
     "Three amendments were submitted by the working group."
@@ -30,11 +29,9 @@ The same analysis from Rust, and from the command line:
 
 ```rust
 use matra::domain::Format;
-use matra::nlp::udpipe::Udpipe;
 use matra::{Engine, Ingest};
 
-let nlp = Udpipe::english("/tmp/matra-models")?;
-let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
+let engine = Engine::with_defaults()?;
 
 let text = "The committee approved the proposal without debate. \
             Three amendments were submitted by the working group.";

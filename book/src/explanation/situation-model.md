@@ -37,7 +37,7 @@ Two properties make it usable that far downstream. Every value is serde-serializ
 
 ## What it needs from the environment
 
-**Nothing has to be set up first.** `Engine::with_defaults()` in Rust, `Matra.english()` in Python, and any `matra` command resolve where models live and fetch what is missing. The directory comes from `MATRA_MODEL_DIR`, else your config file, else the `models` subdirectory of `$XDG_DATA_HOME/matra`. [Programming model](programming-model.md#configuration) has the resolution order.
+**Nothing has to be set up first.** `Engine::with_defaults()` in Rust, `Matra.english()` in Python, and any `matra` command resolve where models live and fetch what is missing. The directory comes from an explicit argument if you pass one, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`), with a non-empty `~/.matra/models` from an older install used when the new location does not exist yet. The config file names which models to use, not where they live. [Programming model](programming-model.md#configuration) has the resolution order.
 
 **Models are fetched, not bundled, and only against a pinned digest.** The UDPipe English model arrives on the first call to `Udpipe::english`, `Udpipe::from_config` or `Matra.english`; the reference embedding model arrives on the first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config`. Both fetch from URLs written in the source and load nothing whose SHA-256 does not equal a constant written beside them. A file that fails verification is removed and fetched once more, and a second failure raises. Exactly one artifact set can arrive this way for each.
 
