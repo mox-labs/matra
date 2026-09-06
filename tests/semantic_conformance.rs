@@ -37,9 +37,15 @@ fn semantic_clusters_matches_the_shape_fixture() {
 /// Reference-model conformance (i9 M6): exact-vector and exact-cluster
 /// assertions against potion-base-8M, pinned by artifact digest in
 /// `spec/tests/semantic/reference-model.json`. Ignored because the model
-/// (~30 MB) is caller-supplied, not committed; run with the model at
-/// `~/.matra/models/potion-base-8M` (or `MATRA_MODEL2VEC_DIR`) via
+/// (~30 MB) is fetched on first run and the suite must not need a
+/// network by default; run it with
 /// `cargo test --features model2vec --test semantic_conformance -- --ignored`.
+///
+/// Since i10 M4 the model arrives through `Model2Vec::potion_base_8m`,
+/// which downloads it into the resolved directory when it is absent and
+/// verifies the same digest this fixture asserts. `MATRA_MODEL2VEC_DIR`
+/// still names the directory when set; without it the directory is the
+/// one `Config` resolves.
 #[cfg(feature = "model2vec")]
 mod reference_model {
     use std::fs;
@@ -69,24 +75,29 @@ mod reference_model {
         clusters: Vec<SemanticCluster>,
     }
 
-    fn model_dir() -> PathBuf {
-        std::env::var_os("MATRA_MODEL2VEC_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                PathBuf::from(std::env::var_os("HOME").expect("HOME"))
-                    .join(".matra/models/potion-base-8M")
-            })
+    /// The pinned model, from `MATRA_MODEL2VEC_DIR` when it is set and
+    /// from the resolved configuration otherwise. Both go through the
+    /// pinned-download constructor, so a first run provisions and every
+    /// later one loads from disk.
+    fn reference_model() -> Model2Vec {
+        match std::env::var_os("MATRA_MODEL2VEC_DIR") {
+            Some(dir) => Model2Vec::potion_base_8m(PathBuf::from(dir)).expect("model"),
+            None => {
+                let cfg = matra::config::Config::resolve().expect("config");
+                Model2Vec::from_config(&cfg).expect("model")
+            }
+        }
     }
 
     #[test]
-    #[ignore = "requires the potion-base-8M model"]
+    #[ignore = "downloads the potion-base-8M model on first run"]
     fn reference_model_vectors_and_clusters_are_exact() {
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("spec/tests/semantic/reference-model.json");
         let fixture: RefFixture =
             serde_json::from_str(&fs::read_to_string(&path).expect("fixture")).expect("parse");
 
-        let m = Model2Vec::from_dir(model_dir()).expect("model");
+        let m = reference_model();
         assert_eq!(
             m.model_hash(),
             fixture.model.artifact_hash,

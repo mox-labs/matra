@@ -14,12 +14,16 @@
 
 use std::fs;
 use std::path::Path;
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::PathBuf;
 
 use safetensors::SafeTensors;
 use safetensors::tensor::Dtype;
 use sha2::{Digest, Sha256};
 use tokenizers::Tokenizer;
 
+#[cfg(not(target_arch = "wasm32"))]
+use crate::config::Config;
 use crate::domain::{self, Embedding, Error};
 use crate::embed::Embedder;
 
@@ -27,6 +31,47 @@ use crate::embed::Embedder;
 /// after unknown-token removal; also drives the pre-tokenization
 /// character truncation (`max_tokens * median_token_length` bytes).
 const DEFAULT_MAX_TOKENS: usize = 512;
+
+/// The three artifact filenames, in the order the identity digest covers
+/// them. Every path in this file is built from this array, so the digest
+/// and the loader can never disagree about which file is which.
+const ARTIFACT_FILES: [&str; 3] = ["model.safetensors", "tokenizer.json", "config.json"];
+
+/// SHA-256 over the three artifact files of the pinned potion-base-8M
+/// release, concatenated in [`ARTIFACT_FILES`] order. The same value
+/// `spec/tests/semantic/reference-model.json` carries as `artifact_hash`,
+/// and the same value [`Model2Vec::model_hash`] reports once loaded.
+///
+/// Refresh this and [`POTION_BASE_8M_URLS`] together with
+/// `scripts/fetch-embedding-hash.sh <revision>`.
+#[cfg(not(target_arch = "wasm32"))]
+const POTION_BASE_8M_SHA256: &str =
+    "81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4";
+
+/// Download URLs for the pinned release, one per [`ARTIFACT_FILES`]
+/// entry in the same order. The path segment after `resolve/` is a git
+/// commit on the Hugging Face repository rather than a branch, so the
+/// URL names one immutable tree; `main` would move under the pin. The
+/// digest is what actually decides whether the bytes are trusted, and
+/// the revision is what makes a mismatch a bug report rather than an
+/// upstream edit.
+///
+/// Refresh with `scripts/fetch-embedding-hash.sh <revision>`.
+#[cfg(not(target_arch = "wasm32"))]
+const POTION_BASE_8M_URLS: [&str; 3] = [
+    "https://huggingface.co/minishlab/potion-base-8M/resolve/bf8b056651a2c21b8d2565580b8569da283cab23/model.safetensors",
+    "https://huggingface.co/minishlab/potion-base-8M/resolve/bf8b056651a2c21b8d2565580b8569da283cab23/tokenizer.json",
+    "https://huggingface.co/minishlab/potion-base-8M/resolve/bf8b056651a2c21b8d2565580b8569da283cab23/config.json",
+];
+
+/// Ceiling on any one downloaded artifact. The largest of the three in
+/// the pinned release is `model.safetensors` at 30,236,760 bytes, so this
+/// is a shade over twice the real thing: headroom for a later revision,
+/// and small enough that a redirect to something enormous costs a bounded
+/// read rather than the machine's memory. Past it,
+/// [`Error::InputTooLarge`] with `what` set to `"embedding_download"`.
+#[cfg(not(target_arch = "wasm32"))]
+const MAX_ARTIFACT_BYTES: usize = 64 * 1024 * 1024;
 
 /// A loaded static embedding model in the model2vec artifact format.
 ///
@@ -59,7 +104,10 @@ impl Model2Vec {
     /// Load a model from a directory holding `model.safetensors`,
     /// `tokenizer.json`, and `config.json`.
     ///
-    /// No network is touched; the caller supplies the files (ADR-0010).
+    /// No network is touched, ever, whatever the directory holds:
+    /// this constructor loads what the caller supplied and nothing else.
+    /// [`Model2Vec::potion_base_8m`] is the one that provisions.
+    ///
     /// Paths are trusted as given, matching the `Udpipe::from_path`
     /// precedent for caller-supplied model locations: no size cap (the
     /// artifacts are the model, and a huge one fails in safetensors
@@ -73,9 +121,7 @@ impl Model2Vec {
     /// loader internally (the panic is caught at this boundary).
     pub fn from_dir(dir: impl AsRef<Path>) -> domain::Result<Self> {
         let dir = dir.as_ref();
-        let model_path = dir.join("model.safetensors");
-        let tokenizer_path = dir.join("tokenizer.json");
-        let config_path = dir.join("config.json");
+        let [model_path, tokenizer_path, config_path] = ARTIFACT_FILES.map(|f| dir.join(f));
         for p in [&model_path, &tokenizer_path, &config_path] {
             if !p.exists() {
                 return Err(Error::ModelNotFound(p.clone()));
@@ -85,6 +131,138 @@ impl Model2Vec {
         let tokenizer_bytes = fs::read(&tokenizer_path)?;
         let config_bytes = fs::read(&config_path)?;
         catch_embed_panic(|| Self::from_bytes(&model_bytes, &tokenizer_bytes, &config_bytes))
+    }
+
+    /// Load the pinned reference model from `dir`, downloading it first
+    /// if it is not already there.
+    ///
+    /// The bytes are trusted only if the SHA-256 over all three artifact
+    /// files, in the order `model.safetensors`, `tokenizer.json`,
+    /// `config.json`, equals a constant compiled into this file. That is the UDPipe discipline applied to the
+    /// embedding model, and it is why "downloads a model" is not the
+    /// same claim as "reaches the network for whatever is there":
+    /// exactly one artifact set can ever load through this constructor,
+    /// and it is named in the source. ADR-0010 decision 6 is amended to
+    /// say so.
+    ///
+    /// The sequence:
+    ///
+    /// 1. If any of the three files is missing, all three are downloaded
+    ///    into `dir` (created if needed). Each lands through a temporary
+    ///    file in the same directory and a rename, so no reader ever sees
+    ///    a partial artifact, and a download is capped at 64 MiB.
+    /// 2. The three files are read once and hashed. On a match, the model
+    ///    parses from those same buffers.
+    /// 3. On a mismatch, the three files are removed and downloaded once
+    ///    more, then hashed again. A second mismatch removes them again
+    ///    and returns [`Error::ModelInvalid`].
+    ///
+    /// So a caller either gets the pinned model or gets an error. A
+    /// half-verified or partially-written model is never loaded, and a
+    /// failed attempt leaves nothing on disk for a later call to pick up.
+    ///
+    /// **No TOCTOU window.** The bytes that satisfy the digest are the
+    /// bytes that get parsed; nothing re-reads the directory between
+    /// verify and load.
+    ///
+    /// ```no_run
+    /// use matra::embed::model2vec::Model2Vec;
+    ///
+    /// let model = Model2Vec::potion_base_8m("/tmp/matra-models/potion-base-8M")?;
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// [`Error::Io`] if `dir` cannot be created, read, or written, or if
+    /// a download fails at the transport. [`Error::InputTooLarge`] with
+    /// `what` set to `"embedding_download"` if a response exceeds the
+    /// 64 MiB cap. [`Error::ModelInvalid`] if the digest
+    /// still mismatches after one re-download, or if the verified bytes
+    /// do not parse.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn potion_base_8m(dir: impl AsRef<Path>) -> domain::Result<Self> {
+        Self::potion_base_8m_with(dir.as_ref(), fetch_capped)
+    }
+
+    /// [`Model2Vec::potion_base_8m`] over the directory a [`Config`]
+    /// resolves: the model directory joined with the configured
+    /// embedding model name.
+    ///
+    /// Additive. The explicit-directory constructors are unchanged, and
+    /// this one exists so a caller with no opinion about where models
+    /// live does not have to invent one.
+    ///
+    /// ```no_run
+    /// use matra::embed::model2vec::Model2Vec;
+    ///
+    /// let cfg = matra::config::Config::resolve()?;
+    /// let model = Model2Vec::from_config(&cfg)?;
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Whatever [`Model2Vec::potion_base_8m`] returns.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn from_config(cfg: &Config) -> domain::Result<Self> {
+        Self::potion_base_8m(cfg.model_dir().join(cfg.embedding_model()))
+    }
+
+    /// [`Model2Vec::potion_base_8m`] with the fetcher as an argument.
+    /// The public constructor passes [`fetch_capped`]; tests pass a
+    /// closure, so the download path is exercised without a network.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn potion_base_8m_with<F>(dir: &Path, fetch: F) -> domain::Result<Self>
+    where
+        F: Fn(&str) -> domain::Result<Vec<u8>>,
+    {
+        Self::provision(dir, POTION_BASE_8M_SHA256, &POTION_BASE_8M_URLS, &fetch)
+    }
+
+    /// The provisioning sequence [`Model2Vec::potion_base_8m`] documents,
+    /// with the three things that make it "potion-base-8M" as arguments:
+    /// the pinned digest, the pinned URLs, and the fetcher.
+    ///
+    /// The pin is a parameter rather than a constant read from scope so
+    /// that a test can pin a three-file fixture of its own. A test that
+    /// could vary only the fetcher would be testing the fetcher; the
+    /// behavior worth pinning is what the digest decides.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn provision<F>(
+        dir: &Path,
+        expected_digest: &str,
+        urls: &[&str; 3],
+        fetch: &F,
+    ) -> domain::Result<Self>
+    where
+        F: Fn(&str) -> domain::Result<Vec<u8>>,
+    {
+        let paths: [PathBuf; 3] = ARTIFACT_FILES.map(|f| dir.join(f));
+
+        if !paths.iter().all(|p| p.exists()) {
+            download_artifacts(dir, &paths, urls, fetch)?;
+        }
+        if let Some(model) = read_verify_load(&paths, expected_digest)? {
+            return Ok(model);
+        }
+
+        // One retry. The likely cause of a mismatch is a truncated or
+        // interrupted earlier download, and that heals. Removal comes
+        // first so a second failure can never leave bytes behind that a
+        // later call would find and load.
+        remove_artifacts(&paths);
+        download_artifacts(dir, &paths, urls, fetch)?;
+        match read_verify_load(&paths, expected_digest)? {
+            Some(model) => Ok(model),
+            None => {
+                remove_artifacts(&paths);
+                Err(Error::ModelInvalid(format!(
+                    "artifact digest mismatch after re-download in {}: expected {expected_digest}",
+                    dir.display()
+                )))
+            }
+        }
     }
 
     /// Parse a model from in-memory artifact bytes. The identity hash is
@@ -332,6 +510,140 @@ impl Embedder for Model2Vec {
     fn identity(&self) -> &str {
         self.model_hash()
     }
+}
+
+/// Read the three artifacts once, hash those buffers, and parse the model
+/// from the same buffers when the digest matches.
+///
+/// Returns `Ok(None)` on a digest mismatch, which is the caller's signal
+/// to remove and retry. Verification happens before parsing rather than
+/// after, and not only for the obvious reason: if the parse ran first, a
+/// corrupt artifact would fail as [`Error::ModelInvalid`] from
+/// safetensors and never reach the retry at all.
+///
+/// [`Model2Vec::from_bytes`] hashes the same three buffers again to
+/// compute the model identity. That is one duplicated pass over 30 MB,
+/// kept because the two hashes answer different questions: this one is a
+/// gate on bytes that are not yet trusted, the other is a property of a
+/// model that loaded.
+#[cfg(not(target_arch = "wasm32"))]
+fn read_verify_load(
+    paths: &[PathBuf; 3],
+    expected_digest: &str,
+) -> domain::Result<Option<Model2Vec>> {
+    let model_bytes = fs::read(&paths[0])?;
+    let tokenizer_bytes = fs::read(&paths[1])?;
+    let config_bytes = fs::read(&paths[2])?;
+
+    let mut hasher = Sha256::new();
+    hasher.update(&model_bytes);
+    hasher.update(&tokenizer_bytes);
+    hasher.update(&config_bytes);
+    let got = format!("{:x}", hasher.finalize());
+    if !got.eq_ignore_ascii_case(expected_digest) {
+        return Ok(None);
+    }
+
+    catch_embed_panic(|| Model2Vec::from_bytes(&model_bytes, &tokenizer_bytes, &config_bytes))
+        .map(Some)
+}
+
+/// Remove all three artifacts, ignoring failures. A file that is already
+/// gone is the state this wants; one that cannot be removed surfaces at
+/// the next verify, which is the loud place for it.
+#[cfg(not(target_arch = "wasm32"))]
+fn remove_artifacts(paths: &[PathBuf; 3]) {
+    for path in paths {
+        let _ = fs::remove_file(path);
+    }
+}
+
+/// Fetch all three artifacts and put them in place.
+#[cfg(not(target_arch = "wasm32"))]
+fn download_artifacts<F>(
+    dir: &Path,
+    paths: &[PathBuf; 3],
+    urls: &[&str; 3],
+    fetch: &F,
+) -> domain::Result<()>
+where
+    F: Fn(&str) -> domain::Result<Vec<u8>>,
+{
+    fs::create_dir_all(dir)?;
+    for i in 0..ARTIFACT_FILES.len() {
+        let bytes = fetch(urls[i])?;
+        // The cap is enforced here, at the one place every artifact
+        // passes through, rather than inside the fetcher: the fetcher is
+        // replaceable and the bound is not.
+        if bytes.len() > MAX_ARTIFACT_BYTES {
+            return Err(Error::InputTooLarge {
+                limit: MAX_ARTIFACT_BYTES,
+                actual: bytes.len(),
+                what: "embedding_download",
+            });
+        }
+        atomic_write(dir, ARTIFACT_FILES[i], &paths[i], &bytes)?;
+    }
+    Ok(())
+}
+
+/// Write `bytes` to `final_path` through a temporary file in the same
+/// directory, then rename.
+///
+/// `std::fs::rename` is atomic on one filesystem (POSIX `rename(2)`,
+/// Windows `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING`), so no reader
+/// sees a half-written artifact, and two processes provisioning into the
+/// same directory cannot interleave: the temporary name carries the
+/// process id and the rename is the only operation that touches
+/// `final_path`. The temporary file is removed on scope exit either way,
+/// including on panic.
+///
+/// This is deliberately a second implementation of the pattern
+/// `nlp/udpipe.rs` uses rather than a shared helper. The two adapters
+/// share no module by design, and a utility module both imported would
+/// put a third file into the wiring to save twenty lines.
+#[cfg(not(target_arch = "wasm32"))]
+fn atomic_write(dir: &Path, name: &str, final_path: &Path, bytes: &[u8]) -> domain::Result<()> {
+    struct Cleanup<'a>(&'a Path);
+    impl Drop for Cleanup<'_> {
+        fn drop(&mut self) {
+            let _ = fs::remove_file(self.0);
+        }
+    }
+
+    let tmp = dir.join(format!(".tmp.{name}.{}", std::process::id()));
+    let _cleanup = Cleanup(&tmp);
+    fs::write(&tmp, bytes)?;
+    fs::rename(&tmp, final_path)?;
+    Ok(())
+}
+
+/// Fetch one URL into memory, reading at most one byte past
+/// [`MAX_ARTIFACT_BYTES`].
+///
+/// Stopping one byte over is what lets the caller tell "at the cap" from
+/// "over it" while keeping the read bounded: an endless or misdirected
+/// response costs 64 MiB and a rejection, not the machine's memory. The
+/// consequence is that the `actual` on the resulting
+/// [`Error::InputTooLarge`] is the bound that was breached rather than
+/// the response's full length, which is not knowable without reading it.
+///
+/// `ureq` treats a non-2xx status as an error by default, so an HTML
+/// error page never reaches the digest.
+#[cfg(not(target_arch = "wasm32"))]
+fn fetch_capped(url: &str) -> domain::Result<Vec<u8>> {
+    use std::io::Read;
+
+    let response = ureq::get(url)
+        .call()
+        .map_err(|e| Error::ModelInvalid(format!("download {url}: {e}")))?;
+    let mut bytes = Vec::new();
+    response
+        .into_body()
+        .into_reader()
+        .take(MAX_ARTIFACT_BYTES as u64 + 1)
+        .read_to_end(&mut bytes)?;
+    Ok(bytes)
 }
 
 /// Convert a tensor's raw little-endian bytes to f32. Only f32 sources
@@ -754,5 +1066,254 @@ mod bit_parity {
             let bits: Vec<u32> = got.0.iter().map(|v| v.to_bits()).collect();
             assert_eq!(&bits[..], expected, "bit drift on {text:?}");
         }
+    }
+}
+
+#[cfg(test)]
+#[cfg(not(target_arch = "wasm32"))]
+mod provisioning {
+    //! The pinned-download path (i10 M4), exercised with the fetcher as
+    //! an argument so no test here touches the network or needs the
+    //! 30 MB reference artifact. The fixture is the same tiny three-file
+    //! model the rest of this file's tests use, and its digest is
+    //! computed here rather than pinned.
+    use std::cell::RefCell;
+
+    use super::tests::write_model_normalized;
+    use super::*;
+
+    /// Stand-ins for [`POTION_BASE_8M_URLS`]. Nothing dereferences them;
+    /// they are the keys the test fetcher is asked for, and asserting on
+    /// them is how a test shows which artifacts were requested.
+    const URLS: [&str; 3] = ["test://model", "test://tokenizer", "test://config"];
+
+    /// The three artifacts as bytes, plus the digest over them in
+    /// [`ARTIFACT_FILES`] order.
+    struct Fixture {
+        bytes: [Vec<u8>; 3],
+        digest: String,
+    }
+
+    impl Fixture {
+        fn new() -> Fixture {
+            let dir = tempfile::tempdir().unwrap();
+            write_model_normalized(dir.path());
+            let bytes = ARTIFACT_FILES.map(|name| fs::read(dir.path().join(name)).unwrap());
+            let mut hasher = Sha256::new();
+            for buf in &bytes {
+                hasher.update(buf);
+            }
+            Fixture {
+                bytes,
+                digest: format!("{:x}", hasher.finalize()),
+            }
+        }
+
+        fn write_into(&self, dir: &Path) {
+            for (name, buf) in ARTIFACT_FILES.iter().zip(&self.bytes) {
+                fs::write(dir.join(name), buf).unwrap();
+            }
+        }
+    }
+
+    /// What a fetcher hands back for every request.
+    enum Serves {
+        /// The fixture bytes, so a download heals the directory.
+        TheModel,
+        /// Bytes that parse as nothing, so the digest can never match.
+        Garbage,
+        /// One byte past the cap.
+        TooMuch,
+        /// Nothing: being called at all is the failure.
+        Nothing,
+    }
+
+    /// A fetcher that records every URL it was asked for.
+    struct Fetcher<'a> {
+        fixture: &'a Fixture,
+        serves: Serves,
+        log: RefCell<Vec<String>>,
+    }
+
+    impl<'a> Fetcher<'a> {
+        fn new(fixture: &'a Fixture, serves: Serves) -> Fetcher<'a> {
+            Fetcher {
+                fixture,
+                serves,
+                log: RefCell::new(Vec::new()),
+            }
+        }
+
+        fn fetch(&self, url: &str) -> domain::Result<Vec<u8>> {
+            self.log.borrow_mut().push(url.to_string());
+            let index = URLS.iter().position(|u| *u == url).expect("known url");
+            match self.serves {
+                Serves::TheModel => Ok(self.fixture.bytes[index].clone()),
+                Serves::Garbage => Ok(b"not a model".to_vec()),
+                Serves::TooMuch => Ok(vec![0u8; MAX_ARTIFACT_BYTES + 1]),
+                Serves::Nothing => {
+                    panic!("the fetcher was called for {url}, and should not have been")
+                }
+            }
+        }
+
+        fn calls(&self) -> Vec<String> {
+            self.log.borrow().clone()
+        }
+    }
+
+    fn provision(
+        dir: &Path,
+        fixture: &Fixture,
+        fetcher: &Fetcher<'_>,
+    ) -> domain::Result<Model2Vec> {
+        Model2Vec::provision(dir, &fixture.digest, &URLS, &|url| fetcher.fetch(url))
+    }
+
+    /// `Result::unwrap_err` would need `Model2Vec: Debug`, and a loaded
+    /// model has nothing worth printing (a 30 MB matrix and a tokenizer),
+    /// so the surface stays as it is and the tests unwrap by hand.
+    fn expect_err(result: domain::Result<Model2Vec>) -> Error {
+        match result {
+            Ok(_) => panic!("expected an error, got a loaded model"),
+            Err(e) => e,
+        }
+    }
+
+    fn present(dir: &Path) -> Vec<&'static str> {
+        ARTIFACT_FILES
+            .into_iter()
+            .filter(|name| dir.join(name).exists())
+            .collect()
+    }
+
+    #[test]
+    fn a_matching_digest_loads_and_nothing_is_fetched() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+        fixture.write_into(dir.path());
+
+        let fetcher = Fetcher::new(&fixture, Serves::Nothing);
+        let model = provision(dir.path(), &fixture, &fetcher).unwrap();
+
+        assert_eq!(model.model_hash(), fixture.digest);
+        assert!(fetcher.calls().is_empty());
+    }
+
+    #[test]
+    fn a_corrupted_artifact_is_removed_and_downloaded_again() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+        fixture.write_into(dir.path());
+        fs::write(dir.path().join("config.json"), r#"{"normalize": false}"#).unwrap();
+
+        let fetcher = Fetcher::new(&fixture, Serves::TheModel);
+        let model = provision(dir.path(), &fixture, &fetcher).unwrap();
+
+        // All three come back, not just the one that drifted: the digest
+        // covers the set, so the set is what gets replaced.
+        assert_eq!(fetcher.calls(), URLS.to_vec());
+        assert_eq!(model.model_hash(), fixture.digest);
+    }
+
+    #[test]
+    fn a_second_mismatch_is_model_invalid_and_leaves_no_files() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+        fixture.write_into(dir.path());
+        fs::write(dir.path().join("model.safetensors"), b"corrupt").unwrap();
+
+        let fetcher = Fetcher::new(&fixture, Serves::Garbage);
+        let err = expect_err(provision(dir.path(), &fixture, &fetcher));
+
+        assert!(
+            matches!(err, Error::ModelInvalid(ref m) if m.contains(&fixture.digest)),
+            "expected a digest mismatch, got {err:?}"
+        );
+        // Exactly one retry, and nothing left behind for a later call to
+        // find and load.
+        assert_eq!(fetcher.calls().len(), 3);
+        assert_eq!(present(dir.path()), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn an_oversized_download_is_input_too_large() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+
+        let fetcher = Fetcher::new(&fixture, Serves::TooMuch);
+        let err = expect_err(provision(dir.path(), &fixture, &fetcher));
+
+        match err {
+            Error::InputTooLarge {
+                limit,
+                actual,
+                what,
+            } => {
+                assert_eq!(limit, MAX_ARTIFACT_BYTES);
+                assert_eq!(actual, MAX_ARTIFACT_BYTES + 1);
+                assert_eq!(what, "embedding_download");
+            }
+            other => panic!("expected InputTooLarge, got {other:?}"),
+        }
+        // The cap fires before anything is written.
+        assert_eq!(present(dir.path()), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn one_missing_artifact_downloads_all_three() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+        fixture.write_into(dir.path());
+        fs::remove_file(dir.path().join("tokenizer.json")).unwrap();
+
+        let fetcher = Fetcher::new(&fixture, Serves::TheModel);
+        let model = provision(dir.path(), &fixture, &fetcher).unwrap();
+
+        assert_eq!(fetcher.calls(), URLS.to_vec());
+        assert_eq!(model.model_hash(), fixture.digest);
+    }
+
+    #[test]
+    fn a_missing_directory_is_created_and_filled() {
+        let fixture = Fixture::new();
+        let parent = tempfile::tempdir().unwrap();
+        let dir = parent.path().join("models").join("potion-base-8M");
+
+        let fetcher = Fetcher::new(&fixture, Serves::TheModel);
+        let model = provision(&dir, &fixture, &fetcher).unwrap();
+
+        assert_eq!(model.model_hash(), fixture.digest);
+        assert_eq!(present(&dir).len(), 3);
+        // The temporary each artifact landed through is gone.
+        let leftovers: Vec<_> = fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .filter(|name| name.to_string_lossy().starts_with(".tmp."))
+            .collect();
+        assert!(leftovers.is_empty(), "temporary files left: {leftovers:?}");
+    }
+
+    #[test]
+    fn from_dir_never_downloads() {
+        let fixture = Fixture::new();
+        let fetcher = Fetcher::new(&fixture, Serves::TheModel);
+
+        // The fetcher is live: provisioning an empty directory calls it.
+        let provisioned = tempfile::tempdir().unwrap();
+        provision(provisioned.path(), &fixture, &fetcher).unwrap();
+        assert_eq!(fetcher.calls().len(), 3);
+
+        // `from_dir` has no fetcher to call, and an empty directory is
+        // where the difference shows: it reports what is missing instead
+        // of going to get it.
+        let empty = tempfile::tempdir().unwrap();
+        let err = expect_err(Model2Vec::from_dir(empty.path()));
+        assert!(
+            matches!(err, Error::ModelNotFound(ref p) if p.ends_with("model.safetensors")),
+            "expected ModelNotFound, got {err:?}"
+        );
+        assert_eq!(fetcher.calls().len(), 3);
+        assert_eq!(present(empty.path()), Vec::<&str>::new());
     }
 }

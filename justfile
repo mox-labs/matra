@@ -85,9 +85,10 @@ install-hooks:
     bash scripts/install-hooks.sh
 
 # ---------------------------------------------------------------------------
-# Run the conformance suite across every crust. Requires the UDPipe model
-# and, for the semantic lane, potion-base-8M at ~/.matra/models (or
-# MATRA_MODEL2VEC_DIR); the library downloads neither.
+# Run the conformance suite across every crust. Both models are fetched on
+# the first run and cached after it: UDPipe into the resolved model
+# directory, potion-base-8M into that directory or MATRA_MODEL2VEC_DIR.
+# Each is pinned by a digest in the source, so a first run needs a network.
 conformance:
     cargo test --test conformance -- --ignored
     cargo test --features model2vec --test semantic_conformance -- --include-ignored
