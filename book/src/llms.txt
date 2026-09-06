@@ -1,0 +1,39 @@
+# matra
+
+> NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction. Rust core with Python bindings.
+
+## Introduction
+
+- [Introduction](https://mox-labs.github.io/matra/introduction.html): matra reports the structure of text and measurements over it.
+
+## Explanation
+
+- [Concepts](https://mox-labs.github.io/matra/explanation/concepts.html): Analysis returns one nested value. Each level owns the level below it and carries its own data.
+- [Situation model](https://mox-labs.github.io/matra/explanation/situation-model.html): matra reports the structure of text and measurements over it.
+- [Programming model](https://mox-labs.github.io/matra/explanation/programming-model.html): `Ingest` is where documents come from. `Engine` is what happens to each one.
+- [Pragmatics](https://mox-labs.github.io/matra/explanation/pragmatics.html): Run `matra --skill`. It prints, from the installed program itself, what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not license you to conclude, the limits, and the errors.
+
+## Using matra
+
+- [Installation](https://mox-labs.github.io/matra/tutorials/installation.html): matra ships three ways from one Rust core: a Rust library on crates.io, a command-line binary installed from the same crate, and a Python package on PyPI.
+- [Rust](https://mox-labs.github.io/matra/guides/rust.html): You already have `matra` in your `Cargo.toml`.
+- [Python](https://mox-labs.github.io/matra/guides/python.html): You installed matra with `uv add matra`.
+- [CLI](https://mox-labs.github.io/matra/guides/cli.html): `matra` reads a file (or stdin) and writes to stdout.
+- [Semantic clusters](https://mox-labs.github.io/matra/guides/semantic-clusters.html): Everything else matra returns is deterministic structure, checkable against the source bytes.
+
+## Reference
+
+- [What matra gives you](https://mox-labs.github.io/matra/capabilities.html): Every value the pipeline returns, by tier.
+- [Domain model](https://mox-labs.github.io/matra/reference/domain-types.html): `matra::domain` holds every type the library hands back.
+- [Methodology](https://mox-labs.github.io/matra/reference/methodology.html): What each number matra reports is computed from, how to cite the work it comes from, and what it does not license you to conclude.
+- [Errors](https://mox-labs.github.io/matra/reference/errors.html): Every fallible function in matra returns `domain::Result<T>`, which is `std::result::Result<T, domain::Error>`.
+
+## Contributing
+
+- [Architecture](https://mox-labs.github.io/matra/architecture/design.html): `engine.analyze(Ingest::path("essay.md")?)` yields a `Document` or a `DocumentError`.
+- [Boundary rules](https://mox-labs.github.io/matra/reference/boundary-rules.html): Eight rules hold matra's hexagonal architecture in place.
+
+## What is planned
+
+- [Roadmap](https://mox-labs.github.io/matra/roadmap.html): What matra does not do yet, why, and the condition that would change that.
+- [Plans](https://mox-labs.github.io/matra/plans/index.html): The roadmap says what matra does not do yet and what condition would change that.
