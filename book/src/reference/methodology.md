@@ -18,7 +18,7 @@ The English model is pinned in `src/nlp/udpipe.rs`.
 | Treebank | English Web Treebank, Universal Dependencies 2.5, release 191206 |
 | Distributor | LINDAT/CLARIAH-CZ repository, handle 11234/1-3131 |
 
-`Udpipe::english(model_dir)` downloads the file when it is absent, checks the size, computes the SHA-256, and loads the same bytes it hashed. There is no second read from disk between verification and load. A file that fails verification is deleted and downloaded once more; a second failure returns `Error::ModelInvalid` and nothing is loaded.
+`Udpipe::english(model_dir)` downloads the file when it is absent, checks the size, computes the SHA-256, and loads the same bytes it hashed. There is no second read from disk between verification and load. A file that fails verification is downloaded once more and replaced only if the new bytes verify; a second failure returns `Error::ModelInvalid`, nothing is loaded, and the file that was there is still there.
 
 Verification belongs to that constructor alone. `Udpipe::from_path` and `Udpipe::from_bytes` load whatever you hand them without checking size or hash, so a result produced through either one is only as identifiable as the file you supplied.
 

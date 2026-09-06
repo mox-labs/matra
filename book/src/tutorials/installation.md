@@ -88,7 +88,7 @@ On the platforms with wheels this downloads a prebuilt binary and installs in se
 
 matra parses through UDPipe. None of the three install paths bundle the English model: the library, the CLI, and the Python package each download it on first use and cache it on disk. Every surface resolves the directory the same way. `Engine::with_defaults()`, `Matra.english()`, and the CLI all use `MATRA_MODEL_DIR`, else the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`, falling back to a pre-existing, non-empty `~/.matra/models` from an older install when the new location does not exist yet (matra never creates `~/.matra`, but a selected legacy cache is used as the model directory, downloads included). The Rust and Python APIs also take the directory as an explicit argument, and the CLI takes `--model-dir`.
 
-matra writes the download (about 16 MB) to a temporary location first, then moves it into place, and checks the bytes against a fixed hash before loading them. If a file fails that check, matra deletes it and re-downloads once; if the second attempt still does not match, matra returns an error instead of loading an unverified file.
+matra holds the download (about 16 MB) in memory, checks it against a fixed hash there, and writes it only if it matches, so nothing unverified ever reaches the model directory and an interrupted transfer leaves nothing behind. If the check fails, matra downloads once more; if the second attempt still does not match, it returns an error instead of loading an unverified file. A cached file that fails the check is replaced only when new bytes verify, so a re-download that cannot reach the network leaves you the file you had.
 
 ---
 

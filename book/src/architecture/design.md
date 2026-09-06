@@ -59,11 +59,11 @@ A directory changes the shape by streaming. `Ingest::path` lists the entries up 
 
 Everything above assumes `nlp` already exists. Constructing it is the one genuinely slow operation matra performs.
 
-`Udpipe::english(dir)` looks for the English UD-EWT model in the directory you name. If it is absent, the download goes to a per-process temporary subdirectory and is then moved into place with a single `rename`, so two processes pointing at the same directory cannot leave each other a half-written file.
+`Udpipe::english(dir)` looks for the English UD-EWT model in the directory you name. If it is absent, the bytes are verified in memory and then written to a temporary subdirectory named for this call, and moved into place with a single `rename`, so two processes pointing at the same directory cannot leave each other a half-written file. The name carries more than the process id, because in a container every process is pid 1 and two cold starts would otherwise collide.
 
 `Udpipe::from_config(&cfg)` is the same call with the directory resolved rather than named, and `Engine::with_defaults()` is `Config::resolve()` followed by that. `Config` is read once, at construction; nothing in the call path above consults it, which is why configuration cannot change what a call computes. `Model2Vec::potion_base_8m(dir)` and `Model2Vec::from_config(&cfg)` do the same for the reference embedding model, against a three-file digest rather than a single one.
 
-The cached file is then checked against a size constant, 16,309,608 bytes, and a SHA-256 constant pinned in `nlp/udpipe.rs`. A size mismatch fails before the file is hashed. A hash mismatch deletes the file, downloads once more, and gives up with `Error::ModelInvalid` on a second failure. An unverified model is never loaded.
+The cached file is then checked against a size constant, 16,309,608 bytes, and a SHA-256 constant pinned in `nlp/udpipe.rs`. A size mismatch fails before the file is hashed. A hash mismatch downloads once more and replaces the file only if the new bytes verify, giving up with `Error::ModelInvalid` on a second failure and leaving the old file untouched. An unverified model is never loaded.
 
 The verify step returns the bytes it hashed, and those exact bytes go to the loader. Nothing re-reads the disk in between. That ordering is the whole point: a hash-then-reopen sequence leaves a window in which an attacker with write access to the model directory can swap the file after the check and before the read.
 

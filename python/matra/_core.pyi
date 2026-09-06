@@ -186,6 +186,8 @@ class Model2Vec:
 
         Raises:
             FileNotFoundError: an artifact file is absent.
+            OSError: an artifact is present but cannot be read. The
+                message names the operation and the path.
             RuntimeError: the artifact does not parse or is malformed.
         """
         ...
