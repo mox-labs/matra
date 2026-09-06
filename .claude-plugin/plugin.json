@@ -1,7 +1,7 @@
 {
   "name": "matra",
   "description": "Parses text into a typed structure tree, measures it, and ranks what is in it. Reach for it on questions of passive voice, density, repetition, keyphrases, summaries, or dependency arcs.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "mox labs",
     "url": "https://github.com/mox-labs"

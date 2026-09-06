@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "matra"
-version = "0.1.0"
+version = "0.2.0"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction."
 readme = "README.md"
 license = { text = "MIT" }

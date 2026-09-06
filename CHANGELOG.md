@@ -31,6 +31,8 @@ those by hand.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-06
+
 ### Highlights
 
 **Out of the box now means every surface, not just the binary.** 0.1.0 shipped a CLI that defaulted the model directory and downloaded the model on first use, and a library that made every caller re-derive that same path. The asymmetry was the defect: "works with no setup" was a property of one entry point rather than of the package. `Config` closes it by answering one question, once, for all three surfaces: where do things live and what are the defaults. It resolves per key from an explicit argument, then the environment, then the config file, then the defaults compiled into the crate, and it records which rung each value came from, so `matra config show` can print provenance instead of asserting numbers. The line it does not cross is the one the roadmap warned about: `Config` carries locations and defaults, never behavior. Which metrics run and how output is shaped stay where they were, because a config format that selects behavior puts policy in a file the library parses. `Engine::with_defaults()`, `Matra.english()` and `uvx matra analyze file.md` are the same idea on three surfaces, and every 0.1.0 signature still works unchanged beside them.
