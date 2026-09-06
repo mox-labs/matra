@@ -3,10 +3,9 @@
 > **Point-in-time record.** This is the report of one exploratory pass against
 > commit `7197ca0`, kept as the evidence behind
 > `.claude/skills/e2e-validation/SKILL.md`. It describes what matra was on
-> 2026-09-06, not what it is now, and several findings below were fixed before
-> 0.2.0 shipped. The `[0.2.0]` section of `CHANGELOG.md` records what was done
-> about them. Nothing here should be read as a description of current
-> behaviour.
+> 2026-09-06, not what it is now, and several findings below have since been
+> fixed. The `[0.2.0]` section of `CHANGELOG.md` records what was done about
+> them. Nothing here should be read as a description of current behaviour.
 
 **Subject:** worktree at commit `7197ca0` (main), `<worktree>`
 **Date:** 2026-09-06
