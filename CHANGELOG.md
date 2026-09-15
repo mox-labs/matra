@@ -108,6 +108,10 @@ those by hand.
 
 - `click` and `rich` leave the Python package's runtime dependencies. It now has none, which is what ruff and uv ship.
 
+### Security
+
+- `rustls` moves from 0.23.38 to 0.23.45 in `Cargo.lock` for [RUSTSEC-2026-0285](https://rustsec.org/advisories/RUSTSEC-2026-0285): TLS 1.3 handshake messages sent at the wrong encryption level were accepted rather than rejected. It sits on the model download path through `ureq`. The advisory notes the handshake transcript stays authenticated, so a network attacker cannot alter or complete a handshake with it. The lockfile governs the wheels, the release binaries and `cargo install --locked`; a crate that depends on matra resolves its own `rustls` and should update the same way.
+
 ## [0.1.0] - 2026-08-21
 
 First release. The surface this version freezes is the one pipeline
