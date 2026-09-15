@@ -10,8 +10,12 @@
 # the way they are below.
 #
 # Take a snapshot before and after a pass and diff them. An identical pair is
-# the evidence that the pass stayed inside its sandbox, and the report should
-# say so.
+# evidence that the pass wrote nothing the snapshot can see, which is narrower
+# than "wrote nothing": the comment above the walk in `snapshot` states exactly
+# what it sees and what it does not. The snapshot is a best-effort tripwire,
+# not an isolation guarantee. When a target is or contains a symlink it says
+# so on stderr, a clean pair is then not evidence of no leak, and the pass
+# belongs in a container, which never mounts the real locations at all.
 #
 # `snapshot` refuses to run inside a sandbox, because in there $HOME points at
 # the sandbox and it would happily fingerprint that instead, print clean
@@ -20,16 +24,20 @@
 # so the guard is the point of this script rather than a nicety.
 #
 # The one property this script has to hold is that it cannot report a clean
-# result for a tree it did not examine. `scripts/test-e2e-sandbox.sh` is where
-# that property is asserted, and it runs from `just check`. Three review rounds
-# each closed a hole here and left another, which is what an untested script
-# buys.
+# result for a tree it did not examine without saying so: an unreadable target
+# is named in the artifact, and a symlink it cannot see beneath is named on
+# stderr. `scripts/test-e2e-sandbox.sh` is where that property is asserted,
+# and it runs from `just check`. Review rounds kept closing one hole here and
+# finding the next, which is why the remaining one is declared rather than
+# chased with more traversal code.
 #
 # What "cold" covers: matra's own resolution, which is the XDG variables plus
-# the legacy cache under $HOME. Moving HOME also relocates the default cargo,
-# rustup, uv and pip caches. It does NOT override those when the operator's
-# environment already points them somewhere absolute, so a wheel can still be
-# served from a warm cache. Say which you had if the timing matters.
+# the legacy cache under $HOME, and CARGO_HOME, which `new` exports explicitly
+# (see the comment there). Moving HOME also relocates the default rustup, uv
+# and pip caches, but nothing here overrides RUSTUP_HOME, UV_CACHE_DIR or
+# PIP_CACHE_DIR when the operator's environment already points them somewhere
+# absolute, so a wheel can still be served from a warm cache. Say which you had
+# if the timing matters.
 set -euo pipefail
 
 # Not MATRA_-prefixed on purpose: the skill tells a tester to unset every
@@ -202,22 +210,59 @@ snapshot)
         # was created, and -e alone calls it ABSENT in both snapshots of a
         # pair, which is a false all-clear of the same family.
         if [ -e "$p" ] || [ -L "$p" ]; then
-            # Two passes, and the second is the one that took four rounds to
-            # get right. The walk uses -H, which follows the command-line
-            # argument only, so a symlinked target is descended without any
-            # cycle risk from links met further down. But stat then records
-            # every link inside the tree as the link: its own name, its own
-            # size (the length of the target path) and its own mtime. Writing
-            # through such a link moves nothing this listing carries.
+            # What this detects is narrower than a walk suggests, so it is
+            # stated exactly here and claimed no wider anywhere else.
             #
-            # That is not a special case, it is every symlink in the tree, and
-            # matra's own layout puts the two shapes src/config.rs names one
-            # level inside a target rather than at it: the config file is
-            # `<config target>/config.toml` and the models live in
-            # `<data target>/models`. Fixing the target alone fixed a depth,
-            # not the defect. So the second pass records what each link points
-            # at, at any depth, and a dangling one is recorded as dangling
-            # rather than dropped.
+            # The first pass is `find -H`, which follows the target itself when
+            # the target is a symlink and follows no symlink below it. It
+            # records the name, size and whole-second mtime of every entry
+            # reached that way, so an entry created, removed, resized or
+            # re-timestamped at any depth on that walk moves the diff. A
+            # symlink it meets is recorded as the link, with the link's own
+            # size and mtime, and a write through a link changes neither.
+            #
+            # The second pass records, for each symlink the first pass met, the
+            # size and mtime of what it points at. -H matters here as well:
+            # without it a symlinked target is not descended, so the links
+            # inside it are never listed. A file referent moves the diff when a
+            # write changes its size or mtime. A directory referent moves it
+            # only when an entry is created, removed or renamed directly inside
+            # it. GNU and busybox stat fail on a dangling link, which is then
+            # recorded as DANGLING; BSD `stat -L` exits 0 on one and reports
+            # the link's own size and mtime, so on macOS a dangling link reads
+            # like any other referent line.
+            #
+            # Not detected:
+            #   - a write through a symlink that is itself a target root and
+            #     points at a file, such as MATRA_CONFIG_FILE naming a link
+            #     into a dotfiles repository. The root's line is the link's
+            #     own, and -H means the second pass never sees it as a link;
+            #   - beneath a symlink inside a target, anything other than the
+            #     referent's own size and mtime: a rewrite in place of an
+            #     existing file in a linked directory, and everything in that
+            #     directory's subdirectories. model2vec provisions into
+            #     `<model dir>/<model name>/` (src/embed/model2vec.rs), so a
+            #     symlinked models directory hides exactly its writes.
+            #
+            # The walker is deliberately not extended to close these. Every
+            # extension so far closed one hole and exposed the next, and
+            # `find -L` and `stat -L` differ across BSD, GNU and busybox. So
+            # the residual is made loud instead: a target that is or contains a
+            # symlink gets a WARNING on stderr, which leaves the exit status
+            # and the diffed stdout alone, and the skill routes that pass to
+            # the container layer, where the real locations are never mounted.
+            #
+            # The root warning is broader than the residual on purpose. A
+            # symlinked directory at a root is walked like any other, and only
+            # a link to a file is blind. But "any symlink means a container" is
+            # one rule an operator can follow without re-deriving this comment,
+            # and a dangling root, which could become either shape, needs it.
+            if [ -L "$p" ]; then
+                echo "WARNING: $p is a symlink, and the snapshot cannot vouch" \
+                     "for what lies behind a symlinked target. A clean pair" \
+                     "is not evidence that nothing leaked here; run the pass" \
+                     "in a container (.claude/skills/e2e-validation)." >&2
+            fi
             #
             # Both listings are buffered before printing: `find | sort` emits
             # partial output before failing, and a partial listing followed by
@@ -235,6 +280,13 @@ snapshot)
                done)"; then
                 [ -z "$listing" ] || printf '%s\n' "$listing"
                 [ -z "$referents" ] || printf '%s\n' "$referents"
+                if [ -n "$referents" ]; then
+                    echo "WARNING: $p contains a symlink, and the snapshot" \
+                         "records only the size and mtime of what each one" \
+                         "points at, never what lies beneath it. A clean pair" \
+                         "is not evidence that nothing leaked here; run the" \
+                         "pass in a container (.claude/skills/e2e-validation)." >&2
+                fi
             else
                 printf '%s UNREADABLE\n' "$p"
                 failed=1

@@ -70,7 +70,7 @@ boundary:
     bash scripts/check-boundaries.sh
 
 # The end-to-end sandbox script cannot report a clean result for a tree it did
-# not examine. Needs an unprivileged user for the unreadable and unwritable
+# not examine without saying so. Needs an unprivileged user for the unreadable and unwritable
 # cases; under uid 0 it skips those and says so.
 test-sandbox:
     bash scripts/test-e2e-sandbox.sh
