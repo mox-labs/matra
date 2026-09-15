@@ -123,7 +123,7 @@ If `Matra.english()` raises `RuntimeError`, the download or the hash check faile
 
 ## What you have
 
-- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.2.0 core. Until 0.2.0 is the release the registries hand out, the install commands on this page fetch 0.1.0, and only the `uvx` line above carries a floor. The others need their own: `cargo add matra@0.2`, `cargo install matra --version '^0.2' --features cli`, and `pip install 'matra>=0.2'`. The failure is the one the CLI guide describes: the command does not fail, it succeeds and gives you an older program, so the version banner below will not match.
+- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.2.0 core. Until 0.2.0 is the release the registries hand out, the install commands on this page fetch 0.1.0, and only the `uvx` line above carries a version requirement. The others need their own. The Python routes take the same floor as that line: `pip install 'matra>=0.2'` or `uv add 'matra>=0.2'`. The cargo routes take a caret requirement, which is how cargo states a version: `cargo add matra@0.2` and `cargo install matra --version '^0.2' --features cli` accept 0.2.0 or a later release semver-compatible with it, so unlike a floor they stop short of 0.3.0. The failure is the one the CLI guide describes: the command does not fail, it succeeds and gives you an older program, so the version banners above will not match.
 - The English UDPipe model cached under the resolved model directory, verified against a pinned hash.
 - A confirmed working call from `Matra.english()` through `analyze()` to a result.
 

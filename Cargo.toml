@@ -15,7 +15,9 @@ categories = ["text-processing", "science"]
 # An exclude list, so anything not named here ships. `skills/matra/**` must
 # keep shipping: it is the agent-facing skill, and the crate is where it is
 # distributed from. Adding it here would remove public surface, not weight.
-exclude = ["scratch/*", ".claude/*", "target/*", "book/*", "*.udpipe"]
+# `tests/cited_figures.rs` reads `book/`, which does not ship, so it would fail
+# every `cargo test` run from the published tarball.
+exclude = ["scratch/*", ".claude/*", "target/*", "book/*", "*.udpipe", "tests/cited_figures.rs"]
 
 [package.metadata.docs.rs]
 all-features = true
