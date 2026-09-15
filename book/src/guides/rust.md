@@ -39,7 +39,7 @@ use matra::nlp::udpipe::Udpipe;
 let nlp = Udpipe::english("/tmp/matra-models")?;
 ```
 
-`Udpipe::english` creates the directory if it is missing, downloads the English model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The download goes to a per-process temporary subdirectory and is moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file.
+`Udpipe::english` creates the directory if it is missing, downloads the English model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.
 
 The path is passed to `std::fs::create_dir_all` unchanged. Rust does not expand `~`, so `Udpipe::english("~/.matra/models")` creates a directory literally named `~` under your current working directory. Pass an absolute path, or expand the home directory yourself.
 

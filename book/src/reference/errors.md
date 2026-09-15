@@ -91,7 +91,7 @@ Wraps `std::io::Error`, produced by:
 
 - `FileSource` rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`.
 - `FileSource` rejecting a path that is not a regular file, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`.
-- Any read, directory listing, directory creation, file removal, or rename that fails.
+- Any read, directory listing, directory creation, write, or rename that fails.
 - `Udpipe::english` when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise.
 - `Udpipe::english` when the model directory cannot be created, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads `cannot write the model to <path>: No space left on device (os error 28)` rather than `Permission denied (os error 13)` with nothing to act on.
 - `Model2Vec::potion_base_8m` when a download fails at the transport or answers with a non-2xx status. The message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise. Bytes that arrived and then failed the digest are `ModelInvalid` instead; this variant is for the ones that never arrived.
@@ -111,7 +111,7 @@ Wraps `std::io::Error`, produced by:
 | TLS certificate rejected | `Io` | `io` | The host, why matra cannot be made to trust it, the way out, then the underlying failure |
 | Non-2xx status | `Io` | `io` | The URL and the status |
 | Response past 64 MiB | `InputTooLarge` | `input_too_large` | `what` is `"udpipe_download"` or `"embedding_download"` |
-| Directory, write, remove or rename failed | `Io` | `io` | The operation and the path |
+| Directory, write or rename failed | `Io` | `io` | The operation and the path |
 | Bytes arrived and failed the pinned digest, twice | `ModelInvalid` | `model_invalid` | The URL, or the directory and the expected digest |
 | Bytes arrived, passed the digest, and did not load | `ModelInvalid` | `model_invalid` | The loader's message |
 
@@ -119,7 +119,7 @@ The rule behind the table: `model_invalid` is about bytes that arrived. Anything
 
 The rule has a consequence in Python that is easy to miss, because it changes which `except` clause fires rather than only which string a message carries. `Io` routes to `OSError` and `ModelInvalid` routes to `RuntimeError`, so from 0.2.0 a DNS failure, a rejected certificate, a timeout or a non-2xx status raises `OSError` from `Matra.english()` where it used to raise `RuntimeError`. A caller that wrapped a bootstrap in `except RuntimeError` catches nothing now and the `OSError` propagates past it. Catch both, or catch `Exception` and branch on the message.
 
-Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. The one thing a failed run does remove is a cached file that was already there and had already failed verification: `Udpipe::english` deletes that once the replacement is in hand, because a file under the model's name that is not the pinned model is not a file to keep, and deleting it before the fetch would cost an offline user the only copy they had. `Model2Vec::potion_base_8m` removes nothing at all, because its three filenames belong to the artifact format rather than to this one model and so may be a caller's own ([ADR-0015](https://github.com/mox-labs/matra/blob/main/docs/decisions/0015-provisioning-failures.md)). A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. `Udpipe::english` leaves a temporary directory and `Model2Vec::potion_base_8m` three temporary files, and each reclaims its own by the same rule.
+Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. A failed run removes nothing either. A cached file that is already there and fails verification is not loaded and not deleted: `Udpipe::english` downloads again, at most twice, and replaces the file only with bytes that verified, through the same atomic rename every install lands through. A run whose downloads fail, at the network or at the digest, leaves that file byte-identical. `Model2Vec::potion_base_8m` replaces nothing and refuses a directory whose artifacts fail verification, because its three filenames belong to the artifact format rather than to this one model and so may be a caller's own ([ADR-0015](https://github.com/mox-labs/matra/blob/main/docs/decisions/0015-provisioning-failures.md)). A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. `Udpipe::english` leaves a temporary directory and `Model2Vec::potion_base_8m` three temporary files, and each reclaims its own by the same rule.
 
 ### Behind a TLS-intercepting proxy
 
@@ -133,7 +133,7 @@ installing its CA. Fetch english-ewt-ud-2.5-191206.udpipe by hand and put it in 
 directory instead. Underlying failure: io: invalid peer certificate: ...
 ```
 
-Place the model by hand. `matra config show` prints the model directory this machine resolves, and the artifact is pinned by name, size and SHA-256, so a hand-placed file is exactly as trustworthy as a fetched one: it goes through the same verification on load, and a file that is not the pinned model is removed rather than used.
+Place the model by hand. `matra config show` prints the model directory this machine resolves, and the artifact is pinned by name, size and SHA-256, so a hand-placed file is exactly as trustworthy as a fetched one: it goes through the same verification on load. A file that is not the pinned model is never used and never deleted. matra tries to download the pinned model in its place, and where that download cannot get through, which is the reason to place the file by hand, the call fails and the file stays exactly as you left it. Check the SHA-256 before moving the file in, as below, so a truncated or proxy-rewritten download fails here rather than on the next run.
 
 ```bash
 mkdir -p "$(matra config show | awk -F\" '/^model_dir/ {print $2}')"
