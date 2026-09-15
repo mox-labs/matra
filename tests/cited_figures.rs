@@ -2,9 +2,10 @@
 //!
 //! Several pages cite numbers measured against other pages of this book: the
 //! similarity scores in the semantic guide come from two guides and the
-//! roadmap, and the keyphrase figures come from the errors reference. Those
-//! inputs are live documents. Editing one silently invalidates a figure
-//! somewhere else, and nothing notices.
+//! roadmap, the keyphrase figures come from the errors and methodology
+//! references, and the embedder's word figures come from a sweep of every
+//! page. Those inputs are live documents. Editing one silently invalidates a
+//! figure somewhere else, and nothing notices.
 //!
 //! That is not hypothetical. Three wrong figures shipped across three review
 //! rounds of one branch, and the margin that carries the whole lesson of the
@@ -17,10 +18,15 @@
 //! Recomputing the figures here would need the embedding model and the
 //! parser, so it would run only in the model-gated lane and would not fire on
 //! the edit that caused the drift. This does the cheap thing instead: it pins
-//! the content of each source page. Change one and this test fails, naming
-//! the figures to measure again. It is the same shape as the count law in
-//! `tests/skill.rs`, which fails when a command escapes its runner rather
-//! than trying to prove the command still works.
+//! the content of the pages the figures were measured from. Change one and
+//! this test fails, naming the figures to measure again. It is the same shape
+//! as the count law in `tests/skill.rs`, which fails when a command escapes
+//! its runner rather than trying to prove the command still works.
+//!
+//! The coverage is narrower for the figures swept over every page. The raw
+//! 141 to 368 word range pins only the two pages that set its ends, so an
+//! edit that carries some other page past either end goes unnoticed. The 231
+//! to 351 range, measured with the markup stripped, is not pinned at all.
 //!
 //! When a source page legitimately changes: re-measure the figures the
 //! failure names, update them wherever they are cited, then update the digest
@@ -58,6 +64,18 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
             "32875:1db146b5048bd3c2",
             "the 141-word saturation floor and the 54-word window in \
              book/src/guides/semantic-clusters.md and skills/matra/references/semantic.md",
+        ),
+        (
+            "book/src/explanation/situation-model.md",
+            "3775:56c1b3ce9826c3bc",
+            "the 368-word saturation ceiling in book/src/guides/semantic-clusters.md \
+             and skills/matra/references/semantic.md",
+        ),
+        (
+            "book/src/reference/methodology.md",
+            "24933:743520cee436cbec",
+            "the RAKE length example in book/src/guides/cli.md: `lexical density` \
+             at 5.667 over `model file name` at 5.467",
         ),
     ]
 }
