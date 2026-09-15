@@ -23,10 +23,9 @@
 //! as the count law in `tests/skill.rs`, which fails when a command escapes
 //! its runner rather than trying to prove the command still works.
 //!
-//! The coverage is narrower for the figures swept over every page. The raw
-//! 141 to 368 word range pins only the two pages that set its ends, so an
-//! edit that carries some other page past either end goes unnoticed. The 231
-//! to 351 range, measured with the markup stripped, is not pinned at all.
+//! The coverage is narrower for the figure swept over every page. The 141 to
+//! 368 word range pins only the two pages that set its ends, so an edit that
+//! carries some other page past either end goes unnoticed.
 //!
 //! When a source page legitimately changes: re-measure the figures the
 //! failure names, update them wherever they are cited, then update the digest
