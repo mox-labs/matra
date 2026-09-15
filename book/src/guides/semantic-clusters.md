@@ -126,8 +126,8 @@ for cluster in pairs["clusters"]:
 Those three are pages of this book, run from a checkout of the repository, so the numbers below are yours to reproduce. Two of them cover the same ground for different surfaces, and the third is unrelated. It prints:
 
 ```text
-0.8334  cli.md <-> rust.md
-0.5917  cli.md <-> roadmap.md
+0.8355  cli.md <-> rust.md
+0.5935  cli.md <-> roadmap.md
 0.6035  rust.md <-> roadmap.md
 ```
 

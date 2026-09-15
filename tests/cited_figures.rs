@@ -9,7 +9,7 @@
 //!
 //! That is not hypothetical. Three wrong figures shipped across three review
 //! rounds of one branch, and the margin that carries the whole lesson of the
-//! semantic example is 0.0166: a near-duplicate pair scores 0.8334 against a
+//! semantic example is 0.0145: a near-duplicate pair scores 0.8355 against a
 //! cutoff of 0.85, and the example exists to show that the cutoff calls them
 //! unrelated. An ordinary edit to either guide can push that pair over the
 //! line, at which point two pages teach the opposite of what they say, in
@@ -39,25 +39,25 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
             "book/src/guides/cli.md",
-            "16743:db8e1ab6918622ef",
-            "the 0.8334 pair score in book/src/guides/semantic-clusters.md \
-             and skills/matra/references/semantic.md, and the 0.5917 unrelated score",
+            "17163:a6b2409cd01fe3b9",
+            "the 0.8355 pair score in book/src/guides/semantic-clusters.md \
+             and skills/matra/references/semantic.md, and the 0.5935 unrelated score",
         ),
         (
             "book/src/guides/rust.md",
-            "17823:7fa3d4e32f0eb6a5",
-            "the 0.8334 pair score and the 0.6035 unrelated score, in the same two files",
+            "17961:5e7c2779bee2baa3",
+            "the 0.8355 pair score and the 0.6035 unrelated score, in the same two files",
         ),
         (
             "book/src/roadmap.md",
             "28552:401dc1bf5ab761ac",
-            "the 0.5917 and 0.6035 unrelated scores, in the same two files",
+            "the 0.5935 and 0.6035 unrelated scores, in the same two files",
         ),
         (
             "book/src/reference/errors.md",
-            "16349:6bb85e7bcf54de5a",
-            "the RAKE and YAKE figures in book/src/guides/cli.md: 342 phrases, \
-             9.000, 1.154, 151 at the floor, and YAKE's 1390.768",
+            "25110:53ba6ea7484435c3",
+            "the RAKE and YAKE figures in book/src/guides/cli.md: 463 phrases, \
+             the two tied at 9.000, 1.190, 213 at the floor, and YAKE's 80.224",
         ),
         (
             "book/src/reference/domain-types.md",
@@ -67,15 +67,15 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "book/src/explanation/situation-model.md",
-            "3775:56c1b3ce9826c3bc",
+            "3823:a6d990f55a916692",
             "the 368-word saturation ceiling in book/src/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md",
         ),
         (
             "book/src/reference/methodology.md",
-            "24933:743520cee436cbec",
+            "25156:038958d544bafd9e",
             "the RAKE length example in book/src/guides/cli.md: `lexical density` \
-             at 5.667 over `model file name` at 5.467",
+             at 5.667 over `model file name` at 5.167",
         ),
     ]
 }
