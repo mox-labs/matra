@@ -3,8 +3,11 @@
 #
 # The sandbox script has one property, and everything here asserts a corner of
 # it: it must not be able to report a clean result for a tree it did not
-# examine. Three review rounds each closed a hole in that property and left
-# another, because the script had no test and no gate. This is the gate.
+# examine without saying so. Three review rounds each closed a hole in that
+# property and left another, because the script had no test and no gate. This
+# is the gate. The snapshot does not see beneath a symlink; that residual is
+# declared in the script and routed to a container by the skill, and the cases
+# here assert that it is announced, never that it is detected.
 #
 # Two shapes of failure are covered, because the script has two entry points
 # and each one fails differently.
@@ -456,6 +459,127 @@ case_exports_survive_eval() {
     fi
 }
 
+# A pass that builds or installs uses CARGO_HOME, and rustup and asdf setups
+# routinely export an absolute one. If `new` stops moving it, the pass runs
+# against the operator's real cargo home while the snapshot diffs clean,
+# because ~/.cargo is not a matra location. Nothing else here would notice.
+case_cargo_home_exported() {
+    local name="new: CARGO_HOME moves into the sandbox even when already set"
+    local r="$WORK/cargo-home"
+    mkdir -p "$r"
+    local out got
+    if ! out="$(run_sandbox "$WORK/real" "CARGO_HOME=$WORK/real/.cargo" -- new "$r" 2>/dev/null)"; then
+        fail "$name" "new failed"
+        return
+    fi
+    got="$(CARGO_HOME="$WORK/real/.cargo" bash -c "eval \"\$1\"; printf '%s' \"\$CARGO_HOME\"" _ "$out")"
+    if [ "$got" != "$r/home/.cargo" ]; then
+        fail "$name" "CARGO_HOME came back as '$got', wanted '$r/home/.cargo'"
+    else
+        pass "$name"
+    fi
+}
+
+# The -H on the second pass. A symlinked target root holding a link to a file,
+# written through: the first pass records the nested link as the link, which
+# the write does not change, so only the referent line can move. Without -H
+# the second pass stops at the symlinked root and never lists the nested link.
+case_nested_link_under_symlinked_root() {
+    local name="snapshot: a write through a link inside a symlinked target shows in the diff"
+    local r="$WORK/symlink-root-nested"
+    make_fixture "$r"
+    rmdir "$r/home/.config/matra"
+    mkdir -p "$r/dot/matra" "$r/dotfiles"
+    printf 'a = 1\n' > "$r/dotfiles/matra.toml"
+    if ! ln -s "$r/dot/matra" "$r/home/.config/matra" ||
+       ! ln -s "$r/dotfiles/matra.toml" "$r/dot/matra/config.toml"; then
+        fail "$name" "could not create the symlink fixture"
+        return
+    fi
+    local before after
+    before="$(fixture_snapshot "$r" 2>/dev/null)"
+    printf 'leaked = true\n' >> "$r/dotfiles/matra.toml"
+    after="$(fixture_snapshot "$r" 2>/dev/null)"
+    if [ "$before" = "$after" ]; then
+        fail "$name" "the pair is identical, so a write through the nested link is invisible"
+    else
+        pass "$name"
+    fi
+}
+
+# The residual is declared, not closed: beneath a symlink the snapshot sees
+# only the referent's own size and mtime, and through a symlink at a target
+# root it sees nothing. These cases assert that the residual is LOUD, on
+# stderr, without touching the exit status or the stdout that gets diffed.
+# They deliberately do not assert that a write beneath a symlink is detected,
+# because it is not, and the skill routes that pass to a container.
+#
+#   snapshot_streams <fixture root> <stdout var> <stderr var> <status var>
+snapshot_streams() {
+    local r="$1" errfile="$WORK/stderr.$$"
+    local o s
+    o="$(fixture_snapshot "$r" 2>"$errfile")"
+    s=$?
+    printf -v "$2" '%s' "$o"
+    printf -v "$3" '%s' "$(cat "$errfile")"
+    printf -v "$4" '%s' "$s"
+}
+
+case_warns_on_symlinked_target_root() {
+    local name="snapshot: warns on stderr when a target root is a symlink"
+    local r="$WORK/warn-root"
+    make_fixture "$r"
+    mkdir -p "$r/dot/matra"
+    rmdir "$r/home/.config/matra"
+    ln -s "$r/dot/matra" "$r/home/.config/matra"
+    local out err status
+    snapshot_streams "$r" out err status
+    if ! printf '%s\n' "$err" | grep -qF "WARNING: $r/home/.config/matra is a symlink"; then
+        fail "$name" "no warning naming the symlinked root on stderr: $err"
+    elif printf '%s\n' "$out" | grep -q 'WARNING'; then
+        fail "$name" "the warning reached the stdout that gets diffed"
+    elif [ "$status" -ne 0 ]; then
+        fail "$name" "the warning changed the exit status to $status"
+    else
+        pass "$name"
+    fi
+}
+
+case_warns_on_symlink_inside_target() {
+    local name="snapshot: warns on stderr when a target contains a symlink"
+    local r="$WORK/warn-nested"
+    make_fixture "$r"
+    # The model2vec shape: a models directory linked onto another volume.
+    mkdir -p "$r/vol/models"
+    ln -s "$r/vol/models" "$r/data/models"
+    local out err status
+    snapshot_streams "$r" out err status
+    if ! printf '%s\n' "$err" | grep -qF "WARNING: $r/data contains a symlink"; then
+        fail "$name" "no warning naming the target on stderr: $err"
+    elif printf '%s\n' "$out" | grep -q 'WARNING'; then
+        fail "$name" "the warning reached the stdout that gets diffed"
+    elif [ "$status" -ne 0 ]; then
+        fail "$name" "the warning changed the exit status to $status"
+    else
+        pass "$name"
+    fi
+}
+
+case_no_warning_without_symlinks() {
+    local name="snapshot: prints no warning when no target is or holds a symlink"
+    local r="$WORK/warn-none"
+    make_fixture "$r"
+    local out err status
+    snapshot_streams "$r" out err status
+    if printf '%s\n%s\n' "$out" "$err" | grep -q 'WARNING'; then
+        fail "$name" "a warning with no symlink anywhere teaches operators to ignore it: $err"
+    elif [ "$status" -ne 0 ]; then
+        fail "$name" "exited $status"
+    else
+        pass "$name"
+    fi
+}
+
 case_dangling_symlink_target() {
     local name="snapshot: a dangling symlink at a target is not reported ABSENT"
     local r="$WORK/dangling"
@@ -524,6 +648,11 @@ case_union_targets
 case_symlinked_target
 case_symlink_inside_a_target
 case_exports_survive_eval
+case_cargo_home_exported
+case_nested_link_under_symlinked_root
+case_warns_on_symlinked_target_root
+case_warns_on_symlink_inside_target
+case_no_warning_without_symlinks
 case_dangling_symlink_target
 case_unreadable_target
 
