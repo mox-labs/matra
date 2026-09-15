@@ -206,7 +206,7 @@ Process identity is not usable for naming either. The temporary used to
 carry the process id alone and be removed by name just before it was
 created, which is safe only where a pid is unique. In a container every
 process is pid 1, so two cold starts sharing a bind-mounted model
-directory pick the same name, and the removal deletes a live peer's
+directory picked the same name, and the removal deleted a live peer's
 transfer. The name now carries the pid, a nanosecond timestamp and a
 counter, and nothing is removed for looking like this call's own: age is
 the only rule that reclaims anything.
@@ -220,18 +220,23 @@ adapters differ in the ways that matter (one artifact against three, one
 file against a directory).
 
 **One divergence survives, and it is deliberate.** `Udpipe::english`
-removes a cached file that fails verification; `Model2Vec::potion_base_8m`
-removes nothing at all. The asymmetry follows from what the two names
-mean. `english-ewt-ud-2.5-191206.udpipe` names one pinned release, so a
-file sitting under it that is not that release is matra's own stale
-cache and nothing else it could plausibly be. `model.safetensors`,
+replaces a cached file that fails verification, by an atomic rename of
+bytes that verified, and leaves it byte-identical when no such bytes
+arrive; `Model2Vec::potion_base_8m` refuses a directory whose artifacts
+fail verification and replaces nothing. Neither deletes a file it found.
+The asymmetry follows from what the two names mean.
+`english-ewt-ud-2.5-191206.udpipe` names one pinned release, so a file
+sitting under it that is not that release is matra's own stale cache
+and nothing else it could plausibly be. `model.safetensors`,
 `tokenizer.json` and `config.json` are the artifact format's names rather
 than this model's, so a directory holding them may be a caller's own
 model, which is why the embedding provisioner refuses a directory it did
-not fill instead of clearing it. Removing where the name is unambiguous
-and refusing where it is not is one rule, not two.
+not fill instead of writing over it. Replacing where the name is
+unambiguous and refusing where it is not is one rule, not two.
 
-The ordering is a second thing, and the review of #77 corrected it. The
+How the replacement happens is a second thing, and two reviews of #77
+shaped it; the paragraphs below record both, because the first answer
+was not the last. The
 UDPipe removal used to run before the refetch, on the reasoning that it
 kept the "download only into a directory that does not hold this name"
 shape. It bought nothing: `install` lands through `fs::rename`, which

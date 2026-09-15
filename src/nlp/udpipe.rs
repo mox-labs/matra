@@ -23,11 +23,12 @@ const ENGLISH_MODEL_SHA256: &str =
 /// Expected size in bytes, checked before hashing as a fast-fail guard.
 const ENGLISH_MODEL_SIZE: u64 = 16_309_608;
 
-/// Direct download URL for the pinned model. LINDAT migrated the bitstream
-/// endpoint from `/repository/xmlui/bitstream/...` (now a 200 HTML preview)
-/// to `/repository/server/api/core/bitstreams/...` (the actual binary).
-/// `udpipe_rs::download_model` still uses the old pattern, so we call
-/// `download_model_from_url` directly with the working URL.
+/// Direct download URL for the pinned model, fetched by [`fetch_capped`].
+/// LINDAT migrated the bitstream endpoint from
+/// `/repository/xmlui/bitstream/...` (now a 200 HTML preview) to
+/// `/repository/server/api/core/bitstreams/...` (the actual binary), so
+/// the URL is pinned here in its working form rather than derived from a
+/// model name.
 const ENGLISH_MODEL_URL: &str = "https://lindat.mff.cuni.cz/repository/server/api/core/bitstreams/handle/11234/1-3131/english-ewt-ud-2.5-191206.udpipe?sequence=17&isAllowed=y";
 
 /// Ceiling on the downloaded model. The pinned artifact is 16.3 MB, so
@@ -110,12 +111,17 @@ impl Udpipe {
     /// The bytes are fetched into memory, verified there, and only then
     /// written: nothing that failed the digest ever reaches the model
     /// directory, and a run interrupted during the transfer leaves
-    /// nothing behind at all. A cached file that fails verification is
-    /// refetched once and replaced only when the new bytes verify, so a
-    /// refetch that cannot reach the network leaves the cached file
-    /// where it was rather than leaving nothing; a second mismatch returns
+    /// nothing behind at all.
+    ///
+    /// A model directory that lacks the file, or holds one that fails
+    /// verification, costs a download, and a response that fails the
+    /// digest costs one more: at most two downloads per call. A cached file
+    /// that fails verification is never deleted. It is replaced only when
+    /// bytes that verify arrive, by an atomic rename onto its name, so a
+    /// refetch that fails, at the network or at the digest, leaves it
+    /// byte-identical. Two responses that both fail the digest return
     /// [`Error::ModelInvalid`] without loading anything, because a
-    /// mismatched model is untrusted.
+    /// mismatched model is untrusted. A transport failure is not retried.
     ///
     /// **No TOCTOU window.** The bytes that match the SHA-256 are the
     /// same bytes loaded into the model. There is no second disk read
@@ -134,9 +140,9 @@ impl Udpipe {
     /// timeout from an unreachable host), or if the verified bytes
     /// cannot be written. [`Error::InputTooLarge`] with `what` set to
     /// `"udpipe_download"` if the response exceeds
-    /// [`MAX_MODEL_BYTES`](self). [`Error::ModelInvalid`] if the bytes
-    /// still fail the digest after one refetch, or if the verified bytes
-    /// do not load.
+    /// [`MAX_MODEL_BYTES`](self). [`Error::ModelInvalid`] if two
+    /// downloads in a row fail the digest, or if the verified bytes do not
+    /// load.
     pub fn english(model_dir: impl AsRef<Path>) -> crate::domain::Result<Self> {
         Self::english_with_notice(model_dir, |_| {})
     }
@@ -223,8 +229,9 @@ impl Udpipe {
     }
 }
 
-/// Filename `udpipe_rs::download_model("english-ewt", ...)` writes inside
-/// the target directory. Hardcoded by the upstream crate.
+/// Filename the pinned model is cached under inside the model directory.
+/// It is the release's own name, the one the upstream distribution uses,
+/// so a hand-placed download lands under it without renaming.
 const ENGLISH_MODEL_FILENAME: &str = "english-ewt-ud-2.5-191206.udpipe";
 
 /// Obtain the pinned artifact's verified bytes, downloading it if the
@@ -242,12 +249,11 @@ const ENGLISH_MODEL_FILENAME: &str = "english-ewt-ud-2.5-191206.udpipe";
 /// the bytes that satisfied the digest, which is what closes the TOCTOU
 /// window: the loader never reads the disk again.
 ///
-/// A cached file that is not the pinned model is removed, but only once
-/// a replacement is in hand. Removing it first cost the user their
-/// working file whenever the refetch then failed, which offline plus a
-/// corrupt cache made a certainty, and bought nothing: [`install`] lands
-/// through a rename and `fs::rename` replaces an existing destination,
-/// so the write never needed the name free.
+/// A cached file that is not the pinned model is never removed. It is
+/// replaced when [`install`] renames verified bytes onto its name, which
+/// `fs::rename` does over an existing destination, and left byte-identical
+/// when no verified bytes arrive. Removing it before the refetch used to
+/// cost an offline user the only copy they had.
 fn provision(
     dir: &Path,
     filename: &str,
@@ -1049,8 +1055,9 @@ mod tests {
         );
     }
 
-    /// Regression (review of #77, M1): the replacement is fetched before
-    /// the cached file is removed. The removal used to run first, so a
+    /// Regression (review of #77, M1): a cached file that fails
+    /// verification is never removed, so a refetch that fails leaves it
+    /// byte-identical. A removal used to run before the refetch, so a
     /// user who was offline with a corrupt cache lost the file they had
     /// and got nothing back, and the removal bought nothing: the install
     /// lands through a rename, which replaces an existing destination.
@@ -1171,8 +1178,9 @@ mod tests {
 
     /// The constraint on that sweep: a concurrent cold start's directory
     /// is minutes fresh, and reclaiming it would delete another live
-    /// process's download. Three racing processes on one empty model
-    /// directory must still produce one correct file and no residue.
+    /// process's download. The test plants one fresh peer directory and
+    /// checks that neither a direct sweep nor a full provision in the same
+    /// model directory removes it. It does not race processes.
     #[test]
     fn a_live_concurrent_temp_directory_is_left_alone() {
         let dir = tempfile::tempdir().unwrap();
