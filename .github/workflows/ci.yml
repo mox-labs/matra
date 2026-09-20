@@ -187,7 +187,7 @@ jobs:
       # with two matches becomes `basename A B`, where B is read as a
       # suffix to strip rather than a second file, so the tag case below
       # would inspect only the first wheel and pass with a non-abi3 one
-      # sitting beside it. publish-pypi.yml guards the same contract the
+      # sitting beside it. release.yml guards the same contract the
       # same way.
       - name: The wheel is abi3
         shell: bash

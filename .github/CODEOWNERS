@@ -29,7 +29,7 @@
 
 # Release machinery — irreversible operations live here. Per the
 # durable per-publish approval rule (`memory/feedback_no_publish.md`),
-# every change to publish.yml, changelog-release.sh, the release recipe
+# every change to release.yml, changelog-release.sh, the release recipe
 # in the justfile, or the supply-chain config gets explicit review.
 /justfile                              @yzavyas
 /scripts/changelog-release.sh          @yzavyas
