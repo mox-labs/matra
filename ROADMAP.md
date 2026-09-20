@@ -175,13 +175,15 @@ That last question is the real one. matra's discipline is that the library retur
 
 **Precedent.** A survey of seventeen tools (`docs/surveys/2026-09-05-conventions.md`) found one that prints its own agent-facing instructions with a second tier of detail, Vercel Labs' `agent-browser`, whose stated reason is that instructions served from the installed binary always match its version. The same survey records the surrounding conventions this entry adopts alongside the flag: an `llms.txt` on the docsite, an `AGENTS.md` in the repository, and a `CITATION.cff` so the research behind each measure is citable from the repository page.
 
+**Shipped, 2026-09-06**, via [i11](https://github.com/mox-labs/matra/blob/main/book/src/plans/i11-agent-surface.md): `matra --skill` prints the top level, `matra --skill -r` lists the references and `matra --skill -r <name>` prints one. The text is embedded with `include_str!`, so an installed program's instructions are the ones that match it, and a test executes the commands the skill names, so an incantation that stops working fails a gate rather than a reader. `--help` is unchanged and stays the reference for humans. The surrounding conventions the precedent paragraph names landed alongside it: `llms.txt` on the docsite with a currency gate, `AGENTS.md` in the repository, a plugin manifest, and `CITATION.cff`.
+
 **Trigger condition. FIRED, 2026-09-05**, by owner direction, sequenced after I10: the skill documents the CLI contract, so the CLI had to be one implementation with a pinned JSON shape first. I10 landed on 2026-09-06; [ADR-0012](https://github.com/mox-labs/matra/blob/main/docs/decisions/0012-agent-surface.md) records the decisions and [`book/src/plans/i11-agent-surface.md`](https://github.com/mox-labs/matra/blob/main/book/src/plans/i11-agent-surface.md) carries the milestones.
 
 ## Terminal UI for the Rust CLI
 
 **What it is.** An interactive terminal interface over the same `cli` module: browse a parsed document, its sections, sentences, and dependency trees, and the metrics beside them, without leaving the terminal.
 
-**Trigger condition.** I10 and the agent surface have met their acceptance gates. The TUI is a renderer over a contract that has to be stable first; building it before that means re-doing it.
+**Trigger condition. FIRED, 2026-09-06.** I10 and the agent surface have both met their acceptance gates. The TUI is a renderer over a contract that has to be stable first; building it before that means re-doing it.
 
 
 ## Record traceability accessor

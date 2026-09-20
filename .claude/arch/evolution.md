@@ -12,6 +12,8 @@ Architecture is a sequence of decisions across iterations. This file is the chan
 | I2 | Resilience floor (size caps, symlink rejection, atomic download, TOCTOU closure, `catch_unwind` panic boundary, O(n) tree_depth, parse-per-paragraph) | shipped |
 | I7 | Structural primitives are fields (ADR-0008): derivations cross FFI as serde-visible data computed once at a pipeline choke point; views over data already crossing stay methods (ADR-0009). Five primitives landed on that channel: negation cues, modals plus the bare-assertion discriminator, reporting constructions, root adverbials, Hearst span pairs | shipped 2026-08-21 |
 | I9 | The Tier-2 channel (ADR-0010): embeddings behind the `Embedder` port with provenance identity, the model2vec static adapter (bit-deterministic, wasm-clean), `semantic_clusters` as connected components carrying their edges, `embed_and_cluster` as the composition-root pairing. Adapter features name their backend | shipped 2026-09-05 |
+| I10 | `Config` resolves locations and defaults per key (argument, environment, config file, compiled defaults) and carries locations and defaults only, never behavior; the command line moves into the library as `src/cli/`, with `src/bin/matra.rs` and `python/matra/cli.py` as launchers over one implementation. ADR-0011 | shipped 2026-09-06 |
+| I11 | The agent surface (ADR-0012): `--skill` and `--skill -r <name>` print `skills/matra/` out of the binary via `include_str!`, so instructions match the version that prints them, and a test executes the commands the skill names. `--help` stays the human reference | shipped 2026-09-06 |
 
 Future iterations are tracked in `book/src/plans/`. Past iterations are not rewritten; commitments only get superseded by new ADRs, never edited out.
 

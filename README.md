@@ -38,14 +38,16 @@ The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `
 
 ```bash
 # Rust library
-cargo add matra
+cargo add matra@0.2
 
 # Rust CLI
-cargo install matra --features cli
+cargo install matra --version '^0.2' --features cli
 
 # Python library and the matra command
-pip install matra
+pip install 'matra>=0.2'
 ```
+
+Each command names a version for the reason the `uvx` line above does: until 0.2.0 is the release the registries hand out, a bare `cargo add matra` or `pip install matra` fetches 0.1.0, which succeeds and gives you an older program rather than failing. The Python routes take a floor, and `uv add 'matra>=0.2'` is that same floor for uv. The cargo routes take a caret requirement, which is how cargo states a version, so they accept 0.2.0 or a later release semver-compatible with it and stop short of 0.3.0.
 
 The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output and the exit codes are the same either way. Wheels ship for Linux x86_64, Linux aarch64, macOS x86_64 and macOS arm64. They are built against the CPython stable ABI, so one wheel per platform serves 3.12 and every later 3.x on GIL-enabled CPython, and the Linux ones are manylinux2014, which installs on glibc 2.17 or newer and so reaches back through Debian 11, Ubuntu 20.04, RHEL 8 and Amazon Linux 2. Anything else builds from the sdist, which needs a Rust toolchain and a C++ compiler, because UDPipe is C++. On Windows that path is untested rather than known to work, and it needs the MSVC build tools rather than any of the packages the installation page names. Free-threaded CPython also falls here, which takes a different ABI tag than the one these wheels carry.
 
