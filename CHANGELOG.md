@@ -31,7 +31,7 @@ those by hand.
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-09-06
+## [0.2.0] - 2026-09-20
 
 ### Highlights
 
