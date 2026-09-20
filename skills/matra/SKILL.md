@@ -104,7 +104,7 @@ Every metric row below names a slot on the result. A slot is null when the metri
 
 ## Limits and errors
 
-Input is capped at 8 MiB, checked before decoding. Summarizers cap at 2,000 sentences, keyphrase extractors at 200,000 tokens, the config file at 64 KiB. Over a cap, the failure names which gate fired in a `what` label: `input`, `file_source`, `tfidf`, `textrank`, `rake`, `yake`, `semantic_clusters`, `embedding_download`, `config_file`.
+Input is capped at 8 MiB, checked before decoding. Summarizers cap at 2,000 sentences, keyphrase extractors at 200,000 tokens, the config file at 64 KiB. Over a cap, the failure names which gate fired in a `what` label: `input`, `file_source`, `tfidf`, `textrank`, `rake`, `yake`, `semantic_clusters`, `udpipe_download`, `embedding_download`, `config_file`.
 
 Seven failure kinds exist, and `invalid_input` is the one that means the call site is wrong rather than the text: mismatched vector dimensions, a non-finite threshold, an unknown config key. Fix the call, not the document. Every kind, its Python exception, and what to do about it is in `errors`.
 
