@@ -70,6 +70,7 @@ The pinned model is part of the contract in every case. A different model produc
 | sentences into either summarizer | 2,000 | `InputTooLarge` with `what` set to `"tfidf"` or `"textrank"` |
 | sentences into clustering | 2,000 | `InputTooLarge` with `what` set to `"semantic_clusters"`, checked before the embedding pass runs |
 | tokens into either keyphrase extractor | 200,000 | `InputTooLarge` with `what` set to `"rake"` or `"yake"` |
+| the UDPipe model being downloaded | 64 MiB | `InputTooLarge` with `what` set to `"udpipe_download"`, the read stopping at the bound rather than continuing |
 | one embedding artifact being downloaded | 64 MiB | `InputTooLarge` with `what` set to `"embedding_download"`, the read stopping at the bound rather than continuing |
 | the config file matra is about to read | 64 KiB | `InputTooLarge` with `what` set to `"config_file"`, checked against the file's metadata before any read |
 

@@ -89,6 +89,7 @@ Every gate returns a typed variant of `Error`. There is no `Result<T, String>` a
 | `tfidf_summarize`, `textrank_summarize` | 2,000 sentences | `InputTooLarge`, `what` is `"tfidf"` or `"textrank"` |
 | `embed_and_cluster`, `semantic_clusters` | 2,000 sentences | `InputTooLarge`, `what` is `"semantic_clusters"` |
 | `rake_keyphrases`, `yake_keyphrases` | 200,000 tokens | `InputTooLarge`, `what` is `"rake"` or `"yake"` |
+| the pinned UDPipe model being downloaded | 64 MiB | `InputTooLarge`, `what` is `"udpipe_download"` |
 | one pinned embedding artifact being downloaded | 64 MiB | `InputTooLarge`, `what` is `"embedding_download"` |
 | the config file, checked against its metadata | 64 KiB | `InputTooLarge`, `what` is `"config_file"` |
 

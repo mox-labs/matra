@@ -38,10 +38,11 @@ Seven kinds exist. The kind string is the stable key a consumer branches on; the
 | `rake` | RAKE keyphrases | 200,000 | Tokens across the slice, punctuation included |
 | `yake` | YAKE keyphrases | 200,000 | Tokens across the slice, punctuation included |
 | `semantic_clusters` | Clustering | 2,000 | Sentences in the slice |
+| `udpipe_download` | The UDPipe model fetch | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
 | `embedding_download` | One embedding artifact fetch | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
 | `config_file` | Reading the config file | 64 KiB (65,536) | File size from the filesystem, checked before any read |
 
-The value carries both `limit` and `actual`, so a message can be built without hardcoding the constants. The caps bound worst-case memory and time: TextRank's dense matrix reaches roughly 32 MB at its cap, and the keyphrase caps are stated in tokens because their maps grow with token count rather than sentence count. The download cap is the one gate whose input is not the caller's; it bounds what a misbehaving server can make the process hold.
+The value carries both `limit` and `actual`, so a message can be built without hardcoding the constants. The caps bound worst-case memory and time: TextRank's dense matrix reaches roughly 32 MB at its cap, and the keyphrase caps are stated in tokens because their maps grow with token count rather than sentence count. The two download caps are the gates whose input is not the caller's; they bound what a misbehaving server can make the process hold.
 
 A document from disk crosses two text gates in sequence, and `file_source` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
