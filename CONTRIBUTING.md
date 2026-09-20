@@ -94,17 +94,52 @@ every few iterations). Post-1.0, semver discipline binds.
 2. Maintainer reviews the diff, ensures the [VERSION] section has 2-4
    Highlight paragraphs (for the load-bearing changes) plus the
    structured Keep-a-Changelog bullets.
-3. Maintainer bumps `Cargo.toml` version, commits.
+3. Maintainer bumps `Cargo.toml` version and every other
+   version-carrying file (`just version-sync` names them), commits, and
+   lands it on `main`.
 4. `cargo publish --dry-run --features udpipe` for sanity check.
-5. **Manual approval gate.** Push a signed tag
-   (`git tag -s vVERSION -m 'vVERSION'; git push --follow-tags`). The tag
-   triggers `.github/workflows/publish.yml`, which pauses at the
-   `crates-io` environment gate. Approving that deployment in the Actions
-   UI is the per-publish approval point. Nothing publishes from a laptop.
+5. **Dispatch the release from main**, with the version typed out:
+   `gh workflow run release.yml --ref main -f version=VERSION`. There is
+   no tag to push; `.github/workflows/release.yml` creates the annotated
+   tag itself once its checks pass, so the tag can never name a commit
+   the release did not verify. A release cannot be started from a branch
+   other than `main`, and a version that disagrees with `Cargo.toml`
+   stops the run before anything is built.
+6. **Two manual approval gates.** The run pauses at the `crates-io`
+   environment and again at `pypi`. Approving each deployment in the
+   Actions UI is the per-publish approval point for that registry.
+   Nothing publishes from a laptop.
+7. After both publishes, a smoke job installs the released version from
+   PyPI and from crates.io, on Linux and macOS, under a CPython one
+   minor above the abi3 floor, and runs `matra --version` and
+   `matra --skill` from each install.
+
+To retry a publish that failed after the tag was created, dispatch again
+with `-f skip_tag=true`. That reuses the existing tag and builds from it
+rather than from whatever `main` has become, and it is the only
+supported way to re-run a release without bumping the version.
 
 The deliberate manual gate is by policy, not because automation is hard.
 Publishing is irreversible (yanking leaves a tombstone) and visible to
 every downstream consumer; it deserves an explicit human moment.
+
+**Settings the workflow cannot enforce for itself.** These live in three
+web UIs, and the 0.2.0 release is what proved each one matters:
+
+- The `crates-io` and `pypi` GitHub environments each need **required
+  reviewers**. Without them the workflow publishes unattended, which is
+  what `pypi` did for 0.2.0 while `crates-io` correctly waited.
+- Each environment's **deployment branch policy must allow `main`**,
+  since the release is dispatched from there. A branch-only policy is
+  also why the tag-triggered workflow failed outright for 0.2.0 with
+  `Tag "v0.2.0" is not allowed to deploy to crates-io due to environment
+  protection rules`. If a tag trigger is ever restored, both
+  environments need a `v*` tag policy as well.
+- The **Trusted Publishing configuration on both registries names a
+  workflow filename**, and that filename is now `release.yml`. It was
+  `publish.yml` on crates.io and `publish-pypi.yml` on PyPI. Until both
+  are updated, the OIDC exchange fails and neither registry accepts an
+  upload.
 
 ---
 

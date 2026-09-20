@@ -31,6 +31,21 @@ those by hand.
 
 ## [Unreleased]
 
+### Added
+
+- Build provenance attestations (`actions/attest-build-provenance`) over the `.crate`, the four wheels and the sdist, generated before anything is published, so a consumer can run `gh attestation verify` against what they downloaded. SLSA Build Level 2; Level 3 still needs a reusable workflow, which the SHA-pin policy rejects.
+- PEP 740 attestations on the PyPI upload, which arrive automatically now that the upload goes through `pypa/gh-action-pypi-publish` under Trusted Publishing.
+- A post-publish smoke job. It installs the released version from PyPI and from crates.io, on Linux and macOS, under a CPython one minor above the abi3 floor, and runs `matra --version` and `matra --skill` from each install. Nothing checked this before: a release could publish artifacts a user could not install and look green.
+
+### Changed
+
+- One release workflow, `.github/workflows/release.yml`, replaces `publish.yml` and `publish-pypi.yml`. Two tag-triggered workflows raced on the same tag and re-derived the same version checks in two places, where they had already drifted; the checks now run once, in one `verify` job, and that job also runs `scripts/check-version-sync.sh` so all five version-carrying files and the CITATION date are covered rather than one file each.
+- A release is dispatched from `main` with the version typed out, not started by pushing a tag. The `crates-io` environment's deployment policy is branch-based and rejected a tag ref outright on the 0.2.0 release, and a typed version that disagrees with `Cargo.toml` now stops the run before anything is built. The workflow creates the annotated tag itself, after its checks pass, so the tag cannot name a commit the release did not verify. A `skip_tag` input retries a failed publish against the tag that already exists.
+
+### Removed
+
+- `.github/workflows/publish.yml` and `.github/workflows/publish-pypi.yml`. The Trusted Publishing configuration on crates.io and on PyPI binds to a workflow filename and must be repointed at `release.yml`, and both the `crates-io` and `pypi` environments need required reviewers. `pypi` had none, so PyPI published 0.2.0 unattended. `CONTRIBUTING.md` names all three prerequisites.
+
 ## [0.2.0] - 2026-09-20
 
 ### Highlights

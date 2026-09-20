@@ -5,6 +5,13 @@
 - **Decider(s):** owner decision on the abi3 question, recorded and verified by
   the maintainer role
 
+> **Note (2026-09-20):** `publish-pypi.yml` was consolidated with `publish.yml`
+> into `.github/workflows/release.yml`. Every reference below to
+> `publish-pypi.yml` now means the `build-wheels` and `build-sdist` jobs of
+> `release.yml`, which carry the four-target matrix, the pinned
+> `ghcr.io/pyo3/maturin` digest, `RUSTUP_TOOLCHAIN=stable` and the abi3 and
+> manylinux2014 assertions unchanged. The decision itself is untouched.
+
 ## Context
 
 matra 0.2.0 is cut and unpublished. Two clean-room install passes, one on macOS
