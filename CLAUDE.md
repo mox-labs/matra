@@ -38,8 +38,9 @@ Four layers, and the dependency arrows only ever point inward.
 - Each adapter implements one port. `nlp/udpipe.rs` is the only file in the tree that imports `udpipe_rs`, because that is where the panic boundary lives.
 - `metrics/` and `extraction/` are plain functions over `domain` and `stopwords`. They touch no port, which is why they test without a model.
 - `lib.rs` is the composition root: the only file that knows every adapter and every port, and the only place they are wired together.
+- `config.rs` sits beside `lib.rs` and answers where things live and what the defaults are. It is the one box an adapter may read from the row above it (`Udpipe::from_config`, `Model2Vec::from_config`).
 
-Above the library, `bin/matra.rs` is the application tier and decides rendering and exit codes, while `python/matra/` is the crust.
+Above the library, `cli/` is the application tier: it parses arguments, renders, and decides exit codes, behind the non-default `cli` feature. Boundary rule 7 holds it to the public surface (`Engine`, `Ingest`, `extraction`, `config`, `domain`) and never a port or an adapter, so it is a consumer that ships in the same crate rather than a layer of it. `src/bin/matra.rs` and `python/matra/cli.py` are launchers: each collects arguments and calls `matra::cli::run`, so one program answers to both. The application tier lives in the library because a binary target cannot be reached from PyO3, and the alternative was the second implementation that 0.1.0 shipped and drifted.
 
 Run `ls` for the file list. It is not repeated here, because a hand-maintained tree in a context document goes stale the first time a file moves and then quietly misinforms whoever trusted it.
 
