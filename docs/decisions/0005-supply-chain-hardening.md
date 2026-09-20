@@ -4,6 +4,8 @@
 - **Date:** 2026-05-20
 - **Decider(s):** project maintainer
 
+> **Note (2026-09-20):** `publish.yml` and `publish-pypi.yml` were consolidated into `.github/workflows/release.yml`. Every reference below to either filename now means `release.yml`. The posture in this ADR stands unchanged; what moved is that the release is dispatched from `main` rather than triggered by a tag push (the `crates-io` environment's branch policy rejects a tag ref), the workflow creates the annotated tag itself, PyPI uploads through `pypa/gh-action-pypi-publish` instead of hand-rolled curl plus twine, and `actions/attest-build-provenance` attests every artifact at SLSA Build Level 2. The Trusted Publishing configuration on crates.io and on PyPI binds to a workflow filename and must be updated to `release.yml`.
+
 ## Context
 
 Matra is a library. Downstream callers (third-party Rust and Python projects) inherit matra's supply-chain posture transitively. If matra publishes from a workflow with a long-lived API token, every downstream depends on that token never leaking. If matra's actions are pinned to floating tags, a hostile force-push to one of those tags can be injected into every downstream build through matra's CI cache. The library's trust posture is inherited by everything downstream.

@@ -156,23 +156,28 @@ release-prep VERSION:
     @echo "  cargo publish --dry-run --features udpipe"
     @echo "  just release {{VERSION}}"
 
-# Tag and push for the current VERSION. The actual cargo publish runs
-# inside the `crates-io` GitHub environment via .github/workflows/publish.yml,
-# which pauses for a required-reviewer approval before invoking
-# `cargo publish` via Trusted Publishing (OIDC, no long-lived tokens).
-# That environment gate is the canonical per-publish approval point;
-# this recipe just creates and pushes the tag.
+# Release VERSION. Nothing publishes from a laptop and nothing is tagged
+# from one either: .github/workflows/release.yml is dispatched from main,
+# verifies the version, creates the annotated tag itself, builds and
+# attests every artifact, then pauses at the `crates-io` and `pypi`
+# environment gates for a required-reviewer approval before either
+# registry is written. Those two approvals are the canonical per-publish
+# approval points. This recipe prints the dispatch command.
 release VERSION:
-    @echo "Pre-release checks:"
-    @echo "  - git log/diff matches what you expect"
+    @echo "Pre-release checks (the workflow re-checks all of these):"
+    @echo "  - the commit you want to release is merged to main"
     @echo "  - cargo publish --dry-run --features udpipe is clean"
     @echo "  - the [{{VERSION}}] section of CHANGELOG.md is correct"
     @echo "  - just version-sync is clean and reports {{VERSION}}"
     @echo "  - CITATION.cff date-released is the date you are actually releasing"
+    @echo "  - the maturin image digest in release.yml is current enough"
     @echo ""
-    @echo "When ready, push the tag:"
-    @echo "  git tag -s v{{VERSION}} -m 'v{{VERSION}}'"
-    @echo "  git push --follow-tags"
+    @echo "When ready, dispatch the release from main:"
+    @echo "  gh workflow run release.yml --ref main -f version={{VERSION}}"
     @echo ""
-    @echo "The publish workflow will then pause at the crates-io environment"
-    @echo "gate. Approve in the GitHub Actions UI to fire cargo publish."
+    @echo "To retry a publish against the tag it already created:"
+    @echo "  gh workflow run release.yml --ref main -f version={{VERSION}} -f skip_tag=true"
+    @echo ""
+    @echo "The run pauses twice, once per registry. Approve each deployment"
+    @echo "in the GitHub Actions UI. A post-publish smoke job then installs"
+    @echo "{{VERSION}} from PyPI and crates.io on Linux and macOS."
