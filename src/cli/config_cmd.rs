@@ -211,7 +211,8 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
         .unwrap_or(Path::new("."));
-    std::fs::create_dir_all(parent)?;
+    std::fs::create_dir_all(parent)
+        .map_err(|e| io_at("create the config directory", parent, &e))?;
 
     let temp = parent.join(format!(
         ".{}.{}.tmp",
@@ -225,14 +226,15 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
     let mut file = std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(&temp)?;
+        .open(&temp)
+        .map_err(|e| io_at("create the temporary file", &temp, &e))?;
     let written = file
         .write_all(DEFAULT_TOML.as_bytes())
         .and_then(|()| file.sync_all());
     drop(file);
     if let Err(e) = written {
         let _ = std::fs::remove_file(&temp);
-        return Err(Box::new(e));
+        return Err(Box::new(io_at("write the config to", &temp, &e)));
     }
 
     let arrived = if force {
@@ -249,7 +251,7 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
             )
             .into());
         }
-        return Err(Box::new(e));
+        return Err(Box::new(io_at("move the config into place at", path, &e)));
     }
 
     // `rename` consumed the temp; `hard_link` left it behind as a second
@@ -263,6 +265,23 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
         let _ = std::fs::remove_file(&temp);
     }
     Ok(())
+}
+
+/// A filesystem failure that names the operation and the path.
+///
+/// The counterpart of the functions of the same name in
+/// `nlp/udpipe.rs` and `embed/model2vec.rs`, and it exists for the same
+/// reason: `io error: Permission denied (os error 13)` was the whole
+/// message a failed `config init` produced, with the directory sitting
+/// in a variable one line away. ADR-0015 settled that the discipline
+/// travels and the helper does not, and here the helper could not
+/// travel anyway: both existing copies are private to an adapter, and
+/// boundary rule 7 keeps `src/cli/` off the adapters.
+fn io_at(operation: &str, path: &Path, error: &std::io::Error) -> crate::domain::Error {
+    crate::domain::Error::Io(std::io::Error::new(
+        error.kind(),
+        format!("cannot {operation} {}: {error}", path.display()),
+    ))
 }
 
 #[cfg(test)]
@@ -420,5 +439,35 @@ mod tests {
             .filter(|name| name.ends_with(".tmp"))
             .collect();
         assert!(leftovers.is_empty(), "left behind: {leftovers:?}");
+    }
+
+    /// Regression (0.2.1): a filesystem failure names the operation and
+    /// the path. `create_dir_all` was called bare, so an unwritable
+    /// config directory produced `matra: Permission denied (os error
+    /// 13)` and nothing else, with the directory one line away in a
+    /// variable.
+    ///
+    /// The fixture is a file where a directory has to be, which fails
+    /// the same way on every platform and for every user, including
+    /// root. A chmod fixture would need a unix gate and would still
+    /// pass vacuously in a container that runs as root.
+    #[test]
+    fn a_filesystem_failure_names_the_operation_and_the_path() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let blocked = dir.path().join("not-a-directory");
+        std::fs::write(&blocked, b"x").expect("write the blocker");
+        let path = blocked.join("matra").join("config.toml");
+
+        let err = write_defaults(&path, false).expect_err("the directory cannot be created");
+        let message = err.to_string();
+
+        assert!(
+            message.contains("create the config directory"),
+            "names the operation: {message}"
+        );
+        assert!(
+            message.contains(&blocked.join("matra").display().to_string()),
+            "names the path: {message}"
+        );
     }
 }
