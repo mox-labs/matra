@@ -146,6 +146,8 @@ Ten CoNLL-U columns plus one derived flag, all present on every token.
 
 `keyphrases` returns `{ "phrase": string, "score": float }`, highest score first. There is no position, because a phrase is not tied to one place the way a sentence is.
 
+Phrases with equal scores can swap order between runs, and a tie at the `-n` boundary can change which phrase makes the list, so sort the array before diffing it across runs.
+
 ## Useful jq filters
 
 Non-null readability across a document: `[.result.sections[].paragraphs[].readability_grade | select(. != null)] | add / length`.
