@@ -31,6 +31,8 @@ those by hand.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-21
+
 ### Added
 
 - Build provenance attestations (`actions/attest-build-provenance`) over the `.crate`, the four wheels and the sdist, generated before anything is published, so a consumer can run `gh attestation verify` against what they downloaded. SLSA Build Level 2; Level 3 still needs a reusable workflow, which the SHA-pin policy rejects.
@@ -45,6 +47,14 @@ those by hand.
 ### Removed
 
 - `.github/workflows/publish.yml` and `.github/workflows/publish-pypi.yml`. The Trusted Publishing configuration on crates.io and on PyPI binds to a workflow filename and must be repointed at `release.yml`, and both the `crates-io` and `pypi` environments need required reviewers. `pypi` had none, so PyPI published 0.2.0 unattended. `CONTRIBUTING.md` names all three prerequisites.
+
+### Fixed
+
+- A failed `matra config init` named neither the operation nor the path. `create_dir_all` was called bare, so an unwritable config directory produced `Permission denied (os error 13)` and nothing else; the four other filesystem failures in the same function were equally anonymous. All five now carry the operation and the path, as the two provisioners already did under ADR-0015.
+- The keyphrase tie caveat reached three of the five surfaces that document keyphrase output. RAKE and YAKE order among exactly tied scores varies between runs, and a tie at the requested count changes which phrase is returned. The Rust guide and the skill's JSON reference now say so, which the CLI guide, the Python guide and the skill's metrics reference already did.
+- The install pages still said 0.2.0 was not on the registries yet. It reached crates.io and PyPI on 2026-09-20, so `README.md`, `book/src/guides/cli.md`, `book/src/tutorials/installation.md` and `skills/matra/SKILL.md` were telling a reader to pin a floor until a release that was already there, and `skills/matra/SKILL.md` ships inside the binary, so `matra --skill` told an agent the published version might not exist. The floors and every command line are unchanged, because `>=0.2` and the caret requirements stay correct for 0.2.1 and every later 0.2.x; only the claim about what the registries serve is gone.
+- Two cross-document similarity figures in `book/src/guides/semantic-clusters.md` and `skills/matra/references/semantic.md` were re-measured, because that install prose sits inside `book/src/guides/cli.md`'s first 512 tokens and so is part of what the page embeds to. The pair score moves from 0.8355 to 0.8362 and the unrelated score from 0.5935 to 0.5866. The lesson the example carries is intact: 0.8362 is still under the 0.85 cutoff, so the same vectors at 0.85 still yield zero clusters. The 0.2.0 entry below keeps the figures that were correct when it shipped.
+- `uv.lock` carried 0.2.0 into the 0.2.1 bump, because it is rewritten by `uv run` rather than by hand and nothing checked it. `scripts/check-version-sync.sh` now covers it as a sixth version-carrying file, so a stale lockfile fails the release workflow's verify job instead of shipping.
 
 ## [0.2.0] - 2026-09-20
 

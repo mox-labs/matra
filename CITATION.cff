@@ -21,8 +21,8 @@ abstract: >-
   extraction by RAKE and YAKE. The core is Rust, with Python bindings and
   a command line interface. It reports structure and numbers and makes no
   judgment about the text.
-version: 0.2.0
-date-released: '2026-09-20'
+version: 0.2.1
+date-released: '2026-09-21'
 license: MIT
 repository-code: 'https://github.com/mox-labs/matra'
 url: 'https://mox-labs.github.io/matra/'
