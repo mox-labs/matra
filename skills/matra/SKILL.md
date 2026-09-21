@@ -26,7 +26,7 @@ Do not reach for it to score quality, detect authorship, or judge an argument. I
 
 ## Install and first run
 
-The Python package ships the command, so `uvx 'matra>=0.2' --version` runs it with nothing installed and nothing configured. Pin the floor: a bare `uvx matra` resolves to whatever release is newest, and the command line before 0.2.0 was a different program without `--skill`. The pinned line resolves once 0.2.0 is on PyPI; before that, run the `matra` already in hand. `cargo install matra --features cli` installs the Rust binary instead, and `uv add matra` puts the same command on a project.
+The Python package ships the command, so `uvx 'matra>=0.2' --version` runs it with nothing installed and nothing configured. Pin the floor: a bare `uvx matra` resolves to whatever release is newest, and the command line before 0.2.0 was a different program without `--skill`. PyPI and crates.io serve 0.2.x, so the pinned line resolves; the floor is there so it keeps naming this program as later releases arrive. `cargo install matra --features cli` installs the Rust binary instead, and `uv add matra` puts the same command on a project.
 
 ```console
 $ matra --version

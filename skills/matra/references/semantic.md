@@ -116,8 +116,8 @@ for cluster in pairs["clusters"]:
 Three pages of matra's own book, run from a checkout: two covering the same ground for different surfaces, and one unrelated. Reproducible, unlike a corpus nobody else has.
 
 ```text
-0.8355  cli.md <-> rust.md
-0.5935  cli.md <-> roadmap.md
+0.8362  cli.md <-> rust.md
+0.5866  cli.md <-> roadmap.md
 0.6035  rust.md <-> roadmap.md
 ```
 

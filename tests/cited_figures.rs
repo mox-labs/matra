@@ -9,7 +9,7 @@
 //!
 //! That is not hypothetical. Three wrong figures shipped across three review
 //! rounds of one branch, and the margin that carries the whole lesson of the
-//! semantic example is 0.0145: a near-duplicate pair scores 0.8355 against a
+//! semantic example is 0.0138: a near-duplicate pair scores 0.8362 against a
 //! cutoff of 0.85, and the example exists to show that the cutoff calls them
 //! unrelated. An ordinary edit to either guide can push that pair over the
 //! line, at which point two pages teach the opposite of what they say, in
@@ -38,19 +38,19 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
             "book/src/guides/cli.md",
-            "17163:a6b2409cd01fe3b9",
-            "the 0.8355 pair score in book/src/guides/semantic-clusters.md \
-             and skills/matra/references/semantic.md, and the 0.5935 unrelated score",
+            "17214:9c24b3bc458b70bf",
+            "the 0.8362 pair score in book/src/guides/semantic-clusters.md \
+             and skills/matra/references/semantic.md, and the 0.5866 unrelated score",
         ),
         (
             "book/src/guides/rust.md",
             "18204:82b70f0e40a536ac",
-            "the 0.8355 pair score and the 0.6035 unrelated score, in the same two files",
+            "the 0.8362 pair score and the 0.6035 unrelated score, in the same two files",
         ),
         (
             "book/src/roadmap.md",
             "29300:cb720bffc9c15e6f",
-            "the 0.5935 and 0.6035 unrelated scores, in the same two files",
+            "the 0.5866 and 0.6035 unrelated scores, in the same two files",
         ),
         (
             "book/src/reference/errors.md",
