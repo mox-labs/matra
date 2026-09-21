@@ -137,6 +137,8 @@ let phrases = matra::extraction::rake_keyphrases(&sentences, 10)?;
 
 Each extractor reads the same slice; nothing re-parses. Skip the `compose` call if you only want the extractions and not the metrics. The sentences you read off the tree are the ones the decomposer kept, so markdown headings, fenced code, and blockquotes never reach the extractors as if they were prose.
 
+The two keyphrase extractors return score order, highest first. Phrases with equal scores can swap order between runs, and a tie at the requested count can change which phrase makes the list, so sort the result before diffing it across runs.
+
 ## Why a metric slot is `None`
 
 Every metric slot is an `Option`, and each metric has its own threshold. A `None` means the metric declined to run, not that it computed nothing.
