@@ -3,7 +3,9 @@
 # citation file's release date must match the CHANGELOG entry for that
 # version. ADR-0013 added CITATION.cff as a fifth version-carrying file and
 # the only one that also carries a date, so this check exists rather than a
-# printed reminder in the release recipe.
+# printed reminder in the release recipe. uv.lock is the sixth, added for
+# 0.2.1 after it was found stale at 0.2.0 by a gate that happened to rewrite
+# it rather than by anything that checks it.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -38,6 +40,16 @@ check CITATION.cff \
     "$(grep -m1 '^version: ' CITATION.cff | sed 's/^version: *//')"
 check skills/matra/SKILL.md \
     "$(grep -m1 '^version: ' skills/matra/SKILL.md | sed 's/^version: *//')"
+
+# uv.lock carries the version too, and `uv run` rewrites it silently: a
+# release that never ran a uv command ships a lockfile naming the previous
+# version. It is not a hand-edited file, so the fix is `uv lock` rather than
+# an edit, but it still has to move with the other five. The version line is
+# read under the `matra` package entry rather than with a bare grep, because
+# the first `version = ` line in the file belongs to some other package.
+check uv.lock \
+    "$(awk '/^name = "matra"$/{f=1;next} f&&/^version = /{print;exit}' uv.lock \
+        | sed 's/.*"\(.*\)".*/\1/')"
 
 # The citation file is the only place carrying a release date. It must agree
 # with the CHANGELOG heading for the same version, or a citation will name a
