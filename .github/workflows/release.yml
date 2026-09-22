@@ -198,11 +198,18 @@ jobs:
           SKIP_TAG: ${{ inputs.skip_tag }}
         run: |
           set -euo pipefail
-          # `git ls-remote`, not `gh api`: on a 404 `gh api` writes the error
-          # body to stdout, so `--jq '.object.sha'` prints the literal `null`
-          # and a `-z` test reads a missing tag as an existing one. That is
-          # what failed the first 0.2.1 dispatch, on a tag that did not exist.
-          existing="$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG" | awk '{print $1}')"
+          # Exit status, not output. Two ways to get this wrong, both of
+          # which failed a 0.2.1 dispatch on a tag that did not exist:
+          # `gh api --jq '.object.sha' || true` prints the literal `null` on a
+          # 404 because gh writes the error body to stdout, so an emptiness
+          # test reads a missing tag as an existing one; and `git ls-remote
+          # origin` cannot work here because this job never checks out, so it
+          # has no remote. `--silent` discards the body and leaves the status.
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --silent >/dev/null 2>&1; then
+            existing=yes
+          else
+            existing=
+          fi
           if [ "$SKIP_TAG" = "true" ]; then
             if [ -z "$existing" ]; then
               echo "::error::skip_tag was set but $RELEASE_TAG does not exist. Dispatch without skip_tag to create it."
