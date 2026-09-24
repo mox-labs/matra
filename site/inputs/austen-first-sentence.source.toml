@@ -1,0 +1,7 @@
+title = "Pride and Prejudice, the first sentence"
+author = "Jane Austen"
+source = "Project Gutenberg eBook #1342: the first sentence of chapter 1, the text only"
+url = "https://www.gutenberg.org/ebooks/1342"
+licence = "Public domain (first published 1813)"
+register = "narrative"
+figures = ["parse"]

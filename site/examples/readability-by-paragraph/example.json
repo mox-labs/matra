@@ -1,0 +1,10 @@
+{
+  "input": "federalist-10",
+  "file": "federalist-10.txt",
+  "output": {
+    "omit": [
+      "sentences"
+    ],
+    "keep": 3
+  }
+}

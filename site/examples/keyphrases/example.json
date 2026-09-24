@@ -1,0 +1,7 @@
+{
+  "input": "origin-struggle",
+  "file": "origin-struggle.txt",
+  "output": {
+    "keep": 5
+  }
+}
