@@ -4,11 +4,13 @@ NLP library. Text in, structured analysis out.
 
 UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression, vocab TTR, nominalization, passive ratio), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.
 
-Rule evaluation over parsed text structure is part of the intended scope and lands in a later iteration; document references describe it as planned, not present.
+Rule evaluation over parsed text structure is part of the intended scope and lands later; document references describe it as planned, not present.
 
-## Session start: OODA and resume
+## Session start
 
-On session start in this directory, read `.claude/logs/SESSION-RESUME.md` first. Run the OODA loop it specifies (Observe state, Orient on what is in flight, Decide the next action, Act), then continue with the operational sections below. The resume file is the durable surface that captures where the work stopped and what the next move is; keep it updated after each batch ships or any meaningful state change.
+On session start in this directory, read `blueprints/README.md`: the RFC index says what is accepted, and the EP index and its statuses say what is in flight. Then Observe (the branch and open pull requests), Orient (which EP milestone is next), Decide, Act, and continue with the operational sections below.
+
+A local, untracked `.claude/logs/SESSION-RESUME.md` may hold session notes. It is a convenience, not a record: anything a later session must rely on belongs in an RFC, an EP status log, or the CHANGELOG.
 
 ## Posture
 

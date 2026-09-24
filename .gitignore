@@ -62,3 +62,6 @@ coverage.xml
 # agents, not project artifacts.
 .claude/rhetoric/
 .claude/research-deep-dive/
+
+# Local session notes (a convenience, not a record; see CLAUDE.md)
+.claude/logs/
