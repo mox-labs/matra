@@ -51,6 +51,18 @@ check uv.lock \
     "$(awk '/^name = "matra"$/{f=1;next} f&&/^version = /{print;exit}' uv.lock \
         | sed 's/.*"\(.*\)".*/\1/')"
 
+# The installation page shows the `matra --version` banner a reader compares
+# their install against. A first-run pass on 0.2.1 found both banners still
+# reading 0.2.0 (EP-0012, M6), so each is held to Cargo.toml here. The CLI
+# guide shows the same banner and is left out on purpose: it is a pinned
+# source page in tests/cited_figures.rs, so moving it on every release would
+# mean re-measuring the figures cited from it every release.
+banners=$(grep -E '^matra [0-9]+\.[0-9]+\.[0-9]+$' site/content/tutorials/installation.md | sed 's/^matra //' || true)
+[ -n "$banners" ] || bad "site/content/tutorials/installation.md shows no 'matra X.Y.Z' version banner"
+for found in $banners; do
+    check "site/content/tutorials/installation.md banner" "$found"
+done
+
 # The citation file is the only place carrying a release date. It must agree
 # with the CHANGELOG heading for the same version, or a citation will name a
 # date the changelog contradicts.

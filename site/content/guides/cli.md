@@ -228,7 +228,7 @@ The 8 MiB cap applies to stdin as it does to a file, and it is enforced while re
 `--version` prints the version and then the features this build was compiled with:
 
 ```
-matra 0.2.0
+matra 0.2.1
 features: udpipe model2vec python cli
 ```
 
