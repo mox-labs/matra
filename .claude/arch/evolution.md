@@ -1,5 +1,7 @@
 # Evolution
 
+> Iterations were the unit of work before RFC-0019; each maps to the EP of the same number in `blueprints/eps/` where one exists (I9 is EP-0009). The table below is kept as history.
+
 Architecture is a sequence of decisions across iterations. This file is the change history of the boundary, not the change history of the code (that's in git and CHANGELOG.md).
 
 ## Iterations shipped
@@ -15,7 +17,7 @@ Architecture is a sequence of decisions across iterations. This file is the chan
 | I10 | `Config` resolves locations and defaults per key (argument, environment, config file, compiled defaults) and carries locations and defaults only, never behavior; the command line moves into the library as `src/cli/`, with `src/bin/matra.rs` and `python/matra/cli.py` as launchers over one implementation. RFC-0011 | shipped 2026-09-06 |
 | I11 | The agent surface (RFC-0012): `--skill` and `--skill -r <name>` print `skills/matra/` out of the binary via `include_str!`, so instructions match the version that prints them, and a test executes the commands the skill names. `--help` stays the human reference | shipped 2026-09-06 |
 
-Future iterations are tracked as EPs in `blueprints/eps/`, beside the RFCs they implement in `blueprints/rfcs/`. Past iterations are not rewritten; commitments only get superseded by new RFCs, never edited out.
+New work is tracked as EPs in `blueprints/eps/`, beside the RFCs they implement in `blueprints/rfcs/`. Past iterations are not rewritten; commitments only get superseded by new RFCs, never edited out.
 
 ## What never gets undone
 
@@ -83,19 +85,21 @@ Planned capabilities, not yet shipped. Each carries its trigger condition:
 
 ## Origin notes
 
-Two memory entries shape every iteration boundary:
+Two memory entries shape every EP:
 
 1. **Ontology-first.** Names settle first, code moves second. This is why renames precede structural work: renaming a stable surface is cheaper than renaming a freshly restructured one.
 
-2. **Never publish without approval.** Each iteration's "ship" gate stops at `cargo publish --dry-run`. Explicit per-publish approval is required. One approval authorizes one publish; do not reuse across versions or packages.
+2. **Never publish without approval.** Each EP's ship criteria stop at `cargo publish --dry-run`. Explicit per-publish approval is required. One approval authorizes one publish; do not reuse across versions or packages.
 
-These hold across the whole project, not per-iteration.
+These hold across the whole project, not per EP.
 
-## How to add a future iteration
+## How to add new work: an RFC, then an EP
+
+The process is `blueprints/README.md`. In short:
 
 1. Identify the trigger. What changed in the world that requires a new boundary? (Consumer report, performance ceiling, new requirement.)
 2. If the change touches the design (the public surface, a boundary rule, the systems around the code, the toolchain), write an RFC in `blueprints/rfcs/` from `0000-template.md` and open it as a pull request. Merging it accepts it.
 3. If the implementation spans more than one PR, write an EP in `blueprints/eps/` from `0000-template.md` that names the RFC it implements, and add both to the index in `blueprints/README.md`.
 4. Land. Validate. Update CHANGELOG.md.
 
-The iteration table above is append-only. Past iterations don't get rewritten when a new one lands; they get a superseded-by note in the row instead.
+The iteration table above is closed: it records the work before RFC-0019 and is not extended. New work is recorded as EPs, whose statuses live in the index in `blueprints/README.md`.

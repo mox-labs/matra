@@ -21,18 +21,19 @@ change can be backed out cleanly).
 
 ## The working model
 
-matra is developed in **iterations**. Each iteration addresses one
-structural concern: resilience, observability, streaming, etc. Each is
-planned as an EP in `blueprints/eps/`, implementing the RFCs in
-`blueprints/rfcs/` that decided its design, and the architecture it builds
-toward is documented in `.claude/arch/`. Anyone can read both before
-opening an issue or PR.
+A design change starts as an RFC: a pull request adding a file to
+`blueprints/rfcs/`, discussed there and accepted by merging it. When the
+accepted RFC takes more than one pull request to implement, an EP in
+`blueprints/eps/` plans the work as milestones, each with a deliverable and
+an exit criterion, and records its status as it goes. The process and the
+index of both are in [`blueprints/README.md`](blueprints/README.md); read it
+before opening an issue or PR.
 
-An iteration is implemented as a sequence of atomic commits on a short-
-lived branch, opened as a single PR against `main`, reviewed, then merged.
-Every commit on the branch is its own logical unit (a sub-task) so the
-history reads as a series of small, auditable steps. After merge, the
-branch is deleted.
+Each EP milestone is one pull request: a sequence of atomic commits on a
+short-lived branch, opened against `main`, reviewed, then merged. Every
+commit on the branch is its own logical unit so the history reads as a
+series of small, auditable steps. After merge, the branch is deleted and
+the EP's status log gains a line if the status changed.
 
 The project's primary engineer is Claude (Anthropic's AI), working with
 human direction and review. Every commit carries a `Co-Authored-By` trailer
@@ -90,8 +91,8 @@ closes it. The PR's body explains the why; the commits explain the what.
 change, breaking surface change, security-relevant fix, new feature. Not
 on a calendar.
 
-**Cadence:** pre-1.0, releases happen at iteration boundaries (typically
-every few iterations). Post-1.0, semver discipline binds.
+**Cadence:** pre-1.0, releases typically follow an EP shipping. Post-1.0,
+semver discipline binds.
 
 **Process:**
 1. Maintainer runs `just release-prep VERSION`. This rolls
@@ -170,7 +171,7 @@ discussions into categories (configured in the GitHub UI):
 
 ### Open a PR
 
-1. Fork; create a branch named after the work (e.g. `i3/error-tracing`,
+1. Fork; create a branch named after the work (e.g. `ep-0011/m2-skill-references`,
    `fix/symlink-rejection`, `docs/clarify-tree-walk`).
 2. Run `just install-hooks` once on a fresh clone. The hook runs the Rust
    gates (fmt, check, clippy, doc, test on both feature configurations)
@@ -297,8 +298,10 @@ When you (a human) open a PR with Claude's help:
 - The same review and CI gates apply.
 
 If you want to work on matra with Claude Code on your machine, the
-`.claude/` directory in this repo is preloaded with the architecture
-docs and iteration plans. Claude Code will read those automatically.
+`.claude/` directory in this repo is preloaded with the agent
+definitions, the skills, and the architecture history, and `CLAUDE.md`
+points it at the design record in `blueprints/`. Claude Code will read
+those automatically.
 
 ---
 

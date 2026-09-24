@@ -56,4 +56,4 @@ pull request and its findings are applied before merge; a human approves.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): the working model, how decisions get
   made, how releases work, the full PR mechanics.
 - [`blueprints/`](blueprints/README.md): the RFCs that record each design
-  decision and the EPs that plan each iteration, with its ship criteria.
+  decision and the EPs that plan their implementation, with ship criteria.
