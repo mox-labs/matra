@@ -189,33 +189,35 @@ jobs:
             "$BUN_SHA256"
           unzip -q -j "$RUNNER_TEMP/bun.zip" bun-linux-x64/bun -d "$bin"
       # Gate 8 regenerates the figure data with the released pipeline, so the
-      # job builds matra and needs the UDPipe model.
+      # job builds matra (with model2vec) and needs both models.
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de  # master
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
-      # The model is cached under the digest matra pins it to, read from the
-      # source, so a new pin is a new cache entry. A hit is still verified
-      # against that digest when matra loads it; a miss is fetched through
-      # matra's own pinned, hash-verified download. Either way the model comes
-      # from the path every caller's does, and if it cannot be had gate 8
-      # fails: nothing here skips it.
-      - name: Read the pinned UDPipe model digest
+      # Both models (UDPipe for every parse, potion-base-8M for the semantic
+      # clusters figure) share one directory, cached under the digests matra
+      # pins them to, read from the source, so a new pin is a new cache entry.
+      # A hit is still verified against its digest when matra loads it; a miss
+      # is fetched through matra's own pinned, hash-verified download. Either
+      # way the models come from the path every caller's do, and if one cannot
+      # be had gate 8 fails: nothing here skips it.
+      - name: Read the pinned model digests
         id: model
         run: |
           set -euo pipefail
-          sha=$(grep -A1 'const ENGLISH_MODEL_SHA256' src/nlp/udpipe.rs | grep -o '[0-9a-f]\{64\}' || true)
-          if [ -z "$sha" ]; then
-            echo "::error::could not read ENGLISH_MODEL_SHA256 from src/nlp/udpipe.rs"
+          udpipe=$(grep -A1 'const ENGLISH_MODEL_SHA256' src/nlp/udpipe.rs | grep -o '[0-9a-f]\{64\}' || true)
+          potion=$(grep -A1 'const POTION_BASE_8M_SHA256' src/embed/model2vec.rs | grep -o '[0-9a-f]\{64\}' || true)
+          if [ -z "$udpipe" ] || [ -z "$potion" ]; then
+            echo "::error::could not read ENGLISH_MODEL_SHA256 or POTION_BASE_8M_SHA256 from the source"
             exit 1
           fi
-          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
-      - name: Cache the UDPipe model by its digest
+          echo "key=udpipe-${udpipe}-potion-${potion}" >> "$GITHUB_OUTPUT"
+      - name: Cache the models by their digests
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ${{ runner.temp }}/matra-models
-          key: udpipe-model-${{ steps.model.outputs.sha256 }}
+          key: models-${{ steps.model.outputs.key }}
       # Ten gates: links, orphans, type names, the site build, em dashes,
       # llms.txt, the published URL manifest, figures current, figure twins,
       # and input licences.

@@ -19,6 +19,12 @@
  *                the reference line matches the document value listed
  *   keyphrases   every phrase has the same RAKE and YAKE rank, or the same
  *                absence, in the table as in the slopegraph
+ *   textrank     every sentence's score and summary membership agree
+ *   clusters     at the threshold drawn, the same clusters and the same
+ *                edges with the same scores as the table's row for it
+ *   pipeline     every paragraph drawn at the annotate and compose stages
+ *                has the table's sentence and token counts, no measures
+ *                after annotate, and the table's measures after compose
  *
  * A figure with no twin fails, a kind this script cannot compare fails, and
  * so does a build with no figures at all: a check that examined nothing has
@@ -187,7 +193,125 @@ const keyphrases: Compare = (fig, table, fail) => {
 	return twin.size;
 };
 
-const COMPARE: Record<string, Compare> = { parse, primitives, metrics, keyphrases };
+const close = (a: number, b: number, places: number) => Math.abs(a - b) <= 0.5 * 10 ** -places + 1e-9;
+
+const textrank: Compare = (fig, table, fail) => {
+	const twin = new Map(
+		rows(table).map((c) => [Number.parseInt(c[0], 10), { score: Number.parseFloat(c[2]), summary: c[3] === 'yes' }])
+	);
+	const drawn = new Map(
+		all(fig, (e) => e.properties.dataPosition !== undefined).map((b) => [
+			Number(prop(b, 'dataPosition')),
+			{ score: Number.parseFloat(prop(b, 'dataScore') ?? ''), summary: prop(b, 'dataSummary') === 'yes' }
+		])
+	);
+	if (twin.size === 0) fail('the twin table has no rows');
+	for (const [pos, t] of twin) {
+		const d = drawn.get(pos);
+		if (!d) fail(`sentence ${pos} is in the table but has no bar`);
+		else if (!close(t.score, d.score, 4) || t.summary !== d.summary) {
+			fail(`sentence ${pos} is ${t.score}${t.summary ? ' (summary)' : ''} in the table, ${d.score}${d.summary ? ' (summary)' : ''} in the figure`);
+		}
+	}
+	for (const pos of drawn.keys()) if (!twin.has(pos)) fail(`sentence ${pos} has a bar but no row`);
+	return twin.size;
+};
+
+const clusters: Compare = (fig, table, fail) => {
+	const svg = all(fig, (e) => e.properties.dataThreshold !== undefined)[0];
+	if (!svg) {
+		fail('no diagram carrying data-threshold');
+		return 0;
+	}
+	const at = prop(svg, 'dataThreshold');
+	const row = rows(table).find((c) => c[0] === at);
+	if (!row) {
+		fail(`the twin has no row for the threshold drawn, ${at}`);
+		return 0;
+	}
+	const twinEdges = new Map(
+		[...row[2].matchAll(/(\d+)-(\d+) \((\d\.\d+)\)/g)].map((m) => [`${m[1]}-${m[2]}`, Number.parseFloat(m[3])])
+	);
+	const twinClusters = new Set(
+		[...row[1].matchAll(/\{([^}]*)\}/g)].map((m) =>
+			m[1]
+				.split(',')
+				.map((x) => Number.parseInt(x, 10))
+				.sort((a, b) => a - b)
+				.join(',')
+		)
+	);
+	const drawnEdges = new Map(
+		all(svg, (e) => e.properties.dataA !== undefined).map((g) => [
+			`${prop(g, 'dataA')}-${prop(g, 'dataB')}`,
+			Number.parseFloat(prop(g, 'dataScore') ?? '')
+		])
+	);
+	const groups = new Map<string, number[]>();
+	for (const m of all(svg, (e) => e.properties.dataRow !== undefined)) {
+		const k = prop(m, 'dataCluster') ?? '';
+		if (k !== '') groups.set(k, [...(groups.get(k) ?? []), Number(prop(m, 'dataRow'))]);
+	}
+	const drawnClusters = new Set([...groups.values()].map((g) => g.sort((a, b) => a - b).join(',')));
+	for (const [e, s] of twinEdges) {
+		const d = drawnEdges.get(e);
+		if (d === undefined) fail(`at ${at}, edge ${e} is in the table but not drawn`);
+		else if (!close(s, d, 4)) fail(`at ${at}, edge ${e} is ${s} in the table, ${d} in the figure`);
+	}
+	for (const e of drawnEdges.keys()) if (!twinEdges.has(e)) fail(`at ${at}, edge ${e} is drawn but not in the table`);
+	for (const c of twinClusters) if (!drawnClusters.has(c)) fail(`at ${at}, cluster {${c}} is in the table but not drawn`);
+	for (const c of drawnClusters) if (!twinClusters.has(c)) fail(`at ${at}, cluster {${c}} is drawn but not in the table`);
+	return twinEdges.size + twinClusters.size;
+};
+
+const pipeline: Compare = (fig, table, fail) => {
+	const num = (s: string) => (s === 'none' || s === '' ? null : Number.parseFloat(s));
+	const twin = new Map(
+		rows(table).map((c) => [
+			c[0],
+			{ sentences: c[2], tokens: c[3], metrics: [num(c[4]), num(c[5]), num(c[6])] }
+		])
+	);
+	let compared = 0;
+	const stages = all(fig, (e) => e.properties.dataStage !== undefined);
+	for (const stage of ['annotated', 'composed']) {
+		if (!stages.some((s) => prop(s, 'dataStage') === stage)) fail(`the ${stage} stage is not in the prerendered figure`);
+	}
+	for (const s of stages) {
+		const stage = prop(s, 'dataStage');
+		for (const p of all(s, (e) => e.properties.dataParagraph !== undefined)) {
+			const n = prop(p, 'dataParagraph') ?? '';
+			const t = twin.get(n);
+			if (!t) {
+				fail(`${stage} paragraph ${n} is drawn but not in the table`);
+				continue;
+			}
+			compared += 1;
+			if (prop(p, 'dataSentences') !== t.sentences || prop(p, 'dataTokens') !== t.tokens) {
+				fail(`${stage} paragraph ${n} has ${prop(p, 'dataSentences')}/${prop(p, 'dataTokens')} sentences/tokens, the table ${t.sentences}/${t.tokens}`);
+			}
+			const drawn = ['dataGrade', 'dataDensity', 'dataCompression'].map((k) => num(prop(p, k) ?? ''));
+			drawn.forEach((d, k) => {
+				const expected = stage === 'annotated' ? null : t.metrics[k];
+				if ((d === null) !== (expected === null) || (d !== null && expected !== null && !close(d, expected, 2))) {
+					fail(`${stage} paragraph ${n} measure ${k + 1} is ${d ?? 'none'} in the figure, ${expected ?? 'none'} expected from the table`);
+				}
+			});
+		}
+	}
+	if (twin.size === 0) fail('the twin table has no rows');
+	return compared;
+};
+
+const COMPARE: Record<string, Compare> = {
+	parse,
+	primitives,
+	metrics,
+	keyphrases,
+	textrank,
+	clusters,
+	pipeline
+};
 
 const failures: string[] = [];
 const byKind = new Map<string, number>();

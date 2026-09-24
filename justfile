@@ -102,7 +102,7 @@ docs-floor:
 # into site/src/lib/figures/. Fetches the UDPipe model on first run.
 # Regenerate the docsite's figure data.
 docs-figures:
-    cargo run --example docsite_figures
+    cargo run --features model2vec --example docsite_figures
 
 # Search needs the index the build writes, so it answers only in a built site.
 # Serve the docsite with live reload at http://localhost:3000.
