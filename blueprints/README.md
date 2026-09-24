@@ -117,5 +117,5 @@ in git.
 | [EP-0009](eps/0009-embeddings-adapter.md) | Embeddings as a specialist adapter | shipped in 0.2.0 | RFC-0010 |
 | [EP-0010](eps/0010-foundations.md) | Out of the box | shipped in 0.2.0 | RFC-0011 |
 | [EP-0011](eps/0011-agent-surface.md) | The agent surface | shipped in 0.2.0 | RFC-0012 |
-| [EP-0012](eps/0012-docsite.md) | The docsite on SvelteKit, with figures and examples | planned | none |
+| [EP-0012](eps/0012-docsite.md) | The docsite on SvelteKit, with figures and examples | in progress | none |
 | [EP-0000](eps/0000-template.md) | The template | not a record | none |
