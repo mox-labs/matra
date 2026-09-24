@@ -36,6 +36,7 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
 fail=0
+skipped=0
 
 # ---------------------------------------------------------------------------
 # Gate 1: lychee link check
@@ -58,6 +59,7 @@ else
     else
         echo "SKIP (gate 1): lychee not installed; install with \`cargo install lychee\`"
         echo "        CI runs this gate after installing lychee."
+        skipped=$((skipped + 1))
     fi
 fi
 echo ""
@@ -67,7 +69,9 @@ echo ""
 # ---------------------------------------------------------------------------
 echo "=== Gate 2: orphan detect ==="
 orphans=()
+pages=0
 while IFS= read -r page; do
+    pages=$((pages + 1))
     rel="${page#book/src/}"
     # SUMMARY.md references look like "(./path/to/page.md)" or "(path/to/page.md)".
     if ! grep -F -q -e "($rel)" -e "(./$rel)" book/src/SUMMARY.md; then
@@ -76,8 +80,11 @@ while IFS= read -r page; do
 done < <(find book/src -type f -name '*.md' \
     ! -name SUMMARY.md \
     | sort)
-if [ ${#orphans[@]} -eq 0 ]; then
-    echo "PASS (gate 2): every book/src/ page is in SUMMARY.md"
+if [ "$pages" -eq 0 ]; then
+    echo "FAIL (gate 2): found no pages under book/src/"
+    fail=$((fail + 1))
+elif [ ${#orphans[@]} -eq 0 ]; then
+    echo "PASS (gate 2): all $pages book/src/ pages are in SUMMARY.md"
 else
     echo "FAIL (gate 2): pages not referenced in SUMMARY.md:"
     printf '  %s\n' "${orphans[@]}"
@@ -251,6 +258,7 @@ EOF
 # the loop below read zero names and printed a pass.
 unknown=()
 names=""
+checked=0
 gate3_ok=1
 if ! command -v rg >/dev/null 2>&1; then
     echo "FAIL (gate 3): ripgrep (rg) not installed"
@@ -267,6 +275,7 @@ else
 fi
 while IFS= read -r name; do
     [ -z "$name" ] && continue
+    checked=$((checked + 1))
     # On any allowlist? skip.
     if printf '%s\n' "$external_allowlist" | grep -Fxq -- "$name"; then
         continue
@@ -287,8 +296,11 @@ done < <(printf '%s\n' "$names" | sort -u)
 
 if [ "$gate3_ok" -eq 0 ]; then
     fail=$((fail + 1))
+elif [ "$checked" -eq 0 ]; then
+    echo "FAIL (gate 3): found no backtick-inline names in book/src/ or skills/"
+    fail=$((fail + 1))
 elif [ ${#unknown[@]} -eq 0 ]; then
-    echo "PASS (gate 3): every backtick-inline type name resolves in src/ or allowlist"
+    echo "PASS (gate 3): all $checked backtick-inline names resolve in src/ or an allowlist"
 else
     echo "FAIL (gate 3): backtick-inline identifiers in book/src/ or skills/ not found in src/:"
     printf '  %s\n' "${unknown[@]}"
@@ -314,8 +326,16 @@ echo "=== Gate 5: no em dashes in prose ==="
 # The pattern is the literal U+2014 byte sequence. It used to be written
 # '\u2014', which grep reads as the letter u followed by 2014: the gate
 # had never matched an em dash in its life.
-offenders=$(grep -rn '—' book/src skills --include='*.md' --include='llms.txt' | grep -v '"' || true)
-if [ -n "$offenders" ]; then
+# grep exits 1 on no match and 2 on an error such as a missing directory; the
+# old `|| true` read the second as a clean pass.
+em_files=$(find book/src skills -type f \( -name '*.md' -o -name 'llms.txt' \) | wc -l | tr -d ' ') || em_files=0
+em_rc=0
+em_raw=$(grep -rn '—' book/src skills --include='*.md' --include='llms.txt') || em_rc=$?
+offenders=$(printf '%s\n' "$em_raw" | grep -v '"' || true)
+if [ "$em_rc" -gt 1 ] || [ "$em_files" -eq 0 ]; then
+    echo "FAIL (gate 5): could not scan book/src/ and skills/ (grep exit $em_rc, $em_files files)"
+    fail=$((fail + 1))
+elif [ -n "$offenders" ]; then
     echo "FAIL (gate 5): em dashes found in documentation prose:"
     echo "$offenders" | sed 's/^/  /'
     echo ""
@@ -324,7 +344,7 @@ if [ -n "$offenders" ]; then
     echo "        lines containing a double quote are exempt."
     fail=$((fail + 1))
 else
-    echo "PASS (gate 5): no em dashes outside quoted material"
+    echo "PASS (gate 5): no em dashes outside quoted material in $em_files files"
 fi
 echo ""
 
@@ -392,9 +412,9 @@ echo ""
 # Summary
 # ---------------------------------------------------------------------------
 if [ "$fail" -eq 0 ]; then
-    echo "docsite floor: all gates pass"
+    echo "docsite floor: 6 gates, $((6 - skipped)) passed, $skipped skipped"
     exit 0
 else
-    echo "docsite floor: $fail gate(s) failed"
+    echo "docsite floor: 6 gates, $fail failed, $skipped skipped"
     exit 1
 fi
