@@ -2,33 +2,43 @@
 # Floor gates for the docsite. Runs in CI (the `Docsite floor` job in
 # .github/workflows/ci.yml); can be invoked locally via `just docs-floor`.
 #
-# Six gates protect against the cheap-to-introduce, expensive-to-find regressions.
-# The pages live in site/content/ (EP-0012). roadmap.md there is a symlink to
-# the repository's ROADMAP.md, and gates 2 and 5 follow it.
+# Eight gates protect against the cheap-to-introduce, expensive-to-find
+# regressions. The pages live in site/content/ (EP-0012). roadmap.md there is a
+# symlink to the repository's ROADMAP.md, and gates 2 and 5 follow it. Both the
+# mdBook site (still deployed) and the SvelteKit site (its replacement) are
+# built and checked until the cut-over.
 #
-#   1. Link integrity     — lychee verifies all Markdown links in site/content/ resolve.
-#   2. Orphan detect      — every page under site/content/ is referenced in SUMMARY.md.
-#   3. Type-name parity   — every backtick-inline PascalCase identifier in site/content/
+#   1. Link integrity:      lychee verifies every link in site/content/ and in
+#                            the built SvelteKit site, fragments included.
+#   2. Orphan detect:       every page under site/content/ is referenced in SUMMARY.md.
+#   3. Type-name parity:    every backtick-inline PascalCase identifier in site/content/
 #                            and skills/ either exists as an identifier in src/,
 #                            or is on the external-types allowlist below. Catches
 #                            rename drift. Plans and design records live in
 #                            blueprints/, outside the book, and are not scanned:
 #                            an RFC or an EP names types that do not exist yet,
 #                            which is what makes it a proposal or a plan.
-#   4. mdbook clean build — `mdbook build` runs without warnings or errors.
-#   5. No em dashes       — project prose convention, exempting quoted material.
+#   4. mdbook clean build:  `mdbook build` runs without warnings or errors.
+#   5. No em dashes:        project prose convention, exempting quoted material.
 #                            Covers site/content/, skills/ and blueprints/.
-#   6. llms.txt currency  — site/content/llms.txt is what scripts/gen-llms-txt.sh
+#   6. llms.txt currency:   site/content/llms.txt is what scripts/gen-llms-txt.sh
 #                            writes today. The file is generated from SUMMARY.md
 #                            and from the opening line of each page, so a page
 #                            added, retitled, or reworded leaves it stale, and
 #                            a stale map is worse for an agent than none.
+#   7. SvelteKit build:     bun install --frozen-lockfile, svelte-check with
+#                            warnings as failures, and a clean prerendered build.
+#   8. URL parity:          every .html path and heading anchor mdBook serves
+#                            exists in the SvelteKit build (scripts/check-url-parity.sh).
+#
+# Execution order is 2, 3, 5, 6, 4, 7, 1, 8: the builds come before the link
+# check and the parity check that read their output.
 #
 # Local invocation: lychee is optional locally (skip-with-warning); CI installs it.
-# mdbook is required (this script fails gate 4 if missing).
+# mdbook and bun are required (gates 4 and 7 fail if either is missing).
 #
 # Tunables:
-#   LYCHEE_REQUIRED=1   — turn the "lychee missing" skip into a hard failure.
+#   LYCHEE_REQUIRED=1:    turn the "lychee missing" skip into a hard failure.
 #                          The `Docsite floor` job in ci.yml sets it.
 
 set -euo pipefail
@@ -38,31 +48,6 @@ cd "$REPO_ROOT"
 
 fail=0
 skipped=0
-
-# ---------------------------------------------------------------------------
-# Gate 1: lychee link check
-# ---------------------------------------------------------------------------
-echo "=== Gate 1: link integrity (lychee) ==="
-if command -v lychee >/dev/null 2>&1; then
-    if lychee --no-progress --offline \
-            'site/content/**/*.md'; then
-        echo "PASS (gate 1): all links in site/content/ resolve"
-    else
-        echo "FAIL (gate 1): broken links detected"
-        fail=$((fail + 1))
-    fi
-else
-    if [ "${LYCHEE_REQUIRED:-0}" = "1" ]; then
-        echo "FAIL (gate 1): lychee not installed and LYCHEE_REQUIRED=1"
-        echo "        install: cargo install lychee"
-        fail=$((fail + 1))
-    else
-        echo "SKIP (gate 1): lychee not installed; install with \`cargo install lychee\`"
-        echo "        CI runs this gate after installing lychee."
-        skipped=$((skipped + 1))
-    fi
-fi
-echo ""
 
 # ---------------------------------------------------------------------------
 # Gate 2: orphan detect
@@ -385,14 +370,18 @@ echo ""
 # ---------------------------------------------------------------------------
 # Gate 4: mdbook clean build
 # ---------------------------------------------------------------------------
+# mdBook still deploys the site until the cut-over (EP-0012, M2), so its build
+# stays gated. Its output in book/book is also the reference list of URLs that
+# gate 8 holds the new site to.
 echo "=== Gate 4: mdbook clean build ==="
+build_log=$(mktemp)
+site_log=$(mktemp)
+trap 'rm -f "$build_log" "$site_log"' EXIT
 if ! command -v mdbook >/dev/null 2>&1; then
     echo "FAIL (gate 4): mdbook not installed"
     echo "        install: cargo install mdbook"
     fail=$((fail + 1))
 else
-    build_log=$(mktemp)
-    trap 'rm -f "$build_log"' EXIT
     if (cd book && mdbook build) >"$build_log" 2>&1; then
         # Warnings still cause a fail. mdbook 0.5.3 has no --warning-policy,
         # so we grep for the emitted patterns directly.
@@ -412,12 +401,127 @@ fi
 echo ""
 
 # ---------------------------------------------------------------------------
+# Gate 7: the SvelteKit site builds clean
+# ---------------------------------------------------------------------------
+# site/ is the docsite that replaces mdBook (EP-0012). Three steps, each of
+# which fails the gate:
+#
+#   install        bun install --frozen-lockfile: bun.lock is the pin, and a
+#                  package.json it does not match is a failure, not an update.
+#   svelte-check   types and Svelte diagnostics, with warnings as failures.
+#   build          prerenders every page. The renderer fails the build on a
+#                  tag not in the registry, a link to no page, a fence language
+#                  with no grammar, or a page without a title; the crawler fails
+#                  it on a link to a missing route or heading. Then the base-path
+#                  check and the Pagefind index. Any warning in the log fails.
+#
+# BASE_PATH is empty here so the output can be link-checked from its own root
+# (gate 1). docs.yml builds the published preview with BASE_PATH=/matra.
+echo "=== Gate 7: SvelteKit site (svelte-check, build) ==="
+# Vite and Rollup print warnings as "(!) ...", SvelteKit and plugins as
+# "[warn]" or "warning:".
+warn_re='^[[:space:]]*\(!\)|\[warn|warning:'
+if ! command -v bun >/dev/null 2>&1; then
+    echo "FAIL (gate 7): bun not installed"
+    echo "        install: https://bun.sh (the version CI uses is BUN_VERSION in ci.yml)"
+    fail=$((fail + 1))
+elif ! (cd site && bun install --frozen-lockfile) >"$site_log" 2>&1; then
+    echo "FAIL (gate 7): bun install --frozen-lockfile failed"
+    sed 's/^/  /' "$site_log"
+    fail=$((fail + 1))
+elif ! (cd site && bun run check) >"$site_log" 2>&1; then
+    echo "FAIL (gate 7): svelte-check reported errors or warnings"
+    sed 's/^/  /' "$site_log"
+    fail=$((fail + 1))
+else
+    checked_line=$(grep -E 'COMPLETED|svelte-check found' "$site_log" | tail -1)
+    if ! (cd site && BASE_PATH='' bun run build) >"$site_log" 2>&1; then
+        echo "FAIL (gate 7): the site did not build"
+        sed 's/^/  /' "$site_log"
+        fail=$((fail + 1))
+    elif grep -E -i -q "$warn_re" "$site_log"; then
+        echo "FAIL (gate 7): the site build produced warnings"
+        grep -E -i "$warn_re" "$site_log" | sed 's/^/  /'
+        fail=$((fail + 1))
+    else
+        html=$(find site/build -name '*.html' | wc -l | tr -d ' ')
+        twins=$(find site/build -name '*.md' | wc -l | tr -d ' ')
+        indexed=$(grep -E 'Indexed [0-9]+ pages' "$site_log" | tr -s ' ' | sed 's/^ //')
+        echo "  svelte-check: ${checked_line:-no summary line}"
+        echo "  $(grep 'verify-base-path:' "$site_log")"
+        echo "  pagefind: ${indexed:-no index summary}"
+        echo "PASS (gate 7): site/build holds $html pages and $twins Markdown twins"
+    fi
+fi
+echo ""
+
+# ---------------------------------------------------------------------------
+# Gate 1: link integrity (lychee)
+# ---------------------------------------------------------------------------
+# Two inputs. The Markdown in site/content/, as authored: relative links
+# between pages resolve on disk. And the built site/build/, as served: every
+# link, asset and #fragment in the prerendered HTML resolves from the site
+# root, extensionless routes resolving to their .html file as GitHub Pages
+# does. /api/ is the one exclusion: rustdoc is assembled beside the site at
+# deploy time and is not in this build.
+echo "=== Gate 1: link integrity (lychee) ==="
+if command -v lychee >/dev/null 2>&1; then
+    gate1_ok=1
+    if ! lychee --no-progress --offline 'site/content/**/*.md'; then
+        echo "FAIL (gate 1): broken links in site/content/"
+        gate1_ok=0
+    fi
+    if [ ! -d site/build ]; then
+        echo "FAIL (gate 1): no site/build to check; gate 7 did not build it"
+        gate1_ok=0
+    elif ! lychee --no-progress --offline \
+            --root-dir "$REPO_ROOT/site/build" \
+            --fallback-extensions html \
+            --include-fragments \
+            --exclude '/api/?$' \
+            'site/build/**/*.html'; then
+        echo "FAIL (gate 1): broken links in the built site"
+        gate1_ok=0
+    fi
+    if [ "$gate1_ok" -eq 1 ]; then
+        echo "PASS (gate 1): all links in site/content/ and site/build/ resolve"
+    else
+        fail=$((fail + 1))
+    fi
+else
+    if [ "${LYCHEE_REQUIRED:-0}" = "1" ]; then
+        echo "FAIL (gate 1): lychee not installed and LYCHEE_REQUIRED=1"
+        echo "        install: cargo install lychee"
+        fail=$((fail + 1))
+    else
+        echo "SKIP (gate 1): lychee not installed; install with \`cargo install lychee\`"
+        echo "        CI runs this gate after installing lychee."
+        skipped=$((skipped + 1))
+    fi
+fi
+echo ""
+
+# ---------------------------------------------------------------------------
+# Gate 8: URL parity with mdBook
+# ---------------------------------------------------------------------------
+# Every .html path and heading anchor mdBook serves must exist in the new
+# site. Runs while mdBook still builds; it retires with book/ at the cut-over.
+echo "=== Gate 8: URL parity (mdBook to SvelteKit) ==="
+if bash scripts/check-url-parity.sh book/book site/build; then
+    :
+else
+    fail=$((fail + 1))
+fi
+echo ""
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
+gates=8
 if [ "$fail" -eq 0 ]; then
-    echo "docsite floor: 6 gates, $((6 - skipped)) passed, $skipped skipped"
+    echo "docsite floor: $gates gates, $((gates - skipped)) passed, $skipped skipped"
     exit 0
 else
-    echo "docsite floor: 6 gates, $fail failed, $skipped skipped"
+    echo "docsite floor: $gates gates, $fail failed, $skipped skipped"
     exit 1
 fi

@@ -159,6 +159,10 @@ jobs:
       MDBOOK_SHA256: e2fd508a4fac06cbaa9f88b97d27bdc3b55a08946304ca845879fe26a3699e11
       LYCHEE_VERSION: 0.24.2
       LYCHEE_SHA256: 1f4e0ef7f6554a6ed33dd7ac144fb2e1bbed98598e7af973042fc5cd43951c9a
+      # Builds the SvelteKit site (gate 7). The version that wrote site/bun.lock;
+      # keep in step with BUN_VERSION in docs.yml.
+      BUN_VERSION: 1.3.12
+      BUN_SHA256: 11dc3ee11bc1695e149737c6ca3d5619302cf4346e6b8a6ec7988967ef01ddc5
       # Gate 1 skips with a warning when lychee is absent, which is right on
       # a laptop and wrong here: this makes a missing lychee a failure.
       LYCHEE_REQUIRED: "1"
@@ -166,7 +170,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
-      - name: Install ripgrep, mdbook and lychee
+      - name: Install ripgrep, mdbook, lychee and bun
         run: |
           set -euo pipefail
           bin="$HOME/.local/bin"
@@ -189,7 +193,14 @@ jobs:
             "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/lychee-x86_64-unknown-linux-gnu.tar.gz" \
             "$LYCHEE_SHA256"
           tar -xzf "$RUNNER_TEMP/lychee.tar.gz" -C "$bin" --strip-components=1 lychee-x86_64-unknown-linux-gnu/lychee
-      - name: Six docsite gates
+          fetch bun.zip \
+            "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64.zip" \
+            "$BUN_SHA256"
+          unzip -q -j "$RUNNER_TEMP/bun.zip" bun-linux-x64/bun -d "$bin"
+      # Eight gates: links, orphans, type names, em dashes, llms.txt, the
+      # mdBook build, the SvelteKit build, and URL parity between the two
+      # (scripts/check-url-parity.sh, gate 8).
+      - name: Docsite gates
         run: bash scripts/check-docsite-floor.sh
       # Every RFC and EP cited anywhere resolves to a record in blueprints/,
       # and every record is in the index. A step here rather than a job of its
