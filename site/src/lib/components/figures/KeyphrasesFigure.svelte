@@ -6,8 +6,10 @@
 	 * RAKE on the left and under YAKE on the right, on one log scale, so a
 	 * phrase one method ranks first and the other ranks 900th reads as a steep
 	 * line. Ranks, not scores: matra's two scores are not comparable with each
-	 * other. A phrase a method does not produce at all sits in the "not ranked"
-	 * row. The table of every rank and score leads. Static: nothing moves.
+	 * other. A line joins a phrase only when both methods rank it; a phrase
+	 * only one method produces is a hollow dot on that side, with no line, so a
+	 * pair of lists that share little does not become a bundle of lines to
+	 * nowhere. The table of every rank and score leads. Static: nothing moves.
 	 */
 	import { scaleLog } from 'd3-scale';
 	import type { KeyphrasesFigureFile } from '$lib/types';
@@ -41,8 +43,7 @@
 			10,
 			...data.phrases.flatMap((p) => [p.rake?.rank ?? 1, p.yake?.rank ?? 1])
 		);
-		const y = scaleLog().domain([1, maxRank]).range([TOP, TOP + SPAN]).nice();
-		const unranked = TOP + SPAN + 26;
+		const y = scaleLog().domain([1, maxRank]).range([TOP, TOP + SPAN]);
 		const leftW = Math.max(...data.rake.map((p) => label(p.phrase, p.rank).length)) * CHAR;
 		const rightW = Math.max(...data.yake.map((p) => label(p.phrase, p.rank).length)) * CHAR;
 		const L = PAD + leftW + 16;
@@ -64,17 +65,18 @@
 		};
 		const left = dodge(data.rake);
 		const right = dodge(data.yake);
-		const height = Math.ceil(Math.max(unranked + 20, ...left.map((l) => l.ly + 10), ...right.map((r) => r.ly + 10)));
+		const bottom = y(y.domain()[1]);
+		const height = Math.ceil(Math.max(bottom + 16, ...left.map((l) => l.ly + 10), ...right.map((r) => r.ly + 10)));
 		const ticks = [1, 10, 100, 1000, 10000].filter((t) => t <= y.domain()[1]);
 		const lines = data.phrases.map((p) => ({
 			phrase: p.phrase,
 			rake: p.rake?.rank ?? null,
 			yake: p.yake?.rank ?? null,
-			y1: p.rake ? y(p.rake.rank) : unranked,
-			y2: p.yake ? y(p.yake.rank) : unranked,
+			y1: p.rake ? y(p.rake.rank) : null,
+			y2: p.yake ? y(p.yake.rank) : null,
 			group: inRake.has(p.phrase) && inYake.has(p.phrase) ? 'both' : inRake.has(p.phrase) ? 'rake' : 'yake'
 		}));
-		return { y, L, R, width, height, left, right, lines, ticks, unranked };
+		return { y, L, R, width, height, left, right, lines, ticks, bottom };
 	});
 
 	let overflowing = $state<boolean | null>(null);
@@ -121,19 +123,24 @@
 			<text class="head" x={layout.R} y={14}>YAKE rank</text>
 			{#each layout.ticks as t (t)}
 				<line class="grid" x1={layout.L} x2={layout.R} y1={layout.y(t)} y2={layout.y(t)} />
-				<text class="tick" x={(layout.L + layout.R) / 2} y={layout.y(t) - 4}>{t}</text>
 			{/each}
-			<line class="grid unranked-line" x1={layout.L} x2={layout.R} y1={layout.unranked} y2={layout.unranked} />
-			<text class="tick" x={(layout.L + layout.R) / 2} y={layout.unranked - 4}>not ranked</text>
-			<line class="axis" x1={layout.L} x2={layout.L} y1={layout.y(1) - 6} y2={layout.unranked} />
-			<line class="axis" x1={layout.R} x2={layout.R} y1={layout.y(1) - 6} y2={layout.unranked} />
+			<line class="axis" x1={layout.L} x2={layout.L} y1={layout.y(1) - 6} y2={layout.bottom} />
+			<line class="axis" x1={layout.R} x2={layout.R} y1={layout.y(1) - 6} y2={layout.bottom} />
 
 			{#each layout.lines as l (l.phrase)}
 				<g class="slope g-{l.group}" data-phrase={l.phrase} data-rake={l.rake ?? ''} data-yake={l.yake ?? ''}>
-					<line class:absent={l.rake === null || l.yake === null} x1={layout.L} y1={l.y1} x2={layout.R} y2={l.y2} />
-					<circle cx={layout.L} cy={l.y1} r="3" />
-					<circle cx={layout.R} cy={l.y2} r="3" />
+					{#if l.y1 !== null && l.y2 !== null}
+						<line x1={layout.L} y1={l.y1} x2={layout.R} y2={l.y2} />
+					{/if}
+					{#if l.y1 !== null}<circle class:alone={l.y2 === null} cx={layout.L} cy={l.y1} r="3.2" />{/if}
+					{#if l.y2 !== null}<circle class:alone={l.y1 === null} cx={layout.R} cy={l.y2} r="3.2" />{/if}
 				</g>
+			{/each}
+
+			<!-- Tick labels after the lines, with a halo, so a bundle of lines
+			     cannot hide them. -->
+			{#each layout.ticks as t (t)}
+				<text class="tick" x={(layout.L + layout.R) / 2} y={layout.y(t) - 4}>{t}</text>
 			{/each}
 
 			{#each layout.left as p (p.phrase)}
@@ -161,6 +168,12 @@
 			{#if layout.lines.some((l) => l.group === 'both')}
 				<li><span class="swatch g-both" aria-hidden="true"></span>in both</li>
 			{/if}
+			{#if layout.lines.some((l) => l.y1 === null || l.y2 === null)}
+				<li>
+					<svg class="slope g-both" width="12" height="12" aria-hidden="true"><circle class="alone" cx="6" cy="6" r="4" /></svg>
+					only one method produces the phrase
+				</li>
+			{/if}
 		</ul>
 	{/snippet}
 
@@ -170,7 +183,7 @@
 		runs lower as more relevant. The two scores share no scale, so the figure compares ranks, on a
 		log scale, out of {data.total.rake} RAKE and {data.total.yake} YAKE candidates. Equal scores share
 		a rank, and a tie at the cut of {data.shown} is taken in alphabetical order. A phrase a method does
-		not produce at all sits in the "not ranked" row.
+		not produce at all is a hollow dot on the side that ranks it, with no line.
 	{/snippet}
 </FigureFrame>
 
@@ -231,10 +244,6 @@
 		stroke: var(--border);
 	}
 
-	.unranked-line {
-		stroke-dasharray: 2 3;
-	}
-
 	.axis {
 		stroke: var(--border-strong);
 	}
@@ -243,6 +252,9 @@
 		font-size: 10px;
 		fill: var(--text-muted);
 		text-anchor: middle;
+		paint-order: stroke;
+		stroke: var(--bg-raised);
+		stroke-width: 3px;
 	}
 
 	.slope line {
@@ -251,12 +263,14 @@
 		opacity: 0.8;
 	}
 
-	.slope line.absent {
-		stroke-dasharray: 3 3;
-	}
-
 	.slope circle {
 		fill: var(--g);
+		stroke: var(--g);
+		stroke-width: 1.4px;
+	}
+
+	.slope circle.alone {
+		fill: var(--bg-raised);
 	}
 
 	.lbl text {

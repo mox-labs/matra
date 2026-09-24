@@ -41,8 +41,11 @@ import { toHtml } from 'hast-util-to-html';
 import type { Element, ElementContent, Root, RootContent } from 'hast';
 import type { Root as MdRoot } from 'mdast';
 import type {
+	ClustersFigureFile,
 	FigureFile,
 	KeyphrasesFigureFile,
+	PipelineFigureFile,
+	TextrankFigureFile,
 	MetricsFigureFile,
 	ParseFigureFile,
 	PrimitivesFigureFile,
@@ -233,6 +236,24 @@ function toSegments(tree: Root, ctx: RenderContext): Segment[] {
 				break;
 			case 'keyphrases':
 				segment = { ...base, figure: 'keyphrases', file: file as KeyphrasesFigureFile };
+				break;
+			case 'textrank':
+				segment = { ...base, figure: 'textrank', file: file as TextrankFigureFile };
+				break;
+			case 'clusters': {
+				const clusters = file as ClustersFigureFile;
+				const grid = clusters.data.grid.map((g) => g.threshold);
+				const threshold =
+					attrs.threshold === undefined ? clusters.data.default_threshold : Number(attrs.threshold);
+				if (!grid.some((t) => Math.abs(t - threshold) < 1e-9)) {
+					errors.push(`  ${at}: threshold="${attrs.threshold}" is not on the grid (${grid.join(', ')})`);
+					continue;
+				}
+				segment = { ...base, figure: 'clusters', threshold, file: clusters };
+				break;
+			}
+			case 'pipeline':
+				segment = { ...base, figure: 'pipeline', file: file as PipelineFigureFile };
 				break;
 		}
 		flush();

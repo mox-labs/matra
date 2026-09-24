@@ -21,6 +21,10 @@ Three things the shape means, stated once here and again in the type docs:
 - **Singletons are always excluded.** A sentence with no above-threshold edge appears in no cluster, so "not in any cluster" is a meaningful count.
 - **The threshold is yours, and it does not travel.** Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus; the working value depends on the model, the domain, and the text length. Start around 0.85 with the reference model on sentences, and calibrate on your own corpus. A cutoff calibrated on sentences is not the cutoff for whole documents: a document vector is the mean over far more tokens, so unrelated documents sit well above zero and near-duplicates need not reach the sentence band. Read the raw scores at the granularity you are clustering before you pick a number.
 
+All three, on ten short sentences with the reference model: step the threshold and watch a sentence about a different event join a cluster on shared words alone, two sentences share a cluster through a third, and the clusters dissolve as the bar rises.
+
+<figure-clusters input="paraphrases" />
+
 ## The model
 
 The adapter loads static embedding models in the model2vec artifact format: an embedding matrix (`model.safetensors`), a `tokenizer.json`, and a `config.json` in one directory. The reference model is [potion-base-8M](https://huggingface.co/minishlab/potion-base-8M), about 30 MB, and you do not have to fetch it yourself:
