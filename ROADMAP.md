@@ -143,7 +143,7 @@ matra reports the clusters and the numbers; whether they constitute fluff is the
 
 **Where it lands.** Mostly paid for already: `extraction/textrank.rs` builds a pairwise sentence-similarity matrix and projects it down to centrality ranks; re-projecting the same matrix as clusters is the core of this capability. Thresholds are caller-supplied parameters, not constants matra pretends to know.
 
-**Trigger condition. FIRED, 2026-08-21.** A concrete caller pattern was named that field access cannot serve: quantifying restatement across a document for LLM-output auditing. Design against I7's primitives and the rule-vocabulary shape; an RFC settles whether this is a metric family, an extractor, or the first rule pack.
+**Trigger condition. FIRED, 2026-08-21.** A concrete caller pattern was named that field access cannot serve: quantifying restatement across a document for LLM-output auditing. Design against EP-0007's primitives and the rule-vocabulary shape; an RFC settles whether this is a metric family, an extractor, or the first rule pack.
 
 ## Information density
 
@@ -177,13 +177,13 @@ That last question is the real one. matra's discipline is that the library retur
 
 **Shipped, 2026-09-06**, via [EP-0011](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0011-agent-surface.md): `matra --skill` prints the top level, `matra --skill -r` lists the references and `matra --skill -r <name>` prints one. The text is embedded with `include_str!`, so an installed program's instructions are the ones that match it, and a test executes the commands the skill names, so an incantation that stops working fails a gate rather than a reader. `--help` is unchanged and stays the reference for humans. The surrounding conventions the precedent paragraph names landed alongside it: `llms.txt` on the docsite with a currency gate, `AGENTS.md` in the repository, a plugin manifest, and `CITATION.cff`.
 
-**Trigger condition. FIRED, 2026-09-05**, by owner direction, sequenced after I10: the skill documents the CLI contract, so the CLI had to be one implementation with a pinned JSON shape first. I10 landed on 2026-09-06; [RFC-0012](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0012-agent-surface.md) records the decisions and [`blueprints/eps/0011-agent-surface.md`](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0011-agent-surface.md) carries the milestones.
+**Trigger condition. FIRED, 2026-09-05**, by owner direction, sequenced after EP-0010: the skill documents the CLI contract, so the CLI had to be one implementation with a pinned JSON shape first. EP-0010 landed on 2026-09-06; [RFC-0012](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0012-agent-surface.md) records the decisions and [`blueprints/eps/0011-agent-surface.md`](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0011-agent-surface.md) carries the milestones.
 
 ## Terminal UI for the Rust CLI
 
 **What it is.** An interactive terminal interface over the same `cli` module: browse a parsed document, its sections, sentences, and dependency trees, and the metrics beside them, without leaving the terminal.
 
-**Trigger condition. FIRED, 2026-09-06.** I10 and the agent surface have both met their acceptance gates. The TUI is a renderer over a contract that has to be stable first; building it before that means re-doing it.
+**Trigger condition. FIRED, 2026-09-06.** EP-0010 and the agent surface have both met their acceptance gates. The TUI is a renderer over a contract that has to be stable first; building it before that means re-doing it.
 
 
 ## Record traceability accessor

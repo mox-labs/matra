@@ -47,7 +47,7 @@ Run via `cargo test`.
 
 **Every fixed bug gets a regression test before the fix lands.** The test exists so the specific failure cannot recur without somebody noticing.
 
-Matra's i2 iteration codified this for the resilience floor:
+Matra's resilience-floor work before 0.1.0 codified this:
 
 - `parse_per_paragraph_scopes_sentences_to_originating_paragraph` (FM1 — the prefix-match defect)
 - `parse_per_paragraph_no_inner_substring_theft` (FM1 — the inner-substring theft variant)

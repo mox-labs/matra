@@ -5,7 +5,7 @@ description: Antifragile operational discipline for matra — size caps at the e
 
 # resilience-floor
 
-The antifragile operational discipline for matra. This skill codifies the patterns that emerged from the i2 iteration's resilience work.
+The antifragile operational discipline for matra. This skill codifies the patterns that emerged from the resilience-floor work before 0.1.0.
 
 ACES (`.claude/skills/aces/SKILL.md`) is the **structural** discipline (adaptability/composability/extensibility resisting stasis/drag/opacity). This skill is the **operational** discipline that complements it: when a process gets a hostile input, when a C library panics, when two processes race on the same file, the system survives loudly, not silently. ACES designs the system to evolve; resilience-floor designs it to fail well.
 
@@ -181,7 +181,7 @@ If any of these is "no" without an explicit reason, the change is incomplete.
 
 ## Add a regression test
 
-Every fixed failure mode gets a regression test that the failure cannot recur without somebody noticing. The i2 work shipped these:
+Every fixed failure mode gets a regression test that the failure cannot recur without somebody noticing. The resilience-floor work before 0.1.0 shipped these:
 
 - `parse_per_paragraph_*` — the prefix-match defect cannot recur.
 - `tree_depth_*` — the magic-ceiling and silently-truncated-cycle cannot recur.
