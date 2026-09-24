@@ -1,0 +1,380 @@
+{
+  "data": {
+    "phrases": [
+      {
+        "phrase": "blessing liberty",
+        "rake": null,
+        "yake": {
+          "rank": 10,
+          "score": 30.4766
+        }
+      },
+      {
+        "phrase": "blessing liberty ourselves",
+        "rake": null,
+        "yake": {
+          "rank": 5,
+          "score": 155.3577
+        }
+      },
+      {
+        "phrase": "common defence",
+        "rake": {
+          "rank": 2,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 137,
+          "score": 0.7883
+        }
+      },
+      {
+        "phrase": "general welfare",
+        "rake": {
+          "rank": 2,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 145,
+          "score": 0.7599
+        }
+      },
+      {
+        "phrase": "insure domestic tranquility",
+        "rake": {
+          "rank": 1,
+          "score": 9.0
+        },
+        "yake": {
+          "rank": 146,
+          "score": 0.7578
+        }
+      },
+      {
+        "phrase": "legislative power",
+        "rake": {
+          "rank": 2,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 173,
+          "score": 0.617
+        }
+      },
+      {
+        "phrase": "liberty ourselves posterity",
+        "rake": null,
+        "yake": {
+          "rank": 6,
+          "score": 129.7914
+        }
+      },
+      {
+        "phrase": "numerous branch",
+        "rake": {
+          "rank": 2,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 184,
+          "score": 0.4361
+        }
+      },
+      {
+        "phrase": "order form",
+        "rake": null,
+        "yake": {
+          "rank": 2,
+          "score": 363.3185
+        }
+      },
+      {
+        "phrase": "order form perfect",
+        "rake": null,
+        "yake": {
+          "rank": 3,
+          "score": 339.7541
+        }
+      },
+      {
+        "phrase": "ourselves posterity ordain",
+        "rake": null,
+        "yake": {
+          "rank": 7,
+          "score": 109.5731
+        }
+      },
+      {
+        "phrase": "perfect union",
+        "rake": {
+          "rank": 2,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 128,
+          "score": 0.87
+        }
+      },
+      {
+        "phrase": "qualifications requisite",
+        "rake": {
+          "rank": 2,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 182,
+          "score": 0.451
+        }
+      },
+      {
+        "phrase": "second year",
+        "rake": {
+          "rank": 10,
+          "score": 3.3333
+        },
+        "yake": {
+          "rank": 181,
+          "score": 0.4623
+        }
+      },
+      {
+        "phrase": "secure blessing",
+        "rake": null,
+        "yake": {
+          "rank": 9,
+          "score": 34.181
+        }
+      },
+      {
+        "phrase": "secure blessing liberty",
+        "rake": null,
+        "yake": {
+          "rank": 4,
+          "score": 183.5412
+        }
+      },
+      {
+        "phrase": "several states",
+        "rake": {
+          "rank": 2,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 113,
+          "score": 0.9319
+        }
+      },
+      {
+        "phrase": "state",
+        "rake": {
+          "rank": 12,
+          "score": 1.3333
+        },
+        "yake": {
+          "rank": 169,
+          "score": 0.6501
+        }
+      },
+      {
+        "phrase": "state legislature",
+        "rake": {
+          "rank": 10,
+          "score": 3.3333
+        },
+        "yake": {
+          "rank": 186,
+          "score": 0.4248
+        }
+      },
+      {
+        "phrase": "states order",
+        "rake": null,
+        "yake": {
+          "rank": 12,
+          "score": 28.6316
+        }
+      },
+      {
+        "phrase": "states order form",
+        "rake": null,
+        "yake": {
+          "rank": 1,
+          "score": 489.5463
+        }
+      },
+      {
+        "phrase": "united states",
+        "rake": {
+          "rank": 2,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 79,
+          "score": 2.3576
+        }
+      },
+      {
+        "phrase": "united states order",
+        "rake": null,
+        "yake": {
+          "rank": 8,
+          "score": 50.0961
+        }
+      },
+      {
+        "phrase": "welfare secure blessing",
+        "rake": null,
+        "yake": {
+          "rank": 11,
+          "score": 29.7284
+        }
+      }
+    ],
+    "rake": [
+      {
+        "phrase": "insure domestic tranquility",
+        "rank": 1,
+        "score": 9.0
+      },
+      {
+        "phrase": "common defence",
+        "rank": 2,
+        "score": 4.0
+      },
+      {
+        "phrase": "general welfare",
+        "rank": 2,
+        "score": 4.0
+      },
+      {
+        "phrase": "legislative power",
+        "rank": 2,
+        "score": 4.0
+      },
+      {
+        "phrase": "numerous branch",
+        "rank": 2,
+        "score": 4.0
+      },
+      {
+        "phrase": "perfect union",
+        "rank": 2,
+        "score": 4.0
+      },
+      {
+        "phrase": "qualifications requisite",
+        "rank": 2,
+        "score": 4.0
+      },
+      {
+        "phrase": "several states",
+        "rank": 2,
+        "score": 4.0
+      },
+      {
+        "phrase": "united states",
+        "rank": 2,
+        "score": 4.0
+      },
+      {
+        "phrase": "second year",
+        "rank": 10,
+        "score": 3.3333
+      },
+      {
+        "phrase": "state legislature",
+        "rank": 10,
+        "score": 3.3333
+      },
+      {
+        "phrase": "state",
+        "rank": 12,
+        "score": 1.3333
+      }
+    ],
+    "shown": 12,
+    "total": {
+      "rake": 32,
+      "yake": 199
+    },
+    "yake": [
+      {
+        "phrase": "states order form",
+        "rank": 1,
+        "score": 489.5463
+      },
+      {
+        "phrase": "order form",
+        "rank": 2,
+        "score": 363.3185
+      },
+      {
+        "phrase": "order form perfect",
+        "rank": 3,
+        "score": 339.7541
+      },
+      {
+        "phrase": "secure blessing liberty",
+        "rank": 4,
+        "score": 183.5412
+      },
+      {
+        "phrase": "blessing liberty ourselves",
+        "rank": 5,
+        "score": 155.3577
+      },
+      {
+        "phrase": "liberty ourselves posterity",
+        "rank": 6,
+        "score": 129.7914
+      },
+      {
+        "phrase": "ourselves posterity ordain",
+        "rank": 7,
+        "score": 109.5731
+      },
+      {
+        "phrase": "united states order",
+        "rank": 8,
+        "score": 50.0961
+      },
+      {
+        "phrase": "secure blessing",
+        "rank": 9,
+        "score": 34.181
+      },
+      {
+        "phrase": "blessing liberty",
+        "rank": 10,
+        "score": 30.4766
+      },
+      {
+        "phrase": "welfare secure blessing",
+        "rank": 11,
+        "score": 29.7284
+      },
+      {
+        "phrase": "states order",
+        "rank": 12,
+        "score": 28.6316
+      }
+    ]
+  },
+  "figure": "keyphrases",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "constitution-article-one",
+  "source": {
+    "author": "The Constitutional Convention, 1787",
+    "licence": "Public domain (a founding document of the United States, 1787)",
+    "register": "legal",
+    "source": "National Archives, transcript of the Constitution of the United States",
+    "title": "The Constitution of the United States: the Preamble, and Article I, Sections 1 and 2 (opening)",
+    "url": "https://www.archives.gov/founding-docs/constitution-transcript"
+  }
+}

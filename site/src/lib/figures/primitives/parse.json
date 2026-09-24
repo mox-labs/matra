@@ -304,6 +304,116 @@
             "text": "."
           }
         ]
+      },
+      {
+        "paragraph": 1,
+        "text": "Agencies such as the treasury and the audit office publish quarterly reports.",
+        "tokens": [
+          {
+            "dep": "nsubj",
+            "head": 10,
+            "id": 1,
+            "lemma": "Agency",
+            "pos": "NOUN",
+            "text": "Agencies"
+          },
+          {
+            "dep": "case",
+            "head": 5,
+            "id": 2,
+            "lemma": "such",
+            "pos": "ADJ",
+            "text": "such"
+          },
+          {
+            "dep": "fixed",
+            "head": 2,
+            "id": 3,
+            "lemma": "as",
+            "pos": "ADP",
+            "text": "as"
+          },
+          {
+            "dep": "det",
+            "head": 5,
+            "id": 4,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "nmod",
+            "head": 1,
+            "id": 5,
+            "lemma": "treasury",
+            "pos": "NOUN",
+            "text": "treasury"
+          },
+          {
+            "dep": "cc",
+            "head": 9,
+            "id": 6,
+            "lemma": "and",
+            "pos": "CCONJ",
+            "text": "and"
+          },
+          {
+            "dep": "det",
+            "head": 9,
+            "id": 7,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "compound",
+            "head": 9,
+            "id": 8,
+            "lemma": "audit",
+            "pos": "NOUN",
+            "text": "audit"
+          },
+          {
+            "dep": "conj",
+            "head": 5,
+            "id": 9,
+            "lemma": "office",
+            "pos": "NOUN",
+            "text": "office"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 10,
+            "lemma": "publish",
+            "pos": "VERB",
+            "text": "publish"
+          },
+          {
+            "dep": "amod",
+            "head": 12,
+            "id": 11,
+            "lemma": "quarterly",
+            "pos": "ADJ",
+            "text": "quarterly"
+          },
+          {
+            "dep": "obj",
+            "head": 10,
+            "id": 12,
+            "lemma": "report",
+            "pos": "NOUN",
+            "text": "reports"
+          },
+          {
+            "dep": "punct",
+            "head": 10,
+            "id": 13,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
       }
     ]
   },
@@ -321,7 +431,7 @@
     "licence": "MIT, as part of the matra repository",
     "register": "administrative",
     "source": "Written for matra's documentation",
-    "title": "Four sentences, one structural primitive each: a negation, a modal, a reporting, a root adverbial",
+    "title": "Five sentences, one structural primitive each: a negation, a modal, a reporting, a root adverbial, a Hearst pair",
     "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/primitives.txt"
   }
 }

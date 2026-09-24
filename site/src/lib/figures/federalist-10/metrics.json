@@ -1,0 +1,236 @@
+{
+  "data": {
+    "document": {
+      "mean_readability": 18.1992,
+      "nominalization_ratio": 0.0423,
+      "passive_ratio": 0.4205,
+      "vocabulary_ttr": 0.2523
+    },
+    "paragraphs": [
+      {
+        "compression_ratio": 0.4564,
+        "in_blockquote": false,
+        "index": 1,
+        "lexical_density": 0.47,
+        "opening": "AMONG the numerous advantages promised by a well",
+        "readability_grade": 20.7247,
+        "words": 384
+      },
+      {
+        "compression_ratio": 0.5636,
+        "in_blockquote": false,
+        "index": 2,
+        "lexical_density": 0.4314,
+        "opening": "By a faction, I understand a number of",
+        "readability_grade": 24.8922,
+        "words": 51
+      },
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 3,
+        "lexical_density": 0.4545,
+        "opening": "There are two methods of curing the mischiefs",
+        "readability_grade": 10.69,
+        "words": 22
+      },
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 4,
+        "lexical_density": 0.4,
+        "opening": "There are again two methods of removing the",
+        "readability_grade": 18.89,
+        "words": 40
+      },
+      {
+        "compression_ratio": 0.5227,
+        "in_blockquote": false,
+        "index": 5,
+        "lexical_density": 0.4557,
+        "opening": "It could never be more truly said than",
+        "readability_grade": 12.9028,
+        "words": 79
+      },
+      {
+        "compression_ratio": 0.445,
+        "in_blockquote": false,
+        "index": 6,
+        "lexical_density": 0.4423,
+        "opening": "The second expedient is as impracticable as the",
+        "readability_grade": 14.5949,
+        "words": 157
+      },
+      {
+        "compression_ratio": 0.4247,
+        "in_blockquote": false,
+        "index": 7,
+        "lexical_density": 0.5323,
+        "opening": "The latent causes of faction are thus sown",
+        "readability_grade": 18.6776,
+        "words": 263
+      },
+      {
+        "compression_ratio": 0.4596,
+        "in_blockquote": false,
+        "index": 8,
+        "lexical_density": 0.4719,
+        "opening": "No man is allowed to be a judge",
+        "readability_grade": 12.9243,
+        "words": 267
+      },
+      {
+        "compression_ratio": 0.5453,
+        "in_blockquote": false,
+        "index": 9,
+        "lexical_density": 0.475,
+        "opening": "It is in vain to say that enlightened",
+        "readability_grade": 13.5425,
+        "words": 80
+      },
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 10,
+        "lexical_density": 0.3548,
+        "opening": "The inference to which we are brought is,",
+        "readability_grade": 12.8677,
+        "words": 32
+      },
+      {
+        "compression_ratio": 0.4514,
+        "in_blockquote": false,
+        "index": 11,
+        "lexical_density": 0.4269,
+        "opening": "If a faction consists of less than a",
+        "readability_grade": 16.1036,
+        "words": 172
+      },
+      {
+        "compression_ratio": 0.4986,
+        "in_blockquote": false,
+        "index": 12,
+        "lexical_density": 0.4711,
+        "opening": "By what means is this object attainable? Evidently",
+        "readability_grade": 13.7422,
+        "words": 121
+      },
+      {
+        "compression_ratio": 0.481,
+        "in_blockquote": false,
+        "index": 13,
+        "lexical_density": 0.4469,
+        "opening": "From this view of the subject it may",
+        "readability_grade": 21.5731,
+        "words": 179
+      },
+      {
+        "compression_ratio": 0.5811,
+        "in_blockquote": false,
+        "index": 14,
+        "lexical_density": 0.4426,
+        "opening": "A republic, by which I mean a government",
+        "readability_grade": 13.9083,
+        "words": 61
+      },
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 15,
+        "lexical_density": 0.48,
+        "opening": "The two great points of difference between a",
+        "readability_grade": 23.026,
+        "words": 50
+      },
+      {
+        "compression_ratio": 0.485,
+        "in_blockquote": false,
+        "index": 16,
+        "lexical_density": 0.4857,
+        "opening": "The effect of the first difference is, on",
+        "readability_grade": 20.2176,
+        "words": 175
+      },
+      {
+        "compression_ratio": 0.4186,
+        "in_blockquote": false,
+        "index": 17,
+        "lexical_density": 0.4472,
+        "opening": "In the first place, it is to be",
+        "readability_grade": 26.5267,
+        "words": 123
+      },
+      {
+        "compression_ratio": 0.5479,
+        "in_blockquote": false,
+        "index": 18,
+        "lexical_density": 0.4211,
+        "opening": "In the next place, as each representative will",
+        "readability_grade": 32.0605,
+        "words": 76
+      },
+      {
+        "compression_ratio": 0.5178,
+        "in_blockquote": false,
+        "index": 19,
+        "lexical_density": 0.4563,
+        "opening": "It must be confessed that in this, as",
+        "readability_grade": 17.2757,
+        "words": 103
+      },
+      {
+        "compression_ratio": 0.4477,
+        "in_blockquote": false,
+        "index": 20,
+        "lexical_density": 0.4352,
+        "opening": "The other point of difference is, the greater",
+        "readability_grade": 24.6996,
+        "words": 216
+      },
+      {
+        "compression_ratio": 0.4756,
+        "in_blockquote": false,
+        "index": 21,
+        "lexical_density": 0.494,
+        "opening": "Hence, it clearly appears, that the same advantage",
+        "readability_grade": 14.139,
+        "words": 169
+      },
+      {
+        "compression_ratio": 0.5104,
+        "in_blockquote": false,
+        "index": 22,
+        "lexical_density": 0.4844,
+        "opening": "The influence of factious leaders may kindle a",
+        "readability_grade": 19.8563,
+        "words": 128
+      },
+      {
+        "compression_ratio": 0.5426,
+        "in_blockquote": false,
+        "index": 23,
+        "lexical_density": 0.4808,
+        "opening": "In the extent and proper structure of the",
+        "readability_grade": 14.7462,
+        "words": 52
+      }
+    ]
+  },
+  "figure": "metrics",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "federalist-10",
+  "source": {
+    "author": "James Madison (as Publius)",
+    "licence": "Public domain (first published 1787)",
+    "register": "argumentative",
+    "source": "Project Gutenberg eBook #1404, The Federalist Papers: the text of No. 10 from its first sentence to the signature, without the heading, the Project Gutenberg header, footer or licence",
+    "title": "The Federalist No. 10, the essay body",
+    "url": "https://www.gutenberg.org/ebooks/1404"
+  }
+}

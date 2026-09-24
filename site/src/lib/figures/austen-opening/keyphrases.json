@@ -1,0 +1,386 @@
+{
+  "data": {
+    "phrases": [
+      {
+        "phrase": "daughter",
+        "rake": {
+          "rank": 8,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 28,
+          "score": 1.8888
+        }
+      },
+      {
+        "phrase": "day",
+        "rake": {
+          "rank": 8,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 97,
+          "score": 0.6322
+        }
+      },
+      {
+        "phrase": "dear mr. bennet",
+        "rake": {
+          "rank": 1,
+          "score": 8.0
+        },
+        "yake": {
+          "rank": 116,
+          "score": 0.3922
+        }
+      },
+      {
+        "phrase": "family",
+        "rake": {
+          "rank": 8,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 84,
+          "score": 0.7037
+        }
+      },
+      {
+        "phrase": "feeling",
+        "rake": {
+          "rank": 8,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 16,
+          "score": 4.1885
+        }
+      },
+      {
+        "phrase": "feeling view",
+        "rake": null,
+        "yake": {
+          "rank": 3,
+          "score": 16.4679
+        }
+      },
+      {
+        "phrase": "feeling view man",
+        "rake": null,
+        "yake": {
+          "rank": 4,
+          "score": 14.0901
+        }
+      },
+      {
+        "phrase": "good fortune",
+        "rake": {
+          "rank": 3,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 72,
+          "score": 0.7897
+        }
+      },
+      {
+        "phrase": "know feeling view",
+        "rake": null,
+        "yake": {
+          "rank": 5,
+          "score": 13.5772
+        }
+      },
+      {
+        "phrase": "lady",
+        "rake": {
+          "rank": 8,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 32,
+          "score": 1.7556
+        }
+      },
+      {
+        "phrase": "man",
+        "rake": {
+          "rank": 7,
+          "score": 1.5
+        },
+        "yake": {
+          "rank": 62,
+          "score": 0.8556
+        }
+      },
+      {
+        "phrase": "man possession",
+        "rake": null,
+        "yake": {
+          "rank": 8,
+          "score": 8.2028
+        }
+      },
+      {
+        "phrase": "man possession good",
+        "rake": null,
+        "yake": {
+          "rank": 11,
+          "score": 7.3177
+        }
+      },
+      {
+        "phrase": "mr. bennet",
+        "rake": {
+          "rank": 2,
+          "score": 5.0
+        },
+        "yake": {
+          "rank": 103,
+          "score": 0.6006
+        }
+      },
+      {
+        "phrase": "must want wife",
+        "rake": null,
+        "yake": {
+          "rank": 2,
+          "score": 25.4417
+        }
+      },
+      {
+        "phrase": "netherfield park",
+        "rake": {
+          "rank": 3,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 118,
+          "score": 0.385
+        }
+      },
+      {
+        "phrase": "possession",
+        "rake": {
+          "rank": 8,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 6,
+          "score": 9.5871
+        }
+      },
+      {
+        "phrase": "possession good",
+        "rake": null,
+        "yake": {
+          "rank": 7,
+          "score": 8.5527
+        }
+      },
+      {
+        "phrase": "possession good fortune",
+        "rake": null,
+        "yake": {
+          "rank": 10,
+          "score": 7.571
+        }
+      },
+      {
+        "phrase": "rightful property",
+        "rake": {
+          "rank": 3,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 111,
+          "score": 0.4638
+        }
+      },
+      {
+        "phrase": "single man",
+        "rake": {
+          "rank": 6,
+          "score": 3.5
+        },
+        "yake": {
+          "rank": 70,
+          "score": 0.8019
+        }
+      },
+      {
+        "phrase": "single man possession",
+        "rake": null,
+        "yake": {
+          "rank": 9,
+          "score": 7.6882
+        }
+      },
+      {
+        "phrase": "want",
+        "rake": {
+          "rank": 8,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 12,
+          "score": 5.7534
+        }
+      },
+      {
+        "phrase": "want wife",
+        "rake": null,
+        "yake": {
+          "rank": 1,
+          "score": 28.9606
+        }
+      }
+    ],
+    "rake": [
+      {
+        "phrase": "dear mr. bennet",
+        "rank": 1,
+        "score": 8.0
+      },
+      {
+        "phrase": "mr. bennet",
+        "rank": 2,
+        "score": 5.0
+      },
+      {
+        "phrase": "good fortune",
+        "rank": 3,
+        "score": 4.0
+      },
+      {
+        "phrase": "netherfield park",
+        "rank": 3,
+        "score": 4.0
+      },
+      {
+        "phrase": "rightful property",
+        "rank": 3,
+        "score": 4.0
+      },
+      {
+        "phrase": "single man",
+        "rank": 6,
+        "score": 3.5
+      },
+      {
+        "phrase": "man",
+        "rank": 7,
+        "score": 1.5
+      },
+      {
+        "phrase": "daughter",
+        "rank": 8,
+        "score": 1.0
+      },
+      {
+        "phrase": "day",
+        "rank": 8,
+        "score": 1.0
+      },
+      {
+        "phrase": "family",
+        "rank": 8,
+        "score": 1.0
+      },
+      {
+        "phrase": "feeling",
+        "rank": 8,
+        "score": 1.0
+      },
+      {
+        "phrase": "lady",
+        "rank": 8,
+        "score": 1.0
+      }
+    ],
+    "shown": 12,
+    "total": {
+      "rake": 20,
+      "yake": 120
+    },
+    "yake": [
+      {
+        "phrase": "want wife",
+        "rank": 1,
+        "score": 28.9606
+      },
+      {
+        "phrase": "must want wife",
+        "rank": 2,
+        "score": 25.4417
+      },
+      {
+        "phrase": "feeling view",
+        "rank": 3,
+        "score": 16.4679
+      },
+      {
+        "phrase": "feeling view man",
+        "rank": 4,
+        "score": 14.0901
+      },
+      {
+        "phrase": "know feeling view",
+        "rank": 5,
+        "score": 13.5772
+      },
+      {
+        "phrase": "possession",
+        "rank": 6,
+        "score": 9.5871
+      },
+      {
+        "phrase": "possession good",
+        "rank": 7,
+        "score": 8.5527
+      },
+      {
+        "phrase": "man possession",
+        "rank": 8,
+        "score": 8.2028
+      },
+      {
+        "phrase": "single man possession",
+        "rank": 9,
+        "score": 7.6882
+      },
+      {
+        "phrase": "possession good fortune",
+        "rank": 10,
+        "score": 7.571
+      },
+      {
+        "phrase": "man possession good",
+        "rank": 11,
+        "score": 7.3177
+      },
+      {
+        "phrase": "want",
+        "rank": 12,
+        "score": 5.7534
+      }
+    ]
+  },
+  "figure": "keyphrases",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "austen-opening",
+  "source": {
+    "author": "Jane Austen",
+    "licence": "Public domain (first published 1813)",
+    "register": "narrative",
+    "source": "Project Gutenberg eBook #1342, the text only, without the Project Gutenberg header, footer or licence",
+    "title": "Pride and Prejudice, the opening of chapter 1",
+    "url": "https://www.gutenberg.org/ebooks/1342"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "data": {
+    "document": {
+      "mean_readability": 8.1955,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.2,
+      "vocabulary_ttr": 0.8333
+    },
+    "paragraphs": [
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 1,
+        "lexical_density": 0.619,
+        "opening": "The committee did not approve the budget. Members",
+        "readability_grade": 8.1955,
+        "words": 42
+      }
+    ]
+  },
+  "figure": "metrics",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "primitives",
+  "source": {
+    "author": "matra contributors",
+    "licence": "MIT, as part of the matra repository",
+    "register": "administrative",
+    "source": "Written for matra's documentation",
+    "title": "Five sentences, one structural primitive each: a negation, a modal, a reporting, a root adverbial, a Hearst pair",
+    "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/primitives.txt"
+  }
+}

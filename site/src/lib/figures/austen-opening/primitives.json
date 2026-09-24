@@ -1,0 +1,574 @@
+{
+  "data": {
+    "sentences": [
+      {
+        "bare_assertion": true,
+        "hearst_pairs": [],
+        "modals": [
+          {
+            "aux_id": 18,
+            "aux_lemma": "must",
+            "head_id": 21
+          }
+        ],
+        "negations": [],
+        "paragraph": 1,
+        "reportings": [
+          {
+            "ccomp_id": 21,
+            "subject_id": null,
+            "subject_lemma": null,
+            "verb_id": 6,
+            "verb_lemma": "acknowledge"
+          }
+        ],
+        "root_adverbials": [],
+        "root_id": 4,
+        "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
+        "tokens": [
+          {
+            "id": 1,
+            "text": "It"
+          },
+          {
+            "id": 2,
+            "text": "is"
+          },
+          {
+            "id": 3,
+            "text": "a"
+          },
+          {
+            "id": 4,
+            "text": "truth"
+          },
+          {
+            "id": 5,
+            "text": "universally"
+          },
+          {
+            "id": 6,
+            "text": "acknowledged"
+          },
+          {
+            "id": 7,
+            "text": ","
+          },
+          {
+            "id": 8,
+            "text": "that"
+          },
+          {
+            "id": 9,
+            "text": "a"
+          },
+          {
+            "id": 10,
+            "text": "single"
+          },
+          {
+            "id": 11,
+            "text": "man"
+          },
+          {
+            "id": 12,
+            "text": "in"
+          },
+          {
+            "id": 13,
+            "text": "possession"
+          },
+          {
+            "id": 14,
+            "text": "of"
+          },
+          {
+            "id": 15,
+            "text": "a"
+          },
+          {
+            "id": 16,
+            "text": "good"
+          },
+          {
+            "id": 17,
+            "text": "fortune"
+          },
+          {
+            "id": 18,
+            "text": "must"
+          },
+          {
+            "id": 19,
+            "text": "be"
+          },
+          {
+            "id": 20,
+            "text": "in"
+          },
+          {
+            "id": 21,
+            "text": "want"
+          },
+          {
+            "id": 22,
+            "text": "of"
+          },
+          {
+            "id": 23,
+            "text": "a"
+          },
+          {
+            "id": 24,
+            "text": "wife"
+          },
+          {
+            "id": 25,
+            "text": "."
+          }
+        ]
+      },
+      {
+        "bare_assertion": false,
+        "hearst_pairs": [],
+        "modals": [
+          {
+            "aux_id": 12,
+            "aux_lemma": "may",
+            "head_id": 26
+          }
+        ],
+        "negations": [],
+        "paragraph": 2,
+        "reportings": [],
+        "root_adverbials": [
+          {
+            "adv_id": 1,
+            "adv_lemma": "however"
+          },
+          {
+            "adv_id": 2,
+            "adv_lemma": "little"
+          }
+        ],
+        "root_id": 3,
+        "text": "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.",
+        "tokens": [
+          {
+            "id": 1,
+            "text": "However"
+          },
+          {
+            "id": 2,
+            "text": "little"
+          },
+          {
+            "id": 3,
+            "text": "known"
+          },
+          {
+            "id": 4,
+            "text": "the"
+          },
+          {
+            "id": 5,
+            "text": "feelings"
+          },
+          {
+            "id": 6,
+            "text": "or"
+          },
+          {
+            "id": 7,
+            "text": "views"
+          },
+          {
+            "id": 8,
+            "text": "of"
+          },
+          {
+            "id": 9,
+            "text": "such"
+          },
+          {
+            "id": 10,
+            "text": "a"
+          },
+          {
+            "id": 11,
+            "text": "man"
+          },
+          {
+            "id": 12,
+            "text": "may"
+          },
+          {
+            "id": 13,
+            "text": "be"
+          },
+          {
+            "id": 14,
+            "text": "on"
+          },
+          {
+            "id": 15,
+            "text": "his"
+          },
+          {
+            "id": 16,
+            "text": "first"
+          },
+          {
+            "id": 17,
+            "text": "entering"
+          },
+          {
+            "id": 18,
+            "text": "a"
+          },
+          {
+            "id": 19,
+            "text": "neighbourhood"
+          },
+          {
+            "id": 20,
+            "text": ","
+          },
+          {
+            "id": 21,
+            "text": "this"
+          },
+          {
+            "id": 22,
+            "text": "truth"
+          },
+          {
+            "id": 23,
+            "text": "is"
+          },
+          {
+            "id": 24,
+            "text": "so"
+          },
+          {
+            "id": 25,
+            "text": "well"
+          },
+          {
+            "id": 26,
+            "text": "fixed"
+          },
+          {
+            "id": 27,
+            "text": "in"
+          },
+          {
+            "id": 28,
+            "text": "the"
+          },
+          {
+            "id": 29,
+            "text": "minds"
+          },
+          {
+            "id": 30,
+            "text": "of"
+          },
+          {
+            "id": 31,
+            "text": "the"
+          },
+          {
+            "id": 32,
+            "text": "surrounding"
+          },
+          {
+            "id": 33,
+            "text": "families"
+          },
+          {
+            "id": 34,
+            "text": ","
+          },
+          {
+            "id": 35,
+            "text": "that"
+          },
+          {
+            "id": 36,
+            "text": "he"
+          },
+          {
+            "id": 37,
+            "text": "is"
+          },
+          {
+            "id": 38,
+            "text": "considered"
+          },
+          {
+            "id": 39,
+            "text": "as"
+          },
+          {
+            "id": 40,
+            "text": "the"
+          },
+          {
+            "id": 41,
+            "text": "rightful"
+          },
+          {
+            "id": 42,
+            "text": "property"
+          },
+          {
+            "id": 43,
+            "text": "of"
+          },
+          {
+            "id": 44,
+            "text": "some"
+          },
+          {
+            "id": 45,
+            "text": "one"
+          },
+          {
+            "id": 46,
+            "text": "or"
+          },
+          {
+            "id": 47,
+            "text": "other"
+          },
+          {
+            "id": 48,
+            "text": "of"
+          },
+          {
+            "id": 49,
+            "text": "their"
+          },
+          {
+            "id": 50,
+            "text": "daughters"
+          },
+          {
+            "id": 51,
+            "text": "."
+          }
+        ]
+      },
+      {
+        "bare_assertion": true,
+        "hearst_pairs": [],
+        "modals": [],
+        "negations": [],
+        "paragraph": 3,
+        "reportings": [
+          {
+            "ccomp_id": 24,
+            "subject_id": 18,
+            "subject_lemma": "you",
+            "verb_id": 19,
+            "verb_lemma": "hear"
+          }
+        ],
+        "root_adverbials": [],
+        "root_id": 8,
+        "text": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+        "tokens": [
+          {
+            "id": 1,
+            "text": "“"
+          },
+          {
+            "id": 2,
+            "text": "My"
+          },
+          {
+            "id": 3,
+            "text": "dear"
+          },
+          {
+            "id": 4,
+            "text": "Mr."
+          },
+          {
+            "id": 5,
+            "text": "Bennet"
+          },
+          {
+            "id": 6,
+            "text": ","
+          },
+          {
+            "id": 7,
+            "text": "”"
+          },
+          {
+            "id": 8,
+            "text": "said"
+          },
+          {
+            "id": 9,
+            "text": "his"
+          },
+          {
+            "id": 10,
+            "text": "lady"
+          },
+          {
+            "id": 11,
+            "text": "to"
+          },
+          {
+            "id": 12,
+            "text": "him"
+          },
+          {
+            "id": 13,
+            "text": "one"
+          },
+          {
+            "id": 14,
+            "text": "day"
+          },
+          {
+            "id": 15,
+            "text": ","
+          },
+          {
+            "id": 16,
+            "text": "“"
+          },
+          {
+            "id": 17,
+            "text": "have"
+          },
+          {
+            "id": 18,
+            "text": "you"
+          },
+          {
+            "id": 19,
+            "text": "heard"
+          },
+          {
+            "id": 20,
+            "text": "that"
+          },
+          {
+            "id": 21,
+            "text": "Netherfield"
+          },
+          {
+            "id": 22,
+            "text": "Park"
+          },
+          {
+            "id": 23,
+            "text": "is"
+          },
+          {
+            "id": 24,
+            "text": "let"
+          },
+          {
+            "id": 25,
+            "text": "at"
+          },
+          {
+            "id": 26,
+            "text": "last"
+          },
+          {
+            "id": 27,
+            "text": "?"
+          },
+          {
+            "id": 28,
+            "text": "”"
+          }
+        ]
+      },
+      {
+        "bare_assertion": true,
+        "hearst_pairs": [],
+        "modals": [],
+        "negations": [
+          {
+            "cue_id": 7,
+            "cue_lemma": "not",
+            "head_id": 6
+          }
+        ],
+        "paragraph": 4,
+        "reportings": [
+          {
+            "ccomp_id": 6,
+            "subject_id": 1,
+            "subject_lemma": "Mr.",
+            "verb_id": 3,
+            "verb_lemma": "reply"
+          }
+        ],
+        "root_adverbials": [],
+        "root_id": 3,
+        "text": "Mr. Bennet replied that he had not.",
+        "tokens": [
+          {
+            "id": 1,
+            "text": "Mr."
+          },
+          {
+            "id": 2,
+            "text": "Bennet"
+          },
+          {
+            "id": 3,
+            "text": "replied"
+          },
+          {
+            "id": 4,
+            "text": "that"
+          },
+          {
+            "id": 5,
+            "text": "he"
+          },
+          {
+            "id": 6,
+            "text": "had"
+          },
+          {
+            "id": 7,
+            "text": "not"
+          },
+          {
+            "id": 8,
+            "text": "."
+          }
+        ]
+      }
+    ]
+  },
+  "figure": "primitives",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "austen-opening",
+  "source": {
+    "author": "Jane Austen",
+    "licence": "Public domain (first published 1813)",
+    "register": "narrative",
+    "source": "Project Gutenberg eBook #1342, the text only, without the Project Gutenberg header, footer or licence",
+    "title": "Pride and Prejudice, the opening of chapter 1",
+    "url": "https://www.gutenberg.org/ebooks/1342"
+  }
+}
