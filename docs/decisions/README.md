@@ -66,3 +66,4 @@ supersede old ones. The full lineage is preserved.
 | [0013](0013-attribution-and-citation.md) | Attribution and citation: mox labs as the one author and copyright holder, CITATION.cff at the root | accepted |
 | [0014](0014-distribution-matrix.md) | The distribution matrix: four abi3 wheels built in manylinux, and a from-source path that names its C++ toolchain | accepted |
 | [0015](0015-provisioning-failures.md) | Provisioning is matra's own, and a failure to fetch is not an invalid model | accepted |
+| [0018](0018-docsite-on-sveltekit.md) | The docsite on SvelteKit: plain Markdown, figures from matra's own output | proposed |
