@@ -13,6 +13,7 @@ import { editUrl } from '$lib/site';
 import type { Doc, FigureFile, NavPart } from '$lib/types';
 import { flatten, parseSummary } from './summary';
 import { render } from './markdown/render';
+import { exampleMarkdown, examples } from './examples';
 
 const SOURCES = import.meta.glob('/content/**/*.md', {
 	query: '?raw',
@@ -68,11 +69,22 @@ export function llmsTxt(): string {
 	return text;
 }
 
-/** The raw Markdown of a page, as authored: the `.md` twin agents read. */
+/**
+ * The Markdown of a page, as authored: the `.md` twin agents read. The one
+ * change is that a worked example's tags become the Markdown they stand for,
+ * the input, the calls and the output, since a tag alone tells an agent
+ * nothing it can run.
+ */
 export function markdownOf(route: string): string {
 	const page = pages.find((p) => p.route === route);
 	if (!page) error(404, `No page at ${route}`);
-	return source(page.file);
+	return source(page.file).replace(
+		/^<example-(input|call|output) name="([^"]+)" \/>$/gm,
+		(tag, part: 'input' | 'call' | 'output', name: string) => {
+			const ex = examples.get(name);
+			return ex ? exampleMarkdown(ex, part, figures) : tag;
+		}
+	);
 }
 
 const SITE_ROOT = resolve('.');
@@ -93,7 +105,7 @@ export async function loadDoc(route: string): Promise<Doc> {
 	const i = order.findIndex((o) => o.item.route === route);
 	if (i === -1) error(404, `No page at ${route}`);
 	const { item, part } = order[i];
-	const rendered = await render(source(item.file), { file: item.file, routes, base, figures });
+	const rendered = await render(source(item.file), { file: item.file, routes, base, figures, examples });
 	const link = (j: number) =>
 		j >= 0 && j < order.length ? { title: order[j].item.title, route: order[j].item.route } : null;
 	return {

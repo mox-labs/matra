@@ -120,7 +120,9 @@ trap 'rm -f "$tmp"' EXIT
     # Held in variables: an unquoted regex with parentheses in it is read by
     # the shell before [[ =~ ]] ever sees it.
     heading_re='^#[[:space:]]+(.+)$'
-    link_re='^(-[[:space:]]+)?\[([^]]+)\]\(\.?/?([^)]+\.md)\)'
+    # Leading space admits a nested entry (the Examples part nests its pages
+    # under an index); an anchored pattern skipped them without a word.
+    link_re='^[[:space:]]*(-[[:space:]]+)?\[([^]]+)\]\(\.?/?([^)]+\.md)\)'
 
     while IFS= read -r raw; do
         # A `# Heading` in SUMMARY.md opens a part. The first one is the book

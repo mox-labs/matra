@@ -183,12 +183,51 @@ interface FigureSegmentBase {
 	dataUrl: string;
 }
 
+/** One of a worked example's three calls, highlighted at build time. */
+export interface ExampleCall {
+	lang: 'rust' | 'python' | 'cli';
+	label: string;
+	/** The file the call lives in, under site/examples/<name>/. */
+	file: string;
+	html: string;
+}
+
+/**
+ * A worked example (EP-0012, M6), as its page shows it: the input, the same
+ * call in Rust, Python and the CLI, and what the calls print. Everything here
+ * comes from site/examples/<name>/, whose calls the examples gate runs.
+ */
+export interface ExampleView {
+	name: string;
+	input: {
+		name: string;
+		/** The file name the calls read. */
+		file: string;
+		text: string;
+		words: number;
+		source: Record<string, string>;
+		/** Where the input is published, to download under `file`. */
+		url: string;
+	};
+	calls: ExampleCall[];
+	/** What the CLI prints around the result, highlighted, the result elided. */
+	cliEnvelopeHtml: string;
+	output: {
+		html: string;
+		/** How the shown output was trimmed, or null when it is whole. */
+		trimmed: string | null;
+		url: string;
+		cliUrl: string;
+	};
+}
+
 /**
  * A page body is a run of segments: rendered HTML, and between runs the
- * figures the page's Markdown names, each with the data it renders.
+ * figures and example parts the page's Markdown names, each with its data.
  */
 export type Segment =
 	| { kind: 'html'; html: string }
+	| { kind: 'example'; part: 'input' | 'call' | 'output'; id: string; example: ExampleView }
 	| (FigureSegmentBase & {
 			figure: 'parse';
 			/** The sentence shown first, 1-based. */
@@ -207,7 +246,7 @@ export type Segment =
 	  })
 	| (FigureSegmentBase & { figure: 'pipeline'; file: PipelineFigureFile });
 
-export type FigureKind = Exclude<Segment, { kind: 'html' }>['figure'];
+export type FigureKind = Extract<Segment, { kind: 'figure' }>['figure'];
 
 export interface PageLink {
 	title: string;

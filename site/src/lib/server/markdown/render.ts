@@ -53,6 +53,7 @@ import type {
 	TocEntry
 } from '$lib/types';
 import { MARKDOWN_ELEMENTS, REGISTRY } from './registry';
+import { exampleView, type ExampleSource } from '../examples';
 
 /**
  * The grammars the pages use. A fence in a language not listed here fails the
@@ -60,7 +61,7 @@ import { MARKDOWN_ELEMENTS, REGISTRY } from './registry';
  * decision someone makes here. `text` and an unlabelled fence need no grammar.
  * `console` is shiki's alias for shellsession.
  */
-const LANGUAGES = ['rust', 'python', 'bash', 'shellsession', 'json'];
+const LANGUAGES = ['rust', 'python', 'bash', 'shellsession', 'json', 'jsonc'];
 const THEMES = { light: 'github-light', dark: 'github-dark' } as const;
 
 let highlighter: ReturnType<typeof createHighlighter> | undefined;
@@ -91,6 +92,8 @@ export interface RenderContext {
 	base: string;
 	/** Every figure data file, keyed `<input>/<figure>`. */
 	figures: ReadonlyMap<string, FigureFile>;
+	/** Every worked example in site/examples/, by name. */
+	examples: ReadonlyMap<string, ExampleSource>;
 }
 
 export async function render(markdown: string, ctx: RenderContext): Promise<Rendered> {
@@ -120,12 +123,15 @@ export async function render(markdown: string, ctx: RenderContext): Promise<Rend
 		.use(liftTitle, { file: ctx.file, heading });
 
 	const tree = (await processor.run(processor.parse(markdown))) as Root;
+	const hl = await getHighlighter();
+	const highlight = (code: string, lang: string) =>
+		hl.codeToHtml(code, { lang, themes: THEMES, defaultColor: false });
 	return {
 		title: meta.title,
 		titleHtml: heading.html,
 		titleId: heading.id,
 		description: meta.description,
-		segments: toSegments(tree, ctx),
+		segments: toSegments(tree, ctx, highlight),
 		toc
 	};
 }
@@ -135,14 +141,15 @@ export async function render(markdown: string, ctx: RenderContext): Promise<Rend
  * Only a whole Markdown block matches; a figure tag anywhere else is left as
  * raw HTML, and checkTags then fails the build on it with the reason.
  */
-const FIGURE_TAG = /^<(figure-[a-z][a-z-]*)((?:\s+[a-z][a-z-]*="[^"<>]*")*)\s*\/>$/;
+const FIGURE_TAG = /^<((?:figure|example)-[a-z][a-z-]*)((?:\s+[a-z][a-z-]*="[^"<>]*")*)\s*\/>$/;
 const FIGURE_ATTR = /([a-z][a-z-]*)="([^"<>]*)"/g;
 
 const figureTags: Plugin<[], MdRoot> = () => (tree) => {
 	tree.children = tree.children.map((node) => {
 		if (node.type !== 'html') return node;
 		const m = FIGURE_TAG.exec(node.value.trim());
-		if (!m || REGISTRY[m[1]]?.kind !== 'figure') return node;
+		const kind = m ? REGISTRY[m[1]]?.kind : undefined;
+		if (!m || (kind !== 'figure' && kind !== 'example')) return node;
 		const properties: Record<string, string> = { dataMatraFigure: 'true' };
 		for (const [, name, value] of m[2].matchAll(FIGURE_ATTR)) properties[name] = value;
 		// An mdast node remark-rehype does not know becomes the element its
@@ -162,7 +169,11 @@ const figureTags: Plugin<[], MdRoot> = () => (tree) => {
  * are serialised to HTML runs. Every figure's attributes and data are checked
  * here; anything wrong fails the build with the page and line.
  */
-function toSegments(tree: Root, ctx: RenderContext): Segment[] {
+function toSegments(
+	tree: Root,
+	ctx: RenderContext,
+	highlight: (code: string, lang: string) => string
+): Segment[] {
 	const segments: Segment[] = [];
 	const errors: string[] = [];
 	let run: RootContent[] = [];
@@ -176,7 +187,7 @@ function toSegments(tree: Root, ctx: RenderContext): Segment[] {
 
 	for (const node of tree.children) {
 		const entry = node.type === 'element' ? REGISTRY[node.tagName] : undefined;
-		if (node.type !== 'element' || entry?.kind !== 'figure') {
+		if (node.type !== 'element' || (entry?.kind !== 'figure' && entry?.kind !== 'example')) {
 			run.push(node);
 			continue;
 		}
@@ -186,6 +197,27 @@ function toSegments(tree: Root, ctx: RenderContext): Segment[] {
 		for (const [key, value] of Object.entries(props)) {
 			if (key === 'dataMatraFigure') continue;
 			attrs[key] = String(value);
+		}
+		if (entry.kind === 'example') {
+			const unknown = Object.keys(attrs).filter((k) => k !== 'name');
+			const example = attrs.name === undefined ? undefined : ctx.examples.get(attrs.name);
+			if (unknown.length || !example) {
+				errors.push(
+					`  ${at}: ${unknown.length ? `unknown attribute ${unknown.join(', ')}; ` : ''}` +
+						(example ? '' : `no example called "${attrs.name ?? ''}" in site/examples/ ` +
+							`(known: ${[...ctx.examples.keys()].join(', ') || 'none'})`)
+				);
+				continue;
+			}
+			flush();
+			count += 1;
+			segments.push({
+				kind: 'example',
+				part: entry.part,
+				id: `ex-${example.name}-${entry.part}`,
+				example: exampleView(example, ctx.figures, ctx.base, highlight)
+			});
+			continue;
 		}
 		const unknown = Object.keys(attrs).filter((k) => !(k in entry.attributes));
 		const missing = Object.entries(entry.attributes)
@@ -282,7 +314,7 @@ const checkTags: Plugin<[RenderContext], Root> = (ctx) => (tree) => {
 		const entry = REGISTRY[node.tagName];
 		if (entry?.kind === 'passthrough') return SKIP;
 		const line = node.position?.start.line;
-		if (entry?.kind === 'figure') {
+		if (entry?.kind === 'figure' || entry?.kind === 'example') {
 			if (node.properties?.dataMatraFigure === 'true') return SKIP;
 			unknown.push(
 				`  ${ctx.file}${line ? `:${line}` : ''}: <${node.tagName}> must be one self-closing ` +

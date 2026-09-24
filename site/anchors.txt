@@ -2,8 +2,9 @@
 #
 # `page.html#section` is a URL too, cited from the README, from llms.txt
 # consumers, from bookmarks and from other sites. Each anchor listed here must
-# keep existing on its page. These are the 208 heading ids the mdBook-era site
-# served, checked id for id against its build before the cut-over (EP-0012).
+# keep existing on its page. The first 208 are the heading ids the mdBook-era
+# site served, checked id for id against its build before the cut-over
+# (EP-0012); the rest were added with the pages they belong to.
 #
 # scripts/check-url-manifest.sh reads this beside urls.txt: in --build and
 # --dir mode, each page must carry an element with each listed id. The check
@@ -220,3 +221,37 @@ tutorials/installation.html#the-python-package
 tutorials/installation.html#the-english-model
 tutorials/installation.html#verify-the-install
 tutorials/installation.html#what-you-have
+
+# Added with the home page and the Examples section (EP-0012, M6). The
+# front page is the home page, at both its paths; the introduction's two
+# section ids it served before stay on it and forward (src/routes/+page.svelte).
+index.html#one-passage-and-what-matra-returns
+index.html#where-to-go-next
+home.html#one-passage-and-what-matra-returns
+home.html#where-to-go-next
+examples/index.html#before-you-start
+examples/index.html#what-is-not-here
+examples/keyphrases.html#input
+examples/keyphrases.html#the-call
+examples/keyphrases.html#output
+examples/keyphrases.html#what-to-notice
+examples/markdown-structure.html#input
+examples/markdown-structure.html#the-call
+examples/markdown-structure.html#output
+examples/markdown-structure.html#what-to-notice
+examples/negations-and-modals.html#input
+examples/negations-and-modals.html#the-call
+examples/negations-and-modals.html#output
+examples/negations-and-modals.html#what-to-notice
+examples/parse-a-sentence.html#input
+examples/parse-a-sentence.html#the-call
+examples/parse-a-sentence.html#output
+examples/parse-a-sentence.html#what-to-notice
+examples/readability-by-paragraph.html#input
+examples/readability-by-paragraph.html#the-call
+examples/readability-by-paragraph.html#output
+examples/readability-by-paragraph.html#what-to-notice
+examples/summarize.html#input
+examples/summarize.html#the-call
+examples/summarize.html#output
+examples/summarize.html#what-to-notice
