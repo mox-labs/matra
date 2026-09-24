@@ -1,0 +1,327 @@
+{
+  "data": {
+    "sentences": [
+      {
+        "paragraph": 1,
+        "text": "The committee did not approve the budget.",
+        "tokens": [
+          {
+            "dep": "det",
+            "head": 2,
+            "id": 1,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "The"
+          },
+          {
+            "dep": "nsubj",
+            "head": 5,
+            "id": 2,
+            "lemma": "committee",
+            "pos": "NOUN",
+            "text": "committee"
+          },
+          {
+            "dep": "aux",
+            "head": 5,
+            "id": 3,
+            "lemma": "do",
+            "pos": "AUX",
+            "text": "did"
+          },
+          {
+            "dep": "advmod",
+            "head": 5,
+            "id": 4,
+            "lemma": "not",
+            "pos": "PART",
+            "text": "not"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 5,
+            "lemma": "approve",
+            "pos": "VERB",
+            "text": "approve"
+          },
+          {
+            "dep": "det",
+            "head": 7,
+            "id": 6,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "obj",
+            "head": 5,
+            "id": 7,
+            "lemma": "budget",
+            "pos": "NOUN",
+            "text": "budget"
+          },
+          {
+            "dep": "punct",
+            "head": 5,
+            "id": 8,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 1,
+        "text": "Members must submit revised estimates by Friday.",
+        "tokens": [
+          {
+            "dep": "nsubj",
+            "head": 3,
+            "id": 1,
+            "lemma": "member",
+            "pos": "NOUN",
+            "text": "Members"
+          },
+          {
+            "dep": "aux",
+            "head": 3,
+            "id": 2,
+            "lemma": "must",
+            "pos": "AUX",
+            "text": "must"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 3,
+            "lemma": "submit",
+            "pos": "VERB",
+            "text": "submit"
+          },
+          {
+            "dep": "amod",
+            "head": 5,
+            "id": 4,
+            "lemma": "revise",
+            "pos": "VERB",
+            "text": "revised"
+          },
+          {
+            "dep": "obj",
+            "head": 3,
+            "id": 5,
+            "lemma": "estimate",
+            "pos": "NOUN",
+            "text": "estimates"
+          },
+          {
+            "dep": "case",
+            "head": 7,
+            "id": 6,
+            "lemma": "by",
+            "pos": "ADP",
+            "text": "by"
+          },
+          {
+            "dep": "obl",
+            "head": 3,
+            "id": 7,
+            "lemma": "Friday",
+            "pos": "PROPN",
+            "text": "Friday"
+          },
+          {
+            "dep": "punct",
+            "head": 3,
+            "id": 8,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 1,
+        "text": "The chair reported that the vote was postponed.",
+        "tokens": [
+          {
+            "dep": "det",
+            "head": 2,
+            "id": 1,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "The"
+          },
+          {
+            "dep": "nsubj",
+            "head": 3,
+            "id": 2,
+            "lemma": "chair",
+            "pos": "NOUN",
+            "text": "chair"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 3,
+            "lemma": "report",
+            "pos": "VERB",
+            "text": "reported"
+          },
+          {
+            "dep": "mark",
+            "head": 8,
+            "id": 4,
+            "lemma": "that",
+            "pos": "SCONJ",
+            "text": "that"
+          },
+          {
+            "dep": "det",
+            "head": 6,
+            "id": 5,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "nsubj:pass",
+            "head": 8,
+            "id": 6,
+            "lemma": "vote",
+            "pos": "NOUN",
+            "text": "vote"
+          },
+          {
+            "dep": "aux:pass",
+            "head": 8,
+            "id": 7,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "was"
+          },
+          {
+            "dep": "ccomp",
+            "head": 3,
+            "id": 8,
+            "lemma": "postpone",
+            "pos": "VERB",
+            "text": "postponed"
+          },
+          {
+            "dep": "punct",
+            "head": 3,
+            "id": 9,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 1,
+        "text": "Reportedly, the new figures could arrive next week.",
+        "tokens": [
+          {
+            "dep": "advmod",
+            "head": 7,
+            "id": 1,
+            "lemma": "reportedly",
+            "pos": "ADV",
+            "text": "Reportedly"
+          },
+          {
+            "dep": "punct",
+            "head": 7,
+            "id": 2,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "det",
+            "head": 5,
+            "id": 3,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "amod",
+            "head": 5,
+            "id": 4,
+            "lemma": "new",
+            "pos": "ADJ",
+            "text": "new"
+          },
+          {
+            "dep": "nsubj",
+            "head": 7,
+            "id": 5,
+            "lemma": "figure",
+            "pos": "NOUN",
+            "text": "figures"
+          },
+          {
+            "dep": "aux",
+            "head": 7,
+            "id": 6,
+            "lemma": "could",
+            "pos": "AUX",
+            "text": "could"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 7,
+            "lemma": "arrive",
+            "pos": "VERB",
+            "text": "arrive"
+          },
+          {
+            "dep": "amod",
+            "head": 9,
+            "id": 8,
+            "lemma": "next",
+            "pos": "ADJ",
+            "text": "next"
+          },
+          {
+            "dep": "obl:tmod",
+            "head": 7,
+            "id": 9,
+            "lemma": "week",
+            "pos": "NOUN",
+            "text": "week"
+          },
+          {
+            "dep": "punct",
+            "head": 7,
+            "id": 10,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      }
+    ]
+  },
+  "figure": "parse",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "primitives",
+  "source": {
+    "author": "matra contributors",
+    "licence": "MIT, as part of the matra repository",
+    "register": "administrative",
+    "source": "Written for matra's documentation",
+    "title": "Four sentences, one structural primitive each: a negation, a modal, a reporting, a root adverbial",
+    "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/primitives.txt"
+  }
+}

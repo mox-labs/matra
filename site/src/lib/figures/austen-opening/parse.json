@@ -1,0 +1,943 @@
+{
+  "data": {
+    "sentences": [
+      {
+        "paragraph": 1,
+        "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
+        "tokens": [
+          {
+            "dep": "nsubj",
+            "head": 4,
+            "id": 1,
+            "lemma": "it",
+            "pos": "PRON",
+            "text": "It"
+          },
+          {
+            "dep": "cop",
+            "head": 4,
+            "id": 2,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "is"
+          },
+          {
+            "dep": "det",
+            "head": 4,
+            "id": 3,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 4,
+            "lemma": "truth",
+            "pos": "NOUN",
+            "text": "truth"
+          },
+          {
+            "dep": "advmod",
+            "head": 6,
+            "id": 5,
+            "lemma": "universally",
+            "pos": "ADV",
+            "text": "universally"
+          },
+          {
+            "dep": "conj",
+            "head": 4,
+            "id": 6,
+            "lemma": "acknowledge",
+            "pos": "VERB",
+            "text": "acknowledged"
+          },
+          {
+            "dep": "punct",
+            "head": 6,
+            "id": 7,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "obj",
+            "head": 21,
+            "id": 8,
+            "lemma": "that",
+            "pos": "PRON",
+            "text": "that"
+          },
+          {
+            "dep": "det",
+            "head": 11,
+            "id": 9,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "amod",
+            "head": 11,
+            "id": 10,
+            "lemma": "single",
+            "pos": "ADJ",
+            "text": "single"
+          },
+          {
+            "dep": "nsubj",
+            "head": 21,
+            "id": 11,
+            "lemma": "man",
+            "pos": "NOUN",
+            "text": "man"
+          },
+          {
+            "dep": "case",
+            "head": 13,
+            "id": 12,
+            "lemma": "in",
+            "pos": "ADP",
+            "text": "in"
+          },
+          {
+            "dep": "nmod",
+            "head": 11,
+            "id": 13,
+            "lemma": "possession",
+            "pos": "NOUN",
+            "text": "possession"
+          },
+          {
+            "dep": "case",
+            "head": 17,
+            "id": 14,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 17,
+            "id": 15,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "amod",
+            "head": 17,
+            "id": 16,
+            "lemma": "good",
+            "pos": "ADJ",
+            "text": "good"
+          },
+          {
+            "dep": "nmod",
+            "head": 13,
+            "id": 17,
+            "lemma": "fortune",
+            "pos": "NOUN",
+            "text": "fortune"
+          },
+          {
+            "dep": "aux",
+            "head": 21,
+            "id": 18,
+            "lemma": "must",
+            "pos": "AUX",
+            "text": "must"
+          },
+          {
+            "dep": "cop",
+            "head": 21,
+            "id": 19,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "be"
+          },
+          {
+            "dep": "case",
+            "head": 21,
+            "id": 20,
+            "lemma": "in",
+            "pos": "ADP",
+            "text": "in"
+          },
+          {
+            "dep": "ccomp",
+            "head": 6,
+            "id": 21,
+            "lemma": "want",
+            "pos": "NOUN",
+            "text": "want"
+          },
+          {
+            "dep": "case",
+            "head": 24,
+            "id": 22,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 24,
+            "id": 23,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "nmod",
+            "head": 21,
+            "id": 24,
+            "lemma": "wife",
+            "pos": "NOUN",
+            "text": "wife"
+          },
+          {
+            "dep": "punct",
+            "head": 4,
+            "id": 25,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 2,
+        "text": "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.",
+        "tokens": [
+          {
+            "dep": "advmod",
+            "head": 3,
+            "id": 1,
+            "lemma": "however",
+            "pos": "ADV",
+            "text": "However"
+          },
+          {
+            "dep": "advmod",
+            "head": 3,
+            "id": 2,
+            "lemma": "little",
+            "pos": "ADV",
+            "text": "little"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 3,
+            "lemma": "know",
+            "pos": "VERB",
+            "text": "known"
+          },
+          {
+            "dep": "det",
+            "head": 5,
+            "id": 4,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "obj",
+            "head": 3,
+            "id": 5,
+            "lemma": "feeling",
+            "pos": "NOUN",
+            "text": "feelings"
+          },
+          {
+            "dep": "cc",
+            "head": 7,
+            "id": 6,
+            "lemma": "or",
+            "pos": "CCONJ",
+            "text": "or"
+          },
+          {
+            "dep": "conj",
+            "head": 5,
+            "id": 7,
+            "lemma": "view",
+            "pos": "NOUN",
+            "text": "views"
+          },
+          {
+            "dep": "case",
+            "head": 11,
+            "id": 8,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det:predet",
+            "head": 11,
+            "id": 9,
+            "lemma": "such",
+            "pos": "DET",
+            "text": "such"
+          },
+          {
+            "dep": "det",
+            "head": 11,
+            "id": 10,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "nmod",
+            "head": 5,
+            "id": 11,
+            "lemma": "man",
+            "pos": "NOUN",
+            "text": "man"
+          },
+          {
+            "dep": "aux",
+            "head": 26,
+            "id": 12,
+            "lemma": "may",
+            "pos": "AUX",
+            "text": "may"
+          },
+          {
+            "dep": "cop",
+            "head": 26,
+            "id": 13,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "be"
+          },
+          {
+            "dep": "case",
+            "head": 26,
+            "id": 14,
+            "lemma": "on",
+            "pos": "ADP",
+            "text": "on"
+          },
+          {
+            "dep": "nmod:poss",
+            "head": 26,
+            "id": 15,
+            "lemma": "he",
+            "pos": "PRON",
+            "text": "his"
+          },
+          {
+            "dep": "advmod",
+            "head": 17,
+            "id": 16,
+            "lemma": "first",
+            "pos": "ADV",
+            "text": "first"
+          },
+          {
+            "dep": "advcl",
+            "head": 26,
+            "id": 17,
+            "lemma": "enter",
+            "pos": "VERB",
+            "text": "entering"
+          },
+          {
+            "dep": "det",
+            "head": 19,
+            "id": 18,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "obj",
+            "head": 17,
+            "id": 19,
+            "lemma": "neighbourhood",
+            "pos": "NOUN",
+            "text": "neighbourhood"
+          },
+          {
+            "dep": "punct",
+            "head": 26,
+            "id": 20,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "det",
+            "head": 22,
+            "id": 21,
+            "lemma": "this",
+            "pos": "DET",
+            "text": "this"
+          },
+          {
+            "dep": "nsubj",
+            "head": 26,
+            "id": 22,
+            "lemma": "truth",
+            "pos": "NOUN",
+            "text": "truth"
+          },
+          {
+            "dep": "aux",
+            "head": 26,
+            "id": 23,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "is"
+          },
+          {
+            "dep": "advmod",
+            "head": 26,
+            "id": 24,
+            "lemma": "so",
+            "pos": "ADV",
+            "text": "so"
+          },
+          {
+            "dep": "advmod",
+            "head": 26,
+            "id": 25,
+            "lemma": "well",
+            "pos": "ADV",
+            "text": "well"
+          },
+          {
+            "dep": "xcomp",
+            "head": 3,
+            "id": 26,
+            "lemma": "fix",
+            "pos": "VERB",
+            "text": "fixed"
+          },
+          {
+            "dep": "case",
+            "head": 29,
+            "id": 27,
+            "lemma": "in",
+            "pos": "ADP",
+            "text": "in"
+          },
+          {
+            "dep": "det",
+            "head": 29,
+            "id": 28,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "obl",
+            "head": 26,
+            "id": 29,
+            "lemma": "mind",
+            "pos": "NOUN",
+            "text": "minds"
+          },
+          {
+            "dep": "case",
+            "head": 33,
+            "id": 30,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 33,
+            "id": 31,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "amod",
+            "head": 33,
+            "id": 32,
+            "lemma": "surround",
+            "pos": "VERB",
+            "text": "surrounding"
+          },
+          {
+            "dep": "nmod",
+            "head": 29,
+            "id": 33,
+            "lemma": "family",
+            "pos": "NOUN",
+            "text": "families"
+          },
+          {
+            "dep": "punct",
+            "head": 26,
+            "id": 34,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "mark",
+            "head": 38,
+            "id": 35,
+            "lemma": "that",
+            "pos": "SCONJ",
+            "text": "that"
+          },
+          {
+            "dep": "nsubj:pass",
+            "head": 38,
+            "id": 36,
+            "lemma": "he",
+            "pos": "PRON",
+            "text": "he"
+          },
+          {
+            "dep": "aux:pass",
+            "head": 38,
+            "id": 37,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "is"
+          },
+          {
+            "dep": "advcl",
+            "head": 26,
+            "id": 38,
+            "lemma": "consider",
+            "pos": "VERB",
+            "text": "considered"
+          },
+          {
+            "dep": "case",
+            "head": 42,
+            "id": 39,
+            "lemma": "as",
+            "pos": "ADP",
+            "text": "as"
+          },
+          {
+            "dep": "det",
+            "head": 42,
+            "id": 40,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "amod",
+            "head": 42,
+            "id": 41,
+            "lemma": "rightful",
+            "pos": "ADJ",
+            "text": "rightful"
+          },
+          {
+            "dep": "obl",
+            "head": 38,
+            "id": 42,
+            "lemma": "property",
+            "pos": "NOUN",
+            "text": "property"
+          },
+          {
+            "dep": "case",
+            "head": 45,
+            "id": 43,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 45,
+            "id": 44,
+            "lemma": "some",
+            "pos": "DET",
+            "text": "some"
+          },
+          {
+            "dep": "nmod",
+            "head": 42,
+            "id": 45,
+            "lemma": "one",
+            "pos": "NUM",
+            "text": "one"
+          },
+          {
+            "dep": "cc",
+            "head": 47,
+            "id": 46,
+            "lemma": "or",
+            "pos": "CCONJ",
+            "text": "or"
+          },
+          {
+            "dep": "conj",
+            "head": 42,
+            "id": 47,
+            "lemma": "other",
+            "pos": "ADJ",
+            "text": "other"
+          },
+          {
+            "dep": "case",
+            "head": 50,
+            "id": 48,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "nmod:poss",
+            "head": 50,
+            "id": 49,
+            "lemma": "they",
+            "pos": "PRON",
+            "text": "their"
+          },
+          {
+            "dep": "nmod",
+            "head": 42,
+            "id": 50,
+            "lemma": "daughter",
+            "pos": "NOUN",
+            "text": "daughters"
+          },
+          {
+            "dep": "punct",
+            "head": 26,
+            "id": 51,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 3,
+        "text": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+        "tokens": [
+          {
+            "dep": "punct",
+            "head": 8,
+            "id": 1,
+            "lemma": "\"",
+            "pos": "PUNCT",
+            "text": "“"
+          },
+          {
+            "dep": "nmod:poss",
+            "head": 4,
+            "id": 2,
+            "lemma": "my",
+            "pos": "PRON",
+            "text": "My"
+          },
+          {
+            "dep": "amod",
+            "head": 4,
+            "id": 3,
+            "lemma": "dear",
+            "pos": "ADJ",
+            "text": "dear"
+          },
+          {
+            "dep": "nsubj",
+            "head": 8,
+            "id": 4,
+            "lemma": "Mr.",
+            "pos": "PROPN",
+            "text": "Mr."
+          },
+          {
+            "dep": "flat",
+            "head": 4,
+            "id": 5,
+            "lemma": "Bennet",
+            "pos": "PROPN",
+            "text": "Bennet"
+          },
+          {
+            "dep": "punct",
+            "head": 8,
+            "id": 6,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "punct",
+            "head": 8,
+            "id": 7,
+            "lemma": "\"",
+            "pos": "PUNCT",
+            "text": "”"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 8,
+            "lemma": "say",
+            "pos": "VERB",
+            "text": "said"
+          },
+          {
+            "dep": "nmod:poss",
+            "head": 10,
+            "id": 9,
+            "lemma": "he",
+            "pos": "PRON",
+            "text": "his"
+          },
+          {
+            "dep": "nsubj",
+            "head": 8,
+            "id": 10,
+            "lemma": "lady",
+            "pos": "NOUN",
+            "text": "lady"
+          },
+          {
+            "dep": "case",
+            "head": 12,
+            "id": 11,
+            "lemma": "to",
+            "pos": "ADP",
+            "text": "to"
+          },
+          {
+            "dep": "nmod",
+            "head": 10,
+            "id": 12,
+            "lemma": "he",
+            "pos": "PRON",
+            "text": "him"
+          },
+          {
+            "dep": "nummod",
+            "head": 14,
+            "id": 13,
+            "lemma": "one",
+            "pos": "NUM",
+            "text": "one"
+          },
+          {
+            "dep": "nmod:tmod",
+            "head": 10,
+            "id": 14,
+            "lemma": "day",
+            "pos": "NOUN",
+            "text": "day"
+          },
+          {
+            "dep": "punct",
+            "head": 19,
+            "id": 15,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "punct",
+            "head": 19,
+            "id": 16,
+            "lemma": "\"",
+            "pos": "PUNCT",
+            "text": "“"
+          },
+          {
+            "dep": "aux",
+            "head": 19,
+            "id": 17,
+            "lemma": "have",
+            "pos": "AUX",
+            "text": "have"
+          },
+          {
+            "dep": "nsubj",
+            "head": 19,
+            "id": 18,
+            "lemma": "you",
+            "pos": "PRON",
+            "text": "you"
+          },
+          {
+            "dep": "acl",
+            "head": 10,
+            "id": 19,
+            "lemma": "hear",
+            "pos": "VERB",
+            "text": "heard"
+          },
+          {
+            "dep": "mark",
+            "head": 24,
+            "id": 20,
+            "lemma": "that",
+            "pos": "SCONJ",
+            "text": "that"
+          },
+          {
+            "dep": "nsubj:pass",
+            "head": 24,
+            "id": 21,
+            "lemma": "Netherfield",
+            "pos": "PROPN",
+            "text": "Netherfield"
+          },
+          {
+            "dep": "flat",
+            "head": 21,
+            "id": 22,
+            "lemma": "Park",
+            "pos": "PROPN",
+            "text": "Park"
+          },
+          {
+            "dep": "aux:pass",
+            "head": 24,
+            "id": 23,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "is"
+          },
+          {
+            "dep": "ccomp",
+            "head": 19,
+            "id": 24,
+            "lemma": "let",
+            "pos": "VERB",
+            "text": "let"
+          },
+          {
+            "dep": "case",
+            "head": 26,
+            "id": 25,
+            "lemma": "at",
+            "pos": "ADP",
+            "text": "at"
+          },
+          {
+            "dep": "obl",
+            "head": 24,
+            "id": 26,
+            "lemma": "last",
+            "pos": "ADJ",
+            "text": "last"
+          },
+          {
+            "dep": "punct",
+            "head": 8,
+            "id": 27,
+            "lemma": "?",
+            "pos": "PUNCT",
+            "text": "?"
+          },
+          {
+            "dep": "punct",
+            "head": 8,
+            "id": 28,
+            "lemma": "\"",
+            "pos": "PUNCT",
+            "text": "”"
+          }
+        ]
+      },
+      {
+        "paragraph": 4,
+        "text": "Mr. Bennet replied that he had not.",
+        "tokens": [
+          {
+            "dep": "nsubj",
+            "head": 3,
+            "id": 1,
+            "lemma": "Mr.",
+            "pos": "PROPN",
+            "text": "Mr."
+          },
+          {
+            "dep": "flat",
+            "head": 1,
+            "id": 2,
+            "lemma": "Bennet",
+            "pos": "PROPN",
+            "text": "Bennet"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 3,
+            "lemma": "reply",
+            "pos": "VERB",
+            "text": "replied"
+          },
+          {
+            "dep": "mark",
+            "head": 6,
+            "id": 4,
+            "lemma": "that",
+            "pos": "SCONJ",
+            "text": "that"
+          },
+          {
+            "dep": "nsubj",
+            "head": 6,
+            "id": 5,
+            "lemma": "he",
+            "pos": "PRON",
+            "text": "he"
+          },
+          {
+            "dep": "ccomp",
+            "head": 3,
+            "id": 6,
+            "lemma": "have",
+            "pos": "VERB",
+            "text": "had"
+          },
+          {
+            "dep": "advmod",
+            "head": 6,
+            "id": 7,
+            "lemma": "not",
+            "pos": "PART",
+            "text": "not"
+          },
+          {
+            "dep": "punct",
+            "head": 3,
+            "id": 8,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      }
+    ]
+  },
+  "figure": "parse",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "austen-opening",
+  "source": {
+    "author": "Jane Austen",
+    "licence": "Public domain (first published 1813)",
+    "register": "narrative",
+    "source": "Project Gutenberg eBook #1342, the text only, without the Project Gutenberg header, footer or licence",
+    "title": "Pride and Prejudice, the opening of chapter 1",
+    "url": "https://www.gutenberg.org/ebooks/1342"
+  }
+}

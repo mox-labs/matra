@@ -1,0 +1,1503 @@
+{
+  "data": {
+    "sentences": [
+      {
+        "paragraph": 1,
+        "text": "We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.",
+        "tokens": [
+          {
+            "dep": "nsubj",
+            "head": 31,
+            "id": 1,
+            "lemma": "we",
+            "pos": "PRON",
+            "text": "We"
+          },
+          {
+            "dep": "det",
+            "head": 3,
+            "id": 2,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "appos",
+            "head": 1,
+            "id": 3,
+            "lemma": "People",
+            "pos": "NOUN",
+            "text": "People"
+          },
+          {
+            "dep": "case",
+            "head": 7,
+            "id": 4,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 7,
+            "id": 5,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "compound",
+            "head": 7,
+            "id": 6,
+            "lemma": "United",
+            "pos": "PROPN",
+            "text": "United"
+          },
+          {
+            "dep": "nmod",
+            "head": 3,
+            "id": 7,
+            "lemma": "States",
+            "pos": "PROPN",
+            "text": "States"
+          },
+          {
+            "dep": "punct",
+            "head": 3,
+            "id": 8,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "case",
+            "head": 10,
+            "id": 9,
+            "lemma": "in",
+            "pos": "ADP",
+            "text": "in"
+          },
+          {
+            "dep": "nmod",
+            "head": 3,
+            "id": 10,
+            "lemma": "order",
+            "pos": "NOUN",
+            "text": "Order"
+          },
+          {
+            "dep": "mark",
+            "head": 12,
+            "id": 11,
+            "lemma": "to",
+            "pos": "PART",
+            "text": "to"
+          },
+          {
+            "dep": "acl",
+            "head": 3,
+            "id": 12,
+            "lemma": "form",
+            "pos": "VERB",
+            "text": "form"
+          },
+          {
+            "dep": "det",
+            "head": 16,
+            "id": 13,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "advmod",
+            "head": 15,
+            "id": 14,
+            "lemma": "more",
+            "pos": "ADV",
+            "text": "more"
+          },
+          {
+            "dep": "amod",
+            "head": 16,
+            "id": 15,
+            "lemma": "perfect",
+            "pos": "ADJ",
+            "text": "perfect"
+          },
+          {
+            "dep": "obj",
+            "head": 12,
+            "id": 16,
+            "lemma": "Union",
+            "pos": "NOUN",
+            "text": "Union"
+          },
+          {
+            "dep": "punct",
+            "head": 18,
+            "id": 17,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "conj",
+            "head": 12,
+            "id": 18,
+            "lemma": "establish",
+            "pos": "VERB",
+            "text": "establish"
+          },
+          {
+            "dep": "obj",
+            "head": 18,
+            "id": 19,
+            "lemma": "justice",
+            "pos": "PROPN",
+            "text": "Justice"
+          },
+          {
+            "dep": "punct",
+            "head": 19,
+            "id": 20,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "amod",
+            "head": 23,
+            "id": 21,
+            "lemma": "insure",
+            "pos": "ADJ",
+            "text": "insure"
+          },
+          {
+            "dep": "amod",
+            "head": 23,
+            "id": 22,
+            "lemma": "domestic",
+            "pos": "ADJ",
+            "text": "domestic"
+          },
+          {
+            "dep": "appos",
+            "head": 19,
+            "id": 23,
+            "lemma": "Tranquility",
+            "pos": "NOUN",
+            "text": "Tranquility"
+          },
+          {
+            "dep": "punct",
+            "head": 25,
+            "id": 24,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "conj",
+            "head": 12,
+            "id": 25,
+            "lemma": "provide",
+            "pos": "VERB",
+            "text": "provide"
+          },
+          {
+            "dep": "case",
+            "head": 29,
+            "id": 26,
+            "lemma": "for",
+            "pos": "ADP",
+            "text": "for"
+          },
+          {
+            "dep": "det",
+            "head": 29,
+            "id": 27,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "amod",
+            "head": 29,
+            "id": 28,
+            "lemma": "common",
+            "pos": "ADJ",
+            "text": "common"
+          },
+          {
+            "dep": "obl",
+            "head": 25,
+            "id": 29,
+            "lemma": "defence",
+            "pos": "NOUN",
+            "text": "defence"
+          },
+          {
+            "dep": "punct",
+            "head": 31,
+            "id": 30,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 31,
+            "lemma": "promote",
+            "pos": "VERB",
+            "text": "promote"
+          },
+          {
+            "dep": "det",
+            "head": 34,
+            "id": 32,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "amod",
+            "head": 34,
+            "id": 33,
+            "lemma": "general",
+            "pos": "ADJ",
+            "text": "general"
+          },
+          {
+            "dep": "obj",
+            "head": 31,
+            "id": 34,
+            "lemma": "welfare",
+            "pos": "NOUN",
+            "text": "Welfare"
+          },
+          {
+            "dep": "punct",
+            "head": 37,
+            "id": 35,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "cc",
+            "head": 37,
+            "id": 36,
+            "lemma": "and",
+            "pos": "CCONJ",
+            "text": "and"
+          },
+          {
+            "dep": "conj",
+            "head": 31,
+            "id": 37,
+            "lemma": "secure",
+            "pos": "VERB",
+            "text": "secure"
+          },
+          {
+            "dep": "det",
+            "head": 39,
+            "id": 38,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "obj",
+            "head": 37,
+            "id": 39,
+            "lemma": "blessing",
+            "pos": "NOUN",
+            "text": "Blessings"
+          },
+          {
+            "dep": "case",
+            "head": 41,
+            "id": 40,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "nmod",
+            "head": 39,
+            "id": 41,
+            "lemma": "Liberty",
+            "pos": "PROPN",
+            "text": "Liberty"
+          },
+          {
+            "dep": "case",
+            "head": 43,
+            "id": 42,
+            "lemma": "to",
+            "pos": "ADP",
+            "text": "to"
+          },
+          {
+            "dep": "nmod",
+            "head": 39,
+            "id": 43,
+            "lemma": "ourselves",
+            "pos": "PRON",
+            "text": "ourselves"
+          },
+          {
+            "dep": "cc",
+            "head": 46,
+            "id": 44,
+            "lemma": "and",
+            "pos": "CCONJ",
+            "text": "and"
+          },
+          {
+            "dep": "nmod:poss",
+            "head": 46,
+            "id": 45,
+            "lemma": "we",
+            "pos": "PRON",
+            "text": "our"
+          },
+          {
+            "dep": "conj",
+            "head": 43,
+            "id": 46,
+            "lemma": "posterity",
+            "pos": "NOUN",
+            "text": "Posterity"
+          },
+          {
+            "dep": "punct",
+            "head": 31,
+            "id": 47,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "aux",
+            "head": 49,
+            "id": 48,
+            "lemma": "do",
+            "pos": "AUX",
+            "text": "do"
+          },
+          {
+            "dep": "appos",
+            "head": 31,
+            "id": 49,
+            "lemma": "ordain",
+            "pos": "VERB",
+            "text": "ordain"
+          },
+          {
+            "dep": "cc",
+            "head": 51,
+            "id": 50,
+            "lemma": "and",
+            "pos": "CCONJ",
+            "text": "and"
+          },
+          {
+            "dep": "conj",
+            "head": 49,
+            "id": 51,
+            "lemma": "establish",
+            "pos": "VERB",
+            "text": "establish"
+          },
+          {
+            "dep": "det",
+            "head": 53,
+            "id": 52,
+            "lemma": "this",
+            "pos": "DET",
+            "text": "this"
+          },
+          {
+            "dep": "obj",
+            "head": 49,
+            "id": 53,
+            "lemma": "constitution",
+            "pos": "NOUN",
+            "text": "Constitution"
+          },
+          {
+            "dep": "case",
+            "head": 57,
+            "id": 54,
+            "lemma": "for",
+            "pos": "ADP",
+            "text": "for"
+          },
+          {
+            "dep": "det",
+            "head": 57,
+            "id": 55,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "compound",
+            "head": 57,
+            "id": 56,
+            "lemma": "United",
+            "pos": "PROPN",
+            "text": "United"
+          },
+          {
+            "dep": "obl",
+            "head": 49,
+            "id": 57,
+            "lemma": "States",
+            "pos": "PROPN",
+            "text": "States"
+          },
+          {
+            "dep": "case",
+            "head": 59,
+            "id": 58,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "nmod",
+            "head": 57,
+            "id": 59,
+            "lemma": "America",
+            "pos": "PROPN",
+            "text": "America"
+          },
+          {
+            "dep": "punct",
+            "head": 31,
+            "id": 60,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 2,
+        "text": "All legislative Powers herein granted shall be vested in a Congress of the United States, which shall consist of a Senate and House of Representatives.",
+        "tokens": [
+          {
+            "dep": "det",
+            "head": 3,
+            "id": 1,
+            "lemma": "all",
+            "pos": "DET",
+            "text": "All"
+          },
+          {
+            "dep": "amod",
+            "head": 3,
+            "id": 2,
+            "lemma": "legislative",
+            "pos": "ADJ",
+            "text": "legislative"
+          },
+          {
+            "dep": "nsubj:pass",
+            "head": 8,
+            "id": 3,
+            "lemma": "power",
+            "pos": "NOUN",
+            "text": "Powers"
+          },
+          {
+            "dep": "advmod",
+            "head": 5,
+            "id": 4,
+            "lemma": "herein",
+            "pos": "ADV",
+            "text": "herein"
+          },
+          {
+            "dep": "acl",
+            "head": 3,
+            "id": 5,
+            "lemma": "grant",
+            "pos": "VERB",
+            "text": "granted"
+          },
+          {
+            "dep": "aux",
+            "head": 8,
+            "id": 6,
+            "lemma": "shall",
+            "pos": "AUX",
+            "text": "shall"
+          },
+          {
+            "dep": "aux:pass",
+            "head": 8,
+            "id": 7,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "be"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 8,
+            "lemma": "vest",
+            "pos": "VERB",
+            "text": "vested"
+          },
+          {
+            "dep": "case",
+            "head": 11,
+            "id": 9,
+            "lemma": "in",
+            "pos": "ADP",
+            "text": "in"
+          },
+          {
+            "dep": "det",
+            "head": 11,
+            "id": 10,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "obl",
+            "head": 8,
+            "id": 11,
+            "lemma": "Congress",
+            "pos": "PROPN",
+            "text": "Congress"
+          },
+          {
+            "dep": "case",
+            "head": 15,
+            "id": 12,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 15,
+            "id": 13,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "compound",
+            "head": 15,
+            "id": 14,
+            "lemma": "United",
+            "pos": "PROPN",
+            "text": "United"
+          },
+          {
+            "dep": "nmod",
+            "head": 11,
+            "id": 15,
+            "lemma": "States",
+            "pos": "PROPN",
+            "text": "States"
+          },
+          {
+            "dep": "punct",
+            "head": 11,
+            "id": 16,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "nsubj",
+            "head": 19,
+            "id": 17,
+            "lemma": "which",
+            "pos": "PRON",
+            "text": "which"
+          },
+          {
+            "dep": "aux",
+            "head": 19,
+            "id": 18,
+            "lemma": "shall",
+            "pos": "AUX",
+            "text": "shall"
+          },
+          {
+            "dep": "acl:relcl",
+            "head": 11,
+            "id": 19,
+            "lemma": "consist",
+            "pos": "VERB",
+            "text": "consist"
+          },
+          {
+            "dep": "case",
+            "head": 22,
+            "id": 20,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 22,
+            "id": 21,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "obl",
+            "head": 19,
+            "id": 22,
+            "lemma": "Senate",
+            "pos": "PROPN",
+            "text": "Senate"
+          },
+          {
+            "dep": "cc",
+            "head": 24,
+            "id": 23,
+            "lemma": "and",
+            "pos": "CCONJ",
+            "text": "and"
+          },
+          {
+            "dep": "conj",
+            "head": 22,
+            "id": 24,
+            "lemma": "House",
+            "pos": "PROPN",
+            "text": "House"
+          },
+          {
+            "dep": "case",
+            "head": 26,
+            "id": 25,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "nmod",
+            "head": 22,
+            "id": 26,
+            "lemma": "Representatives",
+            "pos": "PROPN",
+            "text": "Representatives"
+          },
+          {
+            "dep": "punct",
+            "head": 8,
+            "id": 27,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 3,
+        "text": "The House of Representatives shall be composed of Members chosen every second Year by the People of the several States, and the Electors in each State shall have the Qualifications requisite for Electors of the most numerous Branch of the State Legislature.",
+        "tokens": [
+          {
+            "dep": "det",
+            "head": 2,
+            "id": 1,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "The"
+          },
+          {
+            "dep": "nsubj:pass",
+            "head": 7,
+            "id": 2,
+            "lemma": "House",
+            "pos": "NOUN",
+            "text": "House"
+          },
+          {
+            "dep": "case",
+            "head": 4,
+            "id": 3,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "nmod",
+            "head": 2,
+            "id": 4,
+            "lemma": "Representatives",
+            "pos": "NOUN",
+            "text": "Representatives"
+          },
+          {
+            "dep": "aux",
+            "head": 7,
+            "id": 5,
+            "lemma": "shall",
+            "pos": "AUX",
+            "text": "shall"
+          },
+          {
+            "dep": "aux:pass",
+            "head": 7,
+            "id": 6,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "be"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 7,
+            "lemma": "compose",
+            "pos": "VERB",
+            "text": "composed"
+          },
+          {
+            "dep": "case",
+            "head": 9,
+            "id": 8,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "nmod",
+            "head": 10,
+            "id": 9,
+            "lemma": "member",
+            "pos": "PROPN",
+            "text": "Members"
+          },
+          {
+            "dep": "acl:relcl",
+            "head": 7,
+            "id": 10,
+            "lemma": "choose",
+            "pos": "VERB",
+            "text": "chosen"
+          },
+          {
+            "dep": "det",
+            "head": 13,
+            "id": 11,
+            "lemma": "every",
+            "pos": "DET",
+            "text": "every"
+          },
+          {
+            "dep": "amod",
+            "head": 13,
+            "id": 12,
+            "lemma": "second",
+            "pos": "ADJ",
+            "text": "second"
+          },
+          {
+            "dep": "obl:tmod",
+            "head": 10,
+            "id": 13,
+            "lemma": "year",
+            "pos": "NOUN",
+            "text": "Year"
+          },
+          {
+            "dep": "case",
+            "head": 16,
+            "id": 14,
+            "lemma": "by",
+            "pos": "ADP",
+            "text": "by"
+          },
+          {
+            "dep": "det",
+            "head": 16,
+            "id": 15,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "obl",
+            "head": 10,
+            "id": 16,
+            "lemma": "People",
+            "pos": "NOUN",
+            "text": "People"
+          },
+          {
+            "dep": "case",
+            "head": 20,
+            "id": 17,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 20,
+            "id": 18,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "amod",
+            "head": 20,
+            "id": 19,
+            "lemma": "several",
+            "pos": "ADJ",
+            "text": "several"
+          },
+          {
+            "dep": "nmod",
+            "head": 16,
+            "id": 20,
+            "lemma": "States",
+            "pos": "PROPN",
+            "text": "States"
+          },
+          {
+            "dep": "punct",
+            "head": 24,
+            "id": 21,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "cc",
+            "head": 24,
+            "id": 22,
+            "lemma": "and",
+            "pos": "CCONJ",
+            "text": "and"
+          },
+          {
+            "dep": "det",
+            "head": 24,
+            "id": 23,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "nsubj",
+            "head": 29,
+            "id": 24,
+            "lemma": "Elector",
+            "pos": "NOUN",
+            "text": "Electors"
+          },
+          {
+            "dep": "case",
+            "head": 27,
+            "id": 25,
+            "lemma": "in",
+            "pos": "ADP",
+            "text": "in"
+          },
+          {
+            "dep": "det",
+            "head": 27,
+            "id": 26,
+            "lemma": "each",
+            "pos": "DET",
+            "text": "each"
+          },
+          {
+            "dep": "nmod",
+            "head": 24,
+            "id": 27,
+            "lemma": "State",
+            "pos": "NOUN",
+            "text": "State"
+          },
+          {
+            "dep": "aux",
+            "head": 29,
+            "id": 28,
+            "lemma": "shall",
+            "pos": "AUX",
+            "text": "shall"
+          },
+          {
+            "dep": "conj",
+            "head": 10,
+            "id": 29,
+            "lemma": "have",
+            "pos": "VERB",
+            "text": "have"
+          },
+          {
+            "dep": "det",
+            "head": 32,
+            "id": 30,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "compound",
+            "head": 32,
+            "id": 31,
+            "lemma": "qualifications",
+            "pos": "NOUN",
+            "text": "Qualifications"
+          },
+          {
+            "dep": "obj",
+            "head": 29,
+            "id": 32,
+            "lemma": "requisite",
+            "pos": "NOUN",
+            "text": "requisite"
+          },
+          {
+            "dep": "case",
+            "head": 34,
+            "id": 33,
+            "lemma": "for",
+            "pos": "ADP",
+            "text": "for"
+          },
+          {
+            "dep": "obl",
+            "head": 29,
+            "id": 34,
+            "lemma": "Elector",
+            "pos": "NOUN",
+            "text": "Electors"
+          },
+          {
+            "dep": "case",
+            "head": 39,
+            "id": 35,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 39,
+            "id": 36,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "advmod",
+            "head": 38,
+            "id": 37,
+            "lemma": "most",
+            "pos": "ADV",
+            "text": "most"
+          },
+          {
+            "dep": "amod",
+            "head": 39,
+            "id": 38,
+            "lemma": "numerous",
+            "pos": "ADJ",
+            "text": "numerous"
+          },
+          {
+            "dep": "nmod",
+            "head": 34,
+            "id": 39,
+            "lemma": "branch",
+            "pos": "NOUN",
+            "text": "Branch"
+          },
+          {
+            "dep": "case",
+            "head": 43,
+            "id": 40,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 43,
+            "id": 41,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "compound",
+            "head": 43,
+            "id": 42,
+            "lemma": "state",
+            "pos": "PROPN",
+            "text": "State"
+          },
+          {
+            "dep": "nmod",
+            "head": 39,
+            "id": 43,
+            "lemma": "legislature",
+            "pos": "PROPN",
+            "text": "Legislature"
+          },
+          {
+            "dep": "punct",
+            "head": 7,
+            "id": 44,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 3,
+        "text": "No Person shall be a Representative who shall not have attained to the Age of twenty five Years, and been seven Years a Citizen of the United States, and who shall not, when elected, be an Inhabitant of that State in which he shall be chosen.",
+        "tokens": [
+          {
+            "dep": "det",
+            "head": 2,
+            "id": 1,
+            "lemma": "no",
+            "pos": "DET",
+            "text": "No"
+          },
+          {
+            "dep": "nsubj",
+            "head": 6,
+            "id": 2,
+            "lemma": "person",
+            "pos": "NOUN",
+            "text": "Person"
+          },
+          {
+            "dep": "aux",
+            "head": 6,
+            "id": 3,
+            "lemma": "shall",
+            "pos": "AUX",
+            "text": "shall"
+          },
+          {
+            "dep": "cop",
+            "head": 6,
+            "id": 4,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "be"
+          },
+          {
+            "dep": "det",
+            "head": 6,
+            "id": 5,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 6,
+            "lemma": "Representative",
+            "pos": "NOUN",
+            "text": "Representative"
+          },
+          {
+            "dep": "nsubj",
+            "head": 11,
+            "id": 7,
+            "lemma": "who",
+            "pos": "PRON",
+            "text": "who"
+          },
+          {
+            "dep": "aux",
+            "head": 11,
+            "id": 8,
+            "lemma": "shall",
+            "pos": "AUX",
+            "text": "shall"
+          },
+          {
+            "dep": "advmod",
+            "head": 11,
+            "id": 9,
+            "lemma": "not",
+            "pos": "PART",
+            "text": "not"
+          },
+          {
+            "dep": "aux",
+            "head": 11,
+            "id": 10,
+            "lemma": "have",
+            "pos": "AUX",
+            "text": "have"
+          },
+          {
+            "dep": "acl:relcl",
+            "head": 6,
+            "id": 11,
+            "lemma": "attain",
+            "pos": "VERB",
+            "text": "attained"
+          },
+          {
+            "dep": "case",
+            "head": 14,
+            "id": 12,
+            "lemma": "to",
+            "pos": "ADP",
+            "text": "to"
+          },
+          {
+            "dep": "det",
+            "head": 14,
+            "id": 13,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "obl",
+            "head": 11,
+            "id": 14,
+            "lemma": "age",
+            "pos": "PROPN",
+            "text": "Age"
+          },
+          {
+            "dep": "case",
+            "head": 18,
+            "id": 15,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "compound",
+            "head": 17,
+            "id": 16,
+            "lemma": "twenty",
+            "pos": "NUM",
+            "text": "twenty"
+          },
+          {
+            "dep": "nummod",
+            "head": 18,
+            "id": 17,
+            "lemma": "five",
+            "pos": "NUM",
+            "text": "five"
+          },
+          {
+            "dep": "nmod",
+            "head": 14,
+            "id": 18,
+            "lemma": "year",
+            "pos": "NOUN",
+            "text": "Years"
+          },
+          {
+            "dep": "punct",
+            "head": 23,
+            "id": 19,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "cc",
+            "head": 23,
+            "id": 20,
+            "lemma": "and",
+            "pos": "CCONJ",
+            "text": "and"
+          },
+          {
+            "dep": "cop",
+            "head": 23,
+            "id": 21,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "been"
+          },
+          {
+            "dep": "nummod",
+            "head": 23,
+            "id": 22,
+            "lemma": "seven",
+            "pos": "NUM",
+            "text": "seven"
+          },
+          {
+            "dep": "conj",
+            "head": 6,
+            "id": 23,
+            "lemma": "year",
+            "pos": "NOUN",
+            "text": "Years"
+          },
+          {
+            "dep": "det",
+            "head": 25,
+            "id": 24,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "appos",
+            "head": 23,
+            "id": 25,
+            "lemma": "citizen",
+            "pos": "NOUN",
+            "text": "Citizen"
+          },
+          {
+            "dep": "case",
+            "head": 29,
+            "id": 26,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 29,
+            "id": 27,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "compound",
+            "head": 29,
+            "id": 28,
+            "lemma": "United",
+            "pos": "PROPN",
+            "text": "United"
+          },
+          {
+            "dep": "nmod",
+            "head": 25,
+            "id": 29,
+            "lemma": "States",
+            "pos": "PROPN",
+            "text": "States"
+          },
+          {
+            "dep": "punct",
+            "head": 33,
+            "id": 30,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "cc",
+            "head": 33,
+            "id": 31,
+            "lemma": "and",
+            "pos": "CCONJ",
+            "text": "and"
+          },
+          {
+            "dep": "nsubj",
+            "head": 33,
+            "id": 32,
+            "lemma": "who",
+            "pos": "PRON",
+            "text": "who"
+          },
+          {
+            "dep": "aux",
+            "head": 41,
+            "id": 33,
+            "lemma": "shall",
+            "pos": "AUX",
+            "text": "shall"
+          },
+          {
+            "dep": "advmod",
+            "head": 33,
+            "id": 34,
+            "lemma": "not",
+            "pos": "PART",
+            "text": "not"
+          },
+          {
+            "dep": "punct",
+            "head": 41,
+            "id": 35,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "mark",
+            "head": 37,
+            "id": 36,
+            "lemma": "when",
+            "pos": "ADV",
+            "text": "when"
+          },
+          {
+            "dep": "advcl",
+            "head": 41,
+            "id": 37,
+            "lemma": "elect",
+            "pos": "VERB",
+            "text": "elected"
+          },
+          {
+            "dep": "punct",
+            "head": 41,
+            "id": 38,
+            "lemma": ",",
+            "pos": "PUNCT",
+            "text": ","
+          },
+          {
+            "dep": "cop",
+            "head": 41,
+            "id": 39,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "be"
+          },
+          {
+            "dep": "det",
+            "head": 41,
+            "id": 40,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "an"
+          },
+          {
+            "dep": "appos",
+            "head": 25,
+            "id": 41,
+            "lemma": "Inhabitant",
+            "pos": "NOUN",
+            "text": "Inhabitant"
+          },
+          {
+            "dep": "case",
+            "head": 44,
+            "id": 42,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 44,
+            "id": 43,
+            "lemma": "that",
+            "pos": "DET",
+            "text": "that"
+          },
+          {
+            "dep": "nmod",
+            "head": 41,
+            "id": 44,
+            "lemma": "state",
+            "pos": "NOUN",
+            "text": "State"
+          },
+          {
+            "dep": "case",
+            "head": 46,
+            "id": 45,
+            "lemma": "in",
+            "pos": "ADP",
+            "text": "in"
+          },
+          {
+            "dep": "obl",
+            "head": 50,
+            "id": 46,
+            "lemma": "which",
+            "pos": "PRON",
+            "text": "which"
+          },
+          {
+            "dep": "nsubj:pass",
+            "head": 50,
+            "id": 47,
+            "lemma": "he",
+            "pos": "PRON",
+            "text": "he"
+          },
+          {
+            "dep": "aux",
+            "head": 50,
+            "id": 48,
+            "lemma": "shall",
+            "pos": "AUX",
+            "text": "shall"
+          },
+          {
+            "dep": "aux:pass",
+            "head": 50,
+            "id": 49,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "be"
+          },
+          {
+            "dep": "acl:relcl",
+            "head": 44,
+            "id": 50,
+            "lemma": "chosen",
+            "pos": "VERB",
+            "text": "chosen"
+          },
+          {
+            "dep": "punct",
+            "head": 41,
+            "id": 51,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      }
+    ]
+  },
+  "figure": "parse",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "constitution-article-one",
+  "source": {
+    "author": "The Constitutional Convention, 1787",
+    "licence": "Public domain (a founding document of the United States, 1787)",
+    "register": "legal",
+    "source": "National Archives, transcript of the Constitution of the United States",
+    "title": "The Constitution of the United States: the Preamble, and Article I, Sections 1 and 2 (opening)",
+    "url": "https://www.archives.gov/founding-docs/constitution-transcript"
+  }
+}
