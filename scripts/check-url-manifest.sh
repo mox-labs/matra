@@ -7,7 +7,8 @@
 #
 #   --build DIR   The SvelteKit build (gate 7 of the docsite floor). Every
 #                 listed path outside api/ must exist in DIR. And every .html,
-#                 .md and .txt file DIR holds outside _app/ and pagefind/ must
+#                 .md, .txt and .json file DIR holds outside _app/ and pagefind/
+#                 (SvelteKit's own __data.json aside) must
 #                 be listed, so a new page cannot ship without entering the
 #                 contract.
 #   --dir DIR     The assembled Pages artifact (docs.yml, before upload).
@@ -112,8 +113,8 @@ case "$mode" in
     if [ "$mode" = "--build" ]; then
         while IFS= read -r f; do
             printf '%s\n' "${paths[@]}" | grep -Fxq -- "$f" || unlisted+=("$f")
-        done < <(cd "$target" && find . \( -name '*.html' -o -name '*.md' -o -name '*.txt' \) \
-            -not -path './_app/*' -not -path './pagefind/*' | sed 's#^\./##' | LC_ALL=C sort)
+        done < <(cd "$target" && find . \( -name '*.html' -o -name '*.md' -o -name '*.txt' -o -name '*.json' \) \
+            -not -path './_app/*' -not -path './pagefind/*' -not -name '__data.json' | sed 's#^\./##' | LC_ALL=C sort)
     fi
     lost=()
     [ "${#anchors[@]}" -gt 0 ] && check_anchors "$target"
