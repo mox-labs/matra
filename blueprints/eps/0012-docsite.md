@@ -169,6 +169,7 @@ stays at `/api/`. Search is Pagefind, indexed from the built HTML.
 | new: figures current | Regenerate figure JSON and diff |
 | new: every figure has its twin | A test over the prerendered HTML: each figure element has a text twin with the same data |
 | new: every example input has a licence | Each file in `site/inputs/` has a sidecar with a source and a licence |
+| new: every example runs (M6) | Each worked example's Rust, Python and CLI call is run and what it prints compared with the committed output |
 
 While mdBook still deployed (M1), gate 4 stayed the mdBook build, the
 SvelteKit build ran as gate 7, and gate 8 held the new build to every `.html`
@@ -478,3 +479,49 @@ examples are live, and the M6 newcomer pass is filed.
   two top-twelve lists, which share nothing, no longer read as a bundle of
   lines to a "not ranked" row. None of the three pages carrying a new figure
   is a pinned source in `tests/cited_figures.rs`.
+- 2026-09-24: M5 landed in #111.
+- 2026-09-24: M6 delivered.
+  - An Examples part of six worked examples, one page each, over inputs in
+    four registers (a new scientific one, Darwin's chapter on the struggle
+    for existence, beside the legal, argumentative and narrative inputs).
+    Each page has the input with its licence and a download command, the
+    call in Rust, Python and the CLI as tabs, the output (trimmed where long,
+    the whole of it published), a figure of the same input with its table,
+    and what to notice. The call and output are the files in
+    `site/examples/<name>/`, not text in the page. Two candidates were left
+    out because the CLI cannot do them, a directory as a corpus and the
+    semantic clusters, and the Examples page says so.
+  - Gate 11 runs every example's three calls from a directory holding only
+    the input and compares what each prints with the committed output. The
+    Rust tabs are compiled as written by `examples/docsite_examples.rs`, and
+    CI builds matra into a virtualenv for the Python calls and fails when it
+    cannot import it. Four planted faults were each caught: a committed
+    score, a Python call asking for two sentences, an example the runner
+    does not know, and a CLI line asking for nine phrases. Numbers agree to
+    ten significant digits and equal scores may swap, both documented matra
+    behaviour; a tie at the cut is not allowed for, so the keyphrase example
+    asks for ten, where the scores are distinct.
+  - The home page opens on the semantic clusters of ten short sentences,
+    then three labelled paths: Install, Examples, Concepts. The introduction
+    is its own page; its two section ids the old front page carried stay on
+    the home page and forward to it. The clusters were chosen over the
+    parse and the primitives by three cold readers, one per candidate: all
+    three answered correctly, and only the clusters reader was left with
+    nothing but layout defects, which were fixed.
+  - The newcomer pass is filed as `docs/e2e/2026-09-24-docsite-newcomer.md`.
+    It installed matra 0.2.1 from PyPI in a clean container and reproduced
+    the summary and the parse examples exactly (the summary in Rust too, from
+    crates.io). It lists no step it could not follow, and five
+    first-impression findings, all fixed here: a stale version banner on the
+    installation page (now held to `Cargo.toml` by the version-sync check), a
+    download command that saved an error page as the input, a home page
+    promising more than its example showed, the clusters figure's clipped
+    table and crowded labels, and Markdown twins that named the calls
+    without showing them. It was run by the maintainer who wrote the pages,
+    which the report states as its main limitation.
+  - `llms.txt` lists the Examples part, each page included (the generator
+    skipped nested entries until now), and the URL and anchor manifests list
+    the new pages, their heading anchors and the published example files.
+  - The semantic clusters guide names the chaining the figure shows at 0.70.
+  The EP stays in progress until the ship criteria hold: the examples are
+  live only after this merges and the deploy's live check passes.
