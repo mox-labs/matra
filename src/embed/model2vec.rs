@@ -1129,8 +1129,10 @@ fn host_of(url: &str) -> &str {
 fn f32_tensor(dtype: Dtype, data: &[u8], name: &str) -> domain::Result<Vec<f32>> {
     match dtype {
         Dtype::F32 => Ok(data
-            .chunks_exact(4)
-            .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|b| f32::from_le_bytes(*b))
             .collect()),
         other => Err(Error::ModelInvalid(format!(
             "{name} tensor dtype {other:?} not supported (f32 only in this build)"
@@ -1145,16 +1147,16 @@ fn index_tensor(dtype: Dtype, data: &[u8]) -> domain::Result<Vec<usize>> {
     };
     match dtype {
         Dtype::I32 => data
-            .chunks_exact(4)
-            .map(|b| to_usize(i64::from(i32::from_le_bytes([b[0], b[1], b[2], b[3]]))))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|b| to_usize(i64::from(i32::from_le_bytes(*b))))
             .collect(),
         Dtype::I64 => data
-            .chunks_exact(8)
-            .map(|b| {
-                to_usize(i64::from_le_bytes([
-                    b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
-                ]))
-            })
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|b| to_usize(i64::from_le_bytes(*b)))
             .collect(),
         other => Err(Error::ModelInvalid(format!(
             "mapping tensor dtype {other:?} not supported (i32/i64 only)"
