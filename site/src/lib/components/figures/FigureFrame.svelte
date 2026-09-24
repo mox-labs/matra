@@ -49,7 +49,9 @@
 		<p class="provenance">
 			Input: <a href={source.url}>{source.title}</a>, {source.author}. {source.licence}.
 			Produced by matra {file.generator.matra} with the UDPipe model {model.name}
-			(SHA-256 <code>{model.sha256.slice(0, 12)}</code>). Data:
+			(SHA-256 <code>{model.sha256.slice(0, 12)}</code>){#if file.generator.embedding_model}{' '}and
+				the embedding model {file.generator.embedding_model.name} (SHA-256
+				<code>{file.generator.embedding_model.sha256.slice(0, 12)}</code>){/if}. Data:
 			<a href={dataUrl}>{file.input}/{file.figure}.json</a>.
 		</p>
 	</figcaption>

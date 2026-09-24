@@ -85,6 +85,32 @@ export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 			'RAKE and YAKE ranks of the same phrases as a slopegraph. Answers "do the two ' +
 			'methods agree on what ranks high?" faster than two ranked lists side by side.',
 		attributes: { input: 'required' }
+	},
+	'figure-textrank': {
+		kind: 'figure',
+		figure: 'textrank',
+		reason:
+			'Every sentence\'s TextRank score in document order, with the summary it picks ' +
+			'marked. Answers "where in the document did the summary come from, and how far ' +
+			'ahead of the rest were its sentences?" faster than a sorted list.',
+		attributes: { input: 'required' }
+	},
+	'figure-clusters': {
+		kind: 'figure',
+		figure: 'clusters',
+		reason:
+			'Semantic clusters at a fixed grid of thresholds, stepped by the reader. Answers ' +
+			'"what does moving the threshold do to the clusters?" faster than a table per value.',
+		attributes: { input: 'required', threshold: 'optional' }
+	},
+	'figure-pipeline': {
+		kind: 'figure',
+		figure: 'pipeline',
+		reason:
+			'One document at each stage of the pipeline, stepped by the reader: ingested, ' +
+			'annotated, composed. Answers "what does each stage add?" faster than reading the ' +
+			'stages\' types.',
+		attributes: { input: 'required' }
 	}
 };
 

@@ -88,6 +88,10 @@ Free functions over a sentence slice. Both return `Vec<ScoredSentence>` (`text`,
 
 Both are on the Python surface as `Matra.tfidf_summarize` and `Matra.textrank_summarize`, which parse the text and run the extractor in one call.
 
+TextRank's summary of The Federalist No. 10 at the default length, and every sentence's score it was chosen from:
+
+<figure-textrank input="federalist-10" />
+
 ## 4. Keyphrases
 
 Free functions over a sentence slice. Both return `Vec<Keyphrase>` (`phrase`, `score`), highest score first, capped at 200,000 tokens.

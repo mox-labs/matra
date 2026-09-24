@@ -44,7 +44,12 @@ export interface FigureFile<T = unknown> {
 	figure: string;
 	input: string;
 	source: Record<string, string>;
-	generator: { matra: string; udpipe_model: { name: string; sha256: string } };
+	generator: {
+		matra: string;
+		udpipe_model: { name: string; sha256: string };
+		/** Present on figures drawn from sentence embeddings. */
+		embedding_model?: { name: string; sha256: string };
+	};
 	data: T;
 }
 
@@ -121,6 +126,54 @@ export type KeyphrasesFigureFile = FigureFile<{
 	}[];
 }>;
 
+export type TextrankFigureFile = FigureFile<{
+	n: number;
+	sentences: {
+		position: number;
+		paragraph: number | null;
+		text: string;
+		score: number;
+		summary: boolean;
+	}[];
+}>;
+
+export interface ClusterGridPoint {
+	threshold: number;
+	clusters: { members: number[]; edges: { a: number; b: number; score: number }[] }[];
+}
+
+export type ClustersFigureFile = FigureFile<{
+	default_threshold: number;
+	grid: ClusterGridPoint[];
+	sentences: { index: number; text: string }[];
+}>;
+
+export interface PipelineParagraph {
+	index: number;
+	opening: string;
+	in_blockquote: boolean;
+	sentences: number;
+	tokens: number;
+	readability_grade: number | null;
+	lexical_density: number | null;
+	compression_ratio: number | null;
+}
+
+export interface PipelineStage {
+	sections: { heading: string | null; level: number; paragraphs: PipelineParagraph[] }[];
+	document: {
+		vocabulary_ttr: number | null;
+		nominalization_ratio: number | null;
+		passive_ratio: number | null;
+	};
+}
+
+export type PipelineFigureFile = FigureFile<{
+	raw: { format: string; bytes: number; text: string };
+	annotated: PipelineStage;
+	composed: PipelineStage;
+}>;
+
 /** A figure in a page, resolved against its data at build time. */
 interface FigureSegmentBase {
 	kind: 'figure';
@@ -144,7 +197,15 @@ export type Segment =
 	  })
 	| (FigureSegmentBase & { figure: 'primitives'; file: PrimitivesFigureFile })
 	| (FigureSegmentBase & { figure: 'metrics'; file: MetricsFigureFile })
-	| (FigureSegmentBase & { figure: 'keyphrases'; file: KeyphrasesFigureFile });
+	| (FigureSegmentBase & { figure: 'keyphrases'; file: KeyphrasesFigureFile })
+	| (FigureSegmentBase & { figure: 'textrank'; file: TextrankFigureFile })
+	| (FigureSegmentBase & {
+			figure: 'clusters';
+			/** The threshold shown first, on the data's grid. */
+			threshold: number;
+			file: ClustersFigureFile;
+	  })
+	| (FigureSegmentBase & { figure: 'pipeline'; file: PipelineFigureFile });
 
 export type FigureKind = Exclude<Segment, { kind: 'html' }>['figure'];
 

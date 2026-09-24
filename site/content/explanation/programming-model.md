@@ -23,6 +23,10 @@ Reads are lazy. `Ingest::path` on a directory lists entries up front, and a list
 
 `compose` is total. It reads what is attached and skips what is not, so it has no failure path.
 
+One short Markdown document at each of the three stages, as matra produces them:
+
+<figure-pipeline input="field-notes" />
+
 ## Configuration
 
 `Engine::new` takes a provider and a decomposer table, which means the caller decides where the UDPipe model lives. `Config` answers that question once so no caller has to invent a path.
