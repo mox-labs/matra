@@ -1,7 +1,8 @@
 //! Generate the docsite's figure data (EP-0012).
 //!
 //! Runs the released pipeline, through the public surface only (`config`,
-//! `Engine`, `Ingest`, `extraction`, `embed_and_cluster`), over every input in
+//! `Engine`, `Ingest`, `extraction`, `embed_and_cluster`, and
+//! `embed::model2vec::Model2Vec` for the embedder it takes), over every input in
 //! `site/inputs/` and writes one JSON file per figure:
 //! `site/src/lib/figures/<input>/<figure>.json`. The site reads those files at
 //! build time; the browser never recomputes matra's output, so there is no
@@ -568,8 +569,19 @@ fn read_source(dir: &Path, name: &str) -> Result<Sidecar, Box<dyn Error>> {
             ("figures", toml::Value::Array(list)) => {
                 figures = list
                     .into_iter()
-                    .map(|v| v.as_str().map(str::to_owned).ok_or("figures lists names"))
+                    .map(|v| {
+                        v.as_str().map(str::to_owned).ok_or_else(|| {
+                            format!(
+                                "{}: figures lists names, found {}",
+                                path.display(),
+                                v.type_str()
+                            )
+                        })
+                    })
                     .collect::<Result<_, _>>()?;
+                if figures.is_empty() {
+                    return Err(format!("{}: figures is empty", path.display()).into());
+                }
             }
             ("format", toml::Value::String(f)) => {
                 format = match f.as_str() {
@@ -579,6 +591,21 @@ fn read_source(dir: &Path, name: &str) -> Result<Sidecar, Box<dyn Error>> {
                         return Err(format!("{}: unknown format {other:?}", path.display()).into());
                     }
                 };
+            }
+            // The two keys the generator reads are never provenance: a
+            // mistyped one fails here, not as a missing file at site build.
+            (k @ ("figures" | "format"), other) => {
+                let expected = if k == "figures" {
+                    "a list of figure names"
+                } else {
+                    "a string"
+                };
+                return Err(format!(
+                    "{}: {k} is {other}, expected {expected}",
+                    path.display(),
+                    other = other.type_str()
+                )
+                .into());
             }
             (_, toml::Value::String(s)) => {
                 fields.insert(key, s);
