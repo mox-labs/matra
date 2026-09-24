@@ -31,6 +31,20 @@ those by hand.
 
 ## [Unreleased]
 
+### Changed
+
+- CI runs the boundary check and the docsite floor on every push and pull request, as the `Boundary check` and `Docsite floor` jobs in `ci.yml`. Both ran only from `just check` and the opt-in hook before, while the floor script's header said it ran in CI. The floor job sets `LYCHEE_REQUIRED=1`, which the justfile said CI set and nothing did, so the link gate cannot skip there. Tools install from pinned release assets checked against pinned SHA-256 digests.
+- The pre-commit hook warns when the installed copy differs from `scripts/pre-commit-hook.sh`, and runs the boundary check unconditionally rather than only when the script carries an execute bit.
+
+### Fixed
+
+- `scripts/check-boundaries.sh` passed with exit 0 when `rg` was not installed, and when a named port file did not exist, because `2>/dev/null || true` absorbed those failures exactly as it absorbed "no match". It now fails on both, and ends with a line naming what it examined: checks, files under `src/`, violations.
+- Gate 3 of `scripts/check-docsite-floor.sh` passed having examined no names when `rg` was missing; gate 5 read a grep error as a clean result. Both now fail, gates 2, 3 and 5 fail on examining zero items and report their counts, and the last line tallies passed, skipped and failed gates.
+
+### Security
+
+- `docs.yml` granted `pages: write` and `id-token: write` to every job. The workflow level is now `contents: read`, and only the deploy job holds the two write scopes.
+
 ## [0.2.1] - 2026-09-21
 
 ### Added
