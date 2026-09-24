@@ -57,3 +57,25 @@ updates:
           - patch
     commit-message:
       prefix: "chore(deps)"
+
+  # The docsite's JavaScript toolchain (site/package.json, site/bun.lock).
+  # Every version is pinned exactly; Dependabot moves the pins. The Bun
+  # binary itself is pinned by version and checksum in ci.yml and docs.yml,
+  # which Dependabot does not track.
+  - package-ecosystem: bun
+    directory: "/site"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    labels:
+      - "area:docs"
+      - "type:chore"
+    groups:
+      site-minor-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope

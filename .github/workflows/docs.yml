@@ -18,6 +18,9 @@ concurrency:
 env:
   # Must support edition = "2024" in book.toml; 0.4.x does not.
   MDBOOK_VERSION: 0.5.3
+  # Builds the SvelteKit site preview. Keep in step with BUN_VERSION in ci.yml.
+  BUN_VERSION: 1.3.12
+  BUN_SHA256: 11dc3ee11bc1695e149737c6ca3d5619302cf4346e6b8a6ec7988967ef01ddc5
 
 jobs:
   build:
@@ -48,6 +51,39 @@ jobs:
       - name: Build mdbook
         working-directory: book
         run: mdbook build
+
+      # The SvelteKit site that replaces mdBook (EP-0012). Until the cut-over
+      # it is built for inspection only: uploaded as the `site-preview`
+      # artifact, never deployed. Built for the Pages base path, so serve it
+      # under /matra to browse it.
+      - name: Install bun
+        run: |
+          set -euo pipefail
+          curl -sSLf -o "$RUNNER_TEMP/bun.zip" \
+            "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64.zip"
+          echo "${BUN_SHA256}  $RUNNER_TEMP/bun.zip" | sha256sum -c -
+          unzip -q -j "$RUNNER_TEMP/bun.zip" bun-linux-x64/bun -d "$HOME/.local/bin"
+
+      - name: Build the SvelteKit site preview
+        working-directory: site
+        env:
+          BASE_PATH: /matra
+          # Comments (giscus) render only when both ids are set; see
+          # site/README.md. The category id is set once the Docs discussion
+          # category exists.
+          PUBLIC_GISCUS_REPO_ID: R_kgDORzS1lQ
+          PUBLIC_GISCUS_CATEGORY_ID: ""
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+
+      - name: Upload the site preview
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: site-preview
+          path: site/build
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Build rustdoc
         env:
