@@ -37,43 +37,43 @@ use std::collections::BTreeMap;
 fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
-            "book/src/guides/cli.md",
+            "site/content/guides/cli.md",
             "17214:e0136af0618f0dff",
-            "the 0.8362 pair score in book/src/guides/semantic-clusters.md \
+            "the 0.8362 pair score in site/content/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md, and the 0.5907 unrelated score",
         ),
         (
-            "book/src/guides/rust.md",
+            "site/content/guides/rust.md",
             "18204:82b70f0e40a536ac",
             "the 0.8362 pair score and the 0.6080 unrelated score, in the same two files",
         ),
         (
-            "book/src/roadmap.md",
+            "site/content/roadmap.md",
             "29344:3b4175273c83c6d7",
             "the 0.5907 and 0.6080 unrelated scores, in the same two files",
         ),
         (
-            "book/src/reference/errors.md",
+            "site/content/reference/errors.md",
             "25113:4527dfc9417cedf7",
-            "the RAKE and YAKE figures in book/src/guides/cli.md: 465 phrases, \
+            "the RAKE and YAKE figures in site/content/guides/cli.md: 465 phrases, \
              the two tied at 9.000, 1.190, 215 at the floor, and YAKE's 80.224",
         ),
         (
-            "book/src/reference/domain-types.md",
+            "site/content/reference/domain-types.md",
             "32877:efa9451410f35008",
             "the 141-word saturation floor and the 54-word window in \
-             book/src/guides/semantic-clusters.md and skills/matra/references/semantic.md",
+             site/content/guides/semantic-clusters.md and skills/matra/references/semantic.md",
         ),
         (
-            "book/src/explanation/situation-model.md",
+            "site/content/explanation/situation-model.md",
             "3823:a6d990f55a916692",
-            "the 368-word saturation ceiling in book/src/guides/semantic-clusters.md \
+            "the 368-word saturation ceiling in site/content/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md",
         ),
         (
-            "book/src/reference/methodology.md",
+            "site/content/reference/methodology.md",
             "25156:038958d544bafd9e",
-            "the RAKE length example in book/src/guides/cli.md: `lexical density` \
+            "the RAKE length example in site/content/guides/cli.md: `lexical density` \
              at 5.667 over `model file name` at 5.167",
         ),
     ]

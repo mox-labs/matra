@@ -1,7 +1,7 @@
 //! Every documented error table agrees with the code that routes errors.
 //!
 //! Four surfaces tell a reader which Python exception a failure raises:
-//! `book/src/reference/errors.md`, `book/src/guides/python.md`, the
+//! `site/content/reference/errors.md`, `site/content/guides/python.md`, the
 //! agent skill's `skills/matra/references/errors.md`, and the typed stub
 //! `python/matra/_core.pyi`. Nothing tied any of them to
 //! `From<MatraError> for PyErr` in `src/lib.rs`, and the docsite floor
@@ -181,7 +181,7 @@ fn rows(markdown: &str, heading: &str) -> Vec<Vec<String>> {
 /// The reference page's variant-to-exception table is the routing.
 #[test]
 fn the_reference_page_agrees_with_the_pyerr_routing() {
-    let page = read("book/src/reference/errors.md");
+    let page = read("site/content/reference/errors.md");
     let documented: BTreeMap<String, String> = rows(&page, "## Python exception mapping")
         .into_iter()
         .filter(|r| r.len() == 2)
@@ -191,14 +191,14 @@ fn the_reference_page_agrees_with_the_pyerr_routing() {
     assert_eq!(
         documented,
         routing(),
-        "book/src/reference/errors.md disagrees with From<MatraError> for PyErr in src/lib.rs"
+        "site/content/reference/errors.md disagrees with From<MatraError> for PyErr in src/lib.rs"
     );
 }
 
 /// The reference page's variant-to-kind table is `Error::kind`.
 #[test]
 fn the_reference_page_agrees_with_error_kind() {
-    let page = read("book/src/reference/errors.md");
+    let page = read("site/content/reference/errors.md");
     let documented: BTreeMap<String, String> = rows(&page, "## Display strings and kinds")
         .into_iter()
         .filter(|r| r.len() == 3)
@@ -208,7 +208,7 @@ fn the_reference_page_agrees_with_error_kind() {
     assert_eq!(
         documented,
         kinds(),
-        "book/src/reference/errors.md disagrees with Error::kind in src/domain.rs"
+        "site/content/reference/errors.md disagrees with Error::kind in src/domain.rs"
     );
 }
 
@@ -218,7 +218,7 @@ fn the_reference_page_agrees_with_error_kind() {
 /// name the same variant; none of them may name the wrong exception.
 #[test]
 fn the_python_guide_agrees_with_the_pyerr_routing() {
-    let page = read("book/src/guides/python.md");
+    let page = read("site/content/guides/python.md");
     let routing = routing();
     let mut seen = 0usize;
     for row in rows(&page, "## Exceptions") {
@@ -231,7 +231,7 @@ fn the_python_guide_agrees_with_the_pyerr_routing() {
         };
         assert_eq!(
             exception, expected,
-            "book/src/guides/python.md maps {variant} to {exception}, the routing says {expected}"
+            "site/content/guides/python.md maps {variant} to {exception}, the routing says {expected}"
         );
         seen += 1;
     }

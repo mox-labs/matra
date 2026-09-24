@@ -3,7 +3,9 @@ title = "matra"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction"
 authors = ["mox labs"]
 language = "en"
-src = "src"
+# The pages moved to site/content/ for the SvelteKit site (EP-0012, M1).
+# mdBook still builds and deploys them from there until the cut-over (M2).
+src = "../site/content"
 
 [build]
 # When mdbook serve / build encounters a SUMMARY.md entry whose source file

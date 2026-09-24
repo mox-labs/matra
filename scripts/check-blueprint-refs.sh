@@ -45,7 +45,7 @@ if [ ! -f "$index" ]; then
     exit 2
 fi
 
-# The tracked tree. A symlink (book/src/roadmap.md) is searched through, so
+# The tracked tree. A symlink (site/content/roadmap.md) is searched through, so
 # its target's citations are counted twice; that changes a count, not a result.
 tracked=()
 while IFS= read -r -d '' f; do

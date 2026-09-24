@@ -20,7 +20,7 @@ Do not run `cargo test --all-features`. It turns on `python`, which links
 against libpython with symbols left undefined until an interpreter loads them,
 so it fails at link with a symbol error that reads like a regression and is not.
 
-`book/src/llms.txt` is generated and committed, and gate 6 of the docsite floor
+`site/content/llms.txt` is generated and committed, and gate 6 of the docsite floor
 diffs it. Run `scripts/gen-llms-txt.sh` rather than editing it.
 
 ## Boundary rules
@@ -39,7 +39,7 @@ the rest have no mechanical check, so review is the gate.
 8. `tracing` is forbidden in `domain.rs` and port modules.
 
 What each one is for, what breaks when it is violated, and what to read for
-when reviewing: [`book/src/reference/boundary-rules.md`](book/src/reference/boundary-rules.md).
+when reviewing: [`site/content/reference/boundary-rules.md`](site/content/reference/boundary-rules.md).
 
 ## Proposing a change
 
