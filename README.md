@@ -141,7 +141,7 @@ participate without re-deriving the design.
 | [`blueprints/`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md) | RFCs (design decisions) and EPs (the plans that ship them) |
 | [`CHANGELOG.md`](https://github.com/mox-labs/matra/blob/main/CHANGELOG.md) | What changed and why, per release |
 | [`CONTRIBUTING.md`](https://github.com/mox-labs/matra/blob/main/CONTRIBUTING.md) | How to participate, commit conventions, decision flow |
-| [`SECURITY.md`](https://github.com/mox-labs/matra/blob/main/SECURITY.md) | Vulnerability disclosure policy |
+| [`SECURITY.md`](https://github.com/mox-labs/matra/blob/main/SECURITY.md) | Vulnerability disclosure policy, and how to verify a release with `gh attestation verify` |
 | [`CITATION.cff`](https://github.com/mox-labs/matra/blob/main/CITATION.cff) | How to cite matra |
 
 ## Citing matra

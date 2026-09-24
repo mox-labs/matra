@@ -2,6 +2,8 @@
 
 matra ships three ways from one Rust core: a Rust library on [crates.io](https://crates.io/crates/matra), a command-line binary installed from the same crate, and a Python package on [PyPI](https://pypi.org/project/matra/).
 
+Every release file from 0.2.1 on carries a build provenance attestation you can check with `gh attestation verify` before installing; the commands are under [Verifying a release](https://github.com/mox-labs/matra/blob/main/SECURITY.md#verifying-a-release) in the security policy.
+
 ---
 
 ## Requirements

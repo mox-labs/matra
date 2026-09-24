@@ -31,6 +31,10 @@ those by hand.
 
 ## [Unreleased]
 
+### Added
+
+- `SECURITY.md` has a "Verifying a release" section: the `gh attestation verify` commands for a crate downloaded from crates.io and a wheel downloaded from PyPI, what a pass proves (built by `release.yml` in `mox-labs/matra` on a GitHub-hosted runner, SLSA Build Level 2) and what it does not (Level 3, or anything about the source being correct). crates.io cannot carry provenance, so nothing told a crate user the attestation existed. The installation page and the README point to it.
+
 ### Changed
 
 - CI runs the boundary check and the docsite floor on every push and pull request, as the `Boundary check` and `Docsite floor` jobs in `ci.yml`. Both ran only from `just check` and the opt-in hook before, while the floor script's header said it ran in CI. The floor job sets `LYCHEE_REQUIRED=1`, which the justfile said CI set and nothing did, so the link gate cannot skip there. Tools install from pinned release assets checked against pinned SHA-256 digests.

@@ -10,7 +10,51 @@ supported.
 |---|---|
 | `main` (HEAD) | yes |
 | latest 0.x.y release | yes |
-| older 0.x.y | no — upgrade to the latest patch |
+| older 0.x.y | no; upgrade to the latest patch |
+
+## Verifying a release
+
+From 0.2.1, every release artifact carries a build provenance
+attestation: the `.crate`, each wheel and the sdist. crates.io cannot
+host one, so the attestation lives on GitHub and you check it with the
+GitHub CLI against the file you downloaded.
+
+A crate, straight from crates.io:
+
+```bash
+curl -sSfLO https://static.crates.io/crates/matra/matra-X.Y.Z.crate
+gh attestation verify matra-X.Y.Z.crate --repo mox-labs/matra
+```
+
+A wheel from PyPI, for your platform:
+
+```bash
+pip download matra==X.Y.Z --no-deps --only-binary=:all:
+gh attestation verify matra-X.Y.Z-*.whl --repo mox-labs/matra
+```
+
+PyPI also carries a PEP 740 attestation for each file, shown with the
+file's details on pypi.org and naming `mox-labs/matra` and
+`release.yml` as the publisher. The same record is served at
+`https://pypi.org/integrity/matra/X.Y.Z/<filename>/provenance`.
+
+`gh attestation verify` exits 0 when the file's SHA-256 matches a
+signed attestation from `mox-labs/matra`, and non-zero otherwise. On a
+terminal it prints a summary; piped, it prints nothing, so in a script
+add `--format json` and check the exit status. Adding
+`--signer-workflow mox-labs/matra/.github/workflows/release.yml`
+narrows the check from any workflow in the repository to the release
+workflow.
+
+What a pass proves: the file was built by `.github/workflows/release.yml`
+in `mox-labs/matra`, on a GitHub-hosted runner, from the commit the
+attestation names. That is SLSA Build Level 2.
+
+What it does not prove: it is not Level 3, which needs the build to run
+in an isolated reusable workflow the verifier can identify, and the
+release workflow is not one. It also says nothing about whether the
+source is correct or safe. It tells you where the file came from, not
+that the code in it is free of bugs or vulnerabilities.
 
 ## Reporting a vulnerability
 
