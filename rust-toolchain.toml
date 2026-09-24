@@ -6,7 +6,7 @@
 #
 # `stable`, not the MSRV. Developing on the oldest supported compiler would
 # cost the newer diagnostics for no gain: the MSRV claim in Cargo.toml
-# (rust-version = "1.85") is verified separately by the `msrv` job in
+# (rust-version = "1.88") is verified separately by the `msrv` job in
 # .github/workflows/ci.yml, which is where that check belongs.
 [toolchain]
 channel = "stable"

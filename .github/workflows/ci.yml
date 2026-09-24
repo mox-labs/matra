@@ -68,15 +68,31 @@ jobs:
         run: cargo test ${{ matrix.flags }}
 
   msrv:
-    name: MSRV (Rust 1.85)
+    name: MSRV (Rust 1.88)
     runs-on: ubuntu-latest
+    env:
+      # rust-toolchain.toml pins `stable`, and rustup lets that file override
+      # the toolchain the install step selects. RUSTUP_TOOLCHAIN outranks the
+      # file, so every cargo and rustc below runs on the MSRV. Keep this equal
+      # to `rust-version` in Cargo.toml.
+      RUSTUP_TOOLCHAIN: "1.88"
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9  # master
         with:
-          toolchain: "1.85"
+          toolchain: "1.88"
+      - name: Verify the compiler is the MSRV
+        # A check reports what it examined: fail unless the compiler that
+        # will run is the one this job is named for.
+        run: |
+          version="$(rustc --version)"
+          echo "$version"
+          case "$version" in
+            "rustc 1.88."*) ;;
+            *) echo "::error::expected rustc 1.88.x, got: $version"; exit 1 ;;
+          esac
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
       - name: cargo check (MSRV, all features)
         run: cargo check --all-targets --all-features

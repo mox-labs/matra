@@ -2,7 +2,7 @@
 name = "matra"
 version = "0.2.1"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 authors = ["mox labs <yza.v@moxlabs.org>"]
 license = "MIT"
 description = "NLP library: UDPipe structured parse, base text metrics, summarization, keyphrase extraction. Rust core with Python bindings."
