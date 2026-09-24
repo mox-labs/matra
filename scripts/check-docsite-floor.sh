@@ -471,8 +471,8 @@ echo ""
 # is only ever `include!`d.
 echo "=== Gate 11: examples run ==="
 ex_log=$(mktemp)
-if ! command -v cargo >/dev/null 2>&1 || ! command -v bun >/dev/null 2>&1; then
-    echo "FAIL (gate 11): cargo and bun are both needed to run the examples"
+if ! command -v cargo >/dev/null 2>&1 || ! command -v bun >/dev/null 2>&1 || ! command -v rustfmt >/dev/null 2>&1; then
+    echo "FAIL (gate 11): cargo, rustfmt and bun are all needed to run the examples"
     fail=$((fail + 1))
 elif ! rustfmt --edition 2024 --check site/examples/*/main.rs >"$ex_log" 2>&1; then
     echo "FAIL (gate 11): a Rust tab is not formatted; run rustfmt --edition 2024 site/examples/*/main.rs"
@@ -483,7 +483,7 @@ elif ! { cargo build --quiet --example docsite_examples && cargo build --quiet -
     sed 's/^/  /' "$ex_log" | tail -30
     fail=$((fail + 1))
 else
-    target=$(cargo metadata --format-version 1 --no-deps | sed 's/.*"target_directory":"\([^"]*\)".*/\1/')
+    target="${CARGO_TARGET_DIR:-$PWD/target}"
     if ! (cd site && EXAMPLES_RUNNER="$target/debug/examples/docsite_examples" MATRA_BIN="$target/debug/matra" \
         bun scripts/check-examples.ts) 2>&1 | tee "$ex_log"; then
         echo "        Run \`just docs-examples\` after a deliberate change, and review the diff."
