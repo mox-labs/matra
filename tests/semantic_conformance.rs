@@ -114,9 +114,11 @@ mod reference_model {
                 h.update(v.to_le_bytes());
             }
         }
+        // sha2 0.11 no longer formats a digest with `{:x}`; render the hex
+        // by hand, lowercase as the fixture pins it.
+        let vectors_sha256: String = h.finalize().iter().map(|b| format!("{b:02x}")).collect();
         assert_eq!(
-            format!("{:x}", h.finalize()),
-            fixture.vectors_sha256,
+            vectors_sha256, fixture.vectors_sha256,
             "vector bytes drifted: the bit-determinism contract is broken"
         );
 
