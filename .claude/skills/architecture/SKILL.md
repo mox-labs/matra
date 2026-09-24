@@ -46,7 +46,7 @@ These are non-negotiable:
 
 Motivation, failure modes, and review guidance for each rule live in `book/src/reference/boundary-rules.md`. Read it before applying a rule you cannot justify from memory.
 
-Enforcement is thinner than it looks: only rule 6 has a gate that runs on every push. `scripts/check-boundaries.sh` greps for rules 3, 4, 8 but runs only from `just check` and the opt-in pre-commit hook, and it catches the literal import form only. Rules 1, 2, 5, 7 rest on review.
+Enforcement is thinner than it looks: only rule 6 is verified by compiling. `scripts/check-boundaries.sh` greps for rules 3, 4, 8 from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job, and it catches the literal import form only. Rules 1, 2, 5, 7 rest on review.
 
 When you break a rule, you're either:
 

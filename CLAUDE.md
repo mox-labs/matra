@@ -59,14 +59,14 @@ For how a call actually runs through those layers, read `book/src/architecture/d
 
 **Motivation for each rule, what breaks when it is violated, and what to read for when reviewing: [`book/src/reference/boundary-rules.md`](book/src/reference/boundary-rules.md).** That file is canonical; this list is the summary.
 
-Enforcement is mostly judgment, so review is the gate. Only rule 6 runs on every push (`ci.yml` MSRV job). Rules 3, 4, 8 get a partial grep from `scripts/check-boundaries.sh`, which runs from `just check` and the opt-in pre-commit hook but is **not** wired into any CI workflow. Rules 1, 2, 5, 7 have no mechanical check at all.
+Enforcement is mostly judgment, so review is the gate. Only rule 6 is verified by compiling on every push (`ci.yml` MSRV job). Rules 3, 4, 8 get a partial grep from `scripts/check-boundaries.sh`, which runs from `just check`, the opt-in pre-commit hook, and the `Boundary check` job in `ci.yml`. Rules 1, 2, 5, 7 have no mechanical check at all.
 
 ## Things that will bite you
 
 Non-obvious gotchas. Each is a behavior plus the failure mode if you violate it.
 
 - **Domain purity rests on review, not the compiler.** A non-optional dependency added to `[dependencies]` and used in `domain.rs` compiles clean, including under `--no-default-features` (that flag drops only `udpipe`/`sha2`). Nothing mechanical catches it. See `book/src/reference/boundary-rules.md` rule 1 for what to read for. Adapters are where deps live; the domain stays pure.
-- **Single UDPipe importer.** `scripts/check-boundaries.sh` fails `just check` and the pre-commit hook if anything outside `nlp/udpipe.rs` imports `udpipe_rs`. No CI workflow runs it, so review is the real gate. The wrap exists because UDPipe holds non-Send C-side state and a panic at the FFI boundary would otherwise abort the host process. The catch_unwind seam lives inside this file by design; reintroducing direct imports elsewhere puts the panic boundary back in user code.
+- **Single UDPipe importer.** `scripts/check-boundaries.sh` fails `just check`, the pre-commit hook and the `Boundary check` CI job if anything outside `nlp/udpipe.rs` imports `udpipe_rs`. It sees the literal import form only, so review is the real gate. The wrap exists because UDPipe holds non-Send C-side state and a panic at the FFI boundary would otherwise abort the host process. The catch_unwind seam lives inside this file by design; reintroducing direct imports elsewhere puts the panic boundary back in user code.
 - **Per-paragraph parse, not whole-document.** The previous join-then-prefix-match approach silently reassigned sentences when two paragraphs shared their first 30 characters (FM1). Don't reintroduce "join paragraphs, parse once, wire sentences back to paragraphs by substring match." The pipeline parses each non-blockquote paragraph individually for a reason.
 - **TOCTOU closes in `read_and_verify`.** The function returns `Vec<u8>` and the loader consumes those bytes via `Model::load_from_memory`. Never re-read the disk between hash verify and load — that opens the window a swap attack lives in.
 - **Magic numbers in tree walks are forbidden.** `Sentence::tree_depth` returns `usize::MAX` on cycles; cycle detection uses a visited set, not `if depth > 20 { return }`. The previous magic-ceiling silently truncated malformed parses; the sentinel is the loud failure.

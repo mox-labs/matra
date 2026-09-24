@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # matra pre-commit hook.
 #
-# Runs the Rust gates plus the boundary check. CI runs the Rust gates too,
-# and additionally cargo-deny, cargo-semver-checks, the wheel build and mypy;
-# CI does not run the boundary check. Green here is a strong signal, not a
-# guarantee.
+# Runs the Rust gates plus the boundary check. CI runs both, and
+# additionally the docsite floor, cargo-deny, cargo-semver-checks, the wheel
+# build and mypy. Green here is a strong signal, not a guarantee.
 #
 # Bypass with `git commit --no-verify` when intent justifies it.
 # Default behavior is tight; that is the point.

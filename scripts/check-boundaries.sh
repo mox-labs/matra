@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Verifies matra's hex-architecture boundary rules from CLAUDE.md.
-# Runs from 'just check' and the opt-in pre-commit hook. NOT wired into CI.
+# Runs from 'just check', the opt-in pre-commit hook, and the `Boundary check`
+# job in .github/workflows/ci.yml.
 #
 # Rules enforced here:
 #   3. No port module imports another port module.
