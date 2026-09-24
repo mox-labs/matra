@@ -19,6 +19,7 @@ just docs-serve     # live preview at http://localhost:3000
 just docs-build     # prerender everything into site/build
 just docs-floor     # every docsite gate, the build included
 just docs-figures   # regenerate the figure data from site/inputs/
+just docs-examples  # run the worked examples and write their output
 ```
 
 `just docs-figures` and the figures gate of `just docs-floor` also need a
@@ -47,6 +48,10 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/figures/` | Figure data, generated from `inputs/` by `examples/docsite_figures.rs` and committed. Never edited by hand. |
 | `src/lib/components/figures/` | One component per kind of figure, with its layout. |
 | `scripts/check-figure-twins.ts` | The twin test: every figure in the built HTML against its text twin. |
+| `examples/` | The worked examples, one directory each: which input, the call in Rust, Python and the CLI, and what the calls print. |
+| `src/lib/server/examples.ts` | Reads the examples at build time, and trims their output for the page. |
+| `src/lib/components/examples/` | The input, the call as tabs, and the output. |
+| `scripts/check-examples.ts` | Runs every example's three calls and compares what they print with the committed output. |
 | `urls.txt`, `anchors.txt` | Every published path and heading anchor: the URL contract the build, the artifact and the live site are checked against. |
 
 ## Pages are Markdown
@@ -72,12 +77,14 @@ page was written as raw HTML, and it renders only if its tag is registered in
 names the file, the line and the tag. That also catches a bare `<name>` in
 prose that was meant as text: put it in backticks.
 
-The registry has two kinds of entry. `svg` is a passthrough for the seven
+The registry has three kinds of entry. `svg` is a passthrough for the seven
 hand-authored diagrams: the element and everything inside it are emitted as
 written. `figure-parse`, `figure-primitives`, `figure-metrics`,
 `figure-keyphrases`, `figure-textrank`, `figure-clusters` and
 `figure-pipeline` are figures: tags that name generated data and are drawn by
-a component, described next.
+a component, described next. `example-input`, `example-call` and
+`example-output` are the parts of a worked example, described under
+[Examples](#examples).
 
 A code fence in a language the highlighter has no grammar for also fails the
 build. Add the language to `LANGUAGES` in `render.ts`.
@@ -205,6 +212,52 @@ authored SVG when position carries meaning. Mermaid is not installed. If a
 sequence, state machine or decision tree ever needs it, it would arrive as a
 registered tag rendered at build time, like any other figure.
 
+## Examples
+
+A worked example is one task on one input, called three ways, and what the
+calls print. It lives in `examples/<name>/`:
+
+| File | What it is |
+|---|---|
+| `example.json` | `input`, a name in `inputs/`; `file`, the name the calls read it under; and `output`, how the page trims what they print (`path` to show one part, `omit` to show keys' lists as a count, `keep` to cut lists). |
+| `main.rs` | The Rust call, a whole program a reader can paste into a new project. |
+| `example.py` | The Python call. |
+| `cli.sh` | The command line, one line starting `matra `. |
+| `output.json` | What the Rust call prints. The Python call must print the same value, and so must the `result` the CLI prints. |
+| `cli.json` | What the CLI prints, envelope and all. |
+
+A page shows an example with three tags, each on a line of its own, and adds
+the prose around them: an existing figure of the same input, and what to
+notice.
+
+```text
+<example-input name="summarize" />
+<example-call name="summarize" />
+<example-output name="summarize" />
+```
+
+The site publishes the input under `file`, and both outputs, at
+`example-files/<name>/`, so a reader can run the example as the page shows it.
+A page's `.md` twin carries the input, the calls and the output as Markdown in
+place of the tags.
+
+Nothing a page shows is typed by hand. `examples/docsite_examples.rs` compiles
+every `main.rs` with `include!` and runs the one it is asked for, so a Rust tab
+that does not compile fails the build of that runner. Gate 11 runs all three
+calls for every example in a fresh directory holding only the input, and
+compares what each prints with the committed files. Numbers agree to ten
+significant digits and items with equal scores may come back in either order,
+because both are matra's documented behaviour; a tie at an example's cut is
+not allowed for, so an example must not ask for one.
+
+**Adding an example.** Make the directory with `example.json`, `main.rs`,
+`example.py` and `cli.sh`, add its name to `examples!` in
+`examples/docsite_examples.rs`, and run `just docs-examples`, which writes
+`output.json` and `cli.json` and checks the Python call. It needs matra
+importable from Python (`maturin develop`), or the Python calls are skipped
+locally; CI requires them. Then write the page under `content/examples/`, list
+it in `SUMMARY.md`, and add its paths to `urls.txt`.
+
 ## Design rules, in brief
 
 The full reasoning is in EP-0012's Design section.
@@ -243,10 +296,13 @@ The full reasoning is in EP-0012's Design section.
 (gate 4); lychee over the built HTML, fragments included (gate 1); the URL
 manifest (gate 7); and the twin test over the built HTML (gate 9). Gate 8
 regenerates the figure data into a temporary directory and diffs it against
-`src/lib/figures/`; gate 10 checks every input's licence. The other gates read
-`content/`. In CI the UDPipe model is cached under the digest matra pins it
-to, and fetched through matra's own verified download on a miss; a model that
-cannot be had fails gate 8.
+`src/lib/figures/`; gate 10 checks every input's licence; gate 11 runs the
+worked examples. The other gates read `content/`. In CI the UDPipe and
+embedding models are cached under the digests matra pins them to, and fetched
+through matra's own verified download on a miss; a model that cannot be had
+fails gate 8. The job builds matra into a virtualenv with `maturin develop` for
+gate 11's Python calls, and sets `EXAMPLES_REQUIRED=1` so a Python that cannot
+import matra fails rather than skips.
 
 Dependencies are pinned exactly in `package.json` and locked in `bun.lock`;
 Dependabot moves the pins. The Bun binary is pinned by version and SHA-256 in
