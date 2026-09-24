@@ -51,7 +51,7 @@ Two markers make the state visible inline:
 - **Ships in v0.1**: the capability is available in the current release.
 - **Planned v0.2+**: the capability is designed but not yet shipped. Each planned capability carries a trigger (a concrete condition that activates the build).
 
-The markers move on release: a planned capability that ships flips from to. Visitors always see honest state. No aspirational copy, no "coming soon" without a version number.
+The markers move on release: a planned capability that ships flips from **Planned** to **Ships in**. Visitors always see honest state. No aspirational copy, no "coming soon" without a version number.
 
 ## How decisions get made
 

@@ -27,8 +27,10 @@
 # affects every subsequent PR.
 /.github/workflows/        @yzavyas
 
-# Release machinery — irreversible operations live here. Per the
-# durable per-publish approval rule (`memory/feedback_no_publish.md`),
+# Release machinery — irreversible operations live here. Publishing
+# needs a human approval per release, enforced by the `crates-io` and
+# `pypi` environments that .github/workflows/release.yml deploys to (each
+# requires a reviewer; see the prerequisites at the top of that file), so
 # every change to release.yml, changelog-release.sh, the release recipe
 # in the justfile, or the supply-chain config gets explicit review.
 /justfile                              @yzavyas
