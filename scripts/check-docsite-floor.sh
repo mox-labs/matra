@@ -14,7 +14,7 @@
 #                            and skills/ either exists as an identifier in src/,
 #                            or is on the external-types allowlist below. Catches
 #                            rename drift. Plans and design records live in
-#                            blueprints/, outside the book, and are not scanned:
+#                            blueprints/, outside the docsite, and are not scanned:
 #                            an RFC or an EP names types that do not exist yet,
 #                            which is what makes it a proposal or a plan.
 #   4. Site build:          bun install --frozen-lockfile, svelte-check with

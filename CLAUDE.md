@@ -99,7 +99,7 @@ cargo test                                     # unit + doctests
 cargo test --features cli                      # + the binary's own tests
 cargo test --test integration -- --ignored     # integration (needs model)
 just conformance                               # every crust against spec/tests/
-just docs-floor                                # the six docsite gates
+just docs-floor                                # the seven docsite gates
 maturin develop                                # Python local install
 maturin build                                  # Python wheel
 ```
@@ -136,9 +136,9 @@ Features are additive: `udpipe` (default), `model2vec`, `python`, `cli`. **Do no
 
 Content lives in `site/content/`. Every page describes what ships today; `site/content/roadmap.md` is the only page describing what does not, and it links each fired trigger to its enhancement plan in `blueprints/eps/`, outside the docsite. Design records are `blueprints/rfcs/`; the process is `blueprints/README.md`.
 
-Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quoted material (in `site/content/`, `skills/` and `blueprints/`), and `site/content/llms.txt` current with `SUMMARY.md` (regenerate with `scripts/gen-llms-txt.sh`). Beside them, `scripts/check-blueprint-refs.sh` (from `just check` and the `Docsite floor` CI job) fails when a cited RFC or EP number has no record in `blueprints/` or a record has no row in its index.
+Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quoted material (in `site/content/`, `skills/` and `blueprints/`), `site/content/llms.txt` current with `SUMMARY.md` (regenerate with `scripts/gen-llms-txt.sh`), and every published URL and heading anchor still produced (`site/urls.txt`, `site/anchors.txt`). Beside them, `scripts/check-blueprint-refs.sh` (from `just check` and the `Docsite floor` CI job) fails when a cited RFC or EP number has no record in `blueprints/` or a record has no row in its index.
 
-Live preview: `just docs-serve` runs the SvelteKit site in `site/` (see `site/README.md`). Until the cutover in EP-0012 M2, mdBook still builds and deploys the same pages from `site/content/` (`book/book.toml`, `cd book && mdbook serve --port 3000`), with `create-missing = false`, so a `SUMMARY.md` entry without a file on disk fails the build loudly rather than creating a stub.
+Live preview: `just docs-serve` runs the site in `site/` (see `site/README.md`); `just docs-build` builds it. A `SUMMARY.md` entry without a file on disk fails the build.
 
-Diagrams are hand-authored inline SVG. Mermaid is not installed; the rule for choosing between them, and the command to restore mermaid when a sequence or state machine needs it, are in `book/book.toml`.
+Diagrams are hand-authored inline SVG; the rule for choosing a diagram form is in `site/README.md`.
 

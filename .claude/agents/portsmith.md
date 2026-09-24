@@ -45,7 +45,7 @@ pub trait Embedder: Send {
 }
 ```
 
-Each trait is minimal. Each documents its contract in `book/src/architecture/design.md`. The contracts are load-bearing; downstream code assumes them.
+Each trait is minimal. Each documents its contract in `site/content/architecture/design.md`. The contracts are load-bearing; downstream code assumes them.
 
 ## Adding a new port
 
@@ -81,7 +81,7 @@ For each port trait:
 - **Forbidden imports** stated explicitly (no `udpipe_rs` outside `nlp/udpipe.rs`; no cross-port imports; no I/O in `Decomposer`; etc.).
 - **Object-safety** — every port must be usable through `&dyn Trait` so the composition root can dispatch at runtime.
 
-When you change a contract, update both the trait doc and `book/src/architecture/design.md` in the same commit.
+When you change a contract, update both the trait doc and `site/content/architecture/design.md` in the same commit.
 
 ## Cross-language considerations
 
