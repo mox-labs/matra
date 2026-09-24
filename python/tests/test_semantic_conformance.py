@@ -1,4 +1,4 @@
-"""The FFI shape fixture (i9 M5): the Python crust's vectors-in
+"""The FFI shape fixture (EP-0009 M5): the Python crust's vectors-in
 ``semantic_clusters`` must produce exactly the serialized value in
 ``spec/tests/semantic/clusters.json``.
 
@@ -46,11 +46,11 @@ REF = SPEC.parent / "reference-model.json"
 
 @pytest.mark.model
 def test_reference_model_vectors_and_clusters_are_exact() -> None:
-    """Reference-model conformance (i9 M6): the Python crust reproduces
+    """Reference-model conformance (EP-0009 M6): the Python crust reproduces
     the pinned potion-base-8M expectations exactly. The adapter is
     bit-deterministic, so cluster scores compare exactly in f32 space.
 
-    Since i10 M4 the model arrives through ``potion_base_8m``, which
+    Since EP-0010 M4 the model arrives through ``potion_base_8m``, which
     downloads it into the resolved directory on the first run and
     verifies the same digest this fixture asserts. ``MATRA_MODEL2VEC_DIR``
     still names the directory when set; without it the directory comes

@@ -20,7 +20,7 @@
 //! build a taxonomy and does not assert the relation is true; that
 //! reading is the consumer's.
 //!
-//! This module imports only `domain` (I7 M5 boundary). The pipeline
+//! This module imports only `domain` (EP-0007 M5 boundary). The pipeline
 //! calls [`hypernymy_pairs`] at the annotate stage and stores the
 //! result on [`crate::domain::Sentence::hearst_pairs`], so the
 //! detection crosses FFI as data (RFC-0008).

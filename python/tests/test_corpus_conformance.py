@@ -1,4 +1,4 @@
-"""The corpus item fixture (i10 M5): the Python crust's ``analyze_path``
+"""The corpus item fixture (EP-0010 M5): the Python crust's ``analyze_path``
 items must carry the shapes and the kind vocabulary
 ``spec/tests/corpus/items.json`` pins.
 

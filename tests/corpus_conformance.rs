@@ -1,4 +1,4 @@
-//! The corpus item fixture (i10 M5): the two shapes one document's
+//! The corpus item fixture (EP-0010 M5): the two shapes one document's
 //! result takes when it crosses a binding, and the kind vocabulary a
 //! consumer branches on, both pinned by `spec/tests/corpus/items.json`.
 //!

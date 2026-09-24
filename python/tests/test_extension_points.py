@@ -1,4 +1,4 @@
-"""The two Python extension points (i10 M5).
+"""The two Python extension points (EP-0010 M5).
 
 A Python object with ``embed`` and ``identity`` is accepted wherever an
 embedding model is, and ``analyze_path`` puts directory ingestion on the
