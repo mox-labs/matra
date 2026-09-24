@@ -430,3 +430,27 @@ examples are live, and the M6 newcomer pass is filed.
   parse figure is on the Concepts page, prerendered with scripts off. The M3
   deliverable is edited: the embedding model is fetched from M5, since no
   M3 figure uses it.
+- 2026-09-24: M3 landed in #107.
+- 2026-09-24: M4 delivered, three figures, each with its table twin first,
+  the shared frame (provenance line and data link), and a comparison in the
+  twin test that was seen to fail on a planted fault.
+  - Structural primitives over five sentences on the Situation model page:
+    every field `Sentence` carries, the Hearst pairs included, marked on the
+    words each is read from and attaches to.
+  - Paragraph measures of The Federalist No. 10 (a new public-domain input)
+    as small multiples on the Methodology page. A reference line appears only
+    for readability, whose document value matra computes
+    (`Corpus::mean_readability`); matra has no document-level lexical
+    density or compression ratio, so those panels have none.
+  - RAKE against YAKE on the same essay as a slopegraph of ranks, on the
+    capabilities page's keyphrase section rather than the CLI guide, whose
+    text pins a chain of cited similarity scores. The two top-twelve lists
+    share no phrase, so the figure joins each phrase's rank under both
+    methods on a log scale. Both of matra's scores run higher as more
+    relevant: its YAKE is the reciprocal of the published score.
+  The M4 figures are static, so each one's reduced-motion state is its only
+  state, the one the twin test reads. Two pinned pages gained a figure: the
+  Situation model page's whole-document vector is byte-identical after the
+  edit (the 368-word figure stands), and RAKE on the Methodology page still
+  scores `lexical density` 5.667 and `model file name` 5.167; only their
+  digests in `tests/cited_figures.rs` moved.
