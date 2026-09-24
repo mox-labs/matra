@@ -34,6 +34,8 @@ those by hand.
 ### Added
 
 - `SECURITY.md` has a "Verifying a release" section: the `gh attestation verify` commands for a crate downloaded from crates.io and a wheel downloaded from PyPI, what a pass proves (built by `release.yml` in `mox-labs/matra` on a GitHub-hosted runner, SLSA Build Level 2) and what it does not (Level 3, or anything about the source being correct). crates.io cannot carry provenance, so nothing told a crate user the attestation existed. The installation page and the README point to it.
+- A SvelteKit docsite under `site/`, built beside the mdBook site that still deploys (EP-0012, M1). The pages move from `book/src/` to `site/content/` with `git mv` and stay plain Markdown; mdBook builds them from there until the cut-over. Every page is prerendered at the path mdBook served, with the same heading anchors, and is also served as its Markdown source at `<path>.md` beside `llms.txt`. It adds Pagefind search, light and dark themes, a table of contents per page, "Edit this page" links, and a comments component on GitHub Discussions (giscus) that stays off until its category is set. `docs.yml` uploads the build as the `site-preview` artifact. `just docs-serve` and `just docs-build` run it.
+- The docsite floor grows to eight gates: the SvelteKit build with `svelte-check` warnings as failures (gate 7), lychee over the built HTML with fragments (gate 1), and URL and heading-anchor parity with the mdBook build (gate 8, `scripts/check-url-parity.sh`). Gates 2 and 5 follow symlinks, so `roadmap.md` is checked for the first time. The site's build fails on a tag outside the registry, a link to no page, or a code fence language with no grammar. Bun is pinned by version and SHA-256 in CI, and Dependabot tracks `site/`.
 
 ### Changed
 

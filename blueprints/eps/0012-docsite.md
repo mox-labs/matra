@@ -2,7 +2,7 @@
 
 - EP: EP-0012
 - Implements: none (standalone: the docsite changes how matra is documented, not matra)
-- Status: planned
+- Status: in progress
 - Shipped in: not shipped (the docsite deploys from `main`, not with a release)
 
 ## Summary
@@ -170,6 +170,12 @@ stays at `/api/`. Search is Pagefind, indexed from the built HTML.
 | new: every figure has its twin | A test over the prerendered HTML: each figure element has a text twin with the same data |
 | new: every example input has a licence | Each file in `site/inputs/` has a sidecar with a source and a licence |
 
+While mdBook still deploys (until M2), gate 4 stays the mdBook build, the
+SvelteKit build runs as gate 7, and gate 8 holds the new build to every
+`.html` path and heading anchor mdBook serves (`scripts/check-url-parity.sh`).
+At the cut-over the SvelteKit build becomes gate 4, and gate 8 gives way to the
+check run against the live site after deploy.
+
 `tests/cited_figures.rs`, `tests/error_tables.rs` and
 `skills/matra/references/semantic.md` read pages by path. They move to the new
 paths in the same pull request as the `git mv`; the pinned digests do not
@@ -177,6 +183,27 @@ change because the files do not.
 
 The figures-current gate needs the UDPipe model and the embedding model in the
 docs job, fetched through the pinned, hash-verified path of RFC-0011.
+
+### Links out, and comments
+
+The header links to the repository on GitHub, its Issues and Discussions, and
+the API reference at `/api/`; on a phone they sit at the foot of the
+navigation panel. The footer repeats them beside the contents page, the
+single-page view and `llms.txt`. Each page ends with "Edit this page", linking
+to its source on GitHub (`site/content/<path>`, or `ROADMAP.md` for the
+roadmap, whose page is a symlink to it), and with a link to its Markdown twin.
+
+Readers signed in with GitHub can comment on a page through giscus, which
+stores each page's thread as a GitHub Discussion in this repository. Comments
+then live where the project's other conversations do, under the same
+moderation, with no third-party store. There is one discussion per page,
+matched by path; giscus drops the extension before matching, so the
+extensionless and the `.html` URL of a page share a thread. The widget loads
+nothing until it is scrolled near, follows the site's theme, and renders only
+when the build sets `PUBLIC_GISCUS_REPO_ID` and `PUBLIC_GISCUS_CATEGORY_ID`.
+`site/README.md` has the steps to switch it on. Comments are a reader
+affordance, not content: they are not in the page source, the Markdown twin,
+`llms.txt` or the search index.
 
 ### Alternatives not taken
 
@@ -368,3 +395,7 @@ examples are live, and the M6 newcomer pass is filed.
 ## Status log
 
 - 2026-09-24: planned.
+- 2026-09-24: in progress. M1 delivered: the SvelteKit site under `site/`
+  builds every page beside mdBook, with URL and heading-anchor parity checked
+  by gate 8. Design gains "Links out, and comments", which the owner asked for;
+  comments stay off until a discussion category is chosen.
