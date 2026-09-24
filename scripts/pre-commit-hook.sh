@@ -12,6 +12,15 @@
 
 set -euo pipefail
 
+# The installed hook is a copy, so it goes on running whatever this file said
+# when it was installed. One installed before the rename kept announcing
+# itself under the old project name and claiming parity with CI that did not
+# hold. Say so when the copy has drifted rather than run stale gates quietly.
+if ! cmp -s "$0" scripts/pre-commit-hook.sh; then
+    echo "WARNING: this pre-commit hook differs from scripts/pre-commit-hook.sh;" >&2
+    echo "         run \`just install-hooks\` to update it" >&2
+fi
+
 # Heuristic: skip the heavy gates on commits that touch no Rust source.
 # Pure docs / template commits do not need clippy and doc to run.
 staged=$(git diff --cached --name-only --diff-filter=ACMR)
