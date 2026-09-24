@@ -327,8 +327,9 @@ On the site: RFC-0005 (supply chain), RFC-0011 (pinned downloads), RFC-0012
 - **Deliverable.** `examples/docsite_figures.rs` generating JSON into
   `site/src/lib/figures/` from `site/inputs/`. The figures-current gate
   (regenerate and diff), the twin test over the prerendered HTML, and the
-  input-licence gate. The docs CI job fetches the UDPipe and embedding models
-  through RFC-0011's pinned path. The first figure: the dependency parse, as
+  input-licence gate. The docs CI job fetches the UDPipe model through
+  RFC-0011's pinned path, cached by its digest; the embedding model joins in
+  M5, the first milestone whose figures need it. The first figure: the dependency parse, as
   an arc diagram over the token table, on the Concepts page, where the table
   leads and the figure follows.
 - **Exit criterion.** All three new gates pass, and each fails on a planted
@@ -418,3 +419,14 @@ examples are live, and the M6 newcomer pass is filed.
   live check runs on the deploy that follows the merge. `git grep` still finds
   `book/` paths in `.claude/agents/` and `.claude/arch/`, and mdBook wording
   in the Docsite section of CLAUDE.md; those are the owner's to change.
+- 2026-09-24: M2 landed; the live-site check passed on the first deploy. The
+  owner updated CLAUDE.md and `.claude/`.
+- 2026-09-24: M3 delivered. `examples/docsite_figures.rs` writes
+  deterministic parse data for four inputs in `site/inputs/` (narrative,
+  legal, technical, administrative; two public domain, two written for
+  matra), each recording matra's version and the UDPipe model's name and
+  digest. Gates 8 (figures current), 9 (figure twins) and 10 (input
+  licences) run in the floor, each seen to fail on a planted fault. The
+  parse figure is on the Concepts page, prerendered with scripts off. The M3
+  deliverable is edited: the embedding model is fetched from M5, since no
+  M3 figure uses it.

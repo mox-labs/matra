@@ -18,7 +18,12 @@ in `.github/workflows/ci.yml`.
 just docs-serve     # live preview at http://localhost:3000
 just docs-build     # prerender everything into site/build
 just docs-floor     # every docsite gate, the build included
+just docs-figures   # regenerate the figure data from site/inputs/
 ```
+
+`just docs-figures` and the figures gate of `just docs-floor` also need a
+Rust toolchain; on first run they fetch the UDPipe model (16 MB) into
+matra's model directory, verified against the digest compiled into matra.
 
 `just docs-serve` has no search: the Pagefind index is written from the built
 HTML, so search answers only in a build. To browse a build locally, serve
@@ -36,6 +41,10 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/server/markdown/registry.ts` | The tag registry. |
 | `src/routes/` | One route per page, its `.md` twin, `llms.txt`, and the contents, print and 404 pages. |
 | `src/app.css` | Tokens and page typography. |
+| `inputs/` | The texts figures are drawn from, each `<name>.txt` with a `<name>.source.toml` naming its source and licence. |
+| `src/lib/figures/` | Figure data, generated from `inputs/` by `examples/docsite_figures.rs` and committed. Never edited by hand. |
+| `src/lib/components/figures/` | One component per kind of figure, with its layout. |
+| `scripts/check-figure-twins.ts` | The twin test: every figure in the built HTML against its text twin. |
 | `urls.txt`, `anchors.txt` | Every published path and heading anchor: the URL contract the build, the artifact and the live site are checked against. |
 
 ## Pages are Markdown
@@ -61,13 +70,73 @@ page was written as raw HTML, and it renders only if its tag is registered in
 names the file, the line and the tag. That also catches a bare `<name>` in
 prose that was meant as text: put it in backticks.
 
-Today the registry holds one entry, `svg`, a passthrough for the seven
+The registry has two kinds of entry. `svg` is a passthrough for the seven
 hand-authored diagrams: the element and everything inside it are emitted as
-written. Figures generated from matra's output (EP-0012, M3) will add a second
-kind of entry that maps a tag to a component.
+written. `figure-parse` is a figure: a tag that names generated data and is
+drawn by a component, described next.
 
 A code fence in a language the highlighter has no grammar for also fails the
 build. Add the language to `LANGUAGES` in `render.ts`.
+
+## Figures
+
+A figure shows matra's real output on a recorded input, never an illustration
+of what it might produce. The browser never recomputes that output: the
+generator runs the released pipeline over `inputs/`, writes the result as
+JSON, and the site draws from the committed JSON.
+
+In a page, a figure is one self-closing tag on a line of its own, with a
+blank line before and after:
+
+```text
+<figure-parse input="primitives" sentence="1" />
+```
+
+`input` names a file in `inputs/`; `sentence` is the one shown first
+(default 1). A tag written any other way, a missing input, an unknown
+attribute or a sentence out of range fails the build, naming the page and
+line. Each figure links to its data at `figures/<input>/<figure>.json` on the
+site, and says which matra version and model produced it.
+
+Every figure has a text twin in the same HTML, carrying the same data, for
+readers who do not see the picture and agents that read HTML: for the parse,
+the token table leads and the arcs follow. Gate 9 holds every figure in the
+built site to its twin.
+
+**Adding an input.** Put the text in `inputs/<name>.txt` (paragraphs
+separated by a blank line) and write `inputs/<name>.source.toml` with
+`title`, `author`, `source`, `url`, `licence` and `register`. Every input is
+public domain or written for matra; gate 10 fails on an input without a
+source and a licence. Then run `just docs-figures` and commit the new files
+under `src/lib/figures/`, and add their `figures/<name>/<figure>.json` lines
+to `urls.txt`.
+
+**Adding a figure to a page.** Write its tag where it belongs. Nothing else.
+
+**Adding a new kind of figure.** Four parts, each small and reviewable:
+
+1. A function in `examples/docsite_figures.rs` that turns an analysis into
+   the figure's data, listed in `FIGURES`.
+2. A registry entry in `registry.ts`: its tag, the data it names, the
+   attributes it takes, and the question it answers better than a table. A
+   figure that cannot name one does not get an entry.
+3. A component in `src/lib/components/figures/`, with its text twin, and a
+   branch for it in `Body.svelte` and in `toSegments` in `render.ts`.
+4. The twin test taught to compare it with its twin.
+
+Layout is arithmetic that runs at build time, so the figure is in the
+prerendered page; d3 is used for scales and layout only, and Svelte draws.
+Motion follows EP-0012's rule: nothing moves unless the reader changes the
+figure, then at most two stages in about a second, easing in and out, and
+under reduced motion the end state appears at once.
+
+`figure-parse` answers "what does each word depend on, and by which
+relation?". Its colours are Universal Dependencies' grouping of relations
+(core arguments, modifiers, function words, and the rest dashed), shown in its
+legend, and each holds 4.5:1 contrast in both themes. Words are set in the
+monospace face so their widths, and so the layout, are known without
+measuring text. Arcs are levelled so none collide, and a sentence wider than
+the column scrolls inside the figure.
 
 ### Diagrams
 
@@ -98,9 +167,9 @@ The full reasoning is in EP-0012's Design section.
 - **Light and dark from one set of tokens.** Each colour is declared once with
   `light-dark()`. The site follows `prefers-color-scheme` until the reader picks
   a theme with the toggle, and remembers the choice.
-- **No motion.** Nothing transitions or animates, and `prefers-reduced-motion`
-  is respected globally. Figures that move on the reader's request arrive with
-  EP-0012's later milestones, under its Motion rules.
+- **Motion only on request.** Nothing on the site animates on its own. A
+  figure moves only when the reader changes it, under EP-0012's Motion rule,
+  and `prefers-reduced-motion` is respected globally and by every figure.
 - **URLs are a contract.** `/guides/cli` is written as `guides/cli.html`, the
   path the mdBook-era site served. `urls.txt` lists every published path, and
   `anchors.txt` every published heading anchor: the 208 ids that site served.
@@ -115,8 +184,13 @@ The full reasoning is in EP-0012's Design section.
 `just docs-floor` runs `scripts/check-docsite-floor.sh`, which is also the
 `Docsite floor` job in CI. For this site it runs `bun install
 --frozen-lockfile`, `svelte-check` with warnings as failures, and the build
-(gate 4); lychee over the built HTML, fragments included (gate 1); and the
-URL manifest (gate 7). The other gates read `content/`.
+(gate 4); lychee over the built HTML, fragments included (gate 1); the URL
+manifest (gate 7); and the twin test over the built HTML (gate 9). Gate 8
+regenerates the figure data into a temporary directory and diffs it against
+`src/lib/figures/`; gate 10 checks every input's licence. The other gates read
+`content/`. In CI the UDPipe model is cached under the digest matra pins it
+to, and fetched through matra's own verified download on a miss; a model that
+cannot be had fails gate 8.
 
 Dependencies are pinned exactly in `package.json` and locked in `bun.lock`;
 Dependabot moves the pins. The Bun binary is pinned by version and SHA-256 in
