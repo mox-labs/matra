@@ -119,6 +119,10 @@ jobs:
     name: Verify the live site
     needs: deploy
     runs-on: ubuntu-latest
+    # A reachable site checks in well under a minute. This bounds the case
+    # where it never answers, which the script's retries would otherwise
+    # stretch out.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:

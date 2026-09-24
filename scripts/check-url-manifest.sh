@@ -14,8 +14,17 @@
 #                 Every listed path must exist, rustdoc's included.
 #   --live URL    The deployed site (docs.yml, after deploy). Every listed
 #                 path, and the root, must answer 200. Pages can take a moment
-#                 to serve a new deploy everywhere, so a non-200 is retried
-#                 before it counts.
+#                 to serve a new deploy, so non-200s are retried until the
+#                 site first answers 200; after that a non-200 is real and
+#                 fails at once, so a dead page costs one request, not minutes.
+#
+# In --build and --dir mode the heading anchors in site/anchors.txt are
+# checked too: each listed `page.html#id` must name an element with that id
+# on that page. A fragment cannot be requested over HTTP, so --live does not
+# check anchors; the artifact it deploys was checked for them before upload.
+#
+# Manifest lines are relative paths under the site root. A line that is
+# absolute or climbs out with `..` is rejected rather than followed.
 #
 # Usage: scripts/check-url-manifest.sh --build site/build
 #        scripts/check-url-manifest.sh --dir _site
@@ -25,6 +34,15 @@ set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 MANIFEST="$REPO_ROOT/site/urls.txt"
+ANCHORS="$REPO_ROOT/site/anchors.txt"
+
+# A manifest entry must stay inside the site root.
+unsafe_path() {
+    case "$1" in
+    /* | .. | ../* | */.. | */../*) return 0 ;;
+    *) return 1 ;;
+    esac
+}
 
 mode="${1:-}"
 target="${2:-}"
@@ -40,12 +58,42 @@ fi
 paths=()
 while IFS= read -r line; do
     case "$line" in '' | '#'*) continue ;; esac
+    if unsafe_path "$line"; then
+        echo "FAIL (url manifest): site/urls.txt: not a path under the site root: $line"
+        exit 1
+    fi
     paths+=("$line")
 done < "$MANIFEST"
 if [ "${#paths[@]}" -eq 0 ]; then
     echo "FAIL (url manifest): $MANIFEST lists no paths"
     exit 1
 fi
+
+anchors=()
+if [ -f "$ANCHORS" ]; then
+    while IFS= read -r line; do
+        case "$line" in '' | '#'*) continue ;; esac
+        page="${line%%#*}"
+        if [ "$page" = "$line" ] || [ -z "${line#*#}" ] || unsafe_path "$page"; then
+            echo "FAIL (url manifest): site/anchors.txt: not a page.html#id under the site root: $line"
+            exit 1
+        fi
+        anchors+=("$line")
+    done < "$ANCHORS"
+fi
+
+# Each listed anchor names an element with that id on its page, in DIR.
+check_anchors() {
+    local dir="$1" a page id
+    lost=()
+    for a in "${anchors[@]}"; do
+        page="${a%%#*}"
+        id="${a#*#}"
+        if [ ! -f "$dir/$page" ] || ! grep -F -q "id=\"$id\"" "$dir/$page"; then
+            lost+=("$a")
+        fi
+    done
+}
 
 missing=()
 case "$mode" in
@@ -67,8 +115,21 @@ case "$mode" in
         done < <(cd "$target" && find . \( -name '*.html' -o -name '*.md' -o -name '*.txt' \) \
             -not -path './_app/*' -not -path './pagefind/*' | sed 's#^\./##' | LC_ALL=C sort)
     fi
+    lost=()
+    [ "${#anchors[@]}" -gt 0 ] && check_anchors "$target"
     echo "url manifest: ${#paths[@]} paths listed, $checked checked in $target, ${#missing[@]} missing, ${#unlisted[@]} unlisted"
+    echo "anchor manifest: ${#anchors[@]} heading anchors listed, ${#lost[@]} missing"
     status=0
+    if [ "${#anchors[@]}" -eq 0 ]; then
+        echo "FAIL (url manifest): site/anchors.txt lists no anchors"
+        status=1
+    fi
+    if [ "${#lost[@]}" -gt 0 ]; then
+        echo "FAIL (url manifest): heading anchors in site/anchors.txt that no longer exist:"
+        printf '  %s\n' "${lost[@]}"
+        echo "        A published #fragment is cited elsewhere; keep the id, or remove the line on purpose."
+        status=1
+    fi
     if [ "${#missing[@]}" -gt 0 ]; then
         echo "FAIL (url manifest): listed in site/urls.txt, absent from $target:"
         printf '  %s\n' "${missing[@]}"
@@ -80,7 +141,7 @@ case "$mode" in
         echo "        A new page is a new published URL: add it to site/urls.txt."
         status=1
     fi
-    [ "$status" -eq 0 ] && echo "PASS (url manifest): every published path is in $target"
+    [ "$status" -eq 0 ] && echo "PASS (url manifest): every published path and heading anchor is in $target"
     exit "$status"
     ;;
 --live)
@@ -91,17 +152,21 @@ case "$mode" in
         curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$1" 2>/dev/null || echo 000
     }
     checked=0
+    answered=0
     for p in "" "${paths[@]}"; do
         url="$base/$p"
         checked=$((checked + 1))
         code=$(fetch "$url")
         n=1
-        while [ "$code" != "200" ] && [ "$n" -lt "$attempts" ]; do
+        # Retry only until the site has answered once: before that a non-200
+        # may be a deploy still arriving; after it, the page is missing.
+        while [ "$code" != "200" ] && [ "$answered" -eq 0 ] && [ "$n" -lt "$attempts" ]; do
             sleep "$delay"
             code=$(fetch "$url")
             n=$((n + 1))
         done
         if [ "$code" = "200" ]; then
+            answered=1
             echo "  200  $url"
         else
             echo "  $code  $url  (after $n attempts)"

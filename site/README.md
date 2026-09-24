@@ -36,7 +36,7 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/server/markdown/registry.ts` | The tag registry. |
 | `src/routes/` | One route per page, its `.md` twin, `llms.txt`, and the contents, print and 404 pages. |
 | `src/app.css` | Tokens and page typography. |
-| `urls.txt` | Every published path: the URL contract the build and the live site are checked against. |
+| `urls.txt`, `anchors.txt` | Every published path and heading anchor: the URL contract the build, the artifact and the live site are checked against. |
 
 ## Pages are Markdown
 
@@ -102,12 +102,13 @@ The full reasoning is in EP-0012's Design section.
   is respected globally. Figures that move on the reader's request arrive with
   EP-0012's later milestones, under its Motion rules.
 - **URLs are a contract.** `/guides/cli` is written as `guides/cli.html`, the
-  path the mdBook-era site served, and heading ids match its ids. `urls.txt`
-  lists every published path. Gate 7 of the docsite floor fails when the build
-  does not write one of them or writes a page not listed there; `docs.yml`
-  checks the assembled artifact before upload and the live site after deploy
-  (`scripts/check-url-manifest.sh`). A new page adds its `.html` and `.md`
-  lines to `urls.txt`.
+  path the mdBook-era site served. `urls.txt` lists every published path, and
+  `anchors.txt` every published heading anchor: the 208 ids that site served.
+  Gate 7 of the docsite floor fails when the build does not write a listed
+  path, writes a page not listed, or drops a listed anchor; `docs.yml` checks
+  the assembled artifact the same way before upload, and the live site's paths
+  after deploy (`scripts/check-url-manifest.sh`). A new page adds its `.html`
+  and `.md` lines to `urls.txt`; a new heading needs no entry.
 
 ## Gates
 
