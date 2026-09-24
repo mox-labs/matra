@@ -47,8 +47,8 @@ name: Release
 #      names (`crates-io`, `pypi`) are unchanged.
 #
 # Action refs are 40-character commit SHAs with a version comment, per
-# ADR-0005. The wheel matrix, the manylinux container and the abi3
-# contract are ADR-0014.
+# RFC-0005. The wheel matrix, the manylinux container and the abi3
+# contract are RFC-0014.
 
 on:
   workflow_dispatch:
@@ -131,7 +131,7 @@ jobs:
 
       # Cargo.toml is the canonical version; four other files carry it
       # too, and CITATION.cff carries the release date. One script owns
-      # that comparison (ADR-0013), so this workflow calls it rather than
+      # that comparison (RFC-0013), so this workflow calls it rather than
       # re-deriving a subset of it the way the two old workflows did.
       - name: Every version-carrying file agrees
         run: bash scripts/check-version-sync.sh
@@ -235,7 +235,7 @@ jobs:
       # Annotated is asserted; signed is reported. Today's tags are
       # unsigned, and a tag created through the API cannot carry the
       # maintainer's signature. Requiring one is a separate decision
-      # (ADR-0005 item 8), so this prints the state rather than failing.
+      # (RFC-0005 item 8), so this prints the state rather than failing.
       - name: The tag is annotated, and say whether it is signed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -251,7 +251,7 @@ jobs:
           if [ "$verified" = "true" ]; then
             echo "$RELEASE_TAG is annotated and signed"
           else
-            echo "::notice::$RELEASE_TAG is annotated and NOT signed. Signed release tags are ADR-0005 item 8, not yet in force."
+            echo "::notice::$RELEASE_TAG is annotated and NOT signed. Signed release tags are RFC-0005 item 8, not yet in force."
           fi
 
   build-crate:
@@ -296,7 +296,7 @@ jobs:
   # Building on the runner rather than in that image is what produced a
   # manylinux_2_34 wheel for 0.1.x, which pip rejects on Debian 11,
   # Ubuntu 20.04, RHEL 8 and Amazon Linux 2. The container drops the
-  # floor to glibc 2.17. See ADR-0014.
+  # floor to glibc 2.17. See RFC-0014.
   #
   # Nothing watches the image digest: dependabot covers cargo, actions
   # and pip, and cannot see a digest written inline in a `run:` step.
@@ -347,7 +347,7 @@ jobs:
       #
       # The other way out is RUSTUP_PERMIT_COPY_RENAME=1, which rustup
       # documents as unstable, says sacrifices some transaction
-      # protections, and says may be removed at any point. ADR-0014
+      # protections, and says may be removed at any point. RFC-0014
       # records why this branch was taken instead.
       - name: Build wheel in the manylinux container (Linux)
         if: matrix.platform.manylinux
@@ -460,7 +460,7 @@ jobs:
   # run in a reusable workflow the verifier can identify
   # (slsa-github-generator), which must be referenced by tag, and the
   # org Actions policy requires SHA-pinned refs. publish.yml carried
-  # that note; it is still true, and ADR-0005 tracks the intent.
+  # that note; it is still true, and RFC-0005 tracks the intent.
   #
   # Verify a released artifact with:
   #   gh attestation verify matra-X.Y.Z.crate --repo mox-labs/matra

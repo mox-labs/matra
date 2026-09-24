@@ -25,7 +25,7 @@ For the working model that frames how humans and AI collaborate on this project 
 
 Hex architecture. Rust core with PyO3 Python bindings. Single crate, dual publish: `matra` on crates.io, `matra` on PyPI via maturin.
 
-Pipeline: ingest → decompose → compose (ADR-0007, superseding ADR-0002). `abstract` is the reserved empty seam between structure and purpose-fitted output; rule evaluation lands there, and `abstract` is a Rust keyword so it names the tier, never code.
+Pipeline: ingest → decompose → compose (RFC-0007, superseding RFC-0002). `abstract` is the reserved empty seam between structure and purpose-fitted output; rule evaluation lands there, and `abstract` is a Rust keyword so it names the tier, never code.
 
 The surface is `Ingest` (source variation as data: a string is a stream of one, a directory a stream of many) into `Engine` (`analyze` over a stream, `analyze_one`, or the stages `annotate` and `compose`). `annotate` is the only route from text to the parser, so the size cap holds pipeline-wide; seven equivalence laws in `src/lib.rs` tests pin the grains together. Trait names (`Source`, `Decomposer`, `NlpProvider`) keep their existing names.
 
@@ -48,7 +48,7 @@ For how a call actually runs through those layers, read `book/src/architecture/d
 
 ## Boundary rules
 
-1. `domain.rs` depends only on `serde`, `thiserror`, and `std`. Adding any other dependency requires an ADR.
+1. `domain.rs` depends only on `serde`, `thiserror`, and `std`. Adding any other dependency requires an RFC.
 2. Port modules (`source/mod.rs`, `decompose/mod.rs`, `nlp/mod.rs`, `embed/mod.rs`) import only from `domain`.
 3. No port module imports another port module.
 4. `nlp/udpipe.rs` is the ONLY file that imports `udpipe_rs`.
@@ -73,7 +73,7 @@ Non-obvious gotchas. Each is a behavior plus the failure mode if you violate it.
 - **No `Result<T, String>` anywhere in the library.** Library callers match on concrete `domain::Error` variants. `anyhow` belongs in caller code (a CLI, a service) where erasure is ergonomic; matra itself stays on enums via `thiserror`.
 - **PyErr routing is exhaustive at compile time.** Adding a variant to `domain::Error` will fail to compile until you wire it into `From<MatraError> for PyErr` with a specific Python exception class. The no-wildcard match exists so new variants do not silently route to `PyRuntimeError`.
 - **Methods do not cross FFI. Only fields do.** Aggregate Rust methods (`Document::passive_ratio()`, `Corpus::total_words()`) are invisible to Python and (future) WASM consumers. If a value needs to be visible cross-language, materialize it as a field on a summary type, not a method.
-- **Em dashes get rejected.** Project convention forbids them in documentation prose. `scripts/check-docsite-floor.sh` gate 5 rejects em dashes in `book/src/`; reviewers catch them elsewhere.
+- **Em dashes get rejected.** Project convention forbids them in documentation prose. `scripts/check-docsite-floor.sh` gate 5 rejects em dashes in `book/src/`, `skills/` and `blueprints/`; reviewers catch them elsewhere.
 - **Publishing is hand-gated.** `cargo publish` and `maturin publish` are always preceded by `--dry-run`. The publish step itself requires explicit per-publish approval per the project memory. Do not script away the gate; it exists because publishing is irreversible and visible to every downstream consumer.
 
 ## Conventions
@@ -113,7 +113,7 @@ Features are additive: `udpipe` (default), `model2vec`, `python`, `cli`. **Do no
 | `portsmith` | Port trait design, extension points, Pattern 6 evaluation | `.claude/agents/portsmith.md` |
 | `ffi-keeper` | PyO3 + future WASM/TS surface integrity, dual-publish discipline | `.claude/agents/ffi-keeper.md` |
 | `resilience` | Failure modes, bounds, panics, TOCTOU, security, atomic operations | `.claude/agents/resilience.md` |
-| `archivist` | CHANGELOG, ADRs, README, arch docs in lockstep with code | `.claude/agents/archivist.md` |
+| `archivist` | CHANGELOG, RFCs, EPs, README, arch docs in lockstep with code | `.claude/agents/archivist.md` |
 | `newcomer` | What the experience is actually like from a cold install: first-run passes before a release, following the pages literally and fixing nothing | `.claude/agents/newcomer.md` |
 
 ## Skills
@@ -126,15 +126,15 @@ Features are additive: `udpipe` (default), `model2vec`, `python`, `cli`. **Do no
 | `architecture` | Hex boundary, port design, composition root, canonical pattern application | `.claude/skills/architecture/SKILL.md` |
 | `ffi-surface` | PyO3 dual-publish: unsendable/Bound/pythonize/maturin/pin discipline | `.claude/skills/ffi-surface/SKILL.md` |
 | `resilience-floor` | Taleb patterns: catch_unwind, atomic ops, TOCTOU closure, size caps | `.claude/skills/resilience-floor/SKILL.md` |
-| `docs-lockstep` | CHANGELOG, ADRs, arch docs in sync with shipping code | `.claude/skills/docs-lockstep/SKILL.md` |
+| `docs-lockstep` | CHANGELOG, RFCs and EPs, arch docs in sync with shipping code | `.claude/skills/docs-lockstep/SKILL.md` |
 | `pr-review` | The gates a pull request is read against before it merges | `.claude/skills/pr-review/SKILL.md` |
 | `e2e-validation` | Verifying a built artifact installs and works for a real user: the mechanical CI gates, and the exploratory pass that produces a report rather than a verdict | `.claude/skills/e2e-validation/SKILL.md` |
 
 ## Docsite
 
-Content lives in `book/src/`. Every page describes what ships today; `book/src/roadmap.md` is the only page describing what does not, and `book/src/plans/` holds the plan for anything whose trigger has fired.
+Content lives in `book/src/`. Every page describes what ships today; `book/src/roadmap.md` is the only page describing what does not, and it links each fired trigger to its enhancement plan in `blueprints/eps/`, outside the docsite. Design records are `blueprints/rfcs/`; the process is `blueprints/README.md`.
 
-Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/` (plans exempt, since a plan names types that do not exist yet), every link resolving, a clean build, no em dashes outside quoted material, and `book/src/llms.txt` current with `SUMMARY.md` (regenerate with `scripts/gen-llms-txt.sh`).
+Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quoted material (in `book/src/`, `skills/` and `blueprints/`), and `book/src/llms.txt` current with `SUMMARY.md` (regenerate with `scripts/gen-llms-txt.sh`).
 
 Live preview: `cd book && mdbook serve --port 3000`. `create-missing = false`, so a `SUMMARY.md` entry without a file on disk fails the build loudly rather than creating a stub.
 

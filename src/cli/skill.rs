@@ -2,7 +2,7 @@
 //!
 //! The text an agent needs is embedded in the program it describes, so
 //! the instructions always match the installed version rather than a
-//! copy that may have drifted (ADR-0012). The same files under
+//! copy that may have drifted (RFC-0012). The same files under
 //! `skills/matra/` are what a plugin distributes, so there is one source
 //! and not two.
 //!

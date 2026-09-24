@@ -148,7 +148,7 @@ let token = matra::domain::Token::builder(
 
 `feat("Mood")` returns `Some("Ind")` when `feats` is `Mood=Ind|Tense=Pres`. The value is borrowed raw from `feats`, so multi-valued features (`Case=Nom,Acc`) come back unsplit: matra exposes what the provider emitted and does not normalise it. Both the empty string and the CoNLL-U placeholder `_` carry no `key=value` pair, so every lookup on them returns `None`.
 
-`feat` is Rust-only by design. `feats` already crosses FFI as a string, so a lookup over it adds no information to the wire; a Python or TypeScript caller splits the same string ([ADR-0009](https://github.com/mox-labs/matra/blob/main/docs/decisions/0009-feats-lookup-accessor.md)).
+`feat` is Rust-only by design. `feats` already crosses FFI as a string, so a lookup over it adds no information to the wire; a Python or TypeScript caller splits the same string ([RFC-0009](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0009-feats-lookup-accessor.md)).
 
 ## Sentence
 
@@ -169,7 +169,7 @@ The UDPipe adapter builds `text` by joining token surface forms, inserting a spa
 
 ### Derived structural fields
 
-The fields after `tokens` are computed once from the dependency graph and serialized with the sentence, so every language binding and the CLI's JSON read one Rust detection as data ([ADR-0008](https://github.com/mox-labs/matra/blob/main/docs/decisions/0008-structural-primitives-are-fields.md)). Most are computed at `Sentence::new`; `hearst_pairs` is the exception, filled by the pipeline at the annotate stage because its detector lives in the `hearst` module outside the domain, so a hand-built `Sentence` carries an empty vector until the caller runs `hearst::hypernymy_pairs`. Each field reports structure only; the reading is the caller's. All of them default (to empty or `false`) when deserializing JSON produced before the field existed.
+The fields after `tokens` are computed once from the dependency graph and serialized with the sentence, so every language binding and the CLI's JSON read one Rust detection as data ([RFC-0008](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0008-structural-primitives-are-fields.md)). Most are computed at `Sentence::new`; `hearst_pairs` is the exception, filled by the pipeline at the annotate stage because its detector lives in the `hearst` module outside the domain, so a hand-built `Sentence` carries an empty vector until the caller runs `hearst::hypernymy_pairs`. Each field reports structure only; the reading is the caller's. All of them default (to empty or `false`) when deserializing JSON produced before the field existed.
 
 `Negation` reports one cue by token id: `cue_id`, `cue_lemma` (`not`, `never`, `no`, `neither`, `nor`), and `head_id`, the token the cue attaches to. A cue fires only on its carrying relation (`advmod`, `det`, `cc`), so `nothing` as a subject does not fire and tokenizer-split `cannot` fires exactly once, on the `not` token. Whether the negation reverses the sentence's claim is not matra's call.
 

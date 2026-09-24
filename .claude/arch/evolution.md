@@ -8,20 +8,20 @@ Architecture is a sequence of decisions across iterations. This file is the chan
 |---|---|---|
 | I0 | Hex layout, three ports, single-crate shape, `#[non_exhaustive]` everywhere | shipped |
 | I1 | Pipeline verbs (`ingest → decompose → parse → measure` + peer `extract`) | shipped |
-| I8 | Three stages (`ingest -> decompose -> compose`), `abstract` reserved, the six entry points deleted for `Ingest` + `Engine`. ADR-0007 supersedes ADR-0002 | shipped 2026-08-21 |
+| I8 | Three stages (`ingest -> decompose -> compose`), `abstract` reserved, the six entry points deleted for `Ingest` + `Engine`. RFC-0007 supersedes RFC-0002 | shipped 2026-08-21 |
 | I2 | Resilience floor (size caps, symlink rejection, atomic download, TOCTOU closure, `catch_unwind` panic boundary, O(n) tree_depth, parse-per-paragraph) | shipped |
-| I7 | Structural primitives are fields (ADR-0008): derivations cross FFI as serde-visible data computed once at a pipeline choke point; views over data already crossing stay methods (ADR-0009). Five primitives landed on that channel: negation cues, modals plus the bare-assertion discriminator, reporting constructions, root adverbials, Hearst span pairs | shipped 2026-08-21 |
-| I9 | The Tier-2 channel (ADR-0010): embeddings behind the `Embedder` port with provenance identity, the model2vec static adapter (bit-deterministic, wasm-clean), `semantic_clusters` as connected components carrying their edges, `embed_and_cluster` as the composition-root pairing. Adapter features name their backend | shipped 2026-09-05 |
-| I10 | `Config` resolves locations and defaults per key (argument, environment, config file, compiled defaults) and carries locations and defaults only, never behavior; the command line moves into the library as `src/cli/`, with `src/bin/matra.rs` and `python/matra/cli.py` as launchers over one implementation. ADR-0011 | shipped 2026-09-06 |
-| I11 | The agent surface (ADR-0012): `--skill` and `--skill -r <name>` print `skills/matra/` out of the binary via `include_str!`, so instructions match the version that prints them, and a test executes the commands the skill names. `--help` stays the human reference | shipped 2026-09-06 |
+| I7 | Structural primitives are fields (RFC-0008): derivations cross FFI as serde-visible data computed once at a pipeline choke point; views over data already crossing stay methods (RFC-0009). Five primitives landed on that channel: negation cues, modals plus the bare-assertion discriminator, reporting constructions, root adverbials, Hearst span pairs | shipped 2026-08-21 |
+| I9 | The Tier-2 channel (RFC-0010): embeddings behind the `Embedder` port with provenance identity, the model2vec static adapter (bit-deterministic, wasm-clean), `semantic_clusters` as connected components carrying their edges, `embed_and_cluster` as the composition-root pairing. Adapter features name their backend | shipped 2026-09-05 |
+| I10 | `Config` resolves locations and defaults per key (argument, environment, config file, compiled defaults) and carries locations and defaults only, never behavior; the command line moves into the library as `src/cli/`, with `src/bin/matra.rs` and `python/matra/cli.py` as launchers over one implementation. RFC-0011 | shipped 2026-09-06 |
+| I11 | The agent surface (RFC-0012): `--skill` and `--skill -r <name>` print `skills/matra/` out of the binary via `include_str!`, so instructions match the version that prints them, and a test executes the commands the skill names. `--help` stays the human reference | shipped 2026-09-06 |
 
-Future iterations are tracked in `book/src/plans/`. Past iterations are not rewritten; commitments only get superseded by new ADRs, never edited out.
+Future iterations are tracked as EPs in `blueprints/eps/`, beside the RFCs they implement in `blueprints/rfcs/`. Past iterations are not rewritten; commitments only get superseded by new RFCs, never edited out.
 
 ## What never gets undone
 
 These are commitments, not preferences. Once locked, they hold:
 
-- **Domain purity.** `domain.rs` imports only `serde`, `thiserror`, and `std`. No further crates without an ADR.
+- **Domain purity.** `domain.rs` imports only `serde`, `thiserror`, and `std`. No further crates without an RFC.
 - **Single UDPipe importer.** Only `nlp/udpipe.rs` imports `udpipe_rs`. Adding a second site is a boundary failure. Enforced by `scripts/check-boundaries.sh`.
 - **`#[non_exhaustive]` on every public enum and every public struct with public fields.** Forward compatibility is non-negotiable; matra is a library.
 - **Hex layout.** Adapters do not import each other. Ports do not import each other. The composition root is the only file that knows the whole pipeline.
@@ -40,7 +40,7 @@ These are commitments, not preferences. Once locked, they hold:
 
 ### Workspace split (`matra-core` + sibling matcher-bridge crate)
 
-Proposed in ADR-0003. The proposal was to split matra into a core crate plus a sibling crate for rule-based pattern matching over parsed sentences. Superseded by ADR-0004 (2026-05-20) on the grounds that the rule-evaluation capability is part of matra's own surface, not a peer crate, and the workspace-split criterion (Pattern 6: separately publish a minimal port crate when an external implementor ecosystem exists) has not fired.
+Proposed in RFC-0003. The proposal was to split matra into a core crate plus a sibling crate for rule-based pattern matching over parsed sentences. Superseded by RFC-0004 (2026-05-20) on the grounds that the rule-evaluation capability is part of matra's own surface, not a peer crate, and the workspace-split criterion (Pattern 6: separately publish a minimal port crate when an external implementor ecosystem exists) has not fired.
 
 If and when external NLP backends emerge as published crates (`matra-stanza`, `matra-spacy`, etc.), extract `matra-nlp-api` as a minimal port crate and keep `matra` as the consumer-facing crate. Until then, single-crate is correct.
 
@@ -94,8 +94,8 @@ These hold across the whole project, not per-iteration.
 ## How to add a future iteration
 
 1. Identify the trigger. What changed in the world that requires a new boundary? (Consumer report, performance ceiling, new requirement.)
-2. Write a short proposal in `book/src/plans/` named `iN-<topic>.md`. Use the same structure as the existing plans.
-3. If the change touches the public surface or a boundary rule, write an ADR under `docs/decisions/` and link it from the plan.
+2. If the change touches the design (the public surface, a boundary rule, the systems around the code, the toolchain), write an RFC in `blueprints/rfcs/` from `0000-template.md` and open it as a pull request. Merging it accepts it.
+3. If the implementation spans more than one PR, write an EP in `blueprints/eps/` from `0000-template.md` that names the RFC it implements, and add both to the index in `blueprints/README.md`.
 4. Land. Validate. Update CHANGELOG.md.
 
 The iteration table above is append-only. Past iterations don't get rewritten when a new one lands; they get a superseded-by note in the row instead.

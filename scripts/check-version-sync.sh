@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Every file that carries matra's version must carry the same one, and the
 # citation file's release date must match the CHANGELOG entry for that
-# version. ADR-0013 added CITATION.cff as a fifth version-carrying file and
+# version. RFC-0013 added CITATION.cff as a fifth version-carrying file and
 # the only one that also carries a date, so this check exists rather than a
 # printed reminder in the release recipe. uv.lock is the sixth, added for
 # 0.2.1 after it was found stale at 0.2.0 by a gate that happened to rewrite
@@ -71,6 +71,6 @@ if [ "$fail" -eq 0 ]; then
     echo "Version sync: clean."
 else
     echo
-    echo "Every version-carrying file must move together. See ADR-0013."
+    echo "Every version-carrying file must move together. See RFC-0013."
     exit 1
 fi

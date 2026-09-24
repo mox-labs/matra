@@ -40,8 +40,8 @@ readable because nothing in it is overwritten.
 
 **An EP is a living plan until it ships.** If a milestone turns out to be
 ambiguous, the plan is the bug: edit the plan first, then the code. Every
-change of status adds a dated line to its status log. Once it ships or is dropped, it is kept as the record of
-how the work went.
+change of status adds a dated line to its status log. Once it ships or is
+dropped, it is kept as the record of how the work went.
 
 ### Status
 
@@ -100,7 +100,7 @@ tables. The docsite floor's em-dash gate covers this directory too.
 EP numbers follow the iteration plans they replace, so there is no EP-0001,
 0002 or 0004: the i0, i1 and i2 plans were retired once their work landed
 and their commits are in the history, and the i4 workspace plan was retracted
-with RFC-0003.
+when RFC-0004 superseded RFC-0003.
 
 | EP | Title | Status | Implements |
 |---|---|---|---|
@@ -116,9 +116,8 @@ with RFC-0003.
 
 ## Carried over from the plans index
 
-The index of the iteration plans, `book/src/plans/README.md` until
-2026-09-24, held three things that belong to the plans rather than to any
-one of them. They are kept here as they were written; the EPs refer to the
+The index of the iteration plans, a page of the docsite until 2026-09-24,
+held four things that belong to the plans rather than to any one of them. They are kept here as they were written; the EPs refer to the
 regression matrix, and the 0.1.0 predicate is the record of what that
 release was held to.
 

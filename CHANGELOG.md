@@ -215,7 +215,7 @@ deprecation.
 - `tests/cli.rs` covering argument handling, format detection, output shape and exit codes.
 - `rust-toolchain.toml` pinning stable. The MSRV claim is verified separately by CI.
 - `ROADMAP.md`, the single register of unbuilt capability and its trigger conditions, rendered into the book.
-- `book/src/plans/`, the iteration plans, with per-milestone rubrics.
+- The iteration plans, with per-milestone rubrics, in the docsite (moved to `blueprints/eps/` after 0.2.1).
 - Docsite floor gate 5: no em dashes outside quoted material.
 - `domain::Negation` and `Sentence.negations`: negation cues (`not`, `never`, `no`, `neither`, `nor`) detected from the dependency graph at sentence construction and serialized with the sentence, so every crust reads one Rust detection (ADR-0008).
 - `Document.passive_ratio` as an `Option<f64>` slot filled by the metric suite, beside `vocabulary_ttr` and `nominalization_ratio`; the aggregate now crosses FFI as data, and the Python CLI reads it instead of re-deriving passive detection from raw tokens.

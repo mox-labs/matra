@@ -199,7 +199,7 @@ print(sorted(result.keys()))
 print(result["passive_ratio"])   # a float, or None when there were no sentences to measure
 ```
 
-Rust's `Document` carries `passive_ratio` twice: as the method that computes the ratio, and as the field the metric suite fills with what that method returned. The field exists exactly so the aggregate crosses the boundary as data instead of being re-derived once per language binding (ADR-0008), which is why it is in the dict above.
+Rust's `Document` carries `passive_ratio` twice: as the method that computes the ratio, and as the field the metric suite fills with what that method returned. The field exists exactly so the aggregate crosses the boundary as data instead of being re-derived once per language binding (RFC-0008), which is why it is in the dict above.
 
 Methods do not cross the FFI boundary, only fields do, so the five aggregates that exist only as methods are absent: `paragraph_count()`, `total_sentences()`, `total_words()`, `mean_sentence_length()`, and `sentence_length_std()`. Those five you compute from the fields you already have:
 

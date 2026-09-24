@@ -30,7 +30,7 @@ partly unstated jobs.
   linked to a `decision` issue, and no record here was ever in that state:
   each one arrived in a pull request already accepted, so the pull request
   was where the proposal actually lived, without the process saying so.
-- **Iteration plans** lived in `book/src/plans/`, inside the docsite. Every
+- **Iteration plans** lived under `plans/` in the docsite. Every
   other page of the docsite describes what ships today, and a plan by
   definition describes what does not. The docsite floor had to exempt
   `plans/` from its type-name gate (gate 3) because plans name types that do
@@ -133,8 +133,8 @@ replaced. Each converted record carries a dated note saying so. A record's
 status became `implemented` only where its own text or the CHANGELOG says it
 shipped.
 
-The plans index (`book/src/plans/README.md`) was not a plan, so it has no
-EP. What it held for all the plans, the iteration table, the cross-iteration
+The plans index (the `README.md` of that `plans/` directory) was not a
+plan, so it has no EP. What it held for all the plans, the iteration table, the cross-iteration
 regression matrix, the 0.1.0 ship predicate and the post-ship loop closure,
 moves unchanged into `blueprints/README.md`, and the EPs that cite the matrix
 find it there. The decision-record template is replaced by the two new

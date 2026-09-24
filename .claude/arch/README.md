@@ -9,7 +9,7 @@ Most of what used to live here now lives in the book, where it is built, gated, 
 | The eight boundary rules, why each exists, how each is enforced | [`book/src/reference/boundary-rules.md`](../../book/src/reference/boundary-rules.md) |
 | Every metric formula and its applicability condition | [`book/src/reference/methodology.md`](../../book/src/reference/methodology.md) |
 | What matra does not do yet and what would change that | [`book/src/roadmap.md`](../../book/src/roadmap.md) |
-| How a triggered capability gets built | [`book/src/plans/`](../../book/src/plans/) |
+| Why the design is shaped this way, and how a triggered capability gets built | [`blueprints/`](../../blueprints/README.md): RFCs for decisions, EPs for the plans that ship them |
 
 ## What is still here
 

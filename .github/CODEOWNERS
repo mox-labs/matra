@@ -3,7 +3,7 @@
 # GitHub uses this file to automatically request review from the listed
 # owner(s) when a PR touches a matching path. Today's role: ensure the
 # maintainer reviews any change to the docsite structure, CI workflows,
-# release scripts, ADRs, and the public manifest before merge. Future:
+# release scripts, RFCs, and the public manifest before merge. Future:
 # when contributors join, the path list stays the same but the owners
 # scale.
 #
@@ -39,10 +39,10 @@
 /scripts/pre-commit-hook.sh            @yzavyas
 /deny.toml                             @yzavyas
 
-# Architectural decisions — ADRs are the durable record. Anything in
-# docs/decisions/ should be reviewed for ADR-template compliance and
-# for ADR-supersede chain integrity.
-/docs/decisions/         @yzavyas
+# Design records — RFCs and EPs are the durable record. Anything in
+# blueprints/ should be reviewed for template compliance, for the index
+# in blueprints/README.md, and for RFC-supersede chain integrity.
+/blueprints/             @yzavyas
 
 # Hex boundary critical files — any change to domain.rs, the port
 # modules, or the composition root ripples through every adapter and

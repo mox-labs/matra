@@ -200,12 +200,12 @@ fn a_directory_walk_yields_one_item_per_file() {
     }
 }
 
-/// The provisioning classification ADR-0015 records, on the one failure
+/// The provisioning classification RFC-0015 records, on the one failure
 /// a runner can produce with no network and no model.
 ///
 /// This row is not itself the contract change: `create_dir_all` already
-/// converted through `Error::Io` before ADR-0015, so the kind here was
-/// always `io`. The reclassification ADR-0015 records is DNS, TLS and a
+/// converted through `Error::Io` before RFC-0015, so the kind here was
+/// always `io`. The reclassification RFC-0015 records is DNS, TLS and a
 /// full disk, which no runner exercises, and this row is the assertable
 /// neighbour that keeps the vocabulary honest. What is new is the
 /// message: `io error: Permission denied (os error 13)` was the whole of

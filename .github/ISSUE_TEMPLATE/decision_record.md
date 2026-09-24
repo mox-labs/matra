@@ -41,4 +41,5 @@ labels: ["type:decision", "status:open"]
 ## Outcome
 
 <!-- Filled in when the decision is made, before this issue closes. Links to
-     the resulting PR(s) and the ADR file under docs/decisions/. -->
+     the RFC pull request that carries the proposal (merging it accepts the
+     RFC under blueprints/rfcs/) and to any EP under blueprints/eps/. -->

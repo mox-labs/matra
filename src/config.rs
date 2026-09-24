@@ -3,7 +3,7 @@
 //! [`Config`] is a composition-root value, in the same layer as
 //! [`Engine`](crate::Engine). It resolves *locations and defaults* and
 //! never behavior: everything it carries is something a caller could
-//! pass as an argument instead (ADR-0011). Which metrics run and how
+//! pass as an argument instead (RFC-0011). Which metrics run and how
 //! output is shaped stay where they were, in the caller and in the
 //! binary.
 //!
@@ -267,7 +267,7 @@ impl Config {
     /// explicit argument.
     ///
     /// [`ValueSource::Argument`] is the top rung of the resolution order
-    /// (ADR-0011: "A directory passed explicitly wins over all three"),
+    /// (RFC-0011: "A directory passed explicitly wins over all three"),
     /// so a caller that was handed a directory can layer it on without
     /// losing the provenance of every other value. A command line's
     /// `--model-dir` is the case this exists for: the flag reaches the

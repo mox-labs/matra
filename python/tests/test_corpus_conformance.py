@@ -85,13 +85,13 @@ def test_every_provisioning_kind_is_in_the_vocabulary() -> None:
 
 
 def test_a_model_directory_that_cannot_be_created_is_an_os_error(tmp_path: Path) -> None:
-    """The provisioning classification ADR-0015 records, on the one
+    """The provisioning classification RFC-0015 records, on the one
     failure a runner can produce with no model and no network:
     ``create_dir_all`` fails first, ``io`` crosses into Python as
     ``OSError``.
 
     Not itself the contract change. ``create_dir_all`` already converted
-    through ``Error::Io`` and routed to ``OSError`` before ADR-0015; the
+    through ``Error::Io`` and routed to ``OSError`` before RFC-0015; the
     reclassification is DNS, TLS and a full disk, which no runner
     exercises. What is new here is the message naming the directory."""
     expect = FIXTURE["provisioning"]["unwritable_model_dir"]["expect"]

@@ -45,7 +45,7 @@ required-features = ["cli"]
 # abi3-py312 builds against the stable ABI, so one wheel per platform
 # covers CPython 3.12 and every later GIL-enabled 3.x. Without it the wheel
 # is tagged cp312 and pip on 3.13 or 3.14 falls through to a source build.
-# Free-threaded builds take a different ABI tag (ADR-0014).
+# Free-threaded builds take a different ABI tag (RFC-0014).
 pyo3 = { version = "0.29", features = ["extension-module", "abi3-py312"], optional = true }
 pythonize = { version = "0.29", optional = true }
 udpipe-rs = { version = "0.2", optional = true }
@@ -53,7 +53,7 @@ sha2 = { version = "0.10", optional = true }
 safetensors = { version = "0.8.0", optional = true }
 # default-features = false drops the C regex engine (onig) and the C++
 # suffix-array path; unstable_wasm keeps the closure pure Rust so the
-# wasm32 target stays open (ADR-0010). The swapped regex engine is not
+# wasm32 target stays open (RFC-0010). The swapped regex engine is not
 # on the code path for WordPiece tokenizers, which is what the
 # model2vec adapter loads.
 tokenizers = { version = "0.23.2", default-features = false, features = ["unstable_wasm"], optional = true }
@@ -68,8 +68,8 @@ toml = { version = "1", default-features = false, features = ["parse", "serde", 
 # The pinned-download client. Both provisioning adapters fetch through it
 # directly, so both size caps, both timeout budgets and both transport
 # error classifications live in matra rather than in a dependency
-# (ADR-0015). Declared under a target predicate so `model2vec` on wasm32
-# keeps the pure-Rust, no-network closure ADR-0010 asks for: the download
+# (RFC-0015). Declared under a target predicate so `model2vec` on wasm32
+# keeps the pure-Rust, no-network closure RFC-0010 asks for: the download
 # half of the embedding adapter is `model2vec` plus
 # `not(target_arch = "wasm32")`.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

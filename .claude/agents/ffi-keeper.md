@@ -93,7 +93,7 @@ When you bump `pyo3` or `pythonize`, bump them together. They are version-locked
 | `thiserror = "2"` | major | Axis 1 internal-helpers + `__private<patch>` versioning, multi-version-safe by design. |
 | `maturin >=1.0,<2.0` | major bound | Build-time tool, not a runtime dep. |
 
-If you ever need to relax these pins, write an ADR explaining why.
+If you ever need to relax these pins, write an RFC explaining why.
 
 ## The pyo3 0.20 → 0.28 migration archaeology
 

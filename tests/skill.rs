@@ -1,7 +1,7 @@
 //! The executed-incantation test for the agent skill.
 //!
 //! A skill whose commands do not run is a defect, not a documentation nit
-//! (ADR-0012). Every fenced `console` or `bash` block in
+//! (RFC-0012). Every fenced `console` or `bash` block in
 //! `skills/matra/SKILL.md` and its references whose first line is a
 //! `matra ...` command is extracted here and driven through
 //! [`matra::cli::run`] against the fixtures in `tests/fixtures/skill/`.
@@ -62,7 +62,7 @@ const FIXTURE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/s
 /// deleted wholesale.
 const MINIMUM_INCANTATIONS: usize = 12;
 
-/// The body cap from ADR-0012: SKILL.md is the top level and stays small
+/// The body cap from RFC-0012: SKILL.md is the top level and stays small
 /// enough to read in one pass.
 const MAX_SKILL_BODY_LINES: usize = 150;
 
@@ -601,7 +601,7 @@ fn every_reference_declares_a_name_and_a_summary() {
     }
 }
 
-/// The size caps ADR-0012 sets. They are what keeps the top level worth
+/// The size caps RFC-0012 sets. They are what keeps the top level worth
 /// reading in full and each reference worth loading on demand.
 #[test]
 fn the_skill_and_its_references_stay_within_their_caps() {

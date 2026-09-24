@@ -188,7 +188,7 @@ class Document(TypedDict):
     """Top-level analysis output. Mirrors `matra::domain::Document`.
 
     Document-level aggregates that cross the FFI boundary do so as
-    fields filled by the metric suite (ADR-0008): `passive_ratio`
+    fields filled by the metric suite (RFC-0008): `passive_ratio`
     arrives materialized, like `vocabulary_ttr`. Remaining aggregate
     methods on the Rust `Document` (`mean_sentence_length`,
     `total_words`, etc.) do not cross; consumers compute them from
@@ -245,7 +245,7 @@ class SemanticClusters(TypedDict):
     """Semantic-similarity clusters: Tier 2 output, standing alone.
 
     Mirrors ``matra::domain::SemanticClusters``. Never attached to
-    ``Document`` (ADR-0010); carries the producing model's identity and
+    ``Document`` (RFC-0010); carries the producing model's identity and
     the caller-supplied threshold as provenance. A sentence with no
     above-threshold edge appears in no cluster.
     """

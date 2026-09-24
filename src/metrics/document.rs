@@ -14,7 +14,7 @@ const NOMINALIZATION_SUFFIXES: &[&str] = &["tion", "ment", "ness", "ity", "ence"
 /// (share of NOUN tokens ending in a nominalizing suffix), and
 /// `Document::passive_ratio` (share of sentences with a passive-voice
 /// construction, materialized so the aggregate crosses FFI per
-/// ADR-0008).
+/// RFC-0008).
 pub fn compute(analysis: &mut Document) {
     if analysis.total_sentences() > 0 {
         let ratio = analysis.passive_ratio();

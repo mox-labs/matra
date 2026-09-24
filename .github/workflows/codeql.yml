@@ -7,7 +7,7 @@ name: CodeQL
 # IMPORTANT: before this workflow can run, the repo's CodeQL "default setup"
 # must be disabled in Settings -> Code security -> Code scanning. Otherwise
 # GitHub rejects the custom workflow with "default setup is already
-# enabled". See docs/decisions/0005-supply-chain-hardening.md.
+# enabled". See blueprints/rfcs/0005-supply-chain-hardening.md.
 
 on:
   push:

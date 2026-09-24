@@ -22,8 +22,9 @@ change can be backed out cleanly).
 ## The working model
 
 matra is developed in **iterations**. Each iteration addresses one
-structural concern: resilience, observability, streaming, etc. The full
-plan is sequenced in `book/src/plans/` and the architecture it builds
+structural concern: resilience, observability, streaming, etc. Each is
+planned as an EP in `blueprints/eps/`, implementing the RFCs in
+`blueprints/rfcs/` that decided its design, and the architecture it builds
 toward is documented in `.claude/arch/`. Anyone can read both before
 opening an issue or PR.
 
@@ -45,18 +46,18 @@ merge; nothing lands without a human OK.
 | Location | What lives there |
 |---|---|
 | `.claude/arch/` | Architecture docs: ports, adapters, domain model, evolution. Read this before changing structure. |
-| `book/src/plans/` | Iteration plans: I0, I1, I2, ... Each plan describes the goals, tasks, validation, and acceptance gate for one iteration. |
-| `docs/decisions/` | Architecture Decision Records (ADRs). One file per significant call. |
+| `blueprints/rfcs/` | RFCs: one file per design-level decision, in the Rust RFC layout. The process and the index are `blueprints/README.md`. |
+| `blueprints/eps/` | Enhancement plans (EPs): how an accepted RFC gets to shipping, with milestones, test plan, ship criteria, and a status log. |
 | `CHANGELOG.md` | What shipped per release, with prose Highlights for load-bearing changes. |
 | `CLAUDE.md` | Working rules for AI collaborators: pipeline shape, boundary rules, conventions. |
 | `scripts/` | Versioned tooling: pre-commit hook, boundary check, changelog rollover, etc. |
 | `justfile` | Single source of truth for repeatable workflows. |
 | GitHub Issues | Tracking: bugs, features, decisions. Labels (`type:` / `status:` / `area:`) classify. |
-| GitHub Discussions | Open-ended design space: RFCs, retrospectives, ideas, Q&A. |
+| GitHub Discussions | Open-ended design space: early proposals, retrospectives, ideas, Q&A. |
 
 If something is unclear or contradictory across these surfaces, the order
-of authority is: code > tests > `.claude/arch/` > `book/src/plans/` >
-ADRs > CHANGELOG > Issues > Discussions. Closer to the running system
+of authority is: code > tests > `.claude/arch/` > EPs > RFCs >
+CHANGELOG > Issues > Discussions. Closer to the running system
 wins.
 
 ---
@@ -65,14 +66,18 @@ wins.
 
 Decisions go through three surfaces depending on stakes.
 
-**Open-ended exploration** -> GitHub Discussions. RFCs, "should we
-consider X", retrospectives. No commitment, no labels.
+**Open-ended exploration** -> GitHub Discussions. Early proposals, "should
+we consider X", retrospectives. No commitment, no labels.
 
-**Architectural decisions that will bind future work** -> a `decision`
-issue (`.github/ISSUE_TEMPLATE/decision_record.md`). The issue captures
-context, options, tradeoffs, and the recommendation. After deliberation,
-the chosen option lands in `docs/decisions/NNNN-short-name.md` (an ADR)
-and the issue closes pointing at the ADR.
+**Architectural decisions that will bind future work** -> an RFC. Copy
+`blueprints/rfcs/0000-template.md` to the next free number and open it as a
+pull request; the pull request is the proposal and the place it is
+discussed, and merging it accepts it. A `decision` issue
+(`.github/ISSUE_TEMPLATE/decision_record.md`) can come first when the
+options need airing before anyone writes the RFC; it closes pointing at the
+RFC pull request. When the accepted RFC takes more than one PR to
+implement, an EP in `blueprints/eps/` plans the work. The full process is
+`blueprints/README.md`.
 
 **Concrete changes** -> a regular issue (bug or feature) plus a PR that
 closes it. The PR's body explains the why; the commits explain the what.

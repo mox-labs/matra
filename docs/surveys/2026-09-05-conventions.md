@@ -1,6 +1,6 @@
 # Conventions survey, 2026-09-05
 
-A read-only survey of exemplar open-source packages, CLIs, and developer tooling, run to ground [ADR-0011](../decisions/0011-out-of-the-box.md) and the I10 and I11 plans. Every exemplar cell carries a URL or `local: <cmd>` (output run on the maintainer's machine); every matra cell is a `file:line` read the same day. Absences were established by `find` and `grep`, not memory. Second-hand claims are flagged as such.
+A read-only survey of exemplar open-source packages, CLIs, and developer tooling, run to ground [RFC-0011](../../blueprints/rfcs/0011-out-of-the-box.md) and the I10 and I11 plans. Every exemplar cell carries a URL or `local: <cmd>` (output run on the maintainer's machine); every matra cell is a `file:line` read the same day. Absences were established by `find` and `grep`, not memory. Second-hand claims are flagged as such.
 
 ## 1. CLI conventions
 
@@ -54,7 +54,7 @@ Distribution: `.claude-plugin/plugin.json` (`name` becomes the skill namespace),
 | One wheel, both bin and extension | maturin says no, by design: "Shipping both a binary and library would double the size of your wheel. Consider instead exposing a CLI function in the library and using a Python entrypoint" | https://www.maturin.rs/bindings | matra ships the extension and a Python entry point, `pyproject.toml:36-43` | Already the shape maturin recommends; the divergence from ruff and uv follows from also shipping an extension |
 | Repo layout | polars: `py-polars/` meta-package over per-runtime crates. tokenizers: `bindings/python/`. ruff, uv, pydantic-core, tantivy-py, cryptography: one repo, one `Cargo.toml`, one `pyproject.toml` | https://raw.githubusercontent.com/pola-rs/polars/main/py-polars/pyproject.toml; https://raw.githubusercontent.com/huggingface/tokenizers/main/bindings/python/Cargo.toml | Single crate, both manifests at root, `python-source = "python"` | Already matches |
 | pyo3 pin | tokenizers `=0.29`; pydantic-core `0.26`; cryptography `0.29`; maturin `>=X,<2.0` everywhere; no project states a written rationale | https://raw.githubusercontent.com/huggingface/tokenizers/main/bindings/python/Cargo.toml | `pyo3 = "0.29"`, `pythonize = "0.29"`, `maturin>=1.0,<2.0` | Matches the majority |
-| TS and WASM | nodejs-polars: separate repo, napi-rs. tokenizers npm: napi-rs. ruff: `crates/ruff_wasm` with wasm-bindgen, published as `@astral-sh/ruff-wasm-{web,nodejs,bundler}`, version-locked to releases | https://raw.githubusercontent.com/pola-rs/nodejs-polars/main/Cargo.toml; https://raw.githubusercontent.com/astral-sh/ruff/main/crates/ruff_wasm/Cargo.toml | No WASM crate; wasm32 kept open by pinning `tokenizers` with `unstable_wasm` (ADR-0010) | Planned. ruff's separate-crate shape is the precedent |
+| TS and WASM | nodejs-polars: separate repo, napi-rs. tokenizers npm: napi-rs. ruff: `crates/ruff_wasm` with wasm-bindgen, published as `@astral-sh/ruff-wasm-{web,nodejs,bundler}`, version-locked to releases | https://raw.githubusercontent.com/pola-rs/nodejs-polars/main/Cargo.toml; https://raw.githubusercontent.com/astral-sh/ruff/main/crates/ruff_wasm/Cargo.toml | No WASM crate; wasm32 kept open by pinning `tokenizers` with `unstable_wasm` (RFC-0010) | Planned. ruff's separate-crate shape is the precedent |
 
 ## 5. Docs conventions
 
