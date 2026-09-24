@@ -41,13 +41,13 @@ each is the check on the other.
 | I/O, FFI, input handling, graph walks | `.claude/skills/resilience-floor/SKILL.md` |
 | `src/lib.rs` PyO3 layer, `python/`, pins | `.claude/skills/ffi-surface/SKILL.md` |
 | tests | `.claude/skills/testing/SKILL.md` |
-| public surface, ADRs, book pages | `.claude/skills/docs-lockstep/SKILL.md` |
+| public surface, RFCs, book pages | `.claude/skills/docs-lockstep/SKILL.md` |
 
 ## Gate 0: ACES and the pit of success
 
 Every structural change: does it leave the system more adaptable,
 composable, extensible, or less? A change that is good engineering but
-violates ACES blocks merge unless the PR carries an ADR justifying the
+violates ACES blocks merge unless the PR carries an RFC justifying the
 trade.
 
 New public surface must also be a pit of success: the obvious way to
@@ -78,7 +78,7 @@ aliases.
 - `src/lib.rs` stays the only file that knows every adapter and port.
 - No `tracing` in domain or ports.
 
-## Gate 2: the pipeline surface (ADR-0007)
+## Gate 2: the pipeline surface (RFC-0007)
 
 - `Engine::annotate` must remain the only route from text to
   `NlpProvider::parse`. Grep the diff for new `.parse(` call sites.
@@ -91,7 +91,7 @@ aliases.
   name; variation belongs in `Ingest` constructors and the
   `Decomposers` table.
 
-## Gate 3: FFI exposure (ADR-0008 criterion)
+## Gate 3: FFI exposure (RFC-0008 criterion)
 
 Derivations (facts computed over the parse a consumer would otherwise
 re-implement) cross as serde-visible fields with one Rust
@@ -145,7 +145,7 @@ claims (the mudge posture): "it should be safe" is not evidence.
 ## Gate 7: docs lockstep and conventions
 
 - Public surface changes move CHANGELOG `[Unreleased]`, the relevant
-  book page, and (for non-obvious decisions) an ADR in the same PR.
+  book page, and (for non-obvious decisions) an RFC in the same PR.
 - Docs describe what ships; planned capability lives in ROADMAP only.
 - No em dashes in documentation prose. No hand-maintained source trees
   in context documents.

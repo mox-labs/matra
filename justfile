@@ -77,7 +77,7 @@ test-sandbox:
     bash scripts/test-e2e-sandbox.sh
 
 # Every version-carrying file agrees, and CITATION.cff's release date matches
-# the CHANGELOG heading for that version (ADR-0013).
+# the CHANGELOG heading for that version (RFC-0013).
 version-sync:
     bash scripts/check-version-sync.sh
 

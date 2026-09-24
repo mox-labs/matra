@@ -6,7 +6,7 @@
 //! flags.
 //!
 //! Embeddings are Tier 2 output: a model's opinion about meaning, not
-//! structure verifiable against the source bytes. ADR-0010 records the
+//! structure verifiable against the source bytes. RFC-0010 records the
 //! channel discipline: nothing derived from embeddings becomes a field on
 //! the deterministic pipeline's types.
 

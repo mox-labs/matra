@@ -35,5 +35,5 @@ labels: ["type:feature", "status:triage"]
 
 ## Have you checked
 
-- [ ] The iteration plan under `book/src/plans/` to see if this is already planned
+- [ ] The [roadmap](../../ROADMAP.md) and the enhancement plans under `blueprints/eps/` to see if this is already planned
 - [ ] Existing issues / discussions for prior art

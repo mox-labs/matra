@@ -218,7 +218,7 @@ impl Engine {
     /// of each entry point: no text over [`MAX_INPUT_BYTES`] reaches
     /// [`NlpProvider::parse`].
     ///
-    /// Structure materializes here (ADR-0008): derived facts whose
+    /// Structure materializes here (RFC-0008): derived facts whose
     /// detectors live outside the domain are filled onto each parsed
     /// sentence at this choke point. Today that is
     /// [`domain::Sentence::hearst_pairs`], computed by
@@ -671,7 +671,7 @@ mod python {
 
     /// A loaded static embedding model (model2vec artifact format).
     /// Tier 2: its vectors are model opinion, and everything derived from
-    /// them carries this model's identity (ADR-0010).
+    /// them carries this model's identity (RFC-0010).
     #[cfg(feature = "model2vec")]
     #[pyclass(frozen)]
     struct Model2Vec {

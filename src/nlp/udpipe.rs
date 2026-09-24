@@ -428,7 +428,7 @@ fn download_agent() -> ureq::Agent {
 /// `Error::Io` and wraps everything else, `Timeout` included, in
 /// `io::Error::other`. Reading `kind()` straight off it therefore gives
 /// `Other`, so a fetch that ran past [`FETCH_TIMEOUT`] mid-transfer
-/// reported `Other` where `book/src/reference/errors.md` and ADR-0015
+/// reported `Other` where `book/src/reference/errors.md` and RFC-0015
 /// both promise `TimedOut`. `From<io::Error> for ureq::Error` unwraps
 /// the wrapped error again, which recovers the kind and also gives a
 /// mid-stream certificate rejection the sentence [`download_message`]
@@ -446,7 +446,7 @@ fn body_failure(url: &str, error: std::io::Error) -> Error {
 /// this side too, because what came back was a server's answer about the
 /// request rather than a model. The `io::ErrorKind` is preserved where
 /// `ureq` knows it, so a caller can tell a timeout from an unreachable
-/// host without reading the message. ADR-0015 records the classification
+/// host without reading the message. RFC-0015 records the classification
 /// and what it replaced.
 fn transport_failure(url: &str, error: &ureq::Error) -> Error {
     use std::io::ErrorKind;
@@ -1282,7 +1282,7 @@ mod tests {
 
     /// Regression (review of #77): a timeout while reading the body
     /// reports `TimedOut`, which is what `book/src/reference/errors.md`
-    /// and ADR-0015's decision table both promise. `ureq`'s body reader
+    /// and RFC-0015's decision table both promise. `ureq`'s body reader
     /// builds its `io::Error` with `Error::into_io`, which wraps
     /// everything that is not already an `io::Error` in
     /// `io::Error::other`, so reading `kind()` off it gave `Other` for

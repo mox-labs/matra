@@ -6,7 +6,7 @@ Eight rules hold matra's hexagonal architecture in place.
 
 ## What enforcement means here
 
-Rust offers no directional import control between modules inside a single crate, and matra is a single crate by [ADR-0004](https://github.com/mox-labs/matra/blob/main/docs/decisions/0004-stay-single-crate.md). No compiler mechanism is available for most of these rules. Reasoned review is the primary enforcement; a script and one CI job cover the mechanical cases.
+Rust offers no directional import control between modules inside a single crate, and matra is a single crate by [RFC-0004](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0004-stay-single-crate.md). No compiler mechanism is available for most of these rules. Reasoned review is the primary enforcement; a script and one CI job cover the mechanical cases.
 
 | Rule | Enforced by | What that catches |
 |---|---|---|
@@ -31,7 +31,7 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 **Scope.** One file, plus the non-optional entries in `[dependencies]`.
 
-**Why it is drawn there.** Domain types are what every language surface serializes. A dependency added here enters the closure of every caller on every target. Changing the set takes an ADR. `thiserror` was admitted that way: it emits no public API and replaced roughly 35 lines of hand-written `Display` and `Error` implementations.
+**Why it is drawn there.** Domain types are what every language surface serializes. A dependency added here enters the closure of every caller on every target. Changing the set takes an RFC. `thiserror` was admitted that way: it emits no public API and replaced roughly 35 lines of hand-written `Display` and `Error` implementations.
 
 **Enforcement.** Review. Read the `use` lines at the top of `src/domain.rs`, new non-optional entries in `[dependencies]`, and any domain field whose type comes from outside the three allowed crates.
 
@@ -97,7 +97,7 @@ Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for 
 
 **Enforcement.** Review. Read for any file other than `lib.rs` importing from two or more adapter modules, and for any helper outside the composition root that matches on `Format` to pick a decomposer.
 
-`src/config.rs` sits in this tier alongside `lib.rs`. It imports `domain`, `std`, `serde` and `toml`, and it imports no port and no adapter. The traffic runs the other way: an adapter may import `Config` to offer a `from_config` constructor (ADR-0011), which is why `Udpipe::from_config` lives in `src/nlp/udpipe.rs` and `Model2Vec::from_config` in `src/embed/model2vec.rs`, not in the composition root. That import gives the adapter a default, not a second opinion about the wiring, so rule 7 still holds: `lib.rs` remains the only file that knows every adapter and every port.
+`src/config.rs` sits in this tier alongside `lib.rs`. It imports `domain`, `std`, `serde` and `toml`, and it imports no port and no adapter. The traffic runs the other way: an adapter may import `Config` to offer a `from_config` constructor (RFC-0011), which is why `Udpipe::from_config` lives in `src/nlp/udpipe.rs` and `Model2Vec::from_config` in `src/embed/model2vec.rs`, not in the composition root. That import gives the adapter a default, not a second opinion about the wiring, so rule 7 still holds: `lib.rs` remains the only file that knows every adapter and every port.
 
 `src/cli/` sits above that tier: it is the application, compiled into the library so both launchers run one program. From the crate it uses the public surface `lib.rs` exports (`Engine`, `Ingest`), the `extraction` functions (`tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`), `config` and `domain`, and never a port module or an adapter. It reaches the pipeline through `Engine::from_config`, so rule 7 holds there too.
 
@@ -137,4 +137,4 @@ just install-hooks # install the pre-commit hook that runs it
 
 The script prints the offending files and exits non-zero on any failure, and prints `boundary checks pass (rules 3, 4, 8)` otherwise.
 
-A violation is a merge blocker. The remedy is a change to the structure, or an ADR that changes the rule deliberately. It is never a change to the check.
+A violation is a merge blocker. The remedy is a change to the structure, or an RFC that changes the rule deliberately. It is never a change to the check.

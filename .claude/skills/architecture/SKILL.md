@@ -35,7 +35,7 @@ Dependencies point inward. Adapters know about `domain` and the port they implem
 
 These are non-negotiable:
 
-1. `domain.rs` depends only on `serde`, `thiserror`, `std`. Any further dep requires an ADR.
+1. `domain.rs` depends only on `serde`, `thiserror`, `std`. Any further dep requires an RFC.
 2. Port modules (`source/mod.rs`, `decompose/mod.rs`, `nlp/mod.rs`) import only from `domain`.
 3. No port module imports another port module.
 4. `nlp/udpipe.rs` is the only file that imports `udpipe_rs`.
@@ -50,7 +50,7 @@ Enforcement is thinner than it looks: only rule 6 is verified by compiling. `scr
 
 When you break a rule, you're either:
 
-- Fixing a bug in the rules (write an ADR explaining why),
+- Fixing a bug in the rules (write an RFC explaining why),
 - Or making a structural mistake (fix the structure, not the rule).
 
 ## Adding a new adapter
@@ -93,7 +93,7 @@ Criterion: separate a port trait into its own minimal crate IFF an **external im
 
 Today, matra has no external `NlpProvider` implementor crates. Keep `NlpProvider` in-crate.
 
-If a third-party `matra-stanza`, `matra-spacy`, etc. emerges, extract `matra-nlp-api` as a minimal crate (domain types + the trait, no other deps), and rewrite `matra` to depend on `matra-nlp-api`. Write an ADR superseding `0004-stay-single-crate.md` at that point.
+If a third-party `matra-stanza`, `matra-spacy`, etc. emerges, extract `matra-nlp-api` as a minimal crate (domain types + the trait, no other deps), and rewrite `matra` to depend on `matra-nlp-api`. Write an RFC superseding `0004-stay-single-crate.md` at that point.
 
 ### Pattern 10 — orthogonal-dispatch axes
 

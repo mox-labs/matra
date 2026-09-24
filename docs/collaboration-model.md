@@ -2,7 +2,7 @@
 
 matra is built by a human and an AI working as collaborative cousins, not in a tool-user relationship. This document describes how that works in practice. It is written for anyone curious about the model, anyone considering contributing, and anyone wanting to draw on the pattern for their own work.
 
-The model is the foundation, not a side note. The fact that you can read this page, trace the trail back through ADRs, deliberation logs, and commit messages, and reproduce the working pattern, is the point. matra is an exemplar of human and AI collaborative intelligence, and the working model itself is part of the artifact.
+The model is the foundation, not a side note. The fact that you can read this page, trace the trail back through RFCs, deliberation logs, and commit messages, and reproduce the working pattern, is the point. matra is an exemplar of human and AI collaborative intelligence, and the working model itself is part of the artifact.
 
 ## The posture
 
@@ -30,9 +30,9 @@ The roles are not fixed to either side. A human can write code; Claude can sugge
 
 Every substantive change moves through three surfaces in order.
 
-**Discourse** forms the commitment. A session, a deliberation between agents, a guild voice raising a concern, a back-and-forth that converges on a decision. Recorded in PR comments and in CHANGELOG Highlight paragraphs, and for decisions that bind future work, in an ADR.
+**Discourse** forms the commitment. A session, a deliberation between agents, a guild voice raising a concern, a back-and-forth that converges on a decision. Recorded in PR comments and in CHANGELOG Highlight paragraphs, and for decisions that bind future work, in an RFC.
 
-**Docs** record the commitment. An ADR for architectural decisions, a CHANGELOG entry for what shipped, a docsite page for the explanation. The docs are the durable trace of what was decided.
+**Docs** record the commitment. An RFC for architectural decisions, a CHANGELOG entry for what shipped, a docsite page for the explanation. The docs are the durable trace of what was decided.
 
 **Code** honors the docs, and the enforcement is stated honestly rather than overclaimed. `scripts/check-boundaries.sh` greps three of the eight boundary rules; the docsite floor checks link integrity, orphans, type-name parity, a clean mdbook build, em dashes and `llms.txt` currency; both run from `just check` and in CI. Conventional commits map to CHANGELOG categories.
 
@@ -57,9 +57,9 @@ The markers move on release: a planned capability that ships flips from to. Visi
 
 Decisions go through one of three surfaces depending on stakes.
 
-**Open-ended exploration** lands in GitHub Discussions. RFCs, "should we consider X", retrospectives. No commitment. No labels.
+**Open-ended exploration** lands in GitHub Discussions. Early proposals, "should we consider X", retrospectives. No commitment. No labels.
 
-**Architectural decisions that will bind future work** land as a `decision` issue first, then as an ADR in `docs/decisions/`. The ADR records context, options, the chosen path, the alternatives rejected, and the trigger conditions that would re-open the question. Each ADR is a load-bearing commitment.
+**Architectural decisions that will bind future work** land as an RFC in `blueprints/rfcs/`, proposed as a pull request and accepted by merging it; a `decision` issue can come first when the options need airing. The RFC records the motivation, the design, the drawbacks, the alternatives rejected, and what would re-open the question. Each RFC is a load-bearing commitment. When one takes more than one PR to implement, an EP in `blueprints/eps/` plans the work and records its status.
 
 **Concrete changes** land as a regular issue and a PR. The PR's body explains why; the commits explain what. Every commit carries a `Co-Authored-By` trailer naming the participating model. Author is Claude; co-author is the human director. Merge is gated by the human reviewer's approval with rationale.
 
@@ -69,17 +69,17 @@ The three surfaces correspond to different layers of commitment. The lighter the
 
 What is different about this project versus typical OSS:
 
-- **Discourse-first design.** Decisions begin in dialogue and land where anyone can read them: an ADR in `docs/decisions/` for anything that binds future work, a CHANGELOG Highlight for anything user-visible. The reasoning is in the repository, not in a chat log.
+- **Discourse-first design.** Decisions begin in dialogue and land where anyone can read them: an RFC in `blueprints/rfcs/` for anything that binds future work, a CHANGELOG Highlight for anything user-visible. The reasoning is in the repository, not in a chat log.
 - **The docsite as verification surface.** Floor gates protect the docs against drift (broken links, orphaned pages, type-name mismatches, build warnings). The next-state docs cannot silently disagree with the code.
-- **Rubrics as guardrails.** Each iteration plan under `book/src/plans/` carries a per-milestone rubric: a predicate set that gates the work rather than a description of it.
+- **Rubrics as guardrails.** Each enhancement plan under `blueprints/eps/` carries a per-milestone exit criterion: a predicate set that gates the work rather than a description of it.
 - **Audience-stratified documentation.** CLAUDE.md addresses AI agents during sessions. CONTRIBUTING.md addresses human contributors. This document (you are reading it) addresses anyone curious about the model. README.md is the public face for visitors. Each surface has one audience and one purpose.
-- **Visible audit trail.** Every decision is reachable from a search through `docs/decisions/`, `book/src/plans/`, and the commit log. The chain of reasoning never disappears into an org's internal Slack.
+- **Visible audit trail.** Every decision is reachable from a search through `blueprints/rfcs/`, `blueprints/eps/`, and the commit log. The chain of reasoning never disappears into an org's internal Slack.
 
 ## Why this matters
 
 matra is a library. Downstream consumers (third-party Rust and Python projects) inherit matra's standards transitively. A library whose discipline is invisible cannot be inherited.
 
-The collaboration model is reproducible because every piece is visible. Read the plans, read the rubrics, read the ADRs, read the CHANGELOG Highlights. Apply the same discipline to your own project. The pattern travels.
+The collaboration model is reproducible because every piece is visible. Read the plans, read the rubrics, read the RFCs, read the CHANGELOG Highlights. Apply the same discipline to your own project. The pattern travels.
 
 The project is also part of an ongoing exploration into what human and AI collaborative intelligence looks like in practice. matra is one specimen. The hypothesis under test: discipline plus dialogue plus a queryable audit trail produces software that survives, with both sides strengthened by the exchange rather than degraded by it.
 
@@ -88,6 +88,6 @@ The project is also part of an ongoing exploration into what human and AI collab
 - Working rules for AI agents during a session: [CLAUDE.md](../CLAUDE.md)
 - PR mechanics and contribution flow for humans: [CONTRIBUTING.md](../CONTRIBUTING.md)
 - Architecture explanation: [book/src/architecture/](../book/src/architecture/)
-- Decision history: [docs/decisions/](./decisions/)
-- Discourse archive (working notes): kept locally, not tracked. The durable record of a decision is its ADR, its PR discussion, and its CHANGELOG Highlight, all of which are in-repo.
+- Decision history: [blueprints/](../blueprints/README.md)
+- Discourse archive (working notes): kept locally, not tracked. The durable record of a decision is its RFC, its PR discussion, and its CHANGELOG Highlight, all of which are in-repo.
 - ACES and antifragility: documented in `CLAUDE.md` and `.claude/skills/aces/SKILL.md` (working reference; not in the rendered book)

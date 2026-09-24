@@ -4,7 +4,7 @@
 //! safetensors, a tokenizer.json, a config.json) and embeds by table
 //! gather, mean pooling, and optional L2 normalization. No matmul, no
 //! kernel dispatch, so vectors are bit-identical across targets, which is
-//! the property that won this adapter the first slot (ADR-0010).
+//! the property that won this adapter the first slot (RFC-0010).
 //!
 //! This is the ONLY file that imports `safetensors` and `tokenizers`
 //! (boundary rule 4 analog). The inference semantics replicate the Python
@@ -182,7 +182,7 @@ impl Model2Vec {
     /// embedding model, and it is why "downloads a model" is not the
     /// same claim as "reaches the network for whatever is there":
     /// exactly one artifact set can ever load through this constructor,
-    /// and it is named in the source. ADR-0010 decision 6 is amended to
+    /// and it is named in the source. RFC-0010 decision 6 is amended to
     /// say so.
     ///
     /// The sequence, and the rule it turns on: this constructor only
@@ -673,7 +673,7 @@ fn not_the_pinned_model(dir: &Path, reason: &str, expected_digest: &str) -> Erro
 /// The counterpart of the function of the same name in `nlp/udpipe.rs`,
 /// and it exists for the same reason: `io error: No space left on device
 /// (os error 28)` was the whole message an embedding install produced,
-/// with the path sitting in a variable one line away. ADR-0015 says the
+/// with the path sitting in a variable one line away. RFC-0015 says the
 /// two provisioners share a discipline rather than a module, so this is
 /// the discipline implemented twice, not a helper imported twice.
 fn io_at(operation: &str, path: &Path, error: &std::io::Error) -> Error {
@@ -1034,7 +1034,7 @@ fn download_agent() -> ureq::Agent {
 /// `Error::Io` and wraps everything else, `Timeout` included, in
 /// `io::Error::other`. Reading `kind()` straight off it therefore gives
 /// `Other`, so a fetch that ran past [`FETCH_TIMEOUT`] mid-transfer
-/// reported `Other` where `book/src/reference/errors.md` and ADR-0015
+/// reported `Other` where `book/src/reference/errors.md` and RFC-0015
 /// both promise `TimedOut`. `From<io::Error> for ureq::Error` unwraps
 /// the wrapped error again, which recovers the kind and also gives a
 /// mid-stream certificate rejection the sentence [`download_message`]
@@ -1075,7 +1075,7 @@ fn transport_failure(url: &str, error: &ureq::Error) -> Error {
 /// trust store, which is why it needs no `ca-certificates` package and
 /// also why installing a proxy's CA there changes nothing. That is one
 /// fact about matra rather than one about this adapter, so both
-/// provisioning paths say it (ADR-0015); the wording differs only in the
+/// provisioning paths say it (RFC-0015); the wording differs only in the
 /// way out, because this model is a directory of three artifacts rather
 /// than one file. The raw failure is kept at the end, because a bug
 /// report needs it.
@@ -1509,7 +1509,7 @@ mod parity {
 
 #[cfg(test)]
 mod bit_parity {
-    //! The property the static adapter buys (ADR-0010): identical bits on
+    //! The property the static adapter buys (RFC-0010): identical bits on
     //! every target. These constants were produced once on aarch64; the
     //! CI matrix runs this test on x86_64 and aarch64, so a target whose
     //! arithmetic dispatches differently fails loudly here.
@@ -2165,7 +2165,7 @@ mod provisioning {
 
     /// Regression (review of #77): a timeout while reading the body
     /// reports `TimedOut`, which is what `book/src/reference/errors.md`
-    /// and ADR-0015's decision table both promise. `ureq`'s body reader
+    /// and RFC-0015's decision table both promise. `ureq`'s body reader
     /// builds its `io::Error` with `Error::into_io`, which wraps
     /// everything that is not already an `io::Error` in
     /// `io::Error::other`, so reading `kind()` off it gave `Other`.

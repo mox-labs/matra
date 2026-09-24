@@ -38,29 +38,29 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
             "book/src/guides/cli.md",
-            "17214:9c24b3bc458b70bf",
+            "17214:e0136af0618f0dff",
             "the 0.8362 pair score in book/src/guides/semantic-clusters.md \
-             and skills/matra/references/semantic.md, and the 0.5866 unrelated score",
+             and skills/matra/references/semantic.md, and the 0.5907 unrelated score",
         ),
         (
             "book/src/guides/rust.md",
             "18204:82b70f0e40a536ac",
-            "the 0.8362 pair score and the 0.6035 unrelated score, in the same two files",
+            "the 0.8362 pair score and the 0.6080 unrelated score, in the same two files",
         ),
         (
             "book/src/roadmap.md",
-            "29300:cb720bffc9c15e6f",
-            "the 0.5866 and 0.6035 unrelated scores, in the same two files",
+            "29657:4e209a5fea20fb5b",
+            "the 0.5907 and 0.6080 unrelated scores, in the same two files",
         ),
         (
             "book/src/reference/errors.md",
-            "25110:53ba6ea7484435c3",
-            "the RAKE and YAKE figures in book/src/guides/cli.md: 463 phrases, \
-             the two tied at 9.000, 1.190, 213 at the floor, and YAKE's 80.224",
+            "25113:4527dfc9417cedf7",
+            "the RAKE and YAKE figures in book/src/guides/cli.md: 465 phrases, \
+             the two tied at 9.000, 1.190, 215 at the floor, and YAKE's 80.224",
         ),
         (
             "book/src/reference/domain-types.md",
-            "32875:1db146b5048bd3c2",
+            "32877:efa9451410f35008",
             "the 141-word saturation floor and the 54-word window in \
              book/src/guides/semantic-clusters.md and skills/matra/references/semantic.md",
         ),

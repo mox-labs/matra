@@ -55,5 +55,5 @@ pull request and its findings are applied before merge; a human approves.
   non-obvious behaviors that will bite you.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): the working model, how decisions get
   made, how releases work, the full PR mechanics.
-- [`book/src/plans/`](book/src/plans/README.md): the plan for each iteration,
-  with its acceptance rubric.
+- [`blueprints/`](blueprints/README.md): the RFCs that record each design
+  decision and the EPs that plan each iteration, with its ship criteria.

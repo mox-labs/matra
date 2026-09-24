@@ -5,7 +5,7 @@ name: Scorecard
 # and uploads the results to the Security tab as SARIF. Public score is
 # visible at https://scorecard.dev/viewer/?uri=github.com/mox-labs/matra.
 #
-# Adopted as part of i9/gh-guard-uptake. See docs/decisions/0005-supply-chain-hardening.md.
+# Adopted as part of i9/gh-guard-uptake. See blueprints/rfcs/0005-supply-chain-hardening.md.
 
 on:
   branch_protection_rule:

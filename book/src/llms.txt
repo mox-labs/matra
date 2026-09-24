@@ -36,4 +36,3 @@
 ## What is planned
 
 - [Roadmap](https://mox-labs.github.io/matra/roadmap.html): What matra does not do yet, why, and the condition that would change that.
-- [Plans](https://mox-labs.github.io/matra/plans/index.html): The roadmap says what matra does not do yet and what condition would change that.

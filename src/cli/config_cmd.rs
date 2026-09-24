@@ -273,7 +273,7 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
 /// `nlp/udpipe.rs` and `embed/model2vec.rs`, and it exists for the same
 /// reason: `io error: Permission denied (os error 13)` was the whole
 /// message a failed `config init` produced, with the directory sitting
-/// in a variable one line away. ADR-0015 settled that the discipline
+/// in a variable one line away. RFC-0015 settled that the discipline
 /// travels and the helper does not, and here the helper could not
 /// travel anyway: both existing copies are private to an adapter, and
 /// boundary rule 7 keeps `src/cli/` off the adapters.

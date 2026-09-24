@@ -23,7 +23,7 @@
 //! This module imports only `domain` (I7 M5 boundary). The pipeline
 //! calls [`hypernymy_pairs`] at the annotate stage and stores the
 //! result on [`crate::domain::Sentence::hearst_pairs`], so the
-//! detection crosses FFI as data (ADR-0008).
+//! detection crosses FFI as data (RFC-0008).
 
 use crate::domain::{HearstPair, HearstPattern, HearstSpan, Token};
 

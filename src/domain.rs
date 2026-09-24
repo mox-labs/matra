@@ -67,20 +67,20 @@ pub struct ProvisionNotice {
 ///
 /// Model opinion, not verifiable structure: an embedding cannot be checked
 /// against the source bytes, so it never appears as a field on [`Document`]
-/// or any other type the deterministic pipeline returns (ADR-0010). Values
+/// or any other type the deterministic pipeline returns (RFC-0010). Values
 /// derived from embeddings carry their provenance (model hash, parameters)
 /// in their own standalone types.
 ///
 /// Serde treats the newtype transparently, so the wire form is the bare
 /// array. Deliberately not `#[non_exhaustive]`: on a tuple struct that
 /// attribute makes the constructor crate-private, and external `Embedder`
-/// implementors must construct these values; ADR-0010 records the
+/// implementors must construct these values; RFC-0010 records the
 /// departure from the convention.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Embedding(pub Vec<f32>);
 
 /// Semantic-similarity clusters over a document's sentences: Tier 2
-/// output, standing alone, never attached to [`Document`] (ADR-0010).
+/// output, standing alone, never attached to [`Document`] (RFC-0010).
 ///
 /// Clusters are connected components of the similarity graph whose edges
 /// cleared `threshold`, so co-membership is transitive: two sentences can
@@ -279,7 +279,7 @@ impl Token {
     /// `None` by construction.
     ///
     /// Rust-only by design: `feats` already crosses FFI as a string,
-    /// so this view adds no information to the wire (ADR-0009).
+    /// so this view adds no information to the wire (RFC-0009).
     pub fn feat(&self, key: &str) -> Option<&str> {
         self.feats
             .split('|')
@@ -360,7 +360,7 @@ impl TokenBuilder {
 ///
 /// Derived at [`Sentence`] construction from the dependency graph
 /// (see [`Sentence::new`]) and serialized with the sentence, so every
-/// crust reads the same detection (ADR-0008).
+/// crust reads the same detection (RFC-0008).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Negation {
@@ -375,7 +375,7 @@ pub struct Negation {
 /// Negation cue detection over a sentence's tokens.
 ///
 /// The single Rust implementation behind [`Sentence::negations`]
-/// (ADR-0008). The shapes were verified against live UDPipe parses:
+/// (RFC-0008). The shapes were verified against live UDPipe parses:
 /// `not` and `never` attach as `advmod` to the word they negate,
 /// determiner `no` and `neither` attach as `det` to the noun they
 /// negate, and `nor` attaches as `cc` to the conjunct it links.
@@ -410,7 +410,7 @@ fn detect_negations(tokens: &[Token]) -> Vec<Negation> {
 ///
 /// Derived at [`Sentence`] construction from the dependency graph
 /// (see [`Sentence::new`]) and serialized with the sentence, so every
-/// crust reads the same detection (ADR-0008).
+/// crust reads the same detection (RFC-0008).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Modal {
@@ -426,7 +426,7 @@ pub struct Modal {
 /// Modal auxiliary detection over a sentence's tokens.
 ///
 /// The single Rust implementation behind [`Sentence::modals`]
-/// (ADR-0008). The closed class is the ten lemmas the UD English
+/// (RFC-0008). The closed class is the ten lemmas the UD English
 /// treebank tags `MD`, enumerated from live UDPipe parses (verified
 /// 2026-08-21): `can`, `could`, `may`, `might`, `must`, `ought`,
 /// `shall`, `should`, `will`, `would`. A class lemma matches when it
@@ -510,7 +510,7 @@ fn detect_bare_assertion(tokens: &[Token], modals: &[Modal]) -> bool {
 ///
 /// Derived at [`Sentence`] construction from the dependency graph
 /// (see [`Sentence::new`]) and serialized with the sentence, so every
-/// crust reads the same detection (ADR-0008).
+/// crust reads the same detection (RFC-0008).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Reporting {
@@ -531,7 +531,7 @@ pub struct Reporting {
 /// Reporting-construction detection over a sentence's tokens.
 ///
 /// The single Rust implementation behind [`Sentence::reportings`]
-/// (ADR-0008). The shape was verified against live UDPipe parses
+/// (RFC-0008). The shape was verified against live UDPipe parses
 /// (2026-08-21): in "Smith reported that the effect vanished." the
 /// complement head `vanished` attaches as `ccomp` to `reported`
 /// (`VERB`, root) and `Smith` attaches as `nsubj` to `reported`. The
@@ -584,7 +584,7 @@ fn detect_reportings(tokens: &[Token]) -> Vec<Reporting> {
 ///
 /// Derived at [`Sentence`] construction from the dependency graph
 /// (see [`Sentence::new`]) and serialized with the sentence, so every
-/// crust reads the same detection (ADR-0008).
+/// crust reads the same detection (RFC-0008).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct RootAdverbial {
@@ -597,7 +597,7 @@ pub struct RootAdverbial {
 /// Root-attached adverbial detection over a sentence's tokens.
 ///
 /// The single Rust implementation behind [`Sentence::root_adverbials`]
-/// (ADR-0008). Every token carrying `advmod` whose head is the root
+/// (RFC-0008). Every token carrying `advmod` whose head is the root
 /// is reported, whatever its part of speech: negation particles
 /// ("not" is `PART` on the same arc) appear here and in
 /// [`Sentence::negations`], and the overlap is intentional, because
@@ -672,7 +672,7 @@ pub struct HearstSpan {
 /// construction which conventionally signals one. Derived at the
 /// annotate stage by the pipeline (the detector lives in
 /// `matra::hearst`, outside the domain) and serialized with the
-/// sentence, so every crust reads the same detection (ADR-0008).
+/// sentence, so every crust reads the same detection (RFC-0008).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct HearstPair {
@@ -700,7 +700,7 @@ pub struct Sentence {
     pub tokens: Vec<Token>,
     /// Negation cues derived from the dependency graph at construction
     /// (see [`Sentence::new`]). Serialized with the sentence so the
-    /// detection crosses FFI as data (ADR-0008). Defaults to empty when
+    /// detection crosses FFI as data (RFC-0008). Defaults to empty when
     /// deserializing sentences serialized before this field existed.
     #[serde(default)]
     pub negations: Vec<Negation>,
@@ -711,7 +711,7 @@ pub struct Sentence {
     /// `aux` relation or the `AUX` part of speech (the latter catches
     /// modals the model promotes to root or `conj` under VP ellipsis
     /// and coordination). Serialized with the sentence so the
-    /// detection crosses FFI as data (ADR-0008). Defaults to empty
+    /// detection crosses FFI as data (RFC-0008). Defaults to empty
     /// when deserializing sentences serialized before this field
     /// existed.
     #[serde(default)]
@@ -731,7 +731,7 @@ pub struct Sentence {
     /// has one. The construction is reported for every verb that
     /// fills it; which verbs count as evidential is the consumer's
     /// lexicon ([`Sentence::reportings_in`]). Serialized with the
-    /// sentence so the detection crosses FFI as data (ADR-0008).
+    /// sentence so the detection crosses FFI as data (RFC-0008).
     /// Defaults to empty when deserializing sentences serialized
     /// before this field existed.
     #[serde(default)]
@@ -741,7 +741,7 @@ pub struct Sentence {
     /// adverbs land on. Every root-attached `advmod` is reported;
     /// which lemmas read as evidential is the consumer's lexicon
     /// ([`Sentence::root_adverbials_in`]). Serialized with the
-    /// sentence so the detection crosses FFI as data (ADR-0008).
+    /// sentence so the detection crosses FFI as data (RFC-0008).
     /// Defaults to empty when deserializing sentences serialized
     /// before this field existed.
     #[serde(default)]
@@ -754,7 +754,7 @@ pub struct Sentence {
     /// fills the field at the annotate stage. A hand-built `Sentence`
     /// carries an empty vector until the caller runs the detector.
     /// Serialized with the sentence so the detection crosses FFI as
-    /// data (ADR-0008). Defaults to empty when deserializing
+    /// data (RFC-0008). Defaults to empty when deserializing
     /// sentences serialized before this field existed.
     #[serde(default)]
     pub hearst_pairs: Vec<HearstPair>,
@@ -797,7 +797,7 @@ impl Sentence {
     /// lexicon: an incomplete list that looks authoritative is worse
     /// than none. The structural detection ([`Sentence::reportings`])
     /// crosses FFI as data; this is a Rust-side convenience view over
-    /// it, per ADR-0008's criterion (derivations cross as fields,
+    /// it, per RFC-0008's criterion (derivations cross as fields,
     /// views over crossing data stay methods). Non-Rust consumers
     /// filter the field by `verb_lemma` the same way.
     pub fn reportings_in(&self, lexicon: &[&str]) -> Vec<&Reporting> {
@@ -812,7 +812,7 @@ impl Sentence {
     ///
     /// Evidential adverbs are an open class, so matra ships no default
     /// lexicon; see [`Sentence::reportings_in`] for the reasoning and
-    /// the ADR-0008 classification. Non-Rust consumers filter
+    /// the RFC-0008 classification. Non-Rust consumers filter
     /// [`Sentence::root_adverbials`] by `adv_lemma` the same way.
     pub fn root_adverbials_in(&self, lexicon: &[&str]) -> Vec<&RootAdverbial> {
         self.root_adverbials
@@ -993,7 +993,7 @@ pub struct Paragraph {
     /// (Body / Quote / Code / List / Caption) is justified by real
     /// consumer semantics. The boolean stays in the 0.0.x and 0.1.x lines
     /// because its job (gate measure or not) is binary today. See
-    /// [ADR-0006](https://github.com/mox-labs/matra/blob/main/docs/decisions/0006-abstract-tier-vocabulary-lock.md)
+    /// [RFC-0006](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0006-abstract-tier-vocabulary-lock.md)
     /// for the abstract-tier vocabulary lock.
     pub in_blockquote: bool,
     /// Sentences produced by parsing this paragraph (populated by the
@@ -1073,7 +1073,7 @@ pub struct Document {
     pub nominalization_ratio: Option<f64>,
     /// Fraction of sentences containing a passive-voice construction,
     /// if `measure` ran. Materialized so the aggregate crosses FFI as
-    /// data instead of being re-derived per crust (ADR-0008). Defaults
+    /// data instead of being re-derived per crust (RFC-0008). Defaults
     /// to `None` when deserializing documents serialized before this
     /// field existed.
     #[serde(default)]
@@ -1141,7 +1141,7 @@ impl Document {
     ///
     /// This is the computation behind the [`Document::passive_ratio`]
     /// field, which the metric suite fills so the value crosses FFI
-    /// (ADR-0008). The method stays for Rust callers who want the
+    /// (RFC-0008). The method stays for Rust callers who want the
     /// ratio on an unmeasured document.
     pub fn passive_ratio(&self) -> f64 {
         let total = self.total_sentences();
@@ -1458,7 +1458,7 @@ impl FromIterator<std::result::Result<CorpusEntry, DocumentError>> for CorpusRes
 mod tests {
     use super::*;
 
-    /// The wire form ADR-0010 commits to: a newtype serializes as the
+    /// The wire form RFC-0010 commits to: a newtype serializes as the
     /// bare array, not an object wrapping one.
     #[test]
     fn embedding_serializes_as_bare_array() {
@@ -1795,7 +1795,7 @@ mod tests {
 
     #[test]
     fn negations_serialize_and_default_on_old_json() {
-        // The field crosses the wire (ADR-0008) ...
+        // The field crosses the wire (RFC-0008) ...
         let sent = Sentence::new(
             "It was never reviewed.".to_string(),
             vec![make_token(1, "never", "ADV", "advmod", 0)],
@@ -2182,7 +2182,7 @@ mod tests {
 
     #[test]
     fn modals_serialize_and_default_on_old_json() {
-        // The fields cross the wire (ADR-0008) ...
+        // The fields cross the wire (RFC-0008) ...
         let sent = modal_clause("might");
         let json = serde_json::to_value(&sent).unwrap();
         assert_eq!(json["modals"][0]["aux_lemma"], "might");
@@ -2454,7 +2454,7 @@ mod tests {
 
     #[test]
     fn reportings_serialize_and_default_on_old_json() {
-        // The fields cross the wire (ADR-0008) ...
+        // The fields cross the wire (RFC-0008) ...
         let sent = Sentence::new(
             "Reportedly, it works.".to_string(),
             vec![

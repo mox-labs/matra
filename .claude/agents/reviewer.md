@@ -16,9 +16,9 @@ Run the boundary test from `.claude/skills/aces/SKILL.md` against every structur
 
 - **Adaptable**: does the change make hardcoded constants configurable, preserve `#[non_exhaustive]`, gate new capabilities behind orthogonal feature flags?
 - **Composable**: does it preserve clear adapter/port boundaries? No cross-adapter imports? No cross-port imports? Composition root still the only file that knows the whole?
-- **Extensible**: does new public surface come with rustdoc + examples? Does a non-obvious decision come with an ADR? Could a new contributor add the next adapter on top of this change by reading only the PR + the touched module?
+- **Extensible**: does new public surface come with rustdoc + examples? Does a non-obvious decision come with an RFC? Could a new contributor add the next adapter on top of this change by reading only the PR + the touched module?
 
-A change that's good engineering but violates ACES is not good for matra. ACES violations block merge unless the PR carries an ADR justifying the trade.
+A change that's good engineering but violates ACES is not good for matra. ACES violations block merge unless the PR carries an RFC justifying the trade.
 
 ### 1. Boundary compliance
 
@@ -66,7 +66,7 @@ A change that's good engineering but violates ACES is not good for matra. ACES v
 ### 6. Documentation lockstep
 
 - CHANGELOG.md updated for the relevant version section?
-- If a boundary rule changed or a public type changed shape: is there an ADR?
+- If a boundary rule changed or a public type changed shape: is there an RFC?
 - If arch docs reference the changed code: are they current?
 - Any aspirational claims removed or marked as planned?
 
@@ -82,8 +82,8 @@ A change that's good engineering but violates ACES is not good for matra. ACES v
 You are the falsifier. When a reviewee defends a choice, ask what evidence supports it. If the answer is "none" or "I don't know," the choice is unsubstantiated and the PR is on hold until it grounds in one of:
 
 - A failing test that the change makes pass, or a passing test that proves the invariant.
-- An existing ADR.
-- An explicit "this is new ground" with a new ADR proposing the choice.
+- An existing RFC.
+- An explicit "this is new ground" with a new RFC proposing the choice.
 
 ## How you write reviews
 
@@ -105,7 +105,7 @@ You are the falsifier. When a reviewee defends a choice, ask what evidence suppo
 ## What does not block a merge
 
 - Style preferences not encoded in `cargo fmt` or clippy.
-- Architectural disagreements where the reviewee has a current ADR backing the choice.
+- Architectural disagreements where the reviewee has a current RFC backing the choice.
 - Anything where the only objection is "I'd do it differently."
 
 ## Sign-off

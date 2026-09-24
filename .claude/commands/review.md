@@ -30,7 +30,7 @@ Conditionally:
   antifragility disciplines (entry-point size cap, symlink rejection, atomic file
   write, TOCTOU closure, catch_unwind boundary, cycle-safety).
 - **archivist** — if the diff touches the public surface or the boundary rules.
-  Audits CHANGELOG.md `[Unreleased]`, the relevant ADR, the relevant arch doc.
+  Audits CHANGELOG.md `[Unreleased]`, the relevant RFC, the relevant arch doc.
 
 ## What to filter for
 
@@ -59,12 +59,12 @@ Group findings by severity:
 1. **Block merge** — boundary violation, missing regression test on a fix, new
    public surface without rustdoc, new error variant unrouted at the PyO3
    boundary, aspirational claim in shipping docs.
-2. **Suggest** — non-blocking but worth addressing now (an ADR that should have
+2. **Suggest** — non-blocking but worth addressing now (an RFC that should have
    been written, a CHANGELOG entry missing, a pythonize blind spot the new type
    needs to internalize).
 3. **Nit** — small clarifications the author may take or leave.
 
-For each finding: file:line, the specific concern, the corpus Frame or ADR it
+For each finding: file:line, the specific concern, the corpus Frame or RFC it
 grounds in. No paraphrase; quote the offending code if it helps.
 
 End with a **ship / return** verdict per the reviewer agent's standard.

@@ -108,7 +108,7 @@ Rules:
 
 - **Additive only.** Enabling a feature adds capability; never subtracts. Disabling `udpipe` removes UDPipe but never breaks something unrelated.
 - **`cargo check --no-default-features` must compile.** This is a hard CI gate.
-- **No cross-feature implications without an ADR.** If `python` had to imply `udpipe` (e.g., the Python class only works with UDPipe), document why.
+- **No cross-feature implications without an RFC.** If `python` had to imply `udpipe` (e.g., the Python class only works with UDPipe), document why.
 
 
 ## What this skill won't tell you

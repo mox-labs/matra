@@ -16,10 +16,8 @@
 #   each link target  the deployed page: <BASE>/<path with .md -> .html>
 #   each summary      the first prose sentence of the page itself
 #
-# Only top-level SUMMARY.md entries are listed. A nested entry, such as an
-# iteration plan under Plans, is reachable from its parent's page, and the
-# opening line of a plan is its status or its boundary rather than a summary
-# of it, which would make a poor entry here.
+# Only top-level SUMMARY.md entries are listed. A nested entry is reachable
+# from its parent's page.
 #
 # The output goes under book/src/ because mdbook copies every non-chapter
 # file there into the built site, which puts it at the site root with no step

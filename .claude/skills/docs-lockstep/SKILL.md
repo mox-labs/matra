@@ -1,6 +1,6 @@
 ---
 name: docs-lockstep
-description: Documentation hygiene for matra — CHANGELOG conventional-commit mapping, ADR template + supersede protocol, arch docs sync with code, README elevator pitch, aspirational-claim discipline. Use when a change lands and CHANGELOG / ADRs / arch docs / README need to update in lockstep.
+description: Documentation hygiene for matra — CHANGELOG conventional-commit mapping, the RFC and EP process + supersede protocol, arch docs sync with code, README elevator pitch, aspirational-claim discipline. Use when a change lands and CHANGELOG / RFCs / arch docs / README need to update in lockstep.
 ---
 
 # docs-lockstep
@@ -11,7 +11,7 @@ Documentation discipline for matra. The audit trail is the only durable artifact
 
 - A change has landed in `src/` and the documentation needs to follow.
 - Preparing for a release.
-- Writing a new ADR.
+- Writing a new RFC or EP.
 - Reviewing whether a doc claim still holds.
 
 ## The lockstep contract
@@ -26,12 +26,12 @@ When code changes, exactly the right docs change in the same PR. The mapping:
 | Internal refactor | usually nothing (unless invariants change) |
 | New module under `src/` | `book/src/architecture/design.md` (the diagram) |
 | New adapter | `book/src/architecture/design.md` |
-| New port | `book/src/architecture/design.md` + ADR |
+| New port | `book/src/architecture/design.md` + RFC |
 | New domain type or field | `book/src/reference/domain-types.md` |
-| Boundary rule change | `book/src/architecture/design.md` + ADR |
+| Boundary rule change | `book/src/architecture/design.md` + RFC |
 | New feature flag | `Cargo.toml`, `book/src/architecture/design.md`, `README.md` (if user-visible), `CLAUDE.md` (if structural) |
-| Dep added/removed/bumped | `Cargo.toml`, `CHANGELOG.md`, ADR (if non-trivial) |
-| Public surface change | All of the above + ADR |
+| Dep added/removed/bumped | `Cargo.toml`, `CHANGELOG.md`, RFC (if non-trivial) |
+| Public surface change | All of the above + RFC |
 
 When the change is non-trivial and you cannot tell which docs are affected, run the audit: read each `.claude/arch/*.md` and ask "does any claim here mention what I just changed?"
 
@@ -58,38 +58,37 @@ Conventional-commit mapping:
 
 The `scripts/changelog-release.sh` script rolls `## [Unreleased]` into a versioned section when preparing a release. Run `just release-prep VERSION` to invoke it.
 
-## ADR conventions
+## RFC and EP conventions
 
-ADRs live at `docs/decisions/NNNN-<slug>.md`. Use `docs/decisions/template.md` as the template. Each ADR has:
+The process is `blueprints/README.md`, and RFC-0019 records why it has this shape. It follows the Rust RFC process.
 
-- **Status** — Proposed / Accepted / Superseded / Deprecated.
-- **Date** in ISO-8601.
-- **Decider(s)** — usually "project maintainer."
-- **Context** — what's the situation? What changed?
-- **Decision** — what we're doing.
-- **Consequences** — positive, negative, neutral. Be specific.
-- **Validation** — how we'd know this was right; how we'd know it was wrong (the falsification criterion).
-- **References** — corpus Frames, prior ADRs, arch docs, related issues.
+- **RFC** (`blueprints/rfcs/NNNN-<slug>.md`, cited `RFC-NNNN`): a design-level change to the architecture, the systems around it, the framework, or the toolchain. Copy `blueprints/rfcs/0000-template.md`. Header: Feature Name, Start Date, RFC PR, Tracking EP, Status. Sections: Summary, Motivation, Guide-level explanation, Reference-level explanation, Drawbacks, Rationale and alternatives, Prior art, Unresolved questions, Future possibilities.
+- **EP** (`blueprints/eps/NNNN-<slug>.md`, cited `EP-NNNN`): the enhancement plan that takes an accepted RFC to shipping, written when the implementation spans more than one PR. Copy `blueprints/eps/0000-template.md`. Header: EP, Implements, Status, Shipped in. Sections: Summary, Goals, Non-goals, Iterations and milestones (each with a deliverable and an exit criterion), Test plan, Ship criteria, Risks, Status log.
+- **Acceptance.** An unaccepted RFC is an open pull request. Merging it accepts it, and it lands with `Status: accepted`.
+- **Status.** RFC: `accepted`, `implemented` (once the CHANGELOG records it shipping), or `superseded by RFC-NNNN`. EP: `planned`, `in progress`, `shipped in X.Y.Z`, or `dropped`, with a dated status-log line for each change.
+- **Index.** Every RFC and EP has a row in `blueprints/README.md`. `scripts/check-blueprint-refs.sh` (in `just check` and the `Docsite floor` CI job) fails when a file has no row or a cited `RFC-NNNN` / `EP-NNNN` resolves to nothing.
 
-### Superseding an ADR
+Records cited as `ADR-` plus a number before 2026-09-24 are the RFC of the same number; released CHANGELOG entries keep that wording.
 
-When superseding, edit the old ADR to:
+### Superseding an RFC
+
+An accepted RFC is not rewritten. Superseding one changes exactly two things in it: the status line
 
 ```markdown
-- **Status:** Superseded by [NNNN](NNNN-slug.md) on YYYY-MM-DD
+- Status: superseded by [RFC-NNNN](NNNN-slug.md) (YYYY-MM-DD)
 ```
 
-And add a note at the top:
+and a dated note under the header:
 
 ```markdown
-> **Superseded.** [Context]. The successor ADR ([NNNN](NNNN-slug.md)) formalizes [the new decision]. Read this ADR for historical context only.
+> **Note (YYYY-MM-DD):** Superseded by [RFC-NNNN](NNNN-slug.md), which [the new decision]. Read this RFC for historical context only.
 ```
 
 Never delete the original content; the audit trail is the value.
 
-The new ADR has `**Supersedes:** [NNNN](NNNN-slug.md)` in its header and explicitly explains *why* the prior decision is being changed.
+The new RFC has `- Supersedes: [RFC-NNNN](NNNN-slug.md)` in its header and explains in its Motivation *why* the prior decision is being changed.
 
-Example: `docs/decisions/0003-workspace-with-rumi-nlp.md` was superseded by `docs/decisions/0004-stay-single-crate.md` on 2026-05-20.
+Example: `blueprints/rfcs/0003-workspace-with-rumi-nlp.md` was superseded by `blueprints/rfcs/0004-stay-single-crate.md` on 2026-05-20, and `blueprints/rfcs/0001-record-architectural-decisions.md` by `blueprints/rfcs/0019-rfc-and-ep-process.md` on 2026-09-24.
 
 ## Arch doc structure
 
@@ -105,7 +104,7 @@ Example: `docs/decisions/0003-workspace-with-rumi-nlp.md` was superseded by `doc
 | `evolution.md` | What's locked, what's allowed to change, what's deferred. |
 | `boundary-rules.md` | The eight boundary rules, with motivation, failure modes, and review guidance. |
 
-If a single code change requires updating more than two of these, you're probably changing the architecture and need an ADR.
+If a single code change requires updating more than two of these, you're probably changing the architecture and need an RFC.
 
 ## Aspirational-claim discipline
 
@@ -134,7 +133,8 @@ If matra's scope shifts substantially, update README first, then everywhere else
 Before running `just release-prep VERSION`:
 
 - [ ] `## [Unreleased]` in `CHANGELOG.md` describes every user-facing change since the last release.
-- [ ] Every ADR that lands this release has Status: Accepted.
+- [ ] Every RFC that lands this release has `Status: accepted`, and every RFC this release ships reads `implemented`.
+- [ ] Every EP this release completes reads `shipped in X.Y.Z`, with a dated status-log line.
 - [ ] Arch docs match the shipping code (run the audit if uncertain).
 - [ ] README's elevator pitch is current.
 - [ ] No aspirational claims in shipping docs.
@@ -144,6 +144,6 @@ Then `just release-prep VERSION` rolls the CHANGELOG only. It does not touch `Ca
 
 ## What this skill won't tell you
 
-- How to write the substance of an ADR — that's a thinking activity per case.
-- Whether a specific change deserves an ADR — judgment call; default to "yes" if you'd want a stranger to know in six months.
+- How to write the substance of an RFC — that's a thinking activity per case.
+- Whether a specific change deserves an RFC — judgment call; default to "yes" if you'd want a stranger to know in six months.
 - Specific commit message wording — follow conventional commits, keep the imperative mood.

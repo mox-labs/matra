@@ -138,8 +138,7 @@ participate without re-deriving the design.
 | Where to look | What's there |
 |---|---|
 | [`.claude/arch/`](https://github.com/mox-labs/matra/tree/main/.claude/arch) | Architecture docs |
-| [`book/src/plans/`](https://github.com/mox-labs/matra/tree/main/book/src/plans) | Iteration plans (current + future) |
-| [`docs/decisions/`](https://github.com/mox-labs/matra/tree/main/docs/decisions) | Architecture Decision Records (ADRs) |
+| [`blueprints/`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md) | RFCs (design decisions) and EPs (the plans that ship them) |
 | [`CHANGELOG.md`](https://github.com/mox-labs/matra/blob/main/CHANGELOG.md) | What changed and why, per release |
 | [`CONTRIBUTING.md`](https://github.com/mox-labs/matra/blob/main/CONTRIBUTING.md) | How to participate, commit conventions, decision flow |
 | [`SECURITY.md`](https://github.com/mox-labs/matra/blob/main/SECURITY.md) | Vulnerability disclosure policy |
