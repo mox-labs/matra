@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 # Least privilege at the workflow level. Only the deploy job can write to
-# Pages or mint an OIDC token; the build job, which downloads a tarball and
-# runs cargo doc, carries neither.
+# Pages or mint an OIDC token; the build job, which builds the site and runs
+# cargo doc, and the verify job, which only reads the live site, carry neither.
 permissions:
   contents: read
 
@@ -16,15 +16,14 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Must support edition = "2024" in book.toml; 0.4.x does not.
-  MDBOOK_VERSION: 0.5.3
-  # Builds the SvelteKit site preview. Keep in step with BUN_VERSION in ci.yml.
+  # Builds the site. Keep in step with BUN_VERSION in ci.yml, whose docsite
+  # floor gates the same build.
   BUN_VERSION: 1.3.12
   BUN_SHA256: 11dc3ee11bc1695e149737c6ca3d5619302cf4346e6b8a6ec7988967ef01ddc5
 
 jobs:
   build:
-    name: Build mdbook + rustdoc
+    name: Build site + rustdoc
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -38,33 +37,20 @@ jobs:
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
 
-      # No mermaid: diagrams are hand-authored inline SVG, and the plugin's
-      # install step would re-add the preprocessor entries book/book.toml
-      # deliberately removed (restore instructions live in that file).
-      - name: Install mdbook
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          curl -sSL "https://github.com/rust-lang/mdBook/releases/download/v${MDBOOK_VERSION}/mdbook-v${MDBOOK_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
-            | tar -xz -C "$HOME/.local/bin"
-
-      - name: Build mdbook
-        working-directory: book
-        run: mdbook build
-
-      # The SvelteKit site that replaces mdBook (EP-0012). Until the cut-over
-      # it is built for inspection only: uploaded as the `site-preview`
-      # artifact, never deployed. Built for the Pages base path, so serve it
-      # under /matra to browse it.
       - name: Install bun
         run: |
           set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           curl -sSLf -o "$RUNNER_TEMP/bun.zip" \
             "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64.zip"
           echo "${BUN_SHA256}  $RUNNER_TEMP/bun.zip" | sha256sum -c -
           unzip -q -j "$RUNNER_TEMP/bun.zip" bun-linux-x64/bun -d "$HOME/.local/bin"
 
-      - name: Build the SvelteKit site preview
+      # The SvelteKit site in site/ (EP-0012), prerendered for the Pages base
+      # path. The build itself fails when the emitted asset URLs do not match
+      # BASE_PATH (site/scripts/verify-base-path.ts).
+      - name: Build the site
         working-directory: site
         env:
           BASE_PATH: /matra
@@ -77,14 +63,6 @@ jobs:
           bun install --frozen-lockfile
           bun run build
 
-      - name: Upload the site preview
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
-        with:
-          name: site-preview
-          path: site/build
-          if-no-files-found: error
-          retention-days: 14
-
       - name: Build rustdoc
         env:
           RUSTDOCFLAGS: -Dwarnings
@@ -93,7 +71,7 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site
-          cp -r book/book/* _site/
+          cp -r site/build/. _site/
           mkdir -p _site/api
           cp -r target/doc/* _site/api/
           # Landing page for /api/ that redirects to the crate's index.
@@ -105,6 +83,11 @@ jobs:
           <link rel="canonical" href="matra/index.html">
           <p>Redirecting to <a href="matra/index.html">matra API reference</a>.</p>
           HTML
+
+      # Every published path (site/urls.txt) is in the artifact, rustdoc's
+      # included, before anything is uploaded.
+      - name: Check the artifact holds every published path
+        run: bash scripts/check-url-manifest.sh --dir _site
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
@@ -121,7 +104,26 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  # v5.0.1
+
+  # The deploy succeeding says Pages accepted the artifact, not that readers
+  # can reach it. This asks the live site for every published path, and the
+  # root, and fails on any answer but 200, retrying while a new deploy reaches
+  # every edge.
+  verify:
+    name: Verify the live site
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Every published URL answers 200
+        env:
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: bash scripts/check-url-manifest.sh --live "${PAGE_URL:-https://mox-labs.github.io/matra/}"

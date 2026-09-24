@@ -1,0 +1,59 @@
+# The published URL contract of https://mox-labs.github.io/matra/.
+#
+# Every path here is cited somewhere a reader or an agent may follow it from:
+# Cargo.toml, CITATION.cff, README.md, llms.txt, bookmarks, other sites. Each
+# must keep resolving. scripts/check-url-manifest.sh checks the list three ways:
+#
+#   --build site/build   gate 7 of the docsite floor: every path the site build
+#                        writes (all but api/) exists, and every page, Markdown
+#                        twin and text file the build writes is listed here
+#   --dir _site          docs.yml, before upload: every path, rustdoc included
+#   --live <url>         docs.yml, after deploy: every path answers 200
+#
+# A new page adds its .html and .md lines here. Removing or renaming a path
+# breaks a published URL; keep a page at the old path instead.
+#
+# Paths are relative to the site root. api/ is rustdoc, added at deploy.
+
+404.html
+architecture/design.html
+architecture/design.md
+capabilities.html
+capabilities.md
+explanation/concepts.html
+explanation/concepts.md
+explanation/pragmatics.html
+explanation/pragmatics.md
+explanation/programming-model.html
+explanation/programming-model.md
+explanation/situation-model.html
+explanation/situation-model.md
+guides/cli.html
+guides/cli.md
+guides/python.html
+guides/python.md
+guides/rust.html
+guides/rust.md
+guides/semantic-clusters.html
+guides/semantic-clusters.md
+index.html
+introduction.html
+introduction.md
+llms.txt
+print.html
+reference/boundary-rules.html
+reference/boundary-rules.md
+reference/domain-types.html
+reference/domain-types.md
+reference/errors.html
+reference/errors.md
+reference/methodology.html
+reference/methodology.md
+roadmap.html
+roadmap.md
+toc.html
+tutorials/installation.html
+tutorials/installation.md
+
+api/index.html
+api/matra/index.html

@@ -88,23 +88,22 @@ test-sandbox:
 version-sync:
     bash scripts/check-version-sync.sh
 
-# Requires mdbook, bun and ripgrep. lychee is optional locally (skip-with-warning);
+# Requires bun and ripgrep. lychee is optional locally (skip-with-warning);
 # the `Docsite floor` job in ci.yml installs it and sets LYCHEE_REQUIRED=1 to
-# escalate the skip into a hard failure. The eight gates: links, orphans, type
-# names, em dashes, llms.txt, the mdbook build, the SvelteKit build, and URL
-# parity between the two.
+# escalate the skip into a hard failure. The seven gates: links, orphans, type
+# names, the site build, em dashes, llms.txt, and the published URL manifest.
 # Floor gates for the docsite.
 docs-floor:
     bash scripts/check-docsite-floor.sh
 
 # Search needs the index the build writes, so it answers only in a built site.
-# Serve the SvelteKit docsite with live reload at http://localhost:3000.
+# Serve the docsite with live reload at http://localhost:3000.
 docs-serve:
     cd site && bun install --frozen-lockfile && bun run dev
 
 # Every page prerendered, its Markdown twin beside it, and the search index.
 # BASE_PATH=/matra builds it for GitHub Pages.
-# Build the SvelteKit docsite into site/build.
+# Build the docsite into site/build.
 docs-build:
     cd site && bun install --frozen-lockfile && bun run build
 

@@ -19,10 +19,9 @@
 # Only top-level SUMMARY.md entries are listed. A nested entry is reachable
 # from its parent's page.
 #
-# The output goes under site/content/ beside the pages it maps. Both builds
-# serve it at the site root with no step in the deploy workflow to keep in
-# sync with this script: mdbook copies every non-chapter file there into its
-# output, and the SvelteKit site prerenders site/src/routes/llms.txt from it.
+# The output goes under site/content/ beside the pages it maps. The site
+# serves it at its root with no step in the deploy workflow to keep in sync
+# with this script: site/src/routes/llms.txt prerenders it as committed.
 #
 # The file is committed. Gate 6 of scripts/check-docsite-floor.sh regenerates
 # it and diffs, so a page added, retitled, or reworded without a regeneration
@@ -157,7 +156,8 @@ trap 'rm -f "$tmp"' EXIT
             echo "gen-llms-txt: no prose paragraph found in $path" >&2
             exit 1
         fi
-        # mdbook renders a directory's README.md as its index.html.
+        # The site serves a directory's README.md as its index.html
+        # (routeOf in site/src/lib/server/summary.ts).
         page="${path%.md}"
         page="${page%README}"
         [ "$page" != "${path%.md}" ] && page="${page}index"

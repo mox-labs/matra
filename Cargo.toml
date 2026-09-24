@@ -16,8 +16,7 @@ categories = ["text-processing", "science"]
 # design record (RFCs and EPs) and is for contributors, not crate users. `skills/matra/**` must
 # keep shipping: it is the agent-facing skill, and the crate is where it is
 # distributed from. Adding it here would remove public surface, not weight.
-# `site/` is the docsite, its pages under `site/content/`; `book/` is the
-# mdBook build of the same pages until the SvelteKit site takes over.
+# `site/` is the docsite, its pages under `site/content/`.
 # `tests/cited_figures.rs` and `tests/error_tables.rs` read `site/content/`,
 # which does not ship, so either would fail every `cargo test` run from the
 # published tarball. A new test that reads `site/` belongs on this list too.
@@ -25,7 +24,6 @@ exclude = [
     "scratch/*",
     ".claude/*",
     "target/*",
-    "book/*",
     "site/*",
     "blueprints/*",
     "*.udpipe",
