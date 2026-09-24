@@ -1,0 +1,377 @@
+{
+  "data": {
+    "phrases": [
+      {
+        "phrase": "astonishingly rapid increase",
+        "rake": {
+          "rank": 7,
+          "score": 7.3571
+        },
+        "yake": {
+          "rank": 2176,
+          "score": 0.3772
+        }
+      },
+      {
+        "phrase": "beetle dive water",
+        "rake": null,
+        "yake": {
+          "rank": 10,
+          "score": 1334.5044
+        }
+      },
+      {
+        "phrase": "cling hair quadruped",
+        "rake": null,
+        "yake": {
+          "rank": 7,
+          "score": 1679.6382
+        }
+      },
+      {
+        "phrase": "domestic animal",
+        "rake": {
+          "rank": 11,
+          "score": 4.6364
+        },
+        "yake": {
+          "rank": 1547,
+          "score": 0.5904
+        }
+      },
+      {
+        "phrase": "elder de candolle",
+        "rake": {
+          "rank": 2,
+          "score": 9.0
+        },
+        "yake": {
+          "rank": 1659,
+          "score": 0.5477
+        }
+      },
+      {
+        "phrase": "enter",
+        "rake": null,
+        "yake": {
+          "rank": 5,
+          "score": 2233.5002
+        }
+      },
+      {
+        "phrase": "enter subject",
+        "rake": null,
+        "yake": {
+          "rank": 3,
+          "score": 8986.9666
+        }
+      },
+      {
+        "phrase": "enter subject chapter",
+        "rake": null,
+        "yake": {
+          "rank": 4,
+          "score": 8544.3338
+        }
+      },
+      {
+        "phrase": "fulmar petrel lay",
+        "rake": {
+          "rank": 2,
+          "score": 9.0
+        },
+        "yake": {
+          "rank": 2421,
+          "score": 0.2414
+        }
+      },
+      {
+        "phrase": "great destruction fal",
+        "rake": {
+          "rank": 8,
+          "score": 6.9143
+        },
+        "yake": {
+          "rank": 2379,
+          "score": 0.2813
+        }
+      },
+      {
+        "phrase": "great horticultural knowledge",
+        "rake": {
+          "rank": 5,
+          "score": 8.2
+        },
+        "yake": {
+          "rank": 1919,
+          "score": 0.459
+        }
+      },
+      {
+        "phrase": "hair quadruped feather",
+        "rake": null,
+        "yake": {
+          "rank": 8,
+          "score": 1615.4825
+        }
+      },
+      {
+        "phrase": "immaterial whether",
+        "rake": null,
+        "yake": {
+          "rank": 11,
+          "score": 1313.0735
+        }
+      },
+      {
+        "phrase": "immaterial whether multitude",
+        "rake": null,
+        "yake": {
+          "rank": 1,
+          "score": 45079.2939
+        }
+      },
+      {
+        "phrase": "larger domestic animal tend",
+        "rake": {
+          "rank": 1,
+          "score": 12.6364
+        },
+        "yake": null
+      },
+      {
+        "phrase": "mere theoretical calculation",
+        "rake": {
+          "rank": 4,
+          "score": 8.5
+        },
+        "yake": {
+          "rank": 2245,
+          "score": 0.3517
+        }
+      },
+      {
+        "phrase": "numerous record case",
+        "rake": {
+          "rank": 10,
+          "score": 5.9722
+        },
+        "yake": {
+          "rank": 2361,
+          "score": 0.2916
+        }
+      },
+      {
+        "phrase": "probable minimum rate",
+        "rake": {
+          "rank": 6,
+          "score": 7.6
+        },
+        "yake": {
+          "rank": 2307,
+          "score": 0.3226
+        }
+      },
+      {
+        "phrase": "rapid increase",
+        "rake": {
+          "rank": 12,
+          "score": 4.3571
+        },
+        "yake": {
+          "rank": 1612,
+          "score": 0.5612
+        }
+      },
+      {
+        "phrase": "slow -breeding man",
+        "rake": {
+          "rank": 9,
+          "score": 6.6667
+        },
+        "yake": {
+          "rank": 1810,
+          "score": 0.4964
+        }
+      },
+      {
+        "phrase": "structure beetle dive",
+        "rake": null,
+        "yake": {
+          "rank": 9,
+          "score": 1383.7777
+        }
+      },
+      {
+        "phrase": "sub-specy varietie rank",
+        "rake": null,
+        "yake": {
+          "rank": 2,
+          "score": 26693.1238
+        }
+      },
+      {
+        "phrase": "whether multitude",
+        "rake": null,
+        "yake": {
+          "rank": 12,
+          "score": 1214.9268
+        }
+      },
+      {
+        "phrase": "whether multitude doubtful",
+        "rake": null,
+        "yake": {
+          "rank": 6,
+          "score": 1735.719
+        }
+      }
+    ],
+    "rake": [
+      {
+        "phrase": "larger domestic animal tend",
+        "rank": 1,
+        "score": 12.6364
+      },
+      {
+        "phrase": "elder de candolle",
+        "rank": 2,
+        "score": 9.0
+      },
+      {
+        "phrase": "fulmar petrel lay",
+        "rank": 2,
+        "score": 9.0
+      },
+      {
+        "phrase": "mere theoretical calculation",
+        "rank": 4,
+        "score": 8.5
+      },
+      {
+        "phrase": "great horticultural knowledge",
+        "rank": 5,
+        "score": 8.2
+      },
+      {
+        "phrase": "probable minimum rate",
+        "rank": 6,
+        "score": 7.6
+      },
+      {
+        "phrase": "astonishingly rapid increase",
+        "rank": 7,
+        "score": 7.3571
+      },
+      {
+        "phrase": "great destruction fal",
+        "rank": 8,
+        "score": 6.9143
+      },
+      {
+        "phrase": "slow -breeding man",
+        "rank": 9,
+        "score": 6.6667
+      },
+      {
+        "phrase": "numerous record case",
+        "rank": 10,
+        "score": 5.9722
+      },
+      {
+        "phrase": "domestic animal",
+        "rank": 11,
+        "score": 4.6364
+      },
+      {
+        "phrase": "rapid increase",
+        "rank": 12,
+        "score": 4.3571
+      }
+    ],
+    "shown": 12,
+    "total": {
+      "rake": 321,
+      "yake": 2430
+    },
+    "yake": [
+      {
+        "phrase": "immaterial whether multitude",
+        "rank": 1,
+        "score": 45079.2939
+      },
+      {
+        "phrase": "sub-specy varietie rank",
+        "rank": 2,
+        "score": 26693.1238
+      },
+      {
+        "phrase": "enter subject",
+        "rank": 3,
+        "score": 8986.9666
+      },
+      {
+        "phrase": "enter subject chapter",
+        "rank": 4,
+        "score": 8544.3338
+      },
+      {
+        "phrase": "enter",
+        "rank": 5,
+        "score": 2233.5002
+      },
+      {
+        "phrase": "whether multitude doubtful",
+        "rank": 6,
+        "score": 1735.719
+      },
+      {
+        "phrase": "cling hair quadruped",
+        "rank": 7,
+        "score": 1679.6382
+      },
+      {
+        "phrase": "hair quadruped feather",
+        "rank": 8,
+        "score": 1615.4825
+      },
+      {
+        "phrase": "structure beetle dive",
+        "rank": 9,
+        "score": 1383.7777
+      },
+      {
+        "phrase": "beetle dive water",
+        "rank": 10,
+        "score": 1334.5044
+      },
+      {
+        "phrase": "immaterial whether",
+        "rank": 11,
+        "score": 1313.0735
+      },
+      {
+        "phrase": "whether multitude",
+        "rank": 12,
+        "score": 1214.9268
+      }
+    ]
+  },
+  "figure": "keyphrases",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "origin-struggle",
+  "source": {
+    "author": "Charles Darwin",
+    "licence": "Public domain (first published 1859)",
+    "register": "scientific",
+    "source": "Project Gutenberg eBook #1228, On the Origin of Species (1859, first edition): the first ten paragraphs of chapter III, from \"Before entering on the subject of this chapter\", without the chapter's heading and argument, with each paragraph's line breaks joined",
+    "title": "On the Origin of Species, the opening of chapter III, Struggle for Existence",
+    "url": "https://www.gutenberg.org/ebooks/1228"
+  }
+}

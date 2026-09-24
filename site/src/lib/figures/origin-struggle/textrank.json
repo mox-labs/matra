@@ -1,0 +1,451 @@
+{
+  "data": {
+    "n": 3,
+    "sentences": [
+      {
+        "paragraph": 1,
+        "position": 0,
+        "score": 0.0155,
+        "summary": false,
+        "text": "Before entering on the subject of this chapter, I must make a few preliminary remarks, to show how the struggle for existence bears on Natural Selection."
+      },
+      {
+        "paragraph": 1,
+        "position": 1,
+        "score": 0.0145,
+        "summary": false,
+        "text": "It has been seen in the last chapter that amongst organic beings in a state of nature there is some individual variability; indeed I am not aware that this has ever been disputed."
+      },
+      {
+        "paragraph": 1,
+        "position": 2,
+        "score": 0.0182,
+        "summary": false,
+        "text": "It is immaterial for us whether a multitude of doubtful forms be called species or sub-species or varieties; what rank, for instance, the two or three hundred doubtful forms of British plants are entitled to hold, if the existence of any well-marked varieties be admitted."
+      },
+      {
+        "paragraph": 1,
+        "position": 3,
+        "score": 0.018,
+        "summary": false,
+        "text": "But the mere existence of individual variability and of some few well-marked varieties, though necessary as the foundation for the work, helps us but little in understanding how species arise in nature."
+      },
+      {
+        "paragraph": 1,
+        "position": 4,
+        "score": 0.0148,
+        "summary": false,
+        "text": "How have all those exquisite adaptations of one part of the organisation to another part, and to the conditions of life, and of one distinct organic being to another being, been perfected?"
+      },
+      {
+        "paragraph": 1,
+        "position": 5,
+        "score": 0.0155,
+        "summary": false,
+        "text": "We see these beautiful co-adaptations most plainly in the woodpecker and missletoe; and only a little less plainly in the humblest parasite which clings to the hairs of a quadruped or feathers of a bird; in the structure of the beetle which dives through the water; in the plumed seed which is wafted by the gentlest breeze; in short, we see beautiful adaptations everywhere and in every part of the organic world."
+      },
+      {
+        "paragraph": 2,
+        "position": 6,
+        "score": 0.0123,
+        "summary": false,
+        "text": "Again, it may be asked, how is it that varieties, which I have called incipient species, become ultimately converted into good and distinct species, which in most cases obviously differ from each other far more than do the varieties of the same species?"
+      },
+      {
+        "paragraph": 2,
+        "position": 7,
+        "score": 0.0089,
+        "summary": false,
+        "text": "How do those groups of species, which constitute what are called distinct genera, and which differ from each other more than do the species of the same genus, arise?"
+      },
+      {
+        "paragraph": 2,
+        "position": 8,
+        "score": 0.0168,
+        "summary": false,
+        "text": "All these results, as we shall more fully see in the next chapter, follow inevitably from the struggle for life."
+      },
+      {
+        "paragraph": 2,
+        "position": 9,
+        "score": 0.024,
+        "summary": false,
+        "text": "Owing to this struggle for life, any variation, however slight and from whatever cause proceeding, if it be in any degree profitable to an individual of any species, in its infinitely complex relations to other organic beings and to external nature, will tend to the preservation of that individual, and will generally be inherited by its offspring."
+      },
+      {
+        "paragraph": 2,
+        "position": 10,
+        "score": 0.0153,
+        "summary": false,
+        "text": "The offspring, also, will thus have a better chance of surviving, for, of the many individuals of any species which are periodically born, but a small number can survive."
+      },
+      {
+        "paragraph": 2,
+        "position": 11,
+        "score": 0.0102,
+        "summary": false,
+        "text": "I have called this principle, by which each slight variation, if useful, is preserved, by the term of Natural Selection, in order to mark its relation to man’s power of selection."
+      },
+      {
+        "paragraph": 2,
+        "position": 12,
+        "score": 0.0192,
+        "summary": false,
+        "text": "We have seen that man by selection can certainly produce great results, and can adapt organic beings to his own uses, through the accumulation of slight but useful variations, given to him by the hand of Nature."
+      },
+      {
+        "paragraph": 2,
+        "position": 13,
+        "score": 0.0113,
+        "summary": false,
+        "text": "But Natural Selection, as we shall hereafter see, is a power incessantly ready for action, and is as immeasurably superior to man’s feeble efforts, as the works of Nature are to those of Art."
+      },
+      {
+        "paragraph": 3,
+        "position": 14,
+        "score": 0.0114,
+        "summary": false,
+        "text": "We will now discuss in a little more detail the struggle for existence."
+      },
+      {
+        "paragraph": 3,
+        "position": 15,
+        "score": 0.006,
+        "summary": false,
+        "text": "In my future work this subject shall be treated, as it well deserves, at much greater length."
+      },
+      {
+        "paragraph": 3,
+        "position": 16,
+        "score": 0.0025,
+        "summary": false,
+        "text": "The elder De Candolle and"
+      },
+      {
+        "paragraph": 3,
+        "position": 17,
+        "score": 0.0055,
+        "summary": false,
+        "text": "Lyell have largely and philosophically shown that all organic beings are exposed to severe competition."
+      },
+      {
+        "paragraph": 3,
+        "position": 18,
+        "score": 0.0103,
+        "summary": false,
+        "text": "In regard to plants, no one has treated this subject with more spirit and ability than W."
+      },
+      {
+        "paragraph": 3,
+        "position": 19,
+        "score": 0.0046,
+        "summary": false,
+        "text": "Herbert, Dean of Manchester, evidently the result of his great horticultural knowledge."
+      },
+      {
+        "paragraph": 3,
+        "position": 20,
+        "score": 0.0121,
+        "summary": false,
+        "text": "Nothing is easier than to admit in words the truth of the universal struggle for life, or more difficult—at least I have found it so—than constantly to bear this conclusion in mind."
+      },
+      {
+        "paragraph": 3,
+        "position": 21,
+        "score": 0.0123,
+        "summary": false,
+        "text": "Yet unless it be thoroughly engrained in the mind, I am convinced that the whole economy of nature, with every fact on distribution, rarity, abundance, extinction, and variation, will be dimly seen or quite misunderstood."
+      },
+      {
+        "paragraph": 3,
+        "position": 22,
+        "score": 0.0237,
+        "summary": false,
+        "text": "We behold the face of nature bright with gladness, we often see superabundance of food; we do not see, or we forget, that the birds which are idly singing round us mostly live on insects or seeds, and are thus constantly destroying life; or we forget how largely these songsters, or their eggs, or their nestlings, are destroyed by birds and beasts of prey; we do not always bear in mind, that though food may be now superabundant, it is not so at all seasons of each recurring year."
+      },
+      {
+        "paragraph": 4,
+        "position": 23,
+        "score": 0.0202,
+        "summary": false,
+        "text": "I should premise that I use the term Struggle for Existence in a large and metaphorical sense, including dependence of one being on another, and including (which is more important) not only the life of the individual, but success in leaving progeny."
+      },
+      {
+        "paragraph": 4,
+        "position": 24,
+        "score": 0.0152,
+        "summary": false,
+        "text": "Two canine animals in a time of dearth, may be truly said to struggle with each other which shall get food and live."
+      },
+      {
+        "paragraph": 4,
+        "position": 25,
+        "score": 0.0161,
+        "summary": false,
+        "text": "But a plant on the edge of a desert is said to struggle for life against the drought, though more properly it should be said to be dependent on the moisture."
+      },
+      {
+        "paragraph": 4,
+        "position": 26,
+        "score": 0.0237,
+        "summary": false,
+        "text": "A plant which annually produces a thousand seeds, of which on an average only one comes to maturity, may be more truly said to struggle with the plants of the same and other kinds which already clothe the ground."
+      },
+      {
+        "paragraph": 4,
+        "position": 27,
+        "score": 0.0121,
+        "summary": false,
+        "text": "The missletoe is dependent on the apple and a few other trees, but can only in a far-fetched sense be said to struggle with these trees, for if too many of these parasites grow on the same tree, it will languish and die."
+      },
+      {
+        "paragraph": 4,
+        "position": 28,
+        "score": 0.0153,
+        "summary": false,
+        "text": "But several seedling missletoes, growing close together on the same branch, may more truly be said to struggle with each other."
+      },
+      {
+        "paragraph": 4,
+        "position": 29,
+        "score": 0.0216,
+        "summary": false,
+        "text": "As the missletoe is disseminated by birds, its existence depends on birds; and it may metaphorically be said to struggle with other fruit-bearing plants, in order to tempt birds to devour and thus disseminate its seeds rather than those of other plants."
+      },
+      {
+        "paragraph": 4,
+        "position": 30,
+        "score": 0.012,
+        "summary": false,
+        "text": "In these several senses, which pass into each other, I use for convenience sake the general term of struggle for existence."
+      },
+      {
+        "paragraph": 5,
+        "position": 31,
+        "score": 0.0197,
+        "summary": false,
+        "text": "A struggle for existence inevitably follows from the high rate at which all organic beings tend to increase."
+      },
+      {
+        "paragraph": 5,
+        "position": 32,
+        "score": 0.0292,
+        "summary": true,
+        "text": "Every being, which during its natural lifetime produces several eggs or seeds, must suffer destruction during some period of its life, and during some season or occasional year, otherwise, on the principle of geometrical increase, its numbers would quickly become so inordinately great that no country could support the product."
+      },
+      {
+        "paragraph": 5,
+        "position": 33,
+        "score": 0.0308,
+        "summary": true,
+        "text": "Hence, as more individuals are produced than can possibly survive, there must in every case be a struggle for existence, either one individual with another of the same species, or with the individuals of distinct species, or with the physical conditions of life."
+      },
+      {
+        "paragraph": 5,
+        "position": 34,
+        "score": 0.0129,
+        "summary": false,
+        "text": "It is the doctrine of Malthus applied with manifold force to the whole animal and vegetable kingdoms; for in this case there can be no artificial increase of food, and no prudential restraint from marriage."
+      },
+      {
+        "paragraph": 5,
+        "position": 35,
+        "score": 0.0154,
+        "summary": false,
+        "text": "Although some species may be now increasing, more or less rapidly, in numbers, all cannot do so, for the world would not hold them."
+      },
+      {
+        "paragraph": 6,
+        "position": 36,
+        "score": 0.0142,
+        "summary": false,
+        "text": "There is no exception to the rule that every organic being naturally increases at so high a rate, that if not destroyed, the earth would soon be covered by the progeny of a single pair."
+      },
+      {
+        "paragraph": 6,
+        "position": 37,
+        "score": 0.0098,
+        "summary": false,
+        "text": "Even slow-breeding man has doubled in twenty-five years, and at this rate, in a few thousand years, there would literally not be standing room for his progeny."
+      },
+      {
+        "paragraph": 6,
+        "position": 38,
+        "score": 0.0173,
+        "summary": false,
+        "text": "Linnæus has calculated that if an annual plant produced only two seeds—and there is no plant so unproductive as this—and their seedlings next year produced two, and so on, then in twenty years there would be a million plants."
+      },
+      {
+        "paragraph": 6,
+        "position": 39,
+        "score": 0.0152,
+        "summary": false,
+        "text": "The elephant is reckoned to be the slowest breeder of all known animals, and I have taken some pains to estimate its probable minimum rate of natural increase: it will be under the mark to assume that it breeds when thirty years old, and goes on breeding till ninety years old, bringing forth three pair of young in this interval; if this be so, at the end of the fifth century there would be alive fifteen million elephants, descended from the first pair."
+      },
+      {
+        "paragraph": 7,
+        "position": 40,
+        "score": 0.0199,
+        "summary": false,
+        "text": "But we have better evidence on this subject than mere theoretical calculations, namely, the numerous recorded cases of the astonishingly rapid increase of various animals in a state of nature, when circumstances have been favourable to them during two or three following seasons."
+      },
+      {
+        "paragraph": 7,
+        "position": 41,
+        "score": 0.0154,
+        "summary": false,
+        "text": "Still more striking is the evidence from our domestic animals of many kinds which have run wild in several parts of the world: if the statements of the rate of increase of slow-breeding cattle and horses in South America, and latterly in Australia, had not been well authenticated, they would have been quite incredible."
+      },
+      {
+        "paragraph": 7,
+        "position": 42,
+        "score": 0.0153,
+        "summary": false,
+        "text": "So it is with plants: cases could be given of introduced plants which have become common throughout whole islands in a period of less than ten years."
+      },
+      {
+        "paragraph": 7,
+        "position": 43,
+        "score": 0.0093,
+        "summary": false,
+        "text": "Several of the plants now most numerous over the wide plains of La Plata, clothing square leagues of surface almost to the exclusion of all other plants, have been introduced from Europe; and there are plants which now range in India, as I hear from Dr. Falconer, from Cape Comorin to the Himalaya, which have been imported from America since its discovery."
+      },
+      {
+        "paragraph": 7,
+        "position": 44,
+        "score": 0.0198,
+        "summary": false,
+        "text": "In such cases, and endless instances could be given, no one supposes that the fertility of these animals or plants has been suddenly and temporarily increased in any sensible degree."
+      },
+      {
+        "paragraph": 7,
+        "position": 45,
+        "score": 0.0112,
+        "summary": false,
+        "text": "The obvious explanation is that the conditions of life have been very favourable, and that there has consequently been less destruction of the old and young, and that nearly all the young have been enabled to breed."
+      },
+      {
+        "paragraph": 7,
+        "position": 46,
+        "score": 0.0109,
+        "summary": false,
+        "text": "In such cases the geometrical ratio of increase, the result of which never fails to be surprising, simply explains the extraordinarily rapid increase and wide diffusion of naturalised productions in their new homes."
+      },
+      {
+        "paragraph": 8,
+        "position": 47,
+        "score": 0.0213,
+        "summary": false,
+        "text": "In a state of nature almost every plant produces seed, and amongst animals there are very few which do not annually pair."
+      },
+      {
+        "paragraph": 8,
+        "position": 48,
+        "score": 0.0245,
+        "summary": false,
+        "text": "Hence we may confidently assert, that all plants and animals are tending to increase at a geometrical ratio, that all would most rapidly stock every station in which they could any how exist, and that the geometrical tendency to increase must be checked by destruction at some period of life."
+      },
+      {
+        "paragraph": 8,
+        "position": 49,
+        "score": 0.0205,
+        "summary": false,
+        "text": "Our familiarity with the larger domestic animals tends, I think, to mislead us: we see no great destruction falling on them, and we forget that thousands are annually slaughtered for food, and that in a state of nature an equal number would have somehow to be disposed of."
+      },
+      {
+        "paragraph": 9,
+        "position": 50,
+        "score": 0.0179,
+        "summary": false,
+        "text": "The only difference between organisms which annually produce eggs or seeds by the thousand, and those which produce extremely few, is, that the slow-breeders would require a few more years to people, under favourable conditions, a whole district, let it be ever so large."
+      },
+      {
+        "paragraph": 9,
+        "position": 51,
+        "score": 0.0115,
+        "summary": false,
+        "text": "The condor lays a couple of eggs and the ostrich a score, and yet in the same country the condor may be the more numerous of the two: the Fulmar petrel lays but one egg, yet it is believed to be the most numerous bird in the world."
+      },
+      {
+        "paragraph": 9,
+        "position": 52,
+        "score": 0.0173,
+        "summary": false,
+        "text": "One fly deposits hundreds of eggs, and another, like the hippobosca, a single one; but this difference does not determine how many individuals of the two species can be supported in a district."
+      },
+      {
+        "paragraph": 9,
+        "position": 53,
+        "score": 0.0182,
+        "summary": false,
+        "text": "A large number of eggs is of some importance to those species, which depend on a rapidly fluctuating amount of food, for it allows them rapidly to increase in number."
+      },
+      {
+        "paragraph": 9,
+        "position": 54,
+        "score": 0.0237,
+        "summary": false,
+        "text": "But the real importance of a large number of eggs or seeds is to make up for much destruction at some period of life; and this period in the great majority of cases is an early one."
+      },
+      {
+        "paragraph": 9,
+        "position": 55,
+        "score": 0.0247,
+        "summary": false,
+        "text": "If an animal can in any way protect its own eggs or young, a small number may be produced, and yet the average stock be fully kept up; but if many eggs or young are destroyed, many must be produced, or the species will become extinct."
+      },
+      {
+        "paragraph": 9,
+        "position": 56,
+        "score": 0.018,
+        "summary": false,
+        "text": "It would suffice to keep up the full number of a tree, which lived on an average for a thousand years, if a single seed were produced once in a thousand years, supposing that this seed were never destroyed, and could be ensured to germinate in a fitting place."
+      },
+      {
+        "paragraph": 9,
+        "position": 57,
+        "score": 0.0225,
+        "summary": false,
+        "text": "So that in all cases, the average number of any animal or plant depends only indirectly on the number of its eggs or seeds."
+      },
+      {
+        "paragraph": 10,
+        "position": 58,
+        "score": 0.0301,
+        "summary": true,
+        "text": "In looking at Nature, it is most necessary to keep the foregoing considerations always in mind—never to forget that every single organic being around us may be said to be striving to the utmost to increase in numbers; that each lives by a struggle at some period of its life; that heavy destruction inevitably falls either on the young or old, during each generation or at recurrent intervals."
+      },
+      {
+        "paragraph": 10,
+        "position": 59,
+        "score": 0.0183,
+        "summary": false,
+        "text": "Lighten any check, mitigate the destruction ever so little, and the number of the species will almost instantaneously increase to any amount."
+      },
+      {
+        "paragraph": 10,
+        "position": 60,
+        "score": 0.012,
+        "summary": false,
+        "text": "The face of Nature may be compared to a yielding surface, with ten thousand sharp wedges packed close together and driven inwards by incessant blows, sometimes one wedge being struck, and then another with greater force."
+      }
+    ]
+  },
+  "figure": "textrank",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "origin-struggle",
+  "source": {
+    "author": "Charles Darwin",
+    "licence": "Public domain (first published 1859)",
+    "register": "scientific",
+    "source": "Project Gutenberg eBook #1228, On the Origin of Species (1859, first edition): the first ten paragraphs of chapter III, from \"Before entering on the subject of this chapter\", without the chapter's heading and argument, with each paragraph's line breaks joined",
+    "title": "On the Origin of Species, the opening of chapter III, Struggle for Existence",
+    "url": "https://www.gutenberg.org/ebooks/1228"
+  }
+}

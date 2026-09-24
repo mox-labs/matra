@@ -1,0 +1,9 @@
+{
+  "input": "field-notes",
+  "file": "field-notes.md",
+  "output": {
+    "omit": [
+      "sentences"
+    ]
+  }
+}

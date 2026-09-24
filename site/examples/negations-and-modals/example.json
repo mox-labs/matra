@@ -1,0 +1,11 @@
+{
+  "input": "constitution-article-one",
+  "file": "constitution-article-one.txt",
+  "output": {
+    "path": "sections.0.paragraphs.2.sentences",
+    "omit": [
+      "tokens"
+    ],
+    "keep": 2
+  }
+}

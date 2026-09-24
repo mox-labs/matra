@@ -20,8 +20,9 @@ categories = ["text-processing", "science"]
 # `tests/cited_figures.rs` and `tests/error_tables.rs` read `site/content/`,
 # which does not ship, so either would fail every `cargo test` run from the
 # published tarball. A new test that reads `site/` belongs on this list too,
-# and so does `examples/docsite_figures.rs`, which generates the docsite's
-# figure data from `site/inputs/`.
+# and so do `examples/docsite_figures.rs`, which generates the docsite's
+# figure data from `site/inputs/`, and `examples/docsite_examples.rs`, which
+# compiles the docsite's worked examples from `site/examples/`.
 exclude = [
     "scratch/*",
     ".claude/*",
@@ -32,6 +33,7 @@ exclude = [
     "tests/cited_figures.rs",
     "tests/error_tables.rs",
     "examples/docsite_figures.rs",
+    "examples/docsite_examples.rs",
 ]
 
 [package.metadata.docs.rs]
@@ -120,4 +122,10 @@ required-features = ["udpipe"]
 # Writes the docsite's figure data (EP-0012); excluded from the package above.
 [[example]]
 name = "docsite_figures"
+required-features = ["udpipe"]
+
+# Runs the docsite's worked examples' Rust calls (EP-0012); excluded from the
+# package above.
+[[example]]
+name = "docsite_examples"
 required-features = ["udpipe"]
