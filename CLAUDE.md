@@ -134,7 +134,7 @@ Features are additive: `udpipe` (default), `model2vec`, `python`, `cli`. **Do no
 
 Content lives in `book/src/`. Every page describes what ships today; `book/src/roadmap.md` is the only page describing what does not, and it links each fired trigger to its enhancement plan in `blueprints/eps/`, outside the docsite. Design records are `blueprints/rfcs/`; the process is `blueprints/README.md`.
 
-Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quoted material (in `book/src/`, `skills/` and `blueprints/`), and `book/src/llms.txt` current with `SUMMARY.md` (regenerate with `scripts/gen-llms-txt.sh`).
+Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quoted material (in `book/src/`, `skills/` and `blueprints/`), and `book/src/llms.txt` current with `SUMMARY.md` (regenerate with `scripts/gen-llms-txt.sh`). Beside them, `scripts/check-blueprint-refs.sh` (from `just check` and the `Docsite floor` CI job) fails when a cited RFC or EP number has no record in `blueprints/` or a record has no row in its index.
 
 Live preview: `cd book && mdbook serve --port 3000`. `create-missing = false`, so a `SUMMARY.md` entry without a file on disk fails the build loudly rather than creating a stub.
 

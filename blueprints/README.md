@@ -97,7 +97,7 @@ tables. The docsite floor's em-dash gate covers this directory too.
 
 ## EPs
 
-EP numbers follow the iteration plans they replace, so there is no EP-0001,
+EP numbers follow the iteration plans they replace, so no EP carries 0001,
 0002 or 0004: the i0, i1 and i2 plans were retired once their work landed
 and their commits are in the history, and the i4 workspace plan was retracted
 when RFC-0004 superseded RFC-0003.

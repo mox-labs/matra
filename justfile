@@ -11,12 +11,13 @@ default:
 # Quality gates — same commands CI runs.
 # ---------------------------------------------------------------------------
 
-# Run the local gate suite: the Rust gates, the boundary check and the
-# docsite floor, which CI also runs, plus the Python lint, the end-to-end
-# sandbox test and the version sync, which CI does not run on a pull request.
+# Run the local gate suite: the Rust gates, the boundary check, the docsite
+# floor and the blueprint citation check, which CI also runs, plus the Python
+# lint, the end-to-end sandbox test and the version sync, which CI does not run
+# on a pull request.
 # CI additionally runs cargo-deny, cargo-semver-checks, the wheel build and
 # mypy.
-check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary test-sandbox docs-floor version-sync
+check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary test-sandbox docs-floor blueprint-refs version-sync
     @echo ""
     @echo "all gates pass"
 
@@ -69,6 +70,12 @@ test-no-default:
 # Boundary check: hex-architecture rules from CLAUDE.md (3, 4, 8).
 boundary:
     bash scripts/check-boundaries.sh
+
+# Every RFC-NNNN and EP-NNNN cited in the tracked tree resolves to a record in
+# blueprints/ (or a reserved number), and every record has a row in the index
+# in blueprints/README.md. Requires ripgrep.
+blueprint-refs:
+    bash scripts/check-blueprint-refs.sh
 
 # The end-to-end sandbox script cannot report a clean result for a tree it did
 # not examine without saying so. Needs an unprivileged user for the unreadable and unwritable
