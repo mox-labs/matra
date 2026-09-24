@@ -25,6 +25,8 @@ All three, on ten short sentences with the reference model: step the threshold a
 
 <figure-clusters input="paraphrases" />
 
+A cluster can grow through a chain of pairs, as sentence 8 does at 0.70. Its pair with sentence 1 scores 0.7239 and clears the bar. Its pairs with sentences 2 and 3 do not, yet it shares their cluster.
+
 ## The model
 
 The adapter loads static embedding models in the model2vec artifact format: an embedding matrix (`model.safetensors`), a `tokenizer.json`, and a `config.json` in one directory. The reference model is [potion-base-8M](https://huggingface.co/minishlab/potion-base-8M), about 30 MB, and you do not have to fetch it yourself:

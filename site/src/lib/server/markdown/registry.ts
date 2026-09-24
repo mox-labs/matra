@@ -29,13 +29,24 @@
  *                 attribute or a value out of range fails the build. The page
  *                 renders the component for the tag, prerendered with its data.
  *
+ *   example       one part of a worked example (EP-0012, M6), written the
+ *                 same way as a figure and naming a directory in
+ *                 site/examples/:
+ *
+ *                   <example-call name="summarize" />
+ *
+ *                 `part` says which part the tag renders: the input, the
+ *                 call in Rust, Python and the CLI, or what the calls print.
+ *
  * Adding a new kind of figure means a new entry here and its component;
  * adding a new instance means a line in a page and an input in site/inputs/.
+ * Adding an example means a directory in site/examples/ and a page.
  */
 import type { FigureKind } from '$lib/types';
 
 export type TagEntry =
 	| { kind: 'passthrough'; reason: string }
+	| { kind: 'example'; part: 'input' | 'call' | 'output'; reason: string }
 	| {
 			kind: 'figure';
 			figure: FigureKind;
@@ -111,6 +122,23 @@ export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 			'annotated, composed. Answers "what does each stage add?" faster than reading the ' +
 			'stages\' types.',
 		attributes: { input: 'required' }
+	},
+	'example-input': {
+		kind: 'example',
+		part: 'input',
+		reason: "A worked example's input: its text, source and licence, and a link to download it."
+	},
+	'example-call': {
+		kind: 'example',
+		part: 'call',
+		reason:
+			"A worked example's call in Rust, Python and the CLI, as tabs, from the files the " +
+			'examples gate runs.'
+	},
+	'example-output': {
+		kind: 'example',
+		part: 'output',
+		reason: 'What the calls print, trimmed where long, with the whole output linked.'
 	}
 };
 

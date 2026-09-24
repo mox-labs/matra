@@ -1,5 +1,6 @@
 # Summary
 
+[Home](home.md)
 [Introduction](introduction.md)
 
 # Explanation
@@ -16,6 +17,16 @@
 - [Python](guides/python.md)
 - [CLI](guides/cli.md)
 - [Semantic clusters](guides/semantic-clusters.md)
+
+# Examples
+
+- [Examples](examples/README.md)
+  - [Parse one sentence](examples/parse-a-sentence.md)
+  - [Find negations and modals](examples/negations-and-modals.md)
+  - [Compare readability across paragraphs](examples/readability-by-paragraph.md)
+  - [Summarize a long document](examples/summarize.md)
+  - [Extract keyphrases](examples/keyphrases.md)
+  - [Read a Markdown document's structure](examples/markdown-structure.md)
 
 # Reference
 

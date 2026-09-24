@@ -28,7 +28,9 @@
 
 	const ROW = 30;
 	const TOP = 14;
-	const LEVEL = 34;
+	// Nested arcs' labels sit at their apexes, three quarters of a level
+	// apart; at 44 a four-character label clears its neighbour's.
+	const LEVEL = 44;
 	const FONT = 11;
 	const ADVANCE = FONT * 0.6;
 
@@ -123,7 +125,7 @@
 	<!-- A region that scrolls must take focus, or it cannot be scrolled from
 	     the keyboard (WCAG 2.1.1). -->
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-twin tall" tabindex="0" role="region" aria-label="Clusters and edges at every threshold">
+	<div class="fig-twin" tabindex="0" role="region" aria-label="Clusters and edges at every threshold">
 		<table data-twin-for={id}>
 			<thead><tr><th>Threshold</th><th>Clusters</th><th>Edges (cosine)</th></tr></thead>
 			<tbody>
@@ -261,10 +263,8 @@
 		color: var(--text-muted);
 	}
 
-	.tall {
-		max-height: 14rem;
-		overflow-y: auto;
-	}
+	/* Every threshold's row shows: a table that scrolls inside the figure
+	   hid three of them from a first reader, who could not tell it scrolled. */
 
 	tr.current td {
 		color: var(--text);
@@ -272,7 +272,9 @@
 		background: var(--accent-soft);
 	}
 
-	td.edges {
+	/* The frame keeps table cells on one line; the edge list wraps, or its
+	   end is cut off at the figure's edge. */
+	.fig-twin td.edges {
 		white-space: normal;
 		min-width: 16rem;
 	}
