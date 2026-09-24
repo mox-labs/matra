@@ -78,8 +78,11 @@ The full reasoning is in EP-0012's Design section.
   same; search, the menu and the theme toggle hide themselves.
 - **Typography first.** A measure near 80 characters, 17px body text, headings
   bound to the text they introduce, code blocks and tables that sit inside the
-  rhythm. Diagrams and tables keep their width; a table wider than the column
-  scrolls on its own. No page scrolls sideways at 360px.
+  rhythm. Diagrams and tables keep their width. A table wider than the column
+  scrolls on its own; a diagram stops shrinking at 44rem, so its labels stay
+  legible, and on a narrower screen scrolls inside its own container, with a
+  fade at the edge that has more and a hint below it. No page scrolls
+  sideways at 360px.
 - **Light and dark from one set of tokens.** Each colour is declared once with
   `light-dark()`. The site follows `prefers-color-scheme` until the reader picks
   a theme with the toggle, and remembers the choice.

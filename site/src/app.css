@@ -338,8 +338,62 @@ samp {
 	margin-bottom: 0;
 }
 
-/* The hand-authored diagrams. Each carries its own layout; this keeps it
-   inside the column on a narrow screen. Their label halos read --bg. */
+/* The hand-authored diagrams. Their label halos read --bg.
+ *
+ * Drawn 720 units wide, they fill the column on a desktop. Below 44rem
+ * (704px, about 98% of drawn size) they stop shrinking, so the smallest
+ * labels stay as legible as on a desktop, and scroll sideways inside
+ * .diagram-scroll instead. The page does not.
+ *
+ * The affordance needs no script: the scroller's backgrounds are the
+ * "scrolling shadows" pattern. Two covers in the page colour move with the
+ * content (`local`); two shadows stay at the edges (`scroll`). A cover hides
+ * its shadow at whichever end the content has reached, so a fade shows only
+ * on a side with more to see. Below the diagram, a hint says so in words,
+ * shown only while the container is narrower than the diagram. */
+.prose .diagram {
+	container-type: inline-size;
+	margin-block: 1.7em;
+}
+
+.prose .diagram-scroll {
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	background:
+		linear-gradient(to right, var(--bg) 30%, transparent) left / 2.5rem 100% no-repeat local,
+		linear-gradient(to left, var(--bg) 30%, transparent) right / 2.5rem 100% no-repeat local,
+		linear-gradient(to right, light-dark(rgb(0 0 0 / 0.14), rgb(0 0 0 / 0.55)), transparent)
+			left / 1rem 100% no-repeat scroll,
+		linear-gradient(to left, light-dark(rgb(0 0 0 / 0.14), rgb(0 0 0 / 0.55)), transparent)
+			right / 1rem 100% no-repeat scroll;
+	background-color: var(--bg);
+}
+
+/* The inline style on each diagram sets max-width: 100% and a margin; both
+   are replaced here so the minimum width can hold. */
+.prose .diagram-scroll > svg {
+	display: block;
+	width: 100%;
+	min-width: 44rem;
+	max-width: 45rem !important;
+	height: auto;
+	margin: 0 auto !important;
+}
+
+.prose .diagram-hint {
+	display: none;
+	margin: 0.5rem 0 0;
+	font-size: 0.8rem;
+	color: var(--text-muted);
+	text-align: center;
+}
+
+@container (max-width: 43.99rem) {
+	.prose .diagram-hint {
+		display: block;
+	}
+}
+
 .prose svg {
 	max-width: 100%;
 	height: auto;
