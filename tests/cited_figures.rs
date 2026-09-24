@@ -38,7 +38,7 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
             "site/content/guides/cli.md",
-            "17214:e0136af0618f0dff",
+            "17214:59ee44ab27532c5e",
             "the 0.8362 pair score in site/content/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md, and the 0.5907 unrelated score",
         ),

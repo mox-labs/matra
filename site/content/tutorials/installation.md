@@ -55,7 +55,7 @@ matra --version
 Expected output:
 
 ```
-matra 0.2.0
+matra 0.2.1
 features: udpipe cli
 ```
 
@@ -76,7 +76,7 @@ The version in that line is deliberate. The claim holds for 0.2.0 and later, not
 It is not, however, the same *build*. The wheel is compiled with the Python and embedding features on top of the CLI, so its version banner reads:
 
 ```
-matra 0.2.0
+matra 0.2.1
 features: udpipe model2vec python cli
 ```
 
