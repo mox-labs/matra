@@ -72,8 +72,9 @@ prose that was meant as text: put it in backticks.
 
 The registry has two kinds of entry. `svg` is a passthrough for the seven
 hand-authored diagrams: the element and everything inside it are emitted as
-written. `figure-parse` is a figure: a tag that names generated data and is
-drawn by a component, described next.
+written. `figure-parse`, `figure-primitives`, `figure-metrics` and
+`figure-keyphrases` are figures: tags that name generated data and are drawn
+by a component, described next.
 
 A code fence in a language the highlighter has no grammar for also fails the
 build. Add the language to `LANGUAGES` in `render.ts`.
@@ -92,16 +93,19 @@ blank line before and after:
 <figure-parse input="primitives" sentence="1" />
 ```
 
-`input` names a file in `inputs/`; `sentence` is the one shown first
-(default 1). A tag written any other way, a missing input, an unknown
+`input` names a file in `inputs/`; `sentence`, on the parse figure only, is
+the one shown first (default 1). A tag written any other way, a missing input, an unknown
 attribute or a sentence out of range fails the build, naming the page and
 line. Each figure links to its data at `figures/<input>/<figure>.json` on the
 site, and says which matra version and model produced it.
 
 Every figure has a text twin in the same HTML, carrying the same data, for
-readers who do not see the picture and agents that read HTML: for the parse,
-the token table leads and the arcs follow. Gate 9 holds every figure in the
-built site to its twin.
+readers who do not see the picture and agents that read HTML. The twin is a
+table, and it leads: the figure follows it. Gate 9 holds every figure in the
+built site to its twin. Every figure is framed the same way by
+`FigureFrame.svelte`: a title, an optional control, a legend, a note on how
+to read it, and a provenance line naming the input, its licence, the matra
+version and model, with a link to the data.
 
 **Adding an input.** Put the text in `inputs/<name>.txt` (paragraphs
 separated by a blank line) and write `inputs/<name>.source.toml` with
@@ -136,7 +140,28 @@ relation?". Its colours are Universal Dependencies' grouping of relations
 legend, and each holds 4.5:1 contrast in both themes. Words are set in the
 monospace face so their widths, and so the layout, are known without
 measuring text. Arcs are levelled so none collide, and a sentence wider than
-the column scrolls inside the figure.
+the column scrolls inside the figure. It is the only figure with motion: its
+sentence picker.
+
+`figure-primitives` answers "which words did matra read each primitive off?".
+Each sentence is set as written, with the word a primitive is read from
+tinted and the word it attaches to underlined, labelled above in the
+primitive's colour; the colours name primitives, and the labels say the same
+in words. Bare assertion is a sentence-level flag and shows as a badge.
+
+`figure-metrics` answers "where in the document do the paragraph measures
+move, and together?", as small multiples over one paragraph axis. A paragraph
+matra declined to measure is a cross and a break in the line, never a zero. A
+panel has a reference line only where matra computes a document value
+(readability's `Corpus::mean_readability`); the others have none, rather than
+a number the site made up.
+
+`figure-keyphrases` answers "do RAKE and YAKE agree on what ranks high?".
+matra's two scores are not comparable, so it joins each phrase's RAKE rank to
+its YAKE rank on one log scale; both of matra's scores run higher as more
+relevant (its YAKE is the reciprocal of the published score). Ranks come from
+the generator, which sorts on the rounded score with ties broken by the
+phrase, so they do not depend on hash order.
 
 ### Diagrams
 
