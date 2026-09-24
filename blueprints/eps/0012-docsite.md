@@ -2,8 +2,8 @@
 
 - EP: EP-0012
 - Implements: none (standalone: the docsite changes how matra is documented, not matra)
-- Status: in progress
-- Shipped in: not shipped (the docsite deploys from `main`, not with a release)
+- Status: shipped (docsite, not a crate release)
+- Shipped in: the docsite, deployed from `main` on 2026-09-24 (commit 72ce8cb); no crate release carries it
 
 ## Summary
 
@@ -525,3 +525,4 @@ examples are live, and the M6 newcomer pass is filed.
   - The semantic clusters guide names the chaining the figure shows at 0.70.
   The EP stays in progress until the ship criteria hold: the examples are
   live only after this merges and the deploy's live check passes.
+- 2026-09-24: shipped. M6 merged as #112; the deploy of 72ce8cb passed its live check (every manifest URL answers 200). The ship criteria hold: the site builds from `site/`, every gate passes in CI, seven figures and six examples are live, and the newcomer pass is filed at `docs/e2e/2026-09-24-docsite-newcomer.md`.
