@@ -22,8 +22,10 @@ just docs-figures   # regenerate the figure data from site/inputs/
 ```
 
 `just docs-figures` and the figures gate of `just docs-floor` also need a
-Rust toolchain; on first run they fetch the UDPipe model (16 MB) into
-matra's model directory, verified against the digest compiled into matra.
+Rust toolchain and build the generator with `--features model2vec`; on
+first run they fetch the UDPipe model (16 MB) and the potion-base-8M
+embedding model into matra's model directory, each verified against the
+digest compiled into matra.
 
 `just docs-serve` has no search: the Pagefind index is written from the built
 HTML, so search answers only in a build. To browse a build locally, serve
@@ -72,9 +74,10 @@ prose that was meant as text: put it in backticks.
 
 The registry has two kinds of entry. `svg` is a passthrough for the seven
 hand-authored diagrams: the element and everything inside it are emitted as
-written. `figure-parse`, `figure-primitives`, `figure-metrics` and
-`figure-keyphrases` are figures: tags that name generated data and are drawn
-by a component, described next.
+written. `figure-parse`, `figure-primitives`, `figure-metrics`,
+`figure-keyphrases`, `figure-textrank`, `figure-clusters` and
+`figure-pipeline` are figures: tags that name generated data and are drawn by
+a component, described next.
 
 A code fence in a language the highlighter has no grammar for also fails the
 build. Add the language to `LANGUAGES` in `render.ts`.
@@ -94,7 +97,8 @@ blank line before and after:
 ```
 
 `input` names a file in `inputs/`; `sentence`, on the parse figure only, is
-the one shown first (default 1). A tag written any other way, a missing input, an unknown
+the one shown first (default 1); `threshold`, on the clusters figure only, is
+the grid value shown first (default matra's shipped threshold). A tag written any other way, a missing input, an unknown
 attribute or a sentence out of range fails the build, naming the page and
 line. Each figure links to its data at `figures/<input>/<figure>.json` on the
 site, and says which matra version and model produced it.
@@ -111,7 +115,11 @@ version and model, with a link to the data.
 separated by a blank line) and write `inputs/<name>.source.toml` with
 `title`, `author`, `source`, `url`, `licence` and `register`. Every input is
 public domain or written for matra; gate 10 fails on an input without a
-source and a licence. Then run `just docs-figures` and commit the new files
+source and a licence. Two optional keys shape what the generator does with
+it: `figures`, the list of figure kinds to write (by default parse,
+primitives, metrics, keyphrases and textrank; clusters and pipeline are
+written only for an input that asks), and `format`, `"plaintext"` (the
+default) or `"markdown"`. Then run `just docs-figures` and commit the new files
 under `src/lib/figures/`, and add their `figures/<name>/<figure>.json` lines
 to `urls.txt`.
 
@@ -159,9 +167,32 @@ a number the site made up.
 `figure-keyphrases` answers "do RAKE and YAKE agree on what ranks high?".
 matra's two scores are not comparable, so it joins each phrase's RAKE rank to
 its YAKE rank on one log scale; both of matra's scores run higher as more
-relevant (its YAKE is the reciprocal of the published score). Ranks come from
-the generator, which sorts on the rounded score with ties broken by the
-phrase, so they do not depend on hash order.
+relevant (its YAKE is the reciprocal of the published score). A line joins
+a phrase only when both methods produce it; a phrase only one method produces
+is a hollow dot on that side, so two lists that share little do not become a
+bundle of lines to nowhere. Ranks come from the generator, which sorts on the
+rounded score with ties broken by the phrase, so they do not depend on hash
+order.
+
+`figure-textrank` answers "which sentences does TextRank score highest, and
+where are they in the document?": every sentence's score as a bar, in
+document order over bands for its paragraph, with the sentences the summary
+keeps marked and listed. It shows scores, not the sentence graph: the
+similarities TextRank ranks over are internal to matra, and the site draws
+only what the public surface returns.
+
+`figure-clusters` answers "how do the clusters change as the threshold
+moves?". The generator runs `embed_and_cluster` at every value of a grid
+from 0.50 to 0.95 (the shipped default must be on it), and the figure shows
+one value at a time: each sentence a row, each pair that clears the
+threshold an arc labelled with its cosine, a colour per cluster. The
+threshold picker is its motion. The twin lists the clusters and edges at
+every grid value.
+
+`figure-pipeline` answers "what does each stage add?": one Markdown
+document as `Ingest::text` yields it, after `Engine::annotate`, and after
+`Engine::compose`, stepped through with a rail. Without scripts all three
+stages render one after another.
 
 ### Diagrams
 
