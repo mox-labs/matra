@@ -27,9 +27,9 @@ echo "  rust gates:   $rust_touched"
 
 # Boundary script always runs — catches accidental imports of forbidden
 # crates anywhere in src/, regardless of what was staged.
-if [ -x scripts/check-boundaries.sh ]; then
-    bash scripts/check-boundaries.sh
-fi
+# Unconditional: the old `[ -x ... ]` guard skipped it without a word
+# whenever the file lost its mode bit.
+bash scripts/check-boundaries.sh
 
 if [ "$rust_touched" = true ]; then
     cargo fmt --all -- --check
