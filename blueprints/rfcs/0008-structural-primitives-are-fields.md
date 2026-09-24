@@ -1,10 +1,19 @@
-# 0008. Structural primitives are fields
+# RFC-0008: Structural primitives are fields
 
-- **Status:** Accepted
-- **Date:** 2026-08-21
-- **Decider(s):** project maintainer; question raised by I7 M1 ("are structural primitives fields or methods?")
+- Feature Name: `structural_primitives_are_fields`
+- Start Date: 2026-08-21
+- RFC PR: [#32](https://github.com/mox-labs/matra/pull/32)
+- Tracking EP: [EP-0007](../eps/0007-structural-primitives.md)
+- Status: implemented
+- Decider(s): project maintainer; question raised by I7 M1 ("are structural primitives fields or methods?")
 
-## Context
+> **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. The status moved from accepted to implemented because the CHANGELOG records it shipping in 0.1.0.
+
+## Summary
+
+We choose Option B. Derived structural facts cross FFI as serde-visible fields with a single Rust implementation. The criterion, stated once: derivations cross as fields; views over data already crossing stay methods.
+
+## Motivation
 
 `Sentence::is_passive` is a method. Methods do not cross FFI: the Python
 surface in `src/lib.rs` is `pythonize::pythonize(py, &Document)` over the
@@ -24,7 +33,79 @@ settles the question with the first real primitive (negation) in hand.
 M2 through M5 inherit the answer, and M5's rubric has already committed
 its endgame: span pairs cross as data, with a fixture in `spec/tests/`.
 
-## Options considered
+## Guide-level explanation
+
+We choose Option B. Derived structural facts cross FFI as serde-visible
+fields with a single Rust implementation. Structure materializes at the
+annotate stage: `Sentence` construction computes sentence-level
+primitives (M1: `negations: Vec<Negation>`) from its tokens.
+Document-level aggregates materialize as `Option` slots filled by
+`compose` (M1: `Document.passive_ratio`, exactly like `vocabulary_ttr`
+and `nominalization_ratio`). Zero-information accessors over data
+already on the wire (M2's `feat` lookup on the `feats` string) stay
+Rust-only methods: they derive nothing, so there is nothing to cross.
+
+The criterion, stated once: derivations cross as fields; views over
+data already crossing stay methods.
+
+**Amendment (I7 M5, 2026-08-21):** one sentence-level primitive is not
+computed by `Sentence::new`. `Sentence.hearst_pairs` is filled by
+`Engine::annotate`, because its detector lives in `matra::hearst`,
+outside the domain (the M5 boundary rubric requires a new module
+importing only `domain`, and `domain.rs` cannot import it back). The
+field still crosses as data per this ADR; only the choke point moved
+from construction to the annotate stage. A hand-built `Sentence`
+carries an empty `hearst_pairs` until the caller runs the detector.
+
+This does NOT pre-empt RFC-0006's deferred `Finding` shape. These are
+record-tier structural facts on record-tier types. The abstract tier
+(`Finding`, `Rule`, `Predicate`) still lands separately in Phase 2, and
+its trait-vs-enum decision remains open. The field shapes here satisfy
+RFC-0006 Frame-4 (FFI-safe materialization: primitives, `String`,
+`Option<primitive>`, FFI-safe structs) so the two tiers stay consistent.
+
+Substrate discipline binds every field this ADR licenses: a primitive
+reports structure (the cue, the construction, the arc), never an
+interpretive category. Field names name what is in the parse.
+
+## Reference-level explanation
+
+### Consequences
+
+- Positive: Python, the CLI's JSON, and any future TS/WASM crust gain
+  each primitive with zero binding code. `python/matra/cli.py` deletes
+  its passive fold and reads `result["passive_ratio"]`. One
+  `spec/tests/` fixture per crossing primitive proves all crusts agree.
+- Neutral: `python/matra/types.py` and the conformance harnesses grow
+  in lockstep with each crossing field, per the existing docs-lockstep
+  discipline.
+
+### Validation
+
+Falsified if any of the following is observed, each recorded with its
+escape hatch at decision time:
+
+- A benchmark at M5 shows materializing all five primitives degrades
+  analyze throughput or serialized size beyond low single-digit percent
+  on book-length input. Escape: per-primitive compose-stage gating.
+- A real consumer class needs pay-only-for-what-you-use sentence
+  output. Escape: an opt-in projection entry point.
+- Mutation-after-parse workflows emerge that make stale derived fields
+  a recurring bug class. Escape: recompute-on-write or projection.
+- The crusts stop being thin serde projections (a crust adds logic that
+  diverges from the wire). That would break the premise, not the
+  mechanism.
+
+None is in evidence today. Each escape is additive rather than
+breaking.
+
+## Drawbacks
+
+- Negative: every crossing field is a public schema commitment across
+  three languages; renames after 0.1.0 are SemVer-major. Serialized
+  output grows by the size of the materialized facts.
+
+## Rationale and alternatives
 
 ### Option A: methods
 
@@ -38,14 +119,14 @@ parse-time cost, zero schema commitment.
 **Cons:**
 - Invisible to every non-Rust consumer by construction. Each crust
   re-implements each primitive: N crusts times M primitives, with no
-  checker that the re-implementations agree. This is ADR-0007's
+  checker that the re-implementations agree. This is RFC-0007's
   diagnosis one layer up (N restatements of an invariant, compiler
   checks none of them), and `cli.py`'s passive fold is the live case.
 - Plausible for a three-string fold; absurd for M5's six multi-arc
   Hearst patterns re-derived per crust against a fixture.
 - The escape hatch (route crossing through `Finding`) inverts I7's
   sequencing: I7 is rule-substrate work that lands before any
-  `src/rules/` or `Finding` shape design, and ADR-0006 defers Finding's
+  `src/rules/` or `Finding` shape design, and RFC-0006 defers Finding's
   shape to Phase 2. Primitives cannot wait on a shape that is deferred
   until after the primitives exist.
 
@@ -60,7 +141,7 @@ structure (Sentence construction), `compose` fills metric slots.
 - One implementation, one choke point, every crust and the CLI's JSON
   see the identical keys at zero binding code. One conformance fixture
   describes all crusts.
-- Inherits ADR-0007's consolidation instead of undoing it.
+- Inherits RFC-0007's consolidation instead of undoing it.
 - M5's committed shape (span pairs as data) falls out of the same
   convention rather than needing a second mechanism.
 
@@ -89,85 +170,26 @@ Keep primitives as methods; hand-write `Serialize` for `Sentence` and
   every future primitive; a wire shape that no longer equals the struct
   (opacity); graph walks executing inside `Serialize::serialize`; and a
   second materialization mechanism alongside the compose-stage one that
-  ADR-0007 just consolidated.
+  RFC-0007 just consolidated.
 
-## Decision
+## Prior art
 
-We choose Option B. Derived structural facts cross FFI as serde-visible
-fields with a single Rust implementation. Structure materializes at the
-annotate stage: `Sentence` construction computes sentence-level
-primitives (M1: `negations: Vec<Negation>`) from its tokens.
-Document-level aggregates materialize as `Option` slots filled by
-`compose` (M1: `Document.passive_ratio`, exactly like `vocabulary_ttr`
-and `nominalization_ratio`). Zero-information accessors over data
-already on the wire (M2's `feat` lookup on the `feats` string) stay
-Rust-only methods: they derive nothing, so there is nothing to cross.
-
-The criterion, stated once: derivations cross as fields; views over
-data already crossing stay methods.
-
-**Amendment (I7 M5, 2026-08-21):** one sentence-level primitive is not
-computed by `Sentence::new`. `Sentence.hearst_pairs` is filled by
-`Engine::annotate`, because its detector lives in `matra::hearst`,
-outside the domain (the M5 boundary rubric requires a new module
-importing only `domain`, and `domain.rs` cannot import it back). The
-field still crosses as data per this ADR; only the choke point moved
-from construction to the annotate stage. A hand-built `Sentence`
-carries an empty `hearst_pairs` until the caller runs the detector.
-
-This does NOT pre-empt ADR-0006's deferred `Finding` shape. These are
-record-tier structural facts on record-tier types. The abstract tier
-(`Finding`, `Rule`, `Predicate`) still lands separately in Phase 2, and
-its trait-vs-enum decision remains open. The field shapes here satisfy
-ADR-0006 Frame-4 (FFI-safe materialization: primitives, `String`,
-`Option<primitive>`, FFI-safe structs) so the two tiers stay consistent.
-
-Substrate discipline binds every field this ADR licenses: a primitive
-reports structure (the cue, the construction, the arc), never an
-interpretive category. Field names name what is in the parse.
-
-## Consequences
-
-- Positive: Python, the CLI's JSON, and any future TS/WASM crust gain
-  each primitive with zero binding code. `python/matra/cli.py` deletes
-  its passive fold and reads `result["passive_ratio"]`. One
-  `spec/tests/` fixture per crossing primitive proves all crusts agree.
-- Negative: every crossing field is a public schema commitment across
-  three languages; renames after 0.1.0 are SemVer-major. Serialized
-  output grows by the size of the materialized facts.
-- Neutral: `python/matra/types.py` and the conformance harnesses grow
-  in lockstep with each crossing field, per the existing docs-lockstep
-  discipline.
-
-## Validation
-
-Falsified if any of the following is observed, each recorded with its
-escape hatch at decision time:
-
-- A benchmark at M5 shows materializing all five primitives degrades
-  analyze throughput or serialized size beyond low single-digit percent
-  on book-length input. Escape: per-primitive compose-stage gating.
-- A real consumer class needs pay-only-for-what-you-use sentence
-  output. Escape: an opt-in projection entry point.
-- Mutation-after-parse workflows emerge that make stale derived fields
-  a recurring bug class. Escape: recompute-on-write or projection.
-- The crusts stop being thin serde projections (a crust adds logic that
-  diverges from the wire). That would break the premise, not the
-  mechanism.
-
-None is in evidence today. Each escape is additive rather than
-breaking.
-
-## References
-
-- Plan: `book/src/plans/i7-structural-primitives.md` (M1 decides; M2
+- Plan: `blueprints/eps/0007-structural-primitives.md` (M1 decides; M2
   through M5 inherit; M5 rubric already commits span pairs as data).
-- [ADR-0007](0007-one-pipeline.md): one implementation of every
+- [RFC-0007](0007-one-pipeline.md): one implementation of every
   invariant at one choke point; `annotate` and `compose` are the choke
   points this ADR reuses.
-- [ADR-0006](0006-abstract-tier-vocabulary-lock.md): Frame-4 FFI-safe
+- [RFC-0006](0006-abstract-tier-vocabulary-lock.md): Frame-4 FFI-safe
   materialization; `Finding` shape deferred to Phase 2, untouched here.
 - Live duplication: `python/matra/cli.py` passive fold over raw tokens
   (deleted by M1).
 - Wire architecture: `to_dict` in `src/lib.rs` is
   `pythonize::pythonize(py, &Document)` over the `Serialize` derive.
+
+## Unresolved questions
+
+None recorded when this was decided.
+
+## Future possibilities
+
+None recorded when this was decided.

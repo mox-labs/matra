@@ -1,34 +1,15 @@
-# I5: Streaming iterator + Engine + CorpusResult
+# EP-0005: Streaming iterator + Engine + CorpusResult (formerly plan i5)
 
-> **Retired: I8 shipped this, 2026-08-21.** Tasks A through D landed
-> through [I8](i8-pipeline-surface.md): `read_iter` became `Ingest`,
-> `analyze_directory_iter` became `Engine::analyze` generalized past
-> directories, `CorpusResult` arrived via `FromIterator`, and `Engine`
-> is required rather than optional because something must own the
-> decomposer table. The deprecate-and-keep decision below was overtaken:
-> `analyze_directory` is deleted outright, because nothing was published
-> and the consumer that decision protected never existed.
->
-> Task E (`pub mod prelude`) is the one piece still open; it is small
-> and belongs with the 0.1.0 release pass. This plan stays as the
-> deliberation record for the flow-control arguments.
+- EP: EP-0005
+- Implements: none recorded
+- Status: dropped
+- Shipped in: not shipped as planned; Tasks A to D shipped in 0.1.0 through [EP-0008](0008-pipeline-surface.md)
 
-**Status:** not-started
 **Boundary:** **MLP**. at the end of this iteration, matra scales to corpus-sized work without OOM and ships a delightful Rust DX.
 **Depends on:** I4 (workspace + `rumi-nlp` skeleton)
 **Branch:** `i5/streaming` off the I4 commit
 
-## Resolved 2026-04-30: deprecate-and-keep `analyze_directory`
-
-K (recovery 13-agent review, recovery-3.md:782) recommended **cutting `analyze_directory` from 0.1.0 entirely**. Considered and rejected, `deprecate-and-keep` wins. Reasoning:
-
-- pre-publish, matra has zero crates.io consumers, but the 0.1.0 surface defines what 0.2 has to honor. A consumer who picks up `analyze_directory` between 0.1.0 release and 0.1.x would face a surface change at 0.2 if it's removed.
-- the `#[deprecated]` annotation gives migration guidance without breaking the call site. `cargo build` warns; `cargo build -- -D warnings` errors on it. That's enough signal.
-- the smaller-surface argument applies more cleanly to types and traits than to convenience functions. A deprecated function adds zero ongoing maintenance cost; consumers pay attention to the warning or live with it.
-
-Task C below implements deprecate-and-keep.
-
-## Why this iteration exists
+## Summary
 
 The buffered `analyze_directory` is a flow defect (Erlang OBJECTION, 2026-04-28): "5KB × 1M files = 5GB resident text → ~50GB of `Analysis` after parse. OOM at ~10k docs on most machines. Worse: aborts on first I/O error after possibly reading 999,999 files."
 
@@ -38,7 +19,25 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 - **`Engine` struct** for Rust DX parity with the PyO3 `Matra` class.
 - **`CorpusResult { corpus, errors }`** wrapper for clean serialization across FFI.
 
-## What lands
+### Resolved 2026-04-30: deprecate-and-keep `analyze_directory`
+
+K (recovery 13-agent review, recovery-3.md:782) recommended **cutting `analyze_directory` from 0.1.0 entirely**. Considered and rejected, `deprecate-and-keep` wins. Reasoning:
+
+- pre-publish, matra has zero crates.io consumers, but the 0.1.0 surface defines what 0.2 has to honor. A consumer who picks up `analyze_directory` between 0.1.0 release and 0.1.x would face a surface change at 0.2 if it's removed.
+- the `#[deprecated]` annotation gives migration guidance without breaking the call site. `cargo build` warns; `cargo build -- -D warnings` errors on it. That's enough signal.
+- the smaller-surface argument applies more cleanly to types and traits than to convenience functions. A deprecated function adds zero ongoing maintenance cost; consumers pay attention to the warning or live with it.
+
+Task C below implements deprecate-and-keep.
+
+## Goals
+
+None recorded.
+
+## Non-goals
+
+None recorded.
+
+## Iterations and milestones
 
 ### Task A: `DirectorySource::read_iter` inherent method
 
@@ -210,7 +209,7 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 
 **Acceptance:** `use matra::prelude::*` compiles and gives access to the 90% surface.
 
-## Validation
+## Test plan
 
 - Iterator order matches `analyze_directory` (Lamport contract).
 - Memory: streaming iterator's peak RSS on 1000-file fixture is materially lower than buffered.
@@ -221,7 +220,7 @@ Two additional surface improvements come along (Ace, 2026-04-28) because they be
 - `cargo doc --no-deps`: `Engine` and `prelude` rendered with examples.
 - Cross-iteration regression matrix items 1–9 pass.
 
-## Acceptance gate
+## Ship criteria
 
 matra is **MLP-shippable** at the end of I4 if:
 - `analyze_directory_iter` streams; memory test confirms peak RSS reduction.
@@ -247,3 +246,10 @@ matra is **MLP-shippable** at the end of I4 if:
   - **Mitigation:** the deprecation message points at `analyze_directory_iter` *and* `.collect()` to get the buffered shape. Both work.
 
 - **Consult:** Erlang if memory measurement is unclear (the streaming claim is the load-bearing one). Ace if the surface feels overloaded.
+
+## Status log
+
+- Undated: the plan's own status line read `not-started`.
+- 2026-08-21: **Retired: I8 shipped this, 2026-08-21.** Tasks A through D landed through [I8](0008-pipeline-surface.md): `read_iter` became `Ingest`, `analyze_directory_iter` became `Engine::analyze` generalized past directories, `CorpusResult` arrived via `FromIterator`, and `Engine` is required rather than optional because something must own the decomposer table. The deprecate-and-keep decision below was overtaken: `analyze_directory` is deleted outright, because nothing was published and the consumer that decision protected never existed.
+- 2026-08-21: Task E (`pub mod prelude`) is the one piece still open; it is small and belongs with the 0.1.0 release pass. This plan stays as the deliberation record for the flow-control arguments.
+- 2026-09-24: Converted from the plan layout to the EP layout by [RFC-0019](../rfcs/0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the planned text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. Status recorded as `dropped`: the plan was retired with Tasks A to D delivered by EP-0008, and Task E (`pub mod prelude`) has no CHANGELOG entry and no module in `src/`.

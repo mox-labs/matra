@@ -1,11 +1,15 @@
-# I3: Error restructure + tracing PR1
+# EP-0003: Error restructure + tracing PR1 (formerly plan i3)
 
-**Status:** not-started
+- EP: EP-0003
+- Implements: none recorded
+- Status: planned
+- Shipped in: not shipped
+
 **Boundary:** **MVP**. at the end of this iteration, matra is correct, bounded, has a recovery contract, and is observable.
 **Depends on:** I2 (resilience floor)
 **Branch:** `i3/error-tracing` off the I2 commit
 
-## Why this iteration exists
+## Summary
 
 Two things land together because they co-design.
 
@@ -21,7 +25,15 @@ Splitting these into two iterations creates two passes over the same call sites.
 
 K's verdict (2026-04-28): "PR3: Error restructure + Wolf PR1 together. They co-design: `Error::ParseFailed { kind }` and `is_skip_doc/is_fatal` are exactly what the `tracing::error!` events need to carry. Splitting them creates two passes over the same call sites."
 
-## What lands
+## Goals
+
+None recorded.
+
+## Non-goals
+
+None recorded.
+
+## Iterations and milestones
 
 ### Task A: `Error` restructure
 
@@ -197,7 +209,7 @@ K's verdict (2026-04-28): "PR3: Error restructure + Wolf PR1 together. They co-d
 
 **Acceptance:** `cargo run --example observability` runs end-to-end; emits readable trace output. README has the section.
 
-## Validation
+## Test plan
 
 - Truth-table test for every `Error` variant's `is_skip_doc`/`is_fatal` (Task A).
 - `cargo expand` confirms `#[non_exhaustive]` (Chesterton fence 2).
@@ -208,7 +220,7 @@ K's verdict (2026-04-28): "PR3: Error restructure + Wolf PR1 together. They co-d
 - Cross-iteration regression matrix items 1–9 pass.
 - `cargo test --features udpipe` count ≥ N₀ + truth-table tests + tracing tests.
 
-## Acceptance gate
+## Ship criteria
 
 matra is **MVP-correct** at the end of I3 if:
 - Variant-based recovery contract is in place (truth-table green).
@@ -232,3 +244,8 @@ matra is **MVP-correct** at the end of I3 if:
   - **Mitigation:** `kind` on `MatraError` is a Python string, mapped from the Rust `ParseFailKind` via a clean `as_str()` method, not a `Debug` derivation. Document in the implementation comment.
 
 - **Consult:** Burner if the `tracing` integration tempts a port-module instrumentation. Wolf if a span site is unclear.
+
+## Status log
+
+- Undated: the plan's own status line read `not-started`.
+- 2026-09-24: Converted from the plan layout to the EP layout by [RFC-0019](../rfcs/0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the planned text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. Status recorded as `planned`, from that status line; no CHANGELOG entry records any of its tasks shipping.

@@ -1,12 +1,15 @@
-# I11: The agent surface
+# EP-0011: The agent surface (formerly plan i11)
+
+- EP: EP-0011
+- Implements: [RFC-0012](../rfcs/0012-agent-surface.md)
+- Status: shipped in 0.2.0
+- Shipped in: 0.2.0
 
 **Boundary:** additive to the 0.1.0 and I10 surfaces. One new global flag and its references; new files at the repository root and under `skills/`; no existing signature changes.
 
-**Origin:** the roadmap's "Agent surface" trigger fired on 2026-09-05 by owner direction, sequenced after I10 so the skill documents one CLI with a pinned JSON contract. [ADR-0012](https://github.com/mox-labs/matra/blob/main/docs/decisions/0012-agent-surface.md) records the decisions.
+**Origin:** the roadmap's "Agent surface" trigger fired on 2026-09-05 by owner direction, sequenced after I10 so the skill documents one CLI with a pinned JSON contract. [RFC-0012](../rfcs/0012-agent-surface.md) records the decisions.
 
----
-
-## Why this shape and not another
+## Summary
 
 ### Two doors, both first-class
 
@@ -20,7 +23,9 @@ The one precedent the survey found states the reason plainly: instructions serve
 
 Every `matra ...` command in the skill is executed by the test suite through `cli::run`. Drift between the text and the CLI fails CI, the way a stale type name fails the docsite.
 
-## The surface
+## Goals
+
+### The surface
 
 ```text
 matra --skill                 SKILL.md (frontmatter + body under 150 lines)
@@ -46,13 +51,17 @@ book/src/llms.txt                     generated from SUMMARY.md; gate checks it 
 CITATION.cff                          lands when the author form is settled
 ```
 
-## Milestones
+## Non-goals
+
+None recorded.
+
+## Iterations and milestones
 
 Each milestone is one PR, review-hardened by the CI harness before merge. Strict order.
 
 ### M1: the ADR, the plan, the roadmap
 
-ADR-0012 accepted; roadmap entry points here; plans index and `SUMMARY.md` carry this page.
+RFC-0012 accepted; roadmap entry points here; plans index and `SUMMARY.md` carry this page.
 
 **Rubric.** `just docs-floor` passes. The ADR names the flag, the reference set, the file layout, and the test, so a later reviewer can diff the surface against the decision.
 
@@ -80,11 +89,13 @@ CHANGELOG (Added: the flag, the skill, llms.txt, AGENTS.md, the plugin; Changed:
 
 **Rubric.** `just check` and `just conformance` green; the release dry-runs pass; nothing publishes.
 
-## Costs, named
+## Test plan
 
-- The skill text is public surface under semver; an incantation change is a changelog item.
-- Binary and wheel grow by the embedded text (tens of kilobytes).
-- One more docs-floor gate (llms.txt currency) and one more test lane (the skill runner).
+None recorded.
+
+## Ship criteria
+
+`uvx matra --skill` prints a skill whose every command the test suite executed against the same build; `--skill -r` lists the references and each prints; output is byte-identical between launchers; `book/llms.txt` is current by gate; `AGENTS.md` and the plugin manifest exist and the plugin installs; every rubric above holds.
 
 ## Risks
 
@@ -93,6 +104,13 @@ CHANGELOG (Added: the flag, the skill, llms.txt, AGENTS.md, the plugin; Changed:
 - **Two launchers, one text.** The parity test exists for exactly this.
 - **CITATION.cff blocked on attribution.** Named as blocked; nothing in M4 waits on it.
 
-## Acceptance gate
+### Costs, named
 
-`uvx matra --skill` prints a skill whose every command the test suite executed against the same build; `--skill -r` lists the references and each prints; output is byte-identical between launchers; `book/llms.txt` is current by gate; `AGENTS.md` and the plugin manifest exist and the plugin installs; every rubric above holds.
+- The skill text is public surface under semver; an incantation change is a changelog item.
+- Binary and wheel grow by the embedded text (tens of kilobytes).
+- One more docs-floor gate (llms.txt currency) and one more test lane (the skill runner).
+
+## Status log
+
+- 2026-09-06: Shipped, as `ROADMAP.md` records under "Agent surface"; released in 0.2.0 per the CHANGELOG. The plan itself carried no status line.
+- 2026-09-24: Converted from the plan layout to the EP layout by [RFC-0019](../rfcs/0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the planned text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects.

@@ -1,10 +1,14 @@
-# I6: Post-publish: OTel, PDF/DOCX, `rumi-nlp` patterns, possibly the reactor
+# EP-0006: Post-publish: OTel, PDF/DOCX, `rumi-nlp` patterns, possibly the reactor (formerly plan i6)
 
-**Status:** not-started
+- EP: EP-0006
+- Implements: none recorded
+- Status: planned
+- Shipped in: not shipped
+
 **Boundary:** post-0.1.0
 **Depends on:** I5 (MLP shipped, 0.1.0 published)
 
-## Why this iteration exists
+## Summary
 
 I0 through I5 ship 0.1.0. Some work was deliberately deferred:
 
@@ -15,7 +19,15 @@ I0 through I5 ship 0.1.0. Some work was deliberately deferred:
 
 This plan is a holding pattern: each sub-iteration ships only when its specific trigger fires.
 
-## Sub-iterations (each ships independently)
+## Goals
+
+None recorded.
+
+## Non-goals
+
+None recorded.
+
+## Iterations and milestones
 
 ### I6a: `otel` feature
 
@@ -121,7 +133,7 @@ Each sub-item is its own plan. None of them ship in 0.1.0.
 
 **Acceptance:** depends on the trigger. The acceptance gate cannot be defined in advance.
 
-## Cross-cutting: post-ship loop closure
+### Cross-cutting: post-ship loop closure
 
 **Files:** `scratch/post-ship-0.1.0.md` (new at I4 ship; updated as triggers fire).
 
@@ -136,11 +148,11 @@ Each sub-item is its own plan. None of them ship in 0.1.0.
 
 **Acceptance:** the file exists. It is not optional.
 
-## Validation
+## Test plan
 
 Per sub-iteration, not for I5 as a whole.
 
-## Acceptance gate
+## Ship criteria
 
 I5 has no overall acceptance gate. Each sub-iteration ships independently when its trigger fires.
 
@@ -156,3 +168,8 @@ I5 has no overall acceptance gate. Each sub-iteration ships independently when i
   - **Mitigation:** the trigger conditions are named. If none have fired, the reactor does not ship. Period.
 
 - **Consult:** Erlang and K before any I5e work begins. The 2026-04-28 deferral is binding until a trigger fires; reopening requires the same lens.
+
+## Status log
+
+- Undated: the plan's own status line read `not-started`.
+- 2026-09-24: Converted from the plan layout to the EP layout by [RFC-0019](../rfcs/0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the planned text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. Status recorded as `planned`, from that status line: each sub-iteration waits on its own trigger, and no CHANGELOG entry records one shipping.

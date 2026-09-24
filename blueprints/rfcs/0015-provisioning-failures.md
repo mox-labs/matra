@@ -1,13 +1,22 @@
-# 0015. Provisioning is matra's own, and a failure to fetch is not an invalid model
+# RFC-0015: Provisioning is matra's own, and a failure to fetch is not an invalid model
 
-- **Status:** accepted
-- **Date:** 2026-09-06
-- **Decider(s):** project maintainer; measured by a clean-room container pass on 2026-09-06
+- Feature Name: `provisioning_failures`
+- Start Date: 2026-09-06
+- RFC PR: [#77](https://github.com/mox-labs/matra/pull/77)
+- Tracking EP: none
+- Status: implemented
+- Decider(s): project maintainer; measured by a clean-room container pass on 2026-09-06
 
-## Context
+> **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. The status moved from accepted to implemented because the CHANGELOG records it shipping in 0.2.0.
 
-ADR-0011 settled that pinned downloads are one discipline rather than an
-exception per model, and ADR-0010's amendment applied it to the reference
+## Summary
+
+**We choose Option B.** The UDPipe fetch moves into `nlp/udpipe.rs`, and the classification becomes the one the embedding adapter already documents. The rule behind the table, stated once: **`model_invalid` is about bytes that arrived.**
+
+## Motivation
+
+RFC-0011 settled that pinned downloads are one discipline rather than an
+exception per model, and RFC-0010's amendment applied it to the reference
 embedding model. One exception remained. `Model2Vec::potion_base_8m`
 fetched through matra's own code, with a size cap, a global and a connect
 timeout, a transactional temporary that cleaned up after itself, and
@@ -54,67 +63,7 @@ already uses is the right one, and adopting it changes a published
 string. Leaving the string alone preserves a promise whose content is
 false.
 
-## Options considered
-
-### Option A: fix the six findings where they are, keeping the upstream fetch
-
-Add a notice at the call site, wrap the `map_err` in a classifier that
-inspects the upstream error's message, sweep stale temporary directories.
-
-**Pros:** no change to the dependency's role; the smallest diff.
-**Cons:** the timeout cannot be fixed at all, because the configuration
-belongs to `udpipe-rs` and it passes none; the size cap cannot be applied,
-because the bytes never pass through matra before they are on disk; and
-the classifier would have to recover the failure's nature by reading a
-string another crate formatted, which is the sin the finding names.
-Two of the six findings are simply not reachable from here.
-
-### Option B: move the fetch into matra, and classify failures the way the embedding adapter already does
-
-`nlp/udpipe.rs` fetches with its own `ureq::Agent`, under the same 300
-second global and 30 second connect budgets, capped at the same 64 MiB,
-into memory. The bytes are verified there and only then written.
-`udpipe_rs` keeps the job only it can do, `Model::load_from_memory`, so
-boundary rule 4 is untouched: this file is still the only importer.
-
-**Pros:** every one of the six findings closes at the same seam; the two
-provisioning paths become one discipline described once; the size cap,
-the timeouts and the classification live in matra, where they can be
-tested with an injected fetcher and no network.
-**Cons:** `ureq` joins the `udpipe` feature's dependency set explicitly.
-It was already in the tree through `udpipe-rs`, so no crate is added.
-The classification change is a published-contract change.
-
-### Option C: Option B, plus a new `Error` variant for transport failures
-
-A `Network` or `Download` variant with its own kind string.
-
-**Pros:** a consumer can branch on "the download failed" without reading
-an `io::ErrorKind`.
-**Cons:** it contradicts the embedding adapter, which has reported
-transport failures as `Error::Io` since 0.2.0 and documented why; it adds
-a string every crust must learn, for a distinction `io::ErrorKind`
-already carries; and it makes the vocabulary grow with the number of
-places I/O can happen, which is the wrong axis.
-
-### Option D: Option B, plus an escape hatch for the system trust store
-
-matra verifies TLS against roots compiled into the binary
-(`webpki-roots`, via `ureq`'s default features). That is why it needs no
-`ca-certificates` package, which the container pass confirmed twice and
-recorded as a genuine strength. It is also why a TLS-intercepting
-corporate proxy cannot be trusted at all: there is no `SSL_CERT_FILE`
-path, no `platform-verifier` feature, and no way through.
-
-**Pros:** unblocks users behind such a proxy.
-**Cons:** it is a security decision, not an ergonomics one. Reading a
-trust anchor from the environment widens what can authorize a model
-download, and the download's whole trust story today is the pinned digest
-plus a fixed root set. It also has a free alternative that costs the user
-one `curl`: the artifact is pinned by name, size and SHA-256, so placing
-it by hand is exactly as trustworthy as fetching it.
-
-## Decision
+## Guide-level explanation
 
 **We choose Option B.** The UDPipe fetch moves into `nlp/udpipe.rs`, and
 the classification becomes the one the embedding adapter already
@@ -296,30 +245,20 @@ UDPipe filename is pinned in the adapter beside its digest and nothing
 joins the configured value to a path, so validating it would refuse
 configurations that harm nobody.
 
-## Consequences
+## Reference-level explanation
+
+### Consequences
 
 - Positive: the first run says what it is fetching, how big it is, and
   where it is going. A stalled transfer fails in a bounded time instead
   of holding the terminal. An interrupted one leaves nothing behind, and
   an orphan from an older version is reclaimed on the next download. A
   failure names the URL or the path, and a proxy user gets a sentence.
-- Negative: a consumer that branched on `kind == "model_invalid"` to mean
-  "the model could not be obtained" now sees `io` for every failure that
-  is not about the bytes. The migration is one line: branch on `io` for
-  transport and filesystem failures, and keep `model_invalid` for a
-  digest or loader verdict. Both kinds already existed, so no consumer
-  meets a string it has never seen; a consumer that matched exhaustively
-  still matches.
 - Positive: the embedding provisioner verifies before writing, reclaims
   aged temporaries, and names the operation and the path on a filesystem
   failure, so the two adapters implement one discipline rather than one
   and a half. An interrupted embedding provision no longer wedges every
   later one.
-- Negative: a Python caller catching `RuntimeError` around a first run
-  catches nothing when the network is the problem, because that failure
-  is now `OSError`. The exception classes are unchanged and no new one
-  appears, so a caller catching `Exception` is unaffected; a caller
-  catching the narrower class adds `OSError` beside it.
 - Neutral: `tests/error_tables.rs` reads the routing out of `src/lib.rs`
   and the kind strings out of `src/domain.rs` and holds three documented
   tables to them. It pins which arm a variant sits in, which is what a
@@ -329,9 +268,6 @@ configurations that harm nobody.
   ten redirects, so an `https` URL that redirected to `http` would
   otherwise be fetched in cleartext. The digest pin means integrity was
   never at stake here; this is confidentiality.
-- Negative: `ureq` is now named in the `udpipe` feature. It was already
-  in the tree through `udpipe-rs`, so the dependency graph is unchanged
-  and only the declaration is new.
 - Neutral: `udpipe_rs::download_model_from_url` is no longer called.
   `nlp/udpipe.rs` remains the only file importing `udpipe_rs`, for
   `Model::load` and `Model::load_from_memory`, and the panic boundary
@@ -343,30 +279,7 @@ configurations that harm nobody.
   one a runner can produce with no network, so it is the one asserted;
   the other two rows state the contract.
 
-### Deferred: a JSON error envelope
-
-Under `--json` a failure writes plain text to stderr and nothing to
-stdout, so a JSON consumer parses text for every failure. Nothing
-promises an error envelope, so this is a gap rather than a broken
-promise, and it is left open deliberately.
-
-The envelope ADR-0011 pinned is `format_version`, `command`, `input`,
-`result`. An error envelope would swap `result` for an error object, and
-that object needs a kind. The command line's own refusals ("no such
-file", "x is a directory", a bad algorithm name) are
-`Box<dyn std::error::Error>` strings with no kind at all, so shipping one
-means either inventing a kind vocabulary for the application tier or
-guessing a domain kind from a message. Guessing a kind from a message is
-precisely the defect this ADR exists to remove, and doing it properly
-means moving `src/cli/` onto `domain::Error`, which is a change of its
-own with its own consequences for the exit-code contract.
-
-It is worth doing. It is not worth doing as a side effect of a
-provisioning fix. When it happens it uses the same `format_version`
-envelope, is pinned in `spec/tests/cli/envelope.json` with both runners
-updated, and is documented in `book/src/guides/cli.md`.
-
-## Validation
+### Validation
 
 - **The classification is falsifiable per condition**, and each was
   reproduced in a container: no network, an unreachable host, a
@@ -391,15 +304,122 @@ updated, and is documented in `book/src/guides/cli.md`.
   that provisions. Two implementations of a discipline is duplication a
   reader can hold; three is a module.
 
-## References
+## Drawbacks
+
+- Negative: a consumer that branched on `kind == "model_invalid"` to mean
+  "the model could not be obtained" now sees `io` for every failure that
+  is not about the bytes. The migration is one line: branch on `io` for
+  transport and filesystem failures, and keep `model_invalid` for a
+  digest or loader verdict. Both kinds already existed, so no consumer
+  meets a string it has never seen; a consumer that matched exhaustively
+  still matches.
+- Negative: a Python caller catching `RuntimeError` around a first run
+  catches nothing when the network is the problem, because that failure
+  is now `OSError`. The exception classes are unchanged and no new one
+  appears, so a caller catching `Exception` is unaffected; a caller
+  catching the narrower class adds `OSError` beside it.
+- Negative: `ureq` is now named in the `udpipe` feature. It was already
+  in the tree through `udpipe-rs`, so the dependency graph is unchanged
+  and only the declaration is new.
+
+## Rationale and alternatives
+
+### Option A: fix the six findings where they are, keeping the upstream fetch
+
+Add a notice at the call site, wrap the `map_err` in a classifier that
+inspects the upstream error's message, sweep stale temporary directories.
+
+**Pros:** no change to the dependency's role; the smallest diff.
+**Cons:** the timeout cannot be fixed at all, because the configuration
+belongs to `udpipe-rs` and it passes none; the size cap cannot be applied,
+because the bytes never pass through matra before they are on disk; and
+the classifier would have to recover the failure's nature by reading a
+string another crate formatted, which is the sin the finding names.
+Two of the six findings are simply not reachable from here.
+
+### Option B: move the fetch into matra, and classify failures the way the embedding adapter already does
+
+`nlp/udpipe.rs` fetches with its own `ureq::Agent`, under the same 300
+second global and 30 second connect budgets, capped at the same 64 MiB,
+into memory. The bytes are verified there and only then written.
+`udpipe_rs` keeps the job only it can do, `Model::load_from_memory`, so
+boundary rule 4 is untouched: this file is still the only importer.
+
+**Pros:** every one of the six findings closes at the same seam; the two
+provisioning paths become one discipline described once; the size cap,
+the timeouts and the classification live in matra, where they can be
+tested with an injected fetcher and no network.
+**Cons:** `ureq` joins the `udpipe` feature's dependency set explicitly.
+It was already in the tree through `udpipe-rs`, so no crate is added.
+The classification change is a published-contract change.
+
+### Option C: Option B, plus a new `Error` variant for transport failures
+
+A `Network` or `Download` variant with its own kind string.
+
+**Pros:** a consumer can branch on "the download failed" without reading
+an `io::ErrorKind`.
+**Cons:** it contradicts the embedding adapter, which has reported
+transport failures as `Error::Io` since 0.2.0 and documented why; it adds
+a string every crust must learn, for a distinction `io::ErrorKind`
+already carries; and it makes the vocabulary grow with the number of
+places I/O can happen, which is the wrong axis.
+
+### Option D: Option B, plus an escape hatch for the system trust store
+
+matra verifies TLS against roots compiled into the binary
+(`webpki-roots`, via `ureq`'s default features). That is why it needs no
+`ca-certificates` package, which the container pass confirmed twice and
+recorded as a genuine strength. It is also why a TLS-intercepting
+corporate proxy cannot be trusted at all: there is no `SSL_CERT_FILE`
+path, no `platform-verifier` feature, and no way through.
+
+**Pros:** unblocks users behind such a proxy.
+**Cons:** it is a security decision, not an ergonomics one. Reading a
+trust anchor from the environment widens what can authorize a model
+download, and the download's whole trust story today is the pinned digest
+plus a fixed root set. It also has a free alternative that costs the user
+one `curl`: the artifact is pinned by name, size and SHA-256, so placing
+it by hand is exactly as trustworthy as fetching it.
+
+## Prior art
 
 - Clean-room container pass, 2026-09-06 (sections 3.2, 3.3, 3.4, 3.6,
   3.7, 3.9, and findings H1 to H6): the measurements this ADR answers
-- [ADR-0010](0010-embeddings-adapter.md): decision 6 and its amendment,
+- [RFC-0010](0010-embeddings-adapter.md): decision 6 and its amendment,
   the pinned-download discipline this extends
-- [ADR-0011](0011-out-of-the-box.md): pinned downloads as one discipline,
+- [RFC-0011](0011-out-of-the-box.md): pinned downloads as one discipline,
   and the `--json` envelope this defers changing
-- [ADR-0012](0012-agent-surface.md): the envelope's `format_version` as
+- [RFC-0012](0012-agent-surface.md): the envelope's `format_version` as
   an agent-facing contract
 - `book/src/reference/errors.md`: the variant, kind and message tables
   this changes, and the hand-placement path for a blocked download
+
+## Unresolved questions
+
+None recorded when this was decided.
+
+## Future possibilities
+
+### Deferred: a JSON error envelope
+
+Under `--json` a failure writes plain text to stderr and nothing to
+stdout, so a JSON consumer parses text for every failure. Nothing
+promises an error envelope, so this is a gap rather than a broken
+promise, and it is left open deliberately.
+
+The envelope RFC-0011 pinned is `format_version`, `command`, `input`,
+`result`. An error envelope would swap `result` for an error object, and
+that object needs a kind. The command line's own refusals ("no such
+file", "x is a directory", a bad algorithm name) are
+`Box<dyn std::error::Error>` strings with no kind at all, so shipping one
+means either inventing a kind vocabulary for the application tier or
+guessing a domain kind from a message. Guessing a kind from a message is
+precisely the defect this ADR exists to remove, and doing it properly
+means moving `src/cli/` onto `domain::Error`, which is a change of its
+own with its own consequences for the exit-code contract.
+
+It is worth doing. It is not worth doing as a side effect of a
+provisioning fix. When it happens it uses the same `format_version`
+envelope, is pinned in `spec/tests/cli/envelope.json` with both runners
+updated, and is documented in `book/src/guides/cli.md`.

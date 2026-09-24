@@ -1,18 +1,27 @@
-# 0010. Embeddings: a Tier-2 channel behind an Embedder port, static adapter first
+# RFC-0010: Embeddings: a Tier-2 channel behind an Embedder port, static adapter first
 
-- **Status:** Accepted
-- **Date:** 2026-09-04
-- **Decider(s):** project maintainer; design in the i9 plan, grounded by the 2026-09-04 landscape survey and a Karman naming review
+- Feature Name: `embeddings_adapter`
+- Start Date: 2026-09-04
+- RFC PR: [#51](https://github.com/mox-labs/matra/pull/51)
+- Tracking EP: [EP-0009](../eps/0009-embeddings-adapter.md)
+- Status: implemented
+- Decider(s): project maintainer; design in the i9 plan, grounded by the 2026-09-04 landscape survey and a Karman naming review
 
-## Context
+> **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. The status moved from accepted to implemented because the CHANGELOG records it shipping in 0.2.0.
+
+## Summary
+
+Embeddings are model opinion, not verifiable structure, so the roadmap's scoping principle admits them only as a specialist adapter with the tier stated plainly. The i9 plan carries the milestones and rubrics; this ADR locks the decisions the plan builds on.
+
+## Motivation
 
 The self-similarity roadmap entry (trigger fired 2026-08-21) needs sentence embeddings for its semantic half: paraphrase restatement that lexical overlap cannot see. Embeddings are model opinion, not verifiable structure, so the roadmap's scoping principle admits them only as a specialist adapter with the tier stated plainly. The i9 plan carries the milestones and rubrics; this ADR locks the decisions the plan builds on.
 
-## Decisions
+## Guide-level explanation
 
 ### 1. Tier 2 travels in its own types, never as `Document` fields
 
-ADR-0008's rule (derivations cross FFI as fields) applies to derivations of the parse, which are checkable against the source bytes. An embedding is not a derivation of the parse; no consumer can verify a cosine score against the text. Semantic results therefore never become fields on `Document`, `Sentence`, or any type the deterministic pipeline returns. They arrive as standalone values from separate calls, and each such type carries its provenance: the model hash and the parameters that produced it.
+RFC-0008's rule (derivations cross FFI as fields) applies to derivations of the parse, which are checkable against the source bytes. An embedding is not a derivation of the parse; no consumer can verify a cosine score against the text. Semantic results therefore never become fields on `Document`, `Sentence`, or any type the deterministic pipeline returns. They arrive as standalone values from separate calls, and each such type carries its provenance: the model hash and the parameters that produced it.
 
 ### 2. The port is `Embedder`; the carrier is `domain::Embedding`
 
@@ -36,29 +45,23 @@ The feature is **`model2vec`**, not `embeddings`, and the adapter file is **`emb
 
 Caller-supplied files, SHA-256 verified through the read-then-consume pattern (hash bytes in memory, load from those bytes, never re-read disk between verify and load). The reference model is pinned by hash in `spec/`, part of the conformance contract exactly as the UDPipe model is. The backend stays pure Rust with no C FFI while the WASM path is open; `cargo check --no-default-features --features model2vec --target wasm32-unknown-unknown` becomes a CI gate when the adapter lands.
 
-**Amended 2026-09-05 by [ADR-0011](0011-out-of-the-box.md).** "No network" was the wrong reading of this decision, and the words above invited it. What matra will not do is unpinned network access: fetch whatever a name resolves to today and load it. A download whose target digest is a constant in the source, verified before anything is parsed, is not that. It is the discipline `Udpipe::english` has had since 0.1.0, and only exactly one artifact set can arrive through it. That discipline now applies to the reference embedding model as well, through `Model2Vec::potion_base_8m(dir)` and `Model2Vec::from_config(cfg)`, which download the three artifacts from pinned release URLs into a directory holding none of them, verify the three-file digest, remove and retry once on a mismatch over the files they downloaded, and fail with `Error::ModelInvalid` on a second. Artifacts they did not download are never theirs to remove: a directory that already holds a full set that does not match the pin, or part of one, is refused with `Error::ModelInvalid` naming it, because those three filenames belong to the artifact format rather than to this one model. `Model2Vec::from_dir` is untouched and never downloads: caller-supplied files remain a first-class path, and the constructor a caller reaches for decides whether provisioning happens. On wasm32 the download half is not compiled at all, so the pure-Rust closure this decision protects is unchanged.
+**Amended 2026-09-05 by [RFC-0011](0011-out-of-the-box.md).** "No network" was the wrong reading of this decision, and the words above invited it. What matra will not do is unpinned network access: fetch whatever a name resolves to today and load it. A download whose target digest is a constant in the source, verified before anything is parsed, is not that. It is the discipline `Udpipe::english` has had since 0.1.0, and only exactly one artifact set can arrive through it. That discipline now applies to the reference embedding model as well, through `Model2Vec::potion_base_8m(dir)` and `Model2Vec::from_config(cfg)`, which download the three artifacts from pinned release URLs into a directory holding none of them, verify the three-file digest, remove and retry once on a mismatch over the files they downloaded, and fail with `Error::ModelInvalid` on a second. Artifacts they did not download are never theirs to remove: a directory that already holds a full set that does not match the pin, or part of one, is refused with `Error::ModelInvalid` naming it, because those three filenames belong to the artifact format rather than to this one model. `Model2Vec::from_dir` is untouched and never downloads: caller-supplied files remain a first-class path, and the constructor a caller reaches for decides whether provisioning happens. On wasm32 the download half is not compiled at all, so the pure-Rust closure this decision protects is unchanged.
 
-## Amendments
+## Reference-level explanation
+
+### Amendments
 
 **2026-09-05 (i10 M4).** Decision 6 is amended in place, above, where the text it corrects lives: "no network" becomes "no unpinned network", and the pinned-download discipline extends to the reference embedding model.
 
 **2026-09-05 (M5).** Two signature refinements surfaced by the wiring milestone, neither changing any decision above. `Embedder` gains a second required method, `identity(&self) -> &str`: provenance is part of the port contract, because the composition root cannot otherwise attribute scores to the model that produced them, and a caller-carried hash could be the wrong one. And `extraction::semantic_clusters` takes `(embeddings, threshold, model_hash)` rather than also taking the sentence slice: the slice was only ever read for its length, and the document-to-embeddings correspondence check belongs to `embed_and_cluster`, the composition-root function that holds both halves. The plan's sketches are updated in lockstep.
 
-## Options considered and rejected
-
-- **candle BERT as the first adapter** (the plan's original shape): viable and verified, but loses bit-parity to kernel dispatch, and its closure is the whole inference stack. It remains the designated second adapter.
-- **Depending on `model2vec-rs`**: rejected for closure hygiene (CLI deps as library deps, version skew, license metadata).
-- **ONNX Runtime paths (ort, fastembed)**: C FFI; closes the WASM path for every downstream consumer, forever.
-- **Feature named `embeddings`**: rejected by the naming review for the collision in Decision 4.
-- **Cliques for clustering**: splits chained restatement, the consumer pattern.
-
-## Consequences
+### Consequences
 
 - The `abstract` seam stays empty: this is adapter plus consumer work, not rule evaluation.
 - The i9 plan text is amended to the settled names; boundary-rules gain `embed/mod.rs` (port list) and `embed/model2vec.rs` (sole-importer rule) when the code lands, in the same PR, per docs-lockstep.
-- A vocabulary drift found during the naming review is recorded on ADR-0006's deferred list rather than fixed here: `CorpusEntry.analysis` still carries the name ADR-0006 rejected, now SemVer-major to rename; the free half (metric function parameter names) may be fixed any time.
+- A vocabulary drift found during the naming review is recorded on RFC-0006's deferred list rather than fixed here: `CorpusEntry.analysis` still carries the name RFC-0006 rejected, now SemVer-major to rename; the free half (metric function parameter names) may be fixed any time.
 
-## Validation
+### Validation
 
 The decisions rest on falsifiable claims, and each has a check:
 
@@ -68,10 +71,30 @@ The decisions rest on falsifiable claims, and each has a check:
 - **Revisit trigger for static-first:** a consumer demonstrating that the roughly ten percent quality ceiling causes missed paraphrase clusters that matter to their use. The answer is the candle adapter behind the same port (a new ADR is not required; this one already designates it), not a change to the surface.
 - **Revisit trigger for the feature-naming rule:** if a second adapter arrives whose natural backend name collides with an existing feature, the rule needs a tiebreak amendment.
 
-## References
+## Drawbacks
 
-- [i9 plan](../../book/src/plans/i9-embeddings-adapter.md): milestones, rubrics, and the survey-driven amendment trail
-- [ADR-0006](0006-abstract-tier-vocabulary-lock.md): the vocabulary lock this ADR's naming review extends, and the deferred list that gained `CorpusEntry.analysis`
-- [ADR-0007](0007-one-pipeline.md): the pipeline whose annotate/compose split the embed-then-cluster shape mirrors
-- [ADR-0008](0008-structural-primitives-are-fields.md): the FFI channel rule this ADR scopes to parse derivations
+None recorded when this was decided.
+
+## Rationale and alternatives
+
+- **candle BERT as the first adapter** (the plan's original shape): viable and verified, but loses bit-parity to kernel dispatch, and its closure is the whole inference stack. It remains the designated second adapter.
+- **Depending on `model2vec-rs`**: rejected for closure hygiene (CLI deps as library deps, version skew, license metadata).
+- **ONNX Runtime paths (ort, fastembed)**: C FFI; closes the WASM path for every downstream consumer, forever.
+- **Feature named `embeddings`**: rejected by the naming review for the collision in Decision 4.
+- **Cliques for clustering**: splits chained restatement, the consumer pattern.
+
+## Prior art
+
+- [i9 plan](../eps/0009-embeddings-adapter.md): milestones, rubrics, and the survey-driven amendment trail
+- [RFC-0006](0006-abstract-tier-vocabulary-lock.md): the vocabulary lock this ADR's naming review extends, and the deferred list that gained `CorpusEntry.analysis`
+- [RFC-0007](0007-one-pipeline.md): the pipeline whose annotate/compose split the embed-then-cluster shape mirrors
+- [RFC-0008](0008-structural-primitives-are-fields.md): the FFI channel rule this ADR scopes to parse derivations
 - Landscape survey, 2026-09-04 (an internal survey, not in this repository): the verified wasm32 compilation results, the static-vs-transformer evidence, and the threshold-spread literature
+
+## Unresolved questions
+
+None recorded when this was decided.
+
+## Future possibilities
+
+None recorded when this was decided.

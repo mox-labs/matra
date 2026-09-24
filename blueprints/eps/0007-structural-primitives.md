@@ -1,23 +1,15 @@
-# I7: Five structural primitives
+# EP-0007: Five structural primitives (formerly plan i7)
 
-> **Shipped, 2026-08-21.** All five milestones landed.
-> [ADR-0008](https://github.com/mox-labs/matra/blob/main/docs/decisions/0008-structural-primitives-are-fields.md)
-> records the field-versus-method decision (derivations cross FFI as
-> fields; views over data already crossing stay methods) and
-> [ADR-0009](https://github.com/mox-labs/matra/blob/main/docs/decisions/0009-feats-lookup-accessor.md)
-> the feats accessor shape. The Python CLI's passive re-implementation
-> is deleted, `spec/tests/` fixtures pin negation, modals, evidentiality
-> and Hearst pairs across crusts, and what the five revealed about the
-> rule vocabulary is recorded on the roadmap. This plan stays as the
-> milestone record and the reasoning trail.
+- EP: EP-0007
+- Implements: [RFC-0008](../rfcs/0008-structural-primitives-are-fields.md), [RFC-0009](../rfcs/0009-feats-lookup-accessor.md)
+- Status: shipped in 0.1.0
+- Shipped in: 0.1.0
 
 **Boundary:** rule-substrate. Lands before any `src/rules/` design work.
 
 **Source of scope:** an internal research synthesis dated 2026-05-23 naming five concrete primitives, cross-walked against a bidirectional report dated 2026-05-20 that maps the surveyed literature onto matra's actual surface. Neither is public; the grounding each cites is.
 
----
-
-## Why this iteration exists
+## Summary
 
 The research pass produced a list of five additions and declared the rule-evaluation deferral fired. Neither the list nor the verdict reached this repository. Three months of the chain from research to roadmap was lost, and the loss was found only when a session re-derived four of the five by probing the parser by hand.
 
@@ -29,9 +21,15 @@ There is a second reason, and it is stronger because it comes from inside the re
 
 **That question is the spine of this iteration: are structural primitives fields or methods?** It is not settled here. M1 settles it with a real primitive in hand, and M2 through M5 inherit the answer.
 
----
+## Goals
 
-## Milestones
+None recorded.
+
+## Non-goals
+
+None recorded.
+
+## Iterations and milestones
 
 Ordered by dependency, then by size. No milestone starts before the previous one meets its rubric.
 
@@ -43,9 +41,7 @@ Ordered by dependency, then by size. No milestone starts before the previous one
 | M4 | Evidentiality markers | Open class. Needs M3's lexicon mechanism to already exist |
 | M5 | Hearst patterns | Largest. Multi-token, multi-arc, and the only one that spans clauses |
 
----
-
-## M1: Negation
+### M1: Negation
 
 **What lands.** Negation scope on `Sentence`, derived from the dependency graph. The signal verified present in the parse: `not` appears as `advmod` with `lemma == "not"` attached to the verb it negates. `never`, `no`, `neither`, `nor` follow the same shape.
 
@@ -72,9 +68,7 @@ Whichever wins, it binds M2 through M5 and should be recorded as an ADR, because
 | Cross-language | Either the primitive reaches Python and a conformance fixture proves it, or the ADR states why it does not and what consumers do instead |
 | Substrate discipline | Reports scope, not judgement. No "hedged", no "weak", no polarity verdict |
 
----
-
-## M2: Typed `feats`
+### M2: Typed `feats`
 
 **What lands.** Typed access to CoNLL-U column 6, which `Token.feats` carries today as a pipe-separated string like `Mood=Ind|Number=Sing|Tense=Pres`. Consumers parse that string themselves, every time.
 
@@ -96,9 +90,7 @@ The resolution likely sits between them: a lookup accessor (`feat("Mood")` retur
 | Cross-language | Python already receives `feats` as a string, so this may be Rust-only by design. State that explicitly |
 | Substrate discipline | Exposes what UDPipe emitted. Does not normalise, infer, or fill in absent features |
 
----
-
-## M3: Modal classification
+### M3: Modal classification
 
 **What lands.** Classification of modal auxiliaries into the epistemic / deontic / dynamic distinction, plus the structural discriminator for bare assertion.
 
@@ -123,9 +115,7 @@ The resolution likely sits between them: a lookup accessor (`feat("Mood")` retur
 | Cross-language | Inherits M1's decision |
 | Substrate discipline | **Reports the modal. Does not assign epistemic/deontic/dynamic.** Ambiguity is surfaced, not resolved |
 
----
-
-## M4: Evidentiality markers
+### M4: Evidentiality markers
 
 **What lands.** Detection of evidential marking: reported speech, perception verbs, hearsay adverbs.
 
@@ -148,9 +138,7 @@ The resolution likely sits between them: a lookup accessor (`feat("Mood")` retur
 | Cross-language | Inherits M1's decision |
 | Substrate discipline | Detects the construction. Does not decide whether the source is credible or the claim hedged |
 
----
-
-## M5: Hearst patterns
+### M5: Hearst patterns
 
 **What lands.** Detection of the classical lexico-syntactic hypernymy patterns: "X such as Y", "X including Y", "Y and other X", "X, especially Y".
 
@@ -170,9 +158,7 @@ The resolution likely sits between them: a lookup accessor (`feat("Mood")` retur
 | Cross-language | Span pairs cross as data. Fixture in `spec/tests/` |
 | Substrate discipline | Returns candidate pairs with the pattern that matched. Does not build a taxonomy or assert the relation is true |
 
----
-
-## Validation
+## Test plan
 
 Applies at every milestone landing, in addition to that milestone's rubric.
 
@@ -185,9 +171,7 @@ Applies at every milestone landing, in addition to that milestone's rubric.
 
 Known trap, from this session: `cargo test --all-features` fails to link because the `python` feature builds against libpython with symbols left undefined. Do not treat that as a regression, and do not add it to any gate.
 
----
-
-## Acceptance gate
+## Ship criteria
 
 The iteration is done when all five primitives ship, and:
 
@@ -198,8 +182,6 @@ The iteration is done when all five primitives ship, and:
 
 That last point is the actual output of this iteration. The five primitives are worth having on their own, but the reason to build them before designing the rule vocabulary is that they are what the vocabulary must describe.
 
----
-
 ## Risks
 
 **The interpretive line.** M3 and M4 are the closest matra has come to interpretation. The rubric line "reports the modal, does not assign the category" is the guard, and it will feel like under-delivery. It is not. The moment matra decides `must` is deontic, it has taken a position on meaning, and the substrate argument that justifies the whole architecture is gone.
@@ -209,3 +191,8 @@ That last point is the actual output of this iteration. The five primitives are 
 **Sentence segmentation upstream.** UDPipe splits `Smith et al. reported a similar finding` into two sentences at the period in `et al.`, verified this session. Every sentence-scoped primitive here inherits that. It is not this iteration's to fix, but M4 in particular will show it, since attribution lands in a different sentence from its reporting verb. Record it; do not paper over it.
 
 **Scope creep toward coreference.** The research names coreference as the bridge between sentence-internal and document-level extraction, and it will look adjacent to M4. It is not in scope. The same synthesis places it above matra with SRL and NLI, on the argument that matra stops at Marr's algorithmic level.
+
+## Status log
+
+- 2026-08-21: **Shipped, 2026-08-21.** All five milestones landed. [RFC-0008](../rfcs/0008-structural-primitives-are-fields.md) records the field-versus-method decision (derivations cross FFI as fields; views over data already crossing stay methods) and [RFC-0009](../rfcs/0009-feats-lookup-accessor.md) the feats accessor shape. The Python CLI's passive re-implementation is deleted, `spec/tests/` fixtures pin negation, modals, evidentiality and Hearst pairs across crusts, and what the five revealed about the rule vocabulary is recorded on the roadmap. This plan stays as the milestone record and the reasoning trail.
+- 2026-09-24: Converted from the plan layout to the EP layout by [RFC-0019](../rfcs/0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the planned text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects.

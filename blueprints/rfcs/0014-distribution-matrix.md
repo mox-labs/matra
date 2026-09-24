@@ -1,9 +1,11 @@
-# 0014. The Distribution Matrix
+# RFC-0014: The Distribution Matrix
 
-- **Status:** accepted
-- **Date:** 2026-09-06
-- **Decider(s):** owner decision on the abi3 question, recorded and verified by
-  the maintainer role
+- Feature Name: `distribution_matrix`
+- Start Date: 2026-09-06
+- RFC PR: [#76](https://github.com/mox-labs/matra/pull/76)
+- Tracking EP: none
+- Status: implemented
+- Decider(s): owner decision on the abi3 question, recorded and verified by the maintainer role
 
 > **Note (2026-09-20):** `publish-pypi.yml` was consolidated with `publish.yml`
 > into `.github/workflows/release.yml`. Every reference below to
@@ -12,7 +14,13 @@
 > `ghcr.io/pyo3/maturin` digest, `RUSTUP_TOOLCHAIN=stable` and the abi3 and
 > manylinux2014 assertions unchanged. The decision itself is untouched.
 
-## Context
+> **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. The status moved from accepted to implemented because the CHANGELOG records it shipping in 0.2.0.
+
+## Summary
+
+We choose Option C. matra publishes exactly four wheels per release, all abi3. Building matra from source, by any route, requires a Rust toolchain at 1.85 or later **and** a C++ compiler, because UDPipe is C++.
+
+## Motivation
 
 matra 0.2.0 is cut and unpublished. Two clean-room install passes, one on macOS
 and one on Linux under OrbStack, ran against `main` before this decision and
@@ -57,7 +65,172 @@ validated at workflow start and must be a commit SHA, which is why the wheel job
 were written with `actions/*` plus shell rather than a third-party build action
 in the first place. That constraint is real and this decision keeps it.
 
-## Options considered
+## Guide-level explanation
+
+We choose Option C. matra publishes exactly four wheels per release, all abi3:
+
+| Wheel | Runner | Built in | Tag shape |
+|---|---|---|---|
+| Linux x86_64 | `ubuntu-latest` | `ghcr.io/pyo3/maturin` | `cp312-abi3-manylinux_2_17_x86_64` |
+| Linux aarch64 | `ubuntu-24.04-arm` | `ghcr.io/pyo3/maturin` | `cp312-abi3-manylinux_2_17_aarch64` |
+| macOS x86_64 | `macos-14`, cross | on the runner | `cp312-abi3-macosx_*_x86_64` |
+| macOS arm64 | `macos-14` | on the runner | `cp312-abi3-macosx_*_arm64` |
+
+The reason is that Option C is the only one where the fix and the ongoing cost
+both shrink. B and D both answer "more platforms" with "more jobs"; C answers it
+once, at the ABI, and the matrix stops growing. The glibc floor and the
+architecture gap turn out to be the same fix, because the image that gives broad
+manylinux is also the image that runs natively on an arm64 runner.
+
+Windows stays absent. The UDPipe C++ build under MSVC is unverified, and shipping
+an untested wheel is worse than shipping none.
+
+The from-source path stays supported and is now documented honestly. Building
+matra from source, by any route, requires a Rust toolchain at 1.85 or later
+**and** a C++ compiler, because UDPipe is C++.
+`book/src/tutorials/installation.md` names the package per platform.
+
+## Reference-level explanation
+
+### Getting rustup through the container
+
+Running the build inside the image costs one thing that running it on the runner
+did not. `rust-toolchain.toml` names a component the image does not carry. Only
+`llvm-tools-preview` is missing: `rustup component list --installed` inside the
+pinned digest reports cargo, clippy, rust-docs, rust-std, rustc and rustfmt on
+both architectures, so that one absent component is what triggers the re-sync
+before cargo runs, and the rename it performs to swap a component crosses the
+overlay boundary between the image layer and the container. It fails with
+`Invalid cross-device link (os error 18)` and the build stops before it starts.
+
+Two variables can get past it, and they are not equivalent.
+
+`RUSTUP_PERMIT_COPY_RENAME=1` tells rustup to fall back to copying when the
+rename fails. It works, and it was the first answer here. But rustup's own
+environment-variable documentation marks it *unstable*, says the feature
+"sacrifices some transactions protections", and says it "may be removed at any
+point"; it is Linux only. That is not a workaround with an unknown lifetime, it
+is one with a vendor-declared expiry, sitting on the release path.
+
+`RUSTUP_TOOLCHAIN=stable` sits above `rust-toolchain.toml` in rustup's override
+precedence, so rustup resolves to the toolchain already installed in the image
+and never syncs a channel at all. The failing operation is not permitted, it is
+never reached, and a second toolchain download is avoided along with it. This is
+what the workflow uses.
+
+The choice was tested rather than reasoned. On native `linux/arm64`, inside the
+pinned `ghcr.io/pyo3/maturin:v1.14.1` image with the repository mounted at
+`/io`: with neither variable set, `cargo --version` fails with `Invalid
+cross-device link (os error 18)`; with `RUSTUP_TOOLCHAIN=stable` and no permit
+flag, `rustup toolchain list` reports `stable-aarch64-unknown-linux-gnu (active,
+default)` with no sync line, `cargo --version` returns cleanly, and the full
+`maturin build --release --out dist` produces
+`matra-0.2.0-cp312-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl`, which
+installs under CPython 3.13.15 with `--only-binary :all:` and runs.
+
+Two things are asserted mechanically rather than trusted. `publish-pypi.yml`
+fails the release if a wheel is not tagged `cp312-abi3`, or if a Linux wheel is
+not `manylinux2014`; and it smoke tests each native wheel under CPython 3.13,
+one version newer than it was built against, with `--only-binary :all:` so pip
+fails rather than quietly building from source. `ci.yml` asserts the abi3 tag on
+every push, so losing the pyo3 feature is caught long before a release.
+
+### Consequences
+
+- Positive: `pip install matra` gets a prebuilt wheel on four platforms and on
+  every GIL-enabled CPython from 3.12 up, including releases that postdate the
+  publish. Free-threaded builds are the exception, below.
+- Positive: the glibc floor drops from 2.34 to 2.17, which brings Debian 11,
+  Ubuntu 20.04, RHEL 8 and Amazon Linux 2 back onto the wheel path.
+- Positive: the wheel count per release is four and stays four. A new CPython
+  release is a no-op for this project.
+- Neutral: the consequence of that override is that the Linux wheels are built
+  on whatever stable the pinned maturin image ships, not on the newest stable,
+  and without the `llvm-tools-preview` component that `rust-toolchain.toml`
+  requests. A `maturin build` needs neither, and
+  the compiler version becomes a property of the image digest rather than of the
+  day the release ran, which is the more reproducible of the two. If the image
+  ever ships a stable below the MSRV the build fails at compile time, loudly.
+- Neutral: `requires-python = ">=3.12"` in `pyproject.toml` and the abi3 floor
+  now say the same thing in two places. They must move together if the floor ever
+  rises.
+- Neutral: macOS wheels are still built on the runner rather than in a container,
+  because macOS deployment targets are set by the SDK, not by a base image. Only
+  the Linux half needed to move.
+
+- Neutral: the re-sync the override avoids was never only about components.
+  Reproduced on linux/amd64 with no override, rustup reports
+  `syncing channel updates for stable-x86_64-unknown-linux-gnu` and
+  `latest update on 2026-09-03 for version 1.98.1` before failing on the rename.
+  So what `RUSTUP_PERMIT_COPY_RENAME=1` would have given us was not "the
+  image's compiler plus a component", it was "whichever stable exists on
+  release day", chosen by the calendar rather than by anyone. Against the
+  status quo before either variable the comparison is different and simpler:
+  the build fails outright, as recorded above. Pinning to a reviewed
+  digest is the more
+  deliberate of the two, which is the argument for this decision rather than a
+  side effect of it.
+
+### Validation
+
+This decision is right if, after publishing 0.2.0, a reader on any of the four
+platforms and any GIL-enabled CPython from 3.12 up gets a prebuilt wheel, and
+the next CPython release requires no change to `publish-pypi.yml`. It is
+right about the
+documentation if a container carrying exactly the prerequisites the installation
+page names can build matra from source without adding anything.
+
+It is falsified by any of:
+
+- The Python bindings needing a pyo3 or CPython API the stable ABI does not
+  expose. The compile error is the signal, and the answer is a superseding ADR
+  choosing Option B, not a quiet feature removal.
+- Free-threaded CPython becoming a target matra must serve before the stable ABI
+  covers it. This is a live gap, not a hypothetical one: a free-threaded
+  interpreter accepts `abi3t` tags and no `abi3` tag at all, and pyo3 0.29.2
+  offers only `abi3t` and `abi3t-py315`, so the free-threaded stable ABI starts
+  at 3.15. Until then a `python3.14t` user on a platform with a wheel falls to
+  the sdist. `book/src/tutorials/installation.md` says so.
+- `RUSTUP_TOOLCHAIN` ceasing to outrank `rust-toolchain.toml` in rustup's
+  override precedence, which would put the cross-device rename back on the
+  release path with the unstable permit flag as the only remaining answer. The
+  signal is the same `os error 18` the container originally failed with.
+- A measured, user-visible cost from the abi3 call indirection. Asserted as a
+  mechanism above and never measured on matra; a benchmark showing it matters
+  would reopen the choice.
+- Windows becoming a supported target, which adds a fifth wheel and a build this
+  ADR explicitly declined to guess about.
+
+## Drawbacks
+
+- Negative: `abi3-py312` is now a constraint on the Python bindings. Any pyo3
+  feature outside the stable ABI is unavailable, and dropping abi3 to get one
+  back would be a distribution regression, not a local change. That is a
+  superseding-ADR decision, and the CI assertion exists so it cannot happen by
+  accident.
+- Negative: `RUSTUP_TOOLCHAIN=stable` is now load-bearing in the release
+  workflow. `rust-toolchain.toml` asks for a component the image does not
+  carry, `llvm-tools-preview`,
+  so rustup re-syncs the channel inside the container, and the rename it
+  performs crosses the overlay boundary between the image layer and the
+  container, failing with `Invalid cross-device link (os error 18)`.
+  `RUSTUP_TOOLCHAIN` sits above `rust-toolchain.toml` in rustup's override
+  precedence, so setting it means the build uses the toolchain already in the
+  image and rustup never re-syncs. The workflow carries a comment saying so; a
+  future contributor who tidies away the env var breaks every Linux wheel.
+- Negative: the release now depends on a container image and on
+  `ubuntu-24.04-arm` being available. The image is pinned by index digest, so
+  moving to a newer maturin is a deliberate edit; the runner label is a GitHub
+  product commitment for public repositories, and if it went away the arm64 wheel
+  would need QEMU and a longer timeout.
+- Negative: nothing watches the image digest. `.github/dependabot.yml` covers
+  cargo, github-actions and pip, and even a docker ecosystem entry would not see
+  a digest written inline in a `run:` step. So the compiler that builds the
+  Linux wheels is frozen until a person edits that line, and no automation will
+  ever suggest it. That is the price of the pin rather than an argument against
+  it, but it has to be somebody's job, so it belongs on the release checklist.
+
+## Rationale and alternatives
 
 ### Option A: leave the matrix, fix only the documentation
 
@@ -147,167 +320,7 @@ and QEMU for foreign architectures.
   reason a wheel has a given tag moves from four lines of shell into a tool's
   defaults.
 
-## Decision
-
-We choose Option C. matra publishes exactly four wheels per release, all abi3:
-
-| Wheel | Runner | Built in | Tag shape |
-|---|---|---|---|
-| Linux x86_64 | `ubuntu-latest` | `ghcr.io/pyo3/maturin` | `cp312-abi3-manylinux_2_17_x86_64` |
-| Linux aarch64 | `ubuntu-24.04-arm` | `ghcr.io/pyo3/maturin` | `cp312-abi3-manylinux_2_17_aarch64` |
-| macOS x86_64 | `macos-14`, cross | on the runner | `cp312-abi3-macosx_*_x86_64` |
-| macOS arm64 | `macos-14` | on the runner | `cp312-abi3-macosx_*_arm64` |
-
-The reason is that Option C is the only one where the fix and the ongoing cost
-both shrink. B and D both answer "more platforms" with "more jobs"; C answers it
-once, at the ABI, and the matrix stops growing. The glibc floor and the
-architecture gap turn out to be the same fix, because the image that gives broad
-manylinux is also the image that runs natively on an arm64 runner.
-
-Windows stays absent. The UDPipe C++ build under MSVC is unverified, and shipping
-an untested wheel is worse than shipping none.
-
-The from-source path stays supported and is now documented honestly. Building
-matra from source, by any route, requires a Rust toolchain at 1.85 or later
-**and** a C++ compiler, because UDPipe is C++.
-`book/src/tutorials/installation.md` names the package per platform.
-
-### Getting rustup through the container
-
-Running the build inside the image costs one thing that running it on the runner
-did not. `rust-toolchain.toml` names a component the image does not carry. Only
-`llvm-tools-preview` is missing: `rustup component list --installed` inside the
-pinned digest reports cargo, clippy, rust-docs, rust-std, rustc and rustfmt on
-both architectures, so that one absent component is what triggers the re-sync
-before cargo runs, and the rename it performs to swap a component crosses the
-overlay boundary between the image layer and the container. It fails with
-`Invalid cross-device link (os error 18)` and the build stops before it starts.
-
-Two variables can get past it, and they are not equivalent.
-
-`RUSTUP_PERMIT_COPY_RENAME=1` tells rustup to fall back to copying when the
-rename fails. It works, and it was the first answer here. But rustup's own
-environment-variable documentation marks it *unstable*, says the feature
-"sacrifices some transactions protections", and says it "may be removed at any
-point"; it is Linux only. That is not a workaround with an unknown lifetime, it
-is one with a vendor-declared expiry, sitting on the release path.
-
-`RUSTUP_TOOLCHAIN=stable` sits above `rust-toolchain.toml` in rustup's override
-precedence, so rustup resolves to the toolchain already installed in the image
-and never syncs a channel at all. The failing operation is not permitted, it is
-never reached, and a second toolchain download is avoided along with it. This is
-what the workflow uses.
-
-The choice was tested rather than reasoned. On native `linux/arm64`, inside the
-pinned `ghcr.io/pyo3/maturin:v1.14.1` image with the repository mounted at
-`/io`: with neither variable set, `cargo --version` fails with `Invalid
-cross-device link (os error 18)`; with `RUSTUP_TOOLCHAIN=stable` and no permit
-flag, `rustup toolchain list` reports `stable-aarch64-unknown-linux-gnu (active,
-default)` with no sync line, `cargo --version` returns cleanly, and the full
-`maturin build --release --out dist` produces
-`matra-0.2.0-cp312-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl`, which
-installs under CPython 3.13.15 with `--only-binary :all:` and runs.
-
-Two things are asserted mechanically rather than trusted. `publish-pypi.yml`
-fails the release if a wheel is not tagged `cp312-abi3`, or if a Linux wheel is
-not `manylinux2014`; and it smoke tests each native wheel under CPython 3.13,
-one version newer than it was built against, with `--only-binary :all:` so pip
-fails rather than quietly building from source. `ci.yml` asserts the abi3 tag on
-every push, so losing the pyo3 feature is caught long before a release.
-
-## Consequences
-
-- Positive: `pip install matra` gets a prebuilt wheel on four platforms and on
-  every GIL-enabled CPython from 3.12 up, including releases that postdate the
-  publish. Free-threaded builds are the exception, below.
-- Positive: the glibc floor drops from 2.34 to 2.17, which brings Debian 11,
-  Ubuntu 20.04, RHEL 8 and Amazon Linux 2 back onto the wheel path.
-- Positive: the wheel count per release is four and stays four. A new CPython
-  release is a no-op for this project.
-- Negative: `abi3-py312` is now a constraint on the Python bindings. Any pyo3
-  feature outside the stable ABI is unavailable, and dropping abi3 to get one
-  back would be a distribution regression, not a local change. That is a
-  superseding-ADR decision, and the CI assertion exists so it cannot happen by
-  accident.
-- Negative: `RUSTUP_TOOLCHAIN=stable` is now load-bearing in the release
-  workflow. `rust-toolchain.toml` asks for a component the image does not
-  carry, `llvm-tools-preview`,
-  so rustup re-syncs the channel inside the container, and the rename it
-  performs crosses the overlay boundary between the image layer and the
-  container, failing with `Invalid cross-device link (os error 18)`.
-  `RUSTUP_TOOLCHAIN` sits above `rust-toolchain.toml` in rustup's override
-  precedence, so setting it means the build uses the toolchain already in the
-  image and rustup never re-syncs. The workflow carries a comment saying so; a
-  future contributor who tidies away the env var breaks every Linux wheel.
-- Neutral: the consequence of that override is that the Linux wheels are built
-  on whatever stable the pinned maturin image ships, not on the newest stable,
-  and without the `llvm-tools-preview` component that `rust-toolchain.toml`
-  requests. A `maturin build` needs neither, and
-  the compiler version becomes a property of the image digest rather than of the
-  day the release ran, which is the more reproducible of the two. If the image
-  ever ships a stable below the MSRV the build fails at compile time, loudly.
-- Negative: the release now depends on a container image and on
-  `ubuntu-24.04-arm` being available. The image is pinned by index digest, so
-  moving to a newer maturin is a deliberate edit; the runner label is a GitHub
-  product commitment for public repositories, and if it went away the arm64 wheel
-  would need QEMU and a longer timeout.
-- Neutral: `requires-python = ">=3.12"` in `pyproject.toml` and the abi3 floor
-  now say the same thing in two places. They must move together if the floor ever
-  rises.
-- Neutral: macOS wheels are still built on the runner rather than in a container,
-  because macOS deployment targets are set by the SDK, not by a base image. Only
-  the Linux half needed to move.
-
-- Negative: nothing watches the image digest. `.github/dependabot.yml` covers
-  cargo, github-actions and pip, and even a docker ecosystem entry would not see
-  a digest written inline in a `run:` step. So the compiler that builds the
-  Linux wheels is frozen until a person edits that line, and no automation will
-  ever suggest it. That is the price of the pin rather than an argument against
-  it, but it has to be somebody's job, so it belongs on the release checklist.
-- Neutral: the re-sync the override avoids was never only about components.
-  Reproduced on linux/amd64 with no override, rustup reports
-  `syncing channel updates for stable-x86_64-unknown-linux-gnu` and
-  `latest update on 2026-09-03 for version 1.98.1` before failing on the rename.
-  So what `RUSTUP_PERMIT_COPY_RENAME=1` would have given us was not "the
-  image's compiler plus a component", it was "whichever stable exists on
-  release day", chosen by the calendar rather than by anyone. Against the
-  status quo before either variable the comparison is different and simpler:
-  the build fails outright, as recorded above. Pinning to a reviewed
-  digest is the more
-  deliberate of the two, which is the argument for this decision rather than a
-  side effect of it.
-
-## Validation
-
-This decision is right if, after publishing 0.2.0, a reader on any of the four
-platforms and any GIL-enabled CPython from 3.12 up gets a prebuilt wheel, and
-the next CPython release requires no change to `publish-pypi.yml`. It is
-right about the
-documentation if a container carrying exactly the prerequisites the installation
-page names can build matra from source without adding anything.
-
-It is falsified by any of:
-
-- The Python bindings needing a pyo3 or CPython API the stable ABI does not
-  expose. The compile error is the signal, and the answer is a superseding ADR
-  choosing Option B, not a quiet feature removal.
-- Free-threaded CPython becoming a target matra must serve before the stable ABI
-  covers it. This is a live gap, not a hypothetical one: a free-threaded
-  interpreter accepts `abi3t` tags and no `abi3` tag at all, and pyo3 0.29.2
-  offers only `abi3t` and `abi3t-py315`, so the free-threaded stable ABI starts
-  at 3.15. Until then a `python3.14t` user on a platform with a wheel falls to
-  the sdist. `book/src/tutorials/installation.md` says so.
-- `RUSTUP_TOOLCHAIN` ceasing to outrank `rust-toolchain.toml` in rustup's
-  override precedence, which would put the cross-device rename back on the
-  release path with the unstable permit flag as the only remaining answer. The
-  signal is the same `os error 18` the container originally failed with.
-- A measured, user-visible cost from the abi3 call indirection. Asserted as a
-  mechanism above and never measured on matra; a benchmark showing it matters
-  would reopen the choice.
-- Windows becoming a supported target, which adds a fifth wheel and a build this
-  ADR explicitly declined to guess about.
-
-## References
+## Prior art
 
 - `.github/workflows/publish-pypi.yml`, `.github/workflows/ci.yml`,
   `Cargo.toml` (the pyo3 dependency), `book/src/tutorials/installation.md`.
@@ -319,5 +332,13 @@ It is falsified by any of:
 - `docs/surveys/2026-09-06-release-validation.md`, for how ruff, uv, maturin and
   polars build and smoke test their wheels, and specifically for ruff pinning a
   single build Python because its wheels are abi3.
-- ADR-0010, which set the wasm32-open constraint on the embedding adapter and is
+- RFC-0010, which set the wasm32-open constraint on the embedding adapter and is
   the other place the crate's target surface is decided.
+
+## Unresolved questions
+
+None recorded when this was decided.
+
+## Future possibilities
+
+None recorded when this was decided.

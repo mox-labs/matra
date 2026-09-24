@@ -1,10 +1,19 @@
-# 0006. Abstract-tier vocabulary lock
+# RFC-0006: Abstract-tier vocabulary lock
 
-- **Status:** Accepted
-- **Date:** 2026-05-24
-- **Decider(s):** project maintainer (with the ontology guild: karman, burner, ace, chesterton, dijkstra, k)
+- Feature Name: `abstract_tier_vocabulary_lock`
+- Start Date: 2026-05-24
+- RFC PR: [#25](https://github.com/mox-labs/matra/pull/25)
+- Tracking EP: none
+- Status: accepted
+- Decider(s): project maintainer (with the ontology guild: karman, burner, ace, chesterton, dijkstra, k)
 
-## Context
+> **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects.
+
+## Summary
+
+Reserve abstract-tier vocabulary now, in this ADR, without committing to shape.
+
+## Motivation
 
 matra spans three triguna tiers per the conviction settled in 2026-05-21: **record** (tokens, sentences, paragraphs, sections, POS, lemmas, dependencies; ships in 0.0.x), **abstract** (relations, schemas, modalities, speech acts, voice signatures; planned 0.2+), and **extract** (core claims, theses, principles; downstream consumer concern).
 
@@ -16,7 +25,7 @@ Two ontology problems were open after the 2026-05-21 conviction work:
 
 The risk: ship 0.0.x with the wrong names, lock downstream into them, then pay SemVer-major rename costs in 0.2 when the abstract tier lands.
 
-## Decision
+## Guide-level explanation
 
 Reserve abstract-tier vocabulary now, in this ADR, without committing to shape.
 
@@ -33,7 +42,7 @@ Reserve abstract-tier vocabulary now, in this ADR, without committing to shape.
 | Modal marker (epistemic / deontic / evidential) | `Modality` | Linguistically precise |
 | Illocutionary force | `SpeechAct` | Austin / Searle term-of-art |
 | Aggregate stylometric profile | `Stylometry` | "Voice" stays conviction-level; the artifact is stylometry |
-| Umbrella over extraction outputs | **`Finding`** (NOT `Frame`) | `Frame` is reserved by [ADR-0002](./0002-pipeline-vocabulary.md) for Fillmore-style frame semantics |
+| Umbrella over extraction outputs | **`Finding`** (NOT `Frame`) | `Frame` is reserved by [RFC-0002](./0002-pipeline-vocabulary.md) for Fillmore-style frame semantics |
 | Source span pointer | `SourceSpan` | Struct of primitives (byte_offset, byte_length, sentence_id, token_range); FFI-safe |
 | Declarative rule wrapper | `Rule` | Lives in a new `src/rules/` module |
 | Predicate function over Document | `Predicate` | Lives in `src/rules/` |
@@ -44,7 +53,9 @@ Reserve abstract-tier vocabulary now, in this ADR, without committing to shape.
 
 ### Reserved verb
 
-`frame` per ADR-0002 — preserved untouched.
+`frame` per RFC-0002, preserved untouched.
+
+## Reference-level explanation
 
 ### Finding contract (formal, mandatory when the shape lands)
 
@@ -60,44 +71,21 @@ If `Finding` lands as an enum, the same five rules apply at the variant level, p
 
 **The shape decision (trait vs enum) is deferred to Phase 2.** Per the burner verdict, abstraction extracts when the third concretion forces it, not the first.
 
-## Rationale
+### Consequences
 
-**Why `Document` (not `Analysis`).** The type holds the output of parsing; it is the document made queryable. The consumer brings the analytical act. Calling the type `Analysis` puts the verb in the substrate, contradicting the conviction's substrate-vs-interpreter line.
-
-**Why `Finding` (not `Frame`).** ADR-0002 reserved `Frame` for Fillmore-style semantic-frame outputs that matra may someday produce. Reusing the name for the umbrella over all extraction outputs would erase that reservation and force a confusing rename later.
-
-**Why reserve names without committing to shape.** Trait vs enum, `#[non_exhaustive]` placement, exact field layout: these are shape decisions that depend on real consumer patterns. Names are forward-looking commitments that block competitors and let the team plan migration. Shapes are present-tense decisions that need concrete code pulling them into existence.
-
-**Why now.** Pre-publication is the only cheap window. Once 0.1.0 ships and downstream consumers depend on the names, renames cost SemVer-major coordination.
-
-## Consequences
-
-### Positive
+#### Positive
 
 - `Document` reads correctly in three languages (Rust struct, Python TypedDict, future TS interface). "Analysis" reads as a verb in English; "document" reads as a noun.
 - The abstract-tier name set is locked. Phase 2 work cannot accidentally introduce alternative names. PR review against this ADR catches drift.
 - The conviction page's substrate-vs-interpreter line is structurally consistent with the type names.
 - Downstream alpha consumers see one rename today (Analysis → Document), with a deprecation alias that keeps their snippets working through the 0.0.x line.
 
-### Negative
+#### Neutral
 
-- Existing downstream code (none yet, since matra is unpublished) that references `Analysis` needs to migrate before 0.1.0. The deprecation alias keeps the 0.0.x line working but emits compiler warnings.
-- Internal documents (`.claude/arch/*.md`) referencing `Analysis` are now updated; future authors must use `Document` consistently. The type-name parity floor gate (M0) catches drift.
+- RFC-0002's `frame` verb / `Frame` semantic-frame reservation is preserved unchanged. This ADR strengthens that reservation by routing the umbrella name through `Finding` instead.
+- RFC-0004's single-crate decision is unaffected. The abstract-tier vocabulary lives in `matra::*` for now; extraction into a separate crate is a Pattern 6 decision triggered by external implementor ecosystems, not by name reservation.
 
-### Neutral
-
-- ADR-0002's `frame` verb / `Frame` semantic-frame reservation is preserved unchanged. This ADR strengthens that reservation by routing the umbrella name through `Finding` instead.
-- ADR-0004's single-crate decision is unaffected. The abstract-tier vocabulary lives in `matra::*` for now; extraction into a separate crate is a Pattern 6 decision triggered by external implementor ecosystems, not by name reservation.
-
-## Explicit non-decisions (deferred)
-
-- **`Paragraph.in_blockquote` → `ParagraphKind` enum.** The boolean's job (gate measure or not) is binary today. The deprecation rustdoc on the field signals the future migration; the field stays in 0.0.x and 0.1.x.
-- **Metric slot grouping into `ParagraphMetrics`.** Phase 2 work, dependent on whether the cost-benefit lands. Outer `Option<ParagraphMetrics>` is **forbidden** (breaks I-P3 independent-metric-gating); inner `Option<f64>` per slot is the only shape that preserves the invariant.
-- **`CorpusEntry` collapse + `RawDocument` disambiguation.** Phase 2 work, paired with the rules iteration.
-- **`CorpusEntry.analysis` field rename.** Found by the i9 naming review (2026-09-04): the field carries the `Analysis` concept this ADR rejected, and post-0.1.0 the rename is SemVer-major. Fold it into the `CorpusEntry` collapse above so the break is paid once. The metric function parameter names (`analysis: &mut Document` in `src/metrics/`) are internal and free to fix any time.
-- **`Finding` shape (trait vs enum).** Phase 2, decided at the first concrete consumer site.
-
-## Validation criteria
+### Validation criteria
 
 Per the ixian validation criteria (`.claude/rhetoric/ixian-validation-criteria.md`):
 
@@ -105,10 +93,37 @@ Per the ixian validation criteria (`.claude/rhetoric/ixian-validation-criteria.m
 - **Post-merge.** No new uses of `Analysis` enter the codebase (the deprecation lint catches them in CI's `-D warnings` clippy pass).
 - **Pre-0.1.0.** The deprecation alias is removed from `src/domain.rs`; the type-name parity gate refuses to add `Analysis` back to the docs.
 
-## Related
+## Drawbacks
 
-- [ADR-0001](./0001-record-architectural-decisions.md) — ADR process
-- [ADR-0002](./0002-pipeline-vocabulary.md) — `frame` verb reserved; `Frame` reserved for Fillmore semantic frames
-- [ADR-0003](./0003-workspace-with-rumi-nlp.md) — superseded; single-crate
-- [ADR-0004](./0004-stay-single-crate.md) — single-crate decision rationale; Pattern 6 trigger conditions
-- [ADR-0005](./0005-supply-chain-hardening.md) — supply-chain posture for the eventual 0.1.0 publish
+- Existing downstream code (none yet, since matra is unpublished) that references `Analysis` needs to migrate before 0.1.0. The deprecation alias keeps the 0.0.x line working but emits compiler warnings.
+- Internal documents (`.claude/arch/*.md`) referencing `Analysis` are now updated; future authors must use `Document` consistently. The type-name parity floor gate (M0) catches drift.
+
+## Rationale and alternatives
+
+**Why `Document` (not `Analysis`).** The type holds the output of parsing; it is the document made queryable. The consumer brings the analytical act. Calling the type `Analysis` puts the verb in the substrate, contradicting the conviction's substrate-vs-interpreter line.
+
+**Why `Finding` (not `Frame`).** RFC-0002 reserved `Frame` for Fillmore-style semantic-frame outputs that matra may someday produce. Reusing the name for the umbrella over all extraction outputs would erase that reservation and force a confusing rename later.
+
+**Why reserve names without committing to shape.** Trait vs enum, `#[non_exhaustive]` placement, exact field layout: these are shape decisions that depend on real consumer patterns. Names are forward-looking commitments that block competitors and let the team plan migration. Shapes are present-tense decisions that need concrete code pulling them into existence.
+
+**Why now.** Pre-publication is the only cheap window. Once 0.1.0 ships and downstream consumers depend on the names, renames cost SemVer-major coordination.
+
+## Prior art
+
+- [RFC-0001](./0001-record-architectural-decisions.md): ADR process
+- [RFC-0002](./0002-pipeline-vocabulary.md): `frame` verb reserved; `Frame` reserved for Fillmore semantic frames
+- [RFC-0003](./0003-workspace-with-rumi-nlp.md): superseded; single-crate
+- [RFC-0004](./0004-stay-single-crate.md): single-crate decision rationale; Pattern 6 trigger conditions
+- [RFC-0005](./0005-supply-chain-hardening.md): supply-chain posture for the eventual 0.1.0 publish
+
+## Unresolved questions
+
+- **`Paragraph.in_blockquote` → `ParagraphKind` enum.** The boolean's job (gate measure or not) is binary today. The deprecation rustdoc on the field signals the future migration; the field stays in 0.0.x and 0.1.x.
+- **Metric slot grouping into `ParagraphMetrics`.** Phase 2 work, dependent on whether the cost-benefit lands. Outer `Option<ParagraphMetrics>` is **forbidden** (breaks I-P3 independent-metric-gating); inner `Option<f64>` per slot is the only shape that preserves the invariant.
+- **`CorpusEntry` collapse + `RawDocument` disambiguation.** Phase 2 work, paired with the rules iteration.
+- **`CorpusEntry.analysis` field rename.** Found by the i9 naming review (2026-09-04): the field carries the `Analysis` concept this ADR rejected, and post-0.1.0 the rename is SemVer-major. Fold it into the `CorpusEntry` collapse above so the break is paid once. The metric function parameter names (`analysis: &mut Document` in `src/metrics/`) are internal and free to fix any time.
+- **`Finding` shape (trait vs enum).** Phase 2, decided at the first concrete consumer site.
+
+## Future possibilities
+
+None recorded when this was decided.
