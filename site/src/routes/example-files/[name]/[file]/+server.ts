@@ -16,7 +16,9 @@ export const entries: EntryGenerator = () =>
 
 export const GET: RequestHandler = ({ params }) => {
 	const ex = examples.get(params.name);
-	const file = ex ? publishedFiles(ex)[params.file] : undefined;
+	const files = ex ? publishedFiles(ex) : {};
+	// Own keys only: `constructor` is not a file.
+	const file = Object.hasOwn(files, params.file) ? files[params.file] : undefined;
 	if (!file) error(404, 'No such example file');
 	return new Response(file.body, { headers: { 'content-type': file.type } });
 };

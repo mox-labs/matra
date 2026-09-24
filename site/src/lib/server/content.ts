@@ -78,13 +78,19 @@ export function llmsTxt(): string {
 export function markdownOf(route: string): string {
 	const page = pages.find((p) => p.route === route);
 	if (!page) error(404, `No page at ${route}`);
-	return source(page.file).replace(
-		/^<example-(input|call|output) name="([^"]+)" \/>$/gm,
+	// The spellings the renderer's tag pattern accepts (FIGURE_TAG in
+	// markdown/render.ts), so a tag that renders on the page cannot survive
+	// raw in the twin; and if one does anyway, the build fails.
+	const twin = source(page.file).replace(
+		/^<example-(input|call|output)\s+name="([^"<>]*)"\s*\/>\s*$/gm,
 		(tag, part: 'input' | 'call' | 'output', name: string) => {
 			const ex = examples.get(name);
 			return ex ? exampleMarkdown(ex, part, figures) : tag;
 		}
 	);
+	const left = twin.split('\n').find((line) => /^\s*<example-/.test(line));
+	if (left) throw new Error(`${page.file}: an example tag the .md twin could not expand: ${left.trim()}`);
+	return twin;
 }
 
 const SITE_ROOT = resolve('.');
