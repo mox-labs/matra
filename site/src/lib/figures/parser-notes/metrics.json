@@ -1,0 +1,47 @@
+{
+  "data": {
+    "document": {
+      "mean_readability": 6.6682,
+      "nominalization_ratio": 0.0156,
+      "passive_ratio": 0.25,
+      "vocabulary_ttr": 0.6563
+    },
+    "paragraphs": [
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 1,
+        "lexical_density": 0.4815,
+        "opening": "The parser reads each paragraph on its own.",
+        "readability_grade": 5.8454,
+        "words": 27
+      },
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 2,
+        "lexical_density": 0.4722,
+        "opening": "A word's head is the word it depends",
+        "readability_grade": 7.4911,
+        "words": 37
+      }
+    ]
+  },
+  "figure": "metrics",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "parser-notes",
+  "source": {
+    "author": "matra contributors",
+    "licence": "MIT, as part of the matra repository",
+    "register": "technical",
+    "source": "Written for matra's documentation",
+    "title": "How the parser reads text",
+    "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/parser-notes.txt"
+  }
+}

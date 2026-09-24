@@ -1,0 +1,65 @@
+{
+  "data": {
+    "document": {
+      "mean_readability": 10.9032,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.5,
+      "vocabulary_ttr": 0.6566
+    },
+    "paragraphs": [
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 1,
+        "lexical_density": 0.4783,
+        "opening": "It is a truth universally acknowledged, that a",
+        "readability_grade": 10.3104,
+        "words": 23
+      },
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 2,
+        "lexical_density": 0.4167,
+        "opening": "However little known the feelings or views of",
+        "readability_grade": 19.8467,
+        "words": 48
+      },
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 3,
+        "lexical_density": 0.5714,
+        "opening": "“My dear Mr. Bennet,” said his lady to",
+        "readability_grade": 2.5526,
+        "words": 21
+      },
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 4,
+        "lexical_density": 0.4286,
+        "opening": "Mr. Bennet replied that he had not.",
+        "readability_grade": null,
+        "words": 7
+      }
+    ]
+  },
+  "figure": "metrics",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "austen-opening",
+  "source": {
+    "author": "Jane Austen",
+    "licence": "Public domain (first published 1813)",
+    "register": "narrative",
+    "source": "Project Gutenberg eBook #1342, the text only, without the Project Gutenberg header, footer or licence",
+    "title": "Pride and Prejudice, the opening of chapter 1",
+    "url": "https://www.gutenberg.org/ebooks/1342"
+  }
+}

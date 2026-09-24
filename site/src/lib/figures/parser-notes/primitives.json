@@ -1,0 +1,359 @@
+{
+  "data": {
+    "sentences": [
+      {
+        "bare_assertion": true,
+        "hearst_pairs": [],
+        "modals": [],
+        "negations": [],
+        "paragraph": 1,
+        "reportings": [],
+        "root_adverbials": [],
+        "root_id": 3,
+        "text": "The parser reads each paragraph on its own.",
+        "tokens": [
+          {
+            "id": 1,
+            "text": "The"
+          },
+          {
+            "id": 2,
+            "text": "parser"
+          },
+          {
+            "id": 3,
+            "text": "reads"
+          },
+          {
+            "id": 4,
+            "text": "each"
+          },
+          {
+            "id": 5,
+            "text": "paragraph"
+          },
+          {
+            "id": 6,
+            "text": "on"
+          },
+          {
+            "id": 7,
+            "text": "its"
+          },
+          {
+            "id": 8,
+            "text": "own"
+          },
+          {
+            "id": 9,
+            "text": "."
+          }
+        ]
+      },
+      {
+        "bare_assertion": true,
+        "hearst_pairs": [],
+        "modals": [],
+        "negations": [],
+        "paragraph": 1,
+        "reportings": [],
+        "root_adverbials": [],
+        "root_id": 2,
+        "text": "It splits the text into sentences and gives every word a lemma, a part of speech and a head.",
+        "tokens": [
+          {
+            "id": 1,
+            "text": "It"
+          },
+          {
+            "id": 2,
+            "text": "splits"
+          },
+          {
+            "id": 3,
+            "text": "the"
+          },
+          {
+            "id": 4,
+            "text": "text"
+          },
+          {
+            "id": 5,
+            "text": "into"
+          },
+          {
+            "id": 6,
+            "text": "sentences"
+          },
+          {
+            "id": 7,
+            "text": "and"
+          },
+          {
+            "id": 8,
+            "text": "gives"
+          },
+          {
+            "id": 9,
+            "text": "every"
+          },
+          {
+            "id": 10,
+            "text": "word"
+          },
+          {
+            "id": 11,
+            "text": "a"
+          },
+          {
+            "id": 12,
+            "text": "lemma"
+          },
+          {
+            "id": 13,
+            "text": ","
+          },
+          {
+            "id": 14,
+            "text": "a"
+          },
+          {
+            "id": 15,
+            "text": "part"
+          },
+          {
+            "id": 16,
+            "text": "of"
+          },
+          {
+            "id": 17,
+            "text": "speech"
+          },
+          {
+            "id": 18,
+            "text": "and"
+          },
+          {
+            "id": 19,
+            "text": "a"
+          },
+          {
+            "id": 20,
+            "text": "head"
+          },
+          {
+            "id": 21,
+            "text": "."
+          }
+        ]
+      },
+      {
+        "bare_assertion": true,
+        "hearst_pairs": [],
+        "modals": [],
+        "negations": [],
+        "paragraph": 2,
+        "reportings": [],
+        "root_adverbials": [],
+        "root_id": 7,
+        "text": "A word's head is the word it depends on, and the label on that link names the relation.",
+        "tokens": [
+          {
+            "id": 1,
+            "text": "A"
+          },
+          {
+            "id": 2,
+            "text": "word"
+          },
+          {
+            "id": 3,
+            "text": "'s"
+          },
+          {
+            "id": 4,
+            "text": "head"
+          },
+          {
+            "id": 5,
+            "text": "is"
+          },
+          {
+            "id": 6,
+            "text": "the"
+          },
+          {
+            "id": 7,
+            "text": "word"
+          },
+          {
+            "id": 8,
+            "text": "it"
+          },
+          {
+            "id": 9,
+            "text": "depends"
+          },
+          {
+            "id": 10,
+            "text": "on"
+          },
+          {
+            "id": 11,
+            "text": ","
+          },
+          {
+            "id": 12,
+            "text": "and"
+          },
+          {
+            "id": 13,
+            "text": "the"
+          },
+          {
+            "id": 14,
+            "text": "label"
+          },
+          {
+            "id": 15,
+            "text": "on"
+          },
+          {
+            "id": 16,
+            "text": "that"
+          },
+          {
+            "id": 17,
+            "text": "link"
+          },
+          {
+            "id": 18,
+            "text": "names"
+          },
+          {
+            "id": 19,
+            "text": "the"
+          },
+          {
+            "id": 20,
+            "text": "relation"
+          },
+          {
+            "id": 21,
+            "text": "."
+          }
+        ]
+      },
+      {
+        "bare_assertion": true,
+        "hearst_pairs": [],
+        "modals": [],
+        "negations": [],
+        "paragraph": 2,
+        "reportings": [],
+        "root_adverbials": [],
+        "root_id": 4,
+        "text": "The model was trained on the English Web Treebank, so it is most reliable on edited English prose.",
+        "tokens": [
+          {
+            "id": 1,
+            "text": "The"
+          },
+          {
+            "id": 2,
+            "text": "model"
+          },
+          {
+            "id": 3,
+            "text": "was"
+          },
+          {
+            "id": 4,
+            "text": "trained"
+          },
+          {
+            "id": 5,
+            "text": "on"
+          },
+          {
+            "id": 6,
+            "text": "the"
+          },
+          {
+            "id": 7,
+            "text": "English"
+          },
+          {
+            "id": 8,
+            "text": "Web"
+          },
+          {
+            "id": 9,
+            "text": "Treebank"
+          },
+          {
+            "id": 10,
+            "text": ","
+          },
+          {
+            "id": 11,
+            "text": "so"
+          },
+          {
+            "id": 12,
+            "text": "it"
+          },
+          {
+            "id": 13,
+            "text": "is"
+          },
+          {
+            "id": 14,
+            "text": "most"
+          },
+          {
+            "id": 15,
+            "text": "reliable"
+          },
+          {
+            "id": 16,
+            "text": "on"
+          },
+          {
+            "id": 17,
+            "text": "edited"
+          },
+          {
+            "id": 18,
+            "text": "English"
+          },
+          {
+            "id": 19,
+            "text": "prose"
+          },
+          {
+            "id": 20,
+            "text": "."
+          }
+        ]
+      }
+    ]
+  },
+  "figure": "primitives",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "parser-notes",
+  "source": {
+    "author": "matra contributors",
+    "licence": "MIT, as part of the matra repository",
+    "register": "technical",
+    "source": "Written for matra's documentation",
+    "title": "How the parser reads text",
+    "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/parser-notes.txt"
+  }
+}

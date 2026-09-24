@@ -1,0 +1,372 @@
+{
+  "data": {
+    "phrases": [
+      {
+        "phrase": "english prose",
+        "rake": {
+          "rank": 2,
+          "score": 4.5
+        },
+        "yake": {
+          "rank": 75,
+          "score": 0.3797
+        }
+      },
+      {
+        "phrase": "english web treebank",
+        "rake": {
+          "rank": 1,
+          "score": 8.5
+        },
+        "yake": {
+          "rank": 76,
+          "score": 0.2515
+        }
+      },
+      {
+        "phrase": "head",
+        "rake": {
+          "rank": 3,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 50,
+          "score": 0.7567
+        }
+      },
+      {
+        "phrase": "label",
+        "rake": {
+          "rank": 3,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 29,
+          "score": 2.1344
+        }
+      },
+      {
+        "phrase": "lemma",
+        "rake": {
+          "rank": 3,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 18,
+          "score": 3.9069
+        }
+      },
+      {
+        "phrase": "lemma part",
+        "rake": null,
+        "yake": {
+          "rank": 9,
+          "score": 13.983
+        }
+      },
+      {
+        "phrase": "lemma part speech",
+        "rake": null,
+        "yake": {
+          "rank": 3,
+          "score": 46.2552
+        }
+      },
+      {
+        "phrase": "link",
+        "rake": {
+          "rank": 3,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 54,
+          "score": 0.675
+        }
+      },
+      {
+        "phrase": "model",
+        "rake": {
+          "rank": 3,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 32,
+          "score": 1.8444
+        }
+      },
+      {
+        "phrase": "paragraph",
+        "rake": {
+          "rank": 3,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 6,
+          "score": 16.7527
+        }
+      },
+      {
+        "phrase": "parser",
+        "rake": {
+          "rank": 3,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 40,
+          "score": 1.0001
+        }
+      },
+      {
+        "phrase": "parser read paragraph",
+        "rake": null,
+        "yake": {
+          "rank": 7,
+          "score": 16.5085
+        }
+      },
+      {
+        "phrase": "part",
+        "rake": {
+          "rank": 3,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 21,
+          "score": 3.5791
+        }
+      },
+      {
+        "phrase": "part speech",
+        "rake": null,
+        "yake": {
+          "rank": 10,
+          "score": 11.8394
+        }
+      },
+      {
+        "phrase": "part speech head",
+        "rake": null,
+        "yake": {
+          "rank": 12,
+          "score": 8.9583
+        }
+      },
+      {
+        "phrase": "read paragraph",
+        "rake": null,
+        "yake": {
+          "rank": 8,
+          "score": 16.5065
+        }
+      },
+      {
+        "phrase": "relation",
+        "rake": {
+          "rank": 3,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 31,
+          "score": 1.9074
+        }
+      },
+      {
+        "phrase": "reliable",
+        "rake": {
+          "rank": 3,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 35,
+          "score": 1.5546
+        }
+      },
+      {
+        "phrase": "split text",
+        "rake": null,
+        "yake": {
+          "rank": 2,
+          "score": 49.4279
+        }
+      },
+      {
+        "phrase": "split text sentence",
+        "rake": null,
+        "yake": {
+          "rank": 1,
+          "score": 271.4663
+        }
+      },
+      {
+        "phrase": "text sentence",
+        "rake": null,
+        "yake": {
+          "rank": 4,
+          "score": 35.169
+        }
+      },
+      {
+        "phrase": "text sentence give",
+        "rake": null,
+        "yake": {
+          "rank": 5,
+          "score": 29.5057
+        }
+      },
+      {
+        "phrase": "word lemma part",
+        "rake": null,
+        "yake": {
+          "rank": 11,
+          "score": 10.9167
+        }
+      }
+    ],
+    "rake": [
+      {
+        "phrase": "english web treebank",
+        "rank": 1,
+        "score": 8.5
+      },
+      {
+        "phrase": "english prose",
+        "rank": 2,
+        "score": 4.5
+      },
+      {
+        "phrase": "head",
+        "rank": 3,
+        "score": 1.0
+      },
+      {
+        "phrase": "label",
+        "rank": 3,
+        "score": 1.0
+      },
+      {
+        "phrase": "lemma",
+        "rank": 3,
+        "score": 1.0
+      },
+      {
+        "phrase": "link",
+        "rank": 3,
+        "score": 1.0
+      },
+      {
+        "phrase": "model",
+        "rank": 3,
+        "score": 1.0
+      },
+      {
+        "phrase": "paragraph",
+        "rank": 3,
+        "score": 1.0
+      },
+      {
+        "phrase": "parser",
+        "rank": 3,
+        "score": 1.0
+      },
+      {
+        "phrase": "part",
+        "rank": 3,
+        "score": 1.0
+      },
+      {
+        "phrase": "relation",
+        "rank": 3,
+        "score": 1.0
+      },
+      {
+        "phrase": "reliable",
+        "rank": 3,
+        "score": 1.0
+      }
+    ],
+    "shown": 12,
+    "total": {
+      "rake": 16,
+      "yake": 77
+    },
+    "yake": [
+      {
+        "phrase": "split text sentence",
+        "rank": 1,
+        "score": 271.4663
+      },
+      {
+        "phrase": "split text",
+        "rank": 2,
+        "score": 49.4279
+      },
+      {
+        "phrase": "lemma part speech",
+        "rank": 3,
+        "score": 46.2552
+      },
+      {
+        "phrase": "text sentence",
+        "rank": 4,
+        "score": 35.169
+      },
+      {
+        "phrase": "text sentence give",
+        "rank": 5,
+        "score": 29.5057
+      },
+      {
+        "phrase": "paragraph",
+        "rank": 6,
+        "score": 16.7527
+      },
+      {
+        "phrase": "parser read paragraph",
+        "rank": 7,
+        "score": 16.5085
+      },
+      {
+        "phrase": "read paragraph",
+        "rank": 8,
+        "score": 16.5065
+      },
+      {
+        "phrase": "lemma part",
+        "rank": 9,
+        "score": 13.983
+      },
+      {
+        "phrase": "part speech",
+        "rank": 10,
+        "score": 11.8394
+      },
+      {
+        "phrase": "word lemma part",
+        "rank": 11,
+        "score": 10.9167
+      },
+      {
+        "phrase": "part speech head",
+        "rank": 12,
+        "score": 8.9583
+      }
+    ]
+  },
+  "figure": "keyphrases",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "parser-notes",
+  "source": {
+    "author": "matra contributors",
+    "licence": "MIT, as part of the matra repository",
+    "register": "technical",
+    "source": "Written for matra's documentation",
+    "title": "How the parser reads text",
+    "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/parser-notes.txt"
+  }
+}

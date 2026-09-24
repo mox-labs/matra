@@ -1,0 +1,56 @@
+{
+  "data": {
+    "document": {
+      "mean_readability": 20.2594,
+      "nominalization_ratio": 0.0242,
+      "passive_ratio": 0.75,
+      "vocabulary_ttr": 0.5273
+    },
+    "paragraphs": [
+      {
+        "compression_ratio": 0.5994,
+        "in_blockquote": false,
+        "index": 1,
+        "lexical_density": 0.5577,
+        "opening": "We the People of the United States, in",
+        "readability_grade": 26.2477,
+        "words": 52
+      },
+      {
+        "compression_ratio": null,
+        "in_blockquote": false,
+        "index": 2,
+        "lexical_density": 0.48,
+        "opening": "All legislative Powers herein granted shall be vested",
+        "readability_grade": 14.456,
+        "words": 25
+      },
+      {
+        "compression_ratio": 0.502,
+        "in_blockquote": false,
+        "index": 3,
+        "lexical_density": 0.4091,
+        "opening": "The House of Representatives shall be composed of",
+        "readability_grade": 20.0745,
+        "words": 88
+      }
+    ]
+  },
+  "figure": "metrics",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "constitution-article-one",
+  "source": {
+    "author": "The Constitutional Convention, 1787",
+    "licence": "Public domain (a founding document of the United States, 1787)",
+    "register": "legal",
+    "source": "National Archives, transcript of the Constitution of the United States",
+    "title": "The Constitution of the United States: the Preamble, and Article I, Sections 1 and 2 (opening)",
+    "url": "https://www.archives.gov/founding-docs/constitution-transcript"
+  }
+}

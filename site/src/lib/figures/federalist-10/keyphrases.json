@@ -1,0 +1,383 @@
+{
+  "data": {
+    "phrases": [
+      {
+        "phrase": "adequate control",
+        "rake": {
+          "rank": 6,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 2426,
+          "score": 0.5199
+        }
+      },
+      {
+        "phrase": "alone account",
+        "rake": {
+          "rank": 6,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 1486,
+          "score": 0.8225
+        }
+      },
+      {
+        "phrase": "american constitution",
+        "rake": {
+          "rank": 6,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 1793,
+          "score": 0.7025
+        }
+      },
+      {
+        "phrase": "annihilation air essential",
+        "rake": null,
+        "yake": {
+          "rank": 11,
+          "score": 218.1722
+        }
+      },
+      {
+        "phrase": "attractive merit",
+        "rake": {
+          "rank": 6,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 2849,
+          "score": 0.4042
+        }
+      },
+      {
+        "phrase": "break control violence",
+        "rake": null,
+        "yake": {
+          "rank": 10,
+          "score": 362.1871
+        }
+      },
+      {
+        "phrase": "candid review",
+        "rake": {
+          "rank": 6,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 1465,
+          "score": 0.8399
+        }
+      },
+      {
+        "phrase": "character fate contemplate",
+        "rake": null,
+        "yake": {
+          "rank": 6,
+          "score": 3038.7512
+        }
+      },
+      {
+        "phrase": "civilized nation",
+        "rake": {
+          "rank": 6,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 2136,
+          "score": 0.6153
+        }
+      },
+      {
+        "phrase": "complaint foundation evidence",
+        "rake": null,
+        "yake": {
+          "rank": 7,
+          "score": 1730.7585
+        }
+      },
+      {
+        "phrase": "contemplate propensity",
+        "rake": null,
+        "yake": {
+          "rank": 8,
+          "score": 463.1344
+        }
+      },
+      {
+        "phrase": "contemplate propensity dangerous",
+        "rake": null,
+        "yake": {
+          "rank": 9,
+          "score": 455.4617
+        }
+      },
+      {
+        "phrase": "dangerous vice",
+        "rake": {
+          "rank": 6,
+          "score": 4.0
+        },
+        "yake": {
+          "rank": 1294,
+          "score": 0.9668
+        }
+      },
+      {
+        "phrase": "develop tendency break",
+        "rake": null,
+        "yake": {
+          "rank": 3,
+          "score": 22609.3013
+        }
+      },
+      {
+        "phrase": "fate contemplate",
+        "rake": null,
+        "yake": {
+          "rank": 5,
+          "score": 4523.1362
+        }
+      },
+      {
+        "phrase": "fate contemplate propensity",
+        "rake": null,
+        "yake": {
+          "rank": 1,
+          "score": 32553.5666
+        }
+      },
+      {
+        "phrase": "federal constitution form",
+        "rake": {
+          "rank": 3,
+          "score": 6.4286
+        },
+        "yake": {
+          "rank": 2983,
+          "score": 0.3351
+        }
+      },
+      {
+        "phrase": "lesser interest",
+        "rake": {
+          "rank": 5,
+          "score": 4.0417
+        },
+        "yake": {
+          "rank": 1722,
+          "score": 0.7269
+        }
+      },
+      {
+        "phrase": "many judicial determination",
+        "rake": {
+          "rank": 2,
+          "score": 7.8333
+        },
+        "yake": {
+          "rank": 2642,
+          "score": 0.4676
+        }
+      },
+      {
+        "phrase": "many lesser interest",
+        "rake": {
+          "rank": 4,
+          "score": 5.875
+        },
+        "yake": {
+          "rank": 2273,
+          "score": 0.576
+        }
+      },
+      {
+        "phrase": "substantial occasion present",
+        "rake": {
+          "rank": 1,
+          "score": 9.0
+        },
+        "yake": {
+          "rank": 2694,
+          "score": 0.4513
+        }
+      },
+      {
+        "phrase": "tendency",
+        "rake": {
+          "rank": 272,
+          "score": 1.0
+        },
+        "yake": {
+          "rank": 12,
+          "score": 158.447
+        }
+      },
+      {
+        "phrase": "tendency break",
+        "rake": null,
+        "yake": {
+          "rank": 2,
+          "score": 22721.9898
+        }
+      },
+      {
+        "phrase": "tendency break control",
+        "rake": null,
+        "yake": {
+          "rank": 4,
+          "score": 16940.187
+        }
+      }
+    ],
+    "rake": [
+      {
+        "phrase": "substantial occasion present",
+        "rank": 1,
+        "score": 9.0
+      },
+      {
+        "phrase": "many judicial determination",
+        "rank": 2,
+        "score": 7.8333
+      },
+      {
+        "phrase": "federal constitution form",
+        "rank": 3,
+        "score": 6.4286
+      },
+      {
+        "phrase": "many lesser interest",
+        "rank": 4,
+        "score": 5.875
+      },
+      {
+        "phrase": "lesser interest",
+        "rank": 5,
+        "score": 4.0417
+      },
+      {
+        "phrase": "adequate control",
+        "rank": 6,
+        "score": 4.0
+      },
+      {
+        "phrase": "alone account",
+        "rank": 6,
+        "score": 4.0
+      },
+      {
+        "phrase": "american constitution",
+        "rank": 6,
+        "score": 4.0
+      },
+      {
+        "phrase": "attractive merit",
+        "rank": 6,
+        "score": 4.0
+      },
+      {
+        "phrase": "candid review",
+        "rank": 6,
+        "score": 4.0
+      },
+      {
+        "phrase": "civilized nation",
+        "rank": 6,
+        "score": 4.0
+      },
+      {
+        "phrase": "dangerous vice",
+        "rank": 6,
+        "score": 4.0
+      }
+    ],
+    "shown": 12,
+    "total": {
+      "rake": 466,
+      "yake": 3111
+    },
+    "yake": [
+      {
+        "phrase": "fate contemplate propensity",
+        "rank": 1,
+        "score": 32553.5666
+      },
+      {
+        "phrase": "tendency break",
+        "rank": 2,
+        "score": 22721.9898
+      },
+      {
+        "phrase": "develop tendency break",
+        "rank": 3,
+        "score": 22609.3013
+      },
+      {
+        "phrase": "tendency break control",
+        "rank": 4,
+        "score": 16940.187
+      },
+      {
+        "phrase": "fate contemplate",
+        "rank": 5,
+        "score": 4523.1362
+      },
+      {
+        "phrase": "character fate contemplate",
+        "rank": 6,
+        "score": 3038.7512
+      },
+      {
+        "phrase": "complaint foundation evidence",
+        "rank": 7,
+        "score": 1730.7585
+      },
+      {
+        "phrase": "contemplate propensity",
+        "rank": 8,
+        "score": 463.1344
+      },
+      {
+        "phrase": "contemplate propensity dangerous",
+        "rank": 9,
+        "score": 455.4617
+      },
+      {
+        "phrase": "break control violence",
+        "rank": 10,
+        "score": 362.1871
+      },
+      {
+        "phrase": "annihilation air essential",
+        "rank": 11,
+        "score": 218.1722
+      },
+      {
+        "phrase": "tendency",
+        "rank": 12,
+        "score": 158.447
+      }
+    ]
+  },
+  "figure": "keyphrases",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "federalist-10",
+  "source": {
+    "author": "James Madison (as Publius)",
+    "licence": "Public domain (first published 1787)",
+    "register": "argumentative",
+    "source": "Project Gutenberg eBook #1404, The Federalist Papers: the text of No. 10 from its first sentence to the signature, without the heading, the Project Gutenberg header, footer or licence",
+    "title": "The Federalist No. 10, the essay body",
+    "url": "https://www.gutenberg.org/ebooks/1404"
+  }
+}
