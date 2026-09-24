@@ -518,7 +518,10 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: crate
-          path: attested
+          # Outside the checkout. Inside it, the downloaded file is an
+          # untracked change and `cargo package` refuses a dirty tree,
+          # which failed the 0.2.1 publish before it reached crates.io.
+          path: ${{ runner.temp }}/attested
       # cargo has no "publish this .crate file" command, so `cargo
       # publish` repackages from source. That leaves a gap between the
       # artifact that was attested and the bytes that reach crates.io,
@@ -534,7 +537,7 @@ jobs:
           set -euo pipefail
           cargo package --locked
           built="target/package/matra-$RELEASE_VERSION.crate"
-          attested="attested/matra-$RELEASE_VERSION.crate"
+          attested="$RUNNER_TEMP/attested/matra-$RELEASE_VERSION.crate"
           a=$(sha256sum "$built" | cut -d' ' -f1)
           b=$(sha256sum "$attested" | cut -d' ' -f1)
           echo "packaged here: $a"
@@ -593,6 +596,12 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
         with:
           packages-dir: dist
+          # A skip_tag retry rebuilds and re-reaches this step after PyPI
+          # already holds the version (0.2.1 published to PyPI while
+          # crates.io failed). Skipping files that exist keeps a retry of
+          # one registry from failing on the other. A first run cannot hit
+          # this: the tag job refuses a version whose tag exists.
+          skip-existing: true
           attestations: true
           print-hash: true
 
