@@ -17,12 +17,13 @@
 
 # Docsite structure: SUMMARY.md is the navigation tree; svelte.config.js owns
 # the build and the base path; the tag registry decides what raw HTML a page
-# may carry; urls.txt is the published URL contract. Drift here is silent and
-# high-impact.
+# may carry; urls.txt and anchors.txt are the published URL contract. Drift
+# here is silent and high-impact.
 /site/content/SUMMARY.md                     @yzavyas
 /site/svelte.config.js                       @yzavyas
 /site/src/lib/server/markdown/registry.ts    @yzavyas
 /site/urls.txt                               @yzavyas
+/site/anchors.txt                            @yzavyas
 
 # CI workflows — change to triggers, permissions, or pinned action SHAs
 # affects every subsequent PR.

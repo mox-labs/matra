@@ -176,11 +176,14 @@ path and heading anchor mdBook served. At the cut-over (M2) the SvelteKit
 build became gate 4, and parity against a build that no longer exists gave way
 to a committed URL manifest, `site/urls.txt`: M1's parity list, plus
 `llms.txt`, the `.md` twins and rustdoc's `api/index.html` and
-`api/matra/index.html`. Gate 7 fails when the build does not write a listed
-path or writes a page the manifest does not list; `docs.yml` checks the
-assembled artifact against it before upload, and a job after deploy asks the
+`api/matra/index.html`; and beside it `site/anchors.txt`, the 208 heading
+anchors M1 verified id for id, since `page.html#section` is a published URL
+too. Gate 7 fails when the build does not write a listed path, writes a page
+the manifest does not list, or drops a listed anchor; `docs.yml` checks the
+assembled artifact the same way before upload, and a job after deploy asks the
 live site for every path and fails on any answer but 200
-(`scripts/check-url-manifest.sh`).
+(`scripts/check-url-manifest.sh`). A fragment cannot be requested over HTTP,
+so anchors are held at the artifact, not on the live site.
 
 `tests/cited_figures.rs`, `tests/error_tables.rs` and
 `skills/matra/references/semantic.md` read pages by path. They move to the new
@@ -409,8 +412,9 @@ examples are live, and the M6 newcomer pass is filed.
   phone and the roadmap's figures re-measured unchanged after its link moved.
 - 2026-09-24: M2 delivered: `docs.yml` deploys the SvelteKit build with
   rustdoc at `/api/`, `book/` and the mdBook steps are gone, gate 4 is the
-  site build, and the URL manifest replaces mdBook parity, checked on the
-  build, on the artifact, and on the live site after each deploy. The first
+  site build, and the URL and anchor manifests replace mdBook parity, checked
+  on the build and the artifact, and the paths on the live site after each
+  deploy. The first
   live check runs on the deploy that follows the merge. `git grep` still finds
   `book/` paths in `.claude/agents/` and `.claude/arch/`, and mdBook wording
   in the Docsite section of CLAUDE.md; those are the owner's to change.

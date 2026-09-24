@@ -27,8 +27,9 @@
 #                            added, retitled, or reworded leaves it stale, and
 #                            a stale map is worse for an agent than none.
 #   7. URL manifest:        the build writes every published path in
-#                            site/urls.txt, and every page it writes is listed
-#                            there (scripts/check-url-manifest.sh --build).
+#                            site/urls.txt and keeps every heading anchor in
+#                            site/anchors.txt, and every page it writes is
+#                            listed (scripts/check-url-manifest.sh --build).
 #
 # Execution order is 2, 3, 5, 6, 4, 1, 7: the build comes before the link check
 # and the manifest check that read its output.
@@ -475,7 +476,9 @@ echo ""
 # site/urls.txt is the published URL contract: every path the site has served,
 # the mdBook-era pages included. The build must write each one (api/ aside,
 # which rustdoc supplies at deploy), and every page the build writes must be
-# listed, so no page ships outside the contract. docs.yml checks the same list
+# listed, so no page ships outside the contract. site/anchors.txt does the
+# same for the heading anchors those pages published: a reworded heading that
+# drops a cited #fragment fails here. docs.yml checks the same list
 # against the assembled artifact before upload and against the live site after
 # deploy.
 echo "=== Gate 7: URL manifest ==="
