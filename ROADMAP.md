@@ -65,8 +65,6 @@ The `NlpProvider` trait requires no change to support a WASM implementation. Any
 
 **Trigger condition.** A documented caller requirement for PDF or DOCX analysis, paired with a Rust extraction crate that is stable (post-1.0, maintained, no known correctness holes on the document shapes the caller needs). When the adapter lands, no port trait changes; only the composition root grows a branch.
 
-**Plan.** [EP-0006](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0006-post-publish.md), sub-iterations I6c and I6d, waiting on this trigger.
-
 ## Recursive directory walk
 
 **What it is.** A `DirectorySource` variant that descends into subdirectories rather than stopping at depth one. This enables processing nested document collections (a repository of markdown files organized by directory, for example) without the caller having to walk the tree manually.
@@ -82,8 +80,6 @@ The `NlpProvider` trait requires no change to support a WASM implementation. Any
 **What is blocking it.** The current `Source::read` signature returns `Vec<RawDocument>`. A streaming variant requires a different return type: an iterator, a channel, or a `Stream` in the async sense. The async reactor decision (deferred per RFC-0004) is a prerequisite for the most useful form of streaming: async document processing. Without an async reactor, a synchronous iterator-based streaming source is possible but limited in value.
 
 **Trigger condition.** A caller requiring processing of more documents than can be held in memory simultaneously, or a push-semantics integration (a message queue feeding documents into matra in real time) where the `Vec<RawDocument>` return type is genuinely blocking.
-
-**Plan.** The reactor is sub-iteration I6f of [EP-0006](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0006-post-publish.md), waiting on its own named triggers.
 
 ## Separate `matra-nlp-api` port crate
 
