@@ -1548,7 +1548,7 @@ mod bit_parity {
 #[cfg(test)]
 #[cfg(not(target_arch = "wasm32"))]
 mod provisioning {
-    //! The pinned-download path (i10 M4), exercised with the fetcher as
+    //! The pinned-download path (EP-0010 M4), exercised with the fetcher as
     //! an argument so no test here touches the network or needs the
     //! 30 MB reference artifact. The fixture is the same tiny three-file
     //! model the rest of this file's tests use, and its digest is

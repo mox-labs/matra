@@ -1,4 +1,4 @@
-//! The FFI shape fixture (i9 M5): `semantic_clusters` over the fixture's
+//! The FFI shape fixture (EP-0009 M5): `semantic_clusters` over the fixture's
 //! hand-built vectors must produce exactly the serialized value in
 //! `spec/tests/semantic/clusters.json`. No model is required, so this
 //! runs everywhere. Comparison happens in the typed struct (f32 space),
@@ -34,14 +34,14 @@ fn semantic_clusters_matches_the_shape_fixture() {
     assert_eq!(got, fixture.expect, "fixture {}", fixture.name);
 }
 
-/// Reference-model conformance (i9 M6): exact-vector and exact-cluster
+/// Reference-model conformance (EP-0009 M6): exact-vector and exact-cluster
 /// assertions against potion-base-8M, pinned by artifact digest in
 /// `spec/tests/semantic/reference-model.json`. Ignored because the model
 /// (~30 MB) is fetched on first run and the suite must not need a
 /// network by default; run it with
 /// `cargo test --features model2vec --test semantic_conformance -- --ignored`.
 ///
-/// Since i10 M4 the model arrives through `Model2Vec::potion_base_8m`,
+/// Since EP-0010 M4 the model arrives through `Model2Vec::potion_base_8m`,
 /// which downloads it into the resolved directory when it is absent and
 /// verifies the same digest this fixture asserts. `MATRA_MODEL2VEC_DIR`
 /// still names the directory when set; without it the directory is the

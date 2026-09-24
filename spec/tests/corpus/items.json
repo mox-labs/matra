@@ -1,6 +1,6 @@
 {
   "name": "corpus-items",
-  "description": "The corpus item shapes (i10 M5): what one document's result looks like when it crosses a binding, and the kind vocabulary a consumer branches on instead of reading a message. DocumentError has no serde form, because it wraps std::io::Error, so every binding materializes these fields by hand, which is the drift this fixture makes loud. The directory expectation needs no model: ingestion and its failure path both run before any parse.",
+  "description": "The corpus item shapes (EP-0010 M5): what one document's result looks like when it crosses a binding, and the kind vocabulary a consumer branches on instead of reading a message. DocumentError has no serde form, because it wraps std::io::Error, so every binding materializes these fields by hand, which is the drift this fixture makes loud. The directory expectation needs no model: ingestion and its failure path both run before any parse.",
   "error_kinds": [
     "model_not_found",
     "model_invalid",

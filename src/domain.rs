@@ -750,7 +750,7 @@ pub struct Sentence {
     ///
     /// Unlike the other derived fields, this one is not computed by
     /// [`Sentence::new`]: the detector lives in `matra::hearst`, a
-    /// module outside the domain (I7 M5 boundary), so the pipeline
+    /// module outside the domain (EP-0007 M5 boundary), so the pipeline
     /// fills the field at the annotate stage. A hand-built `Sentence`
     /// carries an empty vector until the caller runs the detector.
     /// Serialized with the sentence so the detection crosses FFI as
@@ -2367,7 +2367,7 @@ mod tests {
         // root-attached `advmod` arc as `reportedly`. The dependency
         // graph does not distinguish sentence scope from manner, so
         // the detector reports the arc and the caller's lexicon
-        // decides the evidential reading (I7 M4: construction, not
+        // decides the evidential reading (EP-0007 M4: construction, not
         // category).
         let sent = Sentence::new(
             "The team quickly shipped.".to_string(),
