@@ -170,11 +170,17 @@ stays at `/api/`. Search is Pagefind, indexed from the built HTML.
 | new: every figure has its twin | A test over the prerendered HTML: each figure element has a text twin with the same data |
 | new: every example input has a licence | Each file in `site/inputs/` has a sidecar with a source and a licence |
 
-While mdBook still deploys (until M2), gate 4 stays the mdBook build, the
-SvelteKit build runs as gate 7, and gate 8 holds the new build to every
-`.html` path and heading anchor mdBook serves (`scripts/check-url-parity.sh`).
-At the cut-over the SvelteKit build becomes gate 4, and gate 8 gives way to the
-check run against the live site after deploy.
+While mdBook still deployed (M1), gate 4 stayed the mdBook build, the
+SvelteKit build ran as gate 7, and gate 8 held the new build to every `.html`
+path and heading anchor mdBook served. At the cut-over (M2) the SvelteKit
+build became gate 4, and parity against a build that no longer exists gave way
+to a committed URL manifest, `site/urls.txt`: M1's parity list, plus
+`llms.txt`, the `.md` twins and rustdoc's `api/index.html` and
+`api/matra/index.html`. Gate 7 fails when the build does not write a listed
+path or writes a page the manifest does not list; `docs.yml` checks the
+assembled artifact against it before upload, and a job after deploy asks the
+live site for every path and fails on any answer but 200
+(`scripts/check-url-manifest.sh`).
 
 `tests/cited_figures.rs`, `tests/error_tables.rs` and
 `skills/matra/references/semantic.md` read pages by path. They move to the new
@@ -399,3 +405,12 @@ examples are live, and the M6 newcomer pass is filed.
   builds every page beside mdBook, with URL and heading-anchor parity checked
   by gate 8. Design gains "Links out, and comments", which the owner asked for;
   comments stay off until a discussion category is chosen.
+- 2026-09-24: M1 landed in #101, with diagrams that scroll in place on a
+  phone and the roadmap's figures re-measured unchanged after its link moved.
+- 2026-09-24: M2 delivered: `docs.yml` deploys the SvelteKit build with
+  rustdoc at `/api/`, `book/` and the mdBook steps are gone, gate 4 is the
+  site build, and the URL manifest replaces mdBook parity, checked on the
+  build, on the artifact, and on the live site after each deploy. The first
+  live check runs on the deploy that follows the merge. `git grep` still finds
+  `book/` paths in `.claude/agents/` and `.claude/arch/`, and mdBook wording
+  in the Docsite section of CLAUDE.md; those are the owner's to change.
