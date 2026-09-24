@@ -2,7 +2,7 @@
 # Floor gates for the docsite. Runs in CI (the `Docsite floor` job in
 # .github/workflows/ci.yml); can be invoked locally via `just docs-floor`.
 #
-# Ten gates protect against the cheap-to-introduce, expensive-to-find
+# Eleven gates protect against the cheap-to-introduce, expensive-to-find
 # regressions. The pages live in site/content/ and the SvelteKit site in site/
 # builds them (EP-0012). roadmap.md there is a symlink to the repository's
 # ROADMAP.md, and gates 2 and 5 follow it.
@@ -41,8 +41,12 @@
 #  10. Input licences:      every input in site/inputs/ has a sidecar naming
 #                            its source and its licence, and every sidecar an
 #                            input.
+#  11. Examples run:        every worked example in site/examples/ is run in
+#                            Rust, Python and the CLI, and what each prints
+#                            is compared with the committed output
+#                            (site/scripts/check-examples.ts).
 #
-# Execution order is 2, 3, 5, 6, 10, 8, 4, 1, 7, 9: the build comes before the
+# Execution order is 2, 3, 5, 6, 10, 8, 11, 4, 1, 7, 9: the build comes before the
 # link check, the manifest check and the twin test that read its output.
 #
 # Local invocation: lychee is optional locally (skip-with-warning); CI installs it.
@@ -54,6 +58,10 @@
 # Tunables:
 #   LYCHEE_REQUIRED=1:    turn the "lychee missing" skip into a hard failure.
 #                          The `Docsite floor` job in ci.yml sets it.
+#   EXAMPLES_PYTHON:      a Python that can `import matra`, for gate 11's
+#                          Python calls (default python3; `maturin develop`
+#                          installs it). Without one those calls are skipped.
+#   EXAMPLES_REQUIRED=1:  turn that skip into a hard failure. CI sets it.
 
 set -euo pipefail
 
@@ -453,6 +461,41 @@ rm -rf "$fig_out" "$fig_log"
 echo ""
 
 # ---------------------------------------------------------------------------
+# Gate 11: the worked examples run
+# ---------------------------------------------------------------------------
+# Each example's Rust tab is compiled as written by examples/docsite_examples.rs
+# (a Rust tab that stops compiling fails here), its CLI line runs against the
+# matra binary built from this tree, and its Python call runs where matra is
+# importable. What each prints must be what is committed beside the example.
+# rustfmt checks the Rust tabs because `cargo fmt` does not reach a file that
+# is only ever `include!`d.
+echo "=== Gate 11: examples run ==="
+ex_log=$(mktemp)
+if ! command -v cargo >/dev/null 2>&1 || ! command -v bun >/dev/null 2>&1; then
+    echo "FAIL (gate 11): cargo and bun are both needed to run the examples"
+    fail=$((fail + 1))
+elif ! rustfmt --edition 2024 --check site/examples/*/main.rs >"$ex_log" 2>&1; then
+    echo "FAIL (gate 11): a Rust tab is not formatted; run rustfmt --edition 2024 site/examples/*/main.rs"
+    sed 's/^/  /' "$ex_log" | head -20
+    fail=$((fail + 1))
+elif ! { cargo build --quiet --example docsite_examples && cargo build --quiet --features cli --bin matra; } >"$ex_log" 2>&1; then
+    echo "FAIL (gate 11): the examples runner or the matra binary did not build"
+    sed 's/^/  /' "$ex_log" | tail -30
+    fail=$((fail + 1))
+else
+    target=$(cargo metadata --format-version 1 --no-deps | sed 's/.*"target_directory":"\([^"]*\)".*/\1/')
+    if ! (cd site && EXAMPLES_RUNNER="$target/debug/examples/docsite_examples" MATRA_BIN="$target/debug/matra" \
+        bun scripts/check-examples.ts) 2>&1 | tee "$ex_log"; then
+        echo "        Run \`just docs-examples\` after a deliberate change, and review the diff."
+        fail=$((fail + 1))
+    elif grep -q "Python calls skipped" "$ex_log"; then
+        skipped=$((skipped + 1))
+    fi
+fi
+rm -f "$ex_log"
+echo ""
+
+# ---------------------------------------------------------------------------
 # Gate 4: the site builds clean
 # ---------------------------------------------------------------------------
 # site/ is the docsite (EP-0012). Three steps, each of which fails the gate:
@@ -596,7 +639,7 @@ echo ""
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
-gates=10
+gates=11
 if [ "$fail" -eq 0 ]; then
     echo "docsite floor: $gates gates, $((gates - skipped)) passed, $skipped skipped"
     exit 0

@@ -218,12 +218,29 @@ jobs:
         with:
           path: ${{ runner.temp }}/matra-models
           key: models-${{ steps.model.outputs.key }}
-      # Ten gates: links, orphans, type names, the site build, em dashes,
+      # Gate 11 runs every worked example's Python call, so matra is built
+      # from this tree into a virtualenv (maturin develop needs one) with the
+      # features pyproject.toml pins for the published wheel.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install matra from this tree for the examples' Python calls
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/venv"
+          . "$RUNNER_TEMP/venv/bin/activate"
+          python -m pip install --quiet maturin
+          maturin develop
+      # Eleven gates: links, orphans, type names, the site build, em dashes,
       # llms.txt, the published URL manifest, figures current, figure twins,
-      # and input licences.
+      # input licences, and the worked examples run in Rust, Python and the
+      # CLI. EXAMPLES_REQUIRED makes a Python that cannot import matra a
+      # failure here, where locally it is a skip.
       - name: Docsite gates
         env:
           MATRA_MODEL_DIR: ${{ runner.temp }}/matra-models
+          EXAMPLES_PYTHON: ${{ runner.temp }}/venv/bin/python
+          EXAMPLES_REQUIRED: "1"
         run: bash scripts/check-docsite-floor.sh
       # Every RFC and EP cited anywhere resolves to a record in blueprints/,
       # and every record is in the index. A step here rather than a job of its

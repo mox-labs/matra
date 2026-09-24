@@ -104,6 +104,14 @@ docs-floor:
 docs-figures:
     cargo run --features model2vec --example docsite_figures
 
+# Run every worked example in site/examples/ in Rust, Python and the CLI, and
+# write the Rust and CLI output as the committed output. The Python call is
+# compared, not written: it needs matra importable (`maturin develop`).
+docs-examples:
+    cargo build --example docsite_examples
+    cargo build --features cli --bin matra
+    cd site && EXAMPLES_RUNNER=../target/debug/examples/docsite_examples MATRA_BIN=../target/debug/matra bun scripts/check-examples.ts --write
+
 # Search needs the index the build writes, so it answers only in a built site.
 # Serve the docsite with live reload at http://localhost:3000.
 docs-serve:
@@ -142,10 +150,10 @@ conformance:
 # Lint every language surface.
 lint: clippy clippy-no-default lint-py
 
-# Ruff over the Python surface.
+# Ruff over the Python surface, and the docsite examples' Python calls.
 lint-py:
-    uv run --extra lint ruff check python/
-    uv run --extra lint ruff format --check python/
+    uv run --extra lint ruff check python/ site/examples/
+    uv run --extra lint ruff format --check python/ site/examples/
 
 # Python tests. Conformance needs the model; use `just test-py-fast` without it.
 test-py:
