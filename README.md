@@ -137,7 +137,7 @@ participate without re-deriving the design.
 
 | Where to look | What's there |
 |---|---|
-| [`.claude/arch/`](https://github.com/mox-labs/matra/tree/main/.claude/arch) | Architecture docs |
+| [`.claude/arch/`](https://github.com/mox-labs/matra/tree/main/.claude/arch) | Rejected-decision history: what was proposed, why it was turned down. The architecture itself is in the book's [architecture page](https://mox-labs.github.io/matra/architecture/design.html) |
 | [`blueprints/`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md) | RFCs (design decisions) and EPs (the plans that ship them) |
 | [`CHANGELOG.md`](https://github.com/mox-labs/matra/blob/main/CHANGELOG.md) | What changed and why, per release |
 | [`CONTRIBUTING.md`](https://github.com/mox-labs/matra/blob/main/CONTRIBUTING.md) | How to participate, commit conventions, decision flow |
