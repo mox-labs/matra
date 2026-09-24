@@ -247,7 +247,24 @@ DocumentMetrics
 EOF
 )
 
+# rg is required here. The names come from an rg search, and with rg absent
+# the loop below read zero names and printed a pass.
 unknown=()
+names=""
+gate3_ok=1
+if ! command -v rg >/dev/null 2>&1; then
+    echo "FAIL (gate 3): ripgrep (rg) not installed"
+    echo "        install: brew install ripgrep, apt-get install ripgrep, or cargo install ripgrep"
+    gate3_ok=0
+else
+    # rg exits 1 on no match and 2 on an error; only the error is a failure.
+    rg_rc=0
+    names=$(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' book/src/ skills/ --glob '!**/plans/**') || rg_rc=$?
+    if [ "$rg_rc" -gt 1 ]; then
+        echo "FAIL (gate 3): rg exited $rg_rc extracting names from book/src/ and skills/"
+        gate3_ok=0
+    fi
+fi
 while IFS= read -r name; do
     [ -z "$name" ] && continue
     # On any allowlist? skip.
@@ -266,9 +283,11 @@ while IFS= read -r name; do
         continue
     fi
     unknown+=("$name")
-done < <(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' book/src/ skills/ --glob '!**/plans/**' | sort -u)
+done < <(printf '%s\n' "$names" | sort -u)
 
-if [ ${#unknown[@]} -eq 0 ]; then
+if [ "$gate3_ok" -eq 0 ]; then
+    fail=$((fail + 1))
+elif [ ${#unknown[@]} -eq 0 ]; then
     echo "PASS (gate 3): every backtick-inline type name resolves in src/ or allowlist"
 else
     echo "FAIL (gate 3): backtick-inline identifiers in book/src/ or skills/ not found in src/:"
