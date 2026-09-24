@@ -2,7 +2,7 @@
 
 - Feature Name: `rfc_and_ep_process`
 - Start Date: 2026-09-24
-- RFC PR: this pull request, from the `docs/blueprints` branch (number assigned when it opens)
+- RFC PR: [#95](https://github.com/mox-labs/matra/pull/95)
 - Tracking EP: none
 - Status: accepted
 - Decider(s): project owner (the two kinds, the numbering, and the process), maintainer (the conversion and the checks)
