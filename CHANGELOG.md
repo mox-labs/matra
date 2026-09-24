@@ -39,6 +39,7 @@ those by hand.
 
 ### Fixed
 
+- A `skip_tag` retry of `release.yml` builds the existing tag, while the build provenance records the dispatch commit on `main` as the source. The 0.2.1 retry shipped provenance naming 311ade8 for a crate built from e30a882. The two differed only under `.github/`, so the contents matched, but nothing required that. The `verify` job now refuses a retry unless the tag's commit and the dispatch commit differ only under `.github/`.
 - `scripts/check-boundaries.sh` passed with exit 0 when `rg` was not installed, and when a named port file did not exist, because `2>/dev/null || true` absorbed those failures exactly as it absorbed "no match". It now fails on both, and ends with a line naming what it examined: checks, files under `src/`, violations.
 - Gate 3 of `scripts/check-docsite-floor.sh` passed having examined no names when `rg` was missing; gate 5 read a grep error as a clean result. Both now fail, gates 2, 3 and 5 fail on examining zero items and report their counts, and the last line tallies passed, skipped and failed gates.
 

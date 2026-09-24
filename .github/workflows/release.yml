@@ -160,6 +160,28 @@ jobs:
             exit 1
           fi
 
+      # The provenance names GITHUB_SHA as the source, whatever was built.
+      # attest-build-provenance records the dispatch commit, and on a
+      # retry the build jobs check out the tag instead. The 0.2.1 retry
+      # shipped that mismatch: its provenance says 311ade8 (main at
+      # dispatch) while the crate's .cargo_vcs_info.json says e30a882 (the
+      # tag). It was harmless only because the two differed in .github/
+      # alone. That is now the rule rather than luck: a retry proceeds
+      # only when the commit the provenance names would build the same
+      # release contents as the commit that is actually built. On a first
+      # run HEAD is GITHUB_SHA and this passes trivially.
+      - name: The provenance commit builds what the tag builds
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$GITHUB_SHA"
+          head="$(git rev-parse HEAD)"
+          if ! git diff --quiet "$head" "$GITHUB_SHA" -- . ':(exclude).github'; then
+            echo "::error::$RELEASE_REF ($head) and the dispatch commit $GITHUB_SHA differ outside .github/. The attestation would name $GITHUB_SHA as the source of artifacts built from $head. Retry from a main whose only changes since the tag are under .github/, or release a new version."
+            git diff --stat "$head" "$GITHUB_SHA" -- . ':(exclude).github'
+            exit 1
+          fi
+          echo "$head and $GITHUB_SHA agree outside .github/"
+
       - name: cargo test (no-default-features)
         run: cargo test --locked --no-default-features
 
