@@ -60,7 +60,7 @@ consumer must fall into correct usage, not climb into it.
 
 ## Gate 1: boundary rules, reviewed against motivation not pattern
 
-`book/src/reference/boundary-rules.md` is canonical. The script greps
+`site/content/reference/boundary-rules.md` is canonical. The script greps
 only rules 3, 4, 8 and only their literal spellings. You are the
 enforcement for the rest, and for the spellings greps cannot see:
 re-exports, grouped imports, inline qualified paths, laundering type
