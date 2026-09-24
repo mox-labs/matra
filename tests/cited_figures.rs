@@ -66,13 +66,13 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/explanation/situation-model.md",
-            "3823:a6d990f55a916692",
+            "4109:d87ffe16d2fbc6f2",
             "the 368-word saturation ceiling in site/content/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md",
         ),
         (
             "site/content/reference/methodology.md",
-            "25156:038958d544bafd9e",
+            "25301:b388f08ea871ff65",
             "the RAKE length example in site/content/guides/cli.md: `lexical density` \
              at 5.667 over `model file name` at 5.167",
         ),

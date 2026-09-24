@@ -79,7 +79,7 @@ Inside a sentence, exactly one token has `head` equal to `0`: the root. Every ot
 
 Words keep their reading order left to right; height is depth in the tree. `built` is the root, everything else hangs off it directly or through one more hop, so `tree_depth()` returns 2.
 
-The same two columns, read from matra's output for four short sentences. The table is what a `Sentence` holds; the arcs below it draw each `head` and `dep`. The first sentence carries a negation, the second a modal, the third a reporting, and the fourth a root adverbial: the structural primitives described further down.
+The same two columns, read from matra's output for five short sentences. The table is what a `Sentence` holds; the arcs below it draw each `head` and `dep`. The first sentence carries a negation, the second a modal, the third a reporting, the fourth a root adverbial, and the fifth two Hearst pairs: the structural primitives described further down.
 
 <figure-parse input="primitives" sentence="1" />
 

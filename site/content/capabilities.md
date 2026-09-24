@@ -99,6 +99,10 @@ Free functions over a sentence slice. Both return `Vec<Keyphrase>` (`phrase`, `s
 
 Both are on the Python surface as `Matra.rake_keyphrases` and `Matra.yake_keyphrases`.
 
+The two rank by different properties of the text, and on The Federalist No. 10 their top twelve lists share no phrase:
+
+<figure-keyphrases input="federalist-10" />
+
 ## 5. Semantic clusters
 
 Behind the `model2vec` feature. Not a field on any type above.
