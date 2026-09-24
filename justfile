@@ -88,13 +88,21 @@ test-sandbox:
 version-sync:
     bash scripts/check-version-sync.sh
 
-# Requires bun and ripgrep. lychee is optional locally (skip-with-warning);
+# Requires bun, cargo and ripgrep. lychee is optional locally (skip-with-warning);
 # the `Docsite floor` job in ci.yml installs it and sets LYCHEE_REQUIRED=1 to
-# escalate the skip into a hard failure. The seven gates: links, orphans, type
-# names, the site build, em dashes, llms.txt, and the published URL manifest.
+# escalate the skip into a hard failure. The ten gates: links, orphans, type
+# names, the site build, em dashes, llms.txt, the published URL manifest,
+# figures current, figure twins, and input licences. The figures gate fetches
+# the UDPipe model on first run.
 # Floor gates for the docsite.
 docs-floor:
     bash scripts/check-docsite-floor.sh
+
+# Every input in site/inputs/, through the released pipeline, written as JSON
+# into site/src/lib/figures/. Fetches the UDPipe model on first run.
+# Regenerate the docsite's figure data.
+docs-figures:
+    cargo run --example docsite_figures
 
 # Search needs the index the build writes, so it answers only in a built site.
 # Serve the docsite with live reload at http://localhost:3000.
