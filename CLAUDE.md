@@ -46,7 +46,7 @@ Above the library, `cli/` is the application tier: it parses arguments, renders,
 
 Run `ls` for the file list. It is not repeated here, because a hand-maintained tree in a context document goes stale the first time a file moves and then quietly misinforms whoever trusted it.
 
-For how a call actually runs through those layers, read `book/src/architecture/design.md`.
+For how a call actually runs through those layers, read `site/content/architecture/design.md`.
 
 ## Boundary rules
 
@@ -59,7 +59,7 @@ For how a call actually runs through those layers, read `book/src/architecture/d
 7. Composition root (`lib.rs`) is the only place that knows all adapters and ports. `src/cli/` uses the public surface (`Engine`, `Ingest`), `extraction`, `config` and `domain`, never a port module or an adapter.
 8. `tracing` is forbidden in `domain.rs` and port modules (Burner amendment, 2026-04-28).
 
-**Motivation for each rule, what breaks when it is violated, and what to read for when reviewing: [`book/src/reference/boundary-rules.md`](book/src/reference/boundary-rules.md).** That file is canonical; this list is the summary.
+**Motivation for each rule, what breaks when it is violated, and what to read for when reviewing: [`site/content/reference/boundary-rules.md`](site/content/reference/boundary-rules.md).** That file is canonical; this list is the summary.
 
 Enforcement is mostly judgment, so review is the gate. Only rule 6 is verified by compiling on every push (`ci.yml` MSRV job). Rules 3, 4, 8 get a partial grep from `scripts/check-boundaries.sh`, which runs from `just check`, the opt-in pre-commit hook, and the `Boundary check` job in `ci.yml`. Rules 1, 2, 5, 7 have no mechanical check at all.
 
@@ -67,7 +67,7 @@ Enforcement is mostly judgment, so review is the gate. Only rule 6 is verified b
 
 Non-obvious gotchas. Each is a behavior plus the failure mode if you violate it.
 
-- **Domain purity rests on review, not the compiler.** A non-optional dependency added to `[dependencies]` and used in `domain.rs` compiles clean, including under `--no-default-features` (that flag drops only `udpipe`/`sha2`). Nothing mechanical catches it. See `book/src/reference/boundary-rules.md` rule 1 for what to read for. Adapters are where deps live; the domain stays pure.
+- **Domain purity rests on review, not the compiler.** A non-optional dependency added to `[dependencies]` and used in `domain.rs` compiles clean, including under `--no-default-features` (that flag drops only `udpipe`/`sha2`). Nothing mechanical catches it. See `site/content/reference/boundary-rules.md` rule 1 for what to read for. Adapters are where deps live; the domain stays pure.
 - **Single UDPipe importer.** `scripts/check-boundaries.sh` fails `just check`, the pre-commit hook and the `Boundary check` CI job if anything outside `nlp/udpipe.rs` imports `udpipe_rs`. It sees the literal import form only, so review is the real gate. The wrap exists because UDPipe holds non-Send C-side state and a panic at the FFI boundary would otherwise abort the host process. The catch_unwind seam lives inside this file by design; reintroducing direct imports elsewhere puts the panic boundary back in user code.
 - **Per-paragraph parse, not whole-document.** The previous join-then-prefix-match approach silently reassigned sentences when two paragraphs shared their first 30 characters (FM1). Don't reintroduce "join paragraphs, parse once, wire sentences back to paragraphs by substring match." The pipeline parses each non-blockquote paragraph individually for a reason.
 - **TOCTOU closes in `read_and_verify`.** The function returns `Vec<u8>` and the loader consumes those bytes via `Model::load_from_memory`. Never re-read the disk between hash verify and load — that opens the window a swap attack lives in.
@@ -75,7 +75,7 @@ Non-obvious gotchas. Each is a behavior plus the failure mode if you violate it.
 - **No `Result<T, String>` anywhere in the library.** Library callers match on concrete `domain::Error` variants. `anyhow` belongs in caller code (a CLI, a service) where erasure is ergonomic; matra itself stays on enums via `thiserror`.
 - **PyErr routing is exhaustive at compile time.** Adding a variant to `domain::Error` will fail to compile until you wire it into `From<MatraError> for PyErr` with a specific Python exception class. The no-wildcard match exists so new variants do not silently route to `PyRuntimeError`.
 - **Methods do not cross FFI. Only fields do.** Aggregate Rust methods (`Document::passive_ratio()`, `Corpus::total_words()`) are invisible to Python and (future) WASM consumers. If a value needs to be visible cross-language, materialize it as a field on a summary type, not a method.
-- **Em dashes get rejected.** Project convention forbids them in documentation prose. `scripts/check-docsite-floor.sh` gate 5 rejects em dashes in `book/src/`, `skills/` and `blueprints/`; reviewers catch them elsewhere.
+- **Em dashes get rejected.** Project convention forbids them in documentation prose. `scripts/check-docsite-floor.sh` gate 5 rejects em dashes in `site/content/`, `skills/` and `blueprints/`; reviewers catch them elsewhere.
 - **Publishing is hand-gated.** `cargo publish` and `maturin publish` are always preceded by `--dry-run`. The publish step itself requires explicit per-publish approval per the project memory. Do not script away the gate; it exists because publishing is irreversible and visible to every downstream consumer.
 
 ## Conventions
@@ -134,11 +134,11 @@ Features are additive: `udpipe` (default), `model2vec`, `python`, `cli`. **Do no
 
 ## Docsite
 
-Content lives in `book/src/`. Every page describes what ships today; `book/src/roadmap.md` is the only page describing what does not, and it links each fired trigger to its enhancement plan in `blueprints/eps/`, outside the docsite. Design records are `blueprints/rfcs/`; the process is `blueprints/README.md`.
+Content lives in `site/content/`. Every page describes what ships today; `site/content/roadmap.md` is the only page describing what does not, and it links each fired trigger to its enhancement plan in `blueprints/eps/`, outside the docsite. Design records are `blueprints/rfcs/`; the process is `blueprints/README.md`.
 
-Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quoted material (in `book/src/`, `skills/` and `blueprints/`), and `book/src/llms.txt` current with `SUMMARY.md` (regenerate with `scripts/gen-llms-txt.sh`). Beside them, `scripts/check-blueprint-refs.sh` (from `just check` and the `Docsite floor` CI job) fails when a cited RFC or EP number has no record in `blueprints/` or a record has no row in its index.
+Gates run via `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quoted material (in `site/content/`, `skills/` and `blueprints/`), and `site/content/llms.txt` current with `SUMMARY.md` (regenerate with `scripts/gen-llms-txt.sh`). Beside them, `scripts/check-blueprint-refs.sh` (from `just check` and the `Docsite floor` CI job) fails when a cited RFC or EP number has no record in `blueprints/` or a record has no row in its index.
 
-Live preview: `cd book && mdbook serve --port 3000`. `create-missing = false`, so a `SUMMARY.md` entry without a file on disk fails the build loudly rather than creating a stub.
+Live preview: `just docs-serve` runs the SvelteKit site in `site/` (see `site/README.md`). Until the cutover in EP-0012 M2, mdBook still builds and deploys the same pages from `site/content/` (`book/book.toml`, `cd book && mdbook serve --port 3000`), with `create-missing = false`, so a `SUMMARY.md` entry without a file on disk fails the build loudly rather than creating a stub.
 
 Diagrams are hand-authored inline SVG. Mermaid is not installed; the rule for choosing between them, and the command to restore mermaid when a sequence or state machine needs it, are in `book/book.toml`.
 
