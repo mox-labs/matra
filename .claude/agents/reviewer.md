@@ -32,7 +32,7 @@ A change that's good engineering but violates ACES is not good for matra. ACES v
 
 - Is `tracing` imported in `domain.rs` or a port module (rule 8)?
 
-**You are the enforcement mechanism.** `book/src/reference/boundary-rules.md` carries each rule's motivation, its failure mode, and what to read for, including the spellings the grep cannot see (re-exports, grouped imports, inline qualified paths, laundering type aliases). Review against the motivation, not the pattern.
+**You are the enforcement mechanism.** `site/content/reference/boundary-rules.md` carries each rule's motivation, its failure mode, and what to read for, including the spellings the grep cannot see (re-exports, grouped imports, inline qualified paths, laundering type aliases). Review against the motivation, not the pattern.
 
 `bash scripts/check-boundaries.sh` greps rules 3, 4, 8 and is a backstop, not a gate: it runs from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job, and it sees the literal import form only. Rule 6 is the only rule CI verifies by compiling. Rules 1, 2, 5, 7 have no mechanical check, so a clean script tells you nothing about them.
 

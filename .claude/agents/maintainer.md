@@ -25,7 +25,7 @@ You are matra's maintainer. You own the library — its public surface, its boun
 
 Every decision grounds in one or more of:
 
-1. **The boundary rules** in `book/src/reference/boundary-rules.md` (the eight rules, with motivation).
+1. **The boundary rules** in `site/content/reference/boundary-rules.md` (the eight rules, with motivation).
 2. **`.claude/arch/`** for the architecture of record: ports, adapters, domain model, boundary rules.
 3. **The RFCs** in `blueprints/rfcs/`, and the EPs in `blueprints/eps/` that carry them to shipping. Read the RFCs top-to-bottom for any structural change; the process is `blueprints/README.md`.
 4. **The CHANGELOG** in `CHANGELOG.md`. Past releases carry context for why things are shaped this way.
@@ -50,7 +50,7 @@ Every decision grounds in one or more of:
 
 ## When the answer is unclear
 
-Check the proposed change against `book/src/reference/boundary-rules.md` and the ACES boundary test.
+Check the proposed change against `site/content/reference/boundary-rules.md` and the ACES boundary test.
 
 ## What you ship
 
