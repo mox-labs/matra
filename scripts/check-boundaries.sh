@@ -37,22 +37,37 @@ scan() {
     printf '%s' "$out"
 }
 
+# What the rules examine, counted so a pass over nothing is visible. Rule 4
+# and its analog walk all of src/; rules 3 and 8 read the named files below,
+# and scan() fails if any of those has moved.
+src_files=$(rg --files src/ | wc -l | tr -d ' ') || {
+    echo "FAIL: rg could not list src/" >&2
+    exit 2
+}
+if [ "$src_files" -eq 0 ]; then
+    echo "FAIL: check-boundaries found no files under src/" >&2
+    exit 2
+fi
+
 fail=0
+violations=0
+flag() {
+    echo "$1"
+    echo "$2" | sed 's/^/  /'
+    violations=$((violations + $(printf '%s\n' "$2" | wc -l)))
+    fail=1
+}
 
 # Rule 4: only nlp/udpipe.rs imports udpipe_rs.
 hits=$(scan -l 'use udpipe_rs|udpipe_rs::' src/ --glob '!src/nlp/udpipe.rs')
 if [ -n "$hits" ]; then
-    echo "FAIL (rule 4): udpipe_rs imported outside src/nlp/udpipe.rs"
-    echo "$hits" | sed 's/^/  /'
-    fail=1
+    flag "FAIL (rule 4): udpipe_rs imported outside src/nlp/udpipe.rs" "$hits"
 fi
 
 # Rule 4 analog: only embed/model2vec.rs imports safetensors and tokenizers.
 hits=$(scan -l 'use safetensors|safetensors::|use tokenizers|tokenizers::' src/ --glob '!src/embed/model2vec.rs')
 if [ -n "$hits" ]; then
-    echo "FAIL (rule 4 analog): safetensors/tokenizers imported outside src/embed/model2vec.rs"
-    echo "$hits" | sed 's/^/  /'
-    fail=1
+    flag "FAIL (rule 4 analog): safetensors/tokenizers imported outside src/embed/model2vec.rs" "$hits"
 fi
 
 # Rule 8: tracing forbidden in domain.rs and port modules.
@@ -63,9 +78,7 @@ hits=$(scan -l '(^|\s)use tracing|tracing::' \
     src/nlp/mod.rs \
     src/embed/mod.rs)
 if [ -n "$hits" ]; then
-    echo "FAIL (rule 8): tracing imported in domain.rs or a port module"
-    echo "$hits" | sed 's/^/  /'
-    fail=1
+    flag "FAIL (rule 8): tracing imported in domain.rs or a port module" "$hits"
 fi
 
 # Rule 3: port modules do not import each other.
@@ -75,12 +88,8 @@ hits=$(scan -l 'use crate::source|use crate::decompose|use crate::nlp|use crate:
     src/nlp/mod.rs \
     src/embed/mod.rs)
 if [ -n "$hits" ]; then
-    echo "FAIL (rule 3): cross-port import detected"
-    echo "$hits" | sed 's/^/  /'
-    fail=1
+    flag "FAIL (rule 3): cross-port import detected" "$hits"
 fi
 
-if [ "$fail" -eq 0 ]; then
-    echo "boundary checks pass (rules 3, 4, 8)"
-fi
+echo "check-boundaries: 4 checks (rules 3, 4, 4 analog, 8) over $src_files files in src/, $violations violation(s)"
 exit "$fail"
