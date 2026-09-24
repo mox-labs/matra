@@ -369,7 +369,7 @@ impl Model2Vec {
         hasher.update(model_bytes);
         hasher.update(tokenizer_bytes);
         hasher.update(config_bytes);
-        let model_hash = format!("{:x}", hasher.finalize());
+        let model_hash = hex(&hasher.finalize());
 
         let tensors = SafeTensors::deserialize(model_bytes)
             .map_err(|e| Error::ModelInvalid(format!("safetensors: {e}")))?;
@@ -646,7 +646,22 @@ fn digest_of(artifacts: &[Vec<u8>; 3]) -> String {
     for bytes in artifacts {
         hasher.update(bytes);
     }
-    format!("{:x}", hasher.finalize())
+    hex(&hasher.finalize())
+}
+
+/// Lowercase hex of a digest, two characters per byte.
+///
+/// sha2 0.11 no longer formats its output with `{:x}`. The UDPipe adapter
+/// has its own encoder; this one is private here because adapters do not
+/// import each other.
+fn hex(bytes: &[u8]) -> String {
+    const DIGITS: &[u8; 16] = b"0123456789abcdef";
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for &b in bytes {
+        s.push(char::from(DIGITS[usize::from(b >> 4)]));
+        s.push(char::from(DIGITS[usize::from(b & 0x0f)]));
+    }
+    s
 }
 
 /// The refusal for a directory the provisioner did not fill itself.
@@ -1339,6 +1354,19 @@ mod tests {
         assert!(out.iter().all(|e| e.0.len() == m.dimensions()));
     }
 
+    /// The digest renders as lowercase hex with leading zeros kept, so a
+    /// pin written from `sha256sum` output compares equal. The vector is
+    /// the FIPS 180-2 SHA-256 of "abc".
+    #[test]
+    fn hex_renders_a_digest_as_sha256sum_does() {
+        let digest = Sha256::digest(b"abc");
+        assert_eq!(
+            hex(&digest),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+        assert_eq!(hex(&[0x00, 0x0f, 0xf0, 0xff]), "000ff0ff");
+    }
+
     #[test]
     fn model_hash_covers_all_three_artifact_files() {
         let dir = tempfile::tempdir().unwrap();
@@ -1347,7 +1375,7 @@ mod tests {
         for f in ["model.safetensors", "tokenizer.json", "config.json"] {
             hasher.update(fs::read(dir.path().join(f)).unwrap());
         }
-        let expected = format!("{:x}", hasher.finalize());
+        let expected = hex(&hasher.finalize());
         let m = Model2Vec::from_dir(dir.path()).unwrap();
         assert_eq!(m.model_hash(), expected);
 
@@ -1583,7 +1611,7 @@ mod provisioning {
             }
             Fixture {
                 bytes,
-                digest: format!("{:x}", hasher.finalize()),
+                digest: hex(&hasher.finalize()),
             }
         }
 
