@@ -5,9 +5,9 @@ and prerendered to static HTML. The plan it follows, and the reasons for its
 shape, are in [EP-0012](../blueprints/eps/0012-docsite.md). Its Design section
 is the reference; this file is how to work on the site.
 
-Until the cut-over (EP-0012, M2), the deployed site is still the mdBook build
-of the same pages, from `book/`. This site is built beside it, checked by the
-same gates, and uploaded by `docs.yml` as the `site-preview` artifact.
+`.github/workflows/docs.yml` builds it on every push to `main`, adds the
+rustdoc API reference at `/api/`, deploys it to GitHub Pages, and then checks
+that every published URL answers on the live site.
 
 ## Run it
 
@@ -17,7 +17,7 @@ in `.github/workflows/ci.yml`.
 ```bash
 just docs-serve     # live preview at http://localhost:3000
 just docs-build     # prerender everything into site/build
-just docs-floor     # every docsite gate, both builds included
+just docs-floor     # every docsite gate, the build included
 ```
 
 `just docs-serve` has no search: the Pagefind index is written from the built
@@ -36,6 +36,7 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/server/markdown/registry.ts` | The tag registry. |
 | `src/routes/` | One route per page, its `.md` twin, `llms.txt`, and the contents, print and 404 pages. |
 | `src/app.css` | Tokens and page typography. |
+| `urls.txt` | Every published path: the URL contract the build and the live site are checked against. |
 
 ## Pages are Markdown
 
@@ -68,6 +69,17 @@ kind of entry that maps a tag to a component.
 A code fence in a language the highlighter has no grammar for also fails the
 build. Add the language to `LANGUAGES` in `render.ts`.
 
+### Diagrams
+
+Diagrams are hand-authored inline SVG, because in all of them the meaning
+depends on where something sits: word order in the dependency tree,
+containment in the type graph, arrows that stop at the FFI boundary while
+others cross it. An auto-layout tool such as Mermaid places nodes itself, so
+it would contradict the data while looking authoritative. The rule: hand
+authored SVG when position carries meaning. Mermaid is not installed. If a
+sequence, state machine or decision tree ever needs it, it would arrive as a
+registered tag rendered at build time, like any other figure.
+
 ## Design rules, in brief
 
 The full reasoning is in EP-0012's Design section.
@@ -90,17 +102,20 @@ The full reasoning is in EP-0012's Design section.
   is respected globally. Figures that move on the reader's request arrive with
   EP-0012's later milestones, under its Motion rules.
 - **URLs are a contract.** `/guides/cli` is written as `guides/cli.html`, the
-  path mdBook served, and heading ids match mdBook's. Gate 8 of the docsite
-  floor (`scripts/check-url-parity.sh`) fails on any path or heading anchor
-  mdBook served that this site does not.
+  path the mdBook-era site served, and heading ids match its ids. `urls.txt`
+  lists every published path. Gate 7 of the docsite floor fails when the build
+  does not write one of them or writes a page not listed there; `docs.yml`
+  checks the assembled artifact before upload and the live site after deploy
+  (`scripts/check-url-manifest.sh`). A new page adds its `.html` and `.md`
+  lines to `urls.txt`.
 
 ## Gates
 
 `just docs-floor` runs `scripts/check-docsite-floor.sh`, which is also the
 `Docsite floor` job in CI. For this site it runs `bun install
 --frozen-lockfile`, `svelte-check` with warnings as failures, and the build
-(gate 7); lychee over the built HTML, fragments included (gate 1); and URL
-parity with the mdBook build (gate 8). The other gates read `content/`.
+(gate 4); lychee over the built HTML, fragments included (gate 1); and the
+URL manifest (gate 7). The other gates read `content/`.
 
 Dependencies are pinned exactly in `package.json` and locked in `bun.lock`;
 Dependabot moves the pins. The Bun binary is pinned by version and SHA-256 in
@@ -145,9 +160,8 @@ To switch comments on:
    refuses to run the widget for this repository on any other site; without
    it, any page could embed a widget that posts into these Discussions.
 5. Set `PUBLIC_GISCUS_CATEGORY_ID` to the category id in the `Build the
-   SvelteKit site preview` step of `.github/workflows/docs.yml`, beside the
-   repository id that is already there. Comments then appear in the
-   `site-preview` build, and on the live site once it deploys from here.
+   site` step of `.github/workflows/docs.yml`, beside the repository id that
+   is already there. Comments appear on the live site with the next deploy.
 
 To try it locally before step 4, set both variables when starting the dev
 server: `PUBLIC_GISCUS_REPO_ID=... PUBLIC_GISCUS_CATEGORY_ID=... just

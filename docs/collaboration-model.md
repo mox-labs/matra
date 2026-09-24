@@ -34,7 +34,7 @@ Every substantive change moves through three surfaces in order.
 
 **Docs** record the commitment. An RFC for architectural decisions, a CHANGELOG entry for what shipped, a docsite page for the explanation. The docs are the durable trace of what was decided.
 
-**Code** honors the docs, and the enforcement is stated honestly rather than overclaimed. `scripts/check-boundaries.sh` greps three of the eight boundary rules; the docsite floor checks link integrity, orphans, type-name parity, a clean mdbook build, em dashes and `llms.txt` currency; both run from `just check` and in CI. Conventional commits map to CHANGELOG categories.
+**Code** honors the docs, and the enforcement is stated honestly rather than overclaimed. `scripts/check-boundaries.sh` greps three of the eight boundary rules; the docsite floor checks link integrity, orphans, type-name parity, a clean site build, em dashes, `llms.txt` currency and the published URL manifest; both run from `just check` and in CI. Conventional commits map to CHANGELOG categories.
 
 Where a check exists, drift is mechanically detectable. Where it does not, the audit trail is what makes drift findable, and review is the gate. The discipline produces a project whose history is queryable: any decision in the code can be traced back through docs to discourse, and any decision in discourse can be checked against what the code actually does.
 
