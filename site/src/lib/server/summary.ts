@@ -3,11 +3,10 @@ import type { NavItem, NavPart } from '$lib/types';
 /**
  * Parse SUMMARY.md into navigation.
  *
- * SUMMARY.md stays the navigation source because three other readers already
- * depend on its format: scripts/gen-llms-txt.sh builds llms.txt from it, gate 2
- * of the docsite floor checks every page is listed in it, and mdBook builds
- * from it until the cut-over. The format is the subset mdBook defines and this
- * site uses:
+ * SUMMARY.md stays the navigation source, in the format the mdBook-era site
+ * used, because other readers depend on it: scripts/gen-llms-txt.sh builds
+ * llms.txt from it, and gate 2 of the docsite floor checks every page is
+ * listed in it. The format is the subset of mdBook's this site uses:
  *
  *   # Summary               the title line, ignored
  *   [Title](page.md)        a prefix chapter, before the first part
