@@ -1,7 +1,7 @@
 # EP-0000: Title in sentence case
 
 - EP: EP-0000
-- Implements: (the accepted RFCs this plan delivers, e.g. [RFC-0000](../rfcs/0000-template.md))
+- Implements: (the accepted RFCs this plan delivers, e.g. [RFC-0000](../rfcs/0000-template.md), or `none` for a standalone EP)
 - Status: planned
 - Shipped in: (the release that carries the finished work, or `not shipped`)
 
@@ -19,6 +19,12 @@ nothing to say says so in one line rather than being deleted.
 ## Summary
 
 One paragraph: what this plan delivers, in terms of the RFC it implements.
+
+## Design
+
+Only in a standalone EP (`Implements: none`): the choices a later
+contributor needs, with the reason for each. An EP that implements an RFC
+omits this section; the RFC holds the design.
 
 ## Goals
 
