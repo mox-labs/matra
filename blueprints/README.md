@@ -11,7 +11,8 @@ introduced it.
 
 Records cited as `ADR-NNNN` before 2026-09-24 are the RFC of the same
 number: `ADR-0008` is [RFC-0008](rfcs/0008-structural-primitives-are-fields.md).
-Iteration plans cited as `iN` or `IN` are the EP of the same number: `i9` is
+Iteration plans cited as `iN` or `IN` are the EP of the same number, where
+one exists: `i9` is
 [EP-0009](eps/0009-embeddings-adapter.md).
 
 ## The process
@@ -97,101 +98,17 @@ tables. The docsite floor's em-dash gate covers this directory too.
 
 ## EPs
 
-EP numbers follow the iteration plans they replace, so no EP carries 0001,
-0002 or 0004: the i0, i1 and i2 plans were retired once their work landed
-and their commits are in the history, and the i4 workspace plan was retracted
-when RFC-0004 superseded RFC-0003.
+EP numbers follow the plans they replace, so the sequence has gaps. Plans
+that were retired once their work landed, retracted when RFC-0004
+superseded RFC-0003, or
+written against surfaces that no longer exist have no EP; their history is
+in git.
 
 | EP | Title | Status | Implements |
 |---|---|---|---|
-| [EP-0003](eps/0003-error-tracing.md) | Error restructure + tracing PR1 | planned | none recorded |
-| [EP-0005](eps/0005-streaming.md) | Streaming iterator + Engine + CorpusResult | dropped | none recorded |
-| [EP-0006](eps/0006-post-publish.md) | Post-publish: OTel, PDF/DOCX, `rumi-nlp` patterns, possibly the reactor | planned | none recorded |
 | [EP-0007](eps/0007-structural-primitives.md) | Five structural primitives | shipped in 0.1.0 | RFC-0008, RFC-0009 |
 | [EP-0008](eps/0008-pipeline-surface.md) | One pipeline, not six entry points | shipped in 0.1.0 | RFC-0007 |
 | [EP-0009](eps/0009-embeddings-adapter.md) | Embeddings as a specialist adapter | shipped in 0.2.0 | RFC-0010 |
 | [EP-0010](eps/0010-foundations.md) | Out of the box | shipped in 0.2.0 | RFC-0011 |
 | [EP-0011](eps/0011-agent-surface.md) | The agent surface | shipped in 0.2.0 | RFC-0012 |
 | [EP-0000](eps/0000-template.md) | The template | not a record | none |
-
-## Carried over from the plans index
-
-The index of the iteration plans, a page of the docsite until 2026-09-24,
-held four things that belong to the plans rather than to any one of them. They are kept here as they were written; the EPs refer to the
-regression matrix, and the 0.1.0 predicate is the record of what that
-release was held to.
-
-### Iterations and their boundaries
-
-| Plan | Boundary | Title |
-|---|---|---|
-| the i0 stabilization work | none | Commit the post-recovery baseline; capture N₀ and noise floor |
-| the i1 rename work | none | Karman pipeline rename |
-| the i2 resilience work | resilience floor | Ten antifragile fixes |
-| [EP-0003](eps/0003-error-tracing.md) | **MVP** | Error restructure + tracing PR1 + cdylib feature-gating |
-| the retracted workspace plan | structural | Workspace conversion + `rumi-nlp` skeleton |
-| [EP-0005](eps/0005-streaming.md) | **MLP** | Streaming iterator + Engine + CorpusResult |
-| [EP-0006](eps/0006-post-publish.md) | post-publish | OTel feature, PDF/DOCX, `rumi-nlp` patterns, deferred reactor |
-| [EP-0007](eps/0007-structural-primitives.md) | rule-substrate | Negation, typed feats, modality, evidentiality, Hearst patterns |
-| [EP-0008](eps/0008-pipeline-surface.md) | **pre-publish surface freeze** | One pipeline replacing six entry points |
-| [EP-0009](eps/0009-embeddings-adapter.md) | post-publish, additive only | Embedder port, model2vec adapter, semantic clusters |
-| [EP-0010](eps/0010-foundations.md) | post-publish; additive to the library surface, and the `--json` payload becomes an envelope | Config and paths, default constructors, one CLI with two launchers, pinned embedding download, Python extension points |
-| [EP-0011](eps/0011-agent-surface.md) | additive | The `--skill` flag and its references, the executed-incantation test, `llms.txt`, `AGENTS.md`, the plugin layout |
-
-**Strict ordering.** No iteration starts until the previous one has met its acceptance gate. K's strategic verdict on this is non-negotiable: rename a stable surface before structure moves; install the resilience floor before the error contract; ship the error contract before the streaming surface that consumes it.
-
-### The cross-iteration regression matrix
-
-At every iteration landing (I1, I2, I3, I4, I5, I6), all of these must hold:
-
-1. `cargo test` count `≥ N₀` (PR0 baseline). New iterations add tests; none silently delete.
-2. `cargo test --no-default-features` passes (CLAUDE.md rule 6).
-3. `cargo test --features udpipe` passes.
-4. `cargo test --doc` passes (doctests track API renames).
-5. `cargo check --features python` passes (PyO3 surface tracks renames).
-6. `cargo clippy -- -D warnings` clean.
-7. `cargo public-api` diff reviewed in PR description; deltas match stated scope.
-8. README example block compiles via `cargo test --doc`.
-9. **Boundary check** (`scripts/check-boundaries.sh`):
-   - `rg 'use udpipe_rs' src/` returns hits **only** in `src/nlp/udpipe.rs` (rule 4).
-   - `rg '^use tracing|tracing::' src/domain.rs src/source/mod.rs src/decompose/mod.rs src/nlp/mod.rs` returns empty (rule 8).
-   - `rg 'use crate::source|use crate::decompose|use crate::nlp' src/source/mod.rs src/decompose/mod.rs src/nlp/mod.rs` returns empty (rule 3).
-
-If any matrix item fails at iteration landing, the iteration is rolled back, not patched forward. False foundations compound.
-
-### The 0.1.0 ship predicate
-
-matra 0.1.0 is publishable if and only if **all** of the following are true at HEAD on the release commit:
-
-- [ ] Cross-iteration regression matrix items 1-9 pass.
-- [ ] `cargo publish --dry-run` succeeds.
-- [ ] Fault-injection corpus passes (see the i2 resilience work Validation):
-  - 25-depth and 1000-depth chains return correct depths.
-  - oversized inputs to TF-IDF, RAKE, and YAKE each return three distinct `InputTooLarge` errors with three distinct `what:` labels.
-  - panic-injecting NLP fixture returns `ParseFailed`, never aborts.
-  - directory with permission-denied file yields error and continues.
-  - corrupt model returns `ModelInvalid { recoverable: false }`.
-  - concurrent `Udpipe::english(same_dir)` calls both succeed; final hash matches.
-  - 1GB file returns `InputTooLarge`, not OOM.
-- [ ] `cargo test --test integration -- --ignored` green with UDPipe model. Wall time recorded against PR0 N₀.
-- [ ] `cargo publish --dry-run` succeeds with no warnings.
-- [ ] `maturin build --release` produces a wheel; `pip install <wheel>` plus `python -c "import matra"` succeeds in a clean venv.
-- [ ] Chesterton matrix v2 (Fence 7): zero contradictions vs post-restructure surface.
-- [ ] `CHANGELOG.md` documents every public-API delta vs the pre-recovery state.
-
-Noise floor: `cargo test` wall time vs PR0 baseline within ±2σ of the 5-run median.
-
-**Rollback trigger.** Any item false → do not run `cargo publish` or `maturin upload`. Stop at `--dry-run`.
-
-**Publish authorization.** One explicit approval per publish event. The user authorizes; the plan does not. (Memory rule, non-negotiable.)
-
-### The post-ship loop closure
-
-Within 2 weeks of 0.1.0 publish, write `scratch/post-ship-0.1.0.md` capturing:
-
-- crates.io download count.
-- GitHub issues with labels `panic`, `crash`, `oom`, `hang`.
-- Any consumer-side issue that traces back to matra.
-- Whether any of the deferred-reactor triggers fired (file-change push, >100k corpora, push-source request).
-
-The file is not optional. Without it, "we shipped resilience" is just a claim. With it, we know whether the iteration plan held.

@@ -38,9 +38,9 @@ partly unstated jobs.
   planned", beside the roadmap.
 - **Plan status had no common form.** Some plans opened with a dated
   `Shipped` banner, some carried a `**Status:** not-started` line that
-  nothing kept current (the i3 plan still read `not-started` while two
-  releases shipped without it), and the i11 plan carried no status at all,
-  so its shipping is recorded only in `ROADMAP.md` and the CHANGELOG.
+  nothing kept current (one plan still read `not-started` while two
+  releases shipped without it), and another carried no status at all, so
+  its shipping is recorded only in `ROADMAP.md` and the CHANGELOG.
 - **What a decision and a plan are for was never separated.** The i9 plan
   and RFC-0010, for example, both recorded the static-first adapter decision and
   its reasons, and the plan's amendment trail and the decision's amendment
@@ -112,9 +112,16 @@ Test plan, Ship criteria, Risks, and Status log.
 
 **Numbering.** Four digits, never reused. RFC-0001 to RFC-0015 are the
 decision records under their existing numbers. EP numbers follow the
-iteration plans they replace (i7 is EP-0007, i10 is EP-0010), which leaves
-no EP numbered 0001, 0002 or 0004, because those plans were retired or retracted
-before this change. RFC-0016, 0017 and 0018 are reserved for proposals open
+iteration plans they replace (i7 is EP-0007, i10 is EP-0010). Only the
+plans that describe shipped work became EPs: 0007 to 0011. The plans
+numbered 0001, 0002 and 0004 were retired or retracted before this change,
+and the plans numbered 0003, 0005 and 0006 were dropped by it rather than
+converted: 0003 targeted entry points EP-0008 deleted, 0005 was already
+retired with its work delivered by EP-0008, and 0006 was planned against
+the workspace crate RFC-0004 retracted. Converting them would have meant
+rewriting plans for surfaces that do not exist, so they were removed and
+their history is in git. What each described that is still wanted remains
+on the roadmap as a plain entry. RFC-0016, 0017 and 0018 are reserved for proposals open
 on other branches, which convert separately; the index lists them as
 `open, reserved`. This RFC is RFC-0019.
 
@@ -134,10 +141,9 @@ status became `implemented` only where its own text or the CHANGELOG says it
 shipped.
 
 The plans index (the `README.md` of that `plans/` directory) was not a
-plan, so it has no EP. What it held for all the plans, the iteration table, the cross-iteration
-regression matrix, the 0.1.0 ship predicate and the post-ship loop closure,
-moves unchanged into `blueprints/README.md`, and the EPs that cite the matrix
-find it there. The decision-record template is replaced by the two new
+plan, so it has no EP. Its cross-iteration regression matrix and 0.1.0 ship
+predicate were cited only by the dropped plans, so they go with them; the
+history is in git. The decision-record template is replaced by the two new
 templates.
 
 **Checks.** `scripts/check-blueprint-refs.sh` fails when an `RFC-NNNN` or
@@ -151,15 +157,16 @@ Gate 5 of the docsite floor (no em dashes outside quoted lines) extends to
 left under `book/src/`.
 
 **What does not change.** Released CHANGELOG entries keep the `ADR-NNNN`
-wording they shipped with; the index note maps them. The local session
-resume under `.claude/logs/` is not rewritten either.
+wording they shipped with; the index note maps them. The session resume
+under `.claude/logs/` stops being tracked: it is a local convenience, not a
+record, and `blueprints/README.md` is where a session starts.
 
 ## Drawbacks
 
 - Every citation in the tree changes at once: code comments, workflow
   comments, the docsite, the agent and skill files. Released CHANGELOG
-  entries and the session resume keep `ADR-NNNN`, so a reader meets both
-  spellings and needs the mapping note.
+  entries keep `ADR-NNNN`, so a reader meets both spellings and needs the
+  mapping note.
 - The plans leave the docsite, so a reader of the deployed site reaches an
   EP only through a GitHub link from the roadmap.
 - The RFC template is heavier than the decision-record template was. A small
@@ -205,11 +212,6 @@ resume under `.claude/logs/` is not rewritten either.
 
 - The three open proposals reserved as RFC-0016, 0017 and 0018 are converted
   on their own branches, and their pull requests become the RFC PR of each.
-- EP-0003 and EP-0006 are recorded as `planned` because that is what their
-  own status lines said. EP-0003 targets entry points EP-0008 deleted, and
-  EP-0006's workspace crate was retracted with RFC-0003. Whether either should
-  read `dropped` is the owner's decision, recorded in its status log when
-  made.
 - The `decision` issue template remains for discussion before a proposal is
   written. Whether it is still worth keeping, now that the pull request is
   where an RFC is discussed, is left to use.
