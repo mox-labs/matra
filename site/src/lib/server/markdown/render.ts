@@ -16,6 +16,8 @@
  *   collectHeadings               the table of contents, and heading anchors
  *   shiki                         syntax highlighting, light and dark
  *   wrapTables                    tables scroll on their own on a phone
+ *   wrapDiagrams                  so do diagrams, at a size their labels
+ *                                 stay legible at, with a visible hint
  *   liftTitle                     the `# Title`, set apart by the layout
  */
 import { posix } from 'node:path';
@@ -94,6 +96,7 @@ export async function render(markdown: string, ctx: RenderContext): Promise<Rend
 			defaultLanguage: 'text'
 		})
 		.use(wrapTables)
+		.use(wrapDiagrams)
 		.use(liftTitle, { file: ctx.file, heading })
 		.use(rehypeStringify);
 
@@ -262,6 +265,47 @@ const wrapTables: Plugin<[], Root> = () => (tree) => {
 		};
 		parent.children[index] = wrapper;
 		return SKIP;
+	});
+};
+
+/**
+ * The hand-drawn diagrams are drawn 720 units wide with labels down to about
+ * 9.5 units. Shrunk to a phone's width, those labels become unreadable, so a
+ * diagram keeps a minimum width (set in app.css) and scrolls sideways inside
+ * its own container instead. The page never does.
+ *
+ * The SVG is untouched; only a wrapper is added. The scroller takes focus so
+ * it can be scrolled from the keyboard, and is labelled with the diagram's own
+ * label. The hint below it shows only when the container is narrower than the
+ * diagram, and is hidden from assistive technology and search.
+ */
+const wrapDiagrams: Plugin<[], Root> = () => (tree) => {
+	tree.children = tree.children.map((node) => {
+		if (node.type !== 'element' || node.tagName !== 'svg') return node;
+		const label = node.properties?.ariaLabel;
+		const scroller: Element = {
+			type: 'element',
+			tagName: 'div',
+			properties: {
+				className: ['diagram-scroll'],
+				tabIndex: 0,
+				role: 'region',
+				ariaLabel: typeof label === 'string' ? `Diagram: ${label}` : 'Diagram'
+			},
+			children: [node]
+		};
+		const hint: Element = {
+			type: 'element',
+			tagName: 'p',
+			properties: { className: ['diagram-hint'], ariaHidden: 'true', dataPagefindIgnore: '' },
+			children: [{ type: 'text', value: 'Scroll sideways to see the whole diagram.' }]
+		};
+		return {
+			type: 'element',
+			tagName: 'div',
+			properties: { className: ['diagram'] },
+			children: [scroller, hint]
+		} satisfies Element;
 	});
 };
 
