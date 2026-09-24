@@ -21,7 +21,7 @@ Rust offers no directional import control between modules inside a single crate,
 
 `scripts/check-boundaries.sh` runs from `just check`, from the pre-commit hook that `scripts/install-hooks.sh` installs, and from the `Boundary check` job in `ci.yml`. The hook is opt-in. The hook runs the script on every commit regardless of which files are staged.
 
-Rule 6 is the only rule CI verifies by compiling. The `rust` job runs `cargo check`, `cargo clippy`, and `cargo test` with and without default features, on Linux and macOS. The `msrv` job runs `cargo check` on Rust 1.85, once with all features and once with no default features. CI fires on pushes to `main` and `alpha` and on pull requests targeting them, so work on a feature branch is ungated until the pull request opens.
+Rule 6 is the only rule CI verifies by compiling. The `rust` job runs `cargo check`, `cargo clippy`, and `cargo test` with and without default features, on Linux and macOS. The `msrv` job runs `cargo check` on Rust 1.88, once with all features and once with no default features. CI fires on pushes to `main` and `alpha` and on pull requests targeting them, so work on a feature branch is ungated until the pull request opens.
 
 Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for a feature-gated dependency fails the no-default-features build. A violation that adds an unconditional dependency compiles cleanly, and review is the only thing that catches it.
 

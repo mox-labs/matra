@@ -1,7 +1,7 @@
 # matra
 
 [![CI](https://github.com/mox-labs/matra/actions/workflows/ci.yml/badge.svg)](https://github.com/mox-labs/matra/actions/workflows/ci.yml)
-[![MSRV](https://img.shields.io/badge/MSRV-1.85-blue?logo=rust)](https://github.com/mox-labs/matra/blob/main/Cargo.toml)
+[![MSRV](https://img.shields.io/badge/MSRV-1.88-blue?logo=rust)](https://github.com/mox-labs/matra/blob/main/Cargo.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mox-labs/matra/blob/main/LICENSE)
 
 NLP library. Text in, structured analysis out.

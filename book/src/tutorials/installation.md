@@ -8,7 +8,7 @@ Every release file from 0.2.1 on carries a build provenance attestation you can 
 
 ## Requirements
 
-**Rust 1.85 or later (MSRV)** for the Rust library and the CLI. Check with `rustc --version`.
+**Rust 1.88 or later (MSRV)** for the Rust library and the CLI. Check with `rustc --version`.
 
 **A C++ compiler** for anything that compiles from source: the Rust library, the CLI, and the Python package on a platform with no wheel. matra parses through UDPipe, which is a C++ library that `udpipe-rs` builds during the cargo build. A C compiler on its own is not enough. Without a C++ compiler the build stops with `error occurred in cc-rs: failed to find tool "c++"`, whichever route you took.
 

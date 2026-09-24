@@ -236,14 +236,14 @@ fn detect_conj_family(tokens: &[Token], t: &Token, out: &mut Vec<HearstPair>) {
                 });
             }
         }
-    } else if cc.is_none() {
-        if let Some(e) = especially {
-            out.push(HearstPair {
-                pattern: HearstPattern::Especially,
-                hypernym: span(tokens, f, &[]),
-                hyponym: span(tokens, t, &[e.id]),
-            });
-        }
+    } else if cc.is_none()
+        && let Some(e) = especially
+    {
+        out.push(HearstPair {
+            pattern: HearstPattern::Especially,
+            hypernym: span(tokens, f, &[]),
+            hyponym: span(tokens, t, &[e.id]),
+        });
     }
 }
 

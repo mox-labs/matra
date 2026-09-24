@@ -422,12 +422,12 @@ impl Model2Vec {
         // reference tolerates short weights by defaulting to 1.0; a
         // half-scaled artifact is a defect, not a model, so matra rejects
         // it (resilience floor over quiet parity on malformed input).
-        if let Some(map) = &mapping {
-            if let Some(&bad) = map.iter().find(|&&row| row >= vocab) {
-                return Err(Error::ModelInvalid(format!(
-                    "mapping entry {bad} outside matrix vocab {vocab}"
-                )));
-            }
+        if let Some(map) = &mapping
+            && let Some(&bad) = map.iter().find(|&&row| row >= vocab)
+        {
+            return Err(Error::ModelInvalid(format!(
+                "mapping entry {bad} outside matrix vocab {vocab}"
+            )));
         }
         if let Some(w) = &weights {
             let id_space = mapping.as_ref().map_or(vocab, Vec::len);
