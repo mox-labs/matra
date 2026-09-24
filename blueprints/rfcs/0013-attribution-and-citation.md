@@ -1,10 +1,19 @@
-# 0013. Attribution and Citation
+# RFC-0013: Attribution and Citation
 
-- **Status:** accepted
-- **Date:** 2026-09-06
-- **Decider(s):** owner decision, recorded by the maintainer role
+- Feature Name: `attribution_and_citation`
+- Start Date: 2026-09-06
+- RFC PR: [#72](https://github.com/mox-labs/matra/pull/72)
+- Tracking EP: none
+- Status: implemented
+- Decider(s): owner decision, recorded by the maintainer role
 
-## Context
+> **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. The status moved from accepted to implemented because the CHANGELOG records it shipping in 0.2.0.
+
+## Summary
+
+We choose Option B. The canonical attribution is the organization `mox labs`, with `yza.v@moxlabs.org` as the contact address, and it is identical in every file that carries attribution.
+
+## Motivation
 
 matra is about to publish its first artifacts to crates.io and PyPI. Package
 metadata on both registries is immutable per version: once 0.2.0 is uploaded,
@@ -38,7 +47,72 @@ are authored by Claude with the owner as co-author, which records who did the
 work. Package attribution records who publishes and holds the copyright. The
 two answer different questions and are deliberately not the same.
 
-## Options considered
+## Guide-level explanation
+
+We choose Option B. The canonical attribution is the organization `mox labs`,
+with `yza.v@moxlabs.org` as the contact address, and it is identical in every
+file that carries attribution. The copyright line reads
+`Copyright (c) 2026 mox labs`.
+
+The reason is that everything else about the project's public identity is
+already organizational: the GitHub organization, the documentation homepage,
+the repository URL, and the plugin manifest. Attribution that contradicts the
+URLs printed beside it is not attribution, it is noise, and on an immutable
+registry it is noise that cannot be corrected in place.
+
+Concretely, the canonical forms are:
+
+| File | Form |
+|---|---|
+| `Cargo.toml` | `authors = ["mox labs <yza.v@moxlabs.org>"]` |
+| `pyproject.toml` | `authors = [{ name = "mox labs", email = "yza.v@moxlabs.org" }]` |
+| `LICENSE` | `Copyright (c) 2026 mox labs` |
+| `book/book.toml` | `authors = ["mox labs"]` |
+| `.claude-plugin/plugin.json` | `"author": { "name": "mox labs", ... }` |
+| `CITATION.cff` | entity author `mox labs`, email `yza.v@moxlabs.org` |
+
+`CITATION.cff` ships at the repository root, which is where GitHub reads it
+to render the "Cite this repository" control and where citation tooling looks
+for it.
+
+## Reference-level explanation
+
+### Consequences
+
+- Positive: one name, one contact, one copyright holder, across registries,
+  documentation, plugin manifest, and citation file. A reader gets the same
+  answer wherever they look.
+- Positive: the citation file unblocks. Researchers citing matra get a form
+  from the project rather than composing their own, and the file states
+  explicitly that citing the software does not substitute for citing the
+  publication behind each measure.
+- Positive: copyright sits with an entity that outlives any one contributor.
+- Neutral: commit authorship is untouched. Claude remains the commit author
+  with the owner as co-author.
+
+### Validation
+
+This decision is right if, at the next release, no file disagrees with any
+other about who wrote or holds copyright in matra, and the release checklist
+catches the version and date in `CITATION.cff` without anyone remembering to
+look.
+
+It is falsified if the project acquires outside contributors who need
+individual attribution in package metadata, or if the organization stops
+being the publishing entity. Either would prompt a superseding ADR rather
+than an edit to the files, so that the reason for the change is recorded.
+
+## Drawbacks
+
+- Negative: `CITATION.cff` adds a fifth place carrying the version number,
+  alongside `Cargo.toml`, `pyproject.toml`, `.claude-plugin/plugin.json`, and
+  the `CHANGELOG.md` heading. It also carries a release date, which the others
+  do not. Both must move at each release.
+- Negative: the contact address is a commitment. An address in immutable
+  registry metadata that stops being read is worse than no address, so it must
+  keep working for as long as the published versions exist.
+
+## Rationale and alternatives
 
 ### Option A: an individual, `yzavyas`
 
@@ -87,67 +161,7 @@ List the individual as author and the organization as copyright holder.
 - Neither registry models the distinction, so the split survives only in
   files nobody reads together.
 
-## Decision
-
-We choose Option B. The canonical attribution is the organization `mox labs`,
-with `yza.v@moxlabs.org` as the contact address, and it is identical in every
-file that carries attribution. The copyright line reads
-`Copyright (c) 2026 mox labs`.
-
-The reason is that everything else about the project's public identity is
-already organizational: the GitHub organization, the documentation homepage,
-the repository URL, and the plugin manifest. Attribution that contradicts the
-URLs printed beside it is not attribution, it is noise, and on an immutable
-registry it is noise that cannot be corrected in place.
-
-Concretely, the canonical forms are:
-
-| File | Form |
-|---|---|
-| `Cargo.toml` | `authors = ["mox labs <yza.v@moxlabs.org>"]` |
-| `pyproject.toml` | `authors = [{ name = "mox labs", email = "yza.v@moxlabs.org" }]` |
-| `LICENSE` | `Copyright (c) 2026 mox labs` |
-| `book/book.toml` | `authors = ["mox labs"]` |
-| `.claude-plugin/plugin.json` | `"author": { "name": "mox labs", ... }` |
-| `CITATION.cff` | entity author `mox labs`, email `yza.v@moxlabs.org` |
-
-`CITATION.cff` ships at the repository root, which is where GitHub reads it
-to render the "Cite this repository" control and where citation tooling looks
-for it.
-
-## Consequences
-
-- Positive: one name, one contact, one copyright holder, across registries,
-  documentation, plugin manifest, and citation file. A reader gets the same
-  answer wherever they look.
-- Positive: the citation file unblocks. Researchers citing matra get a form
-  from the project rather than composing their own, and the file states
-  explicitly that citing the software does not substitute for citing the
-  publication behind each measure.
-- Positive: copyright sits with an entity that outlives any one contributor.
-- Negative: `CITATION.cff` adds a fifth place carrying the version number,
-  alongside `Cargo.toml`, `pyproject.toml`, `.claude-plugin/plugin.json`, and
-  the `CHANGELOG.md` heading. It also carries a release date, which the others
-  do not. Both must move at each release.
-- Negative: the contact address is a commitment. An address in immutable
-  registry metadata that stops being read is worse than no address, so it must
-  keep working for as long as the published versions exist.
-- Neutral: commit authorship is untouched. Claude remains the commit author
-  with the owner as co-author.
-
-## Validation
-
-This decision is right if, at the next release, no file disagrees with any
-other about who wrote or holds copyright in matra, and the release checklist
-catches the version and date in `CITATION.cff` without anyone remembering to
-look.
-
-It is falsified if the project acquires outside contributors who need
-individual attribution in package metadata, or if the organization stops
-being the publishing entity. Either would prompt a superseding ADR rather
-than an edit to the files, so that the reason for the change is recorded.
-
-## References
+## Prior art
 
 - `CITATION.cff`, `Cargo.toml`, `pyproject.toml`, `LICENSE`, `book/book.toml`,
   `.claude-plugin/plugin.json`.
@@ -155,5 +169,13 @@ than an edit to the files, so that the reason for the change is recorded.
   software citation does not replace.
 - Citation File Format 1.2.0 schema guide, for the entity author form and the
   `date-released` field.
-- ADR-0012, which introduced the plugin manifest that already carried the
+- RFC-0012, which introduced the plugin manifest that already carried the
   organizational form.
+
+## Unresolved questions
+
+None recorded when this was decided.
+
+## Future possibilities
+
+None recorded when this was decided.

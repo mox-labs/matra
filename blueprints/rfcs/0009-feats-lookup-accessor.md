@@ -1,10 +1,19 @@
-# 0009. Feats lookup accessor, Rust-only
+# RFC-0009: Feats lookup accessor, Rust-only
 
-- **Status:** Accepted
-- **Date:** 2026-08-21
-- **Decider(s):** project maintainer; question framed by I7 M2 (typed `feats`)
+- Feature Name: `feats_lookup_accessor`
+- Start Date: 2026-08-21
+- RFC PR: [#32](https://github.com/mox-labs/matra/pull/32)
+- Tracking EP: [EP-0007](../eps/0007-structural-primitives.md)
+- Status: implemented
+- Decider(s): project maintainer; question framed by I7 M2 (typed `feats`)
 
-## Context
+> **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. The status moved from accepted to implemented because the CHANGELOG records it shipping in 0.1.0.
+
+## Summary
+
+We choose Option C. The accessor is Rust-only by design because `feats` already crosses FFI as a string, so a lookup over it adds no information to the wire.
+
+## Motivation
 
 `Token.feats` carries CoNLL-U column 6 verbatim as a pipe-separated
 string like `Mood=Ind|Number=Sing|Tense=Pres`. Consumers who want one
@@ -19,7 +28,48 @@ so typing them fully is costly on matra's side and cheap on the
 consumer's. The research synthesis disagreed and listed typed access as
 one of the five primitives.
 
-## Options considered
+## Guide-level explanation
+
+We choose Option C. The accessor is Rust-only by design because `feats`
+already crosses FFI as a string, so a lookup over it adds no
+information to the wire. This is the other half of RFC-0008's
+criterion, recorded there and repeated here because future primitives
+are judged by it: derivations cross as fields; views over data already
+crossing stay methods. `feat` derives nothing, so it stays a method,
+and nothing crossing FFI changes, so no `spec/tests/` fixture is added.
+
+The udpipe adapter clones `w.feats` verbatim and stores the empty
+string (not `_`) for feature-less tokens, verified against a live
+parse. Both spellings yield `None` for every key by construction, and
+both are pinned by test so a change in the adapter's behaviour
+surfaces loudly.
+
+## Reference-level explanation
+
+### Consequences
+
+- Positive: M3 reads `Mood` and `VerbForm` through one audited scan
+  instead of ad-hoc string splitting. No wire change, no binding
+  change, no dependency change.
+- Neutral: if a future primitive needs the full inventory typed, that
+  is a new decision against real need, superseding this one.
+
+### Validation
+
+Right if M3 lands on this accessor without needing more. Falsified if
+profiling ever shows feats lookups hot enough that the linear scan
+matters (then benchmark Option B), or if a consumer class needs typed
+feature values across FFI (then the derivation would cross as a field
+per RFC-0008, not as this view).
+
+## Drawbacks
+
+- Negative: consumers in other languages still parse the string
+  themselves. That is the boundary the bidirectional report judged
+  correctly placed; a crust that wants a helper writes a three-line
+  one over data it already has.
+
+## Rationale and alternatives
 
 ### Option A: exhaustive typed enums
 
@@ -69,46 +119,18 @@ match, value borrowed raw from `feats`.
   exposure, not a defect: matra reports what UDPipe emitted and does
   not normalise it.
 
-## Decision
+## Prior art
 
-We choose Option C. The accessor is Rust-only by design because `feats`
-already crosses FFI as a string, so a lookup over it adds no
-information to the wire. This is the other half of ADR-0008's
-criterion, recorded there and repeated here because future primitives
-are judged by it: derivations cross as fields; views over data already
-crossing stay methods. `feat` derives nothing, so it stays a method,
-and nothing crossing FFI changes, so no `spec/tests/` fixture is added.
-
-The udpipe adapter clones `w.feats` verbatim and stores the empty
-string (not `_`) for feature-less tokens, verified against a live
-parse. Both spellings yield `None` for every key by construction, and
-both are pinned by test so a change in the adapter's behaviour
-surfaces loudly.
-
-## Consequences
-
-- Positive: M3 reads `Mood` and `VerbForm` through one audited scan
-  instead of ad-hoc string splitting. No wire change, no binding
-  change, no dependency change.
-- Negative: consumers in other languages still parse the string
-  themselves. That is the boundary the bidirectional report judged
-  correctly placed; a crust that wants a helper writes a three-line
-  one over data it already has.
-- Neutral: if a future primitive needs the full inventory typed, that
-  is a new decision against real need, superseding this one.
-
-## Validation
-
-Right if M3 lands on this accessor without needing more. Falsified if
-profiling ever shows feats lookups hot enough that the linear scan
-matters (then benchmark Option B), or if a consumer class needs typed
-feature values across FFI (then the derivation would cross as a field
-per ADR-0008, not as this view).
-
-## References
-
-- Plan: `book/src/plans/i7-structural-primitives.md` M2, including
+- Plan: `blueprints/eps/0007-structural-primitives.md` M2, including
   both recorded prior positions.
-- [ADR-0008](0008-structural-primitives-are-fields.md): the
+- [RFC-0008](0008-structural-primitives-are-fields.md): the
   derivations-vs-views criterion this accessor instantiates.
 - `src/nlp/udpipe.rs`: the adapter stores `w.feats` verbatim.
+
+## Unresolved questions
+
+None recorded when this was decided.
+
+## Future possibilities
+
+None recorded when this was decided.

@@ -1,31 +1,23 @@
-# I10: Out of the box
+# EP-0010: Out of the box (formerly plan i10)
 
-> **Shipped, 2026-09-05.** All six milestones landed: M1 as PR #62, M2 as
-> #59, M3 as #61, M4 as #64, M5 as #63, and M6 (this PR).
-> [ADR-0011](https://github.com/mox-labs/matra/blob/main/docs/decisions/0011-out-of-the-box.md)
-> records the decisions and names every public item M2 through M5 added;
-> its Consequences carry the two open follow-ups (the `u8` exit code,
-> and `Error::Io` routing to `OSError` whatever its kind). The one item
-> in M6's scope that did not land is the attribution alignment across
-> `Cargo.toml`, `pyproject.toml`, `LICENSE` and the README: the owner
-> has not yet chosen the canonical author and copyright form, so those
-> four files are unchanged. This plan stays as the reasoning trail.
+- EP: EP-0010
+- Implements: [RFC-0011](../rfcs/0011-out-of-the-box.md)
+- Status: shipped in 0.2.0
+- Shipped in: 0.2.0
 
 **Boundary:** post-publish, additive to the 0.1.0 surface. No existing signature changes. The Python CLI's implementation is replaced, its command line is not.
 
-**Origin:** the roadmap's "Configuration-driven invocation" trigger fired on 2026-09-05 with the owner's direction: matra works with no setup on every surface, follows developer-tool conventions for config and paths, keeps Rust as the core with Python and TypeScript as thin reach layers, and is consumable by an agent. [ADR-0011](https://github.com/mox-labs/matra/blob/main/docs/decisions/0011-out-of-the-box.md) records the decisions; this plan is how they land.
+**Origin:** the roadmap's "Configuration-driven invocation" trigger fired on 2026-09-05 with the owner's direction: matra works with no setup on every surface, follows developer-tool conventions for config and paths, keeps Rust as the core with Python and TypeScript as thin reach layers, and is consumable by an agent. [RFC-0011](../rfcs/0011-out-of-the-box.md) records the decisions; this plan is how they land.
 
 This is the first of three iterations: foundations (this plan), the agent surface (`--skill`, planned once the CLI contract here is final), and later a terminal UI for the Rust CLI.
 
----
-
-## Why this shape and not another
+## Summary
 
 ### The boundary test, applied to the language layers
 
 Each layer is checked against one question: does it reduce the total surface a caller integrates against, or add to it? The Rust core passes. The Python binding half passes: fields cross, methods do not, one `Matra` class over the engine. It fails twice, and both failures are the same mistake. `python/matra/cli.py` re-implements rendering and argument parsing that `src/bin/matra.rs` already has, so there are two surfaces where there should be one launcher. And a Python caller who needs a custom embedder, a metric suite, or a directory walk has no extension point and writes the logic in Python, so the binding accumulates behavior the core should own.
 
-The rule that falls out, now written into ADR-0011: every CLI is Rust; a reach layer exposes the API and the extension points and carries no behavior of its own.
+The rule that falls out, now written into RFC-0011: every CLI is Rust; a reach layer exposes the API and the extension points and carries no behavior of its own.
 
 ### Config resolves locations and defaults, never behavior
 
@@ -33,9 +25,11 @@ The roadmap's warning is that a config format reaching into the library puts pol
 
 ### Pinned downloads are one discipline, not two
 
-The UDPipe adapter already downloads a pinned artifact, verifies it against a constant, and loads the verified bytes with no second read. Making the reference embedding model do the same is not a new capability, it is the removal of an exception. ADR-0010 decision 6 said "no network"; it meant "no unpinned network", and the amendment says so.
+The UDPipe adapter already downloads a pinned artifact, verifies it against a constant, and loads the verified bytes with no second read. Making the reference embedding model do the same is not a new capability, it is the removal of an exception. RFC-0010 decision 6 said "no network"; it meant "no unpinned network", and the amendment says so.
 
-## The surface
+## Goals
+
+### The surface
 
 ```rust
 // composition root
@@ -92,15 +86,19 @@ algorithm = "rake"
 
 Names are forever, and M1 settled the two that were open with the [conventions survey](https://github.com/mox-labs/matra/blob/main/docs/surveys/2026-09-05-conventions.md). Constructors share one name across adapters, `from_config`, with `Engine::with_defaults` as the single one-liner. Environment variables name the thing they override, as `UV_CONFIG_FILE`, `UV_CACHE_DIR`, and `OLLAMA_MODELS` do: `MATRA_CONFIG_FILE`, `MATRA_DATA_DIR`, and the existing `MATRA_MODEL_DIR`.
 
-## Milestones
+## Non-goals
+
+None recorded.
+
+## Iterations and milestones
 
 Each milestone is one PR, review-hardened by the CI harness before merge. Strict order.
 
 ### M1: the ADR, the roadmap, the names
 
-ADR-0011 accepted; roadmap entry marked fired with a pointer here; the survey filed in `docs/surveys/` and the two open names settled with its evidence; plans index and `SUMMARY.md` carry this page.
+RFC-0011 accepted; roadmap entry marked fired with a pointer here; the survey filed in `docs/surveys/` and the two open names settled with its evidence; plans index and `SUMMARY.md` carry this page.
 
-**Rubric.** `just docs-floor` passes. ADR-0011 names every new public item that M2 to M5 add, so a later reviewer can diff the surface against the decision.
+**Rubric.** `just docs-floor` passes. RFC-0011 names every new public item that M2 to M5 add, so a later reviewer can diff the surface against the decision.
 
 ### M2: `Config` and the default constructors
 
@@ -116,7 +114,7 @@ ADR-0011 accepted; roadmap entry marked fired with a pointer here; the survey fi
 
 ### M4: the pinned embedding download
 
-`Model2Vec::potion_base_8m(dir)` downloads `model.safetensors`, `tokenizer.json`, and `config.json` from the pinned release, verifies the three-file digest against the constant already in `spec/tests/semantic/reference-model.json`, and loads from the verified bytes. `Model2Vec::from_config` resolves the directory through `Config` and calls it. ADR-0010 decision 6 amended in place with a dated note. Python `Model2Vec.potion_base_8m(dir=None)`. The `just conformance` semantic lane stops needing a hand-placed model.
+`Model2Vec::potion_base_8m(dir)` downloads `model.safetensors`, `tokenizer.json`, and `config.json` from the pinned release, verifies the three-file digest against the constant already in `spec/tests/semantic/reference-model.json`, and loads from the verified bytes. `Model2Vec::from_config` resolves the directory through `Config` and calls it. RFC-0010 decision 6 amended in place with a dated note. Python `Model2Vec.potion_base_8m(dir=None)`. The `just conformance` semantic lane stops needing a hand-placed model.
 
 **Rubric.** The provisioner removes only files it downloaded itself: a digest mismatch over those removes them and retries once, then fails with `Error::ModelInvalid`, while a directory that already holds a full artifact set under a different digest, or part of one, is refused without anything being downloaded over or deleted. No second disk read between verify and load (the resilience skill's TOCTOU rule). A transport or non-2xx failure is `Error::Io`, and the fetch is bounded in time as well as in size. The download is behind the `model2vec` feature and is never triggered by `from_dir`.
 
@@ -132,12 +130,13 @@ Installation, the Rust, Python, and CLI guides, pragmatics, and the semantic clu
 
 **Rubric.** `just docs-floor` and `just check` pass. Every new public item in M2 to M5 appears in CHANGELOG, in the Python stubs where it crosses, and in exactly one docs page.
 
-## Costs, named
+## Test plan
 
-- `toml` and its serde integration enter the default build. Pure Rust; verified on wasm32 by the existing CI job.
-- The `python` feature now compiles `clap`. Wheel size grows by the CLI, which was previously shipped as Python source.
-- The config schema is public surface from M2 on and follows the crate's semver.
-- Two constructors per adapter to keep in lockstep with the Python stubs.
+None recorded.
+
+## Ship criteria
+
+On a machine with no matra state: `uvx matra analyze README.md`, `cargo install matra --features cli && matra analyze README.md`, and `python -c "from matra import Matra; print(Matra.english().analyze('The report was filed.')['passive_ratio'])"` all succeed with no flags and no environment; `matra config show` prints every value with its source; `python/matra/cli.py` contains no rendering; `Matra.semantic_clusters` accepts a Python object with `embed` and `identity`; every rubric above holds.
 
 ## Risks
 
@@ -146,6 +145,14 @@ Installation, the Rust, Python, and CLI guides, pragmatics, and the semantic clu
 - **The launcher shim and `sys.argv[0]`.** Pass `argv[1:]` and set the program name in clap explicitly, so `--help` reads the same from both launchers.
 - **Wheel build with `cli`.** maturin must build with `--features python,udpipe,model2vec` implying `cli`; the CI wheel matrix is the check.
 
-## Acceptance gate
+### Costs, named
 
-On a machine with no matra state: `uvx matra analyze README.md`, `cargo install matra --features cli && matra analyze README.md`, and `python -c "from matra import Matra; print(Matra.english().analyze('The report was filed.')['passive_ratio'])"` all succeed with no flags and no environment; `matra config show` prints every value with its source; `python/matra/cli.py` contains no rendering; `Matra.semantic_clusters` accepts a Python object with `embed` and `identity`; every rubric above holds.
+- `toml` and its serde integration enter the default build. Pure Rust; verified on wasm32 by the existing CI job.
+- The `python` feature now compiles `clap`. Wheel size grows by the CLI, which was previously shipped as Python source.
+- The config schema is public surface from M2 on and follows the crate's semver.
+- Two constructors per adapter to keep in lockstep with the Python stubs.
+
+## Status log
+
+- 2026-09-05: **Shipped, 2026-09-05.** All six milestones landed: M1 as PR #62, M2 as #59, M3 as #61, M4 as #64, M5 as #63, and M6 (this PR). [RFC-0011](../rfcs/0011-out-of-the-box.md) records the decisions and names every public item M2 through M5 added; its Consequences carry the two open follow-ups (the `u8` exit code, and `Error::Io` routing to `OSError` whatever its kind). The one item in M6's scope that did not land is the attribution alignment across `Cargo.toml`, `pyproject.toml`, `LICENSE` and the README: the owner has not yet chosen the canonical author and copyright form, so those four files are unchanged. This plan stays as the reasoning trail.
+- 2026-09-24: Converted from the plan layout to the EP layout by [RFC-0019](../rfcs/0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the planned text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects.

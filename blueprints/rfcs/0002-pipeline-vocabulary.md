@@ -1,18 +1,27 @@
-# 0002. Pipeline vocabulary: ingest / decompose / parse / measure (+ peer extract)
+# RFC-0002: Pipeline vocabulary: ingest / decompose / parse / measure (+ peer extract)
 
-- **Status:** Superseded by [ADR-0007](0007-one-pipeline.md) (2026-08-21)
-- **Date:** 2026-04-28
-- **Decider(s):** project maintainer; ontology review by the architecture guild (Karman)
+- Feature Name: `pipeline_vocabulary`
+- Start Date: 2026-04-28
+- RFC PR: [#3](https://github.com/mox-labs/matra/pull/3)
+- Tracking EP: none (the I1 plan was retired after it landed)
+- Status: superseded by [RFC-0007](0007-one-pipeline.md) (2026-08-21)
+- Decider(s): project maintainer; ontology review by the architecture guild (Karman)
 
 > **Superseded.** The five verbs enumerated calling conventions rather
 > than transformations: `measure` mutates and returns unit while
 > extractors return values, and that difference was the only thing
-> making `extract` a peer. ADR-0007 adopts `ingest -> decompose ->
+> making `extract` a peer. RFC-0007 adopts `ingest -> decompose ->
 > compose` with `abstract` reserved as a named empty seam. The trait
 > names this ADR kept (`Source`, `Decomposer`, `NlpProvider`) carry
 > forward unchanged.
 
-## Context
+> **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects.
+
+## Summary
+
+We adopt **Option C**. Pipeline vocabulary: `ingest -> decompose -> parse -> measure` with `extract` as a peer.
+
+## Motivation
 
 matra's pipeline produces structured analysis from text in stages. The
 stage names become the public vocabulary: trait method names appear in
@@ -25,7 +34,46 @@ Encode -> Extract`. A user-floated alternative was: `arrange ->
 decompose -> frame -> compose`. Both have ergonomic and semantic
 issues that needed settling before structural work.
 
-## Options considered
+## Guide-level explanation
+
+We adopt **Option C**. Pipeline vocabulary: `ingest -> decompose ->
+parse -> measure` with `extract` as a peer.
+
+The `Source`, `Decomposer`, and `NlpProvider` traits keep their
+existing names, they semantically match the new verbs already
+(`Source`'s job is ingestion; `NlpProvider::parse` is the parse stage's
+mechanism). The renamed verbs appear in stage descriptions, doc
+comments, and composition-root function names.
+
+One concrete code change: removed the free function
+`decompose::markdown::parse`. Markdown decomposition now goes through
+`MarkdownDecomposer.decompose(text)` only. This frees the verb
+`parse` for NLP-only use across the codebase.
+
+## Reference-level explanation
+
+### Consequences
+
+**Positive:**
+- Vocabulary is honest about what each stage does.
+- "frame" is preserved for a future semantic-frame analysis layer
+  (a downstream consumer building on top of `parse` output).
+- `measure` vs `extract` distinction makes the public surface easier
+  to teach.
+
+### Validation
+
+Right if the names hold up against being read in three languages
+(Rust, Python, TypeScript-via-WASM). Falsified if a downstream
+consumer requests a name we have to break to give them.
+
+## Drawbacks
+
+**Negative:**
+- One-time rename pass (landed in I1).
+- Anyone reading old v2 plan documents needs to translate.
+
+## Rationale and alternatives
 
 ### Option A: Keep `Source / Decompose / Annotate / Encode / Extract`
 
@@ -66,43 +114,16 @@ with downstream vocabulary; "measure" and "extract" cleanly separate
 aggregation from selection.
 **Cons:** requires renames in `lib.rs`, doc comments, README, CHANGELOG.
 
-## Decision
-
-We adopt **Option C**. Pipeline vocabulary: `ingest -> decompose ->
-parse -> measure` with `extract` as a peer.
-
-The `Source`, `Decomposer`, and `NlpProvider` traits keep their
-existing names — they semantically match the new verbs already
-(`Source`'s job is ingestion; `NlpProvider::parse` is the parse stage's
-mechanism). The renamed verbs appear in stage descriptions, doc
-comments, and composition-root function names.
-
-One concrete code change: removed the free function
-`decompose::markdown::parse`. Markdown decomposition now goes through
-`MarkdownDecomposer.decompose(text)` only. This frees the verb
-`parse` for NLP-only use across the codebase.
-
-## Consequences
-
-**Positive:**
-- Vocabulary is honest about what each stage does.
-- "frame" is preserved for a future semantic-frame analysis layer
-  (a downstream consumer building on top of `parse` output).
-- `measure` vs `extract` distinction makes the public surface easier
-  to teach.
-
-**Negative:**
-- One-time rename pass (landed in I1).
-- Anyone reading old v2 plan documents needs to translate.
-
-## Validation
-
-Right if the names hold up against being read in three languages
-(Rust, Python, TypeScript-via-WASM). Falsified if a downstream
-consumer requests a name we have to break to give them.
-
-## References
+## Prior art
 
 - I1 plan: retired after the iteration landed. The decision it implemented is this ADR; the commits are in the history.
 - Architecture: `book/src/architecture/design.md` (pipeline through-line).
 - I1 PR (merged 2026-05-01): https://github.com/mox-labs/matra/pull/1.
+
+## Unresolved questions
+
+None recorded when this was decided.
+
+## Future possibilities
+
+None recorded when this was decided.

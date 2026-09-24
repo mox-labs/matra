@@ -1,18 +1,15 @@
-# I8: One pipeline, not six entry points
+# EP-0008: One pipeline, not six entry points (formerly plan i8)
 
-> **Shipped, 2026-08-21.** All eight milestones landed;
-> [ADR-0007](https://github.com/mox-labs/matra/blob/main/docs/decisions/0007-one-pipeline.md)
-> records the decision and supersedes ADR-0002. The laws in M4 run as
-> tests in `src/lib.rs`. This plan stays as the defect record and the
-> reasoning trail.
+- EP: EP-0008
+- Implements: [RFC-0007](../rfcs/0007-one-pipeline.md)
+- Status: shipped in 0.1.0
+- Shipped in: 0.1.0
 
 **Boundary:** pre-publish surface freeze. Must land before 0.1.0 or never.
 
 **Origin:** a maintainer question ("why do we have so many entry points?") followed by a formal review. Two live defects were found by taking the stage types seriously; one is fixed, one is documented with its root cause still open.
 
----
-
-## Why this iteration exists
+## Summary
 
 Six public entry points are partial applications of one chain:
 
@@ -41,9 +38,7 @@ The root cause is representational: `run_suite` carries the sentence set twice, 
 
 **Both defects have one shape: N entry points means N restatements of each invariant, and the compiler checks none of them.** That is the argument. Elegance is a side effect.
 
----
-
-## The vocabulary question
+### The vocabulary question
 
 The maintainer proposed `ingest -> decompose -> abstract -> compose`, everything being `data -> transform -> data`.
 
@@ -53,11 +48,17 @@ Two readings were considered. As a name for today's NLP parse it fails, because 
 
 Recommended vocabulary: **`ingest -> decompose -> compose`**, three stages, with `abstract` reserved in an ADR as the named empty seam and documented as unoccupied at 0.1.0. Do not name a stage that has no code.
 
-This **supersedes ADR-0002**, whose five verbs enumerate calling conventions rather than transformations. `measure` and `extract` are one operation with two output projections: `Metric` mutates and returns unit, extractors return values, and that difference is why extract was called a peer. It is not a peer.
+This **supersedes RFC-0002**, whose five verbs enumerate calling conventions rather than transformations. `measure` and `extract` are one operation with two output projections: `Metric` mutates and returns unit, extractors return values, and that difference is why extract was called a peer. It is not a peer.
 
----
+## Goals
 
-## Milestones
+None recorded.
+
+## Non-goals
+
+None recorded.
+
+## Iterations and milestones
 
 Each leaves the tree green. Milestones 1 to 3 are worth doing whether or not the surface changes.
 
@@ -149,11 +150,27 @@ CLI (3 call sites), examples (3 files), PyO3 surface. Defect A closes structural
 
 ### M7 and M8: documentation and ADRs
 
-13 files reference the old surface. Supersede ADR-0002; write one ADR for the pipeline shape and the reserved `abstract` seam.
+13 files reference the old surface. Supersede RFC-0002; write one ADR for the pipeline shape and the reserved `abstract` seam.
 
----
+## Test plan
 
-## Costs, named
+None recorded.
+
+## Ship criteria
+
+None recorded.
+
+## Risks
+
+**The whole design assumes no reactor.** Two lazy `analyze` streams interleaved on one thread are safe only because `analyze_one` runs to completion inside a single `next()`. That breaks the moment a stage can yield inside a parse, which is exactly what a reactor introduces. RFC-0004's deferral is load-bearing for this proof and the new ADR should say so.
+
+**Grep care on M6.** `parse` has far more hits in `src/` than the other five combined, because most are `NlpProvider::parse` rather than the free function.
+
+**Relationship to I5.** Subsumes Tasks A, B, C and D. Contradicts I5 only on keeping `analyze_directory` deprecated: deprecate-and-keep was justified by protecting a consumer who adopts it between 0.1.0 and 0.1.x, and pre-publish there is no such consumer.
+
+**Relationship to I7.** I7 M1 asks whether structural primitives are fields or methods. That question is entangled with this surface and should be decided after M4, not before.
+
+### Costs, named
 
 1. **Not fewer names.** Roughly nine against six. What is bought is one implementation and closure under format growth, not a smaller namespace.
 2. **Callers hold an `Engine`.** Someone must own the decomposer table; free functions cannot.
@@ -162,12 +179,7 @@ CLI (3 call sites), examples (3 files), PyO3 surface. Defect A closes structural
 5. **`Document` stays two-phase.** A Structure/Annotated/Measured split was considered and declined: the `Option` slots also encode inapplicability, so the split would not remove them, and it would only prove "compose has run", which L4 answers more cheaply.
 6. **Compile-time exhaustiveness over `Format` is lost** unless `standard_decomposers()` is written as an exhaustive match. Do not skip that.
 
-## Risks
+## Status log
 
-**The whole design assumes no reactor.** Two lazy `analyze` streams interleaved on one thread are safe only because `analyze_one` runs to completion inside a single `next()`. That breaks the moment a stage can yield inside a parse, which is exactly what a reactor introduces. ADR-0004's deferral is load-bearing for this proof and the new ADR should say so.
-
-**Grep care on M6.** `parse` has far more hits in `src/` than the other five combined, because most are `NlpProvider::parse` rather than the free function.
-
-**Relationship to I5.** Subsumes Tasks A, B, C and D. Contradicts I5 only on keeping `analyze_directory` deprecated: deprecate-and-keep was justified by protecting a consumer who adopts it between 0.1.0 and 0.1.x, and pre-publish there is no such consumer.
-
-**Relationship to I7.** I7 M1 asks whether structural primitives are fields or methods. That question is entangled with this surface and should be decided after M4, not before.
+- 2026-08-21: **Shipped, 2026-08-21.** All eight milestones landed; [RFC-0007](../rfcs/0007-one-pipeline.md) records the decision and supersedes RFC-0002. The laws in M4 run as tests in `src/lib.rs`. This plan stays as the defect record and the reasoning trail.
+- 2026-09-24: Converted from the plan layout to the EP layout by [RFC-0019](../rfcs/0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the planned text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects.

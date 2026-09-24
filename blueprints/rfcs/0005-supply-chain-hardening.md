@@ -1,12 +1,23 @@
-# 0005. Supply-chain hardening posture
+# RFC-0005: Supply-chain hardening posture
 
-- **Status:** Accepted
-- **Date:** 2026-05-20
-- **Decider(s):** project maintainer
+- Feature Name: `supply_chain_hardening`
+- Start Date: 2026-05-20
+- RFC PR: [#17](https://github.com/mox-labs/matra/pull/17)
+- Tracking EP: none
+- Status: accepted
+- Decider(s): project maintainer
 
 > **Note (2026-09-20):** `publish.yml` and `publish-pypi.yml` were consolidated into `.github/workflows/release.yml`. Every reference below to either filename now means `release.yml`. The posture in this ADR stands unchanged; what moved is that the release is dispatched from `main` rather than triggered by a tag push (the `crates-io` environment's branch policy rejects a tag ref), the workflow creates the annotated tag itself, PyPI uploads through `pypa/gh-action-pypi-publish` instead of hand-rolled curl plus twine, and `actions/attest-build-provenance` attests every artifact at SLSA Build Level 2. The Trusted Publishing configuration on crates.io and on PyPI binds to a workflow filename and must be updated to `release.yml`.
 
-## Context
+> **Note (2026-09-24):** Item 7 below, its re-open condition 2, and its validation line describe `slsa-framework/slsa-github-generator` and `slsa-verifier`. The project never adopted either: releases attest provenance with `actions/attest-build-provenance`, which the 2026-09-20 note above and the comment on the `attest` job in `.github/workflows/release.yml` record as SLSA Build Level 2, not Level 3. The body is left as it was decided; a change to the posture is a new RFC.
+
+> **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects.
+
+## Summary
+
+This ADR records matra's adoption of the gh-guard posture, the manual setup the maintainer performs on GitHub.com and crates.io, and the items deliberately deferred.
+
+## Motivation
 
 Matra is a library. Downstream callers (third-party Rust and Python projects) inherit matra's supply-chain posture transitively. If matra publishes from a workflow with a long-lived API token, every downstream depends on that token never leaking. If matra's actions are pinned to floating tags, a hostile force-push to one of those tags can be injected into every downstream build through matra's CI cache. The library's trust posture is inherited by everything downstream.
 
@@ -14,7 +25,7 @@ Research for this decision surfaced `sbom-tool/gh-guard` (https://github.com/sbo
 
 This ADR records matra's adoption of the gh-guard posture, the manual setup the maintainer performs on GitHub.com and crates.io, and the items deliberately deferred.
 
-## Decision
+## Guide-level explanation
 
 Adopt the following hardening posture in this iteration (i9):
 
@@ -51,7 +62,7 @@ Every workflow declares `permissions: read-all` at workflow level. Individual jo
 
 ### 4. CodeQL static analysis
 
-`.github/workflows/codeql.yml` analyzes Rust + Python on push to main, on PR, and weekly (Tuesdays 03:12 UTC). `build-mode: none` for both — sufficient for what CodeQL extracts from a Rust crate and a Python package.
+`.github/workflows/codeql.yml` analyzes Rust + Python on push to main, on PR, and weekly (Tuesdays 03:12 UTC). `build-mode: none` for both, sufficient for what CodeQL extracts from a Rust crate and a Python package.
 
 **Manual prerequisite:** the maintainer must disable the "default setup" for CodeQL in Settings → Code security → Code scanning *before* this workflow runs, otherwise GitHub rejects the custom workflow.
 
@@ -90,7 +101,9 @@ git config --global tag.gpgSign true
 
 Past tags do not need re-signing; future ones do.
 
-## Consequences
+## Reference-level explanation
+
+### Consequences
 
 **Positive:**
 
@@ -103,27 +116,11 @@ Past tags do not need re-signing; future ones do.
 - Per-publish approval gate moves from "human runs cargo publish locally" to "human approves a workflow deployment that runs cargo publish in a least-privilege ephemeral runner" — same human intent, stronger enforcement.
 - Downstream consumers can verify any matra release's provenance via `slsa-verifier`.
 
-**Negative:**
-
-- Dependabot churn: 13 action pins to keep current, weekly PRs.
-- One-time manual setup: GitHub environment, crates.io Trusted Publishing config, CodeQL default-setup disable, SSH signing config.
-- The `crates-io` environment requires a reviewer to be available at publish time. Solo maintainer = maintainer is the bottleneck. Acceptable; the discipline is the point.
-
 **Neutral:**
 
 - The `justfile`'s `release` recipe no longer prints `cargo publish ...`; it prints the tag-push command. The publish step lives in the workflow. The audit trail moves from "I ran cargo publish on my laptop" to "I approved deployment NNNN in the Actions UI", which is more auditable.
 
-## Re-open conditions
-
-This decision is reversible if any of:
-
-1. **Trusted Publishing becomes unavailable.** crates.io revokes the feature or the OIDC issuer fails. Fallback: traditional `CARGO_REGISTRY_TOKEN` in the `crates-io` environment's secrets (still gated by required reviewer).
-2. **SLSA L3 generator deprecates the reusable workflow.** slsa-github-generator could rev to v3 with breaking changes. Update the `@v2.1.0` reference.
-3. **The maintainer set grows beyond a single human.** The required-reviewer set in the `crates-io` environment must update to cover the new maintainers (and ideally enforce N-of-M approval).
-
-Any of these conditions, write a new ADR.
-
-## Validation
+### Validation
 
 This decision is correct if:
 
@@ -137,7 +134,45 @@ Falsified if:
 - Trusted Publishing fails to mint a token and the workflow falls back to a leakable secret in the workflow yaml (config regression).
 - Scorecard drops below 6.0/10 (hardening regression).
 
-## What is deferred
+## Drawbacks
+
+**Negative:**
+
+- Dependabot churn: 13 action pins to keep current, weekly PRs.
+- One-time manual setup: GitHub environment, crates.io Trusted Publishing config, CodeQL default-setup disable, SSH signing config.
+- The `crates-io` environment requires a reviewer to be available at publish time. Solo maintainer = maintainer is the bottleneck. Acceptable; the discipline is the point.
+
+## Rationale and alternatives
+
+None recorded when this was decided.
+
+## Prior art
+
+- [sbom-tool/gh-guard](https://github.com/sbom-tool/gh-guard): the Claude Code plugin whose patterns this ADR adopts.
+- [OpenSSF Scorecard](https://scorecard.dev/): the analysis tool and its 18-check rubric.
+- [crates.io Trusted Publishing announcement](https://blog.rust-lang.org/): the OIDC-based publishing model.
+- [SLSA spec](https://slsa.dev/): the supply-chain levels framework.
+- [slsa-github-generator](https://github.com/slsa-framework/slsa-github-generator): the reusable workflow generating provenance.
+- RFC-0001 (record-architectural-decisions): the ADR template.
+- An internal research corpus (not in this repository), which grounded the gh-guard discovery via the deep research pass on 2026-05-20.
+
+## Unresolved questions
+
+None recorded when this was decided.
+
+## Future possibilities
+
+### Re-open conditions
+
+This decision is reversible if any of:
+
+1. **Trusted Publishing becomes unavailable.** crates.io revokes the feature or the OIDC issuer fails. Fallback: traditional `CARGO_REGISTRY_TOKEN` in the `crates-io` environment's secrets (still gated by required reviewer).
+2. **SLSA L3 generator deprecates the reusable workflow.** slsa-github-generator could rev to v3 with breaking changes. Update the `@v2.1.0` reference.
+3. **The maintainer set grows beyond a single human.** The required-reviewer set in the `crates-io` environment must update to cover the new maintainers (and ideally enforce N-of-M approval).
+
+Any of these conditions, write a new ADR.
+
+### What is deferred
 
 | Item | Reason | Trigger to revisit |
 |---|---|---|
@@ -146,13 +181,3 @@ Falsified if:
 | `osv-scanner.toml` | No SBOM fixtures producing PURL false positives; cargo-deny's advisory check covers the same ground. | If Scorecard's `Vulnerabilities` check scores low after first analysis. |
 | Binary releases via `cargo-dist` | Matra is a library crate; no CLI binary ships from the Rust side. Python wheels are handled by maturin. | If matra ever ships a `matra` Rust CLI binary. |
 | CII / OpenSSF Best Practices badge | Cosmetic for pre-1.0; nice-to-have post-1.0. | Approaching v1.0 release. |
-
-## References
-
-- [sbom-tool/gh-guard](https://github.com/sbom-tool/gh-guard) — the Claude Code plugin whose patterns this ADR adopts.
-- [OpenSSF Scorecard](https://scorecard.dev/) — the analysis tool and its 18-check rubric.
-- [crates.io Trusted Publishing announcement](https://blog.rust-lang.org/) — the OIDC-based publishing model.
-- [SLSA spec](https://slsa.dev/) — the supply-chain levels framework.
-- [slsa-github-generator](https://github.com/slsa-framework/slsa-github-generator) — the reusable workflow generating provenance.
-- ADR-0001 (record-architectural-decisions) — the ADR template.
-- An internal research corpus (not in this repository), which grounded the gh-guard discovery via the deep research pass on 2026-05-20.
