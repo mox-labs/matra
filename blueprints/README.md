@@ -6,8 +6,8 @@ introduced it.
 
 | Kind | Where | Cited as | What it records |
 |---|---|---|---|
-| RFC | `rfcs/NNNN-name.md` | `RFC-NNNN` | A design-level change: architecture, systems, the framework, the toolchain. What and why. |
-| EP | `eps/NNNN-name.md` | `EP-NNNN` | An enhancement plan: how an accepted RFC gets from decision to shipping. Iterations, milestones, test plan, ship criteria, status. |
+| RFC | `rfcs/NNNN-name.md` | `RFC-NNNN` | A change to matra itself: its architecture, its affordances (what a caller can do), or its tuning. What and why. |
+| EP | `eps/NNNN-name.md` | `EP-NNNN` | An enhancement plan: how work gets from decision to shipping. Iterations, milestones, test plan, ship criteria, status. Implements an accepted RFC, or stands alone. |
 
 Records cited as `ADR-NNNN` before 2026-09-24 are the RFC of the same
 number: `ADR-0008` is [RFC-0008](rfcs/0008-structural-primitives-are-fields.md).
@@ -32,6 +32,13 @@ pull request.** Copy [`eps/0000-template.md`](eps/0000-template.md) to the
 next free EP number and fill `Implements`. Work that one
 pull request delivers needs no EP; the RFC and the pull request are the
 record.
+
+**Work that does not change matra itself gets an EP and no RFC.** The
+docsite, the harness, CI and release tooling change how matra is built,
+checked, documented or delivered, not what it is or what a caller can do
+with it. Their plan is a standalone EP with `Implements: none` and a Design
+section holding the choices a later contributor needs. When in doubt, ask
+whether a caller of matra would notice the change: if so, it is an RFC.
 
 **An RFC is not rewritten after acceptance.** Two edits are allowed: the
 status line, and a dated note directly under the header saying what changed
@@ -92,7 +99,6 @@ tables. The docsite floor's em-dash gate covers this directory too.
 | [RFC-0015](rfcs/0015-provisioning-failures.md) | Provisioning is matra's own, and a failure to fetch is not an invalid model | implemented | none |
 | RFC-0016 | Release automation | open, reserved | none |
 | RFC-0017 | Harness layers | open, reserved | none |
-| RFC-0018 | The docsite on SvelteKit | open, reserved | none |
 | [RFC-0019](rfcs/0019-rfc-and-ep-process.md) | The RFC and EP process | accepted | none |
 | [RFC-0000](rfcs/0000-template.md) | The template | not a record | none |
 
@@ -111,4 +117,5 @@ in git.
 | [EP-0009](eps/0009-embeddings-adapter.md) | Embeddings as a specialist adapter | shipped in 0.2.0 | RFC-0010 |
 | [EP-0010](eps/0010-foundations.md) | Out of the box | shipped in 0.2.0 | RFC-0011 |
 | [EP-0011](eps/0011-agent-surface.md) | The agent surface | shipped in 0.2.0 | RFC-0012 |
+| [EP-0012](eps/0012-docsite.md) | The docsite on SvelteKit, with figures and examples | planned | none |
 | [EP-0000](eps/0000-template.md) | The template | not a record | none |
