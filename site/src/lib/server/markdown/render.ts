@@ -7,6 +7,10 @@
  * highlighter is shipped to it.
  *
  *   remark-parse, remark-gfm      Markdown and GitHub's extensions to it
+ *   figureTags                    a registered figure tag on a line of its
+ *                                 own becomes an element, before raw HTML is
+ *                                 parsed (an HTML parser would read a
+ *                                 self-closing custom tag as left open)
  *   remark-rehype, rehype-raw     to HTML, parsing any raw HTML in the page
  *   checkTags                     every element Markdown did not produce is
  *                                 in the tag registry, or the build fails
@@ -19,6 +23,8 @@
  *   wrapDiagrams                  so do diagrams, at a size their labels
  *                                 stay legible at, with a visible hint
  *   liftTitle                     the `# Title`, set apart by the layout
+ *   toSegments                    the body as runs of HTML, with each figure
+ *                                 between them, validated against its data
  */
 import { posix } from 'node:path';
 import { unified, type Plugin } from 'unified';
@@ -28,13 +34,13 @@ import remarkRehype from 'remark-rehype';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
-import rehypeStringify from 'rehype-stringify';
 import { createHighlighter } from 'shiki';
 import { SKIP, visit } from 'unist-util-visit';
 import { toString } from 'hast-util-to-string';
 import { toHtml } from 'hast-util-to-html';
-import type { Element, ElementContent, Root } from 'hast';
-import type { TocEntry } from '$lib/types';
+import type { Element, ElementContent, Root, RootContent } from 'hast';
+import type { Root as MdRoot } from 'mdast';
+import type { FigureFile, ParseFigureFile, Segment, TocEntry } from '$lib/types';
 import { MARKDOWN_ELEMENTS, REGISTRY } from './registry';
 
 /**
@@ -60,8 +66,8 @@ export interface Rendered {
 	/** The id the title's heading carried, kept so `page.html#id` links still land. */
 	titleId: string;
 	description: string;
-	/** The page body, without its title. */
-	html: string;
+	/** The page body, without its title: HTML runs, and figures between them. */
+	segments: Segment[];
 	toc: TocEntry[];
 }
 
@@ -72,6 +78,8 @@ export interface RenderContext {
 	routes: ReadonlyMap<string, string>;
 	/** The configured base path, `''` locally and `/matra` on GitHub Pages. */
 	base: string;
+	/** Every figure data file, keyed `<input>/<figure>`. */
+	figures: ReadonlyMap<string, FigureFile>;
 }
 
 export async function render(markdown: string, ctx: RenderContext): Promise<Rendered> {
@@ -82,6 +90,7 @@ export async function render(markdown: string, ctx: RenderContext): Promise<Rend
 	const processor = unified()
 		.use(remarkParse)
 		.use(remarkGfm)
+		.use(figureTags)
 		.use(remarkRehype, { allowDangerousHtml: true })
 		.use(rehypeRaw)
 		.use(stripComments)
@@ -97,18 +106,119 @@ export async function render(markdown: string, ctx: RenderContext): Promise<Rend
 		})
 		.use(wrapTables)
 		.use(wrapDiagrams)
-		.use(liftTitle, { file: ctx.file, heading })
-		.use(rehypeStringify);
+		.use(liftTitle, { file: ctx.file, heading });
 
-	const html = String(await processor.process(markdown));
+	const tree = (await processor.run(processor.parse(markdown))) as Root;
 	return {
 		title: meta.title,
 		titleHtml: heading.html,
 		titleId: heading.id,
 		description: meta.description,
-		html,
+		segments: toSegments(tree, ctx),
 		toc
 	};
+}
+
+/**
+ * A figure tag on a line of its own: `<figure-name attr="value" ... />`.
+ * Only a whole Markdown block matches; a figure tag anywhere else is left as
+ * raw HTML, and checkTags then fails the build on it with the reason.
+ */
+const FIGURE_TAG = /^<(figure-[a-z][a-z-]*)((?:\s+[a-z][a-z-]*="[^"<>]*")*)\s*\/>$/;
+const FIGURE_ATTR = /([a-z][a-z-]*)="([^"<>]*)"/g;
+
+const figureTags: Plugin<[], MdRoot> = () => (tree) => {
+	tree.children = tree.children.map((node) => {
+		if (node.type !== 'html') return node;
+		const m = FIGURE_TAG.exec(node.value.trim());
+		if (!m || REGISTRY[m[1]]?.kind !== 'figure') return node;
+		const properties: Record<string, string> = { dataMatraFigure: 'true' };
+		for (const [, name, value] of m[2].matchAll(FIGURE_ATTR)) properties[name] = value;
+		// An mdast node remark-rehype does not know becomes the element its
+		// data names, with no children.
+		return {
+			type: 'figureTag',
+			data: { hName: m[1], hProperties: properties },
+			children: [],
+			position: node.position
+		} as unknown as typeof node;
+	});
+};
+
+/**
+ * The body as segments: each registered figure element at the top level
+ * becomes a figure segment carrying its data, and the nodes between figures
+ * are serialised to HTML runs. Every figure's attributes and data are checked
+ * here; anything wrong fails the build with the page and line.
+ */
+function toSegments(tree: Root, ctx: RenderContext): Segment[] {
+	const segments: Segment[] = [];
+	const errors: string[] = [];
+	let run: RootContent[] = [];
+	let count = 0;
+	const flush = () => {
+		if (run.length === 0) return;
+		const html = toHtml({ type: 'root', children: run });
+		if (html.trim() !== '') segments.push({ kind: 'html', html });
+		run = [];
+	};
+
+	for (const node of tree.children) {
+		const entry = node.type === 'element' ? REGISTRY[node.tagName] : undefined;
+		if (node.type !== 'element' || entry?.kind !== 'figure') {
+			run.push(node);
+			continue;
+		}
+		const at = `${ctx.file}${node.position ? `:${node.position.start.line}` : ''}: <${node.tagName}>`;
+		const props = node.properties ?? {};
+		const attrs: Record<string, string> = {};
+		for (const [key, value] of Object.entries(props)) {
+			if (key === 'dataMatraFigure') continue;
+			attrs[key] = String(value);
+		}
+		const unknown = Object.keys(attrs).filter((k) => !(k in entry.attributes));
+		const missing = Object.entries(entry.attributes)
+			.filter(([k, need]) => need === 'required' && !(k in attrs))
+			.map(([k]) => k);
+		if (unknown.length || missing.length) {
+			errors.push(
+				`  ${at}: ${unknown.length ? `unknown attribute ${unknown.join(', ')}` : ''}` +
+					`${unknown.length && missing.length ? '; ' : ''}` +
+					`${missing.length ? `missing ${missing.join(', ')}` : ''}`
+			);
+			continue;
+		}
+		const key = `${attrs.input}/${entry.figure}`;
+		const file = ctx.figures.get(key) as ParseFigureFile | undefined;
+		if (!file) {
+			const known = [...ctx.figures.keys()].filter((k) => k.endsWith(`/${entry.figure}`));
+			errors.push(
+				`  ${at}: no data at site/src/lib/figures/${key}.json ` +
+					`(add site/inputs/${attrs.input}.txt and run cargo run --example docsite_figures; ` +
+					`known: ${known.join(', ') || 'none'})`
+			);
+			continue;
+		}
+		const total = file.data.sentences.length;
+		const sentence = attrs.sentence === undefined ? 1 : Number(attrs.sentence);
+		if (!Number.isInteger(sentence) || sentence < 1 || sentence > total) {
+			errors.push(`  ${at}: sentence="${attrs.sentence}" is not between 1 and ${total}`);
+			continue;
+		}
+		flush();
+		count += 1;
+		segments.push({
+			kind: 'figure',
+			tag: 'figure-parse',
+			id: `fig-${ctx.file.replace(/\.md$/, '').replace(/[^a-z0-9]+/gi, '-')}-${count}`,
+			sentence,
+			dataUrl: `${ctx.base}/figures/${key}.json`,
+			file
+		});
+	}
+	flush();
+	if (errors.length > 0) throw new Error(`figures that cannot render:\n${errors.join('\n')}`);
+	return segments;
 }
 
 /** HTML comments are notes to the author, not content. */
@@ -128,6 +238,14 @@ const checkTags: Plugin<[RenderContext], Root> = (ctx) => (tree) => {
 		const entry = REGISTRY[node.tagName];
 		if (entry?.kind === 'passthrough') return SKIP;
 		const line = node.position?.start.line;
+		if (entry?.kind === 'figure') {
+			if (node.properties?.dataMatraFigure === 'true') return SKIP;
+			unknown.push(
+				`  ${ctx.file}${line ? `:${line}` : ''}: <${node.tagName}> must be one self-closing ` +
+					'tag on a line of its own, with a blank line before and after'
+			);
+			return SKIP;
+		}
 		unknown.push(`  ${ctx.file}${line ? `:${line}` : ''}: <${node.tagName}>`);
 	});
 	if (unknown.length > 0) {

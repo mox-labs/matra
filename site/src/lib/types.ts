@@ -20,6 +20,54 @@ export interface TocEntry {
 	text: string;
 }
 
+/** One token of a parse, under matra's own field names. */
+export interface ParseToken {
+	id: number;
+	text: string;
+	lemma: string;
+	pos: string;
+	head: number;
+	dep: string;
+}
+
+export interface ParseSentence {
+	paragraph: number;
+	text: string;
+	tokens: ParseToken[];
+}
+
+/**
+ * A figure data file as examples/docsite_figures.rs writes it: what the
+ * figure shows, the input it came from, and what produced it.
+ */
+export interface FigureFile<T = unknown> {
+	figure: string;
+	input: string;
+	source: Record<string, string>;
+	generator: { matra: string; udpipe_model: { name: string; sha256: string } };
+	data: T;
+}
+
+export type ParseFigureFile = FigureFile<{ sentences: ParseSentence[] }>;
+
+/**
+ * A page body is a run of segments: rendered HTML, and between runs the
+ * figures the page's Markdown names, each with the data it renders.
+ */
+export type Segment =
+	| { kind: 'html'; html: string }
+	| {
+			kind: 'figure';
+			tag: 'figure-parse';
+			/** Unique on its page. */
+			id: string;
+			/** The sentence shown first, 1-based. */
+			sentence: number;
+			/** Where the data file is published, beside the page. */
+			dataUrl: string;
+			file: ParseFigureFile;
+	  };
+
 export interface PageLink {
 	title: string;
 	route: string;
@@ -36,8 +84,8 @@ export interface Doc {
 	description: string;
 	/** The SUMMARY.md part the page belongs to, shown above its title. */
 	part: string | null;
-	/** Rendered HTML of the page body, produced at build time. */
-	html: string;
+	/** The page body, rendered at build time: HTML runs and figures. */
+	segments: Segment[];
 	toc: TocEntry[];
 	file: string;
 	route: string;
