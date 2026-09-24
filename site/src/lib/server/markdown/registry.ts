@@ -32,11 +32,13 @@
  * Adding a new kind of figure means a new entry here and its component;
  * adding a new instance means a line in a page and an input in site/inputs/.
  */
+import type { FigureKind } from '$lib/types';
+
 export type TagEntry =
 	| { kind: 'passthrough'; reason: string }
 	| {
 			kind: 'figure';
-			figure: 'parse';
+			figure: FigureKind;
 			reason: string;
 			/** Attribute name to whether the tag must carry it. */
 			attributes: Readonly<Record<string, 'required' | 'optional'>>;
@@ -57,6 +59,32 @@ export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 			'then an arc diagram of the same tokens. Answers "what does each word ' +
 			'depend on, and by which relation?" faster than the table alone.',
 		attributes: { input: 'required', sentence: 'optional' }
+	},
+	'figure-primitives': {
+		kind: 'figure',
+		figure: 'primitives',
+		reason:
+			'The structural primitive fields of every sentence of one input, marked on the ' +
+			'words they point at. Answers "which words did matra read each primitive off?" ' +
+			'faster than cross-referencing token ids in a table.',
+		attributes: { input: 'required' }
+	},
+	'figure-metrics': {
+		kind: 'figure',
+		figure: 'metrics',
+		reason:
+			'The paragraph measures of one document as small multiples, one panel a measure, ' +
+			'with the document value where matra computes one. Answers "where in the document ' +
+			'do the measures move, and together?" faster than a column of numbers.',
+		attributes: { input: 'required' }
+	},
+	'figure-keyphrases': {
+		kind: 'figure',
+		figure: 'keyphrases',
+		reason:
+			'RAKE and YAKE ranks of the same phrases as a slopegraph. Answers "do the two ' +
+			'methods agree on what ranks high?" faster than two ranked lists side by side.',
+		attributes: { input: 'required' }
 	}
 };
 

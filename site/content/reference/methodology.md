@@ -113,6 +113,10 @@ compression_ratio = compressed_bytes / original_bytes
 
 **Limitations.** This is a redundancy proxy over bytes, not a measure of meaning, quality, or novelty. Precise technical prose that reuses terminology compresses much like repetitive filler. The number is a property of one encoder at two specific parameter settings: a different compressor, or a different version of this one, gives different values.
 
+The three paragraph measures, computed for every paragraph of one longer text, The Federalist No. 10:
+
+<figure-metrics input="federalist-10" />
+
 ## Document metrics
 
 The two stored document metrics and the derived document methods are computed over the sentences attached to the document's paragraphs, which excludes blockquote paragraphs. There is exactly one sentence set, and it is derivable from the tree in one way, so the numbers cannot disagree with the structure they describe.

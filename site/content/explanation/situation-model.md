@@ -46,3 +46,9 @@ Two properties make it usable that far downstream. Every value is serde-serializ
 **Verification and load share one read.** Bytes are hashed in memory and the model is loaded from those same bytes. Nothing re-reads the disk between the two.
 
 Those pinned model fetches are the only network access anywhere in the library.
+
+## The split, on five sentences
+
+The primitive fields from the table above, as matra fills them for five short sentences written to carry one each. Every mark is a construction in the tree; whether it matters for a text stays with the reader.
+
+<figure-primitives input="primitives" />

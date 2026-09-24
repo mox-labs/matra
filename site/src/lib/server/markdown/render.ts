@@ -40,7 +40,15 @@ import { toString } from 'hast-util-to-string';
 import { toHtml } from 'hast-util-to-html';
 import type { Element, ElementContent, Root, RootContent } from 'hast';
 import type { Root as MdRoot } from 'mdast';
-import type { FigureFile, ParseFigureFile, Segment, TocEntry } from '$lib/types';
+import type {
+	FigureFile,
+	KeyphrasesFigureFile,
+	MetricsFigureFile,
+	ParseFigureFile,
+	PrimitivesFigureFile,
+	Segment,
+	TocEntry
+} from '$lib/types';
 import { MARKDOWN_ELEMENTS, REGISTRY } from './registry';
 
 /**
@@ -189,7 +197,7 @@ function toSegments(tree: Root, ctx: RenderContext): Segment[] {
 			continue;
 		}
 		const key = `${attrs.input}/${entry.figure}`;
-		const file = ctx.figures.get(key) as ParseFigureFile | undefined;
+		const file = ctx.figures.get(key);
 		if (!file) {
 			const known = [...ctx.figures.keys()].filter((k) => k.endsWith(`/${entry.figure}`));
 			errors.push(
@@ -199,22 +207,37 @@ function toSegments(tree: Root, ctx: RenderContext): Segment[] {
 			);
 			continue;
 		}
-		const total = file.data.sentences.length;
-		const sentence = attrs.sentence === undefined ? 1 : Number(attrs.sentence);
-		if (!Number.isInteger(sentence) || sentence < 1 || sentence > total) {
-			errors.push(`  ${at}: sentence="${attrs.sentence}" is not between 1 and ${total}`);
-			continue;
+		const base = {
+			kind: 'figure' as const,
+			id: `fig-${ctx.file.replace(/\.md$/, '').replace(/[^a-z0-9]+/gi, '-')}-${count + 1}`,
+			dataUrl: `${ctx.base}/figures/${key}.json`
+		};
+		let segment: Segment;
+		switch (entry.figure) {
+			case 'parse': {
+				const parse = file as ParseFigureFile;
+				const total = parse.data.sentences.length;
+				const sentence = attrs.sentence === undefined ? 1 : Number(attrs.sentence);
+				if (!Number.isInteger(sentence) || sentence < 1 || sentence > total) {
+					errors.push(`  ${at}: sentence="${attrs.sentence}" is not between 1 and ${total}`);
+					continue;
+				}
+				segment = { ...base, figure: 'parse', sentence, file: parse };
+				break;
+			}
+			case 'primitives':
+				segment = { ...base, figure: 'primitives', file: file as PrimitivesFigureFile };
+				break;
+			case 'metrics':
+				segment = { ...base, figure: 'metrics', file: file as MetricsFigureFile };
+				break;
+			case 'keyphrases':
+				segment = { ...base, figure: 'keyphrases', file: file as KeyphrasesFigureFile };
+				break;
 		}
 		flush();
 		count += 1;
-		segments.push({
-			kind: 'figure',
-			tag: 'figure-parse',
-			id: `fig-${ctx.file.replace(/\.md$/, '').replace(/[^a-z0-9]+/gi, '-')}-${count}`,
-			sentence,
-			dataUrl: `${ctx.base}/figures/${key}.json`,
-			file
-		});
+		segments.push(segment);
 	}
 	flush();
 	if (errors.length > 0) throw new Error(`figures that cannot render:\n${errors.join('\n')}`);
