@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="light dark" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+		<script>
+			// Set the theme before the first paint, so a reader who chose dark
+			// never sees a light flash. With no stored choice the page follows
+			// prefers-color-scheme; with scripts off, the CSS does the same.
+			// `data-js` marks that scripts run, so controls that need them
+			// (search, the menu, the theme toggle) are hidden when they do not.
+			(function () {
+				document.documentElement.dataset.js = '';
+				try {
+					var stored = localStorage.getItem('matra-theme');
+					var dark =
+						stored === 'dark' ||
+						(stored !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+					document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+				} catch (e) {}
+			})();
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

@@ -1,0 +1,394 @@
+/*
+ * matra docsite: tokens and page typography.
+ *
+ * Typography first. The rules below carry the intent of the mdBook-era
+ * stylesheet forward rather than its pixels: a measure that holds a line
+ * near 80 characters, vertical rhythm that lets each paragraph read as its
+ * own thought, headings bound to the text they introduce, and diagrams and
+ * tables allowed their width without pushing the page sideways.
+ *
+ * Colour is declared once per token with light-dark(), so the light and dark
+ * palettes cannot drift apart. `color-scheme` picks the side: the system's
+ * preference by default, the reader's choice when they make one.
+ *
+ * No motion. Nothing on the site transitions or animates, and the reduced
+ * motion rule at the end holds that for anything added later.
+ */
+
+:root {
+	color-scheme: light dark;
+
+	--font-sans:
+		ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+		sans-serif;
+	--font-mono:
+		ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+	/* Warm paper and ink, one terracotta accent. */
+	--bg: light-dark(#fbfaf7, #131316);
+	--bg-raised: light-dark(#ffffff, #1a1a1e);
+	--bg-subtle: light-dark(#f3f1ec, #1c1c21);
+	--code-bg: light-dark(#f5f3ee, #18181c);
+	--text: light-dark(#1f1d1a, #e7e4de);
+	--text-muted: light-dark(#5b564e, #a6a29a);
+	--border: light-dark(#e3dfd6, #2d2d34);
+	--border-strong: light-dark(#cfc9bd, #3d3d46);
+	--accent: light-dark(#b3401e, #f0915f);
+	--accent-soft: light-dark(#f6e6dd, #36231a);
+
+	/* The measure: about 80 characters of body text, and exactly the width
+	   the hand-authored diagrams were drawn at (720px). */
+	--measure: 45rem;
+	--gutter: 1.25rem;
+	--header-h: 3.5rem;
+	--sidebar-w: 16.5rem;
+	--toc-w: 14rem;
+
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 1rem;
+	--space-4: 1.5rem;
+	--space-5: 2.5rem;
+	--space-6: 4rem;
+
+	--radius: 8px;
+}
+
+:root[data-theme='light'] {
+	color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-sans);
+	/* 17px body text, the size the mdBook site settled on. */
+	font-size: 1.0625rem;
+	line-height: 1.65;
+	font-kerning: normal;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	overflow-wrap: break-word;
+}
+
+::selection {
+	background: var(--accent-soft);
+}
+
+a {
+	color: var(--accent);
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+	border-radius: 2px;
+}
+
+code,
+kbd,
+pre,
+samp {
+	font-family: var(--font-mono);
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Page content                                                              */
+/* ------------------------------------------------------------------------ */
+
+.prose {
+	min-width: 0;
+}
+
+.prose p {
+	margin: 0 0 1.15em;
+}
+
+/* The opening paragraph states what the page is; let it lead. On a phone the
+   body size already fills the line, so it stays as it is. */
+@media (min-width: 40rem) {
+	.prose > p:first-child,
+	.prose .body > p:first-child {
+		font-size: 1.1em;
+	}
+}
+
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+	line-height: 1.3;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+	/* Clear the sticky header when a heading is the target of a link. */
+	scroll-margin-top: calc(var(--header-h) + var(--space-3));
+}
+
+/* More space above than below, so a heading binds to the text it introduces. */
+.prose h2 {
+	font-size: 1.5rem;
+	margin: 2.4em 0 0.7em;
+}
+
+.prose h3 {
+	font-size: 1.2rem;
+	margin: 1.9em 0 0.5em;
+}
+
+.prose h4,
+.prose h5,
+.prose h6 {
+	font-size: 1.05rem;
+	margin: 1.6em 0 0.4em;
+}
+
+.prose .heading-anchor {
+	margin-inline-start: 0.4em;
+	color: var(--text-muted);
+	text-decoration: none;
+	font-weight: 400;
+	opacity: 0;
+}
+
+.prose :is(h2, h3, h4, h5, h6):hover .heading-anchor,
+.prose .heading-anchor:focus-visible {
+	opacity: 1;
+}
+
+.prose a {
+	text-decoration-line: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.2em;
+}
+
+.prose a:hover {
+	text-decoration-thickness: 2px;
+}
+
+.prose ul,
+.prose ol {
+	margin: 0 0 1.15em;
+	padding-inline-start: 1.4em;
+}
+
+.prose li {
+	line-height: 1.6;
+	margin-bottom: 0.35em;
+}
+
+.prose li > p {
+	margin-bottom: 0.5em;
+}
+
+.prose li::marker {
+	color: var(--text-muted);
+}
+
+.prose strong {
+	font-weight: 650;
+}
+
+.prose hr {
+	border: 0;
+	border-top: 1px solid var(--border);
+	margin: var(--space-5) 0;
+}
+
+.prose img {
+	max-width: 100%;
+	height: auto;
+}
+
+/* Inline code. Long identifiers may break inside running text so a phone
+   never scrolls sideways; inside tables they keep their shape and the table
+   scrolls instead. */
+.prose :not(pre) > code {
+	font-size: 0.86em;
+	padding: 0.1em 0.35em;
+	border-radius: 4px;
+	background: var(--code-bg);
+	border: 1px solid var(--border);
+}
+
+.prose :is(p, li, blockquote) > code {
+	overflow-wrap: anywhere;
+}
+
+/* Code blocks sit inside the prose rhythm rather than interrupting it. */
+.prose pre {
+	position: relative;
+	margin: 1.3em 0;
+	padding: 0.9rem 1rem;
+	overflow-x: auto;
+	font-size: 0.84rem;
+	line-height: 1.55;
+	background: var(--code-bg) !important;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	tab-size: 4;
+}
+
+.prose pre code {
+	font-size: inherit;
+}
+
+/* Shiki emits both palettes as variables; the colour scheme picks one. */
+.prose .shiki,
+.prose .shiki span {
+	color: light-dark(var(--shiki-light), var(--shiki-dark));
+}
+
+.prose pre .copy {
+	position: absolute;
+	top: 0.4rem;
+	right: 0.4rem;
+	padding: 0.15rem 0.5rem;
+	font: 500 0.75rem var(--font-sans);
+	color: var(--text-muted);
+	background: var(--bg-raised);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	cursor: pointer;
+	opacity: 0;
+}
+
+.prose pre:hover .copy,
+.prose pre .copy:focus-visible,
+.prose pre .copy[data-copied] {
+	opacity: 1;
+}
+
+@media (hover: none) {
+	.prose pre .copy {
+		opacity: 1;
+	}
+}
+
+/* Tables carry much of the reference material. They scroll on their own when
+   wider than the column; only the table moves, the prose stays put. */
+.prose .table-scroll {
+	margin: 1.3em 0;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.prose table {
+	border-collapse: collapse;
+	font-size: 0.94em;
+	line-height: 1.5;
+}
+
+.prose th,
+.prose td {
+	padding: 0.45em 0.75em;
+	text-align: start;
+	vertical-align: top;
+	border-bottom: 1px solid var(--border);
+}
+
+.prose th {
+	font-weight: 650;
+	border-bottom: 2px solid var(--border-strong);
+	white-space: nowrap;
+}
+
+.prose tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+/* Blockquotes carry statements, not asides. */
+.prose blockquote {
+	margin: 1.5em 0;
+	padding: 0.6em 1.2em;
+	border-inline-start: 3px solid var(--accent);
+	background: var(--bg-subtle);
+	border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.prose blockquote > :last-child {
+	margin-bottom: 0;
+}
+
+/* The hand-authored diagrams. Each carries its own layout; this keeps it
+   inside the column on a narrow screen. Their label halos read --bg. */
+.prose svg {
+	max-width: 100%;
+	height: auto;
+}
+
+/* Figures and their captions, for when a diagram is given a caption. */
+.prose figure {
+	margin: 2em auto;
+	max-width: 100%;
+}
+
+.prose figcaption {
+	max-width: 40rem;
+	margin: 0.9em auto 0;
+	text-align: center;
+	font-size: 0.88em;
+	line-height: 1.5;
+	color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Motion                                                                     */
+/* ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+/* ------------------------------------------------------------------------ */
+/* Print                                                                      */
+/* ------------------------------------------------------------------------ */
+
+@media print {
+	:root {
+		color-scheme: light;
+	}
+
+	[data-print='hide'] {
+		display: none !important;
+	}
+
+	.prose pre {
+		white-space: pre-wrap;
+	}
+}
