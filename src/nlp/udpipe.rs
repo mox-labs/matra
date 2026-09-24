@@ -428,7 +428,7 @@ fn download_agent() -> ureq::Agent {
 /// `Error::Io` and wraps everything else, `Timeout` included, in
 /// `io::Error::other`. Reading `kind()` straight off it therefore gives
 /// `Other`, so a fetch that ran past [`FETCH_TIMEOUT`] mid-transfer
-/// reported `Other` where `book/src/reference/errors.md` and RFC-0015
+/// reported `Other` where `site/content/reference/errors.md` and RFC-0015
 /// both promise `TimedOut`. `From<io::Error> for ureq::Error` unwraps
 /// the wrapped error again, which recovers the kind and also gives a
 /// mid-stream certificate rejection the sentence [`download_message`]
@@ -1281,7 +1281,7 @@ mod tests {
     }
 
     /// Regression (review of #77): a timeout while reading the body
-    /// reports `TimedOut`, which is what `book/src/reference/errors.md`
+    /// reports `TimedOut`, which is what `site/content/reference/errors.md`
     /// and RFC-0015's decision table both promise. `ureq`'s body reader
     /// builds its `io::Error` with `Error::into_io`, which wraps
     /// everything that is not already an `io::Error` in

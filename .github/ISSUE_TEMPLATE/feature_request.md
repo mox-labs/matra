@@ -12,7 +12,7 @@ labels: ["type:feature", "status:triage"]
 ## Why matra should have it
 
 <!-- Does this belong in matra itself, or in downstream
-     code? See book/src/architecture/design.md for the boundary. -->
+     code? See site/content/architecture/design.md for the boundary. -->
 
 ## Proposed shape
 

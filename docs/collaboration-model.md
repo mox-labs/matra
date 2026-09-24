@@ -42,7 +42,7 @@ Where a check exists, drift is mechanically detectable. Where it does not, the a
 
 matra's docs live in two states simultaneously.
 
-**Current** is what mirrors the released code. Whatever ships in the latest version of the crate, the wheel, and the future WASM crust. The `book/src/` site renders this state for visitors arriving from search engines or `pip install`.
+**Current** is what mirrors the released code. Whatever ships in the latest version of the crate, the wheel, and the future WASM crust. The `site/content/` site renders this state for visitors arriving from search engines or `pip install`.
 
 **Next** is what the project is building. The alpha branch carries it. Pre-publication, the gap is shrinking; post-publication, the gap is the roadmap.
 
@@ -87,7 +87,7 @@ The project is also part of an ongoing exploration into what human and AI collab
 
 - Working rules for AI agents during a session: [CLAUDE.md](../CLAUDE.md)
 - PR mechanics and contribution flow for humans: [CONTRIBUTING.md](../CONTRIBUTING.md)
-- Architecture explanation: [book/src/architecture/](../book/src/architecture/)
+- Architecture explanation: [site/content/architecture/](../site/content/architecture/)
 - Decision history: [blueprints/](../blueprints/README.md)
 - Discourse archive (working notes): kept locally, not tracked. The durable record of a decision is its RFC, its PR discussion, and its CHANGELOG Highlight, all of which are in-repo.
 - ACES and antifragility: documented in `CLAUDE.md` and `.claude/skills/aces/SKILL.md` (working reference; not in the rendered book)

@@ -18,7 +18,7 @@
 # Docsite structure — SUMMARY.md is the navigation tree; book.toml owns
 # the build config; mermaid runtime is the bundled asset. Drift here is
 # silent and high-impact.
-/book/src/SUMMARY.md       @yzavyas
+/site/content/SUMMARY.md       @yzavyas
 /book/book.toml            @yzavyas
 /book/mermaid-init.js      @yzavyas
 /book/mermaid.min.js       @yzavyas

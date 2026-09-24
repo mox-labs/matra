@@ -1049,7 +1049,7 @@ fn download_agent() -> ureq::Agent {
 /// `Error::Io` and wraps everything else, `Timeout` included, in
 /// `io::Error::other`. Reading `kind()` straight off it therefore gives
 /// `Other`, so a fetch that ran past [`FETCH_TIMEOUT`] mid-transfer
-/// reported `Other` where `book/src/reference/errors.md` and RFC-0015
+/// reported `Other` where `site/content/reference/errors.md` and RFC-0015
 /// both promise `TimedOut`. `From<io::Error> for ureq::Error` unwraps
 /// the wrapped error again, which recovers the kind and also gives a
 /// mid-stream certificate rejection the sentence [`download_message`]
@@ -2051,7 +2051,7 @@ mod provisioning {
     /// review of #77): the failure names the operation and the path.
     /// `io error: No space left on device (os error 28)` was the whole
     /// message an install produced, with the directory one line away in
-    /// a variable, while `book/src/reference/errors.md` said both
+    /// a variable, while `site/content/reference/errors.md` said both
     /// adapters carry the operation and the path.
     #[test]
     fn a_model_directory_that_cannot_be_created_fails_before_the_download() {
@@ -2194,7 +2194,7 @@ mod provisioning {
     }
 
     /// Regression (review of #77): a timeout while reading the body
-    /// reports `TimedOut`, which is what `book/src/reference/errors.md`
+    /// reports `TimedOut`, which is what `site/content/reference/errors.md`
     /// and RFC-0015's decision table both promise. `ureq`'s body reader
     /// builds its `io::Error` with `Error::into_io`, which wraps
     /// everything that is not already an `io::Error` in

@@ -101,9 +101,9 @@ from matra import Model2Vec, semantic_clusters
 
 model = Model2Vec.potion_base_8m()
 docs = [
-    Path("book/src/guides/cli.md"),
-    Path("book/src/guides/rust.md"),
-    Path("book/src/roadmap.md"),
+    Path("site/content/guides/cli.md"),
+    Path("site/content/guides/rust.md"),
+    Path("site/content/roadmap.md"),
 ]
 vectors = model.embed([p.read_text() for p in docs])
 

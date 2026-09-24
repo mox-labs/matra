@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generate book/src/llms.txt from book/src/SUMMARY.md.
+# Generate site/content/llms.txt from site/content/SUMMARY.md.
 #
 # llms.txt (https://llmstxt.org/) is a single file at the root of a
 # documentation site that gives an agent the map a human gets from the
@@ -19,16 +19,17 @@
 # Only top-level SUMMARY.md entries are listed. A nested entry is reachable
 # from its parent's page.
 #
-# The output goes under book/src/ because mdbook copies every non-chapter
-# file there into the built site, which puts it at the site root with no step
-# in the deploy workflow to keep in sync with this script.
+# The output goes under site/content/ beside the pages it maps. Both builds
+# serve it at the site root with no step in the deploy workflow to keep in
+# sync with this script: mdbook copies every non-chapter file there into its
+# output, and the SvelteKit site prerenders site/src/routes/llms.txt from it.
 #
 # The file is committed. Gate 6 of scripts/check-docsite-floor.sh regenerates
 # it and diffs, so a page added, retitled, or reworded without a regeneration
 # fails the floor.
 #
 # Usage:
-#   scripts/gen-llms-txt.sh              write book/src/llms.txt
+#   scripts/gen-llms-txt.sh              write site/content/llms.txt
 #   scripts/gen-llms-txt.sh <path>       write somewhere else (the gate does this)
 
 set -euo pipefail
@@ -37,8 +38,8 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
 BASE_URL="https://mox-labs.github.io/matra"
-SUMMARY="book/src/SUMMARY.md"
-OUT="${1:-book/src/llms.txt}"
+SUMMARY="site/content/SUMMARY.md"
+OUT="${1:-site/content/llms.txt}"
 
 # --- the crate identity -----------------------------------------------------
 # The first `name =` and `description =` under [package]; the range stops at
@@ -142,7 +143,7 @@ trap 'rm -f "$tmp"' EXIT
             continue
         fi
 
-        if [ ! -f "book/src/$path" ]; then
+        if [ ! -f "site/content/$path" ]; then
             echo "gen-llms-txt: SUMMARY.md points at a missing page: $path" >&2
             exit 1
         fi
@@ -152,7 +153,7 @@ trap 'rm -f "$tmp"' EXIT
             printf '\n## %s\n\n' "$section"
         fi
 
-        if ! summary=$(first_sentence "book/src/$path"); then
+        if ! summary=$(first_sentence "site/content/$path"); then
             echo "gen-llms-txt: no prose paragraph found in $path" >&2
             exit 1
         fi

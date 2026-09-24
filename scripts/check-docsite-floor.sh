@@ -2,12 +2,13 @@
 # Floor gates for the docsite. Runs in CI (the `Docsite floor` job in
 # .github/workflows/ci.yml); can be invoked locally via `just docs-floor`.
 #
-# Six gates protect against the cheap-to-introduce, expensive-to-find regressions:
+# Six gates protect against the cheap-to-introduce, expensive-to-find regressions.
+# The pages live in site/content/ (EP-0012). roadmap.md there is a symlink to
+# the repository's ROADMAP.md, and gates 2 and 5 follow it.
 #
-#   1. Link integrity     — lychee verifies all in-book Markdown links resolve.
-#   2. Orphan detect      — every page under book/src/ is referenced in SUMMARY.md
-#                            (with a small allowlist for include-only fragments).
-#   3. Type-name parity   — every backtick-inline PascalCase identifier in book/src/
+#   1. Link integrity     — lychee verifies all Markdown links in site/content/ resolve.
+#   2. Orphan detect      — every page under site/content/ is referenced in SUMMARY.md.
+#   3. Type-name parity   — every backtick-inline PascalCase identifier in site/content/
 #                            and skills/ either exists as an identifier in src/,
 #                            or is on the external-types allowlist below. Catches
 #                            rename drift. Plans and design records live in
@@ -16,8 +17,8 @@
 #                            which is what makes it a proposal or a plan.
 #   4. mdbook clean build — `mdbook build` runs without warnings or errors.
 #   5. No em dashes       — project prose convention, exempting quoted material.
-#                            Covers book/src/, skills/ and blueprints/.
-#   6. llms.txt currency  — book/src/llms.txt is what scripts/gen-llms-txt.sh
+#                            Covers site/content/, skills/ and blueprints/.
+#   6. llms.txt currency  — site/content/llms.txt is what scripts/gen-llms-txt.sh
 #                            writes today. The file is generated from SUMMARY.md
 #                            and from the opening line of each page, so a page
 #                            added, retitled, or reworded leaves it stale, and
@@ -44,9 +45,8 @@ skipped=0
 echo "=== Gate 1: link integrity (lychee) ==="
 if command -v lychee >/dev/null 2>&1; then
     if lychee --no-progress --offline \
-            --exclude-path 'book/book' \
-            'book/src/**/*.md'; then
-        echo "PASS (gate 1): all in-book links resolve"
+            'site/content/**/*.md'; then
+        echo "PASS (gate 1): all links in site/content/ resolve"
     else
         echo "FAIL (gate 1): broken links detected"
         fail=$((fail + 1))
@@ -70,21 +70,24 @@ echo ""
 echo "=== Gate 2: orphan detect ==="
 orphans=()
 pages=0
+# -L follows symlinks, so roadmap.md (a link to ROADMAP.md) is a page here
+# like any other. Without it, `-type f` skipped the link and the gate never
+# checked that the roadmap was listed.
 while IFS= read -r page; do
     pages=$((pages + 1))
-    rel="${page#book/src/}"
+    rel="${page#site/content/}"
     # SUMMARY.md references look like "(./path/to/page.md)" or "(path/to/page.md)".
-    if ! grep -F -q -e "($rel)" -e "(./$rel)" book/src/SUMMARY.md; then
+    if ! grep -F -q -e "($rel)" -e "(./$rel)" site/content/SUMMARY.md; then
         orphans+=("$page")
     fi
-done < <(find book/src -type f -name '*.md' \
+done < <(find -L site/content -type f -name '*.md' \
     ! -name SUMMARY.md \
     | sort)
 if [ "$pages" -eq 0 ]; then
-    echo "FAIL (gate 2): found no pages under book/src/"
+    echo "FAIL (gate 2): found no pages under site/content/"
     fail=$((fail + 1))
 elif [ ${#orphans[@]} -eq 0 ]; then
-    echo "PASS (gate 2): all $pages book/src/ pages are in SUMMARY.md"
+    echo "PASS (gate 2): all $pages site/content/ pages are in SUMMARY.md"
 else
     echo "FAIL (gate 2): pages not referenced in SUMMARY.md:"
     printf '  %s\n' "${orphans[@]}"
@@ -267,9 +270,9 @@ if ! command -v rg >/dev/null 2>&1; then
 else
     # rg exits 1 on no match and 2 on an error; only the error is a failure.
     rg_rc=0
-    names=$(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' book/src/ skills/) || rg_rc=$?
+    names=$(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' site/content/ skills/) || rg_rc=$?
     if [ "$rg_rc" -gt 1 ]; then
-        echo "FAIL (gate 3): rg exited $rg_rc extracting names from book/src/ and skills/"
+        echo "FAIL (gate 3): rg exited $rg_rc extracting names from site/content/ and skills/"
         gate3_ok=0
     fi
 fi
@@ -297,12 +300,12 @@ done < <(printf '%s\n' "$names" | sort -u)
 if [ "$gate3_ok" -eq 0 ]; then
     fail=$((fail + 1))
 elif [ "$checked" -eq 0 ]; then
-    echo "FAIL (gate 3): found no backtick-inline names in book/src/ or skills/"
+    echo "FAIL (gate 3): found no backtick-inline names in site/content/ or skills/"
     fail=$((fail + 1))
 elif [ ${#unknown[@]} -eq 0 ]; then
     echo "PASS (gate 3): all $checked backtick-inline names resolve in src/ or an allowlist"
 else
-    echo "FAIL (gate 3): backtick-inline identifiers in book/src/ or skills/ not found in src/:"
+    echo "FAIL (gate 3): backtick-inline identifiers in site/content/ or skills/ not found in src/:"
     printf '  %s\n' "${unknown[@]}"
     echo ""
     echo "        Fix one of: rename the doc reference, add the type to src/,"
@@ -328,12 +331,12 @@ echo "=== Gate 5: no em dashes in prose ==="
 # had never matched an em dash in its life.
 # grep exits 1 on no match and 2 on an error such as a missing directory; the
 # old `|| true` read the second as a clean pass.
-em_files=$(find book/src skills blueprints -type f \( -name '*.md' -o -name 'llms.txt' \) | wc -l | tr -d ' ') || em_files=0
+em_files=$(find -L site/content skills blueprints -type f \( -name '*.md' -o -name 'llms.txt' \) | wc -l | tr -d ' ') || em_files=0
 em_rc=0
-em_raw=$(grep -rn '—' book/src skills blueprints --include='*.md' --include='llms.txt') || em_rc=$?
+em_raw=$(grep -Rn '—' site/content skills blueprints --include='*.md' --include='llms.txt') || em_rc=$?
 offenders=$(printf '%s\n' "$em_raw" | grep -v '"' || true)
 if [ "$em_rc" -gt 1 ] || [ "$em_files" -eq 0 ]; then
-    echo "FAIL (gate 5): could not scan book/src/, skills/ and blueprints/ (grep exit $em_rc, $em_files files)"
+    echo "FAIL (gate 5): could not scan site/content/, skills/ and blueprints/ (grep exit $em_rc, $em_files files)"
     fail=$((fail + 1))
 elif [ -n "$offenders" ]; then
     echo "FAIL (gate 5): em dashes found in documentation prose:"
@@ -351,7 +354,7 @@ echo ""
 # ---------------------------------------------------------------------------
 # Gate 6: llms.txt currency
 # ---------------------------------------------------------------------------
-# book/src/llms.txt is the agent-facing map of the docsite: the H1, the
+# site/content/llms.txt is the agent-facing map of the docsite: the H1, the
 # blockquote summary and the H2 link sections the llms.txt proposal fixes.
 # Every line of it is derived, so the file is generated rather than written,
 # and it is committed so that a reader of the repository sees what the site
@@ -362,10 +365,10 @@ echo ""
 echo "=== Gate 6: llms.txt currency ==="
 llms_expected=$(mktemp)
 if gen_out=$(bash scripts/gen-llms-txt.sh "$llms_expected" 2>&1); then
-    if llms_diff=$(diff -u book/src/llms.txt "$llms_expected" 2>&1); then
-        echo "PASS (gate 6): book/src/llms.txt is current"
+    if llms_diff=$(diff -u site/content/llms.txt "$llms_expected" 2>&1); then
+        echo "PASS (gate 6): site/content/llms.txt is current"
     else
-        echo "FAIL (gate 6): book/src/llms.txt is stale"
+        echo "FAIL (gate 6): site/content/llms.txt is stale"
         echo "$llms_diff" | sed 's/^/  /'
         echo ""
         echo "        run scripts/gen-llms-txt.sh"
