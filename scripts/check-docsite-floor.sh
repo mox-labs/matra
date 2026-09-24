@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Floor gates for the docsite. Runs in CI; can be invoked locally via `just docs-floor`.
+# Floor gates for the docsite. Runs in CI (the `Docsite floor` job in
+# .github/workflows/ci.yml); can be invoked locally via `just docs-floor`.
 #
 # Six gates protect against the cheap-to-introduce, expensive-to-find regressions:
 #
@@ -28,7 +29,7 @@
 #
 # Tunables:
 #   LYCHEE_REQUIRED=1   — turn the "lychee missing" skip into a hard failure.
-#                          CI sets this after installing lychee.
+#                          The `Docsite floor` job in ci.yml sets it.
 
 set -euo pipefail
 
@@ -385,7 +386,7 @@ echo ""
 echo "=== Gate 4: mdbook clean build ==="
 if ! command -v mdbook >/dev/null 2>&1; then
     echo "FAIL (gate 4): mdbook not installed"
-    echo "        install: cargo install mdbook mdbook-mermaid"
+    echo "        install: cargo install mdbook"
     fail=$((fail + 1))
 else
     build_log=$(mktemp)

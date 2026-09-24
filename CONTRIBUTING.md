@@ -169,11 +169,10 @@ discussions into categories (configured in the GitHub UI):
    `fix/symlink-rejection`, `docs/clarify-tree-walk`).
 2. Run `just install-hooks` once on a fresh clone. The hook runs the Rust
    gates (fmt, check, clippy, doc, test on both feature configurations)
-   plus the boundary check. CI runs those too, and additionally
-   cargo-deny, cargo-semver-checks, the maturin wheel build and
-   `mypy --strict`; CI does not run the boundary check. A green hook is a
-   strong signal, not a guarantee. Run `just check` and `just typecheck`
-   before pushing.
+   plus the boundary check. CI runs those too, and additionally the
+   docsite floor, cargo-deny, cargo-semver-checks, the maturin wheel build
+   and `mypy --strict`. A green hook is a strong signal, not a guarantee.
+   Run `just check` and `just typecheck` before pushing.
 3. Make atomic commits. One logical change per commit. Conventional
    prefix: `feat / fix / docs / chore / refactor / perf / test / ci /
    build`. Optional scope in parens: `feat(extraction): ...`.
@@ -254,9 +253,9 @@ boundary is checked against the antifragile checklist.
 [`book/src/reference/boundary-rules.md`](book/src/reference/boundary-rules.md) for the
 canonical eight rules and how each is enforced; `CLAUDE.md` carries the
 summary. `scripts/check-boundaries.sh` greps three of them and runs from
-`just check` and the optional pre-commit hook. It is not wired into CI:
-only rule 6 has a CI gate. The rest rests on review, so run `just check`
-before opening a PR.
+`just check`, the optional pre-commit hook and the `Boundary check` CI job;
+it sees the literal import form only. Rule 6 is verified by compiling. The
+rest rests on review, so run `just check` before opening a PR.
 
 **Formatting:** `cargo fmt`. Enforced.
 

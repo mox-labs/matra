@@ -11,10 +11,11 @@ default:
 # Quality gates — same commands CI runs.
 # ---------------------------------------------------------------------------
 
-# Run the local gate suite: the Rust gates CI runs, plus the Python lint,
-# the boundary check, the end-to-end sandbox test and the docsite floor,
-# which CI does not run. CI additionally runs cargo-deny,
-# cargo-semver-checks, the wheel build and mypy.
+# Run the local gate suite: the Rust gates, the boundary check and the
+# docsite floor, which CI also runs, plus the Python lint, the end-to-end
+# sandbox test and the version sync, which CI does not run on a pull request.
+# CI additionally runs cargo-deny, cargo-semver-checks, the wheel build and
+# mypy.
 check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary test-sandbox docs-floor version-sync
     @echo ""
     @echo "all gates pass"
@@ -80,9 +81,9 @@ test-sandbox:
 version-sync:
     bash scripts/check-version-sync.sh
 
-# Requires mdbook + mdbook-mermaid (install: `cargo install mdbook mdbook-mermaid`).
-# lychee is optional locally (skip-with-warning); CI installs it and sets
-# LYCHEE_REQUIRED=1 to escalate the skip into a hard failure.
+# Requires mdbook and ripgrep. lychee is optional locally (skip-with-warning);
+# the `Docsite floor` job in ci.yml installs it and sets LYCHEE_REQUIRED=1 to
+# escalate the skip into a hard failure.
 # Floor gates for the docsite: link integrity, orphan detect, type-name parity, mdbook clean build.
 docs-floor:
     bash scripts/check-docsite-floor.sh
