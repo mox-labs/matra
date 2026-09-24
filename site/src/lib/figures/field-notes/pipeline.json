@@ -1,0 +1,128 @@
+{
+  "data": {
+    "annotated": {
+      "document": {
+        "nominalization_ratio": null,
+        "passive_ratio": null,
+        "vocabulary_ttr": null
+      },
+      "sections": [
+        {
+          "heading": "Field notes",
+          "level": 1,
+          "paragraphs": [
+            {
+              "compression_ratio": null,
+              "in_blockquote": false,
+              "index": 1,
+              "lexical_density": null,
+              "opening": "The survey team reached the northern ridge on",
+              "readability_grade": null,
+              "sentences": 2,
+              "tokens": 29
+            },
+            {
+              "compression_ratio": null,
+              "in_blockquote": true,
+              "index": 2,
+              "lexical_density": null,
+              "opening": "Radio contact was lost for six hours.",
+              "readability_grade": null,
+              "sentences": 0,
+              "tokens": 0
+            }
+          ]
+        },
+        {
+          "heading": "Findings",
+          "level": 2,
+          "paragraphs": [
+            {
+              "compression_ratio": null,
+              "in_blockquote": false,
+              "index": 3,
+              "lexical_density": null,
+              "opening": "Three of the five markers were intact and",
+              "readability_grade": null,
+              "sentences": 4,
+              "tokens": 72
+            }
+          ]
+        }
+      ]
+    },
+    "composed": {
+      "document": {
+        "nominalization_ratio": 0.011,
+        "passive_ratio": 0.5,
+        "vocabulary_ttr": 0.6923
+      },
+      "sections": [
+        {
+          "heading": "Field notes",
+          "level": 1,
+          "paragraphs": [
+            {
+              "compression_ratio": null,
+              "in_blockquote": false,
+              "index": 1,
+              "lexical_density": 0.6538,
+              "opening": "The survey team reached the northern ridge on",
+              "readability_grade": 4.9108,
+              "sentences": 2,
+              "tokens": 29
+            },
+            {
+              "compression_ratio": null,
+              "in_blockquote": true,
+              "index": 2,
+              "lexical_density": null,
+              "opening": "Radio contact was lost for six hours.",
+              "readability_grade": null,
+              "sentences": 0,
+              "tokens": 0
+            }
+          ]
+        },
+        {
+          "heading": "Findings",
+          "level": 2,
+          "paragraphs": [
+            {
+              "compression_ratio": 0.5897,
+              "in_blockquote": false,
+              "index": 3,
+              "lexical_density": 0.4844,
+              "opening": "Three of the five markers were intact and",
+              "readability_grade": 6.875,
+              "sentences": 4,
+              "tokens": 72
+            }
+          ]
+        }
+      ]
+    },
+    "raw": {
+      "bytes": 564,
+      "format": "markdown",
+      "text": "# Field notes\n\nThe survey team reached the northern ridge on the third day. Snow had closed the lower pass, so the route ran along the eastern face instead.\n\n> Radio contact was lost for six hours.\n\n## Findings\n\nThree of the five markers were intact and matched their recorded positions. The fourth had been moved about ten metres downhill by a rockfall, and its base plate was cracked. The fifth could not be found, although the team searched the slope below it for most of an afternoon. A replacement marker will be set on the next visit, once the pass is open.\n"
+    }
+  },
+  "figure": "pipeline",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "field-notes",
+  "source": {
+    "author": "matra contributors",
+    "licence": "MIT, as part of the matra repository",
+    "register": "narrative",
+    "source": "Written for matra's documentation",
+    "title": "Field notes: a short Markdown document with a heading, a quote and two sections",
+    "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/field-notes.txt"
+  }
+}

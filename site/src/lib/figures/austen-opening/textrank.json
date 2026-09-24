@@ -1,0 +1,52 @@
+{
+  "data": {
+    "n": 3,
+    "sentences": [
+      {
+        "paragraph": 1,
+        "position": 0,
+        "score": 0.1898,
+        "summary": false,
+        "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife."
+      },
+      {
+        "paragraph": 2,
+        "position": 1,
+        "score": 0.2675,
+        "summary": true,
+        "text": "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters."
+      },
+      {
+        "paragraph": 3,
+        "position": 2,
+        "score": 0.3102,
+        "summary": true,
+        "text": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”"
+      },
+      {
+        "paragraph": 4,
+        "position": 3,
+        "score": 0.2325,
+        "summary": true,
+        "text": "Mr. Bennet replied that he had not."
+      }
+    ]
+  },
+  "figure": "textrank",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "austen-opening",
+  "source": {
+    "author": "Jane Austen",
+    "licence": "Public domain (first published 1813)",
+    "register": "narrative",
+    "source": "Project Gutenberg eBook #1342, the text only, without the Project Gutenberg header, footer or licence",
+    "title": "Pride and Prejudice, the opening of chapter 1",
+    "url": "https://www.gutenberg.org/ebooks/1342"
+  }
+}

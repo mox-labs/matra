@@ -1,0 +1,8 @@
+title = "Field notes: a short Markdown document with a heading, a quote and two sections"
+author = "matra contributors"
+source = "Written for matra's documentation"
+url = "https://github.com/mox-labs/matra/blob/main/site/inputs/field-notes.txt"
+licence = "MIT, as part of the matra repository"
+register = "narrative"
+format = "markdown"
+figures = ["pipeline"]
