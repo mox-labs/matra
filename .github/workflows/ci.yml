@@ -175,6 +175,11 @@ jobs:
           tar -xzf "$RUNNER_TEMP/lychee.tar.gz" -C "$bin" --strip-components=1 lychee-x86_64-unknown-linux-gnu/lychee
       - name: Six docsite gates
         run: bash scripts/check-docsite-floor.sh
+      # Every RFC and EP cited anywhere resolves to a record in blueprints/,
+      # and every record is in the index. A step here rather than a job of its
+      # own, so the set of required check names does not change.
+      - name: Blueprint citations
+        run: bash scripts/check-blueprint-refs.sh
 
   deny:
     name: cargo-deny

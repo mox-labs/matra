@@ -113,7 +113,7 @@ Test plan, Ship criteria, Risks, and Status log.
 **Numbering.** Four digits, never reused. RFC-0001 to RFC-0015 are the
 decision records under their existing numbers. EP numbers follow the
 iteration plans they replace (i7 is EP-0007, i10 is EP-0010), which leaves
-no EP-0001, 0002 or 0004, because those plans were retired or retracted
+no EP numbered 0001, 0002 or 0004, because those plans were retired or retracted
 before this change. RFC-0016, 0017 and 0018 are reserved for proposals open
 on other branches, which convert separately; the index lists them as
 `open, reserved`. This RFC is RFC-0019.

@@ -8,16 +8,15 @@
 #   2. Orphan detect      — every page under book/src/ is referenced in SUMMARY.md
 #                            (with a small allowlist for include-only fragments).
 #   3. Type-name parity   — every backtick-inline PascalCase identifier in book/src/
-#                          and skills/, EXCEPT under book/src/plans/. A plan
-#                          describes types that do not exist yet; that is what
-#                          makes it a plan. Gate 3 keeps reference pages and the
-#                          agent skill honest about what ships, and applying it to
-#                          plans would invert their purpose.
-#                            either exists as an identifier in src/, or is on the
-#                            external-types allowlist below. Catches rename drift.
+#                            and skills/ either exists as an identifier in src/,
+#                            or is on the external-types allowlist below. Catches
+#                            rename drift. Plans and design records live in
+#                            blueprints/, outside the book, and are not scanned:
+#                            an RFC or an EP names types that do not exist yet,
+#                            which is what makes it a proposal or a plan.
 #   4. mdbook clean build — `mdbook build` runs without warnings or errors.
 #   5. No em dashes       — project prose convention, exempting quoted material.
-#                            Covers book/src/ and skills/.
+#                            Covers book/src/, skills/ and blueprints/.
 #   6. llms.txt currency  — book/src/llms.txt is what scripts/gen-llms-txt.sh
 #                            writes today. The file is generated from SUMMARY.md
 #                            and from the opening line of each page, so a page
@@ -268,7 +267,7 @@ if ! command -v rg >/dev/null 2>&1; then
 else
     # rg exits 1 on no match and 2 on an error; only the error is a failure.
     rg_rc=0
-    names=$(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' book/src/ skills/ --glob '!**/plans/**') || rg_rc=$?
+    names=$(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' book/src/ skills/) || rg_rc=$?
     if [ "$rg_rc" -gt 1 ]; then
         echo "FAIL (gate 3): rg exited $rg_rc extracting names from book/src/ and skills/"
         gate3_ok=0
@@ -320,21 +319,21 @@ echo ""
 # as whoever was writing happened to remember. It did not survive contact with
 # files moved in from elsewhere.
 #
-# Lines carrying a double quote are exempt. Plans quote reviewers verbatim, and
-# silently editing an attributed quote to satisfy a house style rule would be a
-# worse fault than the em dash.
+# Lines carrying a double quote are exempt. The RFCs and EPs in blueprints/
+# quote reviewers verbatim, and silently editing an attributed quote to satisfy
+# a house style rule would be a worse fault than the em dash.
 echo "=== Gate 5: no em dashes in prose ==="
 # The pattern is the literal U+2014 byte sequence. It used to be written
 # '\u2014', which grep reads as the letter u followed by 2014: the gate
 # had never matched an em dash in its life.
 # grep exits 1 on no match and 2 on an error such as a missing directory; the
 # old `|| true` read the second as a clean pass.
-em_files=$(find book/src skills -type f \( -name '*.md' -o -name 'llms.txt' \) | wc -l | tr -d ' ') || em_files=0
+em_files=$(find book/src skills blueprints -type f \( -name '*.md' -o -name 'llms.txt' \) | wc -l | tr -d ' ') || em_files=0
 em_rc=0
-em_raw=$(grep -rn '—' book/src skills --include='*.md' --include='llms.txt') || em_rc=$?
+em_raw=$(grep -rn '—' book/src skills blueprints --include='*.md' --include='llms.txt') || em_rc=$?
 offenders=$(printf '%s\n' "$em_raw" | grep -v '"' || true)
 if [ "$em_rc" -gt 1 ] || [ "$em_files" -eq 0 ]; then
-    echo "FAIL (gate 5): could not scan book/src/ and skills/ (grep exit $em_rc, $em_files files)"
+    echo "FAIL (gate 5): could not scan book/src/, skills/ and blueprints/ (grep exit $em_rc, $em_files files)"
     fail=$((fail + 1))
 elif [ -n "$offenders" ]; then
     echo "FAIL (gate 5): em dashes found in documentation prose:"
