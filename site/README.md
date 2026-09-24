@@ -137,13 +137,16 @@ To switch comments on:
      id discussionCategories(first: 20) { nodes { id name } } } }'
    ```
 
-4. Set `PUBLIC_GISCUS_CATEGORY_ID` to it in the `Build the SvelteKit site
-   preview` step of `.github/workflows/docs.yml`, beside the repository id
-   that is already there. Comments then appear in the `site-preview` build,
-   and on the live site once it deploys from here.
-5. Optionally, commit a `giscus.json` at the repository root with
-   `{ "origins": ["https://mox-labs.github.io"] }`, so the widget refuses to
-   run on any other site.
+4. Commit a `giscus.json` at the repository root with
+   `{ "origins": ["https://mox-labs.github.io"] }`. giscus reads it and
+   refuses to run the widget for this repository on any other site; without
+   it, any page could embed a widget that posts into these Discussions.
+5. Set `PUBLIC_GISCUS_CATEGORY_ID` to the category id in the `Build the
+   SvelteKit site preview` step of `.github/workflows/docs.yml`, beside the
+   repository id that is already there. Comments then appear in the
+   `site-preview` build, and on the live site once it deploys from here.
 
-To try it locally, set both variables when starting the dev server:
-`PUBLIC_GISCUS_REPO_ID=... PUBLIC_GISCUS_CATEGORY_ID=... just docs-serve`.
+To try it locally before step 4, set both variables when starting the dev
+server: `PUBLIC_GISCUS_REPO_ID=... PUBLIC_GISCUS_CATEGORY_ID=... just
+docs-serve`. Once `giscus.json` restricts origins, a local server is refused
+unless its origin is listed there too.
