@@ -349,10 +349,12 @@ On the site: RFC-0005 (supply chain), RFC-0011 (pinned downloads), RFC-0012
 
 ### M5: figures for relation and process
 
-- **Deliverable.** TextRank: the sentence graph with the chosen summary
-  sentences marked. Semantic clusters over a threshold grid with a stepping
-  control. The pipeline (ingest, decompose, compose) as a two-stage stepper
-  on the Programming model page.
+- **Deliverable.** TextRank: every sentence's score, in document order, with
+  the chosen summary sentences marked. (This read "the sentence graph" until
+  M5: the similarities TextRank ranks over are internal to matra, and a figure
+  draws only what the public surface returns.) Semantic clusters over a
+  threshold grid with a stepping control. The pipeline (ingest, annotate,
+  compose) as a stepper on the Programming model page.
 - **Exit criterion.** As M4. The cluster figure's grid values are the ones
   matra produced; the twin lists the clusters at every grid value.
 
@@ -454,3 +456,25 @@ examples are live, and the M6 newcomer pass is filed.
   edit (the 368-word figure stands), and RAKE on the Methodology page still
   scores `lexical density` 5.667 and `model file name` 5.167; only their
   digests in `tests/cited_figures.rs` moved.
+- 2026-09-24: M4 landed in #109.
+- 2026-09-24: M5 delivered, three figures on the same bar as M4, each
+  comparison in the twin test seen to fail on a planted fault.
+  - TextRank on The Federalist No. 10, in the capabilities page's
+    summarization section: every sentence's score as a bar over its
+    paragraph, the summary marked and listed. The deliverable is edited: it
+    promised the sentence graph, and the edge weights are not on matra's
+    public surface. Exposing them is an RFC question, not a docsite one.
+  - Semantic clusters of ten short sentences (a new input written for
+    matra) on the semantic clusters guide, at every threshold from 0.50 to
+    0.95, with a picker whose change is the only motion. The embedding model
+    is now fetched and cached in CI beside the UDPipe model, keyed on both
+    pinned digests, and the generator builds with `--features model2vec`.
+  - The pipeline on a short Markdown document (a new input) on the
+    Programming model page: what `Ingest::text` yields, then
+    `Engine::annotate`, then `Engine::compose`, stepped through; with
+    scripts off, all three stages render in order.
+  The keyphrase slopegraph now joins a phrase only when both methods produce
+  it, with a phrase only one method produces drawn as a hollow dot, so the
+  two top-twelve lists, which share nothing, no longer read as a bundle of
+  lines to a "not ranked" row. None of the three pages carrying a new figure
+  is a pinned source in `tests/cited_figures.rs`.
