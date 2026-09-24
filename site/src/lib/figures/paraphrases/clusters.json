@@ -1,0 +1,581 @@
+{
+  "data": {
+    "default_threshold": 0.85,
+    "grid": [
+      {
+        "clusters": [
+          {
+            "edges": [
+              {
+                "a": 0,
+                "b": 1,
+                "score": 0.8521
+              },
+              {
+                "a": 0,
+                "b": 2,
+                "score": 0.8812
+              },
+              {
+                "a": 0,
+                "b": 7,
+                "score": 0.7239
+              },
+              {
+                "a": 1,
+                "b": 2,
+                "score": 0.6923
+              },
+              {
+                "a": 1,
+                "b": 7,
+                "score": 0.5646
+              },
+              {
+                "a": 2,
+                "b": 7,
+                "score": 0.6405
+              }
+            ],
+            "members": [
+              0,
+              1,
+              2,
+              7
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 3,
+                "b": 4,
+                "score": 0.9592
+              }
+            ],
+            "members": [
+              3,
+              4
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 5,
+                "b": 6,
+                "score": 0.859
+              }
+            ],
+            "members": [
+              5,
+              6
+            ]
+          }
+        ],
+        "threshold": 0.5
+      },
+      {
+        "clusters": [
+          {
+            "edges": [
+              {
+                "a": 0,
+                "b": 1,
+                "score": 0.8521
+              },
+              {
+                "a": 0,
+                "b": 2,
+                "score": 0.8812
+              },
+              {
+                "a": 0,
+                "b": 7,
+                "score": 0.7239
+              },
+              {
+                "a": 1,
+                "b": 2,
+                "score": 0.6923
+              },
+              {
+                "a": 1,
+                "b": 7,
+                "score": 0.5646
+              },
+              {
+                "a": 2,
+                "b": 7,
+                "score": 0.6405
+              }
+            ],
+            "members": [
+              0,
+              1,
+              2,
+              7
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 3,
+                "b": 4,
+                "score": 0.9592
+              }
+            ],
+            "members": [
+              3,
+              4
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 5,
+                "b": 6,
+                "score": 0.859
+              }
+            ],
+            "members": [
+              5,
+              6
+            ]
+          }
+        ],
+        "threshold": 0.55
+      },
+      {
+        "clusters": [
+          {
+            "edges": [
+              {
+                "a": 0,
+                "b": 1,
+                "score": 0.8521
+              },
+              {
+                "a": 0,
+                "b": 2,
+                "score": 0.8812
+              },
+              {
+                "a": 0,
+                "b": 7,
+                "score": 0.7239
+              },
+              {
+                "a": 1,
+                "b": 2,
+                "score": 0.6923
+              },
+              {
+                "a": 2,
+                "b": 7,
+                "score": 0.6405
+              }
+            ],
+            "members": [
+              0,
+              1,
+              2,
+              7
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 3,
+                "b": 4,
+                "score": 0.9592
+              }
+            ],
+            "members": [
+              3,
+              4
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 5,
+                "b": 6,
+                "score": 0.859
+              }
+            ],
+            "members": [
+              5,
+              6
+            ]
+          }
+        ],
+        "threshold": 0.6
+      },
+      {
+        "clusters": [
+          {
+            "edges": [
+              {
+                "a": 0,
+                "b": 1,
+                "score": 0.8521
+              },
+              {
+                "a": 0,
+                "b": 2,
+                "score": 0.8812
+              },
+              {
+                "a": 0,
+                "b": 7,
+                "score": 0.7239
+              },
+              {
+                "a": 1,
+                "b": 2,
+                "score": 0.6923
+              }
+            ],
+            "members": [
+              0,
+              1,
+              2,
+              7
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 3,
+                "b": 4,
+                "score": 0.9592
+              }
+            ],
+            "members": [
+              3,
+              4
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 5,
+                "b": 6,
+                "score": 0.859
+              }
+            ],
+            "members": [
+              5,
+              6
+            ]
+          }
+        ],
+        "threshold": 0.65
+      },
+      {
+        "clusters": [
+          {
+            "edges": [
+              {
+                "a": 0,
+                "b": 1,
+                "score": 0.8521
+              },
+              {
+                "a": 0,
+                "b": 2,
+                "score": 0.8812
+              },
+              {
+                "a": 0,
+                "b": 7,
+                "score": 0.7239
+              }
+            ],
+            "members": [
+              0,
+              1,
+              2,
+              7
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 3,
+                "b": 4,
+                "score": 0.9592
+              }
+            ],
+            "members": [
+              3,
+              4
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 5,
+                "b": 6,
+                "score": 0.859
+              }
+            ],
+            "members": [
+              5,
+              6
+            ]
+          }
+        ],
+        "threshold": 0.7
+      },
+      {
+        "clusters": [
+          {
+            "edges": [
+              {
+                "a": 0,
+                "b": 1,
+                "score": 0.8521
+              },
+              {
+                "a": 0,
+                "b": 2,
+                "score": 0.8812
+              }
+            ],
+            "members": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 3,
+                "b": 4,
+                "score": 0.9592
+              }
+            ],
+            "members": [
+              3,
+              4
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 5,
+                "b": 6,
+                "score": 0.859
+              }
+            ],
+            "members": [
+              5,
+              6
+            ]
+          }
+        ],
+        "threshold": 0.75
+      },
+      {
+        "clusters": [
+          {
+            "edges": [
+              {
+                "a": 0,
+                "b": 1,
+                "score": 0.8521
+              },
+              {
+                "a": 0,
+                "b": 2,
+                "score": 0.8812
+              }
+            ],
+            "members": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 3,
+                "b": 4,
+                "score": 0.9592
+              }
+            ],
+            "members": [
+              3,
+              4
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 5,
+                "b": 6,
+                "score": 0.859
+              }
+            ],
+            "members": [
+              5,
+              6
+            ]
+          }
+        ],
+        "threshold": 0.8
+      },
+      {
+        "clusters": [
+          {
+            "edges": [
+              {
+                "a": 0,
+                "b": 1,
+                "score": 0.8521
+              },
+              {
+                "a": 0,
+                "b": 2,
+                "score": 0.8812
+              }
+            ],
+            "members": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 3,
+                "b": 4,
+                "score": 0.9592
+              }
+            ],
+            "members": [
+              3,
+              4
+            ]
+          },
+          {
+            "edges": [
+              {
+                "a": 5,
+                "b": 6,
+                "score": 0.859
+              }
+            ],
+            "members": [
+              5,
+              6
+            ]
+          }
+        ],
+        "threshold": 0.85
+      },
+      {
+        "clusters": [
+          {
+            "edges": [
+              {
+                "a": 3,
+                "b": 4,
+                "score": 0.9592
+              }
+            ],
+            "members": [
+              3,
+              4
+            ]
+          }
+        ],
+        "threshold": 0.9
+      },
+      {
+        "clusters": [
+          {
+            "edges": [
+              {
+                "a": 3,
+                "b": 4,
+                "score": 0.9592
+              }
+            ],
+            "members": [
+              3,
+              4
+            ]
+          }
+        ],
+        "threshold": 0.95
+      }
+    ],
+    "sentences": [
+      {
+        "index": 0,
+        "text": "The committee approved the budget on Tuesday."
+      },
+      {
+        "index": 1,
+        "text": "On Tuesday the committee passed the budget."
+      },
+      {
+        "index": 2,
+        "text": "The budget was approved by the committee."
+      },
+      {
+        "index": 3,
+        "text": "Heavy rain closed the mountain road overnight."
+      },
+      {
+        "index": 4,
+        "text": "The mountain road was shut overnight by heavy rain."
+      },
+      {
+        "index": 5,
+        "text": "The new release fixes a crash when saving large files."
+      },
+      {
+        "index": 6,
+        "text": "Saving large files no longer crashes the program in this release."
+      },
+      {
+        "index": 7,
+        "text": "The committee approved a new park plan on Monday."
+      },
+      {
+        "index": 8,
+        "text": "Bread rises faster in a warm kitchen."
+      },
+      {
+        "index": 9,
+        "text": "The museum opens at nine on weekdays."
+      }
+    ]
+  },
+  "figure": "clusters",
+  "generator": {
+    "embedding_model": {
+      "name": "potion-base-8M",
+      "sha256": "81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4"
+    },
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "paraphrases",
+  "source": {
+    "author": "matra contributors",
+    "licence": "MIT, as part of the matra repository",
+    "register": "mixed",
+    "source": "Written for matra's documentation",
+    "title": "Three things said two or three ways each, and three said once",
+    "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/paraphrases.txt"
+  }
+}

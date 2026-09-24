@@ -1,0 +1,7 @@
+title = "Three things said two or three ways each, and three said once"
+author = "matra contributors"
+source = "Written for matra's documentation"
+url = "https://github.com/mox-labs/matra/blob/main/site/inputs/paraphrases.txt"
+licence = "MIT, as part of the matra repository"
+register = "mixed"
+figures = ["clusters"]

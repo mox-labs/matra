@@ -1,0 +1,59 @@
+{
+  "data": {
+    "n": 3,
+    "sentences": [
+      {
+        "paragraph": 1,
+        "position": 0,
+        "score": 0.03,
+        "summary": true,
+        "text": "The committee did not approve the budget."
+      },
+      {
+        "paragraph": 1,
+        "position": 1,
+        "score": 0.03,
+        "summary": false,
+        "text": "Members must submit revised estimates by Friday."
+      },
+      {
+        "paragraph": 1,
+        "position": 2,
+        "score": 0.2,
+        "summary": true,
+        "text": "The chair reported that the vote was postponed."
+      },
+      {
+        "paragraph": 1,
+        "position": 3,
+        "score": 0.03,
+        "summary": false,
+        "text": "Reportedly, the new figures could arrive next week."
+      },
+      {
+        "paragraph": 1,
+        "position": 4,
+        "score": 0.2,
+        "summary": true,
+        "text": "Agencies such as the treasury and the audit office publish quarterly reports."
+      }
+    ]
+  },
+  "figure": "textrank",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "primitives",
+  "source": {
+    "author": "matra contributors",
+    "licence": "MIT, as part of the matra repository",
+    "register": "administrative",
+    "source": "Written for matra's documentation",
+    "title": "Five sentences, one structural primitive each: a negation, a modal, a reporting, a root adverbial, a Hearst pair",
+    "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/primitives.txt"
+  }
+}
