@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { SITE_NAME } from '$lib/site';
-	import type { Doc } from '$lib/types';
+	import type { Doc, Segment } from '$lib/types';
+	import Body from './Body.svelte';
 	import Giscus from './Giscus.svelte';
 	import Toc from './Toc.svelte';
 
@@ -19,9 +20,9 @@
 	 * A copy button on each code block. It is added after hydration because it
 	 * needs a script to work; without one, the block is still selectable.
 	 */
-	function copyButtons(html: string) {
+	function copyButtons(segments: Segment[]) {
 		return (node: HTMLElement) => {
-			void html;
+			void segments;
 			for (const pre of node.querySelectorAll('pre')) {
 				if (pre.querySelector(':scope > .copy')) continue;
 				const button = document.createElement('button');
@@ -75,8 +76,8 @@
 				</details>
 			{/if}
 
-			<div class="body" {@attach copyButtons(doc.html)}>
-				{@html doc.html}
+			<div class="body" {@attach copyButtons(doc.segments)}>
+				<Body segments={doc.segments} />
 			</div>
 		</div>
 

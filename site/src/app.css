@@ -11,8 +11,9 @@
  * palettes cannot drift apart. `color-scheme` picks the side: the system's
  * preference by default, the reader's choice when they make one.
  *
- * No motion. Nothing on the site transitions or animates, and the reduced
- * motion rule at the end holds that for anything added later.
+ * No motion on its own. Nothing on the site animates unless the reader
+ * changes a figure, and figures follow EP-0012's Motion rule. The reduced
+ * motion rule at the end holds for CSS; figures honour it in their own code.
  */
 
 :root {

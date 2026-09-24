@@ -12,15 +12,35 @@
  * a bare `<name>` in prose, which a browser would swallow as an unknown
  * element and show nothing for.
  *
- * One kind of entry exists today:
+ * Two kinds of entry:
  *
  *   passthrough   the element and everything inside it are emitted as
  *                 written. For hand-authored markup whose meaning is the
  *                 markup itself.
  *
- * Figures (EP-0012, M3) add a second kind that maps a tag to a component.
+ *   figure        a data figure (EP-0012). Written in a page as one
+ *                 self-closing tag on a line of its own, naming its data:
+ *
+ *                   <figure-parse input="primitives" sentence="1" />
+ *
+ *                 `figure` names the data file the generator writes,
+ *                 site/src/lib/figures/<input>/<figure>.json, and `attributes`
+ *                 lists what the tag may carry. A missing input, an unknown
+ *                 attribute or a value out of range fails the build. The page
+ *                 renders the component for the tag, prerendered with its data.
+ *
+ * Adding a new kind of figure means a new entry here and its component;
+ * adding a new instance means a line in a page and an input in site/inputs/.
  */
-export type TagEntry = { kind: 'passthrough'; reason: string };
+export type TagEntry =
+	| { kind: 'passthrough'; reason: string }
+	| {
+			kind: 'figure';
+			figure: 'parse';
+			reason: string;
+			/** Attribute name to whether the tag must carry it. */
+			attributes: Readonly<Record<string, 'required' | 'optional'>>;
+	  };
 
 export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 	svg: {
@@ -28,6 +48,15 @@ export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 		reason:
 			'The hand-authored architecture diagrams. Position carries their meaning, ' +
 			'each is role="img" with an aria-label, and they show structure, not data.'
+	},
+	'figure-parse': {
+		kind: 'figure',
+		figure: 'parse',
+		reason:
+			'The dependency parse of one input, a sentence at a time: the token table, ' +
+			'then an arc diagram of the same tokens. Answers "what does each word ' +
+			'depend on, and by which relation?" faster than the table alone.',
+		attributes: { input: 'required', sentence: 'optional' }
 	}
 };
 

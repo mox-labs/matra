@@ -28,6 +28,10 @@ explanation/programming-model.html
 explanation/programming-model.md
 explanation/situation-model.html
 explanation/situation-model.md
+figures/austen-opening/parse.json
+figures/constitution-article-one/parse.json
+figures/parser-notes/parse.json
+figures/primitives/parse.json
 guides/cli.html
 guides/cli.md
 guides/python.html

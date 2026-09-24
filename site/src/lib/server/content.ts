@@ -10,7 +10,7 @@ import { relative, resolve } from 'node:path';
 import { error } from '@sveltejs/kit';
 import { base } from '$app/paths';
 import { editUrl } from '$lib/site';
-import type { Doc, NavPart } from '$lib/types';
+import type { Doc, FigureFile, NavPart } from '$lib/types';
 import { flatten, parseSummary } from './summary';
 import { render } from './markdown/render';
 
@@ -25,6 +25,25 @@ const LLMS = import.meta.glob('/content/llms.txt', {
 	import: 'default',
 	eager: true
 }) as Record<string, string>;
+
+/**
+ * Figure data, as examples/docsite_figures.rs wrote it. Keyed
+ * `<input>/<figure>`; the figures-current gate keeps it in step with matra.
+ */
+const FIGURE_FILES = import.meta.glob('/src/lib/figures/*/*.json', {
+	import: 'default',
+	eager: true
+}) as Record<string, FigureFile>;
+
+export const figures: ReadonlyMap<string, FigureFile> = new Map(
+	Object.entries(FIGURE_FILES).map(([path, file]) => {
+		const key = path.replace(/^\/src\/lib\/figures\//, '').replace(/\.json$/, '');
+		if (key !== `${file.input}/${file.figure}`) {
+			throw new Error(`${path} says it is ${file.input}/${file.figure}; regenerate the figures`);
+		}
+		return [key, file];
+	})
+);
 
 function source(file: string): string {
 	const text = SOURCES[`/content/${file}`];
@@ -74,7 +93,7 @@ export async function loadDoc(route: string): Promise<Doc> {
 	const i = order.findIndex((o) => o.item.route === route);
 	if (i === -1) error(404, `No page at ${route}`);
 	const { item, part } = order[i];
-	const rendered = await render(source(item.file), { file: item.file, routes, base });
+	const rendered = await render(source(item.file), { file: item.file, routes, base, figures });
 	const link = (j: number) =>
 		j >= 0 && j < order.length ? { title: order[j].item.title, route: order[j].item.route } : null;
 	return {

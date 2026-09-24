@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Body from '$lib/components/Body.svelte';
 	import { SITE_NAME } from '$lib/site';
 	import type { PageProps } from './$types';
 
@@ -15,7 +16,7 @@
 	{#each data.docs as doc (doc.route)}
 		<section class="prose print-section" aria-label={doc.title}>
 			<h1>{@html doc.titleHtml}</h1>
-			{@html doc.html}
+			<Body segments={doc.segments} />
 		</section>
 	{/each}
 </div>
