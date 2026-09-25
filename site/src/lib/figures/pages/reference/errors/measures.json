@@ -1,0 +1,453 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "reference/errors.md",
+  "paragraphs": [
+    {
+      "compression_ratio": 0.5806,
+      "in_blockquote": false,
+      "lexical_density": 0.6444,
+      "readability_grade": 13.5978,
+      "sentences": 3,
+      "text": "Every fallible function in matra returns `domain::Result<T>`, which is `std::result::Result<T, domain::Error>`. No function in the library returns `Result<T, String>`. matra signals failure by returning `Error`, not by unwinding: a panic raised inside the UDPipe C++ boundary is caught at the adapter and converted into `Error::ParseFailed`.",
+      "words": 57
+    },
+    {
+      "compression_ratio": 0.6276,
+      "in_blockquote": false,
+      "lexical_density": 0.5455,
+      "readability_grade": 8.6525,
+      "sentences": 4,
+      "text": "`Error` is `#[non_exhaustive]`. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. `Error` derives neither `Clone` nor serde; it is moved, not copied. The stream surface wraps it in `DocumentError`, which adds the path the failure occurred at and moves the error into `CorpusResult::errors`.",
+      "words": 59
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 13.295,
+      "sentences": 1,
+      "text": "`Error` implements `std::error::Error` and `Display` through `thiserror`, and `From<std::io::Error>`, so `?` converts I/O failures automatically.",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4884,
+      "readability_grade": 10.307,
+      "sentences": 3,
+      "text": "Returned by `Udpipe::from_path` when the path does not exist, and by `Model2Vec::from_dir` when any of the three artifacts is absent. The payload is the path as given. Neither `Udpipe::english` nor `Model2Vec::potion_base_8m` returns this variant: both download the model when the file is absent.",
+      "words": 43
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Returned by:",
+      "words": 2
+    },
+    {
+      "compression_ratio": 0.423,
+      "in_blockquote": false,
+      "lexical_density": 0.5127,
+      "readability_grade": 10.2511,
+      "sentences": 10,
+      "text": "- `Udpipe::from_path` and `Udpipe::from_bytes` when the loader rejects the bytes. The payload is the loader's message.\n- `Udpipe::english` when the bytes it downloaded still fail SHA-256 verification after one refetch. The payload is `SHA-256 mismatch after re-download from <url>`. Nothing that failed verification is written, so the model directory is left as the call found it.\n- `Model2Vec::from_dir` when an artifact does not parse, uses an embedding dtype other than f32, or panics the loader.\n- `Model2Vec::potion_base_8m` when the directory already holds all three artifacts and their digest is not the pinned one, or holds only some of them. The payload names the directory and the ways out; nothing there is downloaded over or removed.\n- `Model2Vec::potion_base_8m` when the artifacts it downloaded still fail the digest after one re-download. Both attempts verify in memory, so neither writes anything, and the directory is left exactly as the call found it. The payload names the directory and the expected digest.",
+      "words": 158
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 7.8189,
+      "sentences": 1,
+      "text": "A file whose hash does not match the pinned constant is treated as untrusted and is never loaded.",
+      "words": 18
+    },
+    {
+      "compression_ratio": 0.5698,
+      "in_blockquote": false,
+      "lexical_density": 0.5484,
+      "readability_grade": 13.5578,
+      "sentences": 3,
+      "text": "`ModelInvalid` is about bytes that arrived. A download that never arrived, a server that answered about the request rather than with a model, and a filesystem that refused the write are `Io`, not `ModelInvalid` ([RFC-0015](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0015-provisioning-failures.md)). Before 0.2.0 the UDPipe download funnelled all three here, so a DNS failure reported `model_invalid`; a consumer that branched on that reads the [provisioning failures](#provisioning-failures) section below.",
+      "words": 66
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Returned by the UDPipe adapter's `parse` in three situations:",
+      "words": 10
+    },
+    {
+      "compression_ratio": 0.5201,
+      "in_blockquote": false,
+      "lexical_density": 0.5915,
+      "readability_grade": 7.3163,
+      "sentences": 9,
+      "text": "- The underlying parser returns an error. The payload is that error's message.\n- The underlying parser panics. The payload is `udpipe panicked: <message>`. The `catch_unwind` boundary that produces this lives in `nlp/udpipe.rs`, and it exists because an unhandled panic crossing the C++ boundary aborts the host process instead of unwinding.\n- A token id or head value cannot be represented as `usize`. The payload names the token and its sentence.",
+      "words": 74
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 5.42,
+      "sentences": 2,
+      "text": "Ten gate labels produce this variant. The `what` field carries the label so a caller can route each gate differently.",
+      "words": 20
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.619,
+      "readability_grade": 11.1429,
+      "sentences": 1,
+      "text": "`limit` carries the cap and `actual` carries the measured size, so an error message can be built without hardcoding the constants.",
+      "words": 21
+    },
+    {
+      "compression_ratio": 0.5381,
+      "in_blockquote": false,
+      "lexical_density": 0.575,
+      "readability_grade": 7.3207,
+      "sentences": 5,
+      "text": "The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens. The two download caps are the gates whose input is not the caller's: they bound what a redirected or misbehaving server can make the process hold, and the read stops at the bound rather than continuing, so `actual` reports the bound that was breached rather than the response's full length. Both are 64 MiB against pinned artifacts of 16.3 MB and 30.2 MB, which is headroom for a later version and still finite.",
+      "words": 124
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 9.615,
+      "sentences": 3,
+      "text": "A document from disk crosses both text gates in sequence: `\"file_source\"` when `Ingest` reads it, `\"input\"` inside `annotate`. In practice `\"file_source\"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6316,
+      "readability_grade": 9.2308,
+      "sentences": 2,
+      "text": "Calling a provider's `parse` directly bypasses the `\"input\"` gate. The gate belongs to `Engine::annotate`, not to the `NlpProvider` trait.",
+      "words": 22
+    },
+    {
+      "compression_ratio": 0.575,
+      "in_blockquote": false,
+      "lexical_density": 0.56,
+      "readability_grade": 10.028,
+      "sentences": 4,
+      "text": "The label has a second producer. The CLI reads stdin through `read_capped` in `src/cli/mod.rs`, which reads at most one byte past `MAX_INPUT_BYTES` and returns `InputTooLarge` with `what` set to `\"input\"` before the text ever reaches `annotate`. Same limit, same label, so a caller sees one gate however the text arrived. Two details differ and neither is visible in the value: the CLI counts bytes before decoding them, so an oversized pipe is reported as too large rather than as invalid UTF-8, and the CLI renders the error on stderr and turns it into an exit code rather than returning it.",
+      "words": 101
+    },
+    {
+      "compression_ratio": 0.4796,
+      "in_blockquote": false,
+      "lexical_density": 0.5902,
+      "readability_grade": 12.6034,
+      "sentences": 4,
+      "text": "The four ranking extractors check their caps after their empty-result checks. `tfidf_summarize(sentences, 0)`, `textrank_summarize(sentences, 0)`, `rake_keyphrases(sentences, 0)`, and `yake_keyphrases(sentences, 0)` return an empty vector without evaluating the cap, whatever the size of the slice. The same holds for an empty slice. `semantic_clusters` has no count parameter; its contract checks run first, then its cap, and an empty slice returns empty clusters.",
+      "words": 66
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5172,
+      "readability_grade": 7.1547,
+      "sentences": 2,
+      "text": "A metric has no gate of its own. The compression ratio skips any paragraph over 262,144 bytes and leaves its metric slot at `None` rather than returning an error.",
+      "words": 30
+    },
+    {
+      "compression_ratio": 0.5455,
+      "in_blockquote": false,
+      "lexical_density": 0.5968,
+      "readability_grade": 14.7377,
+      "sentences": 3,
+      "text": "Returned by `semantic_clusters` when a caller breaks its documented contract (embeddings disagreeing on dimension, an embedding containing a non-finite value, a non-finite threshold), and by `embed_and_cluster` when an embedder violates its own length contract. The payload names the violation. This variant means a call site or a provider implementation is wrong, not the input data; nothing about the analyzed text produces it.",
+      "words": 62
+    },
+    {
+      "compression_ratio": 0.5332,
+      "in_blockquote": false,
+      "lexical_density": 0.52,
+      "readability_grade": 11.7813,
+      "sentences": 3,
+      "text": "`Config::resolve` uses the same variant for a configuration that cannot be honored: a config file that does not parse, an unknown key, an algorithm name this build does not know, a config file that is not valid UTF-8, or an environment with none of `MATRA_DATA_DIR`, `XDG_DATA_HOME` or `HOME` set. The payload names the file and the offending key or line. A config file that is simply absent is not an error; the built-in defaults stand.",
+      "words": 79
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5429,
+      "readability_grade": 9.5257,
+      "sentences": 3,
+      "text": "Returned by `Engine::annotate` when the document's `Format` has no entry in the engine's decomposer table. With `standard_decomposers()` that means `Pdf` or `Docx`; `Markdown` and `PlainText` always have an entry. The payload is the `Format` value.",
+      "words": 38
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.75,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Wraps `std::io::Error`, produced by:",
+      "words": 7
+    },
+    {
+      "compression_ratio": 0.3439,
+      "in_blockquote": false,
+      "lexical_density": 0.5468,
+      "readability_grade": 12.5854,
+      "sentences": 12,
+      "text": "- `FileSource` rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`.\n- `FileSource` rejecting a path that is not a regular file, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`.\n- Any read, directory listing, directory creation, write, or rename that fails.\n- `Udpipe::english` when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise.\n- `Udpipe::english` when the model directory cannot be created, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads `cannot write the model to <path>: No space left on device (os error 28)` rather than `Permission denied (os error 13)` with nothing to act on.\n- `Model2Vec::potion_base_8m` when a download fails at the transport or answers with a non-2xx status. The message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise. Bytes that arrived and then failed the digest are `ModelInvalid` instead; this variant is for the ones that never arrived.\n- `Model2Vec::potion_base_8m` when the model directory cannot be created, when an artifact cannot be read, or when a verified artifact cannot be written or renamed into place. The message names the operation and the path, exactly as the UDPipe path's does. `Model2Vec::from_dir` reports an unreadable artifact the same way.\n- `Model2Vec::potion_base_8m` when the temporary file an artifact lands through cannot be created, with the kind the open reported (`AlreadyExists` when something is already sitting at that path). The temporary is opened exclusively, so a path already there, symlink or not, fails the open rather than being written through.\n- `Ingest` when a source yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.",
+      "words": 359
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4643,
+      "readability_grade": 10.0986,
+      "sentences": 2,
+      "text": "`Udpipe::english` and `Model2Vec::potion_base_8m` obtain a pinned artifact over the network. Both fetch through matra's own client, under the same bounds, and both classify a failure the same way.",
+      "words": 31
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 14.5758,
+      "sentences": 2,
+      "text": "The rule behind the table: `model_invalid` is about bytes that arrived. Anything that stopped a fetch from arriving, or a filesystem from accepting it, is `io` ([RFC-0015](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0015-provisioning-failures.md)).",
+      "words": 29
+    },
+    {
+      "compression_ratio": 0.5364,
+      "in_blockquote": false,
+      "lexical_density": 0.5393,
+      "readability_grade": 8.5933,
+      "sentences": 4,
+      "text": "The rule has a consequence in Python that is easy to miss, because it changes which `except` clause fires rather than only which string a message carries. `Io` routes to `OSError` and `ModelInvalid` routes to `RuntimeError`, so from 0.2.0 a DNS failure, a rejected certificate, a timeout or a non-2xx status raises `OSError` from `Matra.english()` where it used to raise `RuntimeError`. A caller that wrapped a bootstrap in `except RuntimeError` catches nothing now and the `OSError` propagates past it. Catch both, or catch `Exception` and branch on the message.",
+      "words": 93
+    },
+    {
+      "compression_ratio": 0.4594,
+      "in_blockquote": false,
+      "lexical_density": 0.5469,
+      "readability_grade": 13.1011,
+      "sentences": 8,
+      "text": "Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. A failed run removes nothing either. A cached file that is already there and fails verification is not loaded and not deleted: `Udpipe::english` downloads again, at most twice, and replaces the file only with bytes that verified, through the same atomic rename every install lands through. A run whose downloads fail, at the network or at the digest, leaves that file byte-identical. `Model2Vec::potion_base_8m` replaces nothing and refuses a directory whose artifacts fail verification, because its three filenames belong to the artifact format rather than to this one model and so may be a caller's own ([RFC-0015](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0015-provisioning-failures.md)). A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. `Udpipe::english` leaves a temporary directory and `Model2Vec::potion_base_8m` three temporary files, and each reclaims its own by the same rule.",
+      "words": 196
+    },
+    {
+      "compression_ratio": 0.5967,
+      "in_blockquote": false,
+      "lexical_density": 0.5769,
+      "readability_grade": 13.8385,
+      "sentences": 3,
+      "text": "matra verifies TLS against root certificates compiled into the binary and never reads the system trust store. That is why it needs no `ca-certificates` package, on any platform, and it is also why a proxy that re-signs TLS cannot be trusted by installing its CA anywhere on the machine. The failure reads:",
+      "words": 54
+    },
+    {
+      "compression_ratio": 0.4955,
+      "in_blockquote": false,
+      "lexical_density": 0.5164,
+      "readability_grade": 10.6588,
+      "sentences": 5,
+      "text": "Place the model by hand. `matra config show` prints the model directory this machine resolves, and the artifact is pinned by name, size and SHA-256, so a hand-placed file is exactly as trustworthy as a fetched one: it goes through the same verification on load. A file that is not the pinned model is never used and never deleted. matra tries to download the pinned model in its place, and where that download cannot get through, which is the reason to place the file by hand, the call fails and the file stays exactly as you left it. Check the SHA-256 before moving the file in, as below, so a truncated or proxy-rewritten download fails here rather than on the next run.",
+      "words": 127
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5143,
+      "readability_grade": 11.7514,
+      "sentences": 2,
+      "text": "`MATRA_MODEL_DIR` points at a directory of your own if the resolved one is not writable. The reference embedding model has the same route, three artifacts into a directory loaded with `Model2Vec::from_dir`, described in [semantic clusters](../guides/semantic-clusters.md).",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4783,
+      "readability_grade": 9.2843,
+      "sentences": 2,
+      "text": "A cold run has to fetch 16.3 MB before it can answer, and how long that takes is the link's business rather than matra's. The command line writes one line to standard error before the transfer and nothing at all when the model is already there:",
+      "words": 48
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6286,
+      "readability_grade": 15.2571,
+      "sentences": 3,
+      "text": "Standard error, so `--json` output stays a single object on standard output. `--quiet` silences it. A library caller gets the same facts as a `domain::ProvisionNotice` from `Engine::from_config_with_notice`, `Udpipe::english_with_notice` or `Udpipe::from_config_with_notice`, and decides the wording itself.",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5429,
+      "readability_grade": 7.5029,
+      "sentences": 2,
+      "text": "The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts with no notice form of its own, so the first `matra semantic` run is silent for the length of that download.",
+      "words": 35
+    },
+    {
+      "compression_ratio": 0.5658,
+      "in_blockquote": false,
+      "lexical_density": 0.6308,
+      "readability_grade": 12.8292,
+      "sentences": 3,
+      "text": "The stream surface never lets one bad document abort the rest. `Engine::analyze` yields `Result<CorpusEntry, DocumentError>` per document, where `DocumentError` pairs the `Error` with the path it occurred at (`None` for in-memory text, so a path-less document is distinguishable from one at an empty path). Its `Display` prints `path: error` when a path exists and the bare error otherwise, and its `source()` is the wrapped `Error`.",
+      "words": 72
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6591,
+      "readability_grade": 15.5173,
+      "sentences": 2,
+      "text": "Collecting the stream into `CorpusResult` partitions it: every success into `corpus`, every failure into `errors`, in order, with entries plus errors equal to documents consumed. `Ingest::path` is `Err` only when the listing itself fails; both read failures and analysis failures travel as stream items.",
+      "words": 46
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5625,
+      "readability_grade": 8.8417,
+      "sentences": 3,
+      "text": "Two kinds of entry never appear on either side. The directory listing skips symlinks, so a symlink produces no document and no error. It also skips anything that is not a regular file, and the walk is one level deep, so a subdirectory is skipped the same way.",
+      "words": 48
+    },
+    {
+      "compression_ratio": 0.499,
+      "in_blockquote": false,
+      "lexical_density": 0.6078,
+      "readability_grade": 9.4267,
+      "sentences": 6,
+      "text": "Neither `DocumentError` nor `CorpusResult` is `Serialize`, because `Error` wraps `std::io::Error`. Crossing a language boundary therefore needs a projection rather than serde. `Matra.analyze_path` has one: each failed document arrives as `{\"path\": str | None, \"error\": {\"kind\": str, \"message\": str}}`, where `kind` is the stable string `Error::kind` names for the variant, and the table below carries all seven. `Error::kind` is a match with no wildcard arm, so a new `Error` variant fails to compile until someone names it, and `spec/tests/corpus/items.json` pins the vocabulary with a runner per crust, so every crust spells a failure the same way. Both item shapes are assembled field by field rather than serialized, and a `path` is decoded with `os.fsdecode`, so `os.fsencode` on it names the file the walk read even when that name is not valid UTF-8. `CorpusResult` itself does not cross: the Python call returns the items in order and the caller partitions them, testing `\"error\" in item`.",
+      "words": 163
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5135,
+      "readability_grade": 8.2088,
+      "sentences": 2,
+      "text": "These are the strings `Display` produces, which are also the strings Python's `str(exc)` returns, alongside the kind `Error::kind` reports for each variant. A message is for a human to read; a kind is what code branches on.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.75,
+      "readability_grade": 11.7067,
+      "sentences": 2,
+      "text": "`UnsupportedFormat` renders the variant name, so the string reads `unsupported format: Pdf`.",
+      "words": 13
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5882,
+      "readability_grade": 9.4341,
+      "sentences": 2,
+      "text": "The PyO3 binding converts `Error` into a Python exception class. The conversion is a match with no wildcard arm, so adding a variant to `Error` without assigning it an exception class fails to compile.",
+      "words": 34
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5238,
+      "readability_grade": 9.549,
+      "sentences": 3,
+      "text": "The table is unchanged from 0.1.0, but which row a provisioning failure lands on is not. Transport failures moved from `ModelInvalid` to `Io` in 0.2.0, so a failed download from `Matra.english()` or `Model2Vec.potion_base_8m()` now raises `OSError` rather than `RuntimeError`. See [provisioning failures](#provisioning-failures).",
+      "words": 46
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6364,
+      "readability_grade": 14.4455,
+      "sentences": 1,
+      "text": "`ModelNotFound` maps to `FileNotFoundError` so that the conventional Python idiom works:",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 12.475,
+      "sentences": 2,
+      "text": "The exception message is the `Display` string from the table above. Variant identity beyond the exception class is not carried across the boundary; a caller that needs to distinguish `InputTooLarge` from `UnsupportedFormat` inspects the message.",
+      "words": 35
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 19.0921,
+      "sentences": 1,
+      "text": "Every Python method that takes text routes through `Engine::annotate`, so the 8 MiB `\"input\"` gate applies uniformly: to `analyze` and `analyze_markdown`, and to the four extraction methods, whose per-extractor caps apply on top.",
+      "words": 34
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 7.4153,
+      "sentences": 4,
+      "text": "One further failure has no `Error` variant behind it. The `Matra` class is `#[pyclass(unsendable)]`, because the loaded model holds C-side state that is not thread-safe. Accessing one instance from a thread other than the one that created it fails at runtime. Multi-process use is unaffected.",
+      "words": 49
+    },
+    {
+      "compression_ratio": 0.5875,
+      "in_blockquote": false,
+      "lexical_density": 0.5577,
+      "readability_grade": 9.5508,
+      "sentences": 3,
+      "text": "One program is installed under the name `matra`, by either of two routes. The Rust binary comes from `cargo install matra --features cli`; the Python console script comes from the wheel and calls the same `matra::cli::run` through the extension module. The exit-code contract below is the program's, so it holds on both.",
+      "words": 55
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5952,
+      "readability_grade": 6.1652,
+      "sentences": 2,
+      "text": "On exit code 2 the command writes `matra: ` followed by the error's `Display` string to standard error. A broken pipe, which is what happens when the reading end of `matra analyze file.md | head` goes away, exits 0 and prints nothing.",
+      "words": 42
+    },
+    {
+      "compression_ratio": 0.542,
+      "in_blockquote": false,
+      "lexical_density": 0.5488,
+      "readability_grade": 10.8993,
+      "sentences": 3,
+      "text": "The table is the whole contract, and no command narrows it. Two cases are worth naming because they are usage failures rather than failures of the text: `matra --skill -r <name>` with a name no reference answers to exits 2 and names the ones that exist, and `-r` without `--skill` exits 2 and says which flag is missing. `matra --skill` in any of its accepted forms exits 0; it reads no document, so it has nothing to find and never exits 1.",
+      "words": 84
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5476,
+      "readability_grade": 12.5476,
+      "sentences": 2,
+      "text": "The exception classes in the table above belong to the library surface, not to the command line. A `domain::Error` reaching the command line is rendered and turned into an exit code; it never surfaces as a Python exception, whichever launcher started it.",
+      "words": 43
+    }
+  ]
+}

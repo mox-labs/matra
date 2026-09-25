@@ -1,0 +1,471 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "reference/domain-types.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6286,
+      "readability_grade": 10.7893,
+      "sentences": 2,
+      "text": "`matra::domain` holds every type the library hands back. The module depends on `serde`, `thiserror`, and the standard library, and on nothing else, so a caller can depend on these types without inheriting a C++ toolchain.",
+      "words": 35
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5294,
+      "readability_grade": 10.6309,
+      "sentences": 2,
+      "text": "It is not a copy of the generated item-level documentation. For that, run `cargo doc --no-deps --all-features`.",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7273,
+      "readability_grade": 3.7186,
+      "sentences": 2,
+      "text": "Seven types nest, each owning the next. Nothing is owned twice.",
+      "words": 11
+    },
+    {
+      "compression_ratio": 0.2984,
+      "in_blockquote": false,
+      "lexical_density": 0.8843,
+      "readability_grade": 14.7853,
+      "sentences": 29,
+      "text": "<svg class=\"mx-own\" role=\"img\" aria-label=\"Nested containment from Corpus down to Token, with stored fields and computed methods for each type\" viewBox=\"0 0 720 460\" width=\"720\" height=\"460\" style=\"max-width:100%;height:auto;display:block;margin:1.7em auto\">\n<title>Containment from Corpus to Token, stored fields against computed methods</title>\n<style>\n.mx-own text{fill:currentColor}\n.mx-own .box{fill:none;stroke:currentColor;opacity:.35;stroke-width:1px}\n.mx-own .ty{font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}\n.mx-own .mem{font-size:9.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;opacity:.8}\n.mx-own .hd{font-size:10px;font-family:inherit;opacity:.55}\n.mx-own .rule{stroke:currentColor;opacity:.18;stroke-width:1px}\n</style>\n<text class=\"hd\" x=\"206\" y=\"20\">stored fields</text>\n<text class=\"hd\" x=\"462\" y=\"20\">computed on call</text>\n<line class=\"rule\" x1=\"452\" y1=\"28\" x2=\"452\" y2=\"448\"/>\n<rect class=\"box\" x=\"8\" y=\"36\" width=\"182\" height=\"408\" rx=\"4\"/>\n<rect class=\"box\" x=\"20\" y=\"90\" width=\"167\" height=\"348\" rx=\"4\"/>\n<rect class=\"box\" x=\"32\" y=\"134\" width=\"152\" height=\"298\" rx=\"4\"/>\n<rect class=\"box\" x=\"44\" y=\"202\" width=\"137\" height=\"224\" rx=\"4\"/>\n<rect class=\"box\" x=\"56\" y=\"246\" width=\"122\" height=\"174\" rx=\"4\"/>\n<rect class=\"box\" x=\"68\" y=\"300\" width=\"107\" height=\"114\" rx=\"4\"/>\n<rect class=\"box\" x=\"80\" y=\"368\" width=\"92\" height=\"40\" rx=\"4\"/>\n<text class=\"ty\" x=\"17\" y=\"55\">Corpus</text>\n<text class=\"ty\" x=\"29\" y=\"109\">CorpusEntry</text>\n<text class=\"ty\" x=\"41\" y=\"153\">Document</text>\n<text class=\"ty\" x=\"53\" y=\"221\">Section</text>\n<text class=\"ty\" x=\"65\" y=\"265\">Paragraph</text>\n<text class=\"ty\" x=\"77\" y=\"319\">Sentence</text>\n<text class=\"ty\" x=\"89\" y=\"387\">Token</text>\n<text class=\"mem\" x=\"206\" y=\"55\">entries</text>\n<text class=\"mem\" x=\"462\" y=\"55\">total_words · passive_ratio ·</text>\n<text class=\"mem\" x=\"462\" y=\"67\">mean_readability</text>\n<text class=\"mem\" x=\"206\" y=\"109\">path · analysis</text>\n<text class=\"mem\" x=\"206\" y=\"153\">sections · vocabulary_ttr ·</text>\n<text class=\"mem\" x=\"206\" y=\"165\">nominalization_ratio · passive_ratio</text>\n<text class=\"mem\" x=\"462\" y=\"153\">paragraph_count · total_sentences ·</text>\n<text class=\"mem\" x=\"462\" y=\"165\">total_words · passive_ratio ·</text>\n<text class=\"mem\" x=\"462\" y=\"177\">mean_sentence_length · sentence_length_std</text>\n<text class=\"mem\" x=\"206\" y=\"221\">heading · level · paragraphs</text>\n<text class=\"mem\" x=\"206\" y=\"265\">text · in_blockquote · sentences ·</text>\n<text class=\"mem\" x=\"206\" y=\"277\">three metric slots</text>\n<text class=\"mem\" x=\"462\" y=\"265\">word_count · sentence_count</text>\n<text class=\"mem\" x=\"206\" y=\"319\">text · tokens</text>\n<text class=\"mem\" x=\"462\" y=\"319\">root_token · head_of · children_of ·</text>\n<text class=\"mem\" x=\"462\" y=\"331\">subtree · tree_depth · is_passive ·</text>\n<text class=\"mem\" x=\"462\" y=\"343\">word_count · content_tokens</text>\n<text class=\"mem\" x=\"206\" y=\"387\">the ten CoNLL-U columns · is_punct</text>\n</svg>",
+      "words": 512
+    },
+    {
+      "compression_ratio": 0.5096,
+      "in_blockquote": false,
+      "lexical_density": 0.5495,
+      "readability_grade": 13.3814,
+      "sentences": 5,
+      "text": "The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree, and the document-level numbers stored rather than derived are `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. `passive_ratio` is the one name in both columns: the measure stage stores the method's result in the field, which is how the aggregate crosses the language boundary.",
+      "words": 95
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7143,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Five more types sit outside the nest:",
+      "words": 7
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.3846,
+      "readability_grade": 14.7237,
+      "sentences": 1,
+      "text": "Where each of those enters and leaves the pipeline is drawn in [Architecture](../architecture/design.md#one-call-end-to-end).",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6154,
+      "readability_grade": 9.4492,
+      "sentences": 2,
+      "text": "`RawDocument` is the one structural type without serde derives. It is a transient value between the ingest and decompose stages and never appears in stored output.",
+      "words": 26
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5366,
+      "readability_grade": 9.0229,
+      "sentences": 3,
+      "text": "No type in the module derives `PartialEq`, `Eq`, or `Hash`. Two `Token` values cannot be compared with `==`, and a `Format` is distinguished by matching on its variants rather than by equality. `Error` additionally has no `Clone` and no serde derives.",
+      "words": 42
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.625,
+      "readability_grade": 9.67,
+      "sentences": 3,
+      "text": "`#[non_exhaustive]` has two effects outside the crate. Struct literal syntax is unavailable, so you build values through the associated constructors listed below. Matches on `Format` and `Error` need a catch-all arm, because variants can be added in a minor release.",
+      "words": 42
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4583,
+      "readability_grade": 6.2983,
+      "sentences": 3,
+      "text": "Every field on these types is `pub` and readable. `TokenBuilder` is the exception: its fields are private and you reach them through its setters.",
+      "words": 25
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.9231,
+      "readability_grade": 9.4492,
+      "sentences": 1,
+      "text": "One parsed token carrying the full CoNLL-U annotation set plus one derived flag.",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6364,
+      "readability_grade": 12.3,
+      "sentences": 1,
+      "text": "Provider-specific notes for the UDPipe adapter, the one adapter that ships:",
+      "words": 12
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5217,
+      "readability_grade": 4.0298,
+      "sentences": 2,
+      "text": "- `is_punct` is set when the UPOS tag is `PUNCT`.\n- `deps` is always the string `_`, the CoNLL-U empty marker. The underlying `udpipe-rs` binding does not surface column 9.\n- `xpos`, `feats`, and `misc` carry whatever the model emits, and can be `_` or empty.",
+      "words": 44
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4783,
+      "readability_grade": 12.8757,
+      "sentences": 1,
+      "text": "A token id or head that does not fit in `usize` is rejected at the adapter with `Error::ParseFailed` rather than being silently coerced.",
+      "words": 24
+    },
+    {
+      "compression_ratio": 0.5688,
+      "in_blockquote": false,
+      "lexical_density": 0.82,
+      "readability_grade": 8.873,
+      "sentences": 4,
+      "text": "`Token::builder(id, text, lemma, pos, head, dep) -> TokenBuilder` takes the six CoNLL-U essentials. `TokenBuilder` carries one setter per optional field (`xpos`, `feats`, `deps`, `misc`, each taking `String`; `is_punct` taking `bool`), each consuming and returning the builder. `build()` returns the `Token`. Unset string fields default to empty; `is_punct` defaults to `false`.",
+      "words": 55
+    },
+    {
+      "compression_ratio": 0.6538,
+      "in_blockquote": false,
+      "lexical_density": 0.5962,
+      "readability_grade": 11.3662,
+      "sentences": 3,
+      "text": "`feat(\"Mood\")` returns `Some(\"Ind\")` when `feats` is `Mood=Ind|Tense=Pres`. The value is borrowed raw from `feats`, so multi-valued features (`Case=Nom,Acc`) come back unsplit: matra exposes what the provider emitted and does not normalise it. Both the empty string and the CoNLL-U placeholder `_` carry no `key=value` pair, so every lookup on them returns `None`.",
+      "words": 67
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5455,
+      "readability_grade": 10.5123,
+      "sentences": 2,
+      "text": "`feat` is Rust-only by design. `feats` already crosses FFI as a string, so a lookup over it adds no information to the wire; a Python or TypeScript caller splits the same string ([RFC-0009](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0009-feats-lookup-accessor.md)).",
+      "words": 35
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5429,
+      "readability_grade": 16.2657,
+      "sentences": 1,
+      "text": "Invariants that downstream code relies on, and that a hand-built `Sentence` is expected to uphold: tokens are id-sorted; exactly one token has `head == 0`; every other `head` names a token in the same sentence.",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 10.795,
+      "sentences": 2,
+      "text": "The UDPipe adapter builds `text` by joining token surface forms, inserting a space unless the preceding token carries `SpaceAfter=No` in `misc`. The string is a reconstruction, not a slice of the input, so whitespace can differ from the source text.",
+      "words": 41
+    },
+    {
+      "compression_ratio": 0.5556,
+      "in_blockquote": false,
+      "lexical_density": 0.5612,
+      "readability_grade": 12.9351,
+      "sentences": 4,
+      "text": "The fields after `tokens` are computed once from the dependency graph and serialized with the sentence, so every language binding and the CLI's JSON read one Rust detection as data ([RFC-0008](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0008-structural-primitives-are-fields.md)). Most are computed at `Sentence::new`; `hearst_pairs` is the exception, filled by the pipeline at the annotate stage because its detector lives in the `hearst` module outside the domain, so a hand-built `Sentence` carries an empty vector until the caller runs `hearst::hypernymy_pairs`. Each field reports structure only; the reading is the caller's. All of them default (to empty or `false`) when deserializing JSON produced before the field existed.",
+      "words": 104
+    },
+    {
+      "compression_ratio": 0.5491,
+      "in_blockquote": false,
+      "lexical_density": 0.5806,
+      "readability_grade": 11.3119,
+      "sentences": 3,
+      "text": "`Negation` reports one cue by token id: `cue_id`, `cue_lemma` (`not`, `never`, `no`, `neither`, `nor`), and `head_id`, the token the cue attaches to. A cue fires only on its carrying relation (`advmod`, `det`, `cc`), so `nothing` as a subject does not fire and tokenizer-split `cannot` fires exactly once, on the `not` token. Whether the negation reverses the sentence's claim is not matra's call.",
+      "words": 67
+    },
+    {
+      "compression_ratio": 0.4907,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 12.1797,
+      "sentences": 8,
+      "text": "`Modal` reports one modal auxiliary by token id: `aux_id`, `aux_lemma`, and `head_id`, the token the auxiliary attaches to (`0` when the modal is itself the root). The closed class is the ten lemmas the UD English treebank tags `MD`: `can`, `could`, `may`, `might`, `must`, `ought`, `shall`, `should`, `will`, `would`, matched by lemma on the `aux` relation or the `AUX` part of speech. The part-of-speech arm catches the shapes the model does not park on `aux`: VP ellipsis promotes the modal to root (\"Yes, you should.\") and coordinated auxiliaries parse as root plus `aux` or `conj` (\"He can and will succeed.\"). Precision holds because the model's only other `AUX` lemmas (`be`, `have`, `do`, `get`) are outside the class. Contracted forms fire on their lemma (`wo` in `won't` lemmatizes to `will`), the noun `will` never fires because it never carries `aux` or `AUX`, and a multi-auxiliary chain (`might have been done`) reports its modal with `head_id` on the content verb. English modals are ambiguous across readings, and resolving `must` into obligation or inference takes context matra does not model, so no epistemic, deontic, or dynamic category is assigned: the auxiliary and its arc are reported, the reading is the caller's.",
+      "words": 216
+    },
+    {
+      "compression_ratio": 0.5426,
+      "in_blockquote": false,
+      "lexical_density": 0.549,
+      "readability_grade": 9.2027,
+      "sentences": 4,
+      "text": "`bare_assertion` is true when the root clause is finite indicative and no detected modal governs it: the bare assertoric surface form. `Mood=Ind` is read off the root token or off a `cop`, `aux`, or `aux:pass` child of the root, because the model parks finiteness on the auxiliary in copular (\"The sky is blue.\"), do-support (\"He did leave.\") and passive clauses. A modalized clause fails because a modal attaches to the root or is itself the root, and an imperative fails on `Mood=Imp`. It reads the root clause only, so a modal in a subordinate clause is reported in `modals` without defeating it.",
+      "words": 107
+    },
+    {
+      "compression_ratio": 0.4748,
+      "in_blockquote": false,
+      "lexical_density": 0.5765,
+      "readability_grade": 8.3499,
+      "sentences": 11,
+      "text": "`Reporting` reports one reporting construction by token id: `verb_id` and `verb_lemma` for the verb governing a clausal complement, `ccomp_id` for the head of that complement, and `subject_id` plus `subject_lemma` for the verb's subject (`nsubj`, `nsubj:pass`) when the parse has one in the same sentence. The construction fires for every verb that fills it (\"Smith reported that the effect vanished.\", \"These results suggest that the mechanism is shared.\", \"We show that the method works.\" all match), because reporting verbs are an open class and any list matra shipped would be incomplete while looking authoritative. Which verb lemmas count as evidential is the caller's lexicon, supplied as a parameter to `reportings_in` or applied to the field directly in any language. A `ccomp` under a non-verb head (\"I am sure that it works.\" parses the complement under the adjective) is outside the construction by decision. The subject is optional by observed fact: UDPipe splits \"Smith et al. reported that ...\" into two sentences at the period in \"et al.\", stranding the attribution in the previous sentence while the reporting verb keeps its `ccomp`. That upstream segmentation defect is recorded here and in the test suite rather than papered over.",
+      "words": 199
+    },
+    {
+      "compression_ratio": 0.5007,
+      "in_blockquote": false,
+      "lexical_density": 0.5882,
+      "readability_grade": 11.9792,
+      "sentences": 4,
+      "text": "`RootAdverbial` reports one adverbial modifier attached to the root by token id: `adv_id` and `adv_lemma`. The root-attached `advmod` arc is where sentence-scope adverbs land (\"Reportedly, the deal closed.\"), but the dependency graph does not distinguish sentence scope from manner (\"The team quickly shipped.\" puts `quickly` on the same arc), so every root-attached adverbial is reported and the caller's lexicon selects the evidential ones, via `root_adverbials_in` or a filter over the field. Negation particles on the same arc (\"not\" in \"The plan is not ready.\") appear in both `negations` and `root_adverbials`; both report arcs, neither assigns a reading, and the overlap is intentional.",
+      "words": 108
+    },
+    {
+      "compression_ratio": 0.454,
+      "in_blockquote": false,
+      "lexical_density": 0.6127,
+      "readability_grade": 18.2622,
+      "sentences": 6,
+      "text": "`HearstPair` reports one candidate hypernymy pair from the six lexico-syntactic patterns of Hearst (1992), detected as dependency-arc patterns rather than regex over surface text: `NP such as NP`, `such NP as NP`, `NP, including NP`, `NP, especially NP`, `NP and other NP`, `NP or other NP`. The `pattern` field carries a `HearstPattern` tag naming the construction that matched (`such_as`, `such_np_as`, `including`, `especially`, `and_other`, `or_other` on the wire), and `hypernym` and `hyponym` each carry a `HearstSpan`: `head_id` and `head_lemma` for the noun phrase head, plus `first_id` and `last_id` for the contiguous token range covering the head and its adjacent nominal modifiers, with the pattern's own marker words (`such`, `other`) excluded, so traceability holds against `tokens`. Precision is favoured over recall: each detector requires the full verified arc shape, so a clausal coordination (\"She invited John, and other guests brought gifts.\"), a definite contrastive coordination (\"The teacher and the other students laughed.\"), or an emphasized plain coordination (\"France and especially Spain\") does not fire, and a sentence the model misparses is missed rather than misreported. The pair is a candidate by design: matra reports that the sentence used a construction which conventionally signals hypernymy, and does not build a taxonomy or assert the relation is true.",
+      "words": 210
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 8.0429,
+      "sentences": 2,
+      "text": "Most methods below are walks over the `head` and `dep` columns; the two `_in` filters are views over the derived fields against a caller-supplied lexicon. [Concepts](../explanation/concepts.md#the-document-tree) draws one parsed sentence as the tree these walk.",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6279,
+      "readability_grade": 8.9349,
+      "sentences": 2,
+      "text": "`tree_depth` runs in time linear in token count and returns `usize::MAX` when the head references form a cycle, which reports a malformed parse instead of truncating it. An empty sentence returns 0. `subtree` carries a visited set, so it terminates on cyclic input.",
+      "words": 44
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5833,
+      "readability_grade": 7.2817,
+      "sentences": 2,
+      "text": "`word_count` counts tokens the NLP provider identified, minus punctuation. It is not a whitespace split, and the two counts differ on the same text.",
+      "words": 24
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.64,
+      "readability_grade": 12.096,
+      "sentences": 1,
+      "text": "The three metric slots hold `None` until the measure stage fills them, and stay `None` when the paragraph does not meet a metric's applicability condition.",
+      "words": 26
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5667,
+      "readability_grade": 12.63,
+      "sentences": 1,
+      "text": "The pipeline skips blockquote paragraphs at the parse stage, so a paragraph with `in_blockquote == true` reaches the measure stage with no sentences and keeps all three slots at `None`.",
+      "words": 30
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 9.14,
+      "sentences": 5,
+      "text": "`MarkdownDecomposer` sets `level` to the number of leading `#` characters and `heading` to the rest of the line. Content before the first heading becomes a section with `heading: None` and `level: 0`. `PlainTextDecomposer` produces at most one section, always with `heading: None` and `level: 0`.",
+      "words": 45
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5625,
+      "readability_grade": 11.8675,
+      "sentences": 3,
+      "text": "`Section::new(heading: Option<String>, level: usize, paragraphs: Vec<Paragraph>) -> Section` is the constructor. There are no other methods.",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "The output of the pipeline.",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6053,
+      "readability_grade": 12.3147,
+      "sentences": 2,
+      "text": "Both summarizers select the top N by score and then return them in ascending `position`, so the result reads in document order while `score` carries the ranking. `ScoredSentence::new(text: String, score: f64, position: usize) -> ScoredSentence` is the constructor.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7059,
+      "readability_grade": 8.5485,
+      "sentences": 3,
+      "text": "Both extractors return phrases in descending score order. `Keyphrase::new(phrase: String, score: f64) -> Keyphrase` is the constructor.",
+      "words": 19
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Which decomposer a document needs.",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4348,
+      "readability_grade": 9.2843,
+      "sentences": 2,
+      "text": "`Format::from_path(path: impl AsRef<Path>) -> Format` is that table, and it is the only copy of it. `FileSource` reads it for a file on disk and the command line reads it for the name given to `--stdin-filename`, so a name means the same thing on both routes.",
+      "words": 49
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5682,
+      "readability_grade": 11.3164,
+      "sentences": 3,
+      "text": "`Pdf` and `Docx` have no entry in the standard decomposer table, so analyzing such a file returns `Error::UnsupportedFormat`. `Ingest::text` takes the format as an argument; `Ingest::path` assigns one from the extension. `Format` derives `PartialEq` and `Eq`, which is what the decomposer table keys on.",
+      "words": 47
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5909,
+      "readability_grade": 11.7636,
+      "sentences": 2,
+      "text": "`RawDocument::new(text: String, path: Option<PathBuf>, format: Format) -> RawDocument` is the constructor. This is the value a `Source` produces and a `Decomposer` consumes.",
+      "words": 25
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 22.0089,
+      "sentences": 2,
+      "text": "`CorpusEntry::new(path: Option<PathBuf>, analysis: Document) -> CorpusEntry` is the constructor.",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5789,
+      "readability_grade": 10.4729,
+      "sentences": 2,
+      "text": "Documents that failed do not appear here. They travel as `DocumentError` values and land in `CorpusResult::errors` beside the corpus.",
+      "words": 20
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7143,
+      "readability_grade": 8.7254,
+      "sentences": 4,
+      "text": "One per-document failure. `Display` prints `path: error` when a path exists and the bare error otherwise; `source()` returns the wrapped `Error`. `DocumentError::new(path, error)` is the constructor. Not `Serialize` and not `Clone`, because `Error` wraps `std::io::Error`.",
+      "words": 41
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6512,
+      "readability_grade": 15.5209,
+      "sentences": 4,
+      "text": "The partition of a per-document result stream: entries plus errors equals documents consumed. `collect()` is its constructor, via `FromIterator<Result<CorpusEntry, DocumentError>>`, which is how a stream from `Engine::analyze` becomes one value. Inherits `DocumentError`'s serialization gap, so it does not cross the language boundary today.",
+      "words": 47
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 6.7967,
+      "sentences": 3,
+      "text": "The Python surface serializes values with pythonize. Fields have a serde representation and cross with their names unchanged. Methods have none, so there is nothing for them to cross with.",
+      "words": 30
+    },
+    {
+      "compression_ratio": 0.2596,
+      "in_blockquote": false,
+      "lexical_density": 0.9441,
+      "readability_grade": 14.2533,
+      "sentences": 29,
+      "text": "<svg class=\"mx-ffi\" role=\"img\" aria-label=\"Document fields cross the FFI boundary into a Python dict; Document methods stop at the boundary\" viewBox=\"0 0 720 340\" width=\"720\" height=\"340\" style=\"max-width:100%;height:auto;display:block;margin:1.7em auto\">\n<title>Fields cross the FFI boundary, methods stop at it</title>\n<style>\n.mx-ffi text{fill:currentColor}\n.mx-ffi .box{fill:none;stroke:currentColor;opacity:.35;stroke-width:1px}\n.mx-ffi .ty{font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}\n.mx-ffi .mem{font-size:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;opacity:.85}\n.mx-ffi .hd{font-size:9.5px;font-family:inherit;opacity:.55}\n.mx-ffi .nt{font-size:10px;font-family:inherit;opacity:.6}\n.mx-ffi .wall{stroke:currentColor;opacity:.45;stroke-width:1.4px}\n.mx-ffi .cross{stroke:currentColor;opacity:.75;stroke-width:1.2px}\n.mx-ffi .stop{stroke:currentColor;opacity:.4;stroke-width:1.2px;stroke-dasharray:3 3}\n.mx-ffi .bar{stroke:currentColor;opacity:.85;stroke-width:2.4px}\n.mx-ffi marker path{fill:currentColor;opacity:.75}\n</style>\n<defs><marker id=\"mx-ffi-a\" viewBox=\"0 0 8 8\" refX=\"7\" refY=\"4\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto\"><path d=\"M0,0 L8,4 L0,8 z\"/></marker></defs>\n<text class=\"hd\" x=\"16\" y=\"30\">Rust</text>\n<text class=\"hd\" x=\"452\" y=\"30\">Python</text>\n<rect class=\"box\" x=\"16\" y=\"40\" width=\"272\" height=\"268\" rx=\"5\"/>\n<rect class=\"box\" x=\"452\" y=\"40\" width=\"252\" height=\"142\" rx=\"5\"/>\n<text class=\"ty\" x=\"30\" y=\"64\">Document</text>\n<text class=\"ty\" x=\"466\" y=\"64\">Document</text>\n<text class=\"hd\" x=\"30\" y=\"86\">stored fields</text>\n<text class=\"hd\" x=\"466\" y=\"86\">dict keys</text>\n<text class=\"mem\" x=\"30\" y=\"104\">sections</text>\n<text class=\"mem\" x=\"30\" y=\"122\">vocabulary_ttr</text>\n<text class=\"mem\" x=\"30\" y=\"140\">nominalization_ratio</text>\n<text class=\"mem\" x=\"30\" y=\"158\">passive_ratio</text>\n<text class=\"mem\" x=\"466\" y=\"104\">sections</text>\n<text class=\"mem\" x=\"466\" y=\"122\">vocabulary_ttr</text>\n<text class=\"mem\" x=\"466\" y=\"140\">nominalization_ratio</text>\n<text class=\"mem\" x=\"466\" y=\"158\">passive_ratio</text>\n<text class=\"hd\" x=\"30\" y=\"190\">methods</text>\n<text class=\"mem\" x=\"30\" y=\"208\">paragraph_count()</text>\n<text class=\"mem\" x=\"30\" y=\"226\">total_sentences()</text>\n<text class=\"mem\" x=\"30\" y=\"244\">total_words()</text>\n<text class=\"mem\" x=\"30\" y=\"262\">mean_sentence_length()</text>\n<text class=\"mem\" x=\"30\" y=\"280\">sentence_length_std()</text>\n<line class=\"cross\" x1=\"294\" y1=\"100\" x2=\"444\" y2=\"100\" marker-end=\"url(#mx-ffi-a)\"/>\n<line class=\"cross\" x1=\"294\" y1=\"118\" x2=\"444\" y2=\"118\" marker-end=\"url(#mx-ffi-a)\"/>\n<line class=\"cross\" x1=\"294\" y1=\"136\" x2=\"444\" y2=\"136\" marker-end=\"url(#mx-ffi-a)\"/>\n<line class=\"cross\" x1=\"294\" y1=\"154\" x2=\"444\" y2=\"154\" marker-end=\"url(#mx-ffi-a)\"/>\n<line class=\"stop\" x1=\"176\" y1=\"204\" x2=\"386\" y2=\"204\"/>\n<line class=\"stop\" x1=\"176\" y1=\"222\" x2=\"386\" y2=\"222\"/>\n<line class=\"stop\" x1=\"176\" y1=\"240\" x2=\"386\" y2=\"240\"/>\n<line class=\"stop\" x1=\"176\" y1=\"258\" x2=\"386\" y2=\"258\"/>\n<line class=\"stop\" x1=\"176\" y1=\"276\" x2=\"386\" y2=\"276\"/>\n<line class=\"bar\" x1=\"388\" y1=\"197\" x2=\"388\" y2=\"211\"/>\n<line class=\"bar\" x1=\"388\" y1=\"215\" x2=\"388\" y2=\"229\"/>\n<line class=\"bar\" x1=\"388\" y1=\"233\" x2=\"388\" y2=\"247\"/>\n<line class=\"bar\" x1=\"388\" y1=\"251\" x2=\"388\" y2=\"265\"/>\n<line class=\"bar\" x1=\"388\" y1=\"269\" x2=\"388\" y2=\"283\"/>\n<text class=\"hd\" x=\"401\" y=\"14\" text-anchor=\"middle\">FFI boundary</text>\n<text class=\"hd\" x=\"401\" y=\"26\" text-anchor=\"middle\">pythonize + serde</text>\n<line class=\"wall\" x1=\"398\" y1=\"32\" x2=\"398\" y2=\"324\"/>\n<line class=\"wall\" x1=\"404\" y1=\"32\" x2=\"404\" y2=\"324\"/>\n<text class=\"nt\" x=\"462\" y=\"228\">a Python caller computes these</text>\n<text class=\"nt\" x=\"462\" y=\"244\">from the sections it already has</text>\n</svg>",
+      "words": 674
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5385,
+      "readability_grade": 15.3124,
+      "sentences": 3,
+      "text": "`Token::feat`, `Document::mean_sentence_length`, `Corpus::total_words`, `Sentence::tree_depth`, and every other method in the tables above are available to Rust callers only. `passive_ratio` is the one aggregate that crosses: the measure stage stores the method's result in the field of the same name.",
+      "words": 41
+    },
+    {
+      "compression_ratio": 0.5303,
+      "in_blockquote": false,
+      "lexical_density": 0.627,
+      "readability_grade": 9.3868,
+      "sentences": 6,
+      "text": "`CorpusEntry` and `DocumentError` are the two items `Matra.analyze_path` returns, and the Python package names their union `matra.types.CorpusItem`. Neither crosses through serde as a whole. The binding assembles both items field by field: `analysis` crosses through serde like every shape above it, while `path` is decoded with the platform's filesystem decoding (`os.fsdecode` on Unix) so a name that is not valid UTF-8 still crosses instead of aborting the walk, and `DocumentError`'s error, which wraps `std::io::Error` and has no stable wire shape, becomes `{\"kind\": str, \"message\": str}`. `kind` is `Error::kind` on the domain type, pinned across bindings by `spec/tests/corpus/items.json` and exported to Python as `matra.ERROR_KINDS`; `message` is the Rust error's own `Display` text. A future binding must take the same field-by-field route rather than serializing the entry whole.",
+      "words": 141
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5833,
+      "readability_grade": 10.7233,
+      "sentences": 3,
+      "text": "The Python shapes are `TypedDict` declarations available at runtime. They are declared in `matra.types` and re-exported from the package root, so either import works:",
+      "words": 25
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.84,
+      "readability_grade": 8.165,
+      "sentences": 2,
+      "text": "Field names and nesting match the Rust types exactly. `Option<f64>` becomes `float | None`; `Option<String>` becomes `str | None`; `Vec<T>` becomes `list[T]`; `usize` becomes `int`.",
+      "words": 33
+    }
+  ]
+}

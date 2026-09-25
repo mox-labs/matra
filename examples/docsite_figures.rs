@@ -28,6 +28,13 @@
 //!                (needs the `model2vec` feature and the embedding model)
 //!   pipeline     one document at each stage: ingested, annotated, composed
 //!
+//! Beside the inputs, every page of the docsite measures itself: each page
+//! under `site/content/` goes through the same pipeline as Markdown
+//! (`Ingest::text`), and its paragraphs' measures are written to
+//! `site/src/lib/figures/pages/<page>/measures.json`, with each paragraph's
+//! text so the site can check that it sets each number beside the paragraph
+//! it measures, rather than trust the order.
+//!
 //! An input's sidecar may name the figures it gets (`figures = [...]`);
 //! without that it gets the first five. `format = "markdown"` in the sidecar
 //! reads the input as Markdown; plain text otherwise.
@@ -224,7 +231,75 @@ fn main() -> Result<(), Box<dyn Error>> {
             eprintln!("docsite_figures: wrote {}", path.display());
         }
     }
+
+    let content = root.join("site/content");
+    let mut pages = Vec::new();
+    collect_pages(&content, &content, &mut pages)?;
+    pages.sort();
+    for rel in pages {
+        let source = fs::read_to_string(content.join(&rel))?;
+        let doc = engine
+            .analyze(Ingest::text(source, Format::Markdown))
+            .next()
+            .ok_or("the pipeline returned no document")?
+            .map_err(|e| format!("site/content/{rel}: {}", e.error))?
+            .analysis;
+        let value = json!({
+            "page": rel,
+            "generator": generator,
+            "paragraphs": page_measures(&doc),
+        });
+        let dir = out.join("pages").join(rel.trim_end_matches(".md"));
+        fs::create_dir_all(&dir)?;
+        let path = dir.join("measures.json");
+        let mut body = serde_json::to_string_pretty(&value)?;
+        body.push('\n');
+        fs::write(&path, body)?;
+        eprintln!("docsite_figures: wrote {}", path.display());
+    }
     Ok(())
+}
+
+/// Every Markdown page under `dir`, as a path relative to `root` with `/`
+/// separators. `SUMMARY.md` is navigation, not a page. A symlinked page (the
+/// roadmap) is read through its link, as the site reads it.
+fn collect_pages(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), Box<dyn Error>> {
+    for entry in fs::read_dir(dir)? {
+        let path = entry?.path();
+        if fs::metadata(&path)?.is_dir() {
+            collect_pages(root, &path, out)?;
+            continue;
+        }
+        let rel = path
+            .strip_prefix(root)?
+            .to_str()
+            .ok_or("a page path that is not UTF-8")?
+            .replace('\\', "/");
+        if rel.ends_with(".md") && rel != "SUMMARY.md" {
+            out.push(rel);
+        }
+    }
+    Ok(())
+}
+
+/// A page's paragraphs in document order, each with the text matra read and
+/// the measures it gave. A measure matra declined is null, never a zero.
+fn page_measures(doc: &Document) -> Vec<Value> {
+    doc.sections
+        .iter()
+        .flat_map(|s| &s.paragraphs)
+        .map(|p| {
+            json!({
+                "text": p.text,
+                "in_blockquote": p.in_blockquote,
+                "sentences": p.sentences.len(),
+                "words": p.word_count(),
+                "readability_grade": p.readability_grade.map(round4),
+                "lexical_density": p.lexical_density.map(round4),
+                "compression_ratio": p.compression_ratio.map(round4),
+            })
+        })
+        .collect()
 }
 
 /// The dependency parse: every sentence, in document order, with the CoNLL-U

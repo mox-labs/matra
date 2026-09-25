@@ -1,0 +1,408 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "reference/boundary-rules.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.875,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Eight rules hold matra's hexagonal architecture in place.",
+      "words": 9
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6364,
+      "readability_grade": 4.7914,
+      "sentences": 1,
+      "text": "`CLAUDE.md` carries a summary list and points here for the reasoning.",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6087,
+      "readability_grade": 11.598,
+      "sentences": 3,
+      "text": "Rust offers no directional import control between modules inside a single crate, and matra is a single crate by [RFC-0004](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0004-stay-single-crate.md). No compiler mechanism is available for most of these rules. Reasoned review is the primary enforcement; a script and one CI job cover the mechanical cases.",
+      "words": 48
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5526,
+      "readability_grade": 4.8905,
+      "sentences": 3,
+      "text": "`scripts/check-boundaries.sh` runs from `just check`, from the pre-commit hook that `scripts/install-hooks.sh` installs, and from the `Boundary check` job in `ci.yml`. The hook is opt-in. The hook runs the script on every commit regardless of which files are staged.",
+      "words": 42
+    },
+    {
+      "compression_ratio": 0.5294,
+      "in_blockquote": false,
+      "lexical_density": 0.5789,
+      "readability_grade": 6.9512,
+      "sentences": 4,
+      "text": "Rule 6 is the only rule CI verifies by compiling. The `rust` job runs `cargo check`, `cargo clippy`, and `cargo test` with and without default features, on Linux and macOS. The `msrv` job runs `cargo check` on Rust 1.88, once with all features and once with no default features. CI fires on pushes to `main` and `alpha` and on pull requests targeting them, so work on a feature branch is ungated until the pull request opens.",
+      "words": 76
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 12.8286,
+      "sentences": 2,
+      "text": "Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for a feature-gated dependency fails the no-default-features build. A violation that adds an unconditional dependency compiles cleanly, and review is the only thing that catches it.",
+      "words": 45
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6154,
+      "readability_grade": 2.4385,
+      "sentences": 1,
+      "text": "**The rule.** `src/domain.rs` depends on `serde`, `thiserror`, and `std`, and on nothing else.",
+      "words": 12
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7778,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "**Scope.** One file, plus the non-optional entries in `[dependencies]`.",
+      "words": 10
+    },
+    {
+      "compression_ratio": 0.6336,
+      "in_blockquote": false,
+      "lexical_density": 0.6226,
+      "readability_grade": 9.2497,
+      "sentences": 6,
+      "text": "**Why it is drawn there.** Domain types are what every language surface serializes. A dependency added here enters the closure of every caller on every target. Changing the set takes an RFC. `thiserror` was admitted that way: it emits no public API and replaced roughly 35 lines of hand-written `Display` and `Error` implementations.",
+      "words": 54
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7241,
+      "readability_grade": 6.7685,
+      "sentences": 3,
+      "text": "**Enforcement.** Review. Read the `use` lines at the top of `src/domain.rs`, new non-optional entries in `[dependencies]`, and any domain field whose type comes from outside the three allowed crates.",
+      "words": 29
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4706,
+      "readability_grade": 4.3838,
+      "sentences": 2,
+      "text": "**The rule.** Each port module imports from `crate::domain` and `std`, and from no other module or crate.",
+      "words": 18
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 1.0,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "**Scope.** `src/source/mod.rs`, `src/decompose/mod.rs`, `src/nlp/mod.rs`, `src/embed/mod.rs`.",
+      "words": 9
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5278,
+      "readability_grade": 9.0844,
+      "sentences": 3,
+      "text": "**Why it is drawn there.** A port is a contract. Whatever the contract imports becomes a requirement on everyone who implements it, so a domain-only port stays implementable by someone who has never read matra's adapters.",
+      "words": 38
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 6.0267,
+      "sentences": 3,
+      "text": "**Enforcement.** Review. Read the import block and the trait method signatures in those four files.",
+      "words": 15
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 0.5167,
+      "sentences": 2,
+      "text": "**The rule.** The four ports are peers and name each other nowhere.",
+      "words": 12
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "**Scope.** The same four files.",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.439,
+      "readability_grade": 7.2961,
+      "sentences": 4,
+      "text": "**Why it is drawn there.** Stage order belongs to the composition root, not to the contracts. If `Decomposer` knew about `NlpProvider`, the pipeline's shape would be encoded in the traits and a stage could no longer be replaced on its own.",
+      "words": 42
+    },
+    {
+      "compression_ratio": 0.5915,
+      "in_blockquote": false,
+      "lexical_density": 0.7069,
+      "readability_grade": 7.2443,
+      "sentences": 3,
+      "text": "**Enforcement.** `scripts/check-boundaries.sh` greps the four port files for `use crate::source`, `use crate::decompose`, `use crate::nlp`, and `use crate::embed`. The check sees only that literal form. Grouped imports, fully qualified inline paths with no `use` line, a trait bound naming another port's trait, and a type alias that launders the path all pass the script and still violate the rule.",
+      "words": 62
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4615,
+      "readability_grade": 3.3462,
+      "sentences": 1,
+      "text": "**The rule.** `src/nlp/udpipe.rs` is the only file in the crate that imports `udpipe_rs`.",
+      "words": 15
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "**Scope.** All of `src/`.",
+      "words": 5
+    },
+    {
+      "compression_ratio": 0.5591,
+      "in_blockquote": false,
+      "lexical_density": 0.5263,
+      "readability_grade": 8.086,
+      "sentences": 6,
+      "text": "**Why it is drawn there.** This is a resilience rule. UDPipe is C++ across an FFI boundary holding state that is not `Send`, and a panic on the C side aborts the host process rather than unwinding, which means interpreter death in Python. The `catch_unwind` boundary in `nlp/udpipe.rs` converts that into a `domain::Error`. Confining the import is what makes that boundary the only entrance rather than one entrance among several. A second NLP backend gets its own adapter file with its own panic boundary, which is the pattern working rather than an exception to it.",
+      "words": 99
+    },
+    {
+      "compression_ratio": 0.5714,
+      "in_blockquote": false,
+      "lexical_density": 0.6923,
+      "readability_grade": 7.7592,
+      "sentences": 3,
+      "text": "**Enforcement.** `scripts/check-boundaries.sh` searches `src/` for `use udpipe_rs` and `udpipe_rs::`, excluding `src/nlp/udpipe.rs`. It cannot see re-exports: a `pub use udpipe_rs::Model;` inside the adapter would let any other file name the C-backed type while the check stays green. Review reads for re-exports and for any `udpipe_rs` type appearing in a signature outside that file.",
+      "words": 56
+    },
+    {
+      "compression_ratio": 0.5864,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 9.6699,
+      "sentences": 4,
+      "text": "**The analog.** `src/embed/model2vec.rs` is the only file that imports `safetensors` and `tokenizers`, enforced by the same script with the same re-export blind spot. Those crates are pure Rust, so the confinement is not a C panic boundary; it is what keeps the adapter swappable and the model-format vocabulary out of every other file's reach. A second embedding backend gets its own adapter file with its own confinement line.",
+      "words": 72
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5652,
+      "readability_grade": 8.4348,
+      "sentences": 2,
+      "text": "**The rule.** No file under `src/metrics/` or `src/extraction/`, and no structure-reading module (`src/hearst.rs`), imports from any crate module other than `crate::domain` and `crate::stopwords`.",
+      "words": 28
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.75,
+      "readability_grade": 12.1133,
+      "sentences": 3,
+      "text": "**Scope.** Intra-crate imports only. External crates that the computation itself needs are unaffected: the compression metric uses `brotli`, and several extraction files use `std::collections`.",
+      "words": 27
+    },
+    {
+      "compression_ratio": 0.5743,
+      "in_blockquote": false,
+      "lexical_density": 0.5079,
+      "readability_grade": 10.2192,
+      "sentences": 4,
+      "text": "**Why it is drawn there.** These are pure functions over already-parsed structure. Purity is what lets them run with no model loaded, be unit-tested without fixtures, and be called by someone who parsed elsewhere. It is also what makes the parse-once-use-many contract real: a metric that reached for an `NlpProvider` would re-parse internally, and a caller who had already parsed would pay twice.",
+      "words": 68
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7,
+      "readability_grade": 6.01,
+      "sentences": 3,
+      "text": "**Enforcement.** Review. Read for any `use crate::` in those trees naming something beyond `domain` and `stopwords`, and for any function there taking `&dyn NlpProvider` or raw text instead of `&[Sentence]`.",
+      "words": 33
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8333,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "**The rule.** `cargo check --no-default-features` succeeds.",
+      "words": 8
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.75,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "**Scope.** The whole crate.",
+      "words": 4
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4359,
+      "readability_grade": 7.6338,
+      "sentences": 3,
+      "text": "**Why it is drawn there.** This is the mechanical proxy for features being additive and the core standing alone. It proves that the domain and the ports compile with no UDPipe, which is the configuration a type-only caller needs.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6471,
+      "readability_grade": 8.8318,
+      "sentences": 3,
+      "text": "**Enforcement.** CI, as described above. Code that only compiles with `udpipe` enabled belongs behind `#[cfg(feature = \"udpipe\")]`.",
+      "words": 19
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4286,
+      "readability_grade": 0.5586,
+      "sentences": 1,
+      "text": "**The rule.** `src/lib.rs` is the only place that knows all adapters and all ports.",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8889,
+      "readability_grade": null,
+      "sentences": 3,
+      "text": "**Scope.** Every file except `src/lib.rs`. Test modules are exempt.",
+      "words": 10
+    },
+    {
+      "compression_ratio": 0.6172,
+      "in_blockquote": false,
+      "lexical_density": 0.5263,
+      "readability_grade": 5.9079,
+      "sentences": 4,
+      "text": "**Why it is drawn there.** Knowledge of the full assembly is a cost paid once. Concentrating it in one file means a reader learns how matra is wired by reading one file, and adding an adapter is a one-file change. Two files that both know the wiring drift, and the place that was missed becomes the bug.",
+      "words": 58
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5938,
+      "readability_grade": 7.0738,
+      "sentences": 3,
+      "text": "**Enforcement.** Review. Read for any file other than `lib.rs` importing from two or more adapter modules, and for any helper outside the composition root that matches on `Format` to pick a decomposer.",
+      "words": 32
+    },
+    {
+      "compression_ratio": 0.5415,
+      "in_blockquote": false,
+      "lexical_density": 0.5698,
+      "readability_grade": 7.6204,
+      "sentences": 4,
+      "text": "`src/config.rs` sits in this tier alongside `lib.rs`. It imports `domain`, `std`, `serde` and `toml`, and it imports no port and no adapter. The traffic runs the other way: an adapter may import `Config` to offer a `from_config` constructor (RFC-0011), which is why `Udpipe::from_config` lives in `src/nlp/udpipe.rs` and `Model2Vec::from_config` in `src/embed/model2vec.rs`, not in the composition root. That import gives the adapter a default, not a second opinion about the wiring, so rule 7 still holds: `lib.rs` remains the only file that knows every adapter and every port.",
+      "words": 87
+    },
+    {
+      "compression_ratio": 0.5702,
+      "in_blockquote": false,
+      "lexical_density": 0.5738,
+      "readability_grade": 11.4427,
+      "sentences": 3,
+      "text": "`src/cli/` sits above that tier: it is the application, compiled into the library so both launchers run one program. From the crate it uses the public surface `lib.rs` exports (`Engine`, `Ingest`), the `extraction` functions (`tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`), `config` and `domain`, and never a port module or an adapter. It reaches the pipeline through `Engine::from_config`, so rule 7 holds there too.",
+      "words": 61
+    },
+    {
+      "compression_ratio": 0.5066,
+      "in_blockquote": false,
+      "lexical_density": 0.5727,
+      "readability_grade": 11.1191,
+      "sentences": 5,
+      "text": "Read for both spellings of a violation, because a grep over `use` lines alone is blind to the shape it would most likely take. The declared form is `use crate::nlp`, `use crate::source`, `use crate::decompose` or `use crate::embed` at the top of a file in `src/cli/`. The inline form is a qualified path in the body: `crate::nlp::`, `crate::source::`, `crate::decompose::` or `crate::embed::`. The CLI already reaches `Engine`, `Ingest` and the four extractors by inline path rather than by `use`, so the inline form is the ordinary idiom here and the one a violation would blend into. Either form would put adapter selection in the command line, which is the composition root's job.",
+      "words": 119
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5385,
+      "readability_grade": 3.3462,
+      "sentences": 1,
+      "text": "**The rule.** `tracing` is forbidden in `src/domain.rs` and in the four port modules.",
+      "words": 12
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.75,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "**Scope.** Those five files.",
+      "words": 4
+    },
+    {
+      "compression_ratio": 0.5843,
+      "in_blockquote": false,
+      "lexical_density": 0.5536,
+      "readability_grade": 9.0066,
+      "sentences": 5,
+      "text": "**Why it is drawn there.** Observability is an adapter and composition-root concern. A domain type that emits spans holds an opinion about the host's runtime and subscriber configuration, and a port that traces forces that opinion onto every implementor. In `domain.rs` it is also rule 1 by another route, since it would be a fourth dependency.",
+      "words": 58
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5143,
+      "readability_grade": 5.0086,
+      "sentences": 3,
+      "text": "**Enforcement.** `scripts/check-boundaries.sh` greps those five files for `use tracing` and for `tracing::`. The rule is preemptive: `tracing` is not a dependency of matra at all. The line was drawn before the first import could land.",
+      "words": 36
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6364,
+      "readability_grade": 9.6173,
+      "sentences": 1,
+      "text": "The script prints the offending files and exits non-zero on any failure, and prints `boundary checks pass (rules 3, 4, 8)` otherwise.",
+      "words": 22
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4333,
+      "readability_grade": 5.2233,
+      "sentences": 3,
+      "text": "A violation is a merge blocker. The remedy is a change to the structure, or an RFC that changes the rule deliberately. It is never a change to the check.",
+      "words": 30
+    }
+  ]
+}

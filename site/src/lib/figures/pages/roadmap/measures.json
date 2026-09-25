@@ -1,0 +1,660 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "roadmap.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.2857,
+      "readability_grade": 4.1986,
+      "sentences": 1,
+      "text": "What matra does not do yet, why, and the condition that would change that.",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4545,
+      "readability_grade": 8.3662,
+      "sentences": 2,
+      "text": "Every other page of this documentation describes what ships today. This page is the only one that describes what does not, which is what lets you trust the rest without auditing each claim.",
+      "words": 33
+    },
+    {
+      "compression_ratio": 0.5417,
+      "in_blockquote": false,
+      "lexical_density": 0.5968,
+      "readability_grade": 17.6258,
+      "sentences": 2,
+      "text": "matra follows a discipline borrowed from road-building: dirt road first, then cobblestone when traffic justifies it, then tarmac when the route is established. Each capability below is deferred not because it is unimportant, but because adding it before the trigger condition fires would add complexity that nobody needs yet, or that requires design decisions that need real usage patterns to make correctly.",
+      "words": 63
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 9.8305,
+      "sentences": 2,
+      "text": "The discipline is Chesterton's fence applied to features: before you add a capability, be able to state what problem it solves for which caller today. If the answer is \"we might need this eventually,\" the fence stays up.",
+      "words": 39
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5882,
+      "readability_grade": 7.1603,
+      "sentences": 2,
+      "text": "Every entry below names the trigger condition. When the condition is met, write an RFC and proceed.",
+      "words": 17
+    },
+    {
+      "compression_ratio": 0.5445,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 23.7363,
+      "sentences": 2,
+      "text": "A survey of the computational landscape (internal, 2026-08-21) sorts NLP affordances into three tiers: deterministic tooling whose output is checkable against the source (tokenizers, morphology, dependency parsers, document-structure extraction), specialist models (coreference, discourse relations), and general model judgment, which has the widest coverage and the lowest verifiability. The engineering rule it supports: route each operation to the lowest tier that meets the accuracy and verifiability requirement, and escalate only when the cheaper tier provably fails.",
+      "words": 79
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5526,
+      "readability_grade": 12.0042,
+      "sentences": 3,
+      "text": "matra is the first tier, deliberately. Everything it ships is deterministic and grounds back to the bytes it came from, which is what makes its output usable as data rather than as interpretation. Two consequences bound the roadmap:",
+      "words": 39
+    },
+    {
+      "compression_ratio": 0.5868,
+      "in_blockquote": false,
+      "lexical_density": 0.662,
+      "readability_grade": 18.5696,
+      "sentences": 3,
+      "text": "**Capabilities with no reliable affordance stay out, and the gap is recorded rather than simulated.** Pragmatic enrichment (implicature, purport, illocutionary force) and claim or fallacy certification have no deterministic path and no reliable model path either; the honest output there is a structural gap marker, not simulated confidence. matra's idiom already encodes this (`Option` slots that mean \"declined to compute\", the `usize::MAX` cycle sentinel, `UnsupportedFormat`, `DocumentError`), and new capabilities inherit it.",
+      "words": 74
+    },
+    {
+      "compression_ratio": 0.5975,
+      "in_blockquote": false,
+      "lexical_density": 0.6164,
+      "readability_grade": 15.5603,
+      "sentences": 3,
+      "text": "**Capabilities that need a specialist model are adapter work, not extensions of the parse.** Coreference is the clearest case: it sits a tier above UDPipe, the research synthesis places it above matra beside SRL and NLI, and pretending otherwise would put unverifiable output behind a surface that promises verifiability. If a specialist coreference adapter ever lands, it arrives as a new `NlpProvider` implementation behind its own feature flag, with its tier stated plainly.",
+      "words": 74
+    },
+    {
+      "compression_ratio": 0.6116,
+      "in_blockquote": false,
+      "lexical_density": 0.5185,
+      "readability_grade": 9.1231,
+      "sentences": 4,
+      "text": "**What it is.** Declarative rules expressed as predicates over `Document`. A `Rule` names a structural pattern (a dependency arc, a token sequence, a metric threshold) and fires when the pattern is present. The output is a `Finding` with a `SourceSpan` that points back to the bytes in the original text where the rule matched.",
+      "words": 54
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6444,
+      "readability_grade": 12.2867,
+      "sentences": 3,
+      "text": "This is the capability that bridges the record tier (what matra exposes today) and the abstract tier: relation extraction, modality detection, speech act classification, voice signature analysis. The record tier gives you the tokens and arcs. Rule evaluation gives you the named patterns over them.",
+      "words": 45
+    },
+    {
+      "compression_ratio": 0.5443,
+      "in_blockquote": false,
+      "lexical_density": 0.6452,
+      "readability_grade": 10.5023,
+      "sentences": 7,
+      "text": "**Where it lands.** Inside matra, in a new `src/rules/` module, occupying the `abstract` extension point RFC-0007 reserves between structure and purpose-fitted output. The vocabulary is locked by RFC-0006: `Rule`, `Predicate`, `Finding`, `SourceSpan`. Rule evaluation is not a separate crate; callers compose against one surface. The `Finding` type's shape (trait vs enum) is deferred to Phase 2; the name is locked. Rules are deterministic predicates over structure, so their findings stay at the verifiable tier: a `Finding` names the pattern and points at the bytes, and whether the pattern matters remains the caller's judgment.",
+      "words": 101
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.75,
+      "readability_grade": 10.1467,
+      "sentences": 3,
+      "text": "**Trigger condition. FIRED, 2026-05-23.** The condition was at least one concrete caller pattern that direct `Document` field access and application-side logic cannot adequately serve.",
+      "words": 28
+    },
+    {
+      "compression_ratio": 0.6284,
+      "in_blockquote": false,
+      "lexical_density": 0.6731,
+      "readability_grade": 15.4508,
+      "sentences": 3,
+      "text": "An internal research synthesis dated 2026-05-23 names five such patterns and states the case directly: \"these five primitives *are* the consumer sites. The deferral has fired.\" They are negation, modal classification, evidentiality, Hearst patterns, and typed morphological features, each grounded in a distinct literature (FactBank polarity, CoNLL-2010 hedges, Aikhenvald evidentiality, Hearst 1992).",
+      "words": 56
+    },
+    {
+      "compression_ratio": 0.6109,
+      "in_blockquote": false,
+      "lexical_density": 0.625,
+      "readability_grade": 12.2219,
+      "sentences": 3,
+      "text": "A second, sharper piece of evidence sat inside this repository. `Sentence::is_passive` was a method, and methods do not cross FFI, so `python/matra/cli.py` re-implemented passive detection over raw tokens: matra's own language binding duplicated its own primitive. RFC-0008 settled the channel (derived structural facts cross FFI as fields, computed once in Rust at a single point in the pipeline) and the Python re-implementation is deleted.",
+      "words": 70
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 13.8146,
+      "sentences": 2,
+      "text": "**The five primitives shipped, 2026-08-21**, in [`blueprints/eps/0007-structural-primitives.md`](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0007-structural-primitives.md), which carries the milestones, their rubrics, and the reasoning trail. `Rule` and `Predicate` are designed after them, from the shape the five actually took, which is what \"pulled from real use, not anticipated\" asked for.",
+      "words": 46
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5455,
+      "readability_grade": 6.4,
+      "sentences": 3,
+      "text": "**What the five revealed about that shape.** Written from the landed code, not from anticipation. A `Predicate` must be able to name:",
+      "words": 22
+    },
+    {
+      "compression_ratio": 0.4819,
+      "in_blockquote": false,
+      "lexical_density": 0.6028,
+      "readability_grade": 11.327,
+      "sentences": 15,
+      "text": "- **A single dependency arc, selected by relation and lemma.** Negation is one `advmod` arc carrying a closed-class cue; a modal is one `aux` arc whose lemma sits in the ten-item UD closed class, widened by the `AUX` part of speech to catch modals the parser promotes under ellipsis and coordination. Both landed as structs of token ids and lemmas (`Negation`, `Modal`). Arc-plus-lemma is the smallest pattern unit, and two of the five primitives are exactly one of them.\n- **A morphological feature at a tree position.** The bare-assertion discriminator reads `Mood` through `Token::feat` on the root or on a `cop` or `aux` child of it. A predicate vocabulary with arcs but without feats lookups cannot express the discriminator that separates asserted from modalized clauses.\n- **A multi-arc construction with optional participants.** The reporting construction is a verb governing a `ccomp`, plus its `nsubj` when the sentence has one (`Reporting`). The subject slot is optional because sentence segmentation strands attribution across boundaries; a construction predicate must match with an absent argument rather than fail.\n- **A lexicon as a parameter, for open classes.** Reporting verbs and evidential adverbs have no closed list, so the detectors report every structural match and `Sentence::reportings_in` and `Sentence::root_adverbials_in` filter by a caller-supplied lexicon. A `Rule` over an open class carries its lexicon as data; embedding one would ship an incomplete list that looks authoritative.\n- **Span pairs with token-id traceability, as output.** A Hearst match returns a pattern tag plus two spans, each a head token and a token-id range (`HearstPair`, `HearstSpan`). `SourceSpan` therefore has to address a range, not a single token, and a `Finding` has to be able to carry more than one of them.",
+      "words": 288
+    },
+    {
+      "compression_ratio": 0.6012,
+      "in_blockquote": false,
+      "lexical_density": 0.6316,
+      "readability_grade": 15.0953,
+      "sentences": 3,
+      "text": "Two mechanism facts carry over. Predicates read materialized fields, not the raw parse: RFC-0008 computes each derivation once at a single point in the pipeline and serializes it, so rule evaluation is field access over `Document` before it is graph walking. And that line held under real pressure: every discriminant that landed names a construction (`HearstPattern` variants, modal lemmas, the reporting shape), never a semantic judgment, which is exactly the Frame-3 contract RFC-0006 imposes on `Finding`.",
+      "words": 80
+    },
+    {
+      "compression_ratio": 0.5742,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 10.08,
+      "sentences": 5,
+      "text": "**What it is.** A `wasm-bindgen` surface that exposes the same `Document` types to TypeScript running in a browser or Node.js environment. The same names cross; the same methods-don't-cross constraint applies. This makes matra usable in frontend applications, browser-based document editors, and Node.js pipelines without requiring a Python or Rust runtime.",
+      "words": 55
+    },
+    {
+      "compression_ratio": 0.5704,
+      "in_blockquote": false,
+      "lexical_density": 0.6094,
+      "readability_grade": 11.3,
+      "sentences": 4,
+      "text": "**What is blocking it.** The current `NlpProvider` is UDPipe, which uses C FFI compiled to native machine code. C FFI cannot run in a WASM sandbox. A WASM `NlpProvider` requires either a WASM-compiled variant of UDPipe (which has been explored by the upstream project but is not production-ready), a smaller Rust-native model, or a network-backed provider that performs parsing server-side and returns annotated output.",
+      "words": 70
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6429,
+      "readability_grade": 8.8343,
+      "sentences": 2,
+      "text": "The `NlpProvider` trait requires no change to support a WASM implementation. Any Rust type that can implement `NlpProvider::parse` without C FFI can be used as the WASM backend.",
+      "words": 29
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.641,
+      "readability_grade": 12.1723,
+      "sentences": 3,
+      "text": "**Trigger condition.** A browser-side or Node.js caller with a documented requirement for matra analysis without a Python or Rust runtime, paired with an `NlpProvider` implementation that compiles to WASM and delivers sufficient parse quality for the target use case.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 9.6793,
+      "sentences": 4,
+      "text": "**What they are.** Adapter implementations of `Decomposer` for `.pdf` and `.docx` source files. The variants already exist in `domain::Format`; `FileSource` already detects `.pdf` and `.docx` extensions correctly. The composition root returns `Error::UnsupportedFormat` for those formats today; there is no decomposer to hand the bytes to.",
+      "words": 46
+    },
+    {
+      "compression_ratio": 0.5802,
+      "in_blockquote": false,
+      "lexical_density": 0.6897,
+      "readability_grade": 9.6857,
+      "sentences": 5,
+      "text": "**What is blocking them.** The Rust PDF extraction ecosystem. PDF text extraction requires handling layout ordering (columns, reading order), encoding diversity (Type1, CFF, CID fonts), and embedded-font subsetting. No current Rust crate handles all of these consistently and without correctness holes on real-world documents. DOCX extraction is more tractable but has not been required by any caller yet.",
+      "words": 61
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6458,
+      "readability_grade": 8.7567,
+      "sentences": 3,
+      "text": "**Trigger condition.** A documented caller requirement for PDF or DOCX analysis, paired with a Rust extraction crate that is stable (post-1.0, maintained, no known correctness holes on the document shapes the caller needs). When the adapter lands, no port trait changes; only the composition root grows a branch.",
+      "words": 49
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6098,
+      "readability_grade": 13.0522,
+      "sentences": 3,
+      "text": "**What it is.** A `DirectorySource` variant that descends into subdirectories rather than stopping at depth one. This enables processing nested document collections (a repository of markdown files organized by directory, for example) without the caller having to walk the tree manually.",
+      "words": 41
+    },
+    {
+      "compression_ratio": 0.553,
+      "in_blockquote": false,
+      "lexical_density": 0.6027,
+      "readability_grade": 9.0059,
+      "sentences": 7,
+      "text": "**What is blocking it.** No caller has required it. Recursive walks have non-obvious behavior: symlink cycles, permission errors mid-walk, and large directory trees with heterogeneous content all require explicit policy decisions. What is the depth limit? How are symlinks handled at nested levels? How do per-file errors propagate: do they abort the entire walk or continue? Building these policies into the API without a caller to validate them risks building the wrong policies.",
+      "words": 74
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6923,
+      "readability_grade": 15.8031,
+      "sentences": 2,
+      "text": "**Trigger condition.** A caller that documents a requirement to process nested directory trees, with enough specificity to make the symlink, error-tolerance, and depth-limit policy decisions correctly.",
+      "words": 28
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5652,
+      "readability_grade": 13.2204,
+      "sentences": 3,
+      "text": "**What it is.** A `Source` variant that yields documents one at a time rather than collecting all documents into a `Vec<RawDocument>` before returning. This enables processing document collections that exceed available memory, and supports push-semantics integrations where documents arrive from a queue rather than a filesystem.",
+      "words": 49
+    },
+    {
+      "compression_ratio": 0.543,
+      "in_blockquote": false,
+      "lexical_density": 0.625,
+      "readability_grade": 11.1583,
+      "sentences": 5,
+      "text": "**What is blocking it.** The current `Source::read` signature returns `Vec<RawDocument>`. A streaming variant requires a different return type: an iterator, a channel, or a `Stream` in the async sense. The async reactor decision (deferred per RFC-0004) is a prerequisite for the most useful form of streaming: async document processing. Without an async reactor, a synchronous iterator-based streaming source is possible but limited in value.",
+      "words": 69
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6053,
+      "readability_grade": 15.1095,
+      "sentences": 2,
+      "text": "**Trigger condition.** A caller requiring processing of more documents than can be held in memory simultaneously, or a push-semantics integration (a message queue feeding documents into matra in real time) where the `Vec<RawDocument>` return type is genuinely blocking.",
+      "words": 41
+    },
+    {
+      "compression_ratio": 0.5455,
+      "in_blockquote": false,
+      "lexical_density": 0.5692,
+      "readability_grade": 14.2815,
+      "sentences": 3,
+      "text": "**What it is.** Extraction of the `NlpProvider` trait into a separately published minimal crate, so third-party NLP provider implementors can depend on the port contract without depending on all of matra. This follows the Pattern 6 criterion: separately publish a minimal port crate if and only if an external implementor ecosystem exists that needs to pin the contract independently of the main crate's version churn.",
+      "words": 67
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7174,
+      "readability_grade": 11.982,
+      "sentences": 4,
+      "text": "**What is blocking it.** No third-party NLP provider implementor crate exists today. The criterion is ecosystem size, not architectural elegance. Extracting `matra-nlp-api` before any external implementor exists would add a publishing burden (two crates to version, two changelogs, two sets of CI) for zero current benefit.",
+      "words": 49
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 11.7622,
+      "sentences": 3,
+      "text": "**Trigger condition.** A published Rust crate that depends on matra solely for `NlpProvider` (a `matra-stanza`, `matra-spacy`, or similar, shipped by a non-matra maintainer). At that point, extract `matra-nlp-api` as a minimal port crate, have `matra` depend on it, and keep `matra` as the caller-facing surface.",
+      "words": 50
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": null,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "---",
+      "words": 0
+    },
+    {
+      "compression_ratio": 0.5884,
+      "in_blockquote": false,
+      "lexical_density": 0.5094,
+      "readability_grade": 7.3888,
+      "sentences": 4,
+      "text": "The pattern across all of these: capability waits for the caller that justifies it. Adding structure in advance of use is complexity that the next collaborator pays for. The trigger conditions are the guard against that. When one fires, write the RFC, explain why this trigger and not the next one, and proceed.",
+      "words": 53
+    },
+    {
+      "compression_ratio": 0.5988,
+      "in_blockquote": false,
+      "lexical_density": 0.5417,
+      "readability_grade": 11.5458,
+      "sentences": 3,
+      "text": "**What it is.** A self-contained HTML rendering of a `Document`: the parse, the metrics, and the extracted phrases in a form suitable for visual inspection, notebook display, and paper supplementary material. The surface would be `Document::to_html_report()` in Rust, `report(text, format=\"html\")` in Python, and `matra report` on the CLI.",
+      "words": 51
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 4.19,
+      "sentences": 3,
+      "text": "**What is blocking it.** Nothing structural. It is unbuilt because no caller has needed it yet.",
+      "words": 16
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5652,
+      "readability_grade": 10.4428,
+      "sentences": 2,
+      "text": "**Trigger condition.** A caller that needs to eyeball a parse rather than consume it programmatically, most likely a researcher working in a notebook.",
+      "words": 23
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.3889,
+      "readability_grade": 2.9978,
+      "sentences": 2,
+      "text": "**What it is.** A page where text can be pasted and its structure rendered live, with no install.",
+      "words": 18
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.3636,
+      "readability_grade": 2.6459,
+      "sentences": 2,
+      "text": "**What is blocking it.** It depends on the WASM binding above.",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8333,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "**Trigger condition.** The WASM binding ships.",
+      "words": 6
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6176,
+      "readability_grade": 13.9459,
+      "sentences": 2,
+      "text": "**What it is.** Three additions that make matra's existing metrics usable as a stylometric signature rather than as per-document readouts: a length-normalized lexical diversity measure, burstiness as a first-class value, and a contraction count.",
+      "words": 37
+    },
+    {
+      "compression_ratio": 0.5486,
+      "in_blockquote": false,
+      "lexical_density": 0.5882,
+      "readability_grade": 7.8544,
+      "sentences": 6,
+      "text": "**Why these three specifically.** An internal note dated 2026-04-21 records a writing-assistant agent blocked on a calibration loop against a measured baseline: 26.6 word mean sentence length, 36.9 percent passive, 0 percent contractions, 7.7 percent nominalisation, 0.76 burstiness. Checked against what ships, three of those five are already `Document` methods or fields. Burstiness is derivable from `sentence_length_std` and the mean but is not exposed. Contractions are not counted at all. That note estimated the remaining work as a small configuration layer rather than a rewrite.",
+      "words": 91
+    },
+    {
+      "compression_ratio": 0.5859,
+      "in_blockquote": false,
+      "lexical_density": 0.5258,
+      "readability_grade": 8.6855,
+      "sentences": 5,
+      "text": "**One of them is a defect, not an addition.** `vocabulary_ttr` is a raw type-token ratio and TTR falls mechanically as text grows. Measured on this repository: README scores 0.690 against `architecture/design.md` at 0.227, but README has 35 sentences and the other has 266, so most of that gap is length rather than voice. As a cross-document feature it is currently unsound, which matters most for `analyze_directory`, whose whole purpose invites the comparison. Either a length-normalized measure lands beside it (MTLD, MATTR, or standardized TTR) or the limitation is documented on the type. Doing neither leaves a trap.",
+      "words": 100
+    },
+    {
+      "compression_ratio": 0.559,
+      "in_blockquote": false,
+      "lexical_density": 0.6027,
+      "readability_grade": 13.1356,
+      "sentences": 3,
+      "text": "**Why this is the strongest candidate of anything on this page.** The four faces of voice all map onto shipping output with no hole: agentive onto `nsubj` and `nsubj:pass`, modal onto `aux` and `feats`, structural onto section hierarchy and sentence length, stylistic onto lexical density and compression. That is unlike claim atomization, which needs an LLM, and unlike deriving a text's situation model, for which no shipping output is a foundation at all.",
+      "words": 76
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 9.0145,
+      "sentences": 4,
+      "text": "**Trigger condition.** Met in substance: a named caller with a documented baseline exists and has been blocked for months. What is missing is confirmation that the caller still wants matra rather than the thin-wrapper alternative it also considered. Confirm that, then proceed.",
+      "words": 43
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6111,
+      "readability_grade": 14.9844,
+      "sentences": 3,
+      "text": "**What it is.** Structural detection of a document repeating itself: clusters of sentences restating the same content, with quantitative measures over them. The concrete caller pattern is auditing LLM-generated text, whose characteristic failure is high-lexical-overlap restatement.",
+      "words": 39
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5455,
+      "readability_grade": 6.9364,
+      "sentences": 1,
+      "text": "The shape, all deterministic and traceable back to the source bytes:",
+      "words": 11
+    },
+    {
+      "compression_ratio": 0.4987,
+      "in_blockquote": false,
+      "lexical_density": 0.5683,
+      "readability_grade": 12.8591,
+      "sentences": 8,
+      "text": "matra reports the clusters and the numbers; whether they constitute fluff is the caller's reading. The word never appears in the output. That restraint is now empirical as well as principled: the 2026 slop-measurement literature found repetition and templatedness are weak predictors of human quality judgments on their own, so these are structural facts for a caller's argument, never a judgment. Synonym-level paraphrase (different vocabulary, same meaning) is out of reach of lexical overlap by design; catching it needs semantic similarity, which sits above the verifiable tier. That half shipped 2026-09-05 via [EP-0009](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0009-embeddings-adapter.md): the `Embedder` port, the model2vec static adapter, and `semantic_clusters` (see the [semantic clusters guide](https://github.com/mox-labs/matra/blob/main/site/content/guides/semantic-clusters.md)). The deterministic family above remains the open half of this entry. Published similarity thresholds for that task span 0.67 to 0.9 with no consensus, which is why every threshold here is caller-supplied.",
+      "words": 150
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5952,
+      "readability_grade": 11.2621,
+      "sentences": 3,
+      "text": "**Where it lands.** Mostly paid for already: `extraction/textrank.rs` builds a pairwise sentence-similarity matrix and projects it down to centrality ranks; re-projecting the same matrix as clusters is the core of this capability. Thresholds are caller-supplied parameters, not constants matra pretends to know.",
+      "words": 45
+    },
+    {
+      "compression_ratio": 0.6505,
+      "in_blockquote": false,
+      "lexical_density": 0.6809,
+      "readability_grade": 10.3329,
+      "sentences": 4,
+      "text": "**Trigger condition. FIRED, 2026-08-21.** A concrete caller pattern was named that field access cannot serve: quantifying restatement across a document for LLM-output auditing. Design against EP-0007's primitives and the rule-vocabulary shape; an RFC settles whether this is a metric family, an extractor, or the first rule pack.",
+      "words": 52
+    },
+    {
+      "compression_ratio": 0.5236,
+      "in_blockquote": false,
+      "lexical_density": 0.7015,
+      "readability_grade": 14.3424,
+      "sentences": 6,
+      "text": "**What it is.** Deterministic measures of how much a text says per word, the complement of the redundancy family: redundancy catches the same thing said twice, density catches little said at length. The anchor is propositional idea density, a validated psycholinguistics measure (propositions per word) with two published computational forms. CPIDR counts propositions from Penn Treebank tags, which UDPipe already emits in `Token::xpos`; DEPID counts them from dependency relations, which is matra's core output, and agrees with human raters slightly better than CPIDR does. DEPID-R, the variant counting distinct relation-lemma triples rather than tokens of them, catches fluent-but-repetitive text and costs nothing extra once lemmas are in hand. Around the anchor sit smaller settled measures that are direct tree walks: mean dependency distance, modifiers per noun phrase, words before the main verb, content-to-function ratio.",
+      "words": 142
+    },
+    {
+      "compression_ratio": 0.5101,
+      "in_blockquote": false,
+      "lexical_density": 0.622,
+      "readability_grade": 14.2209,
+      "sentences": 6,
+      "text": "**Where it lands.** Metric functions over `Document`, same family as the shipping metrics suite. The DEPID relation inventory is Stanford-style, so an explicit mapping to UD relations is part of the design; the CPIDR path additionally holds only for English models, since `Token::xpos` carries whatever tagset the provider's model emits and PTB tags are the English case. Three counting rules the literature leaves genuinely unsettled (direct objects, coordinating conjunctions, the denominator) get settled by RFC rather than inherited silently, and the RFC also states the non-English story. The reference implementations are GPL, so the derivation is clean-room from the published rules, and exact numeric parity with them is a non-goal. No implementation of idea density exists for CoNLL-U input in any language; this would be the first.",
+      "words": 132
+    },
+    {
+      "compression_ratio": 0.6373,
+      "in_blockquote": false,
+      "lexical_density": 0.6102,
+      "readability_grade": 14.68,
+      "sentences": 3,
+      "text": "**What stays out, and why.** Hedging and booster density need a lexicon, and no canonical machine-readable hedge list exists; per the open-class precedent (`reportings_in`), any such lexicon is caller-supplied data, never shipped as if authoritative. Surprisal needs frequency norms or a language model, and sycophancy detection has no deterministic path at all; both gaps are recorded rather than simulated.",
+      "words": 62
+    },
+    {
+      "compression_ratio": 0.576,
+      "in_blockquote": false,
+      "lexical_density": 0.6078,
+      "readability_grade": 12.057,
+      "sentences": 4,
+      "text": "**Trigger condition. FIRED, 2026-09-04.** The same LLM-output-auditing caller pattern that fired the redundancy entry names low density as the second failure mode, and the 2026-09-04 landscape survey (internal, not in this repository) established implementability from matra's existing parse output. Design together with the redundancy family; the same RFC should place both.",
+      "words": 58
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4706,
+      "readability_grade": 9.7812,
+      "sentences": 2,
+      "text": "**What it is.** A configuration file selecting which metrics run, which extractors run, and how output is shaped, so both the library and the CLI are driven by declaration rather than by argument lists.",
+      "words": 34
+    },
+    {
+      "compression_ratio": 0.5614,
+      "in_blockquote": false,
+      "lexical_density": 0.5424,
+      "readability_grade": 10.9625,
+      "sentences": 4,
+      "text": "**What is blocking it.** Nothing structural, and the extension point already exists. `default_suite()` returns `Vec<Metric>` and `run_suite` is public, so choosing a suite is already choosing the contents of a vector. What is absent is the surface: a format, a resolution order, and a decision about whether configuration is a library concern or belongs only to the application tier.",
+      "words": 61
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6216,
+      "readability_grade": 10.2686,
+      "sentences": 3,
+      "text": "That last question is the real one. matra's discipline is that the library returns typed data and the binary decides presentation. A config format that reaches into the library risks putting policy where the composition root belongs.",
+      "words": 38
+    },
+    {
+      "compression_ratio": 0.5643,
+      "in_blockquote": false,
+      "lexical_density": 0.6444,
+      "readability_grade": 12.4178,
+      "sentences": 4,
+      "text": "**Shipped, 2026-09-05**, via [EP-0010](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0010-foundations.md): `Config` resolves locations and defaults per key from argument, environment, config file, then the defaults compiled into the crate; `Engine::with_defaults()`, `Matra.english()` and the `from_config` constructors are the no-setup path on every surface; `matra config show` and `matra config init` are the command-line half. The question this entry asks is answered narrowly: the file carries locations and defaults, never which metrics run or how output is shaped. Selecting behavior from a file remains unbuilt, and reopening it needs its own RFC rather than a wider schema here.",
+      "words": 96
+    },
+    {
+      "compression_ratio": 0.5057,
+      "in_blockquote": false,
+      "lexical_density": 0.6047,
+      "readability_grade": 13.8338,
+      "sentences": 6,
+      "text": "**Trigger condition. FIRED, 2026-09-05.** The condition was a caller running matra repeatedly with the same non-default selection, with agent-driven use the likely first instance. It fired as owner direction: matra works with no setup on every surface, follows developer-tool conventions for config and paths, and keeps Rust as the core with Python and TypeScript as thin reach layers. [RFC-0011](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0011-out-of-the-box.md) settles the library-or-application question the paragraph above asks (a resolver for locations and defaults in the library, behavior selection in the application), and [`blueprints/eps/0010-foundations.md`](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0010-foundations.md) carries the milestones.",
+      "words": 95
+    },
+    {
+      "compression_ratio": 0.5615,
+      "in_blockquote": false,
+      "lexical_density": 0.5244,
+      "readability_grade": 8.2182,
+      "sentences": 5,
+      "text": "**What it is.** A `--skill` flag on the CLI that prints a self-contained description of matra's semantics for an agent: what it is for, when to reach for it, the incantations with their JSON shapes, how to read the numbers, and the limits. Progressive disclosure follows the shape of a skill on disk: `--skill` prints the short top level, `--skill -r <name>` prints one deeper reference. `--help` stays the framework-generated reference for humans. The same file is what a plugin marketplace distributes.",
+      "words": 90
+    },
+    {
+      "compression_ratio": 0.5544,
+      "in_blockquote": false,
+      "lexical_density": 0.4598,
+      "readability_grade": 8.4902,
+      "sentences": 4,
+      "text": "**Why a flag and not only a docs page.** Human attention is the scarce input. The people who would read the whole docsite are few; the agents that will run matra on their behalf are many, and an agent that can print the semantics it needs, from the tool it is about to run, needs no link and no prior knowledge. The docs stay for human comprehension, with citations and readable benchmarks; the skill is the other door, derived from the same code and tested against it.",
+      "words": 87
+    },
+    {
+      "compression_ratio": 0.5719,
+      "in_blockquote": false,
+      "lexical_density": 0.5844,
+      "readability_grade": 9.3883,
+      "sentences": 3,
+      "text": "**Precedent.** A survey of seventeen tools (`docs/surveys/2026-09-05-conventions.md`) found one that prints its own agent-facing instructions with a second tier of detail, Vercel Labs' `agent-browser`, whose stated reason is that instructions served from the installed binary always match its version. The same survey records the surrounding conventions this entry adopts alongside the flag: an `llms.txt` on the docsite, an `AGENTS.md` in the repository, and a `CITATION.cff` so the research behind each measure is citable from the repository page.",
+      "words": 82
+    },
+    {
+      "compression_ratio": 0.5695,
+      "in_blockquote": false,
+      "lexical_density": 0.6122,
+      "readability_grade": 9.0626,
+      "sentences": 4,
+      "text": "**Shipped, 2026-09-06**, via [EP-0011](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0011-agent-surface.md): `matra --skill` prints the top level, `matra --skill -r` lists the references and `matra --skill -r <name>` prints one. The text is embedded with `include_str!`, so an installed program's instructions are the ones that match it, and a test executes the commands the skill names, so an incantation that stops working fails a gate rather than a reader. `--help` is unchanged and stays the reference for humans. The surrounding conventions the precedent paragraph names landed alongside it: `llms.txt` on the docsite with a currency gate, `AGENTS.md` in the repository, a plugin manifest, and `CITATION.cff`.",
+      "words": 108
+    },
+    {
+      "compression_ratio": 0.5213,
+      "in_blockquote": false,
+      "lexical_density": 0.6047,
+      "readability_grade": 15.5946,
+      "sentences": 4,
+      "text": "**Trigger condition. FIRED, 2026-09-05**, by owner direction, sequenced after EP-0010: the skill documents the CLI contract, so the CLI had to be one implementation with a pinned JSON shape first. EP-0010 landed on 2026-09-06; [RFC-0012](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0012-agent-surface.md) records the decisions and [`blueprints/eps/0011-agent-surface.md`](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0011-agent-surface.md) carries the milestones.",
+      "words": 53
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5484,
+      "readability_grade": 11.3905,
+      "sentences": 2,
+      "text": "**What it is.** An interactive terminal interface over the same `cli` module: browse a parsed document, its sections, sentences, and dependency trees, and the metrics beside them, without leaving the terminal.",
+      "words": 31
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4722,
+      "readability_grade": 4.6367,
+      "sentences": 4,
+      "text": "**Trigger condition. FIRED, 2026-09-06.** EP-0010 and the agent surface have both met their acceptance gates. The TUI is a renderer over a contract that has to be stable first; building it before that means re-doing it.",
+      "words": 38
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5294,
+      "readability_grade": 8.5485,
+      "sentences": 2,
+      "text": "**What it is.** A single accessor returning the source path, the detected format, and a record of how the document was analyzed, as one value rather than as fields scattered across `CorpusEntry.path` and `RawDocument.format`.",
+      "words": 35
+    },
+    {
+      "compression_ratio": 0.592,
+      "in_blockquote": false,
+      "lexical_density": 0.5246,
+      "readability_grade": 8.6865,
+      "sentences": 5,
+      "text": "**Why it is worth doing.** The information is already present and already reconstructable; it is the assembly that is missing. Callers building a grounding chain need it as one thing, and `Sentence.text` and `Paragraph.text` being verbatim by design means the chain from token to source is unambiguous once the anchor is reachable. That guarantee is currently undocumented, which is tracked separately.",
+      "words": 61
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6296,
+      "readability_grade": 6.2756,
+      "sentences": 3,
+      "text": "**Trigger condition.** A caller that stores matra output and must later prove which bytes a value came from. Raised by the bidirectional research report as ask 4.",
+      "words": 27
+    }
+  ]
+}

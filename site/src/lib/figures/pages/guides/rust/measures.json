@@ -1,0 +1,462 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "guides/rust.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4286,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "You already have `matra` in your `Cargo.toml`.",
+      "words": 8
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5625,
+      "readability_grade": 9.655,
+      "sentences": 1,
+      "text": "Every snippet below assumes it runs inside a function returning `matra::domain::Result<()>`, which is why `?` works.",
+      "words": 17
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "One line, no arguments, no model on disk yet:",
+      "words": 9
+    },
+    {
+      "compression_ratio": 0.5609,
+      "in_blockquote": false,
+      "lexical_density": 0.5397,
+      "readability_grade": 14.5168,
+      "sentences": 4,
+      "text": "`Engine::with_defaults` resolves a `Config` (the environment, then your config file, then the defaults compiled into the crate), downloads the English UDPipe model into the resolved directory if it is not already there, and wires the standard decomposer table. The directory is `MATRA_MODEL_DIR` if you set it, otherwise the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`. [Programming model](../explanation/programming-model.md#configuration) has the full resolution order.",
+      "words": 66
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4,
+      "readability_grade": 5.9933,
+      "sentences": 1,
+      "text": "When you want the resolved values but not all of them, hold the `Config` yourself:",
+      "words": 15
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5625,
+      "readability_grade": 11.4325,
+      "sentences": 2,
+      "text": "`with_model_dir` puts the directory on the `Argument` rung, which outranks the environment and the defaults, and `cfg.sources()` reports where every other value came from. `Config` is also what `Udpipe::from_config` and `Model2Vec::from_config` read.",
+      "words": 33
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5294,
+      "readability_grade": 8.0459,
+      "sentences": 2,
+      "text": "Everything below is the explicit path, which still works and still wins over the resolved one. Take it when you want a provider matra does not ship, or a model file you already hold.",
+      "words": 34
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5263,
+      "readability_grade": 10.4516,
+      "sentences": 2,
+      "text": "The pipeline owns a `Box<dyn NlpProvider>`. `Udpipe` is the adapter that ships with the `udpipe` feature (on by default):",
+      "words": 21
+    },
+    {
+      "compression_ratio": 0.5485,
+      "in_blockquote": false,
+      "lexical_density": 0.5652,
+      "readability_grade": 20.9478,
+      "sentences": 2,
+      "text": "`Udpipe::english` creates the directory if it is missing, downloads the English model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.",
+      "words": 96
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 10.7482,
+      "sentences": 3,
+      "text": "The path is passed to `std::fs::create_dir_all` unchanged. Rust does not expand `~`, so `Udpipe::english(\"~/.matra/models\")` creates a directory literally named `~` under your current working directory. Pass an absolute path, or expand the home directory yourself.",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 5.8067,
+      "sentences": 1,
+      "text": "If you already have a model file on disk, load it directly:",
+      "words": 12
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5833,
+      "readability_grade": 11.3789,
+      "sentences": 2,
+      "text": "`from_path` returns `Error::ModelNotFound` when the path does not exist and `Error::ModelInvalid` when the file exists but fails to load. A third constructor, `Udpipe::from_bytes`, loads from an in-memory byte slice, which suits a model embedded with `include_bytes!`.",
+      "words": 42
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5926,
+      "readability_grade": 8.4676,
+      "sentences": 2,
+      "text": "Construction is the expensive step: it loads and validates the model once. Build one provider, hand it to one `Engine`, and reuse that engine for every document.",
+      "words": 27
+    },
+    {
+      "compression_ratio": 0.6483,
+      "in_blockquote": false,
+      "lexical_density": 0.5536,
+      "readability_grade": 6.9379,
+      "sentences": 4,
+      "text": "`NlpProvider` is declared `Send`, not `Sync`. A `Box<dyn NlpProvider>` moves between threads, but a reference to it does not, so an `Engine` (and any stream borrowed from it) belongs to one thread at a time. That is a compile error, not a runtime surprise. Build one engine per worker thread, or serialize calls behind a mutex.",
+      "words": 60
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7083,
+      "readability_grade": 7.2817,
+      "sentences": 2,
+      "text": "matra's public Rust surface is one pipeline assembled from two values. `Ingest` says where documents come from; `Engine` says what happens to each one.",
+      "words": 25
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "`Ingest` has two constructors and they cover every source shape:",
+      "words": 10
+    },
+    {
+      "compression_ratio": 0.5875,
+      "in_blockquote": false,
+      "lexical_density": 0.6154,
+      "readability_grade": 10.1721,
+      "sentences": 2,
+      "text": "Format comes from the extension for `Ingest::path` (`.md` and `.markdown` route to the markdown decomposer, everything else to plain text) and from the argument for `Ingest::text`. Reads are lazy: `Ingest::path` on a directory lists entries up front but touches no file until the stream is pulled, and a per-file failure (unreadable, oversized, a symlink) becomes an `Err` item carrying its path rather than an abort.",
+      "words": 69
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7143,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "`Engine` exposes the pipeline at three levels:",
+      "words": 7
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 12.7356,
+      "sentences": 2,
+      "text": "The three levels always agree: `analyze` is `analyze_one` mapped over the stream, and `analyze_one` is `annotate` followed by `compose`. The library's test suite pins that agreement as equivalence laws, so the levels cannot drift apart silently.",
+      "words": 39
+    },
+    {
+      "compression_ratio": 0.5859,
+      "in_blockquote": false,
+      "lexical_density": 0.537,
+      "readability_grade": 10.6528,
+      "sentences": 3,
+      "text": "`standard_decomposers()` is the format table this build ships: markdown and plain text. `Error::UnsupportedFormat` means exactly \"no entry in the table\", and `Pdf`/`Docx` are reserved variants with no entry today. A caller can build a different table with `Decomposers::new().with(format, decomposer)` and hand it to `Engine::new`, which is also how you plug in your own `Decomposer`.",
+      "words": 60
+    },
+    {
+      "compression_ratio": 0.5776,
+      "in_blockquote": false,
+      "lexical_density": 0.6034,
+      "readability_grade": 9.2788,
+      "sentences": 3,
+      "text": "One ordering detail that shapes which error you actually see: `Ingest::path` reads the file with `read_to_string` before the engine looks at the extension. A genuine binary PDF fails the UTF-8 decode first, so you get `Error::Io` with kind `InvalidData`, not `Error::UnsupportedFormat`. You reach `UnsupportedFormat` only when the file is valid UTF-8 and carries a `.pdf` or `.docx` extension.",
+      "words": 64
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5517,
+      "readability_grade": 7.5616,
+      "sentences": 2,
+      "text": "Six caps guard the pipeline. Each one returns `Error::InputTooLarge`, and the `what` field names which gate fired so you can route on the label instead of guessing from context.",
+      "words": 30
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 9.13,
+      "sentences": 2,
+      "text": "A document from disk passes two of these in sequence: the metadata check when `Ingest` reads it, then the text check inside `annotate`. A file at exactly the cap is accepted; one byte over is rejected.",
+      "words": 36
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5455,
+      "readability_grade": 7.6515,
+      "sentences": 2,
+      "text": "The extraction caps are counted after parsing, so a document under 8 MiB can still exceed the TF-IDF sentence cap. Check `sentences.len()` before calling if you need to decide between summarizing and chunking.",
+      "words": 34
+    },
+    {
+      "compression_ratio": 0.5796,
+      "in_blockquote": false,
+      "lexical_density": 0.6034,
+      "readability_grade": 16.0648,
+      "sentences": 3,
+      "text": "The parse inside `annotate` is the expensive step: it runs the NLP provider once per paragraph. The extraction functions (`tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`) are pure functions over `&[Sentence]` and never call the NLP provider themselves. Run the pipeline once, read the sentences back off the tree, and hand the same slice to as many extractors as you need:",
+      "words": 59
+    },
+    {
+      "compression_ratio": 0.5987,
+      "in_blockquote": false,
+      "lexical_density": 0.5098,
+      "readability_grade": 8.3929,
+      "sentences": 3,
+      "text": "Each extractor reads the same slice; nothing re-parses. Skip the `compose` call if you only want the extractions and not the metrics. The sentences you read off the tree are the ones the decomposer kept, so markdown headings, fenced code, and blockquotes never reach the extractors as if they were prose.",
+      "words": 51
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6341,
+      "readability_grade": 9.3855,
+      "sentences": 2,
+      "text": "The two keyphrase extractors return score order, highest first. Phrases with equal scores can swap order between runs, and a tie at the requested count can change which phrase makes the list, so sort the result before diffing it across runs.",
+      "words": 41
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 6.7262,
+      "sentences": 2,
+      "text": "Every metric slot is an `Option`, and each metric has its own threshold. A `None` means the metric declined to run, not that it computed nothing.",
+      "words": 26
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6471,
+      "readability_grade": 12.9047,
+      "sentences": 2,
+      "text": "\"Words\" here means `Paragraph::word_count()`, the non-punctuation token count summed over the paragraph's attached sentences. A paragraph whose `sentences` vector is empty has a word count of zero and therefore no per-paragraph metrics at all.",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 8.49,
+      "sentences": 3,
+      "text": "Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`. They remain in the section tree with `in_blockquote = true` and their `text` intact.",
+      "words": 39
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6818,
+      "readability_grade": 15.5173,
+      "sentences": 1,
+      "text": "A markdown document (by format argument or by `.md` extension) runs `MarkdownDecomposer`, which discards several kinds of content before any parsing happens:",
+      "words": 22
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4528,
+      "readability_grade": 20.6649,
+      "sentences": 1,
+      "text": "- YAML frontmatter, when the very first line is `---`, through to the closing `---`\n- fenced code blocks, along with the fence lines\n- lines beginning with `|`, which is how table rows are excluded\n- everything from a line reading `## References` or `*References*` onward, to the end of the document",
+      "words": 48
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5417,
+      "readability_grade": 12.0375,
+      "sentences": 3,
+      "text": "That last rule ends decomposition rather than skipping a block. A document with a `## References` heading in the middle loses every section after it, silently. If your documents use that heading for something other than a trailing bibliography, decompose with `PlainTextDecomposer` instead, or write your own `Decomposer`.",
+      "words": 49
+    },
+    {
+      "compression_ratio": 0.5631,
+      "in_blockquote": false,
+      "lexical_density": 0.5909,
+      "readability_grade": 21.1473,
+      "sentences": 2,
+      "text": "`annotate` returns `domain::Result<T>`, an alias for `Result<T, domain::Error>`. The stream methods wrap the same error with its path: `analyze` and `analyze_one` return `DocumentError`, whose `path` field is `Some` for documents that came from disk and whose `error` field is the `domain::Error` to match on:",
+      "words": 52
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6279,
+      "readability_grade": 13.9252,
+      "sentences": 2,
+      "text": "`Error::ParseFailed` also carries panics that crossed the UDPipe FFI boundary. The adapter wraps the C-side call in `catch_unwind` and converts a panic into `ParseFailed` with the payload message, so a bug inside UDPipe surfaces as a matchable error instead of aborting your process.",
+      "words": 45
+    },
+    {
+      "compression_ratio": 0.6013,
+      "in_blockquote": false,
+      "lexical_density": 0.52,
+      "readability_grade": 13.276,
+      "sentences": 2,
+      "text": "`domain::Error` is `#[non_exhaustive]`, so a trailing `_ =>` (or a named catch-all binding, as above) is required even once you have named every variant that exists today. A future variant becomes a compile requirement for code that matches without a wildcard, and a routed catch-all for code that has one.",
+      "words": 54
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4634,
+      "readability_grade": 2.3287,
+      "sentences": 3,
+      "text": "The domain structs carry `#[non_exhaustive]` for the same reason. From outside the crate you cannot write `Token { .. }` or `Sentence { .. }` as struct literals. Use the constructors, which matters most when you are building fixtures for tests:",
+      "words": 37
+    },
+    {
+      "compression_ratio": 0.6756,
+      "in_blockquote": false,
+      "lexical_density": 0.617,
+      "readability_grade": 10.6473,
+      "sentences": 2,
+      "text": "Every string argument is an owned `String`, not a `&str`, so a literal needs `.to_string()` on the way in. `TokenBuilder` takes the remaining CoNLL-U columns through `xpos`, `feats`, `deps` and `misc`, each also a `String`, plus `is_punct` for the derived flag, and `build()` hands back the `Token`:",
+      "words": 53
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5625,
+      "readability_grade": 14.25,
+      "sentences": 1,
+      "text": "`Ingest::path` on a directory streams one level of it, and collecting into `CorpusResult` partitions the outcomes:",
+      "words": 17
+    },
+    {
+      "compression_ratio": 0.5833,
+      "in_blockquote": false,
+      "lexical_density": 0.5833,
+      "readability_grade": 9.6927,
+      "sentences": 3,
+      "text": "`Ingest::path` is `Err` only when the listing itself fails, such as the directory not existing. Everything else lands in `errors`: an unreadable file as `Io`, a file over the cap as `InputTooLarge` with `what = \"file_source\"`, a non-UTF-8 file as `Io` with kind `InvalidData`, a `.pdf` or `.docx` name that happens to hold UTF-8 as `UnsupportedFormat`, and a provider failure as `ParseFailed`. The partition always holds: entries plus errors equals documents consumed.",
+      "words": 74
+    },
+    {
+      "compression_ratio": 0.586,
+      "in_blockquote": false,
+      "lexical_density": 0.6066,
+      "readability_grade": 16.8099,
+      "sentences": 2,
+      "text": "Two kinds of entry are skipped without an error entry, so they will not appear in either list: subdirectories, because the walk is one level deep, and symlinks, which are filtered out with `symlink_metadata` so a link cannot redirect the read elsewhere. Files are attempted in sorted path order, and `Corpus` gives you `total_words()`, `passive_ratio()`, and `mean_readability()` across the whole set.",
+      "words": 63
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4242,
+      "readability_grade": 7.6511,
+      "sentences": 2,
+      "text": "You do not have to collect. The stream from `analyze` is lazy, so a loop that renders each document as it completes holds one document in memory at a time, not the corpus.",
+      "words": 33
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7407,
+      "readability_grade": 16.3548,
+      "sentences": 3,
+      "text": "`Document` holds a `sections: Vec<Section>` tree; sections hold `paragraphs: Vec<Paragraph>`; paragraphs hold `sentences: Vec<Sentence>`. Flat iterators cut across the tree when you do not need the structure:",
+      "words": 32
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "`doc.paragraphs()` and `doc.tokens()` flatten at the other two levels.",
+      "words": 9
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5814,
+      "readability_grade": 18.4684,
+      "sentences": 3,
+      "text": "A `Sentence` carries its dependency tree in `tokens: Vec<Token>`, where each token's `head` field points at another token's `id` in the same sentence and `head == 0` marks the root. Navigate it with the methods `Sentence` provides rather than walking `tokens` by hand:",
+      "words": 45
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6383,
+      "readability_grade": 11.9027,
+      "sentences": 2,
+      "text": "Token fields carry the CoNLL-U columns under Rust names: `text` is the surface form, `pos` is the universal POS tag, `xpos` is the language-specific tag, and `dep` is the dependency relation. `feats`, `deps`, and `misc` hold their raw column strings, and `is_punct` is derived by the adapter.",
+      "words": 50
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5682,
+      "readability_grade": 20.8791,
+      "sentences": 2,
+      "text": "`subtree(id)` collects every token reachable from a given token, sorted back into document order, which is the tool for pulling a phrase out from under a dependency relation rather than a single token. Pulling the direct object out of every sentence that has one:",
+      "words": 45
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6087,
+      "readability_grade": 8.4348,
+      "sentences": 3,
+      "text": "matra reports the dependency label UDPipe assigned (`\"obj\"` here). It does not interpret what the phrase means. That interpretation is your application's job.",
+      "words": 24
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5952,
+      "readability_grade": 20.1757,
+      "sentences": 1,
+      "text": "The remaining navigation methods: `head_of(id)` returns the head token, or `None` for the root and for an id that is not in the sentence; `content_tokens()` and `word_count()` give you the non-punctuation view; `is_passive()` reports whether any token carries `nsubj:pass`, `nsubjpass`, or `aux:pass`.",
+      "words": 45
+    },
+    {
+      "compression_ratio": 0.5704,
+      "in_blockquote": false,
+      "lexical_density": 0.6032,
+      "readability_grade": 9.8446,
+      "sentences": 4,
+      "text": "`tree_depth()` returns the longest root-to-leaf path in the sentence. On a malformed parse where tokens form a cycle it returns `usize::MAX` rather than truncating at some arbitrary ceiling, so a broken parse is loud rather than quietly shallow. Compare against `usize::MAX` before you use the value in arithmetic. `subtree` and `children_of` stay safe on the same malformed input; both use a visited set.",
+      "words": 67
+    }
+  ]
+}

@@ -1,0 +1,507 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "architecture/design.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 22.1782,
+      "sentences": 1,
+      "text": "`engine.analyze(Ingest::path(\"essay.md\")?)` yields a `Document` or a `DocumentError`.",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5652,
+      "readability_grade": 4.2863,
+      "sentences": 2,
+      "text": "Take a 40 KB markdown file. Pulling it through the pipeline runs four things in order, and only the last one is expensive.",
+      "words": 23
+    },
+    {
+      "compression_ratio": 0.6026,
+      "in_blockquote": false,
+      "lexical_density": 0.5541,
+      "readability_grade": 7.0302,
+      "sentences": 6,
+      "text": "**Ingest.** When the stream is pulled, `FileSource` calls `symlink_metadata`, which does not traverse. A symlink is refused. Anything that is not a regular file is refused. A file whose metadata size exceeds `MAX_INPUT_BYTES`, 8 MiB, is refused before a byte is read, so a 1 GB file costs one `stat` call rather than a GB of resident memory. Then `read_to_string` pulls all 40 KB in, and the `.md` extension sets `Format::Markdown` on the `RawDocument`.",
+      "words": 75
+    },
+    {
+      "compression_ratio": 0.6119,
+      "in_blockquote": false,
+      "lexical_density": 0.62,
+      "readability_grade": 11.206,
+      "sentences": 3,
+      "text": "**Dispatch.** `Engine::annotate` re-checks the same 8 MiB bound on the string it now holds (two gates, same limit, different `what` labels, because text from `Ingest::text` never passed the first one), then looks the format up in the engine's decomposer table. No entry means `Error::UnsupportedFormat`; for `Markdown` the entry is `MarkdownDecomposer`.",
+      "words": 55
+    },
+    {
+      "compression_ratio": 0.6295,
+      "in_blockquote": false,
+      "lexical_density": 0.6207,
+      "readability_grade": 5.3414,
+      "sentences": 7,
+      "text": "**Decompose.** `MarkdownDecomposer` walks the file line by line, once. Frontmatter, fenced code, and table rows are dropped. A `#` line closes the current section and opens a new one. A `>` line marks its paragraph as a blockquote. A blank line flushes the accumulated paragraph. Output is a `Vec<Section>` holding fresh `String`s: a second copy of the prose.",
+      "words": 61
+    },
+    {
+      "compression_ratio": 0.5479,
+      "in_blockquote": false,
+      "lexical_density": 0.6269,
+      "readability_grade": 9.8897,
+      "sentences": 3,
+      "text": "**Parse and measure.** `annotate` walks every paragraph in document order, skips the blockquotes, and calls `nlp.parse` on each remaining paragraph's text. Sixty body paragraphs means sixty calls into UDPipe, and each call's sentences are stored on their paragraph. Then `compose` runs four metric functions over the attached tree; the document-level pair aggregates over the same attachment, so there is no second sentence set to keep in agreement.",
+      "words": 70
+    },
+    {
+      "compression_ratio": 0.3293,
+      "in_blockquote": false,
+      "lexical_density": 0.8656,
+      "readability_grade": 13.2018,
+      "sentences": 18,
+      "text": "<svg class=\"mx-res\" role=\"img\" aria-label=\"Residency chart: three allocations of the same prose, showing which are alive at each stage of one pipeline call\" viewBox=\"0 0 720 180\" width=\"720\" height=\"180\" style=\"max-width:100%;height:auto;display:block;margin:1.7em auto\">\n<title>What is alive at each stage of one pipeline call</title>\n<style>\n.mx-res text{fill:currentColor}\n.mx-res .hd{font-size:8.5px;text-anchor:middle;opacity:.55;font-family:inherit}\n.mx-res .lb{font-size:9px;text-anchor:end;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}\n.mx-res .nt{font-size:8px;opacity:.55;font-family:inherit}\n.mx-res .bd{font-size:8.5px;text-anchor:middle;opacity:.7;font-family:inherit}\n.mx-res .bar{fill:currentColor;fill-opacity:.3;stroke:currentColor;stroke-opacity:.6;stroke-width:1px}\n.mx-res .sep{stroke:currentColor;opacity:.12;stroke-width:1px}\n.mx-res .ret{stroke:currentColor;opacity:.4;stroke-width:1px;stroke-dasharray:4 3}\n.mx-res .band{fill:currentColor;fill-opacity:.05}\n</style>\n<rect class=\"band\" x=\"430\" y=\"34\" width=\"180\" height=\"118\"/>\n<text class=\"hd\" x=\"205\" y=\"26\">ingest</text>\n<text class=\"hd\" x=\"295\" y=\"26\">dispatch</text>\n<text class=\"hd\" x=\"385\" y=\"26\">decompose</text>\n<text class=\"hd\" x=\"475\" y=\"26\">parse</text>\n<text class=\"hd\" x=\"565\" y=\"26\">measure</text>\n<text class=\"hd\" x=\"655\" y=\"26\">returned</text>\n<line class=\"sep\" x1=\"250\" y1=\"34\" x2=\"250\" y2=\"152\"/>\n<line class=\"sep\" x1=\"340\" y1=\"34\" x2=\"340\" y2=\"152\"/>\n<line class=\"sep\" x1=\"430\" y1=\"34\" x2=\"430\" y2=\"152\"/>\n<line class=\"sep\" x1=\"520\" y1=\"34\" x2=\"520\" y2=\"152\"/>\n<line class=\"ret\" x1=\"610\" y1=\"34\" x2=\"610\" y2=\"152\"/>\n<text class=\"bd\" x=\"520\" y=\"47\">all three resident</text>\n<rect class=\"bar\" x=\"160\" y=\"62\" width=\"450\" height=\"16\" rx=\"3\"/>\n<rect class=\"bar\" x=\"340\" y=\"92\" width=\"360\" height=\"16\" rx=\"3\"/>\n<rect class=\"bar\" x=\"430\" y=\"122\" width=\"270\" height=\"16\" rx=\"3\"/>\n<text class=\"lb\" x=\"150\" y=\"74\">String, the file text</text>\n<text class=\"lb\" x=\"150\" y=\"104\">Vec&lt;Section&gt;, a second copy</text>\n<text class=\"lb\" x=\"150\" y=\"134\">Vec&lt;Sentence&gt; per paragraph</text>\n<text class=\"nt\" x=\"160\" y=\"168\">bar length is how long an allocation is alive, not how large it is</text>\n</svg>",
+      "words": 380
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 14.5192,
+      "sentences": 1,
+      "text": "At peak, three representations of the same document are resident at once: the original `String`, the section copies, and the parsed tokens hanging off the paragraphs.",
+      "words": 27
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6207,
+      "readability_grade": 7.1547,
+      "sentences": 2,
+      "text": "For a 40 KB input none of that matters. For a caller sizing a batch job against a memory ceiling it does, because every `Token` carries nine owned `String`s.",
+      "words": 30
+    },
+    {
+      "compression_ratio": 0.5686,
+      "in_blockquote": false,
+      "lexical_density": 0.6226,
+      "readability_grade": 12.0057,
+      "sentences": 3,
+      "text": "A directory changes the shape by streaming. `Ingest::path` lists the entries up front but reads nothing until pulled, and each pull runs one document through the whole pipeline before the next file is read. One document's representations are resident at a time; only what you retain accumulates, and collecting into `CorpusResult` retains everything.",
+      "words": 55
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.75,
+      "readability_grade": 13.3425,
+      "sentences": 2,
+      "text": "Everything above assumes `nlp` already exists. Constructing it is the one genuinely slow operation matra performs.",
+      "words": 16
+    },
+    {
+      "compression_ratio": 0.5742,
+      "in_blockquote": false,
+      "lexical_density": 0.525,
+      "readability_grade": 13.69,
+      "sentences": 3,
+      "text": "`Udpipe::english(dir)` looks for the English UD-EWT model in the directory you name. If it is absent, the bytes are verified in memory and then written to a temporary subdirectory named for this call, and moved into place with a single `rename`, so two processes pointing at the same directory cannot leave each other a half-written file. The name carries more than the process id, because in a container every process is pid 1 and two cold starts would otherwise collide.",
+      "words": 86
+    },
+    {
+      "compression_ratio": 0.546,
+      "in_blockquote": false,
+      "lexical_density": 0.5079,
+      "readability_grade": 14.8889,
+      "sentences": 3,
+      "text": "`Udpipe::from_config(&cfg)` is the same call with the directory resolved rather than named, and `Engine::with_defaults()` is `Config::resolve()` followed by that. `Config` is read once, at construction; nothing in the call path above consults it, which is why configuration cannot change what a call computes. `Model2Vec::potion_base_8m(dir)` and `Model2Vec::from_config(&cfg)` do the same for the reference embedding model, against a three-file digest rather than a single one.",
+      "words": 69
+    },
+    {
+      "compression_ratio": 0.5569,
+      "in_blockquote": false,
+      "lexical_density": 0.5679,
+      "readability_grade": 8.0306,
+      "sentences": 5,
+      "text": "The cached file is then checked against a size constant, 16,309,608 bytes, and a SHA-256 constant pinned in `nlp/udpipe.rs`. A size mismatch fails before the file is hashed. A mismatch downloads the model, and a download that also fails the digest is retried once, so a call makes at most two downloads. The file is replaced only if downloaded bytes verify; if both downloads fail, the call returns `Error::ModelInvalid` and leaves the old file untouched. An unverified model is never loaded.",
+      "words": 85
+    },
+    {
+      "compression_ratio": 0.5552,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 9.39,
+      "sentences": 3,
+      "text": "The verify step returns the bytes it hashed, and those exact bytes go to the loader. Nothing re-reads the disk in between. That ordering is the whole point: a hash-then-reopen sequence leaves a window in which an attacker with write access to the model directory can swap the file after the check and before the read.",
+      "words": 58
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5789,
+      "readability_grade": 9.8589,
+      "sentences": 3,
+      "text": "`Udpipe::from_path` and `Udpipe::from_bytes` verify nothing. They load what you name. Traceability for those two paths belongs to the caller.",
+      "words": 20
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5135,
+      "readability_grade": 4.2824,
+      "sentences": 4,
+      "text": "**Load once, reuse.** After construction, the model is a live handle to a C++ object. Parsing does not reload it. The `Engine` owns the provider, so a service builds one engine and keeps it for its lifetime.",
+      "words": 39
+    },
+    {
+      "compression_ratio": 0.6296,
+      "in_blockquote": false,
+      "lexical_density": 0.6324,
+      "readability_grade": 8.74,
+      "sentences": 4,
+      "text": "**One model per thread, or a lock.** The underlying `Model` is `Send` and deliberately not `Sync`: its parse path mutates internal workspace caches. In Rust this is a compile error rather than a race, because sharing `&Udpipe` across threads will not typecheck. To parallelize you either give each thread its own model, paying another 16 MB load, or put one behind a `Mutex` and serialize the parse calls.",
+      "words": 70
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5789,
+      "readability_grade": 10.4658,
+      "sentences": 3,
+      "text": "Python gets the same constraint through a different mechanism. `Matra` is declared `unsendable`, so PyO3 records the creating thread and refuses access from any other at runtime. A `ProcessPoolExecutor` is unaffected, because each process loads its own model.",
+      "words": 39
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5526,
+      "readability_grade": 6.7395,
+      "sentences": 3,
+      "text": "Parsing per paragraph looks wasteful. Sixty FFI calls where one would do, and a parser that never sees a paragraph's neighbours as context. The reason it is worth that is a defect class the alternative could not avoid.",
+      "words": 39
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7073,
+      "readability_grade": 12.2635,
+      "sentences": 2,
+      "text": "The earlier implementation joined every paragraph into one string, parsed once, then wired each returned sentence back to a paragraph by matching text prefixes. Three regression tests in `src/lib.rs` hold the current behaviour in place, one per way that matching failed:",
+      "words": 40
+    },
+    {
+      "compression_ratio": 0.5663,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 8.9442,
+      "sentences": 6,
+      "text": "- Two paragraphs sharing their first thirty characters. A sentence lands in whichever one matched first, and the other paragraph silently loses it.\n- One paragraph containing another paragraph's opening words mid-text. The greedy match steals the sentence from its rightful owner.\n- An empty paragraph with trailing whitespace, which confused the match entirely.",
+      "words": 52
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4545,
+      "readability_grade": 10.5118,
+      "sentences": 3,
+      "text": "Follow that down and the root is not the matching algorithm. It is that the relationship between a sentence and its paragraph was being reconstructed from text, and text does not carry identity. Two paragraphs can be character-for-character similar and still be different paragraphs.",
+      "words": 46
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5625,
+      "readability_grade": 8.5958,
+      "sentences": 3,
+      "text": "So any reconstruction from that data has to guess, and a guess in this position fails silently. The `Document` that comes out is still well-formed, still serializes, still passes every shape check. It is simply wrong about which paragraph said what, and nothing in the output says so.",
+      "words": 49
+    },
+    {
+      "compression_ratio": 0.2598,
+      "in_blockquote": false,
+      "lexical_density": 0.9125,
+      "readability_grade": 10.8972,
+      "sentences": 33,
+      "text": "<svg class=\"mx-col\" role=\"img\" aria-label=\"Left: matching sentences back to paragraphs by text is ambiguous when two paragraphs share a prefix. Right: parsing each paragraph separately leaves nothing to match.\" viewBox=\"0 0 720 200\" width=\"720\" height=\"200\" style=\"max-width:100%;height:auto;display:block;margin:1.7em auto\">\n<title>Matching back by text against parsing per paragraph</title>\n<style>\n.mx-col text{fill:currentColor}\n.mx-col .ti{font-size:9px;font-family:inherit}\n.mx-col .nt{font-size:8px;opacity:.55;font-family:inherit}\n.mx-col .sn{font-size:7.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}\n.mx-col .pg{font-size:9px;text-anchor:middle;font-family:inherit}\n.mx-col .fl{font-size:8px;text-anchor:middle;font-family:inherit;paint-order:stroke;stroke:var(--bg,transparent);stroke-width:3px;stroke-linejoin:round}\n.mx-col .box{fill:none;stroke:currentColor;opacity:.4;stroke-width:1px}\n.mx-col .gone{stroke-dasharray:4 3}\n.mx-col .ar{stroke:currentColor;opacity:.7;stroke-width:1.1px;fill:none}\n.mx-col .stop{stroke:currentColor;opacity:.7;stroke-width:1.1px}\n.mx-col .bar{stroke:currentColor;opacity:.9;stroke-width:2.2px}\n.mx-col marker path{fill:currentColor;opacity:.7}\n</style>\n<defs><marker id=\"mx-col-a\" viewBox=\"0 0 8 8\" refX=\"7\" refY=\"4\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto\"><path d=\"M0,0 L8,4 L0,8 z\"/></marker></defs>\n<text class=\"ti\" x=\"8\" y=\"22\">join, parse once, then match sentences back by text</text>\n<text class=\"nt\" x=\"14\" y=\"38\">sentences from the joined text, in order</text>\n<rect class=\"box\" x=\"14\" y=\"46\" width=\"156\" height=\"20\" rx=\"3\"/>\n<rect class=\"box\" x=\"14\" y=\"74\" width=\"156\" height=\"20\" rx=\"3\"/>\n<rect class=\"box gone\" x=\"14\" y=\"102\" width=\"156\" height=\"20\" rx=\"3\"/>\n<rect class=\"box\" x=\"14\" y=\"130\" width=\"156\" height=\"20\" rx=\"3\"/>\n<text class=\"sn\" x=\"20\" y=\"60\">The system processes input now.</text>\n<text class=\"sn\" x=\"20\" y=\"88\">Tail one.</text>\n<text class=\"sn\" x=\"20\" y=\"116\">The system processes input now.</text>\n<text class=\"sn\" x=\"20\" y=\"144\">Tail two.</text>\n<rect class=\"box\" x=\"250\" y=\"46\" width=\"94\" height=\"48\" rx=\"3\"/>\n<rect class=\"box\" x=\"250\" y=\"102\" width=\"94\" height=\"48\" rx=\"3\"/>\n<text class=\"pg\" x=\"297\" y=\"74\">paragraph A</text>\n<text class=\"pg\" x=\"297\" y=\"130\">paragraph B</text>\n<line class=\"ar\" x1=\"174\" y1=\"56\" x2=\"244\" y2=\"66\" marker-end=\"url(#mx-col-a)\"/>\n<line class=\"ar\" x1=\"174\" y1=\"56\" x2=\"244\" y2=\"116\" marker-end=\"url(#mx-col-a)\"/>\n<line class=\"ar\" x1=\"174\" y1=\"84\" x2=\"244\" y2=\"74\" marker-end=\"url(#mx-col-a)\"/>\n<line class=\"ar\" x1=\"174\" y1=\"140\" x2=\"244\" y2=\"132\" marker-end=\"url(#mx-col-a)\"/>\n<line class=\"stop\" x1=\"174\" y1=\"112\" x2=\"212\" y2=\"112\"/>\n<line class=\"bar\" x1=\"214\" y1=\"105\" x2=\"214\" y2=\"119\"/>\n<text class=\"fl\" x=\"212\" y=\"44\">matches both</text>\n<text class=\"nt\" x=\"14\" y=\"176\">the dashed sentence has no owner, and nothing reports it</text>\n<text class=\"ti\" x=\"370\" y=\"22\">parse each paragraph on its own</text>\n<rect class=\"box\" x=\"376\" y=\"46\" width=\"94\" height=\"34\" rx=\"3\"/>\n<rect class=\"box\" x=\"376\" y=\"110\" width=\"94\" height=\"34\" rx=\"3\"/>\n<text class=\"pg\" x=\"423\" y=\"66\">paragraph A</text>\n<text class=\"pg\" x=\"423\" y=\"130\">paragraph B</text>\n<rect class=\"box\" x=\"530\" y=\"44\" width=\"176\" height=\"20\" rx=\"3\"/>\n<rect class=\"box\" x=\"530\" y=\"68\" width=\"176\" height=\"20\" rx=\"3\"/>\n<rect class=\"box\" x=\"530\" y=\"108\" width=\"176\" height=\"20\" rx=\"3\"/>\n<rect class=\"box\" x=\"530\" y=\"132\" width=\"176\" height=\"20\" rx=\"3\"/>\n<text class=\"sn\" x=\"536\" y=\"58\">The system processes input now.</text>\n<text class=\"sn\" x=\"536\" y=\"82\">Tail one.</text>\n<text class=\"sn\" x=\"536\" y=\"122\">The system processes input now.</text>\n<text class=\"sn\" x=\"536\" y=\"146\">Tail two.</text>\n<line class=\"ar\" x1=\"472\" y1=\"63\" x2=\"526\" y2=\"54\" marker-end=\"url(#mx-col-a)\"/>\n<line class=\"ar\" x1=\"472\" y1=\"63\" x2=\"526\" y2=\"78\" marker-end=\"url(#mx-col-a)\"/>\n<line class=\"ar\" x1=\"472\" y1=\"127\" x2=\"526\" y2=\"118\" marker-end=\"url(#mx-col-a)\"/>\n<line class=\"ar\" x1=\"472\" y1=\"127\" x2=\"526\" y2=\"142\" marker-end=\"url(#mx-col-a)\"/>\n<text class=\"nt\" x=\"376\" y=\"176\">each sentence is the return value of the call on that paragraph</text>\n</svg>",
+      "words": 774
+    },
+    {
+      "compression_ratio": 0.5915,
+      "in_blockquote": false,
+      "lexical_density": 0.4915,
+      "readability_grade": 7.3625,
+      "sentences": 4,
+      "text": "The two identical sentences are the ones from the regression fixture in `src/lib.rs`. On the left nothing in the text distinguishes them, so the assignment is a coin toss and one sentence is left over. On the right the arrows run the other way: the call produced the sentences, so the owner is known before any text is compared.",
+      "words": 59
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.575,
+      "readability_grade": 7.9,
+      "sentences": 3,
+      "text": "Per-paragraph parsing deletes the wiring step instead of improving it. A paragraph's sentences are the return value of the call made on that paragraph's text. The relationship comes from the call graph, so there is nothing left to get wrong.",
+      "words": 42
+    },
+    {
+      "compression_ratio": 0.5737,
+      "in_blockquote": false,
+      "lexical_density": 0.5167,
+      "readability_grade": 14.7933,
+      "sentences": 2,
+      "text": "Blockquote paragraphs are skipped at this stage, which is why they reach the end with no sentences and all three metric slots at `None`. And a parse failure in any single paragraph aborts that document with `Error::ParseFailed`; the partial document is dropped, not returned, and in a stream the failure travels as that document's `DocumentError` while the next document proceeds.",
+      "words": 62
+    },
+    {
+      "compression_ratio": 0.619,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 10.4775,
+      "sentences": 4,
+      "text": "The measure stage is four functions with one signature, `Box<dyn Fn(&mut Document)>`, run in sequence by `compose`. Readability, lexical density, and compression write per-paragraph slots. The document pass writes `vocabulary_ttr` and `nominalization_ratio`. None of the four reads another's output, so the suite is a list, not a chain.",
+      "words": 54
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4667,
+      "readability_grade": 11.5,
+      "sentences": 1,
+      "text": "Each carries its own applicability condition, and this is where unexplained `None` values come from:",
+      "words": 15
+    },
+    {
+      "compression_ratio": 0.6281,
+      "in_blockquote": false,
+      "lexical_density": 0.5636,
+      "readability_grade": 9.5818,
+      "sentences": 3,
+      "text": "`None` is not zero. A three-word paragraph has no meaningful Flesch-Kincaid grade, and the slot says so rather than reporting a number nobody should use. The compression cap is a CPU bound: the brotli window is 2^18 bytes, and a paragraph larger than one window is skipped instead of pegging a core on adversarial input.",
+      "words": 57
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5161,
+      "readability_grade": 9.1066,
+      "sentences": 3,
+      "text": "Summarization and keyphrase extraction are not part of this. The pipeline never calls them. They take `&[Sentence]` and are invoked directly by the caller, on sentences read back off the tree:",
+      "words": 32
+    },
+    {
+      "compression_ratio": 0.6156,
+      "in_blockquote": false,
+      "lexical_density": 0.5517,
+      "readability_grade": 11.0202,
+      "sentences": 4,
+      "text": "Keeping them out of the pipeline is a cost decision. TextRank builds a dense sentence-similarity matrix that is quadratic in sentence count, roughly 32 MB of `f64` at its 2,000-sentence ceiling. Folding it into the analysis pass would charge that to every caller who only wanted a readability grade. Inputs above a cap return `Error::InputTooLarge` rather than allocating.",
+      "words": 62
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6154,
+      "readability_grade": 4.0031,
+      "sentences": 1,
+      "text": "Every guard sits at the earliest point where the check is still cheap.",
+      "words": 13
+    },
+    {
+      "compression_ratio": 0.2978,
+      "in_blockquote": false,
+      "lexical_density": 0.931,
+      "readability_grade": 13.9551,
+      "sentences": 25,
+      "text": "<svg class=\"mx-grd\" role=\"img\" aria-label=\"Three separate call paths with their guards: model construction, the pipeline, and the extractors\" viewBox=\"0 0 720 245\" width=\"720\" height=\"245\" style=\"max-width:100%;height:auto;display:block;margin:1.7em auto\">\n<title>Where each guard fires, on which call path</title>\n<style>\n.mx-grd text{fill:currentColor}\n.mx-grd .en{font-size:8.5px;text-anchor:end;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}\n.mx-grd .out{font-size:8px;opacity:.55;font-family:inherit}\n.mx-grd .gd{font-size:8px;text-anchor:middle;font-family:inherit}\n.mx-grd .er{font-size:8px;text-anchor:middle;opacity:.7;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}\n.mx-grd .lane{stroke:currentColor;opacity:.55;stroke-width:1.4px}\n.mx-grd .tick{stroke:currentColor;opacity:.55;stroke-width:1px}\n.mx-grd .cap{stroke:currentColor;opacity:.55;stroke-width:1.4px}\n</style>\n<text class=\"en\" x=\"162\" y=\"43\">Udpipe::english(dir)</text>\n<line class=\"lane\" x1=\"170\" y1=\"40\" x2=\"470\" y2=\"40\"/>\n<line class=\"cap\" x1=\"170\" y1=\"34\" x2=\"170\" y2=\"46\"/>\n<line class=\"cap\" x1=\"470\" y1=\"34\" x2=\"470\" y2=\"46\"/>\n<text class=\"out\" x=\"478\" y=\"43\">once per process</text>\n<line class=\"tick\" x1=\"330\" y1=\"40\" x2=\"330\" y2=\"52\"/>\n<text class=\"gd\" x=\"330\" y=\"64\">size constant, then SHA-256</text>\n<text class=\"er\" x=\"330\" y=\"75\">Error::ModelInvalid</text>\n<text class=\"en\" x=\"162\" y=\"133\">analyze(Ingest::path(p)?)</text>\n<line class=\"lane\" x1=\"170\" y1=\"130\" x2=\"630\" y2=\"130\"/>\n<line class=\"cap\" x1=\"170\" y1=\"124\" x2=\"170\" y2=\"136\"/>\n<line class=\"cap\" x1=\"630\" y1=\"124\" x2=\"630\" y2=\"136\"/>\n<text class=\"out\" x=\"638\" y=\"133\">Document</text>\n<line class=\"tick\" x1=\"200\" y1=\"130\" x2=\"200\" y2=\"144\"/>\n<text class=\"gd\" x=\"200\" y=\"156\">symlink or non-regular file</text>\n<text class=\"er\" x=\"200\" y=\"167\">Error::Io</text>\n<line class=\"tick\" x1=\"270\" y1=\"130\" x2=\"270\" y2=\"178\"/>\n<text class=\"gd\" x=\"270\" y=\"190\">file size, on metadata</text>\n<text class=\"er\" x=\"270\" y=\"201\">Error::InputTooLarge</text>\n<line class=\"tick\" x1=\"350\" y1=\"130\" x2=\"350\" y2=\"116\"/>\n<text class=\"gd\" x=\"350\" y=\"108\">text size, in annotate</text>\n<text class=\"er\" x=\"350\" y=\"97\">Error::InputTooLarge</text>\n<line class=\"tick\" x1=\"490\" y1=\"130\" x2=\"490\" y2=\"116\"/>\n<text class=\"gd\" x=\"490\" y=\"108\">catch_unwind, once per paragraph</text>\n<text class=\"er\" x=\"490\" y=\"97\">Error::ParseFailed</text>\n<text class=\"en\" x=\"162\" y=\"231\">tfidf_summarize(..)</text>\n<line class=\"lane\" x1=\"170\" y1=\"228\" x2=\"470\" y2=\"228\"/>\n<line class=\"cap\" x1=\"170\" y1=\"222\" x2=\"170\" y2=\"234\"/>\n<line class=\"cap\" x1=\"470\" y1=\"222\" x2=\"470\" y2=\"234\"/>\n<text class=\"out\" x=\"478\" y=\"231\">ScoredSentence</text>\n<line class=\"tick\" x1=\"390\" y1=\"228\" x2=\"390\" y2=\"214\"/>\n<text class=\"gd\" x=\"390\" y=\"206\">per-extractor cap</text>\n<text class=\"er\" x=\"390\" y=\"195\">Error::InputTooLarge</text>\n</svg>",
+      "words": 498
+    },
+    {
+      "compression_ratio": 0.5563,
+      "in_blockquote": false,
+      "lexical_density": 0.5686,
+      "readability_grade": 8.1616,
+      "sentences": 3,
+      "text": "Three separate lanes, because these are three separate call paths. Only the middle one runs during a pipeline call. The model check fires once when you construct the provider, and the extractor caps fire only when you call an extractor, which is why neither shows up in a pipeline stack trace.",
+      "words": 51
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5263,
+      "readability_grade": 10.1411,
+      "sentences": 2,
+      "text": "The `catch_unwind` is the one that matters. A panic crossing an FFI boundary does not unwind into your code, it aborts the process: interpreter death in Python, a trap in WASM, from a library that promised typed errors.",
+      "words": 38
+    },
+    {
+      "compression_ratio": 0.5838,
+      "in_blockquote": false,
+      "lexical_density": 0.4915,
+      "readability_grade": 8.9625,
+      "sentences": 3,
+      "text": "The boundary that converts such a panic into an `Error` lives in `nlp/udpipe.rs`, and that file is the only one permitted to import the UDPipe crate. A second import path would be a second process-abort surface with no boundary in front of it. That boundary covers parsing only; model loading translates the loader's own error and is not wrapped.",
+      "words": 62
+    },
+    {
+      "compression_ratio": 0.5917,
+      "in_blockquote": false,
+      "lexical_density": 0.5972,
+      "readability_grade": 11.5883,
+      "sentences": 4,
+      "text": "Two guards live in the domain types rather than at an edge, because a parse arrives from outside and its shape is not guaranteed. `Sentence::tree_depth` walks head references with a visited set and returns `usize::MAX` when they form a cycle. `Sentence::subtree` carries the same visited set so it terminates. The sentinel is deliberate: an earlier version capped depth at a magic 20, which silently truncated malformed parses and legitimate deep ones alike.",
+      "words": 74
+    },
+    {
+      "compression_ratio": 0.6145,
+      "in_blockquote": false,
+      "lexical_density": 0.6078,
+      "readability_grade": 8.5485,
+      "sentences": 3,
+      "text": "Directory reads fail differently. The stream yields successes and per-document failures side by side, so one unreadable file does not cost you the other ninety-nine; `Ingest::path` is `Err` only when the listing itself fails. Full detail on every gate, every variant, and the Python exception each maps to is in [Errors](../reference/errors.md).",
+      "words": 54
+    },
+    {
+      "compression_ratio": 0.222,
+      "in_blockquote": false,
+      "lexical_density": 0.9248,
+      "readability_grade": 12.3647,
+      "sentences": 55,
+      "text": "<svg class=\"mx-mod\" role=\"img\" aria-label=\"Module map of the matra crate: the launchers and the command line above lib.rs and config.rs, those above the adapters, adapters above the ports, ports above domain.rs, with every dependency arrow pointing down\" viewBox=\"0 0 720 345\" width=\"720\" height=\"345\" style=\"max-width:100%;height:auto;display:block;margin:1.7em auto\">\n<title>Which module may import which, in the matra crate</title>\n<style>\n.mx-mod text{fill:currentColor}\n.mx-mod .fp{font-size:9px;text-anchor:middle;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}\n.mx-mod .tr{font-size:8px;text-anchor:middle;opacity:.75;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}\n.mx-mod .sub{font-size:7.5px;text-anchor:middle;opacity:.55;font-family:inherit}\n.mx-mod .nt{font-size:8px;opacity:.55;font-family:inherit}\n.mx-mod .box{fill:none;stroke:currentColor;opacity:.42;stroke-width:1px}\n.mx-mod .band{fill:currentColor;fill-opacity:.05;stroke:currentColor;stroke-opacity:.42;stroke-width:1px}\n.mx-mod .dep{stroke:currentColor;opacity:.6;stroke-width:1.1px;fill:none}\n.mx-mod marker path{fill:currentColor;opacity:.6}\n</style>\n<defs><marker id=\"mx-mod-a\" viewBox=\"0 0 8 8\" refX=\"7\" refY=\"4\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto\"><path d=\"M0,0 L8,4 L0,8 z\"/></marker></defs>\n<rect class=\"box\" x=\"16\" y=\"8\" width=\"196\" height=\"30\" rx=\"4\"/>\n<text class=\"fp\" x=\"114\" y=\"22\">src/bin/matra.rs</text>\n<text class=\"sub\" x=\"114\" y=\"33\">launcher, feature: cli</text>\n<text class=\"nt\" x=\"215\" y=\"19\">calls run()</text>\n<line class=\"dep\" x1=\"212\" y1=\"23\" x2=\"264\" y2=\"23\" marker-end=\"url(#mx-mod-a)\"/>\n<rect class=\"box\" x=\"268\" y=\"8\" width=\"212\" height=\"30\" rx=\"4\"/>\n<text class=\"fp\" x=\"374\" y=\"22\">src/cli/</text>\n<text class=\"sub\" x=\"374\" y=\"33\">the command line, feature: cli</text>\n<line class=\"dep\" x1=\"114\" y1=\"38\" x2=\"114\" y2=\"54\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"374\" y1=\"38\" x2=\"374\" y2=\"54\" marker-end=\"url(#mx-mod-a)\"/>\n<rect class=\"band\" x=\"16\" y=\"58\" width=\"700\" height=\"36\" rx=\"4\"/>\n<text class=\"fp\" x=\"264\" y=\"73\">src/lib.rs</text>\n<text class=\"sub\" x=\"264\" y=\"85\">declares every module, and is the only file that names every adapter and every port</text>\n<rect class=\"box\" x=\"524\" y=\"60\" width=\"188\" height=\"32\" rx=\"4\"/>\n<text class=\"fp\" x=\"618\" y=\"73\">src/config.rs</text>\n<text class=\"sub\" x=\"618\" y=\"85\">locations and defaults, never behavior</text>\n<line class=\"dep\" x1=\"264\" y1=\"94\" x2=\"264\" y2=\"102\"/>\n<line class=\"dep\" x1=\"80\" y1=\"102\" x2=\"648\" y2=\"102\"/>\n<line class=\"dep\" x1=\"80\" y1=\"102\" x2=\"80\" y2=\"116\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"222\" y1=\"102\" x2=\"222\" y2=\"116\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"364\" y1=\"102\" x2=\"364\" y2=\"116\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"506\" y1=\"102\" x2=\"506\" y2=\"116\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"648\" y1=\"102\" x2=\"648\" y2=\"116\" marker-end=\"url(#mx-mod-a)\"/>\n<rect class=\"box\" x=\"16\" y=\"120\" width=\"128\" height=\"26\" rx=\"4\"/>\n<text class=\"fp\" x=\"80\" y=\"137\">source/directory.rs</text>\n<rect class=\"box\" x=\"40\" y=\"160\" width=\"104\" height=\"26\" rx=\"4\"/>\n<text class=\"fp\" x=\"92\" y=\"177\">source/file.rs</text>\n<line class=\"dep\" x1=\"90\" y1=\"146\" x2=\"90\" y2=\"158\" marker-end=\"url(#mx-mod-a)\"/>\n<text class=\"nt\" x=\"96\" y=\"156\">delegates</text>\n<rect class=\"box\" x=\"158\" y=\"120\" width=\"128\" height=\"26\" rx=\"4\"/>\n<text class=\"fp\" x=\"222\" y=\"136\">decompose/markdown.rs</text>\n<rect class=\"box\" x=\"182\" y=\"160\" width=\"104\" height=\"26\" rx=\"4\"/>\n<text class=\"fp\" x=\"234\" y=\"177\">decompose/plain.rs</text>\n<rect class=\"box\" x=\"300\" y=\"120\" width=\"128\" height=\"46\" rx=\"4\"/>\n<text class=\"fp\" x=\"364\" y=\"134\">nlp/udpipe.rs</text>\n<text class=\"sub\" x=\"364\" y=\"146\">the only importer of udpipe_rs</text>\n<text class=\"sub\" x=\"364\" y=\"158\">feature: udpipe</text>\n<rect class=\"box\" x=\"442\" y=\"120\" width=\"128\" height=\"46\" rx=\"4\"/>\n<text class=\"fp\" x=\"506\" y=\"134\">embed/model2vec.rs</text>\n<text class=\"sub\" x=\"506\" y=\"146\">sole importer of safetensors,</text>\n<text class=\"sub\" x=\"506\" y=\"157\">tokenizers · feature: model2vec</text>\n<rect class=\"box\" x=\"584\" y=\"120\" width=\"132\" height=\"26\" rx=\"4\"/>\n<text class=\"fp\" x=\"650\" y=\"137\">metrics/</text>\n<rect class=\"box\" x=\"600\" y=\"160\" width=\"116\" height=\"26\" rx=\"4\"/>\n<text class=\"fp\" x=\"658\" y=\"177\">extraction/</text>\n<line class=\"dep\" x1=\"28\" y1=\"146\" x2=\"28\" y2=\"206\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"92\" y1=\"186\" x2=\"92\" y2=\"206\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"170\" y1=\"146\" x2=\"170\" y2=\"206\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"234\" y1=\"186\" x2=\"234\" y2=\"206\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"364\" y1=\"166\" x2=\"364\" y2=\"206\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"506\" y1=\"166\" x2=\"506\" y2=\"206\" marker-end=\"url(#mx-mod-a)\"/>\n<rect class=\"box\" x=\"16\" y=\"210\" width=\"128\" height=\"46\" rx=\"4\"/>\n<text class=\"fp\" x=\"80\" y=\"226\">source/mod.rs</text>\n<text class=\"tr\" x=\"80\" y=\"238\">trait Source</text>\n<text class=\"sub\" x=\"80\" y=\"250\">chosen statically in lib.rs</text>\n<rect class=\"box\" x=\"158\" y=\"210\" width=\"128\" height=\"46\" rx=\"4\"/>\n<text class=\"fp\" x=\"222\" y=\"226\">decompose/mod.rs</text>\n<text class=\"tr\" x=\"222\" y=\"238\">trait Decomposer</text>\n<text class=\"sub\" x=\"222\" y=\"250\">chosen statically in lib.rs</text>\n<rect class=\"box\" x=\"300\" y=\"210\" width=\"128\" height=\"46\" rx=\"4\"/>\n<text class=\"fp\" x=\"364\" y=\"226\">nlp/mod.rs</text>\n<text class=\"tr\" x=\"364\" y=\"238\">trait NlpProvider</text>\n<text class=\"sub\" x=\"364\" y=\"250\">&amp;dyn, chosen at runtime</text>\n<rect class=\"box\" x=\"442\" y=\"210\" width=\"128\" height=\"46\" rx=\"4\"/>\n<text class=\"fp\" x=\"506\" y=\"226\">embed/mod.rs</text>\n<text class=\"tr\" x=\"506\" y=\"238\">trait Embedder</text>\n<text class=\"sub\" x=\"506\" y=\"250\">&amp;dyn, chosen at runtime</text>\n<text class=\"sub\" x=\"650\" y=\"232\">no port, no trait</text>\n<line class=\"dep\" x1=\"592\" y1=\"146\" x2=\"592\" y2=\"286\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"708\" y1=\"186\" x2=\"708\" y2=\"286\" marker-end=\"url(#mx-mod-a)\"/>\n<text class=\"sub\" x=\"650\" y=\"270\">domain and stopwords only</text>\n<line class=\"dep\" x1=\"80\" y1=\"256\" x2=\"80\" y2=\"286\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"222\" y1=\"256\" x2=\"222\" y2=\"286\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"364\" y1=\"256\" x2=\"364\" y2=\"286\" marker-end=\"url(#mx-mod-a)\"/>\n<line class=\"dep\" x1=\"506\" y1=\"256\" x2=\"506\" y2=\"286\" marker-end=\"url(#mx-mod-a)\"/>\n<rect class=\"band\" x=\"16\" y=\"290\" width=\"700\" height=\"36\" rx=\"4\"/>\n<text class=\"fp\" x=\"366\" y=\"306\">src/domain.rs</text>\n<text class=\"sub\" x=\"366\" y=\"319\">serde · thiserror · std, and nothing else</text>\n</svg>",
+      "words": 1262
+    },
+    {
+      "compression_ratio": 0.5251,
+      "in_blockquote": false,
+      "lexical_density": 0.5581,
+      "readability_grade": 7.7247,
+      "sentences": 4,
+      "text": "Every arrow points down, and that is the rule: a module imports from the row below it, never the row above. Two arrows run sideways. `source/directory.rs` reaches into `source/file.rs`, inside a single port, so a directory read inherits the same symlink and size guards rather than reimplementing them. And `src/bin/matra.rs` reaches into `src/cli/`, which is the whole of that file: the command line lives in the library so both launchers run one program, and the binary only collects arguments, locks the streams, and returns the code.",
+      "words": 90
+    },
+    {
+      "compression_ratio": 0.5517,
+      "in_blockquote": false,
+      "lexical_density": 0.5479,
+      "readability_grade": 8.8443,
+      "sentences": 2,
+      "text": "`src/config.rs` sits in the composition-root row beside `lib.rs`, and it is the one box an adapter is allowed to import from the row above. `Udpipe::from_config` and `Model2Vec::from_config` take a `&Config`, which is the traffic RFC-0011 intends and [boundary rule 7](../reference/boundary-rules.md) records: `Config` imports no port and no adapter, so nothing travels back down with it, and an adapter that reads it is reading a resolved path rather than reaching for the environment itself.",
+      "words": 75
+    },
+    {
+      "compression_ratio": 0.5542,
+      "in_blockquote": false,
+      "lexical_density": 0.5574,
+      "readability_grade": 13.6187,
+      "sentences": 3,
+      "text": "`Config` is not one of the extension points below, and the distinction is worth keeping. An extension point substitutes an implementation; `Config` only supplies values a caller could have passed as arguments. That is why it carries locations and defaults and never behavior: the moment a file selects which metrics run, configuration stops being adaptability and becomes dispatch that nothing type-checks.",
+      "words": 62
+    },
+    {
+      "compression_ratio": 0.503,
+      "in_blockquote": false,
+      "lexical_density": 0.595,
+      "readability_grade": 11.3732,
+      "sentences": 7,
+      "text": "Three extension points are dispatched at runtime. `NlpProvider` has a single method, and the engine holds it as `Box<dyn NlpProvider>`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. `Embedder` is the same shape one tier over: `embed_and_cluster` takes it as `&dyn Embedder`, and its `identity` travels into every result so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library. And `Decomposer` dispatch is a value: the engine's `Decomposers` table maps each `Format` to a boxed decomposer, `standard_decomposers()` is merely the table this build ships, and `Decomposers::new().with(format, decomposer)` builds a different one. Registering a format is data flow, not a code change.",
+      "words": 128
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6216,
+      "readability_grade": 11.398,
+      "sentences": 2,
+      "text": "`Source` stays static: `Ingest`'s constructors name the file and directory adapters. To ingest from somewhere else, construct `RawDocument` values yourself and feed them to `Engine::analyze` as `Ok` items; the pipeline does not care where they came from.",
+      "words": 39
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5588,
+      "readability_grade": 6.8771,
+      "sentences": 3,
+      "text": "The metric suite is data as well. `Metric`, `run_suite`, and `Document::new` are all public, so a caller can assemble a different suite and run it over a document. `compose` always runs the default four.",
+      "words": 35
+    },
+    {
+      "compression_ratio": 0.5988,
+      "in_blockquote": false,
+      "lexical_density": 0.5185,
+      "readability_grade": 7.1327,
+      "sentences": 4,
+      "text": "What you gain from the arrangement is concrete and mostly shows up in test suites. Nothing under `metrics/` or `extraction/` imports a port, which is the one column above that skips the port row entirely, so those functions run with no model loaded. A new metric is testable against hand-built `Sentence` values, with no 16 MB download and no C++ toolchain. The rules that keep it that way, and how weakly some of them are enforced, are listed in [Boundary rules](../reference/boundary-rules.md).",
+      "words": 85
+    },
+    {
+      "compression_ratio": 0.5847,
+      "in_blockquote": false,
+      "lexical_density": 0.5926,
+      "readability_grade": 8.0306,
+      "sentences": 4,
+      "text": "The Rust side runs the same pipeline, then hands the `Document` to `pythonize`, which walks the serde representation and builds a Python dict. That is a full deep copy. Every token becomes a dict of eleven keys. For a document with seven thousand tokens, that is seven thousand dicts allocated on the Python heap.",
+      "words": 54
+    },
+    {
+      "compression_ratio": 0.533,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 10.0632,
+      "sentences": 7,
+      "text": "Fields cross. Methods do not. `Document::mean_sentence_length()`, `total_words()`, and every other computed value is a Rust method with no serde representation, so it has nothing to cross with. A Python caller recomputes those from the `sections` data already in hand. `passive_ratio` is the one aggregate that does cross, because the measure stage stores the method's result in the field of the same name (RFC-0008), so a Python caller reads it rather than recomputing it. [Domain types](../reference/domain-types.md#what-crosses-the-language-boundary) draws that boundary member by member.",
+      "words": 83
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6279,
+      "readability_grade": 9.4837,
+      "sentences": 3,
+      "text": "Errors cross by type. The conversion is a match with no wildcard arm, so adding a variant to `domain::Error` fails to compile until someone decides which Python exception class it becomes. A wildcard would let new failure modes fall through to `RuntimeError` unnoticed.",
+      "words": 45
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6429,
+      "readability_grade": 8.8343,
+      "sentences": 2,
+      "text": "Every Python method that takes text routes through the same pipeline, so the 8 MiB text cap fires uniformly. The extraction methods add their per-extractor caps on top.",
+      "words": 28
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6111,
+      "readability_grade": 8.4539,
+      "sentences": 1,
+      "text": "[What matra gives you](../capabilities.md) is the output side: every value the pipeline produces and what each one measures.",
+      "words": 19
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 7.01,
+      "sentences": 1,
+      "text": "[Domain types](../reference/domain-types.md) is the type graph: what each type owns, which values are stored and which are computed on demand.",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.45,
+      "readability_grade": 9.96,
+      "sentences": 1,
+      "text": "[Boundary rules](../reference/boundary-rules.md) is the enforcement side: the eight rules, why each exists, and which of them have a mechanical gate.",
+      "words": 21
+    }
+  ]
+}

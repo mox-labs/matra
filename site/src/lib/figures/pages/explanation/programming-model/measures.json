@@ -1,0 +1,282 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "explanation/programming-model.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4615,
+      "readability_grade": 3.2835,
+      "sentences": 2,
+      "text": "`Ingest` is where documents come from. `Engine` is what happens to each one.",
+      "words": 13
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5238,
+      "readability_grade": 11.7048,
+      "sentences": 1,
+      "text": "Source variation lives in the data, not in the function namespace, which is why `Engine::analyze` is one function rather than six.",
+      "words": 23
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Three ways to run it:",
+      "words": 5
+    },
+    {
+      "compression_ratio": 0.6401,
+      "in_blockquote": false,
+      "lexical_density": 0.6415,
+      "readability_grade": 10.4472,
+      "sentences": 3,
+      "text": "Reads are lazy. `Ingest::path` on a directory lists entries up front, and a listing failure is the constructor's `Err`, but no file is read until the iterator is pulled. A per-file failure (unreadable, oversized, a symlink) arrives as an `Err` item carrying the path, so one bad file cannot abort a directory walk.",
+      "words": 57
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.3684,
+      "readability_grade": 3.0203,
+      "sentences": 2,
+      "text": "`compose` is total. It reads what is attached and skips what is not, so it has no failure path.",
+      "words": 19
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 7.57,
+      "sentences": 1,
+      "text": "One short Markdown document at each of the three stages, as matra produces them:",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<figure-pipeline input=\"field-notes\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5484,
+      "readability_grade": 9.8679,
+      "sentences": 2,
+      "text": "`Engine::new` takes a provider and a decomposer table, which means the caller decides where the UDPipe model lives. `Config` answers that question once so no caller has to invent a path.",
+      "words": 32
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5417,
+      "readability_grade": 16.1317,
+      "sentences": 2,
+      "text": "That is `Config::resolve()` followed by `Engine::from_config(&cfg)`. Both are additive: `Engine::new`, `Udpipe::english` and `Udpipe::from_path` are unchanged, and an explicit path still wins over everything below.",
+      "words": 30
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 9.6644,
+      "sentences": 3,
+      "text": "`Config` resolves locations and defaults, never behavior. It carries the model directory, the semantic threshold, and the default counts and algorithm names, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped.",
+      "words": 45
+    },
+    {
+      "compression_ratio": 0.5395,
+      "in_blockquote": false,
+      "lexical_density": 0.5588,
+      "readability_grade": 11.5165,
+      "sentences": 3,
+      "text": "Resolution order, per key: an explicit argument, then the environment, then the config file, then the defaults compiled into the crate from `config/default.toml`. The argument rung has one producer, `Config::with_model_dir`, which returns the same configuration with the model directory replaced and that one key's source changed. It is the rung a command line's `--model-dir` lands on, so the flag reaches the adapter through `Config` rather than past it.",
+      "words": 74
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Paths follow the XDG conventions on Linux and on macOS.",
+      "words": 10
+    },
+    {
+      "compression_ratio": 0.5508,
+      "in_blockquote": false,
+      "lexical_density": 0.5641,
+      "readability_grade": 10.3569,
+      "sentences": 4,
+      "text": "One exception to the model directory rule: if the data root has no `models` subdirectory yet, and `~/.matra/models` exists and is not empty, that older location is used. matra never creates `~/.matra`. When an existing, non-empty legacy cache is selected it is used as the model directory, downloads and re-downloads included, because the resolved directory is the one handed to `Udpipe::english` and that is where it writes. Create the new location, or set `MATRA_MODEL_DIR`, to move off it.",
+      "words": 83
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.55,
+      "readability_grade": 6.895,
+      "sentences": 3,
+      "text": "An empty `~/.matra/models` is not selected. There is no cache in it to keep working, and picking it would send every later download into a directory matra would otherwise never create. A fresh install therefore lands in the new place.",
+      "words": 42
+    },
+    {
+      "compression_ratio": 0.5778,
+      "in_blockquote": false,
+      "lexical_density": 0.55,
+      "readability_grade": 10.1067,
+      "sentences": 3,
+      "text": "A missing config file is not an error; the built-in defaults stand. A malformed one is `Error::InvalidInput` naming the file and the line, and an algorithm name the build does not know is rejected the same way at resolve time rather than at call time. Every resolved value records which rung it came from, readable through `Config::sources` as a `ValueSource`.",
+      "words": 64
+    },
+    {
+      "compression_ratio": 0.6455,
+      "in_blockquote": false,
+      "lexical_density": 0.5385,
+      "readability_grade": 10.0046,
+      "sentences": 3,
+      "text": "`Engine::annotate` runs the size check, then hands each non-blockquote paragraph to `NlpProvider::parse`. Nothing else in the library calls the parser. That is what makes the 8 MiB cap a property of the pipeline rather than of each entry point: no text over `MAX_INPUT_BYTES` can reach a provider, whichever call you started from.",
+      "words": 54
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5161,
+      "readability_grade": 5.1884,
+      "sentences": 3,
+      "text": "It is also the cheap route when you want the extractors. Annotate once, read the sentences off the tree, and hand the same slice to every extractor. Nothing is parsed twice.",
+      "words": 31
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "The domain depends on port traits. Adapters implement them.",
+      "words": 9
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 9.2508,
+      "sentences": 4,
+      "text": "Features are additive. Enabling `udpipe` adds UDPipe; disabling it removes UDPipe and nothing else. `cargo check --no-default-features` compiles. The other two features are `cli` (the command line, which implies `udpipe`) and `python` (the PyO3 bindings, which implies `cli` so that a wheel carries the command).",
+      "words": 47
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5814,
+      "readability_grade": 14.1997,
+      "sentences": 2,
+      "text": "Your own adapter is a trait implementation plus a change at the call site. `Engine::new` takes any `Box<dyn NlpProvider>`; `Decomposers::with` builds a table other than `standard_decomposers()`; `embed_and_cluster` takes any `&dyn Embedder`, and with your own implementation it needs no feature flag at all.",
+      "words": 46
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 8.1771,
+      "sentences": 4,
+      "text": "Every gate returns a typed variant of `Error`. There is no `Result<T, String>` anywhere in the library, and library code does not panic: UDPipe panics at the C boundary are caught in `nlp/udpipe.rs` and converted.",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 14.3744,
+      "sentences": 1,
+      "text": "The `what` discriminator names which gate fired, so a caller can route a document-too-big differently from a corpus-too-big.",
+      "words": 22
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6364,
+      "readability_grade": 16.59,
+      "sentences": 1,
+      "text": "Cycle safety is a sentinel, not a ceiling: `Sentence::tree_depth` returns `usize::MAX` on a malformed parse containing a cycle rather than silently truncating.",
+      "words": 23
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4688,
+      "readability_grade": 5.1638,
+      "sentences": 3,
+      "text": "Values reach Python through serde and pythonize. A field has a serde representation and crosses with its name unchanged. A method has none, so there is nothing for it to cross with.",
+      "words": 32
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.9063,
+      "readability_grade": 33.765,
+      "sentences": 1,
+      "text": "Rust-only, therefore: `Document::total_words`, `total_sentences`, `paragraph_count`, `mean_sentence_length`, `sentence_length_std`; every `Corpus` aggregate (`total_words`, `passive_ratio`, `mean_readability`); the `Sentence` tree walks (`root_token`, `head_of`, `children_of`, `subtree`, `tree_depth`, `is_passive`, `content_tokens`, `word_count`, `reportings_in`, `root_adverbials_in`); `Paragraph::word_count` and `sentence_count`; and `Token::feat`.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5122,
+      "readability_grade": 12.2635,
+      "sentences": 2,
+      "text": "When an aggregate needs to be visible cross-language it is materialized as a field. `Document::passive_ratio` is the worked case: the method still exists for Rust callers, and the metric suite writes its value into the `passive_ratio` field, which is what crosses.",
+      "words": 42
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7857,
+      "readability_grade": 11.7843,
+      "sentences": 1,
+      "text": "`Matra`, `Model2Vec`, one module-level function, and the entry point the `matra` console script launches.",
+      "words": 15
+    },
+    {
+      "compression_ratio": 0.5466,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 12.3958,
+      "sentences": 5,
+      "text": "Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `CorpusEntry` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. That arm needs no embedding adapter compiled in, so a build without `model2vec` still clusters with vectors the caller brings.",
+      "words": 120
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6522,
+      "readability_grade": 13.3887,
+      "sentences": 2,
+      "text": "Still not on the Python surface: the separate `annotate` and `compose` stages, the remaining corpus types (`Corpus`, `CorpusResult`), a custom `NlpProvider`, and a replaceable metric suite. Parsing is the one thing the caller cannot substitute, because the size cap and the panic boundary live behind it.",
+      "words": 47
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6923,
+      "readability_grade": 7.18,
+      "sentences": 3,
+      "text": "`Matra` is `unsendable`, because the UDPipe model holds C-side state that is not thread safe. Multi-process Python is fine; sharing one instance across threads is not.",
+      "words": 27
+    }
+  ]
+}

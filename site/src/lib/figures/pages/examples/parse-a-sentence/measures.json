@@ -1,0 +1,75 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "examples/parse-a-sentence.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4815,
+      "readability_grade": 11.5474,
+      "sentences": 1,
+      "text": "The first sentence of Pride and Prejudice, parsed: every word with its lemma, its part of speech, the word it depends on, and the relation between them.",
+      "words": 28
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-input name=\"parse-a-sentence\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-call name=\"parse-a-sentence\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-output name=\"parse-a-sentence\" />",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4,
+      "readability_grade": 2.06,
+      "sentences": 1,
+      "text": "The same 25 tokens as a table, then as arcs drawn from each word's head:",
+      "words": 16
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<figure-parse input=\"austen-first-sentence\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": 0.4924,
+      "in_blockquote": false,
+      "lexical_density": 0.5278,
+      "readability_grade": 7.7144,
+      "sentences": 13,
+      "text": "- A document is sections of paragraphs of sentences, even when it is one sentence, so the tokens are at `sections[0].paragraphs[0].sentences[0].tokens`. In Rust, `doc.sentences()` walks every sentence in document order.\n- Each token carries its CoNLL-U columns under matra's names: `id` (from 1 within the sentence), `text`, `lemma`, `pos` (the Universal Dependencies tag), `head` (the `id` of the word it depends on, 0 for the root) and `dep` (the relation). Here `truth` is the root, and `It` is its `nsubj`.\n- `lemma` is the dictionary form: `is` becomes `be`, and `acknowledged` becomes `acknowledge`.\n- The parse is the model's, reported as the model returned it. The model reads `that` (token 8) as a pronoun and the object of `want`, where a grammar would call it the conjunction that opens the clause. matra does not correct the parser; [Methodology](../reference/methodology.md#the-parse-layer) names the model and its limits.\n- The whole output also carries the structural primitives read off this tree: a modal (`must`, governing `want`) and a reporting (`acknowledge`, whose clause is headed by `want`). The [next example](negations-and-modals.md) reads those across a document.",
+      "words": 191
+    }
+  ]
+}

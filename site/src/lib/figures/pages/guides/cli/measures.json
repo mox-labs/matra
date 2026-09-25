@@ -1,0 +1,417 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "guides/cli.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5641,
+      "readability_grade": 7.0287,
+      "sentences": 3,
+      "text": "`matra` reads a file (or stdin) and writes to stdout. `matra --help` describes the tool in the line built into the command: \"matra parses text into CoNLL-U structure and measures it. It reports what is there; interpretation is yours.\"",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 1.0,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Nothing installed, nothing configured:",
+      "words": 4
+    },
+    {
+      "compression_ratio": 0.5725,
+      "in_blockquote": false,
+      "lexical_density": 0.5495,
+      "readability_grade": 5.6605,
+      "sentences": 4,
+      "text": "The version floor is load-bearing. A bare `uvx matra` takes whatever release is newest, which is 0.2.x today and will not stay that way, and 0.1.0 is still on PyPI for anything pinned to it. 0.1.0's `analyze` is a separate Python implementation rather than this one missing a flag: `--json` prints a bare document with no envelope, the human table is a different renderer, and the model cache lands in `~/.matra/models` instead of the resolved model directory. It does not fail, it succeeds and gives you something else, so pin it.",
+      "words": 96
+    },
+    {
+      "compression_ratio": 0.5007,
+      "in_blockquote": false,
+      "lexical_density": 0.5877,
+      "readability_grade": 11.1055,
+      "sentences": 5,
+      "text": "With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. `cargo install matra --features cli` reports `features: udpipe cli`, while the published wheel reports `features: udpipe model2vec python cli`, so the embedding adapter is present on the Python route and absent from a `--features cli` build. `matra --version` prints the list of the binary in front of you on its second line.",
+      "words": 116
+    },
+    {
+      "compression_ratio": 0.5693,
+      "in_blockquote": false,
+      "lexical_density": 0.5493,
+      "readability_grade": 11.4231,
+      "sentences": 3,
+      "text": "Every route caches the model at the resolved model directory (about 16 MB) and downloads it the first time any command needs it. No flag and no environment variable is required to make that happen. If the cached file fails its SHA-256 check, matra never deletes it: a download that verifies replaces it through an atomic rename, and a download that fails leaves the file you had exactly as it was.",
+      "words": 72
+    },
+    {
+      "compression_ratio": 0.5895,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 9.078,
+      "sentences": 3,
+      "text": "A pre-existing `~/.matra/models` from an older install is still used when the new location does not exist yet. matra never creates `~/.matra`; when a non-empty legacy cache is selected it is the resolved model directory, downloads and re-downloads included. Create the new location, or set `MATRA_MODEL_DIR`, to move off it.",
+      "words": 54
+    },
+    {
+      "compression_ratio": 0.503,
+      "in_blockquote": false,
+      "lexical_density": 0.6038,
+      "readability_grade": 9.7792,
+      "sentences": 3,
+      "text": "Per key, `--model-dir` outranks every environment variable, which outranks the config file, which outranks the defaults compiled into the crate. The config file has no key for the model directory, so that value comes from the flag, the environment, or the defaults. `matra config show` prints which rung each value actually came from.",
+      "words": 55
+    },
+    {
+      "compression_ratio": 0.5818,
+      "in_blockquote": false,
+      "lexical_density": 0.5231,
+      "readability_grade": 12.6477,
+      "sentences": 3,
+      "text": "`analyze`, `summarize`, and `keyphrases` each read one document. The path they take is a file or `-` for stdin; a directory is refused, because a command that reports on one document cannot report on a directory of them, and picking one file out of it would be an answer to a question nobody asked. Analyzing a directory is a library call today (`Engine::analyze` over `Ingest::path`).",
+      "words": 67
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Analyzes a file and reports its metrics.",
+      "words": 7
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 13.2956,
+      "sentences": 1,
+      "text": "`--sections` adds a per-section breakdown under the metric table: one row per section with its heading level, heading, and the paragraph, sentence, and word counts underneath it.",
+      "words": 29
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.56,
+      "readability_grade": 15.4,
+      "sentences": 1,
+      "text": "Every subcommand routes through the library pipeline, which rejects symlinks, rejects files over 8 MiB before reading them, and picks a decomposer from the extension.",
+      "words": 25
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5349,
+      "readability_grade": 11.7299,
+      "sentences": 2,
+      "text": "On a markdown file, decomposition drops YAML frontmatter, fenced code blocks, and table rows beginning with `|`, and it stops entirely at a line reading `## References` or `*References*`. Content after that heading is not analyzed and does not appear in the output.",
+      "words": 44
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7857,
+      "readability_grade": 22.7414,
+      "sentences": 1,
+      "text": "`--json` emits the full `Document` (`sections`, `vocabulary_ttr`, `nominalization_ratio`, `passive_ratio`) inside the envelope described below:",
+      "words": 18
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 12.7356,
+      "sentences": 3,
+      "text": "That query returns `null` more often than you might expect. Per-paragraph metrics have thresholds: `readability_grade` needs more than 10 words, `compression_ratio` needs more than 50, and blockquote paragraphs are skipped entirely. Filter for non-null before aggregating:",
+      "words": 35
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.625,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Extracts the top-N sentences as an extractive summary.",
+      "words": 9
+    },
+    {
+      "compression_ratio": 0.5552,
+      "in_blockquote": false,
+      "lexical_density": 0.6226,
+      "readability_grade": 9.6949,
+      "sentences": 5,
+      "text": "TF-IDF scores each sentence by term frequency against the document. TextRank scores by a graph-coherence measure over sentence similarity. Reach for TextRank when sentences reference each other across the document and mutual reinforcement matters more than raw term weight. TF-IDF is the cheaper default and usually enough. Both reject input over 2000 sentences.",
+      "words": 56
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5952,
+      "readability_grade": 10.3,
+      "sentences": 2,
+      "text": "Both methods select their top-N sentences by score internally, then return that selection re-sorted into document order, not score order. The `score` field tells you how each sentence ranked; the list order tells you where each sentence sits in the source text.",
+      "words": 43
+    },
+    {
+      "compression_ratio": 0.5634,
+      "in_blockquote": false,
+      "lexical_density": 0.5574,
+      "readability_grade": 9.9433,
+      "sentences": 3,
+      "text": "The human table prints each score at three decimals. Two sentences whose scores differ in the fourth therefore print the same number, and a summary of three sentences can arrive looking as though the ranker scored them identically when it did not. `--json` carries the full float, so reach for it whenever the ordering has to be defended rather than read.",
+      "words": 62
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 1.0,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Extracts ranked keyphrases.",
+      "words": 3
+    },
+    {
+      "compression_ratio": 0.572,
+      "in_blockquote": false,
+      "lexical_density": 0.5867,
+      "readability_grade": 9.7693,
+      "sentences": 5,
+      "text": "RAKE splits on stop words and scores the remaining word runs by a co-occurrence degree-to-frequency ratio. It is rule-based and fast. YAKE scores individual terms by position, frequency, and how varied their surrounding context is, then builds one-word to three-word candidates from those scores. It tends to surface longer, more specific phrases and to notice terms that first appear later in a long document, at more computation than RAKE. Both reject input over 200000 tokens.",
+      "words": 80
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6364,
+      "readability_grade": 8.3662,
+      "sentences": 2,
+      "text": "Unlike `summarize`, `keyphrases` output stays in score order, highest first. `Keyphrase` has no position field to sort back into, because a phrase is not tied to one location the way a sentence is.",
+      "words": 33
+    },
+    {
+      "compression_ratio": 0.5976,
+      "in_blockquote": false,
+      "lexical_density": 0.6071,
+      "readability_grade": 9.8114,
+      "sentences": 3,
+      "text": "Phrases are printed as lowercased lemmas, not as the surface text of the document. \"Dependency Parses\" appears as `dependency parse`. Phrases with equal scores can swap order between runs, and a tie at the `-n` boundary can change which phrase makes the list, so do not diff raw keyphrase output across runs without sorting it first.",
+      "words": 57
+    },
+    {
+      "compression_ratio": 0.509,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 8.3853,
+      "sentences": 6,
+      "text": "Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word `lexical density` scores `5.667` and the three-word `model file name` scores `5.167`. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.",
+      "words": 140
+    },
+    {
+      "compression_ratio": 0.5674,
+      "in_blockquote": false,
+      "lexical_density": 0.5221,
+      "readability_grade": 5.1254,
+      "sentences": 5,
+      "text": "Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE ties `dense similarity matrix` and `system trust store` for first at `9.000` and scores the bare `error` at `1.190`, while YAKE's first is `treat untrusted` at `80.224`. What is near the bottom there is the score, not the position: `1.190` sits just above `1.000`, the floor any single word scores, and 215 of the 465 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.",
+      "words": 120
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.76,
+      "readability_grade": 11.624,
+      "sentences": 1,
+      "text": "`matra config show` prints every resolved value with the rung it came from, one key per line, in the shape `cargo config get --show-origin` uses:",
+      "words": 26
+    },
+    {
+      "compression_ratio": 0.526,
+      "in_blockquote": false,
+      "lexical_density": 0.5385,
+      "readability_grade": 4.1237,
+      "sentences": 2,
+      "text": "The origin is `default` for a value compiled into the crate, a path for one read from your config file, `environment variable ...` for one an environment variable set, and `command line` for one a flag set. With `--json`, each key carries its value, the rung, and what the rung pointed at.",
+      "words": 52
+    },
+    {
+      "compression_ratio": 0.5457,
+      "in_blockquote": false,
+      "lexical_density": 0.5625,
+      "readability_grade": 8.2875,
+      "sentences": 4,
+      "text": "What that listing does not carry is the config file path. Every key whose origin is `default` names no file, so a run with no config file on disk prints no path at all, and \"where is my config\" is not a question the human table answers. Two commands do answer it. `matra config show --json` puts the resolved path in the envelope's `input` field, whether or not the file exists; `matra config init` prints the path it wrote to.",
+      "words": 81
+    },
+    {
+      "compression_ratio": 0.5884,
+      "in_blockquote": false,
+      "lexical_density": 0.5882,
+      "readability_grade": 13.7903,
+      "sentences": 2,
+      "text": "`matra config init` writes the shipped defaults to the resolved config path and prints where it wrote them. It creates the parent directories, writes through a temporary file in the same directory so a reader never sees a half-written config, and refuses to overwrite an existing file unless you pass `--force`.",
+      "words": 54
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Prints a completion script for `bash`, `zsh`, or `fish`.",
+      "words": 9
+    },
+    {
+      "compression_ratio": 0.5425,
+      "in_blockquote": false,
+      "lexical_density": 0.4526,
+      "readability_grade": 3.8046,
+      "sentences": 4,
+      "text": "`matra --skill` prints the agent skill: what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not mean, the limits, and the errors. It is the whole hand-off. If you are pointing an agent at matra and it has nothing installed, `uvx 'matra>=0.2' --skill` is the line to give it. Pin the version: `--skill` arrived in 0.2.0, and a bare `uvx matra` takes whatever release is newest, which before 0.2.0 was a different command line that does not have the flag.",
+      "words": 98
+    },
+    {
+      "compression_ratio": 0.5862,
+      "in_blockquote": false,
+      "lexical_density": 0.4265,
+      "readability_grade": 7.2241,
+      "sentences": 3,
+      "text": "The text is compiled into the program with `include_str!` from `skills/matra/SKILL.md` and `skills/matra/references/*.md`, so what you read is what the installed version does, not a copy of the docs that may have moved on. The same files are what the repository ships as a plugin. Every command in them is executed against the command line by the test suite, so an incantation that no longer runs fails CI.",
+      "words": 71
+    },
+    {
+      "compression_ratio": 0.5836,
+      "in_blockquote": false,
+      "lexical_density": 0.5469,
+      "readability_grade": 6.1801,
+      "sentences": 5,
+      "text": "`--skill` outranks a subcommand: `matra analyze essay.md --skill` prints the skill and never looks at the file. `-r` without `--skill` is an error that says so, and an unknown reference name exits `2` naming the ones that exist. Everything else exits `0`. `--quiet` does not apply, as it does not to `completions`: the text is the command's output, not a rendering of a result.",
+      "words": 68
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.619,
+      "readability_grade": 12.2667,
+      "sentences": 1,
+      "text": "Under `--json` the skill uses the same envelope every other command uses, with `input` null because the command reads no document:",
+      "words": 22
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.64,
+      "readability_grade": 5.805,
+      "sentences": 2,
+      "text": "`result.name` is `SKILL` for the top level and the reference's own name for `matra --skill -r <name> --json`. The list replaces `result` with one key:",
+      "words": 27
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4516,
+      "readability_grade": 14.3903,
+      "sentences": 1,
+      "text": "The list is every file under `references/`, in file-name order, and each summary is read from that file's own frontmatter rather than from a second list that could drift from it.",
+      "words": 34
+    },
+    {
+      "compression_ratio": 0.6326,
+      "in_blockquote": false,
+      "lexical_density": 0.5686,
+      "readability_grade": 8.3172,
+      "sentences": 2,
+      "text": "The same files install as a plugin: `claude --plugin-dir <checkout>` over a clone of the repository picks up `skills/matra/`, which is where plugin discovery looks. And this documentation site serves [`llms.txt`](https://mox-labs.github.io/matra/llms.txt) at its root, the map of every page with its one-line summary, for an agent reading the human door instead.",
+      "words": 57
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5238,
+      "readability_grade": 6.7271,
+      "sentences": 3,
+      "text": "`-` in place of the path reads stdin. `--stdin-filename` gives that input a name, which is the label in the output and the envelope, and whose extension selects the decomposer. Without it the input is read as plain text and labelled `<stdin>`.",
+      "words": 43
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4194,
+      "readability_grade": 12.8677,
+      "sentences": 1,
+      "text": "The 8 MiB cap applies to stdin as it does to a file, and it is enforced while reading rather than after, so an unbounded stream is refused instead of buffered.",
+      "words": 31
+    },
+    {
+      "compression_ratio": 0.5836,
+      "in_blockquote": false,
+      "lexical_density": 0.6122,
+      "readability_grade": 11.4902,
+      "sentences": 3,
+      "text": "`--color` takes `auto` (the default), `always`, or `never`. Under `auto`, matra colors an interactive terminal and nothing else, and honors `NO_COLOR`: if that variable is present and not empty, color is off whatever its value. `--color always` and `--color never` are explicit requests and outrank `NO_COLOR` in both directions.",
+      "words": 53
+    },
+    {
+      "compression_ratio": 0.5207,
+      "in_blockquote": false,
+      "lexical_density": 0.5238,
+      "readability_grade": 10.1595,
+      "sentences": 4,
+      "text": "`--quiet` suppresses the human-readable output while leaving the exit code alone, so a script can branch on \"found something\" without collecting the table. It has no effect on `--json`. It also silences the one line the command prints to standard error before it downloads a model, which names the artifact, its size and where it is going. That line is the only output a first run produces during a wait that can reach half a minute, so silence it deliberately rather than by habit.",
+      "words": 88
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4615,
+      "readability_grade": 6.7262,
+      "sentences": 1,
+      "text": "`--version` prints the version and then the features this build was compiled with:",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8571,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "`--json` emits one object for every command:",
+      "words": 8
+    },
+    {
+      "compression_ratio": 0.5302,
+      "in_blockquote": false,
+      "lexical_density": 0.5254,
+      "readability_grade": 10.08,
+      "sentences": 4,
+      "text": "`command` is `analyze`, `summarize`, `keyphrases`, `config`, or `skill`. `input` is the path that was read, or the name `--stdin-filename` gave it, and it is null for `skill`, which reads no document. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`.",
+      "words": 63
+    },
+    {
+      "compression_ratio": 0.5633,
+      "in_blockquote": false,
+      "lexical_density": 0.5283,
+      "readability_grade": 10.8925,
+      "sentences": 3,
+      "text": "Stability: `format_version` increments on any change to the envelope or to a field's meaning; the `result` value is the serde form of the documented domain types. That is the same promise cargo makes for `cargo metadata --format-version`, and it is the whole promise. Pin your consumer to a `format_version` you have tested against.",
+      "words": 55
+    },
+    {
+      "compression_ratio": 0.5441,
+      "in_blockquote": false,
+      "lexical_density": 0.5057,
+      "readability_grade": 12.5384,
+      "sentences": 3,
+      "text": "`0` on success when the command found something, `1` on success when it found nothing (an empty summary, no keyphrases, a file with zero sentences), and `2` when an error occurred. Model load failure, a missing or unreadable file, a directory where a file was expected, input over the size cap, a bad argument, and a parse failure all land on `2`, with the message on stderr prefixed `matra:`. A broken pipe, which is what you get piping into `head`, is treated as success and exits `0`.",
+      "words": 84
+    }
+  ]
+}

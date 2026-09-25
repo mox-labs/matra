@@ -1,0 +1,201 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "capabilities.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6522,
+      "readability_grade": 6.8515,
+      "sentences": 2,
+      "text": "Every value the pipeline returns, by tier. The tables say which language surfaces carry each value: fields cross to Python, methods do not.",
+      "words": 23
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Produced by `Engine::annotate`.",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.75,
+      "readability_grade": 3.4667,
+      "sentences": 2,
+      "text": "The ten CoNLL-U columns plus one derived flag. All cross to Python.",
+      "words": 13
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8571,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "`Token::feat(key)` reads one morphological feature. Rust only.",
+      "words": 9
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4545,
+      "readability_grade": 2.6459,
+      "sentences": 2,
+      "text": "All eight cross to Python. The methods below are Rust only.",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5357,
+      "readability_grade": 11.8797,
+      "sentences": 3,
+      "text": "Produced by `Engine::compose`. Each is `Option<f64>`, and `None` means not computed, which is distinct from a computed zero. [Methodology](./reference/methodology.md) gives each formula and the exact condition for `None`.",
+      "words": 35
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7857,
+      "readability_grade": 21.0557,
+      "sentences": 1,
+      "text": "`Corpus` adds three Rust-only aggregates across the documents of a directory: `total_words()`, `passive_ratio()`, `mean_readability()`.",
+      "words": 15
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6842,
+      "readability_grade": 9.2308,
+      "sentences": 2,
+      "text": "Free functions over a sentence slice. Both return `Vec<ScoredSentence>` (`text`, `score`, `position`) in document order, capped at 2,000 sentences.",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4762,
+      "readability_grade": 7.3686,
+      "sentences": 1,
+      "text": "Both are on the Python surface as `Matra.tfidf_summarize` and `Matra.textrank_summarize`, which parse the text and run the extractor in one call.",
+      "words": 23
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4737,
+      "readability_grade": 10.4516,
+      "sentences": 1,
+      "text": "TextRank's summary of The Federalist No. 10 at the default length, and every sentence's score it was chosen from:",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<figure-textrank input=\"federalist-10\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7222,
+      "readability_grade": 4.9644,
+      "sentences": 2,
+      "text": "Free functions over a sentence slice. Both return `Vec<Keyphrase>` (`phrase`, `score`), highest score first, capped at 200,000 tokens.",
+      "words": 20
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4,
+      "readability_grade": 12.85,
+      "sentences": 1,
+      "text": "Both are on the Python surface as `Matra.rake_keyphrases` and `Matra.yake_keyphrases`.",
+      "words": 12
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 8.0082,
+      "sentences": 1,
+      "text": "The two rank by different properties of the text, and on The Federalist No. 10 their top twelve lists share no phrase:",
+      "words": 22
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<figure-keyphrases input=\"federalist-10\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5455,
+      "readability_grade": 3.7186,
+      "sentences": 2,
+      "text": "Behind the `model2vec` feature. Not a field on any type above.",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6071,
+      "readability_grade": 15.73,
+      "sentences": 3,
+      "text": "Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `Model2Vec` (including `Model2Vec.potion_base_8m`), and the module-level `semantic_clusters`. `Matra.semantic_clusters` takes a `Model2Vec` or any object with `embed` and `identity`.",
+      "words": 32
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4444,
+      "readability_grade": 12.3272,
+      "sentences": 2,
+      "text": "`Engine::with_defaults()` is the no-setup constructor: resolve a `Config`, then build the standard pipeline from it, fetching the pinned English model if it is not on disk. `Engine::new` is the explicit one, and it is what you reach for with your own provider or decomposer table.",
+      "words": 49
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 10.7333,
+      "sentences": 4,
+      "text": "`engine.analyze(ingest)` returns a lazy iterator of per-document results. Collecting it into `CorpusResult` partitions successes from failures, and one bad file does not abort the stream. On the Python surface the same walk is `Matra.analyze_path(path)`, which returns the items in order for the caller to partition.",
+      "words": 48
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5227,
+      "readability_grade": 8.8136,
+      "sentences": 2,
+      "text": "`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Nothing is normalized, re-wrapped, or rewritten, and each paragraph is parsed on its own, so the chain from a token up through its sentence, paragraph, and section always holds, rather than depending on text matching.",
+      "words": 44
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7333,
+      "readability_grade": 25.18,
+      "sentences": 3,
+      "text": "[Domain model](./reference/domain-types.md) is the full type graph. [Methodology](./reference/methodology.md) is every formula. [Errors](./reference/errors.md) is every failure.",
+      "words": 19
+    }
+  ]
+}

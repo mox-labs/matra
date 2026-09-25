@@ -1,0 +1,7 @@
+title = "Amplify radical nonconformity."
+author = "mox labs, which publishes matra"
+source = "The motto, parsed for the docsite's mark: the mark is drawn from this parse"
+url = "https://github.com/mox-labs/matra"
+licence = "MIT, as part of the matra repository"
+register = "motto"
+figures = ["parse"]

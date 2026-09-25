@@ -1,0 +1,219 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "explanation/pragmatics.md",
+  "paragraphs": [
+    {
+      "compression_ratio": 0.5045,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 6.485,
+      "sentences": 5,
+      "text": "Run `matra --skill`. It prints, from the installed program itself, what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not license you to conclude, the limits, and the errors. `matra --skill -r` lists the deeper references and `matra --skill -r <name>` prints one. The text ships inside the binary and the wheel, so it matches the version that is running rather than a page that may have moved on, and every command in it is executed against the command line by the test suite. The [CLI guide](../guides/cli.md) has the flag's JSON shapes; the rest of this page is the same reasoning written for a person.",
+      "words": 123
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6316,
+      "readability_grade": 13.5568,
+      "sentences": 1,
+      "text": "Both return the top N sentences in document order, as `ScoredSentence` values carrying the score and the original position.",
+      "words": 19
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5349,
+      "readability_grade": 12.2787,
+      "sentences": 2,
+      "text": "**`tfidf_summarize`** scores each sentence by the mean TF-IDF of its lemmatized terms, treating every sentence as its own document for the IDF computation. It runs in linear time, and it favours sentences carrying vocabulary that is rare in the rest of the document.",
+      "words": 45
+    },
+    {
+      "compression_ratio": 0.571,
+      "in_blockquote": false,
+      "lexical_density": 0.6111,
+      "readability_grade": 12.6263,
+      "sentences": 3,
+      "text": "**`textrank_summarize`** builds a similarity graph over the sentences (shared content lemmas divided by the log of the two lengths, so long sentences are not favoured) and runs iterative PageRank scoring over it. It favours sentences many others resemble. The dense similarity matrix is quadratic in sentence count, which is why the 2,000-sentence cap exists.",
+      "words": 56
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5882,
+      "readability_grade": 11.5165,
+      "sentences": 2,
+      "text": "Rare-in-this-document against central-to-this-document is the whole difference. On a document with one repeated theme they tend to agree; where they diverge, TF-IDF has found the unusual sentence and TextRank has found the typical one.",
+      "words": 41
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8571,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Both return `Keyphrase` values, highest score first.",
+      "words": 7
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.561,
+      "readability_grade": 10.2489,
+      "sentences": 2,
+      "text": "**`rake_keyphrases`** splits at stop words and punctuation, keeps runs of `NOUN`, `ADJ`, and `PROPN` tokens as candidates, and scores each by the co-occurrence degree over frequency ratio. Multi-word phrases are what it is built to find, and it needs no corpus.",
+      "words": 42
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6176,
+      "readability_grade": 14.64,
+      "sentences": 2,
+      "text": "**`yake_keyphrases`** scores individual terms on position, frequency, and context diversity, then assembles 1-word to 3-word candidates. YAKE's own score is lower-is-better, and matra inverts it so higher is more relevant in the returned values.",
+      "words": 39
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6154,
+      "readability_grade": 14.5192,
+      "sentences": 1,
+      "text": "Their caps differ from the summarizers': both are bounded on total tokens rather than sentence count, because a corpus of many one-token sentences costs them nothing.",
+      "words": 27
+    },
+    {
+      "compression_ratio": 0.6296,
+      "in_blockquote": false,
+      "lexical_density": 0.5167,
+      "readability_grade": 10.1067,
+      "sentences": 3,
+      "text": "Two cautions. `vocabulary_ttr` is a raw type-token ratio and falls as text grows, so two documents of different lengths are not comparable on it without normalizing first. And any of these slots can be `None`, which means the metric was not computed (too short, in a blockquote, or over a per-metric byte ceiling) and is distinct from a computed zero.",
+      "words": 61
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 6.6033,
+      "sentences": 2,
+      "text": "`embed_and_cluster` takes the cosine threshold from you rather than choosing one. Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus, and the working value depends on the model, the domain, and sentence length.",
+      "words": 36
+    },
+    {
+      "compression_ratio": 0.555,
+      "in_blockquote": false,
+      "lexical_density": 0.6032,
+      "readability_grade": 11.1429,
+      "sentences": 4,
+      "text": "Raising the threshold admits fewer edges: clusters get smaller and more of them, and more sentences end up in none. Lowering it merges components through chains, because clusters are connected components rather than cliques. That transitivity is why the clearing edges travel inside each cluster: two sentences can share a cluster without a direct edge, and the edge list is where you check.",
+      "words": 63
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4615,
+      "readability_grade": 4.1912,
+      "sentences": 1,
+      "text": "Start around 0.85 with the reference model and calibrate on your own corpus.",
+      "words": 13
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4737,
+      "readability_grade": 9.2095,
+      "sentences": 1,
+      "text": "Both models work the same way, and the constructor you reach for is what decides whether anything is fetched.",
+      "words": 19
+    },
+    {
+      "compression_ratio": 0.5787,
+      "in_blockquote": false,
+      "lexical_density": 0.463,
+      "readability_grade": 9.2704,
+      "sentences": 3,
+      "text": "**Ask for nothing and you get the pinned model in the resolved place.** `Engine::with_defaults()`, `Udpipe::from_config(cfg)` and `Model2Vec::from_config(cfg)` resolve the directory through [`Config`](programming-model.md) and fetch the pinned model when it is absent. In Python that is `Matra.english()` and `Model2Vec.potion_base_8m()` with no argument. This is the path to take unless you have a reason not to.",
+      "words": 59
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5357,
+      "readability_grade": 12.0714,
+      "sentences": 3,
+      "text": "**Naming the directory changes where, not what.** `Udpipe::english(dir)` and `Model2Vec::potion_base_8m(dir)` fetch the same pinned artifacts into the directory you name. Take them when the model belongs somewhere specific.",
+      "words": 31
+    },
+    {
+      "compression_ratio": 0.4986,
+      "in_blockquote": false,
+      "lexical_density": 0.5391,
+      "readability_grade": 11.6331,
+      "sentences": 6,
+      "text": "**Downloading is pinned, or it does not happen.** Either form fetches from URLs written in the source and loads nothing whose digest does not equal a constant written in the source next to them. Verification happens before the bytes are parsed, and the bytes that were verified are the bytes that get parsed, with no second read of the disk in between. A download that fails the digest is fetched once more into memory, and a second failed download raises; nothing that failed the digest is written at any point, so a failed attempt leaves nothing behind for a later call to pick up. Exactly one artifact set can arrive this way, which is what makes \"matra downloads a model\" a bounded claim rather than an open one.",
+      "words": 128
+    },
+    {
+      "compression_ratio": 0.5539,
+      "in_blockquote": false,
+      "lexical_density": 0.5217,
+      "readability_grade": 10.5711,
+      "sentences": 5,
+      "text": "**A provisioner never deletes what it did not write.** The embedding artifacts are named for their format (`model.safetensors`, `tokenizer.json`, `config.json`) rather than for one model, so a directory can already hold somebody else's. `Model2Vec::potion_base_8m(dir)` therefore downloads only into a directory holding none of the three. Finding all three with a digest that does not match, or finding only some of them, it raises and names the directory, having downloaded nothing and removed nothing. The UDPipe model file is named for its own release, so `Udpipe::english(dir)` has no such collision to guard against.",
+      "words": 97
+    },
+    {
+      "compression_ratio": 0.5841,
+      "in_blockquote": false,
+      "lexical_density": 0.493,
+      "readability_grade": 10.6114,
+      "sentences": 4,
+      "text": "**Bringing your own.** `Udpipe::from_path(path)` and `Model2Vec::from_dir(dir)` load what you supply and never reach the network, whatever the directory holds. That is the path for a model this build does not pin: a different UDPipe language, a different model2vec artifact. Nothing verifies it, so the `model_hash` on a result is identity rather than proof: it tells you which artifacts produced a score, not that they are the ones you meant to fetch.",
+      "words": 73
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6429,
+      "readability_grade": 9.6162,
+      "sentences": 3,
+      "text": "The pinned model is part of the contract in every case. A different model produces a different parse or a different vector space, and the conformance fixtures will fail, correctly. The [semantic clusters guide](../guides/semantic-clusters.md) records the embedding digest the conformance suite pins.",
+      "words": 43
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 8.3933,
+      "sentences": 2,
+      "text": "In Python every one of them surfaces as `ValueError`. [Errors](../reference/errors.md) has the full routing table.",
+      "words": 16
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5758,
+      "readability_grade": 10.1541,
+      "sentences": 3,
+      "text": "`InvalidInput` is the other one worth recognizing: it means the call site is wrong, not the text. Vectors that disagree on dimension, a non-finite threshold, an `Embedder` returning the wrong number of vectors.",
+      "words": 33
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4375,
+      "readability_grade": 2.28,
+      "sentences": 2,
+      "text": "The expensive thing is the model, not the call. Load an `Engine` once and reuse it.",
+      "words": 16
+    }
+  ]
+}
