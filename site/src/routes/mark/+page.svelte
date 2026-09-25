@@ -197,11 +197,21 @@
 		flex: 1;
 		display: flex;
 		align-items: center;
-		justify-content: center;
+		/* `safe`: a mark wider than its tile starts at the left edge and
+		   scrolls, rather than being centred past an edge no scroll reaches. */
+		justify-content: safe center;
 		gap: var(--space-3);
 		min-height: 11rem;
-		padding: var(--space-4);
+		padding: var(--space-4) var(--space-2);
 		overflow-x: auto;
+	}
+
+	/* A mark scales down to its tile, keeping its proportions; the rules
+	   above say how small each form may go, and the tile is wider than that
+	   at 360px. */
+	.stage :global(svg) {
+		max-width: 100%;
+		height: auto;
 	}
 
 	.tile figcaption {
@@ -234,6 +244,17 @@
 
 		.rules dd {
 			margin-bottom: var(--space-1);
+		}
+
+		/* The parse table fits a phone's column whole, so no column hides
+		   behind a scroll the reader has no cue for. */
+		table {
+			font-size: var(--type-xs);
+		}
+
+		th,
+		td {
+			padding-inline-end: 0.6em;
 		}
 	}
 </style>
