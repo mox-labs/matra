@@ -262,12 +262,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 /// Every Markdown page under `dir`, as a path relative to `root` with `/`
 /// separators. `SUMMARY.md` is navigation, not a page. A symlinked page (the
-/// roadmap) is read through its link, as the site reads it.
+/// roadmap) is read through its link, as the site reads it; a symlinked
+/// directory is not walked, so a link cycle cannot recurse without end.
 fn collect_pages(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), Box<dyn Error>> {
     for entry in fs::read_dir(dir)? {
         let path = entry?.path();
+        let link = fs::symlink_metadata(&path)?.file_type().is_symlink();
         if fs::metadata(&path)?.is_dir() {
-            collect_pages(root, &path, out)?;
+            if !link {
+                collect_pages(root, &path, out)?;
+            }
             continue;
         }
         let rel = path

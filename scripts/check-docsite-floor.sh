@@ -460,6 +460,9 @@ else
     echo "FAIL (gate 8): the committed figures differ from what matra produces now:"
     echo "$fig_diff" | head -40 | sed 's/^/  /'
     echo ""
+    if echo "$fig_diff" | grep -q 'figures/pages/'; then
+        echo "        A page under site/content/ changed: each page's margin measures are figure data."
+    fi
     echo "        Run \`just docs-figures\` and review the change."
     fail=$((fail + 1))
 fi
