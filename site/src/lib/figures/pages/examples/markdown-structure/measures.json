@@ -1,0 +1,75 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "examples/markdown-structure.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 8.3533,
+      "sentences": 1,
+      "text": "A short Markdown document with two headings and a quote, read into sections and paragraphs.",
+      "words": 15
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-input name=\"markdown-structure\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-call name=\"markdown-structure\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-output name=\"markdown-structure\" />",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4167,
+      "readability_grade": 4.8233,
+      "sentences": 1,
+      "text": "The same document at each stage of the pipeline, step by step:",
+      "words": 12
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<figure-pipeline input=\"field-notes\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": 0.5443,
+      "in_blockquote": false,
+      "lexical_density": 0.47,
+      "readability_grade": 7.668,
+      "sentences": 3,
+      "text": "- `sections` follow the headings: each has `heading`, the heading's text, and `level`, the number of `#` marks.\n- The quote is kept as a paragraph with `in_blockquote` set to `true`, and it is never parsed: its `sentences` list is empty and all three of its measures are `null`.\n- The Markdown reader is chosen by the `.md` extension in the Rust call and the CLI, and by name in Python (`analyze_markdown`). Read as plain text, the same file is one section with no heading, and the heading lines and the quote are parsed as sentences, `#` marks and all.",
+      "words": 102
+    }
+  ]
+}

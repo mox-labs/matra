@@ -1,0 +1,84 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "introduction.md",
+  "paragraphs": [
+    {
+      "compression_ratio": 0.5305,
+      "in_blockquote": false,
+      "lexical_density": 0.4923,
+      "readability_grade": 9.2644,
+      "sentences": 4,
+      "text": "matra reports the structure of text and measurements over it. It parses a document into a typed tree of sections, paragraphs, sentences, and tokens, measures that tree, and ranks what is in it. Every value it returns is structure or a number over structure. What any of it means for your purpose is your code's decision, which is what makes the output reusable across purposes.",
+      "words": 66
+    },
+    {
+      "compression_ratio": 0.5739,
+      "in_blockquote": false,
+      "lexical_density": 0.7778,
+      "readability_grade": 12.3958,
+      "sentences": 7,
+      "text": "- **Structure.** Sections, paragraphs, sentences, and full CoNLL-U tokens, plus the structural primitives read off each dependency tree: negations, modals, bare assertion, reportings, root adverbials, Hearst pairs.\n- **Measures.** Readability, lexical density, and compression ratio per paragraph; vocabulary TTR, nominalization ratio, and passive ratio per document.\n- **Extraction.** Two extractive summarizers (TF-IDF, TextRank) and two keyphrase extractors (RAKE, YAKE).\n- **Semantic clusters.** Sentence embeddings grouped by cosine similarity, behind the `model2vec` feature, carrying the identity of the model that produced them.",
+      "words": 80
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "The same analysis from Rust, and from the command line:",
+      "words": 10
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5238,
+      "readability_grade": 5.8843,
+      "sentences": 3,
+      "text": "All three return the same shape: a struct in Rust, a dict in Python, a table or `--json` at the command line. The second sentence in the example is passive, and `amendments` carries the relation `nsubj:pass`. matra records that and stops there.",
+      "words": 44
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5333,
+      "readability_grade": 12.4348,
+      "sentences": 3,
+      "text": "**Understand the model.** [Concepts](./explanation/concepts.md) covers the document tree, the four tiers, and what a structural primitive is. [Situation model](./explanation/situation-model.md) covers what the output is for and what it deliberately withholds.",
+      "words": 32
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.625,
+      "readability_grade": 12.2971,
+      "sentences": 3,
+      "text": "**Write against it.** [Programming model](./explanation/programming-model.md) is the surface: `Ingest`, `Engine`, ports, bounds, and what Python exposes. [Pragmatics](./explanation/pragmatics.md) answers the choices you have to make.",
+      "words": 26
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 25.4054,
+      "sentences": 2,
+      "text": "**Get it running.** [Installation](./tutorials/installation.md), then [Rust](./guides/rust.md), [Python](./guides/python.md), or [CLI](./guides/cli.md).",
+      "words": 15
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8,
+      "readability_grade": 9.4725,
+      "sentences": 2,
+      "text": "**Look something up.** [What matra gives you](./capabilities.md) lists every field and function the pipeline returns.",
+      "words": 16
+    }
+  ]
+}

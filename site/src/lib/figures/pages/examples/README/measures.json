@@ -1,0 +1,48 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "examples/README.md",
+  "paragraphs": [
+    {
+      "compression_ratio": 0.5735,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 6.0985,
+      "sentences": 4,
+      "text": "Six worked examples, each one task on one real text. Every example shows the input, the same call in Rust, Python and the command line, and what matra prints. The three calls print the same result. CI runs all three for every example and compares what they print with the output on the page, so an example cannot drift from what matra does.",
+      "words": 64
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6053,
+      "readability_grade": 6.3161,
+      "sentences": 2,
+      "text": "Install matra the way you mean to use it: the library, the CLI, or the Python package ([Installation](../tutorials/installation.md)). The Rust calls also need `serde_json` to print, which is the first line of each one: `cargo add matra serde_json`.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5319,
+      "readability_grade": 6.086,
+      "sentences": 3,
+      "text": "Each call reads its input from the directory it runs in, under the file name the page gives. Each page has the command that downloads it. The first call on a machine downloads the English model (about 16 MB), and every later call reads it from disk.",
+      "words": 47
+    },
+    {
+      "compression_ratio": 0.555,
+      "in_blockquote": false,
+      "lexical_density": 0.4906,
+      "readability_grade": 9.7325,
+      "sentences": 3,
+      "text": "Two tasks are left out because the command line cannot do them, and an example here shows all three calls. The CLI refuses a directory, so analyzing a directory as a corpus is in the [Rust](../guides/rust.md#analyze-a-directory) and [Python](../guides/python.md#analyze-a-directory) guides. The CLI has no command for semantic clusters, which are in their [own guide](../guides/semantic-clusters.md).",
+      "words": 61
+    }
+  ]
+}

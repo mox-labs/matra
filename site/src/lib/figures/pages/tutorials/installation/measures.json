@@ -1,0 +1,309 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "tutorials/installation.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6296,
+      "readability_grade": 10.6425,
+      "sentences": 1,
+      "text": "matra ships three ways from one Rust core: a Rust library on [crates.io](https://crates.io/crates/matra), a command-line binary installed from the same crate, and a Python package on [PyPI](https://pypi.org/project/matra/).",
+      "words": 30
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5484,
+      "readability_grade": 16.1377,
+      "sentences": 1,
+      "text": "Every release file from 0.2.1 on carries a build provenance attestation you can check with `gh attestation verify` before installing; the commands are under [Verifying a release](https://github.com/mox-labs/matra/blob/main/SECURITY.md#verifying-a-release) in the security policy.",
+      "words": 33
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": null,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "---",
+      "words": 0
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5625,
+      "readability_grade": 0.5025,
+      "sentences": 2,
+      "text": "**Rust 1.88 or later (MSRV)** for the Rust library and the CLI. Check with `rustc --version`.",
+      "words": 16
+    },
+    {
+      "compression_ratio": 0.575,
+      "in_blockquote": false,
+      "lexical_density": 0.5571,
+      "readability_grade": 8.4293,
+      "sentences": 4,
+      "text": "**A C++ compiler** for anything that compiles from source: the Rust library, the CLI, and the Python package on a platform with no wheel. matra parses through UDPipe, which is a C++ library that `udpipe-rs` builds during the cargo build. A C compiler on its own is not enough. Without a C++ compiler the build stops with `error occurred in cc-rs: failed to find tool \"c++\"`, whichever route you took.",
+      "words": 76
+    },
+    {
+      "compression_ratio": 0.5782,
+      "in_blockquote": false,
+      "lexical_density": 0.596,
+      "readability_grade": 4.2493,
+      "sentences": 7,
+      "text": "**Python 3.12 or later** for the Python package. Check with `python --version`. Wheels ship for Linux x86_64, Linux aarch64, macOS x86_64 and macOS arm64. They are built against the CPython stable ABI, so one wheel per platform serves 3.12 and every later 3.x on GIL-enabled CPython, rather than only the version it was compiled against. The Linux wheels are manylinux2014, which asks for glibc 2.17 or newer and so reaches back through Debian 11, Ubuntu 20.04, RHEL 8 and Amazon Linux 2. On anything else `pip` builds the sdist, which needs the Rust toolchain and the C++ compiler above.",
+      "words": 101
+    },
+    {
+      "compression_ratio": 0.5806,
+      "in_blockquote": false,
+      "lexical_density": 0.5658,
+      "readability_grade": 7.05,
+      "sentences": 3,
+      "text": "Free-threaded CPython is the exception to \"every later 3.x\", and it is a real one. A free-threaded interpreter accepts a different ABI tag, `abi3t`, and matra's wheels are tagged `abi3`, so `python3.14t` gets no wheel even on a platform this page promises one for and falls to the sdist. pyo3 gains the free-threaded stable ABI at 3.15, so this closes when matra can build against it; until then the prerequisites above apply to a free-threaded install.",
+      "words": 81
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4839,
+      "readability_grade": 6.0615,
+      "sentences": 2,
+      "text": "Windows is not a target yet. No wheel ships for it and the UDPipe build under MSVC is unverified, so the sdist route there is untested rather than known to work.",
+      "words": 31
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": null,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "---",
+      "words": 0
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8125,
+      "readability_grade": 14.9875,
+      "sentences": 1,
+      "text": "The default feature set includes `udpipe`, so `matra::nlp::udpipe::Udpipe` is available without enabling any extra feature flags.",
+      "words": 19
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": null,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "---",
+      "words": 0
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 10.115,
+      "sentences": 2,
+      "text": "matra's binary target is gated behind the `cli` feature, so `--features cli` is required. This compiles from source and places the binary in your cargo bin directory; the build can take a minute or more.",
+      "words": 36
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Confirm it landed:",
+      "words": 3
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 1.0,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Expected output:",
+      "words": 2
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5333,
+      "readability_grade": 8.0911,
+      "sentences": 3,
+      "text": "The second line names the features *this* build was compiled with, so it is not the same on every install route. `cargo install matra --features cli` prints the line above. The Python package is compiled with more features and prints a longer one; see below.",
+      "words": 45
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": null,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "---",
+      "words": 0
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5122,
+      "readability_grade": 5.7823,
+      "sentences": 2,
+      "text": "This installs the library and the `matra` command together. From 0.2.0 the command is the same Rust CLI, reached through the extension module rather than reimplemented in Python, so `uvx 'matra>=0.2' analyze essay.md` and the installed binary do the same thing.",
+      "words": 42
+    },
+    {
+      "compression_ratio": 0.5521,
+      "in_blockquote": false,
+      "lexical_density": 0.486,
+      "readability_grade": 2.3881,
+      "sentences": 4,
+      "text": "The version in that line is deliberate. The claim holds for 0.2.0 and later, not for 0.1.0, which shipped a second CLI written in Python, with a `--json` shape of its own and a model directory hardcoded to the pre-0.2.0 location. An unpinned `uvx matra` picks up 0.2.x today, so the floor is not waiting on a release: it is there so the line keeps naming the program these pages describe, whatever is newest when you read them. A floor rather than an exact pin, because the claim holds for every release from 0.2.0 onward and an exact pin would still be naming 0.2.0 after 0.3.0 ships.",
+      "words": 109
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4444,
+      "readability_grade": 11.5474,
+      "sentences": 2,
+      "text": "It is not, however, the same *build*. The wheel is compiled with the Python and embedding features on top of the CLI, so its version banner reads:",
+      "words": 28
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5185,
+      "readability_grade": 10.6528,
+      "sentences": 2,
+      "text": "Both banners are correct for their own build, and every analysis command behaves identically across the two. The Python package has no runtime dependencies of its own.",
+      "words": 27
+    },
+    {
+      "compression_ratio": 0.612,
+      "in_blockquote": false,
+      "lexical_density": 0.569,
+      "readability_grade": 8.5788,
+      "sentences": 3,
+      "text": "On the platforms with wheels this downloads a prebuilt binary and installs in seconds, on any GIL-enabled CPython from 3.12 up. A free-threaded interpreter builds from source instead, for the reason given under Requirements. The verify step further down this page doubles as the check: if `from matra import Matra` fails there, the package did not install correctly.",
+      "words": 60
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": null,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "---",
+      "words": 0
+    },
+    {
+      "compression_ratio": 0.5256,
+      "in_blockquote": false,
+      "lexical_density": 0.6106,
+      "readability_grade": 10.296,
+      "sentences": 5,
+      "text": "matra parses through UDPipe. None of the three install paths bundle the English model: the library, the CLI, and the Python package each download it on first use and cache it on disk. Every surface resolves the directory the same way. `Engine::with_defaults()`, `Matra.english()`, and the CLI all use `MATRA_MODEL_DIR`, else the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`, falling back to a pre-existing, non-empty `~/.matra/models` from an older install when the new location does not exist yet (matra never creates `~/.matra`, but a selected legacy cache is used as the model directory, downloads included). The Rust and Python APIs also take the directory as an explicit argument, and the CLI takes `--model-dir`.",
+      "words": 122
+    },
+    {
+      "compression_ratio": 0.5265,
+      "in_blockquote": false,
+      "lexical_density": 0.5543,
+      "readability_grade": 14.4548,
+      "sentences": 3,
+      "text": "matra holds the download (about 16 MB) in memory, checks it against a fixed hash there, and writes it only if it matches, so nothing unverified ever reaches the model directory and an interrupted transfer leaves nothing behind. If the check fails, matra downloads once more; if the second attempt still does not match, it returns an error instead of loading an unverified file. A cached file that fails the check is replaced only when new bytes verify, so a re-download that cannot reach the network leaves you the file you had.",
+      "words": 93
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": null,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "---",
+      "words": 0
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 14.9588,
+      "sentences": 2,
+      "text": "Run this once. No arguments and no environment: it resolves the model directory, downloads and caches the model on this first run, then parses a sentence through it and prints two results:",
+      "words": 32
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5135,
+      "readability_grade": 8.6741,
+      "sentences": 2,
+      "text": "`Matra.english(\"/some/directory\")` is the same call with the directory named explicitly, which is what you want when the model belongs somewhere specific. Pass a real path: the string goes straight to Rust's `create_dir_all`, which does not expand `~`.",
+      "words": 39
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 1.0,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Expected output:",
+      "words": 2
+    },
+    {
+      "compression_ratio": 0.5226,
+      "in_blockquote": false,
+      "lexical_density": 0.5096,
+      "readability_grade": 9.3143,
+      "sentences": 5,
+      "text": "That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. The command line does print a line naming the artifact and where it is going, because it opts into the notice; the library call above does not, so that a program embedding matra chooses its own reporting. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow or throttled network can take longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.",
+      "words": 104
+    },
+    {
+      "compression_ratio": 0.5405,
+      "in_blockquote": false,
+      "lexical_density": 0.5652,
+      "readability_grade": 9.7781,
+      "sentences": 3,
+      "text": "If `Matra.english()` raises `OSError`, either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path. Check your network connection first; then run `matra config show` to see which directory matra resolved and check the permissions on it. If it raises `RuntimeError`, bytes did arrive and then failed the pinned hash check; run the snippet again.",
+      "words": 70
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": null,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "---",
+      "words": 0
+    },
+    {
+      "compression_ratio": 0.5135,
+      "in_blockquote": false,
+      "lexical_density": 0.5341,
+      "readability_grade": 5.1397,
+      "sentences": 6,
+      "text": "- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.2.x core. Only the `uvx` line above carries a version requirement; the others take whatever the registry hands out, which is 0.2.x today and will not stay that way, so give them their own. The Python routes take the same floor as that line: `pip install 'matra>=0.2'` or `uv add 'matra>=0.2'`. The cargo routes take a caret requirement, which is how cargo states a version: `cargo add matra@0.2` and `cargo install matra --version '^0.2' --features cli` accept 0.2.0 or a later release semver-compatible with it, so unlike a floor they stop short of 0.3.0. The failure is the one the CLI guide describes: the command does not fail, it succeeds and gives you a program these pages do not describe, so the version banners above will not match.\n- The English UDPipe model cached under the resolved model directory, verified against a pinned hash.\n- A confirmed working call from `Matra.english()` through `analyze()` to a result.",
+      "words": 177
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5385,
+      "readability_grade": 10.3324,
+      "sentences": 1,
+      "text": "Next: [Rust](../guides/rust.md), [Python](../guides/python.md), or [CLI](../guides/cli.md), depending on which surface you are calling from.",
+      "words": 18
+    }
+  ]
+}

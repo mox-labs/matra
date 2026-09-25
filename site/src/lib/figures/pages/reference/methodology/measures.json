@@ -1,0 +1,750 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "reference/methodology.md",
+  "paragraphs": [
+    {
+      "compression_ratio": 0.5609,
+      "in_blockquote": false,
+      "lexical_density": 0.4151,
+      "readability_grade": 13.2242,
+      "sentences": 2,
+      "text": "What each number matra reports is computed from, how to cite the work it comes from, and what it does not license you to conclude. Every formula on this page is transcribed from the implementation, not from the publication it descends from; where matra departs from the published method, the departure is stated.",
+      "words": 53
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6111,
+      "readability_grade": 9.6944,
+      "sentences": 1,
+      "text": "Related pages: [Domain types](domain-types.md) for the fields these values live in, [Errors](errors.md) for the caps each algorithm enforces.",
+      "words": 20
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "The English model is pinned in `src/nlp/udpipe.rs`.",
+      "words": 8
+    },
+    {
+      "compression_ratio": 0.5132,
+      "in_blockquote": false,
+      "lexical_density": 0.4842,
+      "readability_grade": 9.8305,
+      "sentences": 5,
+      "text": "`Udpipe::english(model_dir)` downloads the file when it is absent, checks the size, computes the SHA-256, and loads the same bytes it hashed. There is no second read from disk between verification and load. A cached file that fails verification is not loaded: the model is downloaded, and a download that also fails the digest is retried once, so a call makes at most two downloads. The file is replaced only by bytes that verify. If both downloads fail the digest the call returns `Error::ModelInvalid`, nothing is loaded, and the file that was there is still there.",
+      "words": 98
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 13.1493,
+      "sentences": 2,
+      "text": "Verification belongs to that constructor alone. `Udpipe::from_path` and `Udpipe::from_bytes` load whatever you hand them without checking size or hash, so a result produced through either one is only as identifiable as the file you supplied.",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.64,
+      "readability_grade": 12.096,
+      "sentences": 1,
+      "text": "Changing the model means editing the pinned constants, which makes the change visible in version control and in any caller that pins a matra version.",
+      "words": 25
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6957,
+      "readability_grade": 13.3887,
+      "sentences": 2,
+      "text": "One `Token` per token with all ten CoNLL-U columns, grouped into sentences. Two properties of the shipped adapter matter when you report results:",
+      "words": 25
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5435,
+      "readability_grade": 7.8776,
+      "sentences": 4,
+      "text": "- `deps` (CoNLL-U column 9) is always `_`. The `udpipe-rs` binding does not surface enhanced dependencies.\n- `Sentence::text` is built from token surface forms, with a space inserted unless the preceding token carries `SpaceAfter=No` in `misc`. It is a reconstruction, not a substring of your input.",
+      "words": 48
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5455,
+      "readability_grade": 9.0818,
+      "sentences": 1,
+      "text": "The route through the library changes what gets segmented into sentences.",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6304,
+      "readability_grade": 12.9639,
+      "sentences": 3,
+      "text": "Every pipeline route parses each non-blockquote paragraph separately. Blockquote paragraphs are not parsed, so they contribute nothing to any metric. Calling a provider's `parse` directly parses the whole string in one call with no decomposition, and its segmentation can differ from the pipeline's at paragraph boundaries.",
+      "words": 48
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5385,
+      "readability_grade": 7.7592,
+      "sentences": 1,
+      "text": "`Ingest::path` picks the format from the file extension, so the same bytes segment differently under `.md` and under `.txt`; `Ingest::text` takes the format as an argument.",
+      "words": 28
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6563,
+      "readability_grade": 11.4325,
+      "sentences": 3,
+      "text": "Paragraph-at-a-time parsing means a sentence can never be attributed to the wrong paragraph. It also means sentence segmentation cannot run across a paragraph boundary. Report which format your numbers were produced under.",
+      "words": 35
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6563,
+      "readability_grade": 5.2963,
+      "sentences": 4,
+      "text": "Straka, M., & Straková, J. (2017). Tokenizing, POS Tagging, Lemmatizing and Parsing UD 2.0 with UDPipe. *Proceedings of the CoNLL 2017 Shared Task: Multilingual Parsing from Raw Text to Universal Dependencies*, 88-99.",
+      "words": 34
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7568,
+      "readability_grade": 5.0666,
+      "sentences": 3,
+      "text": "Silveira, N., Dozat, T., de Marneffe, M.-C., Bowman, S., Connor, M., Bauer, J., & Manning, C.D. (2014). A Gold Standard Dependency Corpus for English. *Proceedings of the Ninth International Conference on Language Resources and Evaluation (LREC 2014)*.",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7895,
+      "readability_grade": 11.7292,
+      "sentences": 4,
+      "text": "Zeman, D., et al. (2019). *Universal Dependencies 2.5*. LINDAT/CLARIAH-CZ digital library, Institute of Formal and Applied Linguistics, Charles University.",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6,
+      "readability_grade": 10.761,
+      "sentences": 4,
+      "text": "UDPipe is a statistical syntactic parser. It performs no named entity recognition, no coreference resolution, and no semantic role labeling. Tags and relations are predictions, not ground truth, and error rates on text unlike the training corpus are higher than on text like it. The shipped configuration is English only.",
+      "words": 50
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6122,
+      "readability_grade": 9.6569,
+      "sentences": 4,
+      "text": "Two different counts appear below, and confusing them changes the answer. `Paragraph::word_count` counts non-punctuation tokens from the parse, and every applicability gate is stated in those terms. The formulas themselves split the paragraph text on whitespace. A gate stated in `word_count` terms is not a gate on whitespace words.",
+      "words": 49
+    },
+    {
+      "compression_ratio": 0.5714,
+      "in_blockquote": false,
+      "lexical_density": 0.5439,
+      "readability_grade": 22.5804,
+      "sentences": 1,
+      "text": "The syllable estimate for one word: keep only alphabetic characters, lowercase them; if the result is three bytes or shorter, return 1; otherwise count runs of the letters `a`, `e`, `i`, `o`, `u`, `y`, where adjacent vowels count once; subtract 1 if the word ends in `e` and the count is above 1; return at least 1.",
+      "words": 59
+    },
+    {
+      "compression_ratio": 0.6225,
+      "in_blockquote": false,
+      "lexical_density": 0.4694,
+      "readability_grade": 9.4238,
+      "sentences": 3,
+      "text": "**Applied to** paragraphs that are not in a blockquote and whose `word_count` is above 10. Stored in `Paragraph::readability_grade`. The value is unbounded and can be negative on short, simple text. `metrics::readability::flesch_kincaid_grade(text: &str) -> f64` computes it on any string, and returns 0.0 for a string with no whitespace-separated pieces.",
+      "words": 51
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8214,
+      "readability_grade": 7.2343,
+      "sentences": 4,
+      "text": "**Citation.** Kincaid, J.P., Fishburne, R.P., Rogers, R.L., & Chisholm, B.S. (1975). *Derivation of New Readability Formulas for Navy Enlisted Personnel*. Research Branch Report 8-75, Naval Technical Training Command.",
+      "words": 30
+    },
+    {
+      "compression_ratio": 0.5375,
+      "in_blockquote": false,
+      "lexical_density": 0.6623,
+      "readability_grade": 14.3225,
+      "sentences": 5,
+      "text": "**Limitations.** The formula was fitted to Navy training material in 1975 and predicts nothing about conceptual difficulty, argument quality, or required background knowledge. Two paragraphs with the same syllable and length profile score the same whatever they assert. The original publication specifies no syllable-counting algorithm, so grade values from different tools are not comparable; the heuristic above miscounts many words, and non-ASCII letters register as consonants. Counting sentence-ending characters treats abbreviations, decimals, and ellipses as sentence boundaries.",
+      "words": 79
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4667,
+      "readability_grade": 10.7133,
+      "sentences": 1,
+      "text": "A piece made only of punctuation counts in the denominator and never in the numerator.",
+      "words": 15
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5333,
+      "readability_grade": 6.4167,
+      "sentences": 3,
+      "text": "**Applied to** paragraphs that are not in a blockquote, whose `word_count` is not zero, and whose text yields at least one whitespace-separated piece. Stored in `Paragraph::lexical_density`. Range 0.0 to 1.0.",
+      "words": 32
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7727,
+      "readability_grade": 8.2536,
+      "sentences": 6,
+      "text": "**Citation.** Ure, J. (1971). Lexical density and register differentiation. In G. Perren & J.L.M. Trim (Eds.), *Applications of Linguistics*. Cambridge University Press.",
+      "words": 22
+    },
+    {
+      "compression_ratio": 0.6029,
+      "in_blockquote": false,
+      "lexical_density": 0.6379,
+      "readability_grade": 8.7822,
+      "sentences": 4,
+      "text": "**Limitations.** The value depends entirely on the stop word list, which is matra's own list of 105 English words, not a standard one. Ure's definition counts lexical items by part of speech; matra approximates that with a stop word list over whitespace pieces. Density says nothing about whether the content words are used well, or at all correctly.",
+      "words": 60
+    },
+    {
+      "compression_ratio": 0.5916,
+      "in_blockquote": false,
+      "lexical_density": 0.5606,
+      "readability_grade": 7.4368,
+      "sentences": 5,
+      "text": "**Applied to** paragraphs that are not in a blockquote, whose `word_count` is above 50, and whose text is at most 262,144 bytes. Paragraphs above that byte ceiling are skipped and keep `None`, which bounds worst-case compression time. The slot also stays `None` if the encoder fails to consume the text. Stored in `Paragraph::compression_ratio`. A lower ratio means the text compressed further, which means more surface repetition.",
+      "words": 69
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8235,
+      "readability_grade": 7.7268,
+      "sentences": 4,
+      "text": "**Citation.** Alakuijala, J., & Szabadka, Z. (2016). *Brotli Compressed Data Format*. RFC 7932, Internet Engineering Task Force.",
+      "words": 17
+    },
+    {
+      "compression_ratio": 0.58,
+      "in_blockquote": false,
+      "lexical_density": 0.6415,
+      "readability_grade": 12.7322,
+      "sentences": 4,
+      "text": "**Limitations.** This is a redundancy proxy over bytes, not a measure of meaning, quality, or novelty. Precise technical prose that reuses terminology compresses much like repetitive filler. The number is a property of one encoder at two specific parameter settings: a different compressor, or a different version of this one, gives different values.",
+      "words": 53
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.625,
+      "readability_grade": 12.0375,
+      "sentences": 1,
+      "text": "The three paragraph measures, computed for every paragraph of one longer text, The Federalist No. 10:",
+      "words": 16
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<figure-metrics input=\"federalist-10\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": 0.5737,
+      "in_blockquote": false,
+      "lexical_density": 0.56,
+      "readability_grade": 14.22,
+      "sentences": 2,
+      "text": "The two stored document metrics and the derived document methods are computed over the sentences attached to the document's paragraphs, which excludes blockquote paragraphs. There is exactly one sentence set, and it is derivable from the tree in one way, so the numbers cannot disagree with the structure they describe.",
+      "words": 52
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6111,
+      "readability_grade": 8.8978,
+      "sentences": 2,
+      "text": "**Applied to** the whole slice. Stored in `Document::vocabulary_ttr`, which stays `None` when the slice contains no non-punctuation token.",
+      "words": 18
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.625,
+      "readability_grade": 6.308,
+      "sentences": 5,
+      "text": "**Citation.** Johnson, W. (1944). Studies in language behavior: A program of research. *Psychological Monographs*, 56(2), 1-15.",
+      "words": 19
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7442,
+      "readability_grade": 13.0258,
+      "sentences": 4,
+      "text": "**Limitations.** Type-token ratio falls as documents get longer, because repetition accumulates. Values from documents of different lengths are not comparable without a length correction, and matra applies none. Because lemmas are compared exactly, a provider that emits case-varying lemmas inflates the distinct count.",
+      "words": 45
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5789,
+      "readability_grade": 12.6253,
+      "sentences": 1,
+      "text": "The suffix test reads the surface form, not the lemma, so a plural nominalization such as `conditions` or `measurements` is missed: the plural `-s` falls after the suffix, so `\"conditions\".ends_with(\"tion\")` is false even though the singular `condition` matches.",
+      "words": 41
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6111,
+      "readability_grade": 10.8644,
+      "sentences": 2,
+      "text": "**Applied to** the whole slice. Stored in `Document::nominalization_ratio`, which stays `None` when the slice contains no non-punctuation token.",
+      "words": 18
+    },
+    {
+      "compression_ratio": 0.5556,
+      "in_blockquote": false,
+      "lexical_density": 0.5733,
+      "readability_grade": 10.3987,
+      "sentences": 5,
+      "text": "**Limitations.** Six suffixes are a heuristic, not a morphological analysis. Words that end in those letters without being nominalizations count as false positives, and nominalizations formed otherwise, such as `growth` or `failure`, are missed. The test depends on the POS tagger having assigned `NOUN`, so tagging errors propagate. The denominator counts every running word rather than every noun, so the value is a share of the text, not a share of the nouns in it.",
+      "words": 77
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5641,
+      "readability_grade": 10.4714,
+      "sentences": 2,
+      "text": "A sentence counts as passive when any of its tokens carries a `dep` of `nsubj:pass`, `nsubjpass`, or `aux:pass`. The first two are the Universal Dependencies and older Stanford spellings of a passive subject; the third is a passive auxiliary.",
+      "words": 41
+    },
+    {
+      "compression_ratio": 0.5411,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 10.52,
+      "sentences": 3,
+      "text": "**Computed** by `Document::passive_ratio()` and `Corpus::passive_ratio()`, and per sentence by `Sentence::is_passive()`. The measure stage stores the document-level value in the `passive_ratio` field, which is how it crosses to Python; the `Corpus` aggregate and `is_passive` stay methods, Rust only. Returns 0.0 when there are no sentences, and the field is `None` when the measure stage has not run.",
+      "words": 59
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7778,
+      "readability_grade": 5.4342,
+      "sentences": 3,
+      "text": "**Citation.** de Marneffe, M.-C., Manning, C.D., Nivre, J., & Zeman, D. (2021). Universal Dependencies. *Computational Linguistics*, 47(2), 255-308.",
+      "words": 20
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6053,
+      "readability_grade": 8.2992,
+      "sentences": 4,
+      "text": "**Limitations.** This counts sentences that contain a passive construction, not passive clauses, so a sentence with three passives counts once. Detection is only as good as the parser's relation labels. Nothing here judges whether a passive is appropriate.",
+      "words": 39
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.549,
+      "readability_grade": 11.5253,
+      "sentences": 4,
+      "text": "`Document::mean_sentence_length()` is `total_words / total_sentences`, where `total_words` counts non-punctuation tokens. `Document::sentence_length_std()` is the sample standard deviation of per-sentence non-punctuation token counts, with denominator n minus 1. Both return 0.0 when undefined: no sentences for the mean, fewer than two for the deviation. Both are computed on demand and are not stored.",
+      "words": 50
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6364,
+      "readability_grade": 10.1545,
+      "sentences": 1,
+      "text": "`Corpus` reports three figures over its entries, all computed on demand.",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5667,
+      "readability_grade": 11.1067,
+      "sentences": 2,
+      "text": "`mean_readability` averages paragraphs, not documents, so a long document contributes more terms than a short one. Paragraphs whose slot is `None` are absent from both the numerator and the count.",
+      "words": 30
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 11.1067,
+      "sentences": 2,
+      "text": "Both summarizers take `&[Sentence]` and a count, score every sentence, keep the highest N, and return them in ascending `position`. Neither generates text: the output sentences are the input sentences.",
+      "words": 32
+    },
+    {
+      "compression_ratio": 0.5631,
+      "in_blockquote": false,
+      "lexical_density": 0.625,
+      "readability_grade": 10.0221,
+      "sentences": 3,
+      "text": "A term is a token's `lemma` with punctuation tokens removed and stop words removed. The stop word test lowercases the lemma before looking it up; the term itself is the lemma as the provider produced it, without case folding. The stop word list holds 105 English words and is shared with the paragraph lexical density metric.",
+      "words": 57
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5455,
+      "readability_grade": 11.2273,
+      "sentences": 1,
+      "text": "Each sentence is treated as a document when computing document frequency.",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4865,
+      "readability_grade": 4.9202,
+      "sentences": 3,
+      "text": "A sentence with no terms scores 0.0. The mean divides by the number of distinct terms, not by the number of term occurrences. A term present in every sentence has an `idf` of 0 and contributes nothing.",
+      "words": 38
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4545,
+      "readability_grade": 5.1491,
+      "sentences": 3,
+      "text": "**Cap.** 2,000 sentences. Above it, `Error::InputTooLarge` with `what` set to `\"tfidf\"`.",
+      "words": 13
+    },
+    {
+      "compression_ratio": 0.6069,
+      "in_blockquote": false,
+      "lexical_density": 0.6071,
+      "readability_grade": 7.3589,
+      "sentences": 10,
+      "text": "**Citation.** Luhn, H.P. (1958). The Automatic Creation of Literature Abstracts. *IBM Journal of Research and Development*, 2(2), 159-165. Spärck Jones, K. (1972). A statistical interpretation of term specificity and its application in retrieval. *Journal of Documentation*, 28(1), 11-21. Salton, G., & Buckley, C. (1988). Term-weighting approaches in automatic text retrieval. *Information Processing and Management*, 24(5), 513-523.",
+      "words": 66
+    },
+    {
+      "compression_ratio": 0.5428,
+      "in_blockquote": false,
+      "lexical_density": 0.5926,
+      "readability_grade": 11.7454,
+      "sentences": 4,
+      "text": "**Limitations.** Treating sentences as documents is an adaptation of a corpus-level weighting scheme, and the resulting weights are not the weights you would get from a real document collection. Scores measure term rarity within one text, not informativeness. Selected sentences are not guaranteed to read coherently together, and nothing checks for redundancy between them.",
+      "words": 55
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 7.57,
+      "sentences": 2,
+      "text": "Similarity is 0 when either sentence has no terms or they share none. The matrix is symmetric and its diagonal stays 0, so a sentence never reinforces itself.",
+      "words": 28
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5455,
+      "readability_grade": 4.4333,
+      "sentences": 3,
+      "text": "All scores start at `1 / N`. Iteration stops after 50 passes, or earlier when the largest single-sentence change in a pass falls below 1e-6. Sentences whose `out_sum` is 0 send no weight.",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5217,
+      "readability_grade": 5.8696,
+      "sentences": 3,
+      "text": "**Cap.** 2,000 sentences, which bounds the dense similarity matrix at roughly 32 MB of `f64`. Above it, `Error::InputTooLarge` with `what` set to `\"textrank\"`.",
+      "words": 26
+    },
+    {
+      "compression_ratio": 0.651,
+      "in_blockquote": false,
+      "lexical_density": 0.6939,
+      "readability_grade": 5.3861,
+      "sentences": 8,
+      "text": "**Citation.** Mihalcea, R., & Tarau, P. (2004). TextRank: Bringing Order into Text. *Proceedings of the 2004 Conference on Empirical Methods in Natural Language Processing*, 404-411. Page, L., Brin, S., Motwani, R., & Winograd, T. (1999). *The PageRank Citation Ranking: Bringing Order to the Web*. Stanford InfoLab Technical Report 1999-66.",
+      "words": 51
+    },
+    {
+      "compression_ratio": 0.5898,
+      "in_blockquote": false,
+      "lexical_density": 0.5636,
+      "readability_grade": 11.0127,
+      "sentences": 6,
+      "text": "**Limitations.** Similarity here is lemma overlap. Two sentences expressing one idea in different words have similarity 0. The normalization by the logarithm of distinct-term counts is matra's, not the one in the 2004 paper, so scores are not comparable with other TextRank implementations. Reaching the iteration ceiling without converging is possible and is not reported.",
+      "words": 57
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6552,
+      "readability_grade": 9.1891,
+      "sentences": 2,
+      "text": "Both extractors take `&[Sentence]` and a maximum count, and return `Keyphrase` values in descending score order. Both cap input at 200,000 tokens counted across the slice with punctuation included.",
+      "words": 30
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6444,
+      "readability_grade": 6.6286,
+      "sentences": 4,
+      "text": "**Candidates.** Within each sentence, a candidate is a maximal run of tokens whose `pos` is `NOUN`, `ADJ`, or `PROPN` and whose lowercased lemma is not a stop word. Punctuation, stop words, and any other part of speech end the run. Candidate words are lowercased lemmas.",
+      "words": 45
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4815,
+      "readability_grade": 5.8454,
+      "sentences": 2,
+      "text": "When the same phrase string occurs more than once, the highest score is kept. Phrases are then sorted by score descending and truncated to the requested count.",
+      "words": 27
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4545,
+      "readability_grade": 4.0764,
+      "sentences": 3,
+      "text": "**Cap.** 200,000 tokens. Above it, `Error::InputTooLarge` with `what` set to `\"rake\"`.",
+      "words": 13
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7879,
+      "readability_grade": 4.7091,
+      "sentences": 6,
+      "text": "**Citation.** Rose, S., Engel, D., Cramer, N., & Cowley, W. (2010). Automatic Keyword Extraction from Individual Documents. In M.W. Berry & J. Kogan (Eds.), *Text Mining: Applications and Theory*. John Wiley and Sons.",
+      "words": 33
+    },
+    {
+      "compression_ratio": 0.5659,
+      "in_blockquote": false,
+      "lexical_density": 0.619,
+      "readability_grade": 11.9049,
+      "sentences": 4,
+      "text": "**Limitations.** Published RAKE delimits candidates with stop words and punctuation over surface words. matra adds a part-of-speech filter and works over lemmas, so scores and candidate sets differ from a reference implementation. A high degree over frequency ratio means a word appears in long phrases relative to how often it appears at all; that is a structural property, not evidence of topical centrality.",
+      "words": 65
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7027,
+      "readability_grade": 11.8632,
+      "sentences": 3,
+      "text": "**Terms.** Non-punctuation tokens whose lowercased lemma is not a stop word and is longer than one character. Position is a running index over every non-punctuation token, so stop words and single-character tokens occupy positions without becoming terms.",
+      "words": 38
+    },
+    {
+      "compression_ratio": 0.5465,
+      "in_blockquote": false,
+      "lexical_density": 0.5088,
+      "readability_grade": 8.3921,
+      "sentences": 3,
+      "text": "`total_positions` is the count of all non-punctuation tokens across the slice, floored at 1. A neighbor is the adjacent non-punctuation token on either side within the same sentence, recorded only when it is not a stop word; a term with no recorded neighbor gets a context diversity of 0.0. Lower `term_score` means more relevant at this stage.",
+      "words": 58
+    },
+    {
+      "compression_ratio": 0.5722,
+      "in_blockquote": false,
+      "lexical_density": 0.5333,
+      "readability_grade": 9.32,
+      "sentences": 3,
+      "text": "Candidates are sliding windows of 1, 2, and 3 words over each sentence's term list, with stop words and single-character tokens already removed, so an n-gram can join words that were not adjacent in the source. A sentence with fewer than three terms yields correspondingly shorter windows. When a phrase string occurs more than once, the lowest `ngram_score` is kept.",
+      "words": 62
+    },
+    {
+      "compression_ratio": 0.5899,
+      "in_blockquote": false,
+      "lexical_density": 0.4667,
+      "readability_grade": 10.8933,
+      "sentences": 3,
+      "text": "Candidates whose score is not strictly positive, or is not finite, are dropped before inversion. A term reaches a score of exactly 0 when it occurs only at position 0 and has no eligible neighbor, and any n-gram containing it is dropped with it. The remainder are sorted by `output_score` descending, so higher is more relevant in the returned `Keyphrase`.",
+      "words": 62
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4545,
+      "readability_grade": 4.0764,
+      "sentences": 3,
+      "text": "**Cap.** 200,000 tokens. Above it, `Error::InputTooLarge` with `what` set to `\"yake\"`.",
+      "words": 13
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.7241,
+      "readability_grade": 5.3761,
+      "sentences": 5,
+      "text": "**Citation.** Campos, R., Mangaravite, V., Pasquali, A., Jorge, A., Nunes, C., & Jatowt, A. (2020). YAKE! Keyword extraction from single documents using multiple local features. *Information Sciences*, 509, 257-289.",
+      "words": 31
+    },
+    {
+      "compression_ratio": 0.5358,
+      "in_blockquote": false,
+      "lexical_density": 0.6094,
+      "readability_grade": 13.3708,
+      "sentences": 5,
+      "text": "**Limitations.** Published YAKE combines five features, including casing and sentence spread, and applies deduplication over similar candidates. matra implements three features, no deduplication, and a different combination formula. Scores are not comparable with the reference implementation, and the two will not agree on rankings. The inversion means output scores are unbounded above and have no interpretable unit; use them for ordering, not as magnitudes.",
+      "words": 64
+    },
+    {
+      "compression_ratio": 0.6154,
+      "in_blockquote": false,
+      "lexical_density": 0.54,
+      "readability_grade": 7.43,
+      "sentences": 3,
+      "text": "matra draws no random numbers, sets no seeds, samples nothing, and runs the analysis path on one thread. The model is pinned by SHA-256, and the bytes that pass verification are the bytes that get loaded. Given the same model file and the same input, the parse is the same.",
+      "words": 51
+    },
+    {
+      "compression_ratio": 0.589,
+      "in_blockquote": false,
+      "lexical_density": 0.6885,
+      "readability_grade": 17.1968,
+      "sentences": 2,
+      "text": "Given the same parse, these are reproducible bit for bit on one machine: every paragraph metric, every document metric, every derived method on `Document` and `Corpus`, TextRank scores and selection, RAKE word and phrase scores, and YAKE term and n-gram scores. TextRank in particular is order-stable because its shared-term counts are integer sums and its iteration walks sentence indices in order.",
+      "words": 64
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Two places carry hash map iteration order into the result.",
+      "words": 10
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5833,
+      "readability_grade": 5.9478,
+      "sentences": 4,
+      "text": "1. **TF-IDF sentence scores.** The per-sentence score sums over a hash map whose iteration order is not fixed between runs. Floating-point addition is not associative, so the low bits of a score can differ between runs.",
+      "words": 38
+    },
+    {
+      "compression_ratio": 0.5982,
+      "in_blockquote": false,
+      "lexical_density": 0.5893,
+      "readability_grade": 7.5316,
+      "sentences": 4,
+      "text": "Selection changes only when two sentences differ by less than that rounding difference.\n2. **RAKE and YAKE output order among ties.** Candidates are collected out of a hash map into a vector and sorted by score with a stable sort. Phrases with exactly equal scores can therefore come out in a different relative order between runs.",
+      "words": 56
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 6.7271,
+      "sentences": 1,
+      "text": "When such a tie straddles the truncation point, which phrase is returned can differ.",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": 8.7567,
+      "sentences": 1,
+      "text": "Two further sources of variation are worth recording in a methods section.",
+      "words": 12
+    },
+    {
+      "compression_ratio": 0.5736,
+      "in_blockquote": false,
+      "lexical_density": 0.5849,
+      "readability_grade": 9.17,
+      "sentences": 4,
+      "text": "- Natural logarithms come from the platform's math library. Values can differ by an ulp across operating systems and toolchains, so compare cross-platform results with a tolerance rather than for equality.\n- The compression ratio depends on the brotli encoder. A change in the encoder version can change the value for unchanged text.",
+      "words": 53
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.575,
+      "readability_grade": 19.185,
+      "sentences": 1,
+      "text": "To let someone reproduce a result, report: the matra version, the model file name and its SHA-256, which format the document was analyzed under, and the parameter values you passed, such as the requested sentence count or maximum phrase count.",
+      "words": 41
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 15.6381,
+      "sentences": 1,
+      "text": "Cite the algorithm publications listed above for the methods themselves, and the UDPipe and Universal Dependencies references for the parse layer.",
+      "words": 21
+    },
+    {
+      "compression_ratio": 0.4696,
+      "in_blockquote": false,
+      "lexical_density": 0.4938,
+      "readability_grade": 9.633,
+      "sentences": 5,
+      "text": "Cite matra separately from the methods. The `CITATION.cff` file at the repository root carries the software entry, and it identifies the implementation and its version. The publications identify the method. Because matra departs from several published methods in the ways recorded on this page, a reader who has only the method citation does not know which values you produced, and a reader who has only the software citation does not know what the values are meant to measure. Both are needed.",
+      "words": 81
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "These hold for every number on this page.",
+      "words": 8
+    },
+    {
+      "compression_ratio": 0.5089,
+      "in_blockquote": false,
+      "lexical_density": 0.6455,
+      "readability_grade": 9.1209,
+      "sentences": 10,
+      "text": "- matra reports structure and stops. It measures; your application decides what a measurement means.\n- No output is a judgment of quality, correctness, originality, or authorship. Nothing here detects machine-generated text.\n- No output carries meaning. Passive ratio counts a syntactic pattern, compression ratio counts bytes, keyphrase scores count co-occurrence. None of them read.\n- Metrics that share a name with published measures are matra's implementations of them, with the departures listed per metric. Do not compare matra's values with another tool's values for a like-named metric.\n- Every value downstream of the parse inherits the parser's errors. On text unlike the English Web Treebank, that inheritance is larger.",
+      "words": 111
+    }
+  ]
+}

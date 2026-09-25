@@ -1,0 +1,57 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "home.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5417,
+      "readability_grade": 9.995,
+      "sentences": 1,
+      "text": "matra reads text into its structure and measures it, from Rust, Python or the command line; what the structure means is yours to decide.",
+      "words": 24
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5745,
+      "readability_grade": 7.0902,
+      "sentences": 3,
+      "text": "Ten short sentences, some saying the same thing in different words. matra turns each into a vector and groups the sentences whose similarity clears a threshold. The table lists the groups at every threshold; the figure draws one threshold at a time, and you can step it.",
+      "words": 47
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<figure-clusters input=\"paraphrases\" />",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5333,
+      "readability_grade": 8.8778,
+      "sentences": 2,
+      "text": "This is one of the things matra returns, and it comes with the Python package and with the Rust library's `model2vec` feature; the command line has no clusters command. The [Examples](examples/README.md) show the parse, the measures, summaries and keyphrases the same way, on real texts.",
+      "words": 47
+    },
+    {
+      "compression_ratio": 0.5433,
+      "in_blockquote": false,
+      "lexical_density": 0.5373,
+      "readability_grade": 7.2575,
+      "sentences": 4,
+      "text": "- **[Install](tutorials/installation.md):** the Rust library, the command line, or the Python package, and one call that proves the install works.\n- **[Examples](examples/README.md):** six tasks on real texts, each with the call in Rust, Python and the command line, and the output it prints.\n- **[Concepts](explanation/concepts.md):** the shape of what matra returns, from the document down to each word, and the grammatical facts matra reads off each sentence.",
+      "words": 67
+    }
+  ]
+}

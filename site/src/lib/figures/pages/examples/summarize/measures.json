@@ -1,0 +1,75 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "examples/summarize.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5789,
+      "readability_grade": 9.2095,
+      "sentences": 1,
+      "text": "The three sentences TextRank ranks highest in the opening of Darwin's chapter on the struggle for existence, 2,214 words.",
+      "words": 20
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-input name=\"summarize\" />",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-call name=\"summarize\" />",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-output name=\"summarize\" />",
+      "words": 4
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6923,
+      "readability_grade": 10.3569,
+      "sentences": 1,
+      "text": "Every sentence's score in document order, with the three the summary keeps marked:",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<figure-textrank input=\"origin-struggle\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": 0.5499,
+      "in_blockquote": false,
+      "lexical_density": 0.451,
+      "readability_grade": 6.2727,
+      "sentences": 6,
+      "text": "- Each item has `text`, `score` and `position`, the sentence's place in the document counting from 0. The three come back in document order (positions 32, 33 and 58), not by score: the highest score, 0.0308, is the second. The figure numbers sentences from 1, so there they are 33, 34 and 59.\n- The summary is extractive: the sentences are as Darwin wrote them, and nothing is rephrased.\n- matra has a second summarizer, `tfidf_summarize`, and it is the CLI's default (`summarize.algorithm` in the configuration). This example names TextRank in all three calls, so they agree whatever a configuration file says.",
+      "words": 102
+    }
+  ]
+}

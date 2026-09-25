@@ -1,0 +1,75 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "examples/readability-by-paragraph.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4286,
+      "readability_grade": 5.3621,
+      "sentences": 1,
+      "text": "The three paragraph measures of The Federalist No. 10, to see where the essay is harder going and where it eases.",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-input name=\"readability-by-paragraph\" />",
+      "words": 7
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-call name=\"readability-by-paragraph\" />",
+      "words": 7
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<example-output name=\"readability-by-paragraph\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 6.01,
+      "sentences": 1,
+      "text": "Each measure over the essay's 23 paragraphs, one panel each:",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<figure-metrics input=\"federalist-10\" />",
+      "words": 6
+    },
+    {
+      "compression_ratio": 0.5407,
+      "in_blockquote": false,
+      "lexical_density": 0.534,
+      "readability_grade": 10.3443,
+      "sentences": 7,
+      "text": "- Each paragraph carries `readability_grade`, `lexical_density` and `compression_ratio`. The document carries `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio` beside its `sections`.\n- The grade runs from 10.69 (paragraph 3) to 32.06 (paragraph 18). It is the Flesch-Kincaid formula over sentence length and syllables per word ([Methodology](../reference/methodology.md#flesch-kincaid-grade-level)), so an eighteenth-century paragraph of a few long sentences scores far above any school grade. Compare paragraphs with each other, not with a grade band.\n- `compression_ratio` is `null` for four paragraphs, the ones of 50 words or fewer. `null` means the measure declined to run, not that it measured zero; which measure needs what is in the [Rust guide](../guides/rust.md#why-a-metric-slot-is-none).",
+      "words": 108
+    }
+  ]
+}
