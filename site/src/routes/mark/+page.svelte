@@ -171,7 +171,11 @@
 		gap: var(--space-2);
 	}
 
+	/* A column, so a tile shorter than its row grows its stage, not a strip
+	   of its ground under the caption. */
 	.tile {
+		display: flex;
+		flex-direction: column;
 		margin: 0;
 		border: 1px solid var(--border);
 	}
@@ -190,6 +194,7 @@
 	}
 
 	.stage {
+		flex: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;

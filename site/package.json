@@ -7,7 +7,7 @@
 		"dev": "vite dev",
 		"build": "vite build && bun scripts/verify-base-path.ts build && pagefind --site build",
 		"preview": "vite preview",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && bun scripts/check-contrast.ts",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && bun scripts/check-contrast.ts && bun scripts/check-mark.ts",
 		"prepare": "svelte-kit sync || echo ''"
 	},
 	"devDependencies": {

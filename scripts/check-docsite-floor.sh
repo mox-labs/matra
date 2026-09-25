@@ -20,8 +20,9 @@
 #   4. Site build:          bun install --frozen-lockfile, svelte-check with
 #                            warnings as failures, the WCAG AA contrast check
 #                            of every text and mark pair in both themes
-#                            (site/scripts/check-contrast.ts), and a clean
-#                            prerendered build.
+#                            (site/scripts/check-contrast.ts), the mark's
+#                            geometry (site/scripts/check-mark.ts), and a
+#                            clean prerendered build.
 #   5. No em dashes:        project prose convention, exempting quoted material.
 #                            Covers site/content/, skills/ and blueprints/.
 #   6. llms.txt currency:   site/content/llms.txt is what scripts/gen-llms-txt.sh
@@ -513,7 +514,9 @@ echo ""
 #                  package.json it does not match is a failure, not an update.
 #   check          svelte-check (types and Svelte diagnostics, warnings as
 #                  failures), then the WCAG AA contrast check of every colour
-#                  pair in both themes (site/scripts/check-contrast.ts).
+#                  pair in both themes (site/scripts/check-contrast.ts), then
+#                  the mark's geometry: its words hang from its bar and never
+#                  cross it, in every variant (site/scripts/check-mark.ts).
 #   build          prerenders every page. The renderer fails the build on a
 #                  tag not in the registry, a link to no page, a fence language
 #                  with no grammar, a page without a title, or a SUMMARY.md
@@ -538,11 +541,13 @@ elif ! (cd site && bun install --frozen-lockfile) >"$site_log" 2>&1; then
     sed 's/^/  /' "$site_log"
     fail=$((fail + 1))
 elif ! (cd site && bun run check) >"$site_log" 2>&1; then
-    echo "FAIL (gate 4): svelte-check or the contrast check failed"
+    echo "FAIL (gate 4): svelte-check, the contrast check or the mark check failed"
     sed 's/^/  /' "$site_log"
     fail=$((fail + 1))
 else
     checked_line=$(grep -E 'COMPLETED|svelte-check found' "$site_log" | tail -1)
+    contrast_line=$(grep -E '^PASS \(contrast\)' "$site_log" | tail -1)
+    mark_line=$(grep -E '^PASS: the mark' "$site_log" | tail -1)
     if ! (cd site && BASE_PATH='' bun run build) >"$site_log" 2>&1; then
         echo "FAIL (gate 4): the site did not build"
         sed 's/^/  /' "$site_log"
@@ -556,6 +561,8 @@ else
         twins=$(find site/build -name '*.md' | wc -l | tr -d ' ')
         indexed=$(grep -E 'Indexed [0-9]+ pages' "$site_log" | tr -s ' ' | sed 's/^ //')
         echo "  svelte-check: ${checked_line:-no summary line}"
+        echo "  ${contrast_line:-contrast: no summary line}"
+        echo "  ${mark_line:-mark: no summary line}"
         echo "  $(grep 'verify-base-path:' "$site_log")"
         echo "  pagefind: ${indexed:-no index summary}"
         echo "PASS (gate 4): site/build holds $html pages and $twins Markdown twins"

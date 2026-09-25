@@ -18,11 +18,12 @@
  *   glyph     bar, strokes and arcs; no words
  *   full      the words hang from the bar in the mono face, the root stroke
  *             after its word as the vowel sign sits after its consonant
- *   favicon   the reduced form for 16px: the bar, the root, and the root's
- *             dependents that are not punctuation, with their arcs
+ *   favicon   the reduced form for 16px: the bar and every token that is
+ *             not punctuation, with the arcs between them
  *   mono      the glyph in one ink; hierarchy carried by opacity
  *   paper     the glyph in ink on paper
  */
+import { PLEX_MONO, tallest } from '$lib/fonts';
 import type { ParseFigureFile, ParseToken } from '$lib/types';
 
 export const U = 9;
@@ -138,16 +139,15 @@ function glyphLayout(tokens: ParseToken[], keep?: Set<number>): MarkLayout {
 	};
 }
 
-/** The mono face's advance, as a fraction of its size (IBM Plex Mono). */
-const MONO_ADVANCE = 0.6;
-/** Its x-height, as a fraction of its size. */
-const MONO_XHEIGHT = 0.516;
-
 function fullLayout(tokens: ParseToken[]): MarkLayout {
 	const size = 2 * U;
-	const adv = size * MONO_ADVANCE;
+	const adv = size * PLEX_MONO.advance;
 	const barY = 2 * U;
-	const baseline = barY + size * MONO_XHEIGHT;
+	const weight = { bar: 2, stroke: 1.5, root: 2.5, arc: 1.5 };
+	// The words hang from the bar as Devanagari letters hang from theirs: the
+	// tallest letter's top touches the bar's lower edge, so the bar runs along
+	// the tops of the words and never through them.
+	const baseline = barY + weight.bar / 2 + size * tallest(PLEX_MONO, tokens.map((t) => t.text).join(''));
 	const foot = 4 * U + U;
 	let cursor = 2 * U;
 	const anchors = new Map<number, number>();
@@ -186,35 +186,42 @@ function fullLayout(tokens: ParseToken[]): MarkLayout {
 		strokes,
 		arcs,
 		words,
-		weight: { bar: 2, stroke: 1.5, root: 2.5, arc: 1.5 },
+		weight,
 		clearSpace: 3 * U,
 		wordSize: size
 	};
 }
 
 /**
- * The favicon keeps what a 16px square can carry: the bar, the root, and the
- * root's dependents that are not punctuation. The rule reads the tree; for
- * the motto it keeps `Amplify` and its object `nonconformity`.
+ * The favicon keeps what a 16px square can carry: the bar, and every token
+ * that is not punctuation, with the arcs between them. The rule reads the
+ * tree; for the motto it drops only the full stop, so the nested arcs that
+ * make the glyph recognisable survive. (Keeping only the root's dependents
+ * left one arc, which at 16px read as a letter U.) Strokes are 2px wide on
+ * whole-pixel centres, so each covers two whole pixels and stays sharp.
  */
 function faviconLayout(tokens: ParseToken[]): MarkLayout {
-	const root = tokens.find((t) => t.head === 0);
-	if (!root) throw new Error('the motto parse has no root');
-	const keep = new Set([root.id, ...tokens.filter((t) => t.head === root.id && t.dep !== 'punct').map((t) => t.id)]);
-	const kept = tokens.filter((t) => keep.has(t.id));
+	const kept = tokens.filter((t) => t.dep !== 'punct');
+	if (!kept.some((t) => t.head === 0)) throw new Error('the motto parse has no root');
+	const keep = new Set(kept.map((t) => t.id));
 	const n = kept.length;
-	// A 16 x 16 square: the bar 2px from the top, strokes on whole pixels.
-	const x = (i: number) => (n === 1 ? 8 : 4 + (i * 8) / (n - 1));
-	const barY = 3;
-	const foot = 9;
+	// A 16 x 16 square: the bar 1px from the top, strokes 3px in from the sides.
+	const x = (i: number) => (n === 1 ? 8 : 3 + Math.round((i * 10) / (n - 1)));
+	const barY = 2;
+	const foot = 8;
 	const index = new Map(kept.map((t, i) => [t.id, i]));
-	const arcs = levelled(tokens)
-		.filter((a) => keep.has(a.head) && keep.has(a.dependent))
-		.map((a) => ({ ...a, d: hang(x(index.get(a.head)!), x(index.get(a.dependent)!), foot, 3.5 * a.level) }));
+	const shown = levelled(tokens).filter((a) => keep.has(a.head) && keep.has(a.dependent));
+	const deepest = Math.max(1, ...shown.map((a) => a.level));
+	// The arcs share the 7px under the foot, and never hang deeper than 3px a level.
+	const step = Math.min(3, 7 / deepest);
+	const arcs = shown.map((a) => ({
+		...a,
+		d: hang(x(index.get(a.head)!), x(index.get(a.dependent)!), foot, step * a.level)
+	}));
 	return {
 		width: 16,
 		height: 16,
-		bar: { x1: 1.5, x2: 14.5, y: barY },
+		bar: { x1: 1, x2: 15, y: barY },
 		strokes: kept.map((t, i) => ({
 			id: t.id,
 			x: x(i),
@@ -224,7 +231,7 @@ function faviconLayout(tokens: ParseToken[]): MarkLayout {
 		})),
 		arcs,
 		words: [],
-		weight: { bar: 2, stroke: 1.5, root: 2, arc: 1.5 },
+		weight: { bar: 2, stroke: 2, root: 2, arc: 1.5 },
 		clearSpace: 0
 	};
 }
@@ -268,7 +275,7 @@ export function markSvg(layout: MarkLayout, palette: Palette, opts: { title?: st
 	const q = palette.quiet;
 	// A favicon has no page around it: it follows the reader's scheme itself.
 	const style = opts.scheme
-		? `<style>.i{stroke:${PALETTES.paper.ink};fill:${PALETTES.paper.ink}}.r{stroke:${PALETTES.paper.root}}@media (prefers-color-scheme:dark){.i{stroke:${PALETTES.void.ink};fill:${PALETTES.void.ink}}.r{stroke:${PALETTES.void.root}}}</style>`
+		? `<style>.i{stroke:${PALETTES.paper.ink}}.w{fill:${PALETTES.paper.ink}}.r{stroke:${PALETTES.paper.root}}@media (prefers-color-scheme:dark){.i{stroke:${PALETTES.void.ink}}.w{fill:${PALETTES.void.ink}}.r{stroke:${PALETTES.void.root}}}</style>`
 		: '';
 	const ink = (cls: string) => (opts.scheme ? `class="${cls}"` : `stroke="${cls === 'r' ? palette.root : palette.ink}"`);
 	const parts = [
@@ -293,7 +300,7 @@ export function markSvg(layout: MarkLayout, palette: Palette, opts: { title?: st
 		`</g>`,
 		...(words.length
 			? [
-					`<g ${opts.scheme ? 'class="i" stroke="none"' : `fill="${palette.ink}"`} font-family="'IBM Plex Mono', ui-monospace, monospace" font-size="${layout.wordSize}">`,
+					`<g ${opts.scheme ? 'class="w"' : `fill="${palette.ink}"`} font-family="'IBM Plex Mono', ui-monospace, monospace" font-size="${layout.wordSize}">`,
 					...words.map((w) => `<text x="${w.x}" y="${w.y}">${esc(w.text)}</text>`),
 					`</g>`
 				]

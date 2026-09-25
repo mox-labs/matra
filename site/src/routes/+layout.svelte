@@ -3,10 +3,11 @@
 	 * The frame every page hangs from.
 	 *
 	 * The header is a shirorekha: one hairline rule across the page, with the
-	 * mark and the wordmark hanging from it as Devanagari letters hang from
-	 * their headline (the wordmark's x-height touches the rule; its `t` rises
-	 * above it). The controls hang from the same rule. The footer's rule echoes
-	 * it, and the maker's mark hangs from its end.
+	 * mark and the wordmark hanging wholly below it as Devanagari letters hang
+	 * from their headline (the glyph's own bar lies on the rule; the top of
+	 * the wordmark's tallest letter touches it). The controls hang from the
+	 * same rule. The footer's rule echoes it, and the maker's mark hangs from
+	 * its end.
 	 */
 	import '../app.css';
 	import { afterNavigate } from '$app/navigation';
@@ -18,6 +19,7 @@
 	import NavTree from '$lib/components/NavTree.svelte';
 	import Search from '$lib/components/Search.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import { inkTop, PLEX_MONO, tallest } from '$lib/fonts';
 	import { DISCUSSIONS_URL, ISSUES_URL, REPO_URL, SITE_NAME } from '$lib/site';
 	import type { Doc } from '$lib/types';
 	import type { LayoutProps } from './$types';
@@ -34,6 +36,13 @@
 	});
 
 	const toc = $derived(((page.data as { doc?: Doc }).doc?.toc ?? []).filter((t) => t.depth === 2));
+
+	/** The glyph's height in the header, in px (the /mark page's minimum is 24). */
+	const GLYPH_H = 36;
+	/** How far below the glyph's top its bar is drawn, at that height. */
+	const glyphBar = $derived((GLYPH_H * data.glyph.bar.y) / data.glyph.height);
+	/** Where the top of the wordmark's tallest letter sits in its line box, in em. */
+	const wordTop = inkTop(PLEX_MONO, tallest(PLEX_MONO, SITE_NAME));
 
 	const links = [
 		{ href: `${base}/api/`, label: 'api' },
@@ -59,9 +68,15 @@
 		<Icon name={navOpen ? 'close' : 'menu'} />
 	</button>
 
-	<a class="lockup" href="{base}/" aria-label="{SITE_NAME}, home">
-		<!-- The header's rule is the mark's bar: the glyph hangs from it. -->
-		<span class="glyph"><Mark layout={data.glyph} height={36} decorative bar={false} /></span>
+	<a
+		class="lockup"
+		href="{base}/"
+		aria-label="{SITE_NAME}, home"
+		style="--glyph-bar: {glyphBar}px; --word-top: {wordTop.toFixed(4)}em"
+	>
+		<!-- The glyph's bar lies on the header's rule, in ink, so the mark reads
+		     whole and the rule carries on from it across the page. -->
+		<span class="glyph"><Mark layout={data.glyph} height={GLYPH_H} decorative /></span>
 		<span class="wordmark" aria-hidden="true">{SITE_NAME}</span>
 	</a>
 
@@ -130,11 +145,12 @@
 		top: var(--space-1);
 	}
 
-	/* The header: 54px (6U). The rule is at 18px (2U); everything hangs from
-	   it. The band above the rule is where the wordmark's `t` and the glyph's
-	   top stand, as marks above a headline do. */
+	/* The header: 54px (6U). The rule is at 9px (1U), and everything hangs
+	   wholly below it: the glyph's strokes and arcs reach 27px below it, which
+	   leaves 18px under them, more than the mark's clear space (its root
+	   stroke, 13.5px at this size). */
 	.site-header {
-		--rule: calc(2 * var(--space-1));
+		--rule: var(--space-1);
 		position: sticky;
 		top: 0;
 		z-index: var(--z-sticky);
@@ -174,18 +190,18 @@
 		text-decoration: none;
 	}
 
-	/* The glyph is drawn 72 units tall with its bar 9 units down; at 36px its
-	   bar would be 4.5px from its top, so it is set 13.5px down and its
-	   strokes start on the page's rule, which stands in for its bar. */
+	/* The glyph's bar is drawn --glyph-bar below its top (from its layout), so
+	   it is set that much above the rule: its bar lies on the page's rule and
+	   everything else of it hangs below. */
 	.glyph {
-		margin-top: calc(var(--rule) - 4.5px);
+		margin-top: calc(var(--rule) - var(--glyph-bar));
 	}
 
-	/* IBM Plex Mono at 18px, line-height 1: its x-height top is 6.46px below
-	   the line box's top (ascent 1.025em, descent 0.275em, x-height 0.516em),
-	   so the box starts 11.54px down and the letters hang from the rule. */
+	/* IBM Plex Mono at 18px, line-height 1: the top of the wordmark's tallest
+	   letter is --word-top below the line box's top ($lib/fonts), so the box is
+	   set that much above the rule's lower edge and every letter hangs below. */
 	.wordmark {
-		margin-top: calc(var(--rule) - 6.46px);
+		margin-top: calc(var(--rule) + 0.5px - var(--word-top));
 		margin-inline-start: 0.1em;
 		font: 600 18px / 1 var(--font-mono);
 		letter-spacing: 0.02em;
