@@ -8,13 +8,21 @@
 	 * a zero. A panel carries a reference line only where matra computes a
 	 * document value: readability's is `Corpus::mean_readability`. matra has no
 	 * document-level lexical density or compression ratio, so those panels have
-	 * none. The table of every value leads. Static: nothing moves.
+	 * none. The table of every value leads.
+	 *
+	 * The marks are neutral ink. Pointing at or focusing a paragraph's row
+	 * draws a rule through its three values and lights them in Spark;
+	 * pointing at a value lights its row. At once; nothing else moves.
 	 */
 	import { scaleLinear } from 'd3-scale';
 	import type { MetricsFigureFile, MetricsParagraph } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { roving } from './motion';
 
 	let { id, file, dataUrl }: { id: string; file: MetricsFigureFile; dataUrl: string } = $props();
+
+	/** The paragraph the reader points at. */
+	let active = $state<number | null>(null);
 
 	type Metric = 'readability_grade' | 'lexical_density' | 'compression_ratio';
 	const PANELS: { metric: Metric; title: string; hint: string; reference?: 'mean_readability' }[] = [
@@ -94,9 +102,16 @@
 			<thead>
 				<tr><th>#</th><th>Opens with</th><th>Words</th><th>Grade</th><th>Density</th><th>Compression</th></tr>
 			</thead>
-			<tbody>
+			<tbody {@attach roving}>
 				{#each paragraphs as q (q.index)}
-					<tr>
+					<tr
+						data-row={q.index}
+						class:lit={active === q.index}
+						onpointerenter={() => (active = q.index)}
+						onpointerleave={() => (active = null)}
+						onfocus={() => (active = q.index)}
+						onblur={() => (active = null)}
+					>
 						<td class="num">{q.index}</td>
 						<td class="opening">{q.opening}…</td>
 						<td class="num">{q.words}</td>
@@ -119,6 +134,16 @@
 	<div class="fig-scroll" tabindex="0" role="region" aria-label="Measures by paragraph" {@attach measure}>
 		<svg width={W} {height} viewBox="0 0 {W} {height}" role="img" aria-label="Readability grade, lexical density and compression ratio for each of {paragraphs.length} paragraphs" data-points-for={id}>
 			<title>Paragraph measures across the document</title>
+			{#if panels.length}
+				<line
+					class="cursor"
+					class:on={active !== null}
+					x1={x(active ?? 1)}
+					x2={x(active ?? 1)}
+					y1={panels[0].top - 4}
+					y2={panels[panels.length - 1].top + PANEL_H - 4}
+				/>
+			{/if}
 			{#each panels as p (p.metric)}
 				<g class="panel">
 					<text class="title" x={LEFT - 38} y={p.top - 10}>{p.title}<tspan class="hint" dx="8">{p.hint}</tspan></text>
@@ -135,7 +160,20 @@
 						{#if q[p.metric] === null}
 							<path class="none" data-metric={p.metric} data-paragraph={q.index} data-value="" d="M{x(q.index) - 3},{p.top + PANEL_H - 15}l6,6m0,-6l-6,6" />
 						{:else}
-							<circle class="dot" data-metric={p.metric} data-paragraph={q.index} data-value={q[p.metric]} cx={x(q.index)} cy={p.y(q[p.metric] as number)} r="3.2" />
+							<!-- Pointer-only: the table's rows give the keyboard the same. -->
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<circle
+								class="dot"
+								class:lit={active === q.index}
+								data-metric={p.metric}
+								data-paragraph={q.index}
+								data-value={q[p.metric]}
+								cx={x(q.index)}
+								cy={p.y(q[p.metric] as number)}
+								r="3.2"
+								onpointerenter={() => (active = q.index)}
+								onpointerleave={() => (active = null)}
+							/>
 						{/if}
 					{/each}
 				</g>
@@ -209,7 +247,32 @@
 
 	svg {
 		font-family: var(--font-sans);
-		--m: light-dark(#b3401e, #f0915f);
+		--m: var(--mark);
+	}
+
+	.cursor {
+		stroke: var(--spark);
+		stroke-width: 1px;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.cursor.on {
+		opacity: 1;
+	}
+
+	.dot.lit {
+		fill: var(--spark);
+		stroke: var(--spark);
+	}
+
+	tbody tr:focus-visible {
+		outline: 2px solid var(--spark);
+		outline-offset: -2px;
+	}
+
+	tbody tr.lit td {
+		color: var(--spark);
 	}
 
 	.title {

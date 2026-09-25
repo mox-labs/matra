@@ -6,16 +6,25 @@
 	 * same generated data. The table is the figure's text twin: the docsite
 	 * floor checks every arc against it in the prerendered HTML.
 	 *
-	 * Motion follows the EP's rule: nothing moves unless the reader picks
-	 * another sentence, and then there are two stages, the old state fading
-	 * out and the new one in, about 0.6s in all, easing in and out. With
-	 * reduced motion requested the new state appears at once.
+	 * Relations are grouped the way Universal Dependencies groups them, and
+	 * the group is drawn as a line, not a colour: core arguments heavy and
+	 * solid, modifiers light and solid, function words dotted, the rest
+	 * dashed. The root's stroke is Emergence, as the mark's is.
+	 *
+	 * Linked highlighting: pointing at or focusing a word, in the table or the
+	 * diagram, keeps its arc from its head and its arcs to its dependents, and
+	 * dims the rest, at once. The table's rows are one tab stop; the arrow
+	 * keys walk them.
+	 *
+	 * Motion follows the research (./motion): nothing moves unless the reader
+	 * picks another sentence, and then the two cross in one eased stage that
+	 * a new pick reverses mid-flight. With reduced motion, at once.
 	 */
 	import { fade } from 'svelte/transition';
 	import type { ParseFigureFile } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
 	import { FAMILY_LABELS, family, layoutParse, TYPE, type Family } from './parse-layout';
-	import { enter, leave } from './motion';
+	import { roving, swap } from './motion';
 
 	let {
 		id,
@@ -46,7 +55,19 @@
 		return () => ro.disconnect();
 	}
 	// Before any script runs, guess from the width of the column on a desktop.
-	const hint = $derived(overflowing ?? layout.width > 712);
+	const hint = $derived(overflowing ?? layout.width > 882);
+
+	/** The word the reader points at or focuses, and the words it connects to. */
+	let active = $state<number | null>(null);
+	const lit = $derived.by(() => {
+		if (active === null) return null;
+		const set = new Set<number>([active]);
+		const t = byId.get(active);
+		if (t && t.head !== 0) set.add(t.head);
+		for (const d of shown.tokens) if (d.head === active) set.add(d.id);
+		return set;
+	});
+	const arcLit = (a: { head: number; dep: number }) => active !== null && (a.dep === active || a.head === active);
 </script>
 
 <FigureFrame {id} kind="parse" title="Dependency parse" {file} {dataUrl}>
@@ -69,7 +90,7 @@
 
 	<div class="stage" data-sentence={current}>
 		{#key current}
-			<div class="state" in:fade={enter()} out:fade={leave()}>
+			<div class="state" class:focused={lit !== null} transition:fade={swap()}>
 				<p class="sentence"><span class="n">{current}</span>{shown.text}</p>
 
 				<!-- A region that scrolls must take focus, or it cannot be scrolled
@@ -80,9 +101,17 @@
 						<thead>
 							<tr><th>#</th><th>Word</th><th>Lemma</th><th>POS</th><th>Head</th><th>Relation</th></tr>
 						</thead>
-						<tbody>
+						<tbody {@attach roving}>
 							{#each shown.tokens as t (t.id)}
-								<tr>
+								<tr
+									data-row={t.id}
+									class:lit={lit?.has(t.id)}
+									class:dim={lit !== null && !lit.has(t.id)}
+									onpointerenter={() => (active = t.id)}
+									onpointerleave={() => (active = null)}
+									onfocus={() => (active = t.id)}
+									onblur={() => (active = null)}
+								>
 									<td class="num">{t.id}</td>
 									<td class="word">{t.text}</td>
 									<td>{t.lemma}</td>
@@ -107,22 +136,31 @@
 					>
 						<title>Dependency arcs for: {shown.text}</title>
 						{#if layout.root}
-							<g class="arc fam-root" data-dep={layout.root.id} data-head="0">
+							<g class="arc fam-root" class:lit={active === layout.root.id} data-dep={layout.root.id} data-head="0">
 								<line x1={layout.root.x} y1={layout.root.top} x2={layout.root.x} y2={layout.baseline - 2} />
 								<path class="tip" d="M{layout.root.x - 3.5},{layout.baseline - 9}L{layout.root.x + 3.5},{layout.baseline - 9}L{layout.root.x},{layout.baseline - 2.5}Z" />
 								<text class="rel" x={layout.root.x} y={layout.root.top - 6} font-size={TYPE.rel}>root</text>
 							</g>
 						{/if}
 						{#each layout.arcs as a (a.dep)}
-							<g class="arc fam-{a.family}" data-dep={a.dep} data-head={a.head}>
+							<g class="arc fam-{a.family}" class:lit={arcLit(a)} data-dep={a.dep} data-head={a.head}>
 								<path class="line" d={a.path} />
 								<path class="tip" d={a.arrow} />
 								<text class="rel" x={a.labelX} y={a.labelY} font-size={TYPE.rel}>{a.rel}</text>
 							</g>
 						{/each}
 						{#each layout.tokens as t (t.id)}
-							<text class="word" data-id={t.id} x={t.x} y={layout.wordY} font-size={TYPE.word}>{t.text}</text>
-							<text class="pos" x={t.x} y={layout.posY} font-size={TYPE.pos}>{t.pos}</text>
+							<!-- Pointer-only: the table's rows give the keyboard the same. -->
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<g
+								class="tok"
+								class:lit={lit?.has(t.id)}
+								onpointerenter={() => (active = t.id)}
+								onpointerleave={() => (active = null)}
+							>
+								<text class="word" data-id={t.id} x={t.x} y={layout.wordY} font-size={TYPE.word}>{t.text}</text>
+								<text class="pos" x={t.x} y={layout.posY} font-size={TYPE.pos}>{t.pos}</text>
+							</g>
 						{/each}
 					</svg>
 				</div>
@@ -134,7 +172,7 @@
 	</div>
 
 	{#snippet legend()}
-		<ul class="fig-legend" aria-label="Arc colours">
+		<ul class="fig-legend" aria-label="Arc lines">
 			{#each families as f (f)}
 				<li class="fam-{f}">
 					<svg class="sample" width="22" height="10" viewBox="0 0 22 10" aria-hidden="true">
@@ -147,21 +185,22 @@
 
 	{#snippet note()}
 		Each arc runs from a word's head to the word, whose arrow it ends at, labelled with the
-		relation. Colour groups the relations the way Universal Dependencies does: the core arguments
-		of a predicate, the modifiers, and the function words.
+		relation. The line groups the relations the way Universal Dependencies does: the core
+		arguments of a predicate, the modifiers, and the function words. Point at a word, here or in
+		the table, to keep its arcs and dim the rest.
 	{/snippet}
 </FigureFrame>
 
 <style>
 	/* On the whole figure, since the legend renders in the frame's caption.
-	   Every colour holds 4.5:1 against the figure's background in its theme,
-	   because the relation labels are drawn in it at 10.5px. */
+	   The families share one neutral ink (checked at 3:1 as --mark); the line
+	   carries the family. The root is Emergence, as in the mark. */
 	:global(.mx-figure[data-figure='parse']) {
-		--fam-core: light-dark(#b3401e, #f0915f);
-		--fam-modifier: light-dark(#2b6a8c, #7fb9d8);
-		--fam-function: light-dark(#6f695f, #a6a29a);
-		--fam-other: light-dark(#7a746a, #8a867f);
-		--fam-root: var(--text);
+		--fam-core: var(--mark);
+		--fam-modifier: var(--mark);
+		--fam-function: var(--mark);
+		--fam-other: var(--mark-quiet);
+		--fam-root: var(--emergence);
 	}
 
 	/* Old and new states occupy the same cell while one fades into the other. */
@@ -189,7 +228,7 @@
 		color: var(--text-muted);
 		background: transparent;
 		border: 1px solid var(--border);
-		border-radius: 6px;
+		border-radius: var(--radius-control);
 		cursor: pointer;
 	}
 
@@ -241,14 +280,74 @@
 		color: var(--text);
 	}
 
+	/* The family as a line sample, the same line the arc is drawn with. */
 	.swatch {
 		display: inline-block;
-		width: 0.6em;
-		height: 0.6em;
+		width: 1.1em;
+		height: 0;
 		margin-right: 0.45em;
-		border-radius: 2px;
-		vertical-align: 0.05em;
-		background: var(--swatch);
+		vertical-align: 0.3em;
+		border-bottom: 1.5px solid var(--swatch);
+	}
+
+	.swatch.fam-core {
+		border-bottom-width: 2.5px;
+	}
+
+	.swatch.fam-function {
+		border-bottom-style: dotted;
+		border-bottom-width: 2px;
+	}
+
+	.swatch.fam-other {
+		border-bottom-style: dashed;
+	}
+
+	tbody tr {
+		transition: opacity var(--duration-fast) linear;
+	}
+
+	tbody tr:focus-visible {
+		outline: 2px solid var(--spark);
+		outline-offset: -2px;
+	}
+
+	tbody tr.dim {
+		opacity: 0.4;
+	}
+
+	tbody tr.lit td.word {
+		color: var(--spark);
+	}
+
+	.arc,
+	.tok {
+		transition: opacity var(--duration-fast) linear;
+	}
+
+	.focused .arc:not(.lit),
+	.focused .tok:not(.lit) {
+		opacity: 0.2;
+	}
+
+	.arc.lit {
+		color: var(--spark);
+	}
+
+	.fam-root.lit {
+		color: var(--emergence);
+	}
+
+	.tok.lit text.word {
+		fill: var(--spark);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		tbody tr,
+		.arc,
+		.tok {
+			transition: none;
+		}
 	}
 
 	.fam-core {
@@ -286,8 +385,13 @@
 		stroke-width: 1.9px;
 	}
 
+	.fam-function .line {
+		stroke-dasharray: 1.5 3;
+		stroke-linecap: round;
+	}
+
 	.fam-other .line {
-		stroke-dasharray: 3 3;
+		stroke-dasharray: 4 3;
 	}
 
 	.arc .tip {
@@ -331,7 +435,12 @@
 		stroke-width: 2px;
 	}
 
+	.fam-function .sample .line {
+		stroke-dasharray: 1.5 3;
+		stroke-linecap: round;
+	}
+
 	.fam-other .sample .line {
-		stroke-dasharray: 3 3;
+		stroke-dasharray: 4 3;
 	}
 </style>

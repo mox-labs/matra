@@ -10,10 +10,17 @@
 	 * only one method produces is a hollow dot on that side, with no line, so a
 	 * pair of lists that share little does not become a bundle of lines to
 	 * nowhere. The table of every rank and score leads. Static: nothing moves.
+	 *
+	 * No colour tells the groups apart: a phrase in RAKE's top few is joined by
+	 * a solid line, one in YAKE's by a dashed line, one in both by a heavy
+	 * line; the side a label sits on already says which method ranks it.
+	 * Pointing at or focusing a row lights its line and labels in Spark, and
+	 * pointing at a line lights its row, at once.
 	 */
 	import { scaleLog } from 'd3-scale';
 	import type { KeyphrasesFigureFile } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { roving } from './motion';
 
 	let { id, file, dataUrl }: { id: string; file: KeyphrasesFigureFile; dataUrl: string } = $props();
 
@@ -25,6 +32,8 @@
 	const PAD = 12;
 
 	const data = $derived(file.data);
+	/** The phrase the reader points at. */
+	let active = $state<string | null>(null);
 	const inRake = $derived(new Set(data.rake.map((p) => p.phrase)));
 	const inYake = $derived(new Set(data.yake.map((p) => p.phrase)));
 
@@ -101,9 +110,16 @@
 			<thead>
 				<tr><th>Phrase</th><th>RAKE rank</th><th>RAKE score</th><th>YAKE rank</th><th>YAKE score</th></tr>
 			</thead>
-			<tbody>
+			<tbody {@attach roving}>
 				{#each rows as r (r.phrase)}
-					<tr>
+					<tr
+						data-row={r.phrase}
+						class:lit={active === r.phrase}
+						onpointerenter={() => (active = r.phrase)}
+						onpointerleave={() => (active = null)}
+						onfocus={() => (active = r.phrase)}
+						onblur={() => (active = null)}
+					>
 						<td class="phrase">{r.phrase}</td>
 						<td class="num">{r.rake ? r.rake.rank : 'not ranked'}</td>
 						<td>{r.rake ? fmtScore(r.rake.score) : ''}</td>
@@ -128,7 +144,18 @@
 			<line class="axis" x1={layout.R} x2={layout.R} y1={layout.y(1) - 6} y2={layout.bottom} />
 
 			{#each layout.lines as l (l.phrase)}
-				<g class="slope g-{l.group}" data-phrase={l.phrase} data-rake={l.rake ?? ''} data-yake={l.yake ?? ''}>
+				<!-- Pointer-only: the table's rows give the keyboard the same. -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<g
+					class="slope g-{l.group}"
+					class:lit={active === l.phrase}
+					class:dim={active !== null && active !== l.phrase}
+					data-phrase={l.phrase}
+					data-rake={l.rake ?? ''}
+					data-yake={l.yake ?? ''}
+					onpointerenter={() => (active = l.phrase)}
+					onpointerleave={() => (active = null)}
+				>
 					{#if l.y1 !== null && l.y2 !== null}
 						<line x1={layout.L} y1={l.y1} x2={layout.R} y2={l.y2} />
 					{/if}
@@ -144,13 +171,13 @@
 			{/each}
 
 			{#each layout.left as p (p.phrase)}
-				<g class="lbl g-{inYake.has(p.phrase) ? 'both' : 'rake'}">
+				<g class="lbl g-{inYake.has(p.phrase) ? 'both' : 'rake'}" class:lit={active === p.phrase}>
 					{#if p.ly !== p.py}<path class="leader" d="M{layout.L - 10},{p.ly}L{layout.L - 3},{p.py}" />{/if}
 					<text x={layout.L - 12} y={p.ly} text-anchor="end">{p.phrase}<tspan class="rank" dx="6">{p.rank}</tspan></text>
 				</g>
 			{/each}
 			{#each layout.right as p (p.phrase)}
-				<g class="lbl g-{inRake.has(p.phrase) ? 'both' : 'yake'}">
+				<g class="lbl g-{inRake.has(p.phrase) ? 'both' : 'yake'}" class:lit={active === p.phrase}>
 					{#if p.ly !== p.py}<path class="leader" d="M{layout.R + 10},{p.ly}L{layout.R + 3},{p.py}" />{/if}
 					<text x={layout.R + 12} y={p.ly}><tspan class="rank">{p.rank}</tspan><tspan dx="6">{p.phrase}</tspan></text>
 				</g>
@@ -189,8 +216,9 @@
 
 <style>
 	:global(.mx-figure[data-figure='keyphrases']) {
-		--g-rake: light-dark(#b3401e, #f0915f);
-		--g-yake: light-dark(#2b6a8c, #7fb9d8);
+		/* One neutral ink: the line style carries the group. */
+		--g-rake: var(--mark);
+		--g-yake: var(--mark);
 		--g-both: var(--text);
 	}
 
@@ -288,5 +316,55 @@
 		stroke: var(--g);
 		stroke-width: 1px;
 		opacity: 0.6;
+	}
+
+	/* The group as a line: solid for RAKE's top, dashed for YAKE's, heavy for both. */
+	.slope.g-yake line {
+		stroke-dasharray: 5 3;
+	}
+
+	.slope.g-both line {
+		stroke-width: 2.4px;
+	}
+
+	.swatch.g-yake {
+		background: none;
+		border-top: 2px dashed var(--g);
+		height: 0;
+	}
+
+	.swatch.g-both {
+		height: 0.28em;
+	}
+
+	.slope {
+		transition: opacity var(--duration-fast) linear;
+	}
+
+	.slope.dim {
+		opacity: 0.25;
+	}
+
+	.slope.lit {
+		--g: var(--spark);
+	}
+
+	.lbl.lit text {
+		fill: var(--spark);
+	}
+
+	tbody tr:focus-visible {
+		outline: 2px solid var(--spark);
+		outline-offset: -2px;
+	}
+
+	tbody tr.lit td {
+		color: var(--spark);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.slope {
+			transition: none;
+		}
 	}
 </style>
