@@ -113,8 +113,10 @@
 		color: inherit;
 	}
 
-	/* Shared by every figure's parts, which render inside this card. */
-	.mx-figure :global(.fig-scroll) {
+	/* Shared by every figure's parts, which render inside this card. A part
+	   wider than the card scrolls inside it, with a shadow at the cut edge,
+	   so nothing is clipped silently. */
+	.mx-figure :global(:is(.fig-scroll, .fig-twin)) {
 		overflow-x: auto;
 		overscroll-behavior-x: contain;
 		background:
