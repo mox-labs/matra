@@ -10,7 +10,7 @@ import { relative, resolve } from 'node:path';
 import { error } from '@sveltejs/kit';
 import { base } from '$app/paths';
 import { editUrl } from '$lib/site';
-import type { Doc, FigureFile, NavPart } from '$lib/types';
+import type { Crumb, Doc, FigureFile, NavItem, NavPart, PageMeasures } from '$lib/types';
 import { flatten, parseSummary } from './summary';
 import { render } from './markdown/render';
 import { exampleMarkdown, examples } from './examples';
@@ -44,6 +44,19 @@ export const figures: ReadonlyMap<string, FigureFile> = new Map(
 		}
 		return [key, file];
 	})
+);
+
+/**
+ * matra's measures of each page, keyed by the page's file under content/,
+ * as examples/docsite_figures.rs wrote them.
+ */
+const MEASURE_FILES = import.meta.glob('/src/lib/figures/pages/**/measures.json', {
+	import: 'default',
+	eager: true
+}) as Record<string, PageMeasures>;
+
+export const measures: ReadonlyMap<string, PageMeasures> = new Map(
+	Object.values(MEASURE_FILES).map((m) => [m.page, m])
 );
 
 function source(file: string): string {
@@ -107,16 +120,43 @@ function repoPathOf(file: string): string {
 	return relative(realpathSync(REPO_ROOT), real).split('\\').join('/');
 }
 
+/** The part a page is in, and the item it is nested under, if any. */
+function crumbsOf(target: NavItem): Crumb[] {
+	for (const part of nav) {
+		const walk = (items: NavItem[], trail: Crumb[]): Crumb[] | null => {
+			for (const item of items) {
+				if (item === target) return trail;
+				const found = walk(item.children, [...trail, { title: item.title, route: item.route }]);
+				if (found) return found;
+			}
+			return null;
+		};
+		const found = walk(part.items, part.title ? [{ title: part.title, route: null }] : []);
+		// A part and its index page often share a name ("Examples"): the page,
+		// which can be followed, stands for both.
+		if (found) return found.filter((c, i) => !(c.route === null && found[i + 1]?.title === c.title));
+	}
+	return [];
+}
+
 export async function loadDoc(route: string): Promise<Doc> {
 	const i = order.findIndex((o) => o.item.route === route);
 	if (i === -1) error(404, `No page at ${route}`);
 	const { item, part } = order[i];
-	const rendered = await render(source(item.file), { file: item.file, routes, base, figures, examples });
+	const rendered = await render(source(item.file), {
+		file: item.file,
+		routes,
+		base,
+		figures,
+		examples,
+		measures: measures.get(item.file)
+	});
 	const link = (j: number) =>
 		j >= 0 && j < order.length ? { title: order[j].item.title, route: order[j].item.route } : null;
 	return {
 		...rendered,
 		part,
+		crumbs: crumbsOf(item),
 		file: item.file,
 		route: item.route,
 		editUrl: editUrl(repoPathOf(item.file)),

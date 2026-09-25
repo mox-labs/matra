@@ -1,0 +1,323 @@
+<script lang="ts">
+	/**
+	 * The home page's hero: the mark at full scale, explaining itself.
+	 *
+	 * The motto is set large in the reading face, as text. matra's parse of it
+	 * is drawn over it from the same committed data the mark is drawn from:
+	 * the headline bar at the words' x-height, every word hanging from it, the
+	 * root's stroke in Emergence just after its word, and each dependency as
+	 * an arc hanging below.
+	 *
+	 * Placement needs no font measurement and no script. Each word spans two
+	 * equal grid columns, so its centre is a grid line; an arc spans from its
+	 * head's line to its dependent's (from the root's right edge, where its
+	 * stroke hangs, when the head is the root), drawn as a hanging half
+	 * ellipse. So the prerendered page is exact, at every width.
+	 *
+	 * Nothing moves on load. The reader lights a word by pointing at it or
+	 * focusing it: its head, its dependents and the arcs between them stay,
+	 * the rest dims (opacity only), and a click pins it. "Show the parse"
+	 * reveals each word's part of speech and each arc's relation, and works
+	 * without a script; its table twin is the parse as text.
+	 */
+	import type { ParseToken } from '$lib/types';
+
+	let { tokens, titleId = 'matra' }: { tokens: ParseToken[]; titleId?: string } = $props();
+
+	const root = $derived(tokens.find((t) => t.head === 0));
+	const n = $derived(tokens.length);
+	const byId = $derived(new Map(tokens.map((t) => [t.id, t])));
+
+	/** Arcs, levelled as the mark levels them. */
+	const arcs = $derived.by(() => {
+		const list = tokens
+			.filter((t) => t.head !== 0)
+			.map((t) => ({ head: t.head, dep: t.id, rel: t.dep }))
+			.sort(
+				(p, q) =>
+					Math.abs(p.head - p.dep) - Math.abs(q.head - q.dep) || Math.min(p.head, p.dep) - Math.min(q.head, q.dep)
+			);
+		const placed: { lo: number; hi: number; level: number }[] = [];
+		return list.map((a) => {
+			const lo = Math.min(a.head, a.dep);
+			const hi = Math.max(a.head, a.dep);
+			let level = 1;
+			for (const p of placed) if (p.lo < hi && lo < p.hi) level = Math.max(level, p.level + 1);
+			placed.push({ lo, hi, level });
+			// Grid lines: word i spans columns 2i-1 and 2i, so its centre is line
+			// 2i and its right edge line 2i+1.
+			const anchor = (id: number) => (id === root?.id ? 2 * id + 1 : 2 * id);
+			const [from, to] = [anchor(a.head), anchor(a.dep)].sort((x, y) => x - y);
+			return { ...a, level, from, to };
+		});
+	});
+	const deepest = $derived(Math.max(1, ...arcs.map((a) => a.level)));
+
+	let hover = $state<number | null>(null);
+	let pinned = $state<number | null>(null);
+	const active = $derived(hover ?? pinned);
+	/** The active word, its head and its dependents. */
+	const lit = $derived.by(() => {
+		if (active === null) return null;
+		const t = byId.get(active);
+		const set = new Set<number>([active]);
+		if (t && t.head !== 0) set.add(t.head);
+		for (const d of tokens) if (d.head === active) set.add(d.id);
+		return set;
+	});
+	const arcLit = (a: { head: number; dep: number }) => active !== null && (a.head === active || a.dep === active);
+</script>
+
+<section class="hero" aria-labelledby={titleId}>
+	<!-- The page's title keeps the id the home page's title always had. -->
+	<h1 id={titleId} class="visually-hidden">matra</h1>
+	<p class="kicker">matra's parse of the motto</p>
+
+	<div
+		class="motto"
+		class:dimmed={lit !== null}
+		style="--n: {n}; --deep: {deepest}"
+		role="group"
+		aria-label="Amplify radical nonconformity., with matra's dependency parse drawn over it"
+	>
+		<div class="bar" aria-hidden="true"></div>
+		{#each tokens as t (t.id)}
+			<button
+				type="button"
+				class="word"
+				class:root={t.head === 0}
+				class:punct={t.dep === 'punct'}
+				class:lit={lit?.has(t.id)}
+				style="grid-column: {2 * t.id - 1} / span 2"
+				aria-pressed={pinned === t.id}
+				aria-label="{t.text}: {t.pos}, {t.head === 0 ? 'the root' : `${t.dep} of ${byId.get(t.head)?.text}`}"
+				onpointerenter={() => (hover = t.id)}
+				onpointerleave={() => (hover = null)}
+				onfocus={() => (hover = t.id)}
+				onblur={() => (hover = null)}
+				onclick={() => (pinned = pinned === t.id ? null : t.id)}
+			>
+				<span class="w">{t.text}</span>
+				<span class="pos" aria-hidden="true">{t.pos}</span>
+			</button>
+		{/each}
+		{#each arcs as a (`${a.head}-${a.dep}`)}
+			<div
+				class="arc"
+				class:from-root={a.head === root?.id}
+				class:lit={arcLit(a)}
+				style="grid-column: {a.from} / {a.to}; --level: {a.level}"
+				aria-hidden="true"
+			>
+				<span class="rel">{a.rel}</span>
+			</div>
+		{/each}
+	</div>
+
+	<details class="show-parse">
+		<summary>show the parse</summary>
+		<table>
+			<thead><tr><th>#</th><th>Word</th><th>POS</th><th>Head</th><th>Relation</th></tr></thead>
+			<tbody>
+				{#each tokens as t (t.id)}
+					<tr>
+						<td>{t.id}</td>
+						<td>{t.text}</td>
+						<td>{t.pos}</td>
+						<td>{t.head === 0 ? '0 (root)' : `${t.head} ${byId.get(t.head)?.text}`}</td>
+						<td>{t.dep}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</details>
+</section>
+
+<style>
+	.hero {
+		container-type: inline-size;
+		margin: var(--space-3) 0 var(--space-4);
+	}
+
+	.kicker {
+		margin: 0 0 var(--space-2);
+		font: var(--type-xs) var(--font-mono);
+		letter-spacing: var(--tracking-wide);
+		color: var(--text-muted);
+	}
+
+	/*
+	 * The motto. Alegreya at line-height 1: its x-height top sits 0.3835em
+	 * below the line box's top (ascent 1.016em, descent 0.345em, x-height
+	 * 0.452em), which is where the headline bar is drawn.
+	 */
+	.motto {
+		/* The motto is about 12.6em wide at this weight: sized to its column,
+		   never wider, never above the display size. */
+		--size: clamp(1.5rem, 7.4cqi, var(--type-4xl));
+		--xh-top: 0.3835em;
+		--u: calc(var(--size) * 0.125);
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(calc(var(--n) * 2), auto);
+		/* Space for the labels is kept whether they show or not, so revealing
+		   them moves nothing. */
+		grid-template-rows: 1em calc(var(--deep) * var(--u) * 2.6 + var(--u) + 1.2rem);
+		justify-content: start;
+		font-size: var(--size);
+		--above: 1.3rem;
+		padding-top: var(--above);
+		max-width: 100%;
+	}
+
+	.bar {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: calc(var(--above) + var(--xh-top));
+		height: 0;
+		border-top: max(1.5px, 0.04em) solid var(--text);
+		pointer-events: none;
+	}
+
+	.word {
+		all: unset;
+		position: relative;
+		grid-row: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		cursor: pointer;
+		font-family: var(--font-read);
+		font-weight: var(--weight-black);
+		letter-spacing: var(--tracking-title);
+		line-height: 1;
+		color: var(--text);
+		transition: opacity var(--duration-normal) var(--easing-smooth);
+	}
+
+	.word:not(.punct) {
+		padding-inline: 0.12em;
+	}
+
+	.word:focus-visible {
+		outline: 2px solid var(--spark);
+		outline-offset: 4px;
+	}
+
+	.word[aria-pressed='true'] .w {
+		text-decoration: underline 2px var(--spark);
+		text-underline-offset: 0.12em;
+	}
+
+	/* The root's stroke: the vowel sign, hanging from the bar after its word,
+	   down to where its arcs leave. */
+	.word.root::after {
+		content: '';
+		position: absolute;
+		right: -0.02em;
+		top: var(--xh-top);
+		height: calc(1em - var(--xh-top) + var(--u) * 0.6);
+		border-right: max(2px, 0.055em) solid var(--emergence);
+	}
+
+	/* A word's part of speech stands above it, where the vowel signs above a
+	   Devanagari headline stand. */
+	.pos {
+		position: absolute;
+		bottom: calc(100% + 0.1rem);
+		font: 400 var(--type-xs) / 1 var(--font-mono);
+		letter-spacing: var(--tracking-wide);
+		color: var(--text-muted);
+		opacity: 0;
+		transition: opacity var(--duration-normal) var(--easing-smooth);
+	}
+
+	/* Each arc hangs from its two anchors: a half ellipse below the words. */
+	.arc {
+		position: relative;
+		grid-row: 2;
+		align-self: start;
+		height: calc(var(--level) * var(--u) * 2.6);
+		margin-top: calc(var(--u) * 0.6);
+		border: max(1.5px, 0.03em) solid var(--mark);
+		border-top: 0;
+		border-radius: 0 0 50% 50% / 0 0 100% 100%;
+		pointer-events: none;
+		transition: opacity var(--duration-normal) var(--easing-smooth);
+	}
+
+	.rel {
+		position: absolute;
+		left: 50%;
+		bottom: calc(-0.5em - 2px);
+		transform: translateX(-50%);
+		padding: 0 0.35em;
+		font: 400 var(--type-xs) var(--font-mono);
+		letter-spacing: var(--tracking-wide);
+		color: var(--text-muted);
+		background: var(--bg);
+		white-space: nowrap;
+		opacity: 0;
+		transition: opacity var(--duration-normal) var(--easing-smooth);
+	}
+
+	/* Lighting: the active word, its head, its dependents and their arcs stay;
+	   everything else dims. Opacity only. */
+	.dimmed .word:not(.lit),
+	.dimmed .arc:not(.lit) {
+		opacity: 0.28;
+	}
+
+	.dimmed .arc.lit .rel,
+	.dimmed .word.lit .pos {
+		opacity: 1;
+	}
+
+	/* "Show the parse" reveals every label, with or without a script. */
+	.hero:has(.show-parse[open]) :is(.pos, .rel) {
+		opacity: 1;
+	}
+
+	.show-parse {
+		margin-top: var(--space-2);
+		font: var(--type-sm) var(--font-mono);
+	}
+
+	.show-parse summary {
+		display: inline-block;
+		cursor: pointer;
+		padding: 0.15rem var(--space-1);
+		border: 1px solid var(--border-strong);
+		border-radius: var(--radius-control);
+		color: var(--text);
+		list-style: none;
+	}
+
+	.show-parse summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.show-parse[open] summary {
+		border-color: var(--spark);
+		color: var(--spark);
+	}
+
+	.show-parse table {
+		margin-top: var(--space-2);
+		border-collapse: collapse;
+	}
+
+	.show-parse :is(th, td) {
+		padding: 0.35em 1.2em 0.35em 0;
+		text-align: start;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.show-parse th {
+		font: 600 var(--type-xs) var(--font-ui);
+		letter-spacing: var(--tracking-widest);
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+</style>

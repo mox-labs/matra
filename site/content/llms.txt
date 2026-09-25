@@ -4,7 +4,7 @@
 
 ## Introduction
 
-- [Home](https://mox-labs.github.io/matra/home.html): matra reads text into structure and measures it: sections, paragraphs and sentences, every word's grammar, and readability, keyphrases and summaries over them.
+- [Home](https://mox-labs.github.io/matra/home.html): matra reads text into its structure and measures it, from Rust, Python or the command line; what the structure means is yours to decide.
 - [Introduction](https://mox-labs.github.io/matra/introduction.html): matra reports the structure of text and measurements over it.
 
 ## Explanation

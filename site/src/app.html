@@ -3,22 +3,88 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="color-scheme" content="light dark" />
+		<meta name="color-scheme" content="dark light" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+		<!-- The reading face is on every page, so it is fetched before the CSS
+		     asks for it. The other faces load when first used. -->
+		<link
+			rel="preload"
+			href="%sveltekit.assets%/fonts/alegreya-latin-regular.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin
+		/>
+		<!-- Self-hosted, OFL 1.1 (static/fonts/OFL-*.txt). Declared here so each
+		     URL carries the base path the site is served under. -->
+		<style>
+			@font-face {
+				font-family: 'Alegreya';
+				font-style: normal;
+				font-weight: 400;
+				font-display: swap;
+				src: url('%sveltekit.assets%/fonts/alegreya-latin-regular.woff2') format('woff2');
+			}
+			@font-face {
+				font-family: 'Alegreya';
+				font-style: italic;
+				font-weight: 400;
+				font-display: swap;
+				src: url('%sveltekit.assets%/fonts/alegreya-latin-italic.woff2') format('woff2');
+			}
+			@font-face {
+				font-family: 'Alegreya';
+				font-style: normal;
+				font-weight: 700;
+				font-display: swap;
+				src: url('%sveltekit.assets%/fonts/alegreya-latin-700.woff2') format('woff2');
+			}
+			@font-face {
+				font-family: 'Alegreya';
+				font-style: normal;
+				font-weight: 800;
+				font-display: swap;
+				src: url('%sveltekit.assets%/fonts/alegreya-latin-800.woff2') format('woff2');
+			}
+			@font-face {
+				font-family: 'IBM Plex Mono';
+				font-style: normal;
+				font-weight: 400;
+				font-display: swap;
+				src: url('%sveltekit.assets%/fonts/ibm-plex-mono-latin-400.woff2') format('woff2');
+			}
+			@font-face {
+				font-family: 'IBM Plex Mono';
+				font-style: normal;
+				font-weight: 600;
+				font-display: swap;
+				src: url('%sveltekit.assets%/fonts/ibm-plex-mono-latin-600.woff2') format('woff2');
+			}
+			@font-face {
+				font-family: 'IBM Plex Sans';
+				font-style: normal;
+				font-weight: 400;
+				font-display: swap;
+				src: url('%sveltekit.assets%/fonts/ibm-plex-sans-v23-latin-regular.woff2') format('woff2');
+			}
+			@font-face {
+				font-family: 'IBM Plex Sans';
+				font-style: normal;
+				font-weight: 600;
+				font-display: swap;
+				src: url('%sveltekit.assets%/fonts/ibm-plex-sans-v23-latin-600.woff2') format('woff2');
+			}
+		</style>
 		<script>
-			// Set the theme before the first paint, so a reader who chose dark
-			// never sees a light flash. With no stored choice the page follows
-			// prefers-color-scheme; with scripts off, the CSS does the same.
+			// Set the theme before the first paint. The void (dark) is the
+			// default; paper is the reader's choice, remembered. With scripts
+			// off the page is the void, as the CSS default says.
 			// `data-js` marks that scripts run, so controls that need them
 			// (search, the menu, the theme toggle) are hidden when they do not.
 			(function () {
 				document.documentElement.dataset.js = '';
 				try {
 					var stored = localStorage.getItem('matra-theme');
-					var dark =
-						stored === 'dark' ||
-						(stored !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
-					document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+					document.documentElement.dataset.theme = stored === 'light' ? 'light' : 'dark';
 				} catch (e) {}
 			})();
 		</script>

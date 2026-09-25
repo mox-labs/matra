@@ -253,6 +253,39 @@ export interface PageLink {
 	route: string;
 }
 
+/** matra's measures of one page's paragraphs (site/src/lib/figures/pages/). */
+export interface PageMeasures {
+	page: string;
+	generator: FigureFile['generator'];
+	paragraphs: {
+		text: string;
+		in_blockquote: boolean;
+		sentences: number;
+		words: number;
+		readability_grade: number | null;
+		lexical_density: number | null;
+		compression_ratio: number | null;
+	}[];
+}
+
+/** What the page says about its own measurement, beside its title. */
+export interface MeasuredLine {
+	/** Whether the notes could be set beside the paragraphs they measure. */
+	mapped: boolean;
+	/** Prose paragraphs given a note. */
+	measured: number;
+	generator: FigureFile['generator'];
+	dataUrl: string;
+	/** Why the page shows no notes, when it does not. */
+	reason?: string;
+}
+
+/** A step in the breadcrumb trail; a part has no page of its own. */
+export interface Crumb {
+	title: string;
+	route: string | null;
+}
+
 /** Everything a documentation page renders. Built once, at prerender time. */
 export interface Doc {
 	title: string;
@@ -264,6 +297,10 @@ export interface Doc {
 	description: string;
 	/** The SUMMARY.md part the page belongs to, shown above its title. */
 	part: string | null;
+	/** Where the page sits: its part, and the item it is nested under. */
+	crumbs: Crumb[];
+	/** matra's measures of this page, or null for a page it has none for. */
+	measured: MeasuredLine | null;
 	/** The page body, rendered at build time: HTML runs and figures. */
 	segments: Segment[];
 	toc: TocEntry[];
