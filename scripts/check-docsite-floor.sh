@@ -546,8 +546,10 @@ elif ! (cd site && bun run check) >"$site_log" 2>&1; then
     fail=$((fail + 1))
 else
     checked_line=$(grep -E 'COMPLETED|svelte-check found' "$site_log" | tail -1)
-    contrast_line=$(grep -E '^PASS \(contrast\)' "$site_log" | tail -1)
-    mark_line=$(grep -E '^PASS: the mark' "$site_log" | tail -1)
+    # Summary lines only, so never fatal. Not anchored: in CI svelte-check
+    # prints in colour, and its closing escape codes precede the next line.
+    contrast_line=$(grep -o -E 'PASS \(contrast\).*' "$site_log" | tail -1 || true)
+    mark_line=$(grep -o -E 'PASS: the mark.*' "$site_log" | tail -1 || true)
     if ! (cd site && BASE_PATH='' bun run build) >"$site_log" 2>&1; then
         echo "FAIL (gate 4): the site did not build"
         sed 's/^/  /' "$site_log"
