@@ -1,6 +1,6 @@
 # matra
 
-matra reads text into structure and measures it: sections, paragraphs and sentences, every word's grammar, and readability, keyphrases and summaries over them. It runs from Rust, Python or the command line. It reports what is in the text; what that means for your purpose is your decision.
+matra reads text into its structure and measures it, from Rust, Python or the command line; what the structure means is yours to decide.
 
 ## One passage, and what matra returns
 
@@ -12,6 +12,6 @@ This is one of the things matra returns, and it comes with the Python package an
 
 ## Where to go next
 
-- **[Install](tutorials/installation.md)**: the Rust library, the command line, or the Python package, and one call that proves the install works.
-- **[Examples](examples/README.md)**: six tasks on real texts, each with the call in Rust, Python and the command line, and the output it prints.
-- **[Concepts](explanation/concepts.md)**: the shape of what matra returns, from the document down to each word, and the grammatical facts matra reads off each sentence.
+- **[Install](tutorials/installation.md):** the Rust library, the command line, or the Python package, and one call that proves the install works.
+- **[Examples](examples/README.md):** six tasks on real texts, each with the call in Rust, Python and the command line, and the output it prints.
+- **[Concepts](explanation/concepts.md):** the shape of what matra returns, from the document down to each word, and the grammatical facts matra reads off each sentence.

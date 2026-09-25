@@ -21,11 +21,16 @@ Three things the shape means, stated once here and again in the type docs:
 - **Singletons are always excluded.** A sentence with no above-threshold edge appears in no cluster, so "not in any cluster" is a meaningful count.
 - **The threshold is yours, and it does not travel.** Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus; the working value depends on the model, the domain, and the text length. Start around 0.85 with the reference model on sentences, and calibrate on your own corpus. A cutoff calibrated on sentences is not the cutoff for whole documents: a document vector is the mean over far more tokens, so unrelated documents sit well above zero and near-duplicates need not reach the sentence band. Read the raw scores at the granularity you are clustering before you pick a number.
 
-All three, on ten short sentences with the reference model: step the threshold and watch a sentence about a different event join a cluster on shared words alone, two sentences share a cluster through a third, and the clusters dissolve as the bar rises.
+All three, on ten short sentences with the reference model. Before you scrub, predict: sentence 8 is about a different decision by the same committee. As the threshold falls from 0.85, at which value do you expect it to join sentences 1, 2 and 3, and through which of them? Then drag the threshold and find out.
 
 <figure-clusters input="paraphrases" />
 
-A cluster can grow through a chain of pairs, as sentence 8 does at 0.70. Its pair with sentence 1 scores 0.7239 and clears the bar. Its pairs with sentences 2 and 3 do not, yet it shares their cluster.
+<details>
+<summary>What sentence 8 did</summary>
+
+It joins at 0.70, through sentence 1 alone: their pair scores 0.7239 and clears the bar, while its pairs with sentences 2 and 3 do not, yet it shares their cluster. A cluster can grow through a chain of pairs, on shared words ("committee approved") rather than shared meaning, and the clusters dissolve as the bar rises past 0.85.
+
+</details>
 
 ## The model
 

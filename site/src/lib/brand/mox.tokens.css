@@ -1,0 +1,357 @@
+/* A verbatim copy of the ratified mox design-system token file (the SSOT,
+   mox-design-system/system/tokens/mox.tokens.css, ratified 2026-06-18),
+   SHA-256 750911b576d15185653e1f9c15b7b4eb7f1a879593d9091b8a9f62ce5e777e80.
+   Do not edit below this comment: re-copy when the source changes. The site
+   aliases its own variables to these in src/app.css. */
+
+/* ===========================================
+   Mox Labs — Canonical Design Tokens (SSOT)
+   ===========================================
+   Mission: Every Potential Actualized.
+   Motto:   Amplify. Radical. Non Conformity.
+   Sigil:   27zmdbp
+   Scale:   built on 9 (9, 18, 27, 36, 54, 72 …)
+   ===========================================
+   THE source of truth. Plain :root custom properties — host-agnostic
+   (Lit, Svelte, plain HTML, the boards light-DOM elements consume it
+   identically). mox.tokens.json (DTCG) is GENERATED from this file, never
+   hand-edited. Tailwind @theme is a per-consumer mapping layer that
+   references these vars (`--color-ci-blue: var(--ci-blue)`); it is NOT a
+   source. [foundation §2.7 / §6.1 — ratified 2026-06-18]
+
+   This SSOT supersedes ~/mox/brand/tokens/mox.tokens.css. Retired here:
+   the four theme registers (dao/gotham/gnx/wu), the five typography
+   registers, Fraunces/IM-Fell/Rajdhani/Space-Grotesk as primary faces,
+   and the Diátaxis quadrant hues. One voice. [§6.2, §6.7]
+
+   Middle force named Temperance (ratified 2026-07-04); the --ci-red var
+   name is kept for consumer stability — only the label reads Temperance.
+   Trichrome VALUES (incl. a proposed lapis-lazuli Spark) are under joint
+   review — treat the current hue numbers as provisional.
+   =========================================== */
+
+
+/* ===========================================
+   PRIMITIVES — raw values, never use directly
+   =========================================== */
+
+:root {
+
+  /* ─── Trichrome — by ROLE. Three axes, not four. [§6.4] ─────────────
+     Spark = human / interaction / agency · Temperance = machine /
+     boundary / refusal · Emergence = synthesis / done / converged.
+     Base trio shares the 62–70% L band; the *cores* below run hotter on
+     purpose (the old "equal envelope" claim was true of the base only). */
+
+  --ci-blue:  oklch(62% 0.15 240);   /* Spark      — human, agency, interaction */
+  --ci-red:   oklch(58% 0.18 25);    /* Temperance — machine, boundary, refusal */
+  --ci-green: oklch(70% 0.18 145);   /* Emergence  — the converged third thing, code */
+
+  /* ─── Spark layers (core → atmosphere) ─── */
+  --spark-core:       oklch(75% 0.18 240);
+  --spark-inner:      oklch(62% 0.15 240 / 0.6);
+  --spark-outer:      oklch(55% 0.12 240 / 0.2);
+  --spark-atmosphere: oklch(50% 0.08 240 / 0.05);
+
+  /* ─── Temperance layers (contains, does not emit — rare by allocation) ─── */
+  --constraint-core: oklch(62% 0.20 25);
+  --constraint-glow: oklch(58% 0.18 25 / 0.25);
+
+  /* ─── Emergence layers (chroma 0.20 — brand value wins over studio 0.18) ─── */
+  --emergence-core:       oklch(75% 0.20 145);
+  --emergence-glow:       oklch(70% 0.18 145 / 0.30);
+  --emergence-atmosphere: oklch(65% 0.12 145 / 0.08);
+
+  /* ─── Depth — the void. Always carries the faint 240° trace. NEVER pure black. ─── */
+  --depth-abyss:    oklch(3% 0.003 240);   /* the ground */
+  --depth-void:     oklch(6% 0.005 240);   /* page background */
+  --depth-elevated: oklch(10% 0.005 240);  /* raised surface (back-ported from studio) */
+
+  /* ─── Dao neutrals — zero chroma, so the trichrome can sing ─── */
+  --dao-bg:             oklch(12% 0.01 240); /* keeps the trace — studio's #1a1a1a dropped it */
+  --dao-surface:        oklch(14% 0 0);
+  --dao-surface-2:      oklch(18% 0 0);
+  --dao-surface-3:      oklch(22% 0 0);
+  --dao-border:         oklch(26% 0 0);
+  --dao-border-subtle:  oklch(20% 0 0);
+  --dao-text:           oklch(92% 0 0);
+  --dao-text-secondary: oklch(82% 0 0);
+  --dao-muted:          oklch(72% 0 0);
+
+  /* ─── Light reading zone — back-ported from studio, re-authored in OKLCH.
+     The scholarly light surface (e.g. a paper body). Dark-first system;
+     this is the exception, not the default. ─── */
+  --paper:      oklch(98% 0.002 240);
+  --paper-warm: oklch(96% 0.012 75);
+  --ink:        oklch(22% 0.01 240);   /* near-black with the trace, never #000 */
+  --ink-muted:  oklch(48% 0 0);
+
+  /* ─── Glyph tints — subtle, low-alpha card/code backgrounds ─── */
+  --glyph-blue:  oklch(62% 0.15 240 / 0.06);
+  --glyph-red:   oklch(58% 0.18 25 / 0.03);
+  --glyph-green: oklch(70% 0.18 145 / 0.025);
+
+  /* ─── Evidence levels — an ORTHOGONAL confidence scale (NOT the three
+     forces). Brightness encodes confidence on research/doc surfaces.
+     Kept as a separate signal scale; flagged at reconciliation. ─── */
+  --ev-strong:        oklch(72% 0.16 145);
+  --ev-strong-bg:     oklch(72% 0.16 145 / 0.08);
+  --ev-moderate:      oklch(68% 0.12 230);
+  --ev-moderate-bg:   oklch(68% 0.12 230 / 0.08);
+  --ev-weak:          oklch(72% 0.14 85);
+  --ev-weak-bg:       oklch(72% 0.14 85 / 0.08);
+  --ev-speculative:   oklch(62% 0.02 240);
+  --ev-speculative-bg:oklch(62% 0.02 240 / 0.06);
+  /* (Diátaxis quadrant hues — teal/purple — DROPPED: doc-classification
+     from the cix docs system, outside this design system. [§6.7]) */
+}
+
+
+/* ===========================================
+   SEMANTIC — named for purpose, used in components.
+   Trichrome is de-blued OFF chrome: Spark means ONLY "your touch."
+   [boards D-A17 / §3 rule 1]
+   =========================================== */
+
+:root {
+  /* Spark is reserved for human interaction. Links + focus only. */
+  --color-link:         var(--ci-blue);
+  --color-link-hover:   var(--spark-core);
+  --color-link-visited: oklch(55% 0.12 240);
+  --color-focus:        var(--ci-blue);
+  --color-interactive:          var(--ci-blue);
+  --color-interactive-hover:    var(--spark-core);
+  --color-interactive-active:   oklch(68% 0.16 240);
+  --color-interactive-disabled: var(--dao-muted);
+  --color-selection-bg: oklch(62% 0.15 240 / 0.22); /* Spark ::selection — "this is actionable" */
+
+  /* Emergence carries code/identifiers + the converged state. */
+  --color-code:    var(--ci-green);   /* inline-code / identifiers → green, not blue */
+  --color-success: var(--ci-green);
+  --color-converged: var(--ci-green);
+
+  /* Temperance is rare — real boundaries / refusals / orphaned anchors. */
+  --color-warning: var(--ci-red);
+  --color-error:   var(--ci-red);
+  --color-boundary:var(--ci-red);
+
+  /* Off-role chrome is NEUTRAL (depth/group/arc labels never take Spark). */
+  --color-chrome:        var(--dao-muted);
+  --color-chrome-strong: var(--dao-text-secondary);
+}
+
+
+/* ===========================================
+   TYPOGRAPHY — ONE VOICE.
+   Two functional castes (canon T2): a reading face (Alegreya) and a
+   chrome/identifier face (IBM Plex Mono). Neither does the other's job.
+   Serif-vs-sans is aesthetic, not a legibility cost (canon T2/UPD).
+   [§6.2, §6.3 — ratified]
+   =========================================== */
+
+:root {
+  /* ─── The reading caste — Alegreya. Body 400, heads/title 700/800.
+     Awarded for long-form literary reading; the scholarly register.
+     Fraunces kept only as a fallback while Alegreya loads. ─── */
+  --font-read:    'Alegreya', 'Fraunces', Georgia, 'Iowan Old Style', serif;
+  --font-display: var(--font-read);  /* title/masthead = Alegreya 800 [§6.3] */
+
+  /* ─── The chrome caste — IBM Plex Mono. Apparatus ONLY: chrome, code,
+     identifiers, counts, timestamps. Does not enter the read. (canon T2/12)
+     Demand tabular lining figures + slashed zero for IDs (canon T3). ─── */
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code',
+               'Source Code Pro', Menlo, Consolas, monospace;
+
+  /* ─── UI labels / chrome headings — IBM Plex Sans. ─── */
+  --font-ui:   'IBM Plex Sans', system-ui, -apple-system,
+               BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* ─── ORIENT / wayfinding caste — Atkinson Hyperlegible. Legibility-engineered
+     for SHORT orienting text (decks, sub-descriptions, labels, meta, status),
+     used UPRIGHT where an italic serif hurt readability. An EXTENSION of T2's
+     two-caste rule ("legibility by use, not style") for this comprehension
+     component — grounded in the principle canon (T1–T7) + D-A1, not picked by
+     taste. The sustained READ stays --font-read (Alegreya); this is for wayfinding. */
+  --font-orient: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
+  /* RETIRED faces (do not reintroduce): IM Fell English, Rajdhani,
+     Space Grotesk (--font-mission), Protest Riot (--font-rebel), and the
+     dao/gotham/gnx/wu register stacks. [§6.7] */
+
+  /* ─── Reading defaults (the boards-proof landing values) ─── */
+  --reading-size:    1.1875rem; /* 19px — calm sustained reading */
+  --reading-leading: 1.6;       /* unitless; derived from the face, not snapped to grid (canon T4) */
+  --reading-measure: 66ch;      /* ceiling of UPD's 45–75ch band; never exceed (canon T1) */
+
+  /* ─── Type scale — 9-grid, rem-based (WCAG 1.4.4; canon T6) ─── */
+  --type-xs:   0.6875rem; /* 11 px — micro-label floor */
+  --type-sm:   0.9375rem; /* 15 px — small body, labels */
+  --type-base: 1.125rem;  /* 18 px — body */
+  --type-lg:   1.5rem;    /* 24 px — large body, subheads */
+  --type-xl:   1.6875rem; /* 27 px — section heads */
+  --type-2xl:  2.25rem;   /* 36 px — page sections */
+  --type-3xl:  3.375rem;  /* 54 px — hero */
+  --type-4xl:  4.5rem;    /* 72 px — display, brand */
+
+  --leading-none:    1;
+  --leading-tight:   1.2;
+  --leading-snug:    1.35;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose:   2;
+
+  --tracking-tighter: -0.02em;
+  --tracking-tight:   -0.01em;
+  --tracking-title:   -0.018em; /* Alegreya 800 masthead (boards .db-title) */
+  --tracking-normal:   0;
+  --tracking-wide:     0.02em;
+  --tracking-wider:    0.04em;
+  --tracking-widest:   0.08em;  /* mono chrome only — never Alegreya body (canon T2) */
+
+  --weight-normal:   400;       /* reading weight — keep light on dark (grade-not-weight; canon T5) */
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+  --weight-black:    800;       /* title only */
+}
+
+
+/* ===========================================
+   SPACING — multiples of 9. The base unit is invariant;
+   composite grids are derived per surface (canon G1/G7).
+   =========================================== */
+
+:root {
+  --space-px:  1px;
+  --space-0:   0;
+  --space-0-5: 0.28125rem; /* 4.5  px */
+  --space-1:   0.5625rem;  /* 9    px */
+  --space-1-5: 0.84375rem; /* 13.5 px */
+  --space-2:   1.125rem;   /* 18   px */
+  --space-3:   1.6875rem;  /* 27   px */
+  --space-4:   2.25rem;    /* 36   px */
+  --space-5:   3.375rem;   /* 54   px */
+  --space-6:   4.5rem;     /* 72   px */
+  --space-7:   5.625rem;   /* 90   px */
+  --space-8:   6.75rem;    /* 108  px */
+
+  /* ─── Semantic rhythm ladder ─── */
+  --rhythm-micro:   var(--space-0-5);
+  --rhythm-tight:   var(--space-1);
+  --rhythm-item:    var(--space-2);
+  --rhythm-group:   var(--space-3);
+  --rhythm-section: var(--space-4);
+  --rhythm-breathe: var(--space-6);
+}
+
+
+/* ===========================================
+   LAYOUT — measure is character-quantized, not pixel-quantized
+   =========================================== */
+
+:root {
+  --content-narrow: 45ch;
+  --content-width:  66ch;   /* the reading column (canon T1) */
+  --content-wide:   85ch;
+  --content-full:   100%;
+
+  --header-height:  3.375rem;
+  --grid-gap:       var(--space-3);
+  --grid-gap-tight: var(--space-2);
+  --grid-gap-loose: var(--space-4);
+}
+
+
+/* ===========================================
+   BORDER & SHAPE — sharp by default. radius-0 is on-thesis
+   (rigor / machine-boundary, knowingly chosen). Rounding only on
+   Spark-side human affordances. (canon L6/L2 → §6 #10)
+   =========================================== */
+
+:root {
+  --radius-none: 0;
+  --radius-sm:   2px;   /* small interactive controls only */
+  --radius-md:   4px;
+  --radius-full: 9999px;/* tags only */
+
+  --border-width:   1px;
+  --border-width-2: 2px;
+  --border-accent:  3px;
+
+  --shadow-sm:   0 1px 2px  oklch(0% 0 0 / 0.10);
+  --shadow-md:   0 4px 6px  oklch(0% 0 0 / 0.10);
+  --shadow-lg:   0 10px 15px oklch(0% 0 0 / 0.10);
+  --shadow-glow-spark:     0 0 20px var(--spark-outer);
+  --shadow-glow-emergence: 0 0 20px var(--emergence-glow);
+}
+
+
+/* ===========================================
+   MOTION — stillness is the unmarked case (canon, motion-grammar P1).
+   The dialect's grammar is left open for Claude Design; these are the
+   floor tokens it composes within.
+   =========================================== */
+
+:root {
+  --duration-instant:   0ms;
+  --duration-fast:    100ms;  /* state change */
+  --duration-normal:  200ms;  /* surface change */
+  --duration-slow:    400ms;  /* entrance */
+  --duration-slower:  600ms;  /* editorial reveal */
+  --duration-dramatic:1200ms;
+
+  --easing-linear: linear;
+  --easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-enter:  cubic-bezier(0, 0, 0.2, 1);
+  --easing-exit:   cubic-bezier(0.4, 0, 1, 1);
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* sparingly */
+}
+
+
+/* ===========================================
+   GEIST MODES — the presence/projection vocabulary. There is no fifth.
+   =========================================== */
+
+:root {
+  --mode-ambient-opacity:   0.55; --mode-ambient-scale:   1.00; --mode-ambient-breath:   3.2s; --mode-ambient-glow:   0.0;
+  --mode-attentive-opacity: 0.85; --mode-attentive-scale: 1.18; --mode-attentive-breath: 2.2s; --mode-attentive-glow: 0.35;
+  --mode-speaking-opacity:  1.00; --mode-speaking-scale:  1.25; --mode-speaking-breath:  1.6s; --mode-speaking-glow:  0.6;
+  --mode-hidden-opacity:    0.00; --mode-hidden-scale:    0.85; --mode-hidden-breath:    4.0s; --mode-hidden-glow:    0.0;
+}
+
+
+/* ===========================================
+   Z-INDEX
+   =========================================== */
+
+:root {
+  --z-below: -1;  --z-base: 0;     --z-raised: 10;  --z-dropdown: 100;
+  --z-sticky: 200;--z-overlay: 300;--z-modal: 400;  --z-popover: 500;
+  --z-tooltip: 600; --z-toast: 700; --z-max: 9999;
+}
+
+
+/* ===========================================
+   ACCESSIBILITY
+   Reduced-motion is DECREMENTAL, not zero (canon: vestibular floor,
+   WCAG SC 2.3.3). Large/parallax motion is removed; small functional
+   transitions are shortened, not eliminated — so focus/state changes
+   stay perceivable. [§2.6]
+   =========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-slow:     1ms;
+    --duration-slower:   1ms;
+    --duration-dramatic: 1ms;
+    /* fast/normal kept ~100–200ms so state changes remain legible */
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    --dao-border: oklch(40% 0.02 240);
+    --dao-text:   oklch(95% 0.01 240);
+    --dao-muted:  oklch(78% 0.02 240);
+    --border-width: 2px;
+  }
+}

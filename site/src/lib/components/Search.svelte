@@ -71,7 +71,7 @@
 
 <button type="button" class="search-trigger" onclick={open} aria-haspopup="dialog">
 	<Icon name="search" size={16} />
-	<span class="label">Search</span>
+	<span class="label">search</span>
 	<kbd aria-hidden="true">/</kbd>
 </button>
 
@@ -111,12 +111,11 @@
 		min-width: 14rem;
 		height: 2.25rem;
 		padding: 0 0.6rem 0 0.75rem;
-		font: inherit;
-		font-size: 0.9rem;
+		font: var(--type-sm) var(--font-mono);
 		color: var(--text-muted);
 		background: var(--bg-raised);
 		border: 1px solid var(--border);
-		border-radius: 8px;
+		border-radius: var(--radius-control);
 		cursor: pointer;
 	}
 
@@ -134,7 +133,7 @@
 		font-size: 0.78rem;
 		line-height: 1.4rem;
 		border: 1px solid var(--border);
-		border-radius: 4px;
+		border-radius: var(--radius-control);
 		background: var(--bg-subtle);
 	}
 
@@ -165,7 +164,7 @@
 		color: var(--text);
 		background: var(--bg-raised);
 		border: 1px solid var(--border);
-		border-radius: 12px;
+		border-radius: 0;
 		box-shadow: 0 20px 50px rgb(0 0 0 / 0.25);
 	}
 
@@ -182,7 +181,7 @@
 		--pagefind-ui-border: var(--border);
 		--pagefind-ui-tag: var(--bg-subtle);
 		--pagefind-ui-border-width: 1px;
-		--pagefind-ui-border-radius: 8px;
+		--pagefind-ui-border-radius: var(--radius-control);
 		--pagefind-ui-font: var(--font-sans);
 	}
 

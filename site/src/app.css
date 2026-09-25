@@ -1,58 +1,107 @@
 /*
- * matra docsite: tokens and page typography.
+ * matra docsite: the site's variables, aliased to the ratified brand tokens,
+ * and the page typography.
  *
- * Typography first. The rules below carry the intent of the mdBook-era
- * stylesheet forward rather than its pixels: a measure that holds a line
- * near 80 characters, vertical rhythm that lets each paragraph read as its
- * own thought, headings bound to the text they introduce, and diagrams and
- * tables allowed their width without pushing the page sideways.
+ * The tokens are the mox design system's (src/lib/brand/mox.tokens.css, a
+ * verbatim copy). This file only names what the site needs in terms of them.
+ * Where the canon gives no value for a role on paper, the value here is
+ * chosen, craft-tuned for WCAG AA, and says so ("chosen"). Everything else is
+ * an alias. scripts/check-contrast.ts measures every text and mark pair in
+ * both themes, from `bun run check`.
  *
- * Colour is declared once per token with light-dark(), so the light and dark
- * palettes cannot drift apart. `color-scheme` picks the side: the system's
- * preference by default, the reader's choice when they make one.
+ * Two themes, one identity. The void (dark, the 240 trace, never pure black)
+ * is the default, because the system is dark-first; paper and ink are the
+ * light alternative on the toggle. Colour is declared once per variable with
+ * light-dark(), so the two cannot drift apart.
  *
- * No motion on its own. Nothing on the site animates unless the reader
- * changes a figure, and figures follow EP-0012's Motion rule. The reduced
- * motion rule at the end holds for CSS; figures honour it in their own code.
+ * Colour is by role, never decoration, and never the only carrier of a
+ * meaning (a word or a glyph goes with it):
+ *   Spark       links, focus, and whatever the reader is touching now
+ *   Emergence   inline code and code literals, a converged result, success
+ *   Temperance  warnings and errors only
+ * Everything else is neutral ink.
+ *
+ * The 9-grid: spacing and the type scale are the tokens' multiples of nine.
+ * Square corners; 2px on small controls; no pills except tags.
+ *
+ * No motion on its own (EP-0012; the motion research's F1, F7). What moves
+ * moves because the reader changed it; the reduced-motion rule at the end
+ * holds for CSS, and figures honour it in their own code.
  */
 
+@import './lib/brand/mox.tokens.css';
+
 :root {
-	color-scheme: light dark;
+	color-scheme: dark;
 
-	--font-sans:
-		ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-		sans-serif;
-	--font-mono:
-		ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+	--font-read: 'Alegreya', Georgia, 'Iowan Old Style', serif;
+	--font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+	--font-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	/* Components written before the brand used --font-sans for labels. */
+	--font-sans: var(--font-ui);
 
-	/* Warm paper and ink, one terracotta accent. */
-	--bg: light-dark(#fbfaf7, #131316);
-	--bg-raised: light-dark(#ffffff, #1a1a1e);
-	--bg-subtle: light-dark(#f3f1ec, #1c1c21);
-	--code-bg: light-dark(#f5f3ee, #18181c);
-	--text: light-dark(#1f1d1a, #e7e4de);
-	--text-muted: light-dark(#5b564e, #a6a29a);
-	--border: light-dark(#e3dfd6, #2d2d34);
-	--border-strong: light-dark(#cfc9bd, #3d3d46);
-	--accent: light-dark(#b3401e, #f0915f);
-	--accent-soft: light-dark(#f6e6dd, #36231a);
+	/* Surfaces. */
+	--bg: light-dark(var(--paper), var(--depth-void));
+	--bg-raised: light-dark(oklch(99.5% 0.001 240), var(--depth-elevated)); /* paper side: chosen */
+	--bg-subtle: light-dark(oklch(95.5% 0.003 240), var(--dao-surface)); /* paper side: chosen */
+	--code-bg: light-dark(oklch(95.5% 0.003 240), var(--depth-elevated)); /* paper side: chosen */
 
-	/* The measure: about 80 characters of body text, and exactly the width
-	   the hand-authored diagrams were drawn at (720px). */
-	--measure: 45rem;
-	--gutter: 1.25rem;
-	--header-h: 3.5rem;
-	--sidebar-w: 16.5rem;
-	--toc-w: 14rem;
+	/* Ink. */
+	--text: light-dark(var(--ink), var(--dao-text));
+	--text-muted: light-dark(var(--ink-muted), var(--dao-muted));
+	--border: light-dark(oklch(87% 0.004 240), var(--dao-border)); /* paper side: chosen */
+	--border-strong: light-dark(oklch(58% 0.004 240), oklch(48% 0 0)); /* chosen: a control edge, 3:1 */
 
-	--space-1: 0.25rem;
-	--space-2: 0.5rem;
-	--space-3: 1rem;
-	--space-4: 1.5rem;
-	--space-5: 2.5rem;
-	--space-6: 4rem;
+	/* Figure marks: arcs, bars, rules. Neutral, at least 3:1. */
+	--mark: light-dark(oklch(38% 0.006 240), oklch(80% 0 0)); /* chosen */
+	--mark-quiet: light-dark(oklch(56% 0.004 240), oklch(58% 0 0)); /* chosen */
 
-	--radius: 8px;
+	/* The roles. Dark side: the tokens. Paper side: the same hue and chroma,
+	   lightness lowered until the role reads at 4.5:1 on paper (chosen). */
+	--spark: light-dark(oklch(50% 0.15 240), var(--ci-blue));
+	--spark-strong: light-dark(oklch(42% 0.15 240), var(--spark-core));
+	--spark-wash: light-dark(oklch(62% 0.15 240 / 0.14), oklch(62% 0.15 240 / 0.2));
+	--emergence: light-dark(oklch(47% 0.14 145), var(--ci-green));
+	--emergence-strong: light-dark(oklch(40% 0.14 145), var(--emergence-core));
+	--emergence-wash: light-dark(oklch(70% 0.18 145 / 0.16), oklch(70% 0.18 145 / 0.14));
+	--temperance: light-dark(oklch(50% 0.18 25), var(--constraint-core));
+
+	/* Code, by role: literals take Emergence (the tokens' --color-code),
+	   comments and punctuation are muted, the rest is ink. */
+	--syntax-keyword: var(--text);
+	--syntax-foreground: var(--text);
+	--syntax-background: var(--code-bg);
+	--syntax-token-keyword: var(--text);
+	--syntax-token-function: var(--text);
+	--syntax-token-parameter: var(--text);
+	--syntax-token-constant: var(--emergence);
+	--syntax-token-string: var(--emergence);
+	--syntax-token-string-expression: var(--emergence);
+	--syntax-token-comment: var(--text-muted);
+	--syntax-token-punctuation: var(--text-muted);
+	--syntax-token-link: var(--spark);
+	--syntax-token-inserted: var(--emergence);
+	--syntax-token-deleted: var(--temperance);
+	--syntax-token-changed: var(--text);
+
+	/* Older names the components use, now meaning a role. */
+	--accent: var(--spark);
+	--accent-soft: var(--spark-wash);
+
+	/* Measures. The reading column is the canon's 66ch of Alegreya at 19px;
+	   figures, diagrams, tables and code take the full column beside the
+	   margin, which the 720-unit diagrams need. The right margin carries
+	   matra's measures of each paragraph. */
+	--measure: var(--reading-measure);
+	--margin-w: 13.5rem; /* 216px, 24 x 9 */
+	--margin-gap: var(--space-4);
+	--column: calc(var(--measure) + var(--margin-gap) + var(--margin-w));
+	--gutter: var(--space-2);
+	--header-h: var(--header-height);
+	--sidebar-w: 16.875rem; /* 270px, 30 x 9 */
+
+	--radius: var(--radius-none);
+	--radius-control: var(--radius-sm);
 }
 
 :root[data-theme='light'] {
@@ -78,28 +127,32 @@ body {
 	margin: 0;
 	background: var(--bg);
 	color: var(--text);
-	font-family: var(--font-sans);
-	/* 17px body text, the size the mdBook site settled on. */
-	font-size: 1.0625rem;
-	line-height: 1.65;
+	font-family: var(--font-read);
+	font-size: var(--reading-size);
+	line-height: var(--reading-leading);
 	font-kerning: normal;
+	font-variant-numeric: oldstyle-nums proportional-nums;
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
 	overflow-wrap: break-word;
 }
 
 ::selection {
-	background: var(--accent-soft);
+	background: var(--color-selection-bg);
 }
 
 a {
-	color: var(--accent);
+	color: var(--spark);
+}
+
+a:hover {
+	color: var(--spark-strong);
 }
 
 :focus-visible {
-	outline: 2px solid var(--accent);
+	outline: 2px solid var(--spark);
 	outline-offset: 2px;
-	border-radius: 2px;
+	border-radius: 0;
 }
 
 code,
@@ -107,6 +160,7 @@ kbd,
 pre,
 samp {
 	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums slashed-zero;
 }
 
 .visually-hidden {
@@ -121,6 +175,11 @@ samp {
 	border: 0;
 }
 
+/* Chrome speaks mono, labels speak Plex Sans; prose never does either. */
+.mono {
+	font-family: var(--font-mono);
+}
+
 /* ------------------------------------------------------------------------ */
 /* Page content                                                              */
 /* ------------------------------------------------------------------------ */
@@ -129,17 +188,14 @@ samp {
 	min-width: 0;
 }
 
-.prose p {
-	margin: 0 0 1.15em;
+/* The reading column holds the measure; everything wider than prose (figures,
+   diagrams, tables, code, examples) takes the full column, into the margin. */
+.prose .body > :is(p, ul, ol, h2, h3, h4, h5, h6, blockquote, hr, details) {
+	max-width: var(--measure);
 }
 
-/* The opening paragraph states what the page is; let it lead. On a phone the
-   body size already fills the line, so it stays as it is. */
-@media (min-width: 40rem) {
-	.prose > p:first-child,
-	.prose .body > p:first-child {
-		font-size: 1.1em;
-	}
+.prose p {
+	margin: 0 0 var(--space-2);
 }
 
 .prose h2,
@@ -147,36 +203,40 @@ samp {
 .prose h4,
 .prose h5,
 .prose h6 {
-	line-height: 1.3;
-	font-weight: 650;
-	letter-spacing: -0.01em;
+	font-family: var(--font-read);
+	line-height: var(--leading-tight);
+	font-weight: var(--weight-bold);
+	letter-spacing: var(--tracking-tight);
 	/* Clear the sticky header when a heading is the target of a link. */
 	scroll-margin-top: calc(var(--header-h) + var(--space-3));
+	clear: both;
 }
 
 /* More space above than below, so a heading binds to the text it introduces. */
 .prose h2 {
-	font-size: 1.5rem;
-	margin: 2.4em 0 0.7em;
+	font-size: var(--type-xl);
+	margin: var(--space-5) 0 var(--space-2);
 }
 
 .prose h3 {
-	font-size: 1.2rem;
-	margin: 1.9em 0 0.5em;
+	font-size: var(--type-lg);
+	margin: var(--space-4) 0 var(--space-1);
 }
 
 .prose h4,
 .prose h5,
 .prose h6 {
-	font-size: 1.05rem;
-	margin: 1.6em 0 0.4em;
+	font-size: var(--type-base);
+	margin: var(--space-3) 0 var(--space-1);
 }
 
 .prose .heading-anchor {
 	margin-inline-start: 0.4em;
+	font-family: var(--font-mono);
+	font-size: 0.7em;
+	font-weight: 400;
 	color: var(--text-muted);
 	text-decoration: none;
-	font-weight: 400;
 	opacity: 0;
 }
 
@@ -188,7 +248,7 @@ samp {
 .prose a {
 	text-decoration-line: underline;
 	text-decoration-thickness: 1px;
-	text-underline-offset: 0.2em;
+	text-underline-offset: 0.18em;
 }
 
 .prose a:hover {
@@ -197,17 +257,16 @@ samp {
 
 .prose ul,
 .prose ol {
-	margin: 0 0 1.15em;
-	padding-inline-start: 1.4em;
+	margin: 0 0 var(--space-2);
+	padding-inline-start: 1.3em;
 }
 
 .prose li {
-	line-height: 1.6;
-	margin-bottom: 0.35em;
+	margin-bottom: 0.3em;
 }
 
 .prose li > p {
-	margin-bottom: 0.5em;
+	margin-bottom: 0.4em;
 }
 
 .prose li::marker {
@@ -215,7 +274,7 @@ samp {
 }
 
 .prose strong {
-	font-weight: 650;
+	font-weight: var(--weight-bold);
 }
 
 .prose hr {
@@ -229,32 +288,34 @@ samp {
 	height: auto;
 }
 
-/* Inline code. Long identifiers may break inside running text so a phone
-   never scrolls sideways; inside tables they keep their shape and the table
-   scrolls instead. */
+/* Inline code: an identifier, so Emergence and mono, marked not filled. Long
+   identifiers break in running text so a phone never scrolls sideways; in
+   tables they keep their shape and the table scrolls instead. */
 .prose :not(pre) > code {
-	font-size: 0.86em;
-	padding: 0.1em 0.35em;
-	border-radius: 4px;
-	background: var(--code-bg);
-	border: 1px solid var(--border);
+	font-size: 0.82em;
+	color: var(--emergence);
+	letter-spacing: -0.01em;
 }
 
 .prose :is(p, li, blockquote) > code {
 	overflow-wrap: anywhere;
 }
 
-/* Code blocks sit inside the prose rhythm rather than interrupting it. */
+.prose a > code {
+	color: inherit;
+}
+
+/* Code blocks sit inside the prose rhythm, square, with a hairline. */
 .prose pre {
 	position: relative;
-	margin: 1.3em 0;
-	padding: 0.9rem 1rem;
+	margin: var(--space-3) 0;
+	padding: var(--space-2);
 	overflow-x: auto;
-	font-size: 0.84rem;
+	font-size: var(--type-sm);
 	line-height: 1.55;
 	background: var(--code-bg) !important;
 	border: 1px solid var(--border);
-	border-radius: var(--radius);
+	border-radius: 0;
 	tab-size: 4;
 }
 
@@ -262,22 +323,28 @@ samp {
 	font-size: inherit;
 }
 
-/* Shiki emits both palettes as variables; the colour scheme picks one. */
-.prose .shiki,
-.prose .shiki span {
-	color: light-dark(var(--shiki-light), var(--shiki-dark));
+/* The syntax theme (render.ts) writes role variables, not colours. Keywords
+   share the ink and are set heavier, so structure reads without a hue. */
+.prose .shiki {
+	color: var(--text);
+}
+
+.prose .shiki span[style*='--syntax-token-keyword'] {
+	font-weight: 600;
 }
 
 .prose pre .copy {
 	position: absolute;
-	top: 0.4rem;
-	right: 0.4rem;
-	padding: 0.15rem 0.5rem;
-	font: 500 0.75rem var(--font-sans);
+	top: var(--space-0-5);
+	right: var(--space-0-5);
+	padding: 0.1rem 0.5rem;
+	font: 500 var(--type-xs) var(--font-mono);
+	letter-spacing: var(--tracking-wide);
+	text-transform: lowercase;
 	color: var(--text-muted);
 	background: var(--bg-raised);
 	border: 1px solid var(--border);
-	border-radius: 6px;
+	border-radius: var(--radius-control);
 	cursor: pointer;
 	opacity: 0;
 }
@@ -294,45 +361,56 @@ samp {
 	}
 }
 
-/* Tables carry much of the reference material. They scroll on their own when
-   wider than the column; only the table moves, the prose stays put. */
+/* Tables: the reference apparatus, set in mono (the canon puts tables in the
+   chrome caste). They scroll on their own when wider than the column. */
 .prose .table-scroll {
-	margin: 1.3em 0;
+	margin: var(--space-3) 0;
 	max-width: 100%;
 	overflow-x: auto;
+	clear: both;
 }
 
 .prose table {
 	border-collapse: collapse;
-	font-size: 0.94em;
-	line-height: 1.5;
+	font-family: var(--font-mono);
+	font-size: var(--type-sm);
+	font-variant-numeric: tabular-nums slashed-zero;
+	line-height: 1.45;
 }
 
 .prose th,
 .prose td {
-	padding: 0.45em 0.75em;
+	padding: 0.5em 0.9em 0.5em 0;
 	text-align: start;
 	vertical-align: top;
 	border-bottom: 1px solid var(--border);
 }
 
 .prose th {
-	font-weight: 650;
-	border-bottom: 2px solid var(--border-strong);
+	font-family: var(--font-ui);
+	font-size: var(--type-xs);
+	font-weight: 600;
+	letter-spacing: var(--tracking-widest);
+	text-transform: uppercase;
+	color: var(--text-muted);
+	border-bottom: 1px solid var(--border-strong);
 	white-space: nowrap;
+}
+
+.prose td code {
+	font-size: 1em;
 }
 
 .prose tbody tr:last-child td {
 	border-bottom: 0;
 }
 
-/* Blockquotes carry statements, not asides. */
+/* A blockquote carries a statement: a rule, not a box. */
 .prose blockquote {
-	margin: 1.5em 0;
-	padding: 0.6em 1.2em;
-	border-inline-start: 3px solid var(--accent);
-	background: var(--bg-subtle);
-	border-radius: 0 var(--radius) var(--radius) 0;
+	margin: var(--space-3) 0;
+	padding: 0 0 0 var(--space-2);
+	border-inline-start: var(--border-accent) solid var(--border-strong);
+	font-style: italic;
 }
 
 .prose blockquote > :last-child {
@@ -341,10 +419,10 @@ samp {
 
 /* The hand-authored diagrams. Their label halos read --bg.
  *
- * Drawn 720 units wide, they fill the column on a desktop. Below 44rem
- * (704px, about 98% of drawn size) they stop shrinking, so the smallest
- * labels stay as legible as on a desktop, and scroll sideways inside
- * .diagram-scroll instead. The page does not.
+ * Drawn 720 units wide, they take the full column (prose plus margin, 882px
+ * on a desktop), so they are drawn at full size. Below 44rem (704px) they stop
+ * shrinking, so the smallest labels stay as legible as on a desktop, and
+ * scroll sideways inside .diagram-scroll instead. The page does not.
  *
  * The affordance needs no script: the scroller's backgrounds are the
  * "scrolling shadows" pattern. Two covers in the page colour move with the
@@ -354,7 +432,8 @@ samp {
  * shown only while the container is narrower than the diagram. */
 .prose .diagram {
 	container-type: inline-size;
-	margin-block: 1.7em;
+	margin-block: var(--space-4);
+	clear: both;
 }
 
 .prose .diagram-scroll {
@@ -363,9 +442,9 @@ samp {
 	background:
 		linear-gradient(to right, var(--bg) 30%, transparent) left / 2.5rem 100% no-repeat local,
 		linear-gradient(to left, var(--bg) 30%, transparent) right / 2.5rem 100% no-repeat local,
-		linear-gradient(to right, light-dark(rgb(0 0 0 / 0.14), rgb(0 0 0 / 0.55)), transparent)
+		linear-gradient(to right, light-dark(rgb(0 0 0 / 0.14), rgb(0 0 0 / 0.6)), transparent)
 			left / 1rem 100% no-repeat scroll,
-		linear-gradient(to left, light-dark(rgb(0 0 0 / 0.14), rgb(0 0 0 / 0.55)), transparent)
+		linear-gradient(to left, light-dark(rgb(0 0 0 / 0.14), rgb(0 0 0 / 0.6)), transparent)
 			right / 1rem 100% no-repeat scroll;
 	background-color: var(--bg);
 }
@@ -383,8 +462,8 @@ samp {
 
 .prose .diagram-hint {
 	display: none;
-	margin: 0.5rem 0 0;
-	font-size: 0.8rem;
+	margin: var(--space-1) 0 0;
+	font: var(--type-xs) var(--font-mono);
 	color: var(--text-muted);
 	text-align: center;
 }
@@ -402,17 +481,84 @@ samp {
 
 /* Figures and their captions, for when a diagram is given a caption. */
 .prose figure {
-	margin: 2em auto;
+	margin: var(--space-4) auto;
 	max-width: 100%;
+	clear: both;
 }
 
 .prose figcaption {
-	max-width: 40rem;
-	margin: 0.9em auto 0;
-	text-align: center;
-	font-size: 0.88em;
+	max-width: var(--measure);
+	margin: var(--space-2) auto 0;
+	font-size: var(--type-sm);
 	line-height: 1.5;
 	color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------------ */
+/* The self-measuring margin                                                  */
+/* ------------------------------------------------------------------------ */
+
+/* Beside each prose paragraph, matra's measures of that paragraph, as a mono
+   sidenote in the margin. The note comes just before its paragraph in the
+   source, floated into the margin, so it sits level with the paragraph's
+   first line with no script. Hovering either marks the other. On narrow
+   screens the notes hide behind a toggle (DocPage) and, when shown, sit
+   inline above their paragraph. */
+.prose .measure {
+	float: right;
+	clear: right;
+	width: var(--margin-w);
+	margin: 0.3em 0 var(--space-1) var(--margin-gap);
+	padding-inline-start: var(--space-1);
+	border-inline-start: 1px solid var(--border);
+	font: 400 var(--type-xs) / 1.55 var(--font-mono);
+	font-variant-numeric: tabular-nums slashed-zero;
+	color: var(--text-muted);
+}
+
+.prose .measure .m-row {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--space-1);
+}
+
+.prose .measure .m-v {
+	color: var(--text);
+}
+
+.prose .measure .m-none {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.prose .measure:hover,
+.prose .measure:has(+ p:hover) {
+	border-inline-start-color: var(--spark);
+	color: var(--text);
+}
+
+.prose .measure:hover + p {
+	box-shadow: -9px 0 0 -7px var(--spark);
+}
+
+@media (max-width: 76.99rem) {
+	.prose .measure {
+		display: none;
+	}
+
+	:root:has(#measures-toggle:checked) .prose .measure {
+		display: grid;
+		grid-template-columns: repeat(3, auto);
+		justify-content: start;
+		gap: 0 var(--space-3);
+		float: none;
+		width: auto;
+		margin: 0 0 var(--space-0-5);
+	}
+
+	:root:has(#measures-toggle:checked) .prose .measure .m-row {
+		justify-content: start;
+	}
 }
 
 /* ------------------------------------------------------------------------ */

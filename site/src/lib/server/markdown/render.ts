@@ -18,11 +18,16 @@
  *                                 served at; a link to no page fails the build
  *   rehype-slug                   heading ids, the same ids mdBook produced
  *   collectHeadings               the table of contents, and heading anchors
- *   shiki                         syntax highlighting, light and dark
+ *   shiki                         syntax highlighting, as CSS variables the
+ *                                 site defines by role (app.css), so one
+ *                                 theme serves the void and paper
  *   wrapTables                    tables scroll on their own on a phone
  *   wrapDiagrams                  so do diagrams, at a size their labels
  *                                 stay legible at, with a visible hint
  *   liftTitle                     the `# Title`, set apart by the layout
+ *   measureMargins                beside each prose paragraph, matra's
+ *                                 measures of it, when every paragraph can
+ *                                 be matched to what matra measured
  *   toSegments                    the body as runs of HTML, with each figure
  *                                 between them, validated against its data
  */
@@ -34,7 +39,7 @@ import remarkRehype from 'remark-rehype';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
-import { createHighlighter } from 'shiki';
+import { createCssVariablesTheme, createHighlighter } from 'shiki';
 import { SKIP, visit } from 'unist-util-visit';
 import { toString } from 'hast-util-to-string';
 import { toHtml } from 'hast-util-to-html';
@@ -43,6 +48,8 @@ import type { Root as MdRoot } from 'mdast';
 import type {
 	ClustersFigureFile,
 	FigureFile,
+	MeasuredLine,
+	PageMeasures,
 	KeyphrasesFigureFile,
 	PipelineFigureFile,
 	TextrankFigureFile,
@@ -62,11 +69,16 @@ import { exampleView, type ExampleSource } from '../examples';
  * `console` is shiki's alias for shellsession.
  */
 const LANGUAGES = ['rust', 'python', 'bash', 'shellsession', 'json', 'jsonc'];
-const THEMES = { light: 'github-light', dark: 'github-dark' } as const;
+/**
+ * The syntax theme. Each token kind is a CSS variable (`--syntax-token-*`),
+ * and app.css gives each a role: literals Emergence, comments and
+ * punctuation muted, the rest ink. Nothing here names a colour.
+ */
+const THEME = createCssVariablesTheme({ name: 'matra', variablePrefix: '--syntax-', fontStyle: true });
 
 let highlighter: ReturnType<typeof createHighlighter> | undefined;
 function getHighlighter() {
-	highlighter ??= createHighlighter({ themes: Object.values(THEMES), langs: LANGUAGES });
+	highlighter ??= createHighlighter({ themes: [THEME], langs: LANGUAGES });
 	return highlighter;
 }
 
@@ -81,6 +93,7 @@ export interface Rendered {
 	/** The page body, without its title: HTML runs, and figures between them. */
 	segments: Segment[];
 	toc: TocEntry[];
+	measured: MeasuredLine | null;
 }
 
 export interface RenderContext {
@@ -94,6 +107,8 @@ export interface RenderContext {
 	figures: ReadonlyMap<string, FigureFile>;
 	/** Every worked example in site/examples/, by name. */
 	examples: ReadonlyMap<string, ExampleSource>;
+	/** matra's measures of this page, when it has them. */
+	measures?: PageMeasures;
 }
 
 export async function render(markdown: string, ctx: RenderContext): Promise<Rendered> {
@@ -114,8 +129,7 @@ export async function render(markdown: string, ctx: RenderContext): Promise<Rend
 		.use(collectHeadings, { toc, meta })
 		.use(normalizeFenceLanguage, ctx)
 		.use(rehypeShikiFromHighlighter, await getHighlighter(), {
-			themes: THEMES,
-			defaultColor: false,
+			theme: THEME,
 			defaultLanguage: 'text'
 		})
 		.use(wrapTables)
@@ -123,17 +137,133 @@ export async function render(markdown: string, ctx: RenderContext): Promise<Rend
 		.use(liftTitle, { file: ctx.file, heading });
 
 	const tree = (await processor.run(processor.parse(markdown))) as Root;
+	const measured = measureMargins(tree, ctx);
 	const hl = await getHighlighter();
 	const highlight = (code: string, lang: string) =>
-		hl.codeToHtml(code, { lang, themes: THEMES, defaultColor: false });
+		hl.codeToHtml(code, { lang, theme: THEME });
 	return {
 		title: meta.title,
 		titleHtml: heading.html,
 		titleId: heading.id,
 		description: meta.description,
 		segments: toSegments(tree, ctx, highlight),
-		toc
+		toc,
+		measured
 	};
+}
+
+/**
+ * The self-measuring margin. matra measured this page's Markdown, paragraph
+ * by paragraph (examples/docsite_figures.rs, through Ingest::text); here each
+ * prose paragraph of the rendered page is given a note of those measures,
+ * set in the margin beside it.
+ *
+ * Only top-level paragraphs are prose in the sense matra's Markdown reader
+ * uses: list items, table rows, code and quotes are not. Each is matched to
+ * the next measured paragraph with the same text, compared as letters and
+ * digits only, so Markdown syntax on one side and rendering on the other do
+ * not matter. Measured paragraphs with no rendered twin (a list, an HTML
+ * block, a figure tag) are passed over. If any rendered paragraph finds no
+ * match, the order cannot be trusted, and the page shows no notes at all:
+ * no number is better than a number beside the wrong paragraph.
+ */
+function measureMargins(tree: Root, ctx: RenderContext): MeasuredLine | null {
+	const m = ctx.measures;
+	if (!m) return null;
+	const dataUrl = `${ctx.base}/figures/pages/${ctx.file.replace(/\.md$/, '')}/measures.json`;
+	const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
+	// Links keep their text (which may be a code span); then code spans are
+	// text as written (`Box<dyn NlpProvider>` is not a tag), and outside them
+	// tags and entities go.
+	const fromMarkdown = (s: string) =>
+		norm(
+			s
+				.replace(/!?\[((?:[^\]`]|`[^`]*`)*)\]\([^)]*\)/g, '$1')
+				.split(/(`+)([\s\S]*?)\1/)
+				.map((part, i) =>
+					i % 3 === 2
+						? part
+						: i % 3 === 1
+							? ''
+							: part
+									.replace(/<(https?:[^>\s]+)>/g, '$1')
+									.replace(/<[^>]+>/g, ' ')
+									.replace(/&[a-z]+;|&#\d+;/g, ' ')
+				)
+				.join('')
+		);
+	const measuredTexts = m.paragraphs.map((p) => fromMarkdown(p.text));
+
+	const pairs: { index: number; node: Element; at: number }[] = [];
+	let next = 0;
+	for (const [index, node] of tree.children.entries()) {
+		if (node.type !== 'element' || node.tagName !== 'p') continue;
+		const text = norm(toString(node));
+		if (text === '') continue;
+		let found = -1;
+		for (let k = next; k < measuredTexts.length; k++) {
+			if (measuredTexts[k] === text) {
+				found = k;
+				break;
+			}
+		}
+		if (found === -1) {
+			const opening = toString(node).replace(/\s+/g, ' ').slice(0, 60);
+			// Said at build time too, so an unmeasured page is never silent.
+			console.warn(`measures: ${ctx.file}: no margin notes; no measured paragraph matches "${opening}"`);
+			return {
+				mapped: false,
+				measured: 0,
+				generator: m.generator,
+				dataUrl,
+				reason: `no measured paragraph matches "${opening}"`
+			};
+		}
+		pairs.push({ index, node, at: found });
+		next = found + 1;
+	}
+
+	const fmt = (v: number | null, digits: number) => (v === null ? null : v.toFixed(digits));
+	// Insert from the end, so earlier indices stay valid.
+	for (const { index, at } of pairs.reverse()) {
+		const p = m.paragraphs[at];
+		const rows: [string, string, string | null][] = [
+			['grade', 'grade', fmt(p.readability_grade, 1)],
+			['density', 'lexical density', fmt(p.lexical_density, 2)],
+			['compression', 'compression', fmt(p.compression_ratio, 2)]
+		];
+		const said = rows.map(([, long, v]) => `${long} ${v ?? 'none'}`).join(', ');
+		const note: Element = {
+			type: 'element',
+			tagName: 'div',
+			properties: {
+				className: ['measure'],
+				role: 'note',
+				ariaLabel: `matra's measures of the next paragraph: ${said}`,
+				dataPagefindIgnore: '',
+				dataParagraph: String(at + 1),
+				dataGrade: p.readability_grade ?? '',
+				dataDensity: p.lexical_density ?? '',
+				dataCompression: p.compression_ratio ?? ''
+			},
+			children: rows.map(([short, , v]) => ({
+				type: 'element',
+				tagName: 'span',
+				properties: { className: ['m-row'] },
+				children: [
+					{ type: 'element', tagName: 'span', properties: { className: ['m-k'] }, children: [{ type: 'text', value: short }] },
+					{
+						type: 'element',
+						tagName: 'span',
+						properties: { className: v === null ? ['m-v', 'm-none'] : ['m-v'] },
+						children: [{ type: 'text', value: v ?? 'none' }]
+					}
+				]
+			}))
+		};
+		tree.children.splice(index, 0, note);
+	}
+	return { mapped: true, measured: pairs.length, generator: m.generator, dataUrl };
 }
 
 /**
