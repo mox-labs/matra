@@ -86,23 +86,6 @@
 			</header>
 		{/if}
 
-		{#if m}
-			<p class="measured" data-pagefind-ignore data-print="hide">
-				{#if m.mapped}
-					<span>This page, measured by matra {m.generator.matra} with {m.generator.udpipe_model.name}:
-						{m.measured} {m.measured === 1 ? 'paragraph' : 'paragraphs'}, each with its grade, lexical density and
-						compression in the margin, none where matra declines.</span>
-					<a href={m.dataUrl}>the data</a>
-					<input type="checkbox" id="measures-toggle" class="toggle-input" />
-					<label for="measures-toggle" class="toggle">show the measures</label>
-				{:else}
-					<span>matra measured this page ({m.generator.matra}), but could not match its paragraphs to the page
-						reliably, so the margin shows nothing rather than a number beside the wrong paragraph.</span>
-					<a href={m.dataUrl}>the data</a>
-				{/if}
-			</p>
-		{/if}
-
 		{#if doc.toc.length > 1}
 			<details class="toc-inline" data-print="hide" data-pagefind-ignore>
 				<summary>on this page</summary>
@@ -114,6 +97,22 @@
 			<Body segments={doc.segments} />
 		</div>
 	</div>
+
+	<!-- Where the margin's numbers come from: at the end, as provenance is,
+	     so it never stands between the title and the reading. -->
+	{#if m}
+		<p class="measured" data-pagefind-ignore data-print="hide">
+			{#if m.mapped}
+				<span>This page, measured by matra {m.generator.matra} with {m.generator.udpipe_model.name}:
+					{m.measured} {m.measured === 1 ? 'paragraph' : 'paragraphs'}, in the margin.</span>
+				<a href={m.dataUrl}>the data</a>
+			{:else}
+				<span>matra measured this page ({m.generator.matra}), but could not match its paragraphs to the page
+					reliably, so the margin shows nothing rather than a number beside the wrong paragraph.</span>
+				<a href={m.dataUrl}>the data</a>
+			{/if}
+		</p>
+	{/if}
 
 	<footer class="doc-footer" data-print="hide">
 		<a href={doc.editUrl}>edit this page</a>
@@ -275,54 +274,26 @@
 		scroll-margin-top: calc(var(--header-h) + var(--space-3));
 	}
 
+	/* One line where the column allows: it may use the margin's width too. */
 	.measured {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: var(--space-0-5) var(--space-2);
-		max-width: var(--measure);
-		margin: 0 0 var(--space-3);
-		padding-top: var(--space-1);
-		border-top: 1px solid var(--border);
+		clear: both;
+		margin: var(--space-5) 0 0;
 		font: var(--type-xs) / 1.6 var(--font-mono);
 		color: var(--text-muted);
 	}
 
-	.measured span {
-		flex: 1 1 26rem;
+	.measured a {
+		margin-inline-start: var(--space-1);
+		color: var(--text-muted);
+		white-space: nowrap;
 	}
 
-	.toggle-input {
-		position: absolute;
-		opacity: 0;
-		width: 1px;
-		height: 1px;
-	}
-
-	.toggle {
-		display: none;
-		cursor: pointer;
-		padding: 0.1rem var(--space-1);
-		border: 1px solid var(--border-strong);
-		border-radius: var(--radius-control);
-		color: var(--text);
-	}
-
-	.toggle-input:focus-visible + .toggle {
-		outline: 2px solid var(--spark);
-		outline-offset: 2px;
-	}
-
-	.toggle-input:checked + .toggle {
-		border-color: var(--spark);
+	.measured a:hover {
 		color: var(--spark);
 	}
 
-	/* The margin notes only need a toggle where there is no margin. */
-	@media (max-width: 76.99rem) {
-		.toggle {
-			display: inline-block;
-		}
+	.measured + .doc-footer {
+		margin-top: var(--space-1);
 	}
 
 	.toc-inline {

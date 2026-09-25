@@ -224,6 +224,7 @@ function measureMargins(tree: Root, ctx: RenderContext): MeasuredLine | null {
 	}
 
 	const fmt = (v: number | null, digits: number) => (v === null ? null : v.toFixed(digits));
+	const first = pairs[0]?.index;
 	// Insert from the end, so earlier indices stay valid.
 	for (const { index, at } of pairs.reverse()) {
 		const p = m.paragraphs[at];
@@ -262,6 +263,28 @@ function measureMargins(tree: Root, ctx: RenderContext): MeasuredLine | null {
 			}))
 		};
 		tree.children.splice(index, 0, note);
+	}
+	// Where the margin folds away (below 77rem), the notes wait behind a
+	// toggle, set beside the first measured paragraph. A checkbox inside its
+	// label, so it works without a script (app.css reads it with :has()) and
+	// needs no id, which the single-page view would repeat once per page.
+	if (first !== undefined) {
+		tree.children.splice(first, 0, {
+			type: 'element',
+			tagName: 'div',
+			properties: { className: ['measures-toggle'], dataPagefindIgnore: '', dataPrint: 'hide' },
+			children: [
+				{
+					type: 'element',
+					tagName: 'label',
+					properties: { className: ['toggle'] },
+					children: [
+						{ type: 'element', tagName: 'input', properties: { type: 'checkbox', className: ['toggle-input'] }, children: [] },
+						{ type: 'text', value: 'show the measures' }
+					]
+				}
+			]
+		});
 	}
 	return { mapped: true, measured: pairs.length, generator: m.generator, dataUrl };
 }

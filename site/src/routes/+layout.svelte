@@ -269,8 +269,23 @@
 		align-self: start;
 		height: calc(100vh - var(--header-h));
 		overflow-y: auto;
-		padding: var(--space-3) var(--space-2) var(--space-5);
+		overscroll-behavior: contain;
+		scrollbar-width: thin;
+		padding: var(--space-3) var(--space-2) var(--space-1);
 		border-inline-end: 1px solid var(--border);
+	}
+
+	/* The sidebar scrolls on its own, and a fade pinned to its lower edge says
+	   there is more below. In the flow it comes after the last entry, so at
+	   the end of the scroll it sits under that entry and never covers it. */
+	.sidebar::after {
+		content: '';
+		position: sticky;
+		bottom: 0;
+		display: block;
+		height: var(--space-4);
+		background: linear-gradient(transparent, var(--bg));
+		pointer-events: none;
 	}
 
 	.sidebar-links {

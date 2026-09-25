@@ -502,8 +502,8 @@ samp {
    sidenote in the margin. The note comes just before its paragraph in the
    source, floated into the margin, so it sits level with the paragraph's
    first line with no script. Hovering either marks the other. On narrow
-   screens the notes hide behind a toggle (DocPage) and, when shown, sit
-   inline above their paragraph. */
+   screens the notes hide behind a toggle and, when shown, sit inline above
+   their paragraph. */
 .prose .measure {
 	float: right;
 	clear: right;
@@ -541,12 +541,53 @@ samp {
 	box-shadow: -9px 0 0 -7px var(--spark);
 }
 
+/* The toggle the notes wait behind where there is no margin, beside the
+   first measured paragraph (render.ts puts it there). With a margin it is
+   not needed and does not show. */
+.measures-toggle {
+	display: none;
+}
+
+.measures-toggle .toggle-input {
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+}
+
+.measures-toggle .toggle {
+	display: inline-block;
+	cursor: pointer;
+	padding: 0.1rem var(--space-1);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-control);
+	font: var(--type-xs) / 1.6 var(--font-mono);
+	color: var(--text);
+}
+
+.measures-toggle .toggle:has(.toggle-input:focus-visible) {
+	outline: 2px solid var(--spark);
+	outline-offset: 2px;
+}
+
+.measures-toggle .toggle:has(.toggle-input:checked) {
+	border-color: var(--spark);
+	color: var(--spark);
+}
+
 @media (max-width: 76.99rem) {
+	.measures-toggle {
+		display: flex;
+		justify-content: flex-end;
+		max-width: var(--measure);
+		margin: 0 0 var(--space-1);
+	}
+
 	.prose .measure {
 		display: none;
 	}
 
-	:root:has(#measures-toggle:checked) .prose .measure {
+	:root:has(.measures-toggle .toggle-input:checked) .prose .measure {
 		display: grid;
 		grid-template-columns: repeat(3, auto);
 		justify-content: start;
@@ -556,7 +597,7 @@ samp {
 		margin: 0 0 var(--space-0-5);
 	}
 
-	:root:has(#measures-toggle:checked) .prose .measure .m-row {
+	:root:has(.measures-toggle .toggle-input:checked) .prose .measure .m-row {
 		justify-content: start;
 	}
 }
