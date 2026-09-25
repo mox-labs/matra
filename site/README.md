@@ -150,19 +150,19 @@ figure, then at most two stages in about a second, easing in and out, and
 under reduced motion the end state appears at once.
 
 `figure-parse` answers "what does each word depend on, and by which
-relation?". Its colours are Universal Dependencies' grouping of relations
-(core arguments, modifiers, function words, and the rest dashed), shown in its
-legend, and each holds 4.5:1 contrast in both themes. Words are set in the
-monospace face so their widths, and so the layout, are known without
-measuring text. Arcs are levelled so none collide, and a sentence wider than
-the column scrolls inside the figure. It is the only figure with motion: its
-sentence picker.
+relation?". Its line styles are Universal Dependencies' grouping of relations
+(core arguments heavy, modifiers light, function words dotted, the rest
+dashed), shown in its legend; the root is Emergence, as in the mark. Words
+are set in the monospace face so their widths, and so the layout, are known
+without measuring text. Arcs are levelled so none collide, and a sentence
+wider than the column scrolls inside the figure. Pointing at a word, in the
+table or the diagram, keeps its arcs and dims the rest.
 
 `figure-primitives` answers "which words did matra read each primitive off?".
 Each sentence is set as written, with the word a primitive is read from
-tinted and the word it attaches to underlined, labelled above in the
-primitive's colour; the colours name primitives, and the labels say the same
-in words. Bare assertion is a sentence-level flag and shows as a badge.
+tinted and the word it attaches to underlined, labelled above with the
+primitive's glyph and name, in neutral ink. Bare assertion is a sentence-level
+flag and shows as a tag. A row and its words light each other.
 
 `figure-metrics` answers "where in the document do the paragraph measures
 move, and together?", as small multiples over one paragraph axis. A paragraph
@@ -192,9 +192,12 @@ only what the public surface returns.
 moves?". The generator runs `embed_and_cluster` at every value of a grid
 from 0.50 to 0.95 (the shipped default must be on it), and the figure shows
 one value at a time: each sentence a row, each pair that clears the
-threshold an arc labelled with its cosine, a colour per cluster. The
-threshold picker is its motion. The twin lists the clusters and edges at
-every grid value.
+threshold an arc labelled with its cosine, a clustered sentence's marker in
+Emergence with its cluster's letter. Every grid state is drawn once, as a
+layer; the threshold scrub sets their opacities, blending the two runs either
+side of the pointer and settling on the nearer on release, and the twin's
+rows preview a state on hover. The twin lists the clusters and edges at every
+grid value; gate 9 compares the layer marked `data-current`.
 
 `figure-pipeline` answers "what does each stage add?": one Markdown
 document as `Ingest::text` yields it, after `Engine::annotate`, and after
@@ -266,19 +269,19 @@ The full reasoning is in EP-0012's Design section.
   does not depend on a script. The Markdown pipeline and the highlighter run at
   build time and never reach the browser. With scripts off, the pages read the
   same; search, the menu and the theme toggle hide themselves.
-- **Typography first.** A measure near 80 characters, 17px body text, headings
-  bound to the text they introduce, code blocks and tables that sit inside the
-  rhythm. Diagrams and tables keep their width. A table wider than the column
-  scrolls on its own; a diagram stops shrinking at 44rem, so its labels stay
-  legible, and on a narrower screen scrolls inside its own container, with a
-  fade at the edge that has more and a hint below it. No page scrolls
-  sideways at 360px.
-- **Light and dark from one set of tokens.** Each colour is declared once with
-  `light-dark()`. The site follows `prefers-color-scheme` until the reader picks
-  a theme with the toggle, and remembers the choice.
-- **Motion only on request.** Nothing on the site animates on its own. A
-  figure moves only when the reader changes it, under EP-0012's Motion rule,
-  and `prefers-reduced-motion` is respected globally and by every figure.
+- **Typography first.** Alegreya at 19px / 1.6 for the read, held to 66ch;
+  IBM Plex Mono for the apparatus (navigation, breadcrumbs, tables, code,
+  provenance, the margin notes); IBM Plex Sans for UI labels; headings in
+  Alegreya 700, titles 800. Figures, diagrams, tables and code take the full
+  column, prose plus margin, which is what the 720-unit diagrams need (66ch of
+  Alegreya at 19px is 668px). A table wider than the column scrolls on its own;
+  a diagram stops shrinking at 44rem and scrolls inside its own container. No
+  page scrolls sideways at 360px.
+- **Motion only on request.** Nothing on the site animates on its own. What
+  moves, moves because the reader changed it, as `figures/motion.ts` sets out
+  from the motion research: one eased stage for a swapped state, reversible
+  mid-flight; a scrub that follows the pointer linearly and settles on
+  release; opacity only. `prefers-reduced-motion` makes states jump.
 - **URLs are a contract.** `/guides/cli` is written as `guides/cli.html`, the
   path the mdBook-era site served. `urls.txt` lists every published path, and
   `anchors.txt` every published heading anchor: the 208 ids that site served.
@@ -288,6 +291,95 @@ The full reasoning is in EP-0012's Design section.
   after deploy (`scripts/check-url-manifest.sh`). A new page adds its `.html`
   and `.md` lines to `urls.txt`; a new heading needs no entry.
 
+## The identity
+
+The site's identity is matra's own output, and every choice below is derived
+from something it can name. The ratified mox design system supplies the
+tokens and type; matra supplies the rest.
+
+### Tokens, type and colour
+
+`src/lib/brand/mox.tokens.css` is a verbatim copy of the ratified token file,
+with its SHA-256 in the header; re-copy it, never edit it. `src/app.css`
+names what the site needs in terms of it. The void (dark, with the 240° trace)
+is the default, because the system is dark-first; paper and ink are the
+alternative on the toggle. Where the canon has no value for a role on paper,
+the value is chosen for WCAG AA and says so in a comment.
+
+Colour is by role and never the only signal:
+
+| Role | Carries |
+|---|---|
+| Spark | links, focus, and whatever the reader is pointing at |
+| Emergence | inline code and code literals, a converged result (a cluster, a summary, compose's measures), the mark's root |
+| Temperance | warnings and errors only |
+
+Everything else is neutral ink. Every figure's hues came down to this: the
+parse's relation families are line styles, the primitives are glyphs from
+logic notation (¬ ◇ ⊢ ⊂ “ √) and names, clusters are letters, keyphrase groups
+are solid, dashed and heavy lines. The syntax theme is Shiki's CSS-variables
+theme, with each token kind given a role in `app.css`.
+
+`scripts/check-contrast.ts` resolves the tokens for both themes, converts
+OKLCH to sRGB and checks every text and mark pair at WCAG AA (4.5:1 text, 3:1
+marks). It runs in `bun run check`, so in gate 4.
+
+The faces are self-hosted from `static/fonts/` (Alegreya, IBM Plex Mono and
+Sans: the Google Fonts latin subsets, unmodified), under the SIL Open Font
+Licence 1.1, whose texts sit beside them. `app.html` declares them, so their
+URLs carry the base path, and preloads the reading face.
+
+### The mark
+
+The mark is matra's parse of "Amplify radical nonconformity.", drawn. Every
+token hangs from a headline bar, the shirorekha Devanagari letters hang from.
+The root (the one token matra says the others depend on) hangs longest, in
+Emergence: a mātrā, the small vowel sign that attaches to a letter and changes
+its sound without replacing it, which is what matra does to text. Below, each
+dependency hangs as an arc, levelled as the parse figure levels them.
+
+It is generated, not drawn. `src/lib/mark.ts` lays it out on the 9-grid from
+`src/lib/figures/motto/parse.json`, which is ordinary figure data: gate 8
+regenerates it and fails on any change. So if matra's parse of the motto ever
+changes, the mark changes, and review sees it. The variants (full, glyph, a
+16px favicon, mono, paper) are routes, built with the site: `/mark/*.svg` and
+`/favicon.svg`. The favicon keeps the root and its non-punctuation dependents,
+a reduction the tree itself defines. `/mark` is the sheet, with the rules:
+clear space the root stroke's length; the glyph at least 24px tall; the full
+mark no narrower than where its words reach the 11px floor; mono carries
+hierarchy with opacity.
+
+The header is a shirorekha: one hairline rule, and the glyph and the mono
+wordmark hang from it (the glyph's strokes start on the page's rule, which
+stands in for its bar; the wordmark's x-height touches it). The home page's
+hero is the mark at full scale, explaining itself: the motto in Alegreya with
+the same parse drawn over it in CSS grid, lit word by word on hover or focus,
+pinned by a click, labelled by "show the parse", and still with no script.
+
+### The maker's mark
+
+One circle with three straight arms, and nothing else, appears once: at the
+foot of every page, hanging by its upper arm from the end of the footer's
+rule, the way a vowel sign hangs from the headline. It is a stroke in the
+page's muted ink, carved, not lit: it does not glow, move or link, and it is
+labelled "maker's mark". The footer's rule was chosen over the header because
+the header's rule already carries matra's own mark; the foot of the page is
+where a maker signs.
+
+### The self-measuring margin
+
+Every page measures itself. The figure generator runs each page under
+`content/` through matra as Markdown and writes its paragraphs' measures to
+`src/lib/figures/pages/<page>/measures.json`, so gate 8 guards them too, and
+any edit to a page needs `just docs-figures`. At build time `render.ts` sets
+each prose paragraph's grade, lexical density and compression beside it in
+the margin, "none" where matra declines. Paragraphs are matched by their text,
+not trusted by order: a paragraph matra did not measure (a list, an HTML
+block) is passed over, and if any rendered paragraph finds no match, the page
+shows no notes at all and the build says so. Every page maps today. Below
+77rem the margin folds away behind a "show the measures" toggle. Gate 9 holds
+every note's text to its data.
+
 ## Gates
 
 `just docs-floor` runs `scripts/check-docsite-floor.sh`, which is also the
@@ -296,7 +388,8 @@ The full reasoning is in EP-0012's Design section.
 (gate 4); lychee over the built HTML, fragments included (gate 1); the URL
 manifest (gate 7); and the twin test over the built HTML (gate 9). Gate 8
 regenerates the figure data into a temporary directory and diffs it against
-`src/lib/figures/`; gate 10 checks every input's licence; gate 11 runs the
+`src/lib/figures/` (the page measures and the motto's parse included); gate
+10 checks every input's licence; gate 11 runs the
 worked examples. The other gates read `content/`. In CI the UDPipe and
 embedding models are cached under the digests matra pins them to, and fetched
 through matra's own verified download on a miss; a model that cannot be had

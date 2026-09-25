@@ -18,7 +18,10 @@
 #                            an RFC or an EP names types that do not exist yet,
 #                            which is what makes it a proposal or a plan.
 #   4. Site build:          bun install --frozen-lockfile, svelte-check with
-#                            warnings as failures, and a clean prerendered build.
+#                            warnings as failures, the WCAG AA contrast check
+#                            of every text and mark pair in both themes
+#                            (site/scripts/check-contrast.ts), and a clean
+#                            prerendered build.
 #   5. No em dashes:        project prose convention, exempting quoted material.
 #                            Covers site/content/, skills/ and blueprints/.
 #   6. llms.txt currency:   site/content/llms.txt is what scripts/gen-llms-txt.sh
@@ -31,8 +34,11 @@
 #                            site/anchors.txt, and every page it writes is
 #                            listed (scripts/check-url-manifest.sh --build).
 #   8. Figures current:     examples/docsite_figures.rs, run fresh over
-#                            site/inputs/, writes exactly the committed
-#                            site/src/lib/figures/. Built with model2vec; needs
+#                            site/inputs/ and every page under site/content/
+#                            (each page's own measures, for its margin), writes
+#                            exactly the committed site/src/lib/figures/. The
+#                            mark is drawn from one of these files, so it is
+#                            guarded too. Built with model2vec; needs
 #                            the UDPipe model and the embedding model, both
 #                            provisioned through matra's own pinned path.
 #   9. Figure twins:        every figure in the prerendered HTML has a text
@@ -502,7 +508,9 @@ echo ""
 #
 #   install        bun install --frozen-lockfile: bun.lock is the pin, and a
 #                  package.json it does not match is a failure, not an update.
-#   svelte-check   types and Svelte diagnostics, with warnings as failures.
+#   check          svelte-check (types and Svelte diagnostics, warnings as
+#                  failures), then the WCAG AA contrast check of every colour
+#                  pair in both themes (site/scripts/check-contrast.ts).
 #   build          prerenders every page. The renderer fails the build on a
 #                  tag not in the registry, a link to no page, a fence language
 #                  with no grammar, a page without a title, or a SUMMARY.md
@@ -527,7 +535,7 @@ elif ! (cd site && bun install --frozen-lockfile) >"$site_log" 2>&1; then
     sed 's/^/  /' "$site_log"
     fail=$((fail + 1))
 elif ! (cd site && bun run check) >"$site_log" 2>&1; then
-    echo "FAIL (gate 4): svelte-check reported errors or warnings"
+    echo "FAIL (gate 4): svelte-check or the contrast check failed"
     sed 's/^/  /' "$site_log"
     fail=$((fail + 1))
 else
