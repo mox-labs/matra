@@ -30,6 +30,11 @@
  * so does a build with no figures at all: a check that examined nothing has
  * not passed.
  *
+ * The self-measuring margin is checked here too. Each note (`.measure`)
+ * carries matra's values as data attributes and shows them as text; the text
+ * must say the same numbers, to the precision shown, and "none" exactly where
+ * matra declined.
+ *
  * Usage: bun scripts/check-figure-twins.ts <build-dir>
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -218,9 +223,10 @@ const textrank: Compare = (fig, table, fail) => {
 };
 
 const clusters: Compare = (fig, table, fail) => {
-	const svg = all(fig, (e) => e.properties.dataThreshold !== undefined)[0];
+	// Every grid state is drawn as a layer; the one shown is data-current.
+	const svg = all(fig, (e) => e.properties.dataThreshold !== undefined && prop(e, 'dataCurrent') === 'true')[0];
 	if (!svg) {
-		fail('no diagram carrying data-threshold');
+		fail('no layer carrying data-threshold and data-current="true"');
 		return 0;
 	}
 	const at = prop(svg, 'dataThreshold');
@@ -318,6 +324,30 @@ const byKind = new Map<string, number>();
 let figures = 0;
 let records = 0;
 const withFigures = new Set<string>();
+let notes = 0;
+const withNotes = new Set<string>();
+
+/** One margin note's shown values against its data. */
+function checkNote(note: Element, fail: (msg: string) => void): void {
+	const shown = new Map<string, string>();
+	for (const row of all(note, (e) => (e.properties.className as string[] | undefined)?.includes('m-row') ?? false)) {
+		const [k, v] = all(row, (e) => e.tagName === 'span').map((e) => toString(e).trim());
+		shown.set(k, v);
+	}
+	const want: [string, string, number][] = [
+		['grade', 'dataGrade', 1],
+		['density', 'dataDensity', 2],
+		['compression', 'dataCompression', 2]
+	];
+	for (const [label, attr, digits] of want) {
+		const data = prop(note, attr) ?? '';
+		const text = shown.get(label);
+		const expected = data === '' ? 'none' : Number(data).toFixed(digits);
+		if (text !== expected) {
+			fail(`paragraph ${prop(note, 'dataParagraph')}: ${label} shows ${text ?? 'nothing'}, the data says ${expected}`);
+		}
+	}
+}
 
 for (const file of pages(dir)) {
 	const page = relative(dir, file);
@@ -342,11 +372,17 @@ for (const file of pages(dir)) {
 		}
 		records += compare(fig, table, fail);
 	}
+	for (const note of all(tree, (e) => (e.properties.className as string[] | undefined)?.includes('measure') ?? false)) {
+		notes += 1;
+		withNotes.add(page);
+		checkNote(note, (msg) => failures.push(`${page} (margin note): ${msg}`));
+	}
 }
 
 const kinds = [...byKind].map(([k, n]) => `${n} ${k}`).join(', ');
 console.log(
-	`figure twins: ${figures} figures (${kinds || 'none'}) on ${withFigures.size} pages, ${records} records compared, ${failures.length} mismatches`
+	`figure twins: ${figures} figures (${kinds || 'none'}) on ${withFigures.size} pages, ${records} records compared; ` +
+		`${notes} margin notes on ${withNotes.size} pages; ${failures.length} mismatches`
 );
 if (figures === 0) {
 	console.log('FAIL (figure twins): no figures found in the build; a check that examined nothing has not passed');

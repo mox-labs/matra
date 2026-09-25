@@ -5,13 +5,22 @@
 	 *
 	 * matra returns each sentence's score and position. The similarity graph
 	 * those scores come from is internal to matra, so it is not drawn: drawing
-	 * it would mean computing it a second time here. Static: nothing moves.
+	 * it would mean computing it a second time here.
+	 *
+	 * The summary's bars are Emergence, the converged result, and each is also
+	 * numbered above and listed below; the rest are neutral. Pointing at or
+	 * focusing a row lights its bar in Spark, and pointing at a bar lights its
+	 * row, at once. Nothing else moves.
 	 */
 	import { scaleLinear } from 'd3-scale';
 	import type { TextrankFigureFile } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { roving } from './motion';
 
 	let { id, file, dataUrl }: { id: string; file: TextrankFigureFile; dataUrl: string } = $props();
+
+	/** The sentence the reader points at, by position. */
+	let active = $state<number | null>(null);
 
 	const W = 640;
 	const LEFT = 44;
@@ -48,9 +57,17 @@
 	<div class="fig-twin tall" tabindex="0" role="region" aria-label="Every sentence's TextRank score">
 		<table data-twin-for={id}>
 			<thead><tr><th>#</th><th>¶</th><th>Score</th><th>Summary</th><th>Sentence</th></tr></thead>
-			<tbody>
+			<tbody {@attach roving}>
 				{#each rows as r (r.position)}
-					<tr class:picked={r.summary}>
+					<tr
+						class:picked={r.summary}
+						class:lit={active === r.position}
+						data-row={r.position}
+						onpointerenter={() => (active = r.position)}
+						onpointerleave={() => (active = null)}
+						onfocus={() => (active = r.position)}
+						onblur={() => (active = null)}
+					>
 						<td class="num">{r.position + 1}</td>
 						<td class="num">{r.paragraph ?? ''}</td>
 						<td>{fmt(r.score)}</td>
@@ -64,7 +81,7 @@
 
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 	<div class="fig-scroll" tabindex="0" role="region" aria-label="TextRank score of every sentence">
-		<svg width={W} {height} viewBox="0 0 {W} {height}" role="img" aria-label="TextRank scores of {rows.length} sentences in document order; the {summary.length} summary sentences are marked" data-bars-for={id}>
+		<svg class:active={active !== null} width={W} {height} viewBox="0 0 {W} {height}" role="img" aria-label="TextRank scores of {rows.length} sentences in document order; the {summary.length} summary sentences are marked" data-bars-for={id}>
 			<title>TextRank score of each sentence, in document order</title>
 			{#each layout.bands as b, i (i)}
 				{#if b.odd}<rect class="band" x={b.x} y={TOP} width={b.w} height={H} />{/if}
@@ -74,9 +91,21 @@
 				<text class="tick" x={LEFT - 6} y={layout.y(t)}>{t.toFixed(3)}</text>
 			{/each}
 			{#each rows as r, i (r.position)}
+				<!-- Pointer-only: the table's rows give the keyboard the same. -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<rect
+					class="hit"
+					x={x(i)}
+					y={TOP}
+					width={layout.step}
+					height={H}
+					onpointerenter={() => (active = r.position)}
+					onpointerleave={() => (active = null)}
+				/>
 				<rect
 					class="bar"
 					class:picked={r.summary}
+					class:lit={active === r.position}
 					data-position={r.position + 1}
 					data-score={r.score}
 					data-summary={r.summary ? 'yes' : ''}
@@ -102,7 +131,7 @@
 	</ol>
 
 	{#snippet legend()}
-		<ul class="fig-legend" aria-label="Bar colours">
+		<ul class="fig-legend" aria-label="Bars">
 			<li><span class="swatch picked" aria-hidden="true"></span>in the summary ({file.data.n} sentences, matra's default)</li>
 			<li><span class="swatch" aria-hidden="true"></span>not picked</li>
 		</ul>
@@ -117,9 +146,43 @@
 </FigureFrame>
 
 <style>
+	/* The summary is the converged result: Emergence, and numbered. The rest
+	   are the quiet neutral mark. */
 	:global(.mx-figure[data-figure='textrank']) {
-		--pick: light-dark(#b3401e, #f0915f);
-		--rest: light-dark(#bdb6aa, #4a4a52);
+		--pick: var(--emergence);
+		--rest: var(--mark-quiet);
+	}
+
+	.hit {
+		fill: transparent;
+	}
+
+	.bar {
+		transition: opacity var(--duration-fast) linear;
+		pointer-events: none;
+	}
+
+	.active .bar:not(.lit) {
+		opacity: 0.45;
+	}
+
+	.bar.lit {
+		fill: var(--spark);
+	}
+
+	tbody tr:focus-visible {
+		outline: 2px solid var(--spark);
+		outline-offset: -2px;
+	}
+
+	tbody tr.lit td {
+		color: var(--spark);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.bar {
+			transition: none;
+		}
 	}
 
 	.tall {
@@ -134,7 +197,7 @@
 	}
 
 	td.text {
-		font-family: var(--font-sans);
+		font-family: var(--font-read);
 		white-space: normal;
 		min-width: 18rem;
 		color: var(--text-muted);
@@ -167,11 +230,11 @@
 		dominant-baseline: middle;
 	}
 
-	.bar {
+	.bar:not(.lit) {
 		fill: var(--rest);
 	}
 
-	.bar.picked {
+	.bar.picked:not(.lit) {
 		fill: var(--pick);
 	}
 
@@ -200,7 +263,7 @@
 		list-style: none;
 		border-left: 3px solid var(--pick);
 		background: var(--bg-subtle);
-		border-radius: 0 8px 8px 0;
+		border-radius: 0;
 	}
 
 	.summary li {

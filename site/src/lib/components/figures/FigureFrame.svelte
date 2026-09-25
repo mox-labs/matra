@@ -64,7 +64,7 @@
 		max-width: none;
 		background: var(--bg-raised);
 		border: 1px solid var(--border);
-		border-radius: 12px;
+		border-radius: 0;
 	}
 
 	.head {
@@ -78,6 +78,7 @@
 
 	.eyebrow {
 		margin: 0;
+		font-family: var(--font-ui);
 		font-size: 0.72rem;
 		font-weight: 650;
 		letter-spacing: 0.08em;
@@ -100,8 +101,16 @@
 		margin: 0.4rem 0 0;
 	}
 
+	/* Provenance is apparatus: which matra, which model, which data. Mono. */
+	.provenance {
+		font-family: var(--font-mono);
+		font-size: var(--type-xs);
+		line-height: 1.6;
+	}
+
 	.provenance code {
-		font-size: 0.92em;
+		font-size: 1em;
+		color: inherit;
 	}
 
 	/* Shared by every figure's parts, which render inside this card. */

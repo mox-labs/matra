@@ -15,7 +15,7 @@
 	import { fade } from 'svelte/transition';
 	import type { PipelineFigureFile, PipelineParagraph, PipelineStage } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
-	import { enter, leave } from './motion';
+	import { roving, swap } from './motion';
 
 	let { id, file, dataUrl }: { id: string; file: PipelineFigureFile; dataUrl: string } = $props();
 
@@ -34,6 +34,8 @@
 	const paragraphsOf = (s: PipelineStage) => s.sections.flatMap((sec) => sec.paragraphs);
 	const composedByIndex = $derived(new Map(paragraphsOf(data.composed).map((p) => [p.index, p])));
 	const fmt = (v: number | null) => (v === null ? 'none' : v.toFixed(2));
+	/** The paragraph the reader points at, in the table or the tree. */
+	let active = $state<number | null>(null);
 </script>
 
 {#snippet tree(stage: PipelineStage, key: 'annotated' | 'composed')}
@@ -44,9 +46,14 @@
 				<span class="heading">{'#'.repeat(sec.level)} {sec.heading ?? '(no heading)'}</span>
 				<ul>
 					{#each sec.paragraphs as p (p.index)}
+						<!-- Pointer-only: the table's rows give the keyboard the same. -->
+						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 						<li
 							class="para"
 							class:quote={p.in_blockquote}
+							class:lit={active === p.index}
+							onpointerenter={() => (active = p.index)}
+							onpointerleave={() => (active = null)}
 							data-paragraph={p.index}
 							data-sentences={p.sentences}
 							data-tokens={p.tokens}
@@ -122,10 +129,17 @@
 					<th>¶</th><th>Quote</th><th>Sentences</th><th>Tokens</th><th>Grade</th><th>Density</th><th>Compression</th>
 				</tr>
 			</thead>
-			<tbody>
+			<tbody {@attach roving}>
 				{#each paragraphsOf(data.annotated) as p (p.index)}
 					{@const c = composedByIndex.get(p.index) as PipelineParagraph}
-					<tr>
+					<tr
+						data-row={p.index}
+						class:lit={active === p.index}
+						onpointerenter={() => (active = p.index)}
+						onpointerleave={() => (active = null)}
+						onfocus={() => (active = p.index)}
+						onblur={() => (active = null)}
+					>
 						<td class="num">{p.index}</td>
 						<td>{p.in_blockquote ? 'yes' : ''}</td>
 						<td>{p.sentences}</td>
@@ -157,7 +171,7 @@
 	{#if js}
 		<div class="stage">
 			{#key step}
-				<div class="state" in:fade={enter()} out:fade={leave()}>{@render panel(step)}</div>
+				<div class="state" transition:fade={swap()}>{@render panel(step)}</div>
 			{/key}
 		</div>
 	{:else}
@@ -185,7 +199,7 @@
 		color: var(--text-muted);
 		background: transparent;
 		border: 1px solid var(--border);
-		border-radius: 6px;
+		border-radius: var(--radius-control);
 		cursor: pointer;
 	}
 
@@ -228,7 +242,7 @@
 		color: var(--text-muted);
 		background: transparent;
 		border: 1px solid var(--border);
-		border-radius: 999px;
+		border-radius: var(--radius-control);
 		cursor: pointer;
 	}
 
@@ -249,7 +263,7 @@
 		height: 1.35rem;
 		margin-right: 0.3rem;
 		font: 700 0.72rem var(--font-mono);
-		border-radius: 50%;
+		border-radius: 0;
 		border: 1px solid currentColor;
 	}
 
@@ -289,7 +303,7 @@
 		white-space: pre-wrap;
 		background: var(--code-bg);
 		border: 1px solid var(--border);
-		border-radius: 8px;
+		border-radius: 0;
 	}
 
 	.tree,
@@ -347,12 +361,28 @@
 		padding: 0.02rem 0.45rem;
 		font: 0.74rem var(--font-mono);
 		border: 1px solid var(--border);
-		border-radius: 4px;
+		border-radius: var(--radius-control);
 	}
 
+	/* What compose adds: the measures, the pipeline's finished result, in
+	   Emergence, each named. */
 	.fact.m {
-		color: var(--accent);
-		border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+		color: var(--emergence);
+		border-color: var(--emergence);
+	}
+
+	tbody tr:focus-visible {
+		outline: 2px solid var(--spark);
+		outline-offset: -2px;
+	}
+
+	tbody tr.lit td,
+	.para.lit .label {
+		color: var(--spark);
+	}
+
+	.para.lit {
+		box-shadow: -9px 0 0 -7px var(--spark);
 	}
 
 	.fact.muted {

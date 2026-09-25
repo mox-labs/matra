@@ -5,11 +5,21 @@
 	 * Each primitive is a field matra fills on `Sentence` by reading its
 	 * dependency tree. The table lists them, one row per value; below it each
 	 * sentence is set with the words they were read from tinted and the words
-	 * they attach to underlined, labelled above in the primitive's colour. The
-	 * figure is static: nothing moves.
+	 * they attach to underlined, labelled above.
+	 *
+	 * No colour tells one primitive from another: each has a glyph and its
+	 * name, and the marks are neutral ink. The glyphs come from logic notation
+	 * where it has one: negation ¬, possibility ◇ for a modal, assertion ⊢,
+	 * inclusion ⊂ for a hyponym under its hypernym; quotation marks for
+	 * reported speech; √ for an adverbial on the root.
+	 *
+	 * Linked highlighting: pointing at or focusing a row lights its words in
+	 * the sentence, in Spark; pointing at a marked word lights its rows. The
+	 * rows are one tab stop, walked with the arrow keys. Nothing else moves.
 	 */
 	import type { PrimitiveSentence, PrimitivesFigureFile } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { roving } from './motion';
 
 	let { id, file, dataUrl }: { id: string; file: PrimitivesFigureFile; dataUrl: string } = $props();
 
@@ -21,6 +31,14 @@
 		root_adverbial: 'root adverbial',
 		hearst_pair: 'Hearst pair',
 		bare_assertion: 'bare assertion'
+	};
+	const GLYPH: Record<Kind, string> = {
+		negation: '¬',
+		modal: '◇',
+		reporting: '“',
+		root_adverbial: '√',
+		hearst_pair: '⊂',
+		bare_assertion: '⊢'
 	};
 	const FIELD: Record<Kind, string> = {
 		negation: 'negations',
@@ -107,6 +125,17 @@
 		return { parts: out, tail: s.text.slice(pos) };
 	}
 
+	/** The row the reader points at (sentence and item), or a word (sentence and token id). */
+	let row = $state<{ n: number; j: number } | null>(null);
+	let tok = $state<{ n: number; id: number } | null>(null);
+	const rowLit = (n: number, it: Item, j: number) =>
+		(row !== null && row.n === n && row.j === j) ||
+		(tok !== null && tok.n === n && (it.cue === tok.id || it.head === tok.id));
+	const tokLit = (n: number, list: Item[], id: number) =>
+		(tok !== null && tok.n === n && tok.id === id) ||
+		(row !== null && row.n === n && (list[row.j]?.cue === id || list[row.j]?.head === id));
+	const active = $derived(row !== null || tok !== null);
+
 	const word = (s: PrimitiveSentence, i: number | null) =>
 		i === null ? '' : (s.tokens.find((t) => t.id === i)?.text ?? '');
 	const prim = (list: Item[], tok: number) =>
@@ -125,12 +154,20 @@
 			<thead>
 				<tr><th>#</th><th>Primitive</th><th>Read from</th><th>Attaches to</th><th>Field and detail</th></tr>
 			</thead>
-			<tbody>
+			<tbody {@attach roving}>
 				{#each sentences as x (x.n)}
 					{#each x.list as it, j (j)}
-						<tr class:first={j === 0}>
+						<tr
+							class:first={j === 0}
+							data-row="{x.n}-{j}"
+							class:lit={rowLit(x.n, it, j)}
+							onpointerenter={() => (row = { n: x.n, j })}
+							onpointerleave={() => (row = null)}
+							onfocus={() => (row = { n: x.n, j })}
+							onblur={() => (row = null)}
+						>
 							<td class="num">{x.n}</td>
-							<td><span class="swatch k-{it.kind}" aria-hidden="true"></span>{LABEL[it.kind]}</td>
+							<td class="glyph-cell" data-glyph={GLYPH[it.kind]}>{LABEL[it.kind]}</td>
 							<td>{it.cue}<span class="w">{word(x.s, it.cue)}</span></td>
 							<td>{#if it.head === null}<span class="none">none</span>{:else}{it.head}<span class="w">{word(x.s, it.head)}</span>{/if}</td>
 							<td class="detail"><code>{FIELD[it.kind]}</code>{it.detail ? `, ${it.detail}` : ''}</td>
@@ -146,33 +183,38 @@
 		</table>
 	</div>
 
-	<ol class="sentences" data-marks-for={id}>
+	<ol class="sentences" class:active data-marks-for={id}>
 		{#each sentences as x (x.n)}
 			<li data-sentence={x.n}>
 				<span class="n">{x.n}</span>
 				<p class="line">
-					{#each x.spans.parts as p (p.id)}{p.gap}{#if x.roles.has(p.id)}{@const r = x.roles.get(p.id) ?? []}<ruby
+					{#each x.spans.parts as p (p.id)}{p.gap}{#if x.roles.has(p.id)}{@const r = x.roles.get(p.id) ?? []}<!-- svelte-ignore a11y_no_static_element_interactions --><ruby
 								class="k-{r[0].kind}"
+								class:lit={tokLit(x.n, x.list, p.id)}
+								onpointerenter={() => (tok = { n: x.n, id: p.id })}
+								onpointerleave={() => (tok = null)}
 								><span
 									class="tok"
 									class:cue={r.some((q) => q.cue)}
 									class:target={r.every((q) => !q.cue)}
 									data-id={p.id}
 									data-prim={prim(x.list, p.id)}>{p.text}</span
-								><rt>{r.map((q) => q.label).join(' · ')}</rt></ruby
+								><rt>{r.map((q) => `${GLYPH[q.kind]} ${q.label}`).join(' · ')}</rt></ruby
 							>{:else}<span class="tok" data-id={p.id}>{p.text}</span>{/if}{/each}{x.spans.tail}
 				</p>
 				{#if x.s.bare_assertion && x.s.root_id !== null}
-					<span class="badge k-bare_assertion" data-prim="bare_assertion {x.s.root_id} -">bare assertion</span>
+					<span class="badge k-bare_assertion" data-prim="bare_assertion {x.s.root_id} -"
+						><span aria-hidden="true">{GLYPH.bare_assertion} </span>bare assertion</span
+					>
 				{/if}
 			</li>
 		{/each}
 	</ol>
 
 	{#snippet legend()}
-		<ul class="fig-legend" aria-label="Primitive colours">
+		<ul class="fig-legend" aria-label="Primitive glyphs">
 			{#each kinds as k (k)}
-				<li><span class="swatch k-{k}" aria-hidden="true"></span>{LABEL[k]}</li>
+				<li><span class="glyph" aria-hidden="true">{GLYPH[k]}</span>{LABEL[k]}</li>
 			{/each}
 		</ul>
 	{/snippet}
@@ -186,42 +228,42 @@
 </FigureFrame>
 
 <style>
-	:global(.mx-figure[data-figure='primitives']) {
-		--k-negation: light-dark(#b3401e, #f0915f);
-		--k-modal: light-dark(#2b6a8c, #7fb9d8);
-		--k-reporting: light-dark(#2f7a4f, #7cc79a);
-		--k-root_adverbial: light-dark(#6d4f9e, #b69ae0);
-		--k-hearst_pair: light-dark(#8a5a00, #e0b04a);
-		--k-bare_assertion: light-dark(#5b564e, #a6a29a);
-	}
-
-	.k-negation {
-		--k: var(--k-negation);
-	}
-	.k-modal {
-		--k: var(--k-modal);
-	}
-	.k-reporting {
-		--k: var(--k-reporting);
-	}
-	.k-root_adverbial {
-		--k: var(--k-root_adverbial);
-	}
-	.k-hearst_pair {
-		--k: var(--k-hearst_pair);
-	}
-	.k-bare_assertion {
-		--k: var(--k-bare_assertion);
-	}
-
-	.swatch {
+	.glyph {
 		display: inline-block;
-		width: 0.6em;
-		height: 0.6em;
-		margin-right: 0.45em;
-		border-radius: 2px;
-		vertical-align: 0.05em;
-		background: var(--k);
+		min-width: 1.1em;
+		margin-right: 0.35em;
+		font: 600 1em var(--font-mono);
+		color: var(--text-muted);
+		text-align: center;
+	}
+
+	/* The glyph is generated content with empty alt text: seen, not read, and
+	   not part of the cell's text, which stays the primitive's name. */
+	.glyph-cell::before {
+		content: attr(data-glyph) / '';
+		display: inline-block;
+		min-width: 1.1em;
+		margin-right: 0.35em;
+		font: 600 1em var(--font-mono);
+		color: var(--text-muted);
+		text-align: center;
+	}
+
+	tbody tr.lit .glyph-cell::before {
+		color: var(--spark);
+	}
+
+	tbody tr {
+		transition: opacity var(--duration-fast) linear;
+	}
+
+	tbody tr:focus-visible {
+		outline: 2px solid var(--spark);
+		outline-offset: -2px;
+	}
+
+	tbody tr.lit td {
+		color: var(--spark);
 	}
 
 	tr.first td {
@@ -278,27 +320,51 @@
 	ruby {
 		ruby-position: over;
 		ruby-align: center;
-		color: var(--k);
+		transition: opacity var(--duration-fast) linear;
 	}
 
 	rt {
-		font: 600 0.62rem var(--font-sans);
-		letter-spacing: 0.03em;
-		color: var(--k);
+		font: 600 0.62rem var(--font-mono);
+		letter-spacing: 0.02em;
+		color: var(--text-muted);
 	}
 
 	.tok.cue {
 		padding: 0.1em 0.2em;
-		border-radius: 4px;
-		background: color-mix(in srgb, var(--k) 16%, transparent);
+		background: var(--bg-subtle);
+		box-shadow: inset 0 0 0 1px var(--border);
 		color: var(--text);
-		font-weight: 600;
+		font-weight: 700;
 	}
 
 	.tok.target {
 		color: var(--text);
-		text-decoration: underline 2px var(--k);
+		text-decoration: underline 2px var(--mark);
 		text-underline-offset: 0.25em;
+	}
+
+	.active ruby:not(.lit) {
+		opacity: 0.45;
+	}
+
+	ruby.lit rt {
+		color: var(--spark);
+	}
+
+	ruby.lit .tok.cue {
+		background: var(--spark-wash);
+		box-shadow: inset 0 0 0 1px var(--spark);
+	}
+
+	ruby.lit .tok.target {
+		text-decoration-color: var(--spark);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		tbody tr,
+		ruby {
+			transition: none;
+		}
 	}
 
 	.badge {
@@ -309,8 +375,10 @@
 		font-size: 0.72rem;
 		font-weight: 600;
 		letter-spacing: 0.03em;
-		color: var(--k);
-		border: 1px solid color-mix(in srgb, var(--k) 45%, transparent);
-		border-radius: 999px;
+		font-family: var(--font-mono);
+		color: var(--text-muted);
+		border: 1px solid var(--border-strong);
+		/* A tag: the one place a pill is allowed. */
+		border-radius: var(--radius-full);
 	}
 </style>

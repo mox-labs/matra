@@ -81,7 +81,7 @@
 	}
 
 	.tablist button {
-		font: 600 0.88rem var(--font-sans);
+		font: 600 var(--type-sm) var(--font-mono);
 		color: var(--text-muted);
 		background: none;
 		border: 0;
