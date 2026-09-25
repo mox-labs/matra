@@ -4,7 +4,8 @@
 	 *
 	 * The motto is set large in the reading face, as text. matra's parse of it
 	 * is drawn over it from the same committed data the mark is drawn from:
-	 * the headline bar at the words' x-height, every word hanging from it, the
+	 * the headline bar on the tops of the letters, every word hanging from it
+	 * as Devanagari letters hang from theirs, the
 	 * root's stroke in Emergence just after its word, and each dependency as
 	 * an arc hanging below.
 	 *
@@ -12,7 +13,9 @@
 	 * equal grid columns, so its centre is a grid line; an arc spans from its
 	 * head's line to its dependent's (from the root's right edge, where its
 	 * stroke hangs, when the head is the root), drawn as a hanging half
-	 * ellipse. So the prerendered page is exact, at every width.
+	 * ellipse. The bar's height is the font's own arithmetic ($lib/fonts), so
+	 * it needs no measuring either. So the prerendered page is exact, at every
+	 * width.
 	 *
 	 * Nothing moves on load. The reader lights a word by pointing at it or
 	 * focusing it: its head, its dependents and the arcs between them stay,
@@ -20,6 +23,7 @@
 	 * reveals each word's part of speech and each arc's relation, and works
 	 * without a script; its table twin is the parse as text.
 	 */
+	import { ALEGREYA_BLACK, inkTop, tallest } from '$lib/fonts';
 	import type { ParseToken } from '$lib/types';
 
 	let { tokens, titleId = 'matra' }: { tokens: ParseToken[]; titleId?: string } = $props();
@@ -27,6 +31,10 @@
 	const root = $derived(tokens.find((t) => t.head === 0));
 	const n = $derived(tokens.length);
 	const byId = $derived(new Map(tokens.map((t) => [t.id, t])));
+	/** Where the tallest letter's top sits in a word's line box, in em. */
+	const top = $derived(
+		inkTop(ALEGREYA_BLACK, tallest(ALEGREYA_BLACK, tokens.map((t) => t.text).join(''))).toFixed(4)
+	);
 
 	/** Arcs, levelled as the mark levels them. */
 	const arcs = $derived.by(() => {
@@ -76,7 +84,7 @@
 	<div
 		class="motto"
 		class:dimmed={lit !== null}
-		style="--n: {n}; --deep: {deepest}"
+		style="--n: {n}; --deep: {deepest}; --ink-top: {top}em"
 		role="group"
 		aria-label="Amplify radical nonconformity., with matra's dependency parse drawn over it"
 	>
@@ -147,15 +155,15 @@
 	}
 
 	/*
-	 * The motto. Alegreya at line-height 1: its x-height top sits 0.3835em
-	 * below the line box's top (ascent 1.016em, descent 0.345em, x-height
-	 * 0.452em), which is where the headline bar is drawn.
+	 * The motto. Alegreya at line-height 1: the tops of its tallest letters
+	 * (l, f, d) sit --ink-top below the line box's top, set from the font's
+	 * metrics in $lib/fonts. The headline bar's lower edge is drawn there, so
+	 * the letters touch it from below and it never crosses them.
 	 */
 	.motto {
 		/* The motto is about 12.6em wide at this weight: sized to its column,
 		   never wider, never above the display size. */
 		--size: clamp(1.5rem, 7.4cqi, var(--type-4xl));
-		--xh-top: 0.3835em;
 		--u: calc(var(--size) * 0.125);
 		position: relative;
 		display: grid;
@@ -174,9 +182,10 @@
 		position: absolute;
 		left: 0;
 		right: 0;
-		top: calc(var(--above) + var(--xh-top));
+		top: calc(var(--above) + var(--ink-top));
 		height: 0;
 		border-top: max(1.5px, 0.04em) solid var(--text);
+		transform: translateY(-100%);
 		pointer-events: none;
 	}
 
@@ -216,8 +225,8 @@
 		content: '';
 		position: absolute;
 		right: -0.02em;
-		top: var(--xh-top);
-		height: calc(1em - var(--xh-top) + var(--u) * 0.6);
+		top: var(--ink-top);
+		height: calc(1em - var(--ink-top) + var(--u) * 0.6);
 		border-right: max(2px, 0.055em) solid var(--emergence);
 	}
 
