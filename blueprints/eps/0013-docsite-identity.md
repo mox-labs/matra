@@ -57,6 +57,12 @@ place".
   changes only when matra's parse does. Its variants, the favicon's
   reduction rule, and its clear-space and minimum-size rules are in
   `site/README.md` and on `/mark`.
+- **The bar runs along the tops of the letters, never through them.** Where
+  words hang from it (the hero, the full mark, the header's wordmark), the
+  top of the tallest letter touches the bar's lower edge, as in Devanagari.
+  The height comes from each face's own metrics (`site/src/lib/fonts.ts`), not
+  an offset tuned by eye. The first draft hung the words at their x-height,
+  and review read the motto as struck out.
 - **Every page measures itself.** Each page's Markdown goes through the
   pipeline, and each prose paragraph's grade, lexical density and compression
   sit in the margin beside it. Numbers are matched to paragraphs by text, not
@@ -101,6 +107,10 @@ place".
 
 - `scripts/check-contrast.ts` (gate 4) on every text and mark pair, both
   themes; seen to fail on a planted light Spark.
+- `scripts/check-mark.ts` (gate 4) on the mark's geometry in every variant:
+  the words touch the bar and none crosses it, everything hangs, and the
+  favicon fits its square and keeps at least two arcs. Seen to fail when the
+  words were planted back at their x-height.
 - Gate 8 on the page measures and the motto's parse; seen to fail on a hand
   edit of the parse.
 - Gate 9 on every margin note's text against its data; seen to fail on a
@@ -122,3 +132,12 @@ Merged, deployed, and the live check after deploy passes.
 ## Status log
 
 - 2026-09-25: in progress. M1 delivered in one pull request.
+- 2026-09-25: the review's six defects fixed in the same pull request. The
+  shirorekha no longer strikes through the words. The header's rule moved to
+  1U, and the glyph and wordmark hang wholly below it. The clusters list has
+  one number per sentence; the twin's cells wrap, and the diagram scrolls
+  with its hint. The sidebar scrolls on its own, with a fade at the cut. The
+  provenance line moved to the end of each page, with the measures toggle
+  beside the first measured paragraph. The favicon keeps every token that is
+  not punctuation, so it reads as the mark at 16px. It had also rendered its
+  arcs filled, because a scheme-aware style set `fill` on them.

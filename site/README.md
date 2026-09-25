@@ -48,6 +48,8 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/figures/` | Figure data, generated from `inputs/` by `examples/docsite_figures.rs` and committed. Never edited by hand. |
 | `src/lib/components/figures/` | One component per kind of figure, with its layout. |
 | `scripts/check-figure-twins.ts` | The twin test: every figure in the built HTML against its text twin. |
+| `src/lib/mark.ts`, `src/lib/fonts.ts` | The mark's layout from the motto's parse, and the font metrics that hang words from its bar. |
+| `scripts/check-mark.ts` | The mark's geometry held to its rules, in every variant. |
 | `examples/` | The worked examples, one directory each: which input, the call in Rust, Python and the CLI, and what the calls print. |
 | `src/lib/server/examples.ts` | Reads the examples at build time, and trims their output for the page. |
 | `src/lib/components/examples/` | The input, the call as tabs, and the output. |
@@ -343,15 +345,46 @@ It is generated, not drawn. `src/lib/mark.ts` lays it out on the 9-grid from
 regenerates it and fails on any change. So if matra's parse of the motto ever
 changes, the mark changes, and review sees it. The variants (full, glyph, a
 16px favicon, mono, paper) are routes, built with the site: `/mark/*.svg` and
-`/favicon.svg`. The favicon keeps the root and its non-punctuation dependents,
-a reduction the tree itself defines. `/mark` is the sheet, with the rules:
-clear space the root stroke's length; the glyph at least 24px tall; the full
-mark no narrower than where its words reach the 11px floor; mono carries
-hierarchy with opacity.
+`/favicon.svg`. The favicon keeps every token that is not punctuation, a
+reduction the tree itself defines. It keeps the nested arcs, because a
+single arc under a bar reads as a letter U at 16px. `/mark` is the sheet,
+with the rules: clear space the root stroke's length; the glyph at least 24px
+tall; the full mark no narrower than where its words reach the 11px floor;
+mono carries hierarchy with opacity.
 
-The header is a shirorekha: one hairline rule, and the glyph and the mono
-wordmark hang from it (the glyph's strokes start on the page's rule, which
-stands in for its bar; the wordmark's x-height touches it). The home page's
+**The bar is a headline, never a strikethrough.** Wherever words hang from it,
+the top of the tallest letter touches the bar's lower edge, as in Devanagari.
+That height is arithmetic on the face's vertical metrics, in
+`src/lib/fonts.ts`: in a line box of known line-height, the baseline and each
+letter's top follow from the ascent, the descent and the letter's height, so
+no script measures text and nothing is tuned by eye. The metrics were read
+from the files in `static/fonts/`; if a font file is replaced, read them again:
+
+```bash
+cd site/static/fonts && uv run --with fonttools --with brotli python -c "
+from fontTools.ttLib import TTFont; from fontTools.pens.boundsPen import BoundsPen
+for f in ['alegreya-latin-800.woff2', 'ibm-plex-mono-latin-600.woff2']:
+    t = TTFont(f); u = t['head'].unitsPerEm; g = t.getGlyphSet(); c = t.getBestCmap()
+    def top(ch): p = BoundsPen(g); g[c[ord(ch)]].draw(p); return p.bounds[3] / u
+    print(f, t['hhea'].ascent / u, -t['hhea'].descent / u, {ch: top(ch) for ch in 'lfdiAt'})"
+```
+
+The standalone `full.svg` names IBM Plex Mono but cannot carry it, so where
+the face is not installed a fallback monospace draws the words and they may
+sit a little off the bar. On the site the face is loaded, and the mark on
+`/mark` is drawn inline.
+
+`scripts/check-mark.ts` holds the geometry to those rules in every variant:
+the words touch the bar and none crosses it; every stroke hangs, with the root
+starting on the bar; the favicon fits its square and keeps at least two arcs.
+It runs in `bun run check`, so in gate 4. Gate 8 guards what the mark is drawn
+from, and this guards how it is drawn.
+
+The header is a shirorekha: one hairline rule at 1U, and the glyph and the
+mono wordmark hang wholly below it. The glyph's own bar lies on the rule, and
+the top of the wordmark's `t` touches it. What hangs lowest (the glyph's
+deepest arc) leaves more than the mark's clear space above the header's lower
+edge. The home page's
 hero is the mark at full scale, explaining itself: the motto in Alegreya with
 the same parse drawn over it in CSS grid, lit word by word on hover or focus,
 pinned by a click, labelled by "show the parse", and still with no script.
@@ -377,14 +410,16 @@ the margin, "none" where matra declines. Paragraphs are matched by their text,
 not trusted by order: a paragraph matra did not measure (a list, an HTML
 block) is passed over, and if any rendered paragraph finds no match, the page
 shows no notes at all and the build says so. Every page maps today. Below
-77rem the margin folds away behind a "show the measures" toggle. Gate 9 holds
-every note's text to its data.
+77rem the margin folds away behind a "show the measures" toggle, set beside
+the first measured paragraph. The line saying which matra and model measured
+the page comes at its end, above the edit links, so it never stands between
+the title and the reading. Gate 9 holds every note's text to its data.
 
 ## Gates
 
 `just docs-floor` runs `scripts/check-docsite-floor.sh`, which is also the
 `Docsite floor` job in CI. For this site it runs `bun install
---frozen-lockfile`, `svelte-check` with warnings as failures, and the build
+--frozen-lockfile`, `svelte-check` with warnings as failures, the contrast and mark checks, and the build
 (gate 4); lychee over the built HTML, fragments included (gate 1); the URL
 manifest (gate 7); and the twin test over the built HTML (gate 9). Gate 8
 regenerates the figure data into a temporary directory and diffs it against
