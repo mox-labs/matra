@@ -125,6 +125,18 @@
 	const LETTERS = 'ABCDEFGH';
 	const members = (m: number[]) => `{${m.map((i) => i + 1).join(', ')}}`;
 	const edgeText = (e: { a: number; b: number; score: number }) => `${e.a + 1}-${e.b + 1} (${e.score.toFixed(4)})`;
+
+	/** Whether the diagram is wider than its frame, so the scroll hint shows. */
+	let overflowing = $state<boolean | null>(null);
+	function measure(node: HTMLElement) {
+		const update = () => (overflowing = node.scrollWidth > node.clientWidth + 1);
+		const ro = new ResizeObserver(update);
+		ro.observe(node);
+		update();
+		return () => ro.disconnect();
+	}
+	// Before any script runs, guess from the width of the column on a desktop.
+	const hint = $derived(overflowing ?? width > 882);
 	const fmt = (t: number) => t.toFixed(2);
 	const thresholdAt = (p: number) => {
 		const i = Math.floor(p);
@@ -223,8 +235,16 @@
 						}}
 					>
 						<td class="num">{fmt(g.threshold)}</td>
-						<td>{g.clusters.length ? g.clusters.map((c) => members(c.members)).join(' ') : 'none'}</td>
-						<td class="edges">{g.clusters.flatMap((c) => c.edges).map(edgeText).join(', ') || 'none'}</td>
+						<!-- Each cell wraps between whole items, never inside one, so no
+						     column runs off the figure's edge. -->
+						<td class="wrap"
+							>{#each g.clusters as c, k (k)}{k ? ' ' : ''}<span>{members(c.members)}</span>{:else}none{/each}</td
+						>
+						<td class="wrap edges"
+							>{#each g.clusters.flatMap((c) => c.edges) as e, k (`${e.a}-${e.b}`)}{k ? ', ' : ''}<span
+									>{edgeText(e)}</span
+								>{:else}none{/each}</td
+						>
 					</tr>
 				{/each}
 			</tbody>
@@ -243,7 +263,13 @@
 	</p>
 
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-scroll" tabindex="0" role="region" aria-label="Clusters at threshold {fmt(point.threshold)}">
+	<div
+		class="fig-scroll"
+		tabindex="0"
+		role="region"
+		aria-label="Clusters at threshold {fmt(point.threshold)}"
+		{@attach measure}
+	>
 		<svg
 			{width}
 			{height}
@@ -308,6 +334,9 @@
 			{/each}
 		</svg>
 	</div>
+	{#if hint}
+		<p class="fig-hint" aria-hidden="true">Scroll sideways to read the whole sentences.</p>
+	{/if}
 
 	{#snippet legend()}
 		<ul class="fig-legend" aria-label="Markers">
@@ -388,8 +417,39 @@
 		font-weight: 600;
 	}
 
+	/* One number per sentence: the one the figure and the table use, set as
+	   text so it matches them, with the list's own marker off. */
+	.sentences {
+		margin: 0 0 0.8rem;
+		padding: 0;
+		list-style: none;
+		font-size: 0.92rem;
+		line-height: 1.5;
+	}
+
 	.sentences li {
+		margin: 0.1rem 0;
+		/* A wrapped sentence hangs under its first word, not its number. */
+		padding-inline-start: 2rem;
+		text-indent: -2rem;
 		transition: opacity var(--duration-fast) linear;
+	}
+
+	.sentences .n {
+		display: inline-block;
+		min-width: 2rem;
+		text-indent: 0;
+		font: 600 0.78rem var(--font-mono);
+		color: var(--text-muted);
+	}
+
+	/* The frame keeps table cells on one line; these wrap between items. */
+	.fig-twin td.wrap {
+		white-space: normal;
+	}
+
+	.fig-twin td.wrap span {
+		white-space: nowrap;
 	}
 
 	.sentences li:focus-visible {
