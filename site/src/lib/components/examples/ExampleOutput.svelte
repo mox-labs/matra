@@ -11,7 +11,7 @@
 </script>
 
 <div class="ex-output" data-example={example.name} data-part="output">
-	{#if output.trimmed}
+	{#if output.trimmed && !example.plain}
 		<p class="note">Trimmed: {@html output.trimmed}.</p>
 	{/if}
 	{@html output.html}

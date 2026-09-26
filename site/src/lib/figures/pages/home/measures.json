@@ -38,11 +38,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5111,
-      "readability_grade": 17.4311,
-      "sentences": 2,
-      "text": "All three routes print the same result: the whole document, with its sections, paragraphs, sentences and words. Here is the first word of the sentence, with its lemma, its part of speech, the id of the word it depends on (`head`) and the relation (`dep`):",
-      "words": 46
+      "lexical_density": 0.625,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "It prints JSON; here is the first word:",
+      "words": 8
     },
     {
       "compression_ratio": null,
@@ -56,11 +56,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.4783,
-      "readability_grade": 9.2843,
+      "lexical_density": 0.5,
+      "readability_grade": 4.6625,
       "sentences": 2,
-      "text": "Every word of the sentence, drawn. Each arc runs from a word to the word that depends on it, labelled with the relation:",
-      "words": 23
+      "text": "Every word, drawn. Each arc runs from a word to the word that depends on it:",
+      "words": 16
     },
     {
       "compression_ratio": null,

@@ -30,7 +30,7 @@
 			<ExampleOutput example={segment.example} />
 		{/if}
 	{:else if segment.figure === 'parse'}
-		<ParseFigure id={segment.id} file={segment.file} sentence={segment.sentence} dataUrl={segment.dataUrl} />
+		<ParseFigure id={segment.id} file={segment.file} sentence={segment.sentence} line={segment.line} dataUrl={segment.dataUrl} />
 	{:else if segment.figure === 'primitives'}
 		<PrimitivesFigure id={segment.id} file={segment.file} dataUrl={segment.dataUrl} />
 	{:else if segment.figure === 'metrics'}

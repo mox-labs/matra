@@ -2,6 +2,7 @@
   "input": "quickstart",
   "file": "note.txt",
   "save": "echo 'The committee approved the budget on Tuesday.' > note.txt",
+  "plain": true,
   "output": {
     "path": "sections.0.paragraphs.0.sentences.0.tokens",
     "keep": 1

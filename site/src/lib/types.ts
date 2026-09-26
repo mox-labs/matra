@@ -218,6 +218,8 @@ export interface ExampleView {
 	calls: ExampleCall[];
 	/** What the CLI prints around the result, highlighted, the result elided. */
 	cliEnvelopeHtml: string;
+	/** Show the call and output plainly: no CLI envelope, no trim note (the page's prose says what is shown). */
+	plain: boolean;
 	output: {
 		html: string;
 		/** How the shown output was trimmed, or null when it is whole. */
@@ -239,6 +241,8 @@ export type Segment =
 			/** The sentence shown first, 1-based. */
 			sentence: number;
 			file: ParseFigureFile;
+			/** Whether the compact data line (word, relation, head) sits above the arcs. */
+			line: boolean;
 	  })
 	| (FigureSegmentBase & { figure: 'primitives'; file: PrimitivesFigureFile })
 	| (FigureSegmentBase & { figure: 'metrics'; file: MetricsFigureFile })
