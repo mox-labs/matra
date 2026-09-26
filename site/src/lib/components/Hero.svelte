@@ -2,7 +2,8 @@
 	/**
 	 * The home page's hero: the mark at full scale, explaining itself.
 	 *
-	 * The motto is set large in the reading face, as text. matra's parse of it
+	 * A sentence is set large in the reading face, as text, the way a type
+	 * specimen sets one line to show a face. matra's parse of it
 	 * is drawn over it from the same committed data the mark is drawn from:
 	 * the headline bar on the tops of the letters, every word hanging from it
 	 * as Devanagari letters hang from theirs, the
@@ -31,6 +32,8 @@
 	const root = $derived(tokens.find((t) => t.head === 0));
 	const n = $derived(tokens.length);
 	const byId = $derived(new Map(tokens.map((t) => [t.id, t])));
+	/** The sentence as written: a space before each word, none before punctuation. */
+	const sentence = $derived(tokens.map((t, i) => (i > 0 && t.dep !== 'punct' ? ' ' : '') + t.text).join(''));
 	/** Where the tallest letter's top sits in a word's line box, in em. */
 	const top = $derived(
 		inkTop(ALEGREYA_BLACK, tallest(ALEGREYA_BLACK, tokens.map((t) => t.text).join(''))).toFixed(4)
@@ -79,14 +82,14 @@
 <section class="hero" aria-labelledby={titleId}>
 	<!-- The page's title keeps the id the home page's title always had. -->
 	<h1 id={titleId} class="visually-hidden">matra</h1>
-	<p class="kicker">matra's parse of the motto</p>
+	<p class="kicker">matra's parse of this sentence</p>
 
 	<div
-		class="motto"
+		class="specimen"
 		class:dimmed={lit !== null}
 		style="--n: {n}; --deep: {deepest}; --ink-top: {top}em"
 		role="group"
-		aria-label="Amplify radical nonconformity., with matra's dependency parse drawn over it"
+		aria-label="{sentence} (with matra's dependency parse drawn over it)"
 	>
 		<div class="bar" aria-hidden="true"></div>
 		{#each tokens as t (t.id)}
@@ -155,15 +158,17 @@
 	}
 
 	/*
-	 * The motto. Alegreya at line-height 1: the tops of its tallest letters
+	 * The sentence. Alegreya at line-height 1: the tops of its tallest letters
 	 * (l, f, d) sit --ink-top below the line box's top, set from the font's
 	 * metrics in $lib/fonts. The headline bar's lower edge is drawn there, so
 	 * the letters touch it from below and it never crosses them.
 	 */
-	.motto {
-		/* The motto is about 12.6em wide at this weight: sized to its column,
-		   never wider, never above the display size. */
-		--size: clamp(1.5rem, 7.4cqi, var(--type-4xl));
+	.specimen {
+		/* The sentence is about 17.3em wide at this weight, measured in the
+		   browser with each word's padding: sized to its column with a little
+		   to spare, never wider, never above the display size. A new sentence
+		   needs this measured again. */
+		--size: clamp(1rem, 5.6cqi, var(--type-4xl));
 		--u: calc(var(--size) * 0.125);
 		position: relative;
 		display: grid;

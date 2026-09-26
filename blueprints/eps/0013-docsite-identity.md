@@ -9,7 +9,7 @@
 
 Give the docsite an identity that could not belong to any other project,
 because it is made of matra's own output: a mark that is matra's parse of
-its motto, pages that measure their own paragraphs in the margin, and
+a sentence, pages that measure their own paragraphs in the margin, and
 figures a reader can scrub and point into. The tokens and type are the
 ratified mox design system's. One pull request delivers it.
 
@@ -49,10 +49,10 @@ place".
 
 ### The decisions
 
-- **The mark is matra's parse of "Amplify radical nonconformity.".** Every
-  token hangs from a headline bar (the shirorekha); the root hangs longest,
-  in Emergence, as a mātrā, the vowel sign that changes a letter without
-  replacing it; each dependency hangs below as an arc. It is generated at
+- **The mark is matra's parse of "Collective attention can restore a
+  world.".** Every token hangs from a headline bar (the shirorekha); the
+  root hangs longest, in Emergence, as a mātrā, the vowel sign that changes
+  a letter without replacing it; each dependency hangs below as an arc. It is generated at
   build time from committed figure data that gate 8 regenerates, so it
   changes only when matra's parse does. Its variants, the favicon's
   reduction rule, and its clear-space and minimum-size rules are in
@@ -62,7 +62,7 @@ place".
   top of the tallest letter touches the bar's lower edge, as in Devanagari.
   The height comes from each face's own metrics (`site/src/lib/fonts.ts`), not
   an offset tuned by eye. The first draft hung the words at their x-height,
-  and review read the motto as struck out.
+  and review read the sentence as struck out.
 - **Every page measures itself.** Each page's Markdown goes through the
   pipeline, and each prose paragraph's grade, lexical density and compression
   sit in the margin beside it. Numbers are matched to paragraphs by text, not
@@ -109,9 +109,10 @@ place".
   themes; seen to fail on a planted light Spark.
 - `scripts/check-mark.ts` (gate 4) on the mark's geometry in every variant:
   the words touch the bar and none crosses it, everything hangs, and the
-  favicon fits its square and keeps at least two arcs. Seen to fail when the
-  words were planted back at their x-height.
-- Gate 8 on the page measures and the motto's parse; seen to fail on a hand
+  favicon fits its square, keeps at least two arcs and leaves a pixel
+  between its strokes. Seen to fail when the words were planted back at
+  their x-height, and when the favicon's pitch was planted at 2px.
+- Gate 8 on the page measures and the specimen's parse; seen to fail on a hand
   edit of the parse.
 - Gate 9 on every margin note's text against its data; seen to fail on a
   changed number.
@@ -141,3 +142,13 @@ Merged, deployed, and the live check after deploy passes.
   beside the first measured paragraph. The favicon keeps every token that is
   not punctuation, so it reads as the mark at 16px. It had also rendered its
   arcs filled, because a scheme-aware style set `fill` on them.
+- 2026-09-25: decision (owner): the mark's sentence changes. "Amplify
+  radical nonconformity." is a company motto and is withdrawn from the site;
+  the mark is now drawn from "Collective attention can restore a world.", a
+  line by matra's authors, set like a type specimen's line. The input and
+  figure paths move off the word motto to `specimen`. matra parses it with
+  `restore` as the root verb, `can` its modal auxiliary, `attention` its
+  subject and `world` its object. The favicon's reduction was tree-driven
+  but assumed a small tree: six words at 2px on a 2px pitch fused into a
+  block, so it now keeps the tree's levels nearest the root while their
+  strokes stay a pixel apart, and the mark check holds that gap.

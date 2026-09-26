@@ -48,7 +48,7 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/figures/` | Figure data, generated from `inputs/` by `examples/docsite_figures.rs` and committed. Never edited by hand. |
 | `src/lib/components/figures/` | One component per kind of figure, with its layout. |
 | `scripts/check-figure-twins.ts` | The twin test: every figure in the built HTML against its text twin. |
-| `src/lib/mark.ts`, `src/lib/fonts.ts` | The mark's layout from the motto's parse, and the font metrics that hang words from its bar. |
+| `src/lib/mark.ts`, `src/lib/fonts.ts` | The mark's layout from the specimen sentence's parse, and the font metrics that hang words from its bar. |
 | `scripts/check-mark.ts` | The mark's geometry held to its rules, in every variant. |
 | `examples/` | The worked examples, one directory each: which input, the call in Rust, Python and the CLI, and what the calls print. |
 | `src/lib/server/examples.ts` | Reads the examples at build time, and trims their output for the page. |
@@ -333,20 +333,26 @@ URLs carry the base path, and preloads the reading face.
 
 ### The mark
 
-The mark is matra's parse of "Amplify radical nonconformity.", drawn. Every
-token hangs from a headline bar, the shirorekha Devanagari letters hang from.
+The mark is matra's parse of "Collective attention can restore a world.",
+drawn: a line by matra's authors, chosen the way a type specimen chooses its
+line, short and meaning something. Every token hangs from a headline bar,
+the shirorekha Devanagari letters hang from.
 The root (the one token matra says the others depend on) hangs longest, in
 Emergence: a mātrā, the small vowel sign that attaches to a letter and changes
 its sound without replacing it, which is what matra does to text. Below, each
 dependency hangs as an arc, levelled as the parse figure levels them.
 
 It is generated, not drawn. `src/lib/mark.ts` lays it out on the 9-grid from
-`src/lib/figures/motto/parse.json`, which is ordinary figure data: gate 8
-regenerates it and fails on any change. So if matra's parse of the motto ever
+`src/lib/figures/specimen/parse.json`, parsed from `inputs/specimen.txt`,
+which is ordinary figure data: gate 8 regenerates it and fails on any change. So if matra's parse of the sentence ever
 changes, the mark changes, and review sees it. The variants (full, glyph, a
 16px favicon, mono, paper) are routes, built with the site: `/mark/*.svg` and
-`/favicon.svg`. The favicon keeps every token that is not punctuation, a
-reduction the tree itself defines. It keeps the nested arcs, because a
+`/favicon.svg`. The favicon's reduction is one the tree itself defines: it
+drops punctuation, then keeps every token down to the deepest level of the
+tree whose tokens all fit at a 3px pitch, so its 2px strokes stay a pixel
+apart; a level is kept whole or not at all. For this sentence that is the
+root and its dependents (attention, can, restore, world) with their three
+arcs, nested under the root. It must keep at least two arcs, because a
 single arc under a bar reads as a letter U at 16px. `/mark` is the sheet,
 with the rules: clear space the root stroke's length; the glyph at least 24px
 tall; the full mark no narrower than where its words reach the 11px floor;
@@ -376,7 +382,8 @@ sit a little off the bar. On the site the face is loaded, and the mark on
 
 `scripts/check-mark.ts` holds the geometry to those rules in every variant:
 the words touch the bar and none crosses it; every stroke hangs, with the root
-starting on the bar; the favicon fits its square and keeps at least two arcs.
+starting on the bar; the favicon fits its square, keeps at least two arcs, and leaves a pixel
+between its strokes.
 It runs in `bun run check`, so in gate 4. Gate 8 guards what the mark is drawn
 from, and this guards how it is drawn.
 
@@ -385,7 +392,7 @@ mono wordmark hang wholly below it. The glyph's own bar lies on the rule, and
 the top of the wordmark's `t` touches it. What hangs lowest (the glyph's
 deepest arc) leaves more than the mark's clear space above the header's lower
 edge. The home page's
-hero is the mark at full scale, explaining itself: the motto in Alegreya with
+hero is the mark at full scale, explaining itself: the sentence in Alegreya with
 the same parse drawn over it in CSS grid, lit word by word on hover or focus,
 pinned by a click, labelled by "show the parse", and still with no script.
 
@@ -423,7 +430,7 @@ the title and the reading. Gate 9 holds every note's text to its data.
 (gate 4); lychee over the built HTML, fragments included (gate 1); the URL
 manifest (gate 7); and the twin test over the built HTML (gate 9). Gate 8
 regenerates the figure data into a temporary directory and diffs it against
-`src/lib/figures/` (the page measures and the motto's parse included); gate
+`src/lib/figures/` (the page measures and the specimen's parse included); gate
 10 checks every input's licence; gate 11 runs the
 worked examples. The other gates read `content/`. In CI the UDPipe and
 embedding models are cached under the digests matra pins them to, and fetched

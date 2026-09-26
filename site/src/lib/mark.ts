@@ -1,5 +1,5 @@
 /**
- * The mark: matra's own parse of "Amplify radical nonconformity.", drawn.
+ * The mark: matra's own parse of "Collective attention can restore a world.", drawn.
  *
  * A horizontal headline bar is the shirorekha, the line Devanagari letters
  * hang from. Each token of the sentence hangs from it as a stroke (or, in the
@@ -10,16 +10,16 @@
  * as an arc from head to dependent, levelled so none collide.
  *
  * Nothing here is drawn by hand. The input is the committed figure data
- * site/src/lib/figures/motto/parse.json, which gate 8 regenerates and diffs,
- * so if matra's parse of the motto changes, the mark changes, and review sees
+ * site/src/lib/figures/specimen/parse.json, which gate 8 regenerates and diffs,
+ * so if matra's parse of the specimen changes, the mark changes, and review sees
  * it. The geometry is on the 9-grid (the unit U is 9).
  *
  * Variants:
  *   glyph     bar, strokes and arcs; no words
  *   full      the words hang from the bar in the mono face, the root stroke
  *             after its word as the vowel sign sits after its consonant
- *   favicon   the reduced form for 16px: the bar and every token that is
- *             not punctuation, with the arcs between them
+ *   favicon   the reduced form for 16px: the bar and the tokens nearest the
+ *             root, as many levels of the tree as fit, with their arcs
  *   mono      the glyph in one ink; hierarchy carried by opacity
  *   paper     the glyph in ink on paper
  */
@@ -70,10 +70,10 @@ export interface MarkLayout {
 	wordSize?: number;
 }
 
-/** The motto's tokens, the first (only) sentence of the committed parse. */
-export function mottoTokens(file: ParseFigureFile): ParseToken[] {
+/** The specimen's tokens, the first (only) sentence of the committed parse. */
+export function specimenTokens(file: ParseFigureFile): ParseToken[] {
 	const sentence = file.data.sentences[0];
-	if (!sentence) throw new Error('the motto parse has no sentence; regenerate the figure data');
+	if (!sentence) throw new Error('the specimen parse has no sentence; regenerate the figure data');
 	return sentence.tokens;
 }
 
@@ -192,25 +192,63 @@ function fullLayout(tokens: ParseToken[]): MarkLayout {
 	};
 }
 
+/** The favicon's strokes run from x = 3 to x = 13 of its 16px square. */
+const FAVICON_SPAN = 10;
+/** 2px strokes need a 3px pitch to leave a pixel between them; closer, they fuse into a block. */
+const FAVICON_PITCH = 3;
+
 /**
- * The favicon keeps what a 16px square can carry: the bar, and every token
- * that is not punctuation, with the arcs between them. The rule reads the
- * tree; for the motto it drops only the full stop, so the nested arcs that
- * make the glyph recognisable survive. (Keeping only the root's dependents
- * left one arc, which at 16px read as a letter U.) Strokes are 2px wide on
+ * Each token's depth in the tree: 0 for the root, 1 for its dependents, and
+ * so on. A token whose heads never reach the root (a cycle, or a head that is
+ * not in the sentence) gets Infinity, found with a visited set, so a
+ * malformed parse is dropped from the reduction rather than looped on.
+ */
+function depths(tokens: ParseToken[]): Map<number, number> {
+	const byId = new Map(tokens.map((t) => [t.id, t]));
+	const out = new Map<number, number>();
+	for (const t of tokens) {
+		const seen = new Set<number>();
+		let cur: ParseToken | undefined = t;
+		let d = 0;
+		while (cur && cur.head !== 0 && !seen.has(cur.id)) {
+			seen.add(cur.id);
+			cur = byId.get(cur.head);
+			d++;
+		}
+		out.set(t.id, cur && cur.head === 0 ? d : Infinity);
+	}
+	return out;
+}
+
+/**
+ * The favicon keeps what a 16px square can carry: the bar, and the tokens
+ * nearest the root, with the arcs between them. The rule reads the tree.
+ * Punctuation goes first. Then it keeps every token down to the deepest
+ * level of the tree whose tokens all fit at a 3px pitch (so the 2px strokes
+ * stay apart), and no deeper: a level is kept whole or not at all. The kept
+ * tokens are always a subtree hanging from the root, so every kept arc has
+ * both ends kept. (Keeping one arc alone reads as a letter U at 16px; the
+ * mark check fails if fewer than two survive.) Strokes are 2px wide on
  * whole-pixel centres, so each covers two whole pixels and stays sharp.
  */
 function faviconLayout(tokens: ParseToken[]): MarkLayout {
-	const kept = tokens.filter((t) => t.dep !== 'punct');
-	if (!kept.some((t) => t.head === 0)) throw new Error('the motto parse has no root');
+	const words = tokens.filter((t) => t.dep !== 'punct');
+	if (!words.some((t) => t.head === 0)) throw new Error('the specimen parse has no root');
+	const depth = depths(words);
+	const room = Math.floor(FAVICON_SPAN / FAVICON_PITCH) + 1;
+	let level = 0;
+	while (words.filter((t) => depth.get(t.id)! <= level + 1).length <= room && words.some((t) => depth.get(t.id)! > level)) level++;
+	const kept = words.filter((t) => depth.get(t.id)! <= level);
 	const keep = new Set(kept.map((t) => t.id));
 	const n = kept.length;
-	// A 16 x 16 square: the bar 1px from the top, strokes 3px in from the sides.
-	const x = (i: number) => (n === 1 ? 8 : 3 + Math.round((i * 10) / (n - 1)));
+	// A 16 x 16 square: the bar 1px from the top, strokes 3px in from the
+	// left, on one whole-pixel pitch, as wide as the span allows.
+	const pitch = n === 1 ? 0 : Math.floor(FAVICON_SPAN / (n - 1));
+	const x = (i: number) => (n === 1 ? 8 : 3 + i * pitch);
 	const barY = 2;
 	const foot = 8;
 	const index = new Map(kept.map((t, i) => [t.id, i]));
-	const shown = levelled(tokens).filter((a) => keep.has(a.head) && keep.has(a.dependent));
+	const shown = levelled(kept).filter((a) => keep.has(a.head) && keep.has(a.dependent));
 	const deepest = Math.max(1, ...shown.map((a) => a.level));
 	// The arcs share the 7px under the foot, and never hang deeper than 3px a level.
 	const step = Math.min(3, 7 / deepest);

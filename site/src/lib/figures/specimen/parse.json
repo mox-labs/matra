@@ -1,0 +1,85 @@
+{
+  "data": {
+    "sentences": [
+      {
+        "paragraph": 1,
+        "text": "Collective attention can restore a world.",
+        "tokens": [
+          {
+            "dep": "amod",
+            "head": 2,
+            "id": 1,
+            "lemma": "collective",
+            "pos": "ADJ",
+            "text": "Collective"
+          },
+          {
+            "dep": "nsubj",
+            "head": 4,
+            "id": 2,
+            "lemma": "attention",
+            "pos": "NOUN",
+            "text": "attention"
+          },
+          {
+            "dep": "aux",
+            "head": 4,
+            "id": 3,
+            "lemma": "can",
+            "pos": "AUX",
+            "text": "can"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 4,
+            "lemma": "restore",
+            "pos": "VERB",
+            "text": "restore"
+          },
+          {
+            "dep": "det",
+            "head": 6,
+            "id": 5,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "obj",
+            "head": 4,
+            "id": 6,
+            "lemma": "world",
+            "pos": "NOUN",
+            "text": "world"
+          },
+          {
+            "dep": "punct",
+            "head": 4,
+            "id": 7,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      }
+    ]
+  },
+  "figure": "parse",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "specimen",
+  "source": {
+    "author": "matra contributors",
+    "licence": "MIT, as part of the matra repository",
+    "register": "specimen",
+    "source": "A line by matra's authors, parsed as the docsite's specimen: the mark is drawn from this parse",
+    "title": "Collective attention can restore a world.",
+    "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/specimen.txt"
+  }
+}

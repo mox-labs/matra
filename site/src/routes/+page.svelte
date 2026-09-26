@@ -25,6 +25,6 @@
 {#each MOVED as id (id)}<span {id} hidden></span>{/each}
 <DocPage doc={data.doc} giscus={null} home>
 	{#snippet hero()}
-		<Hero tokens={data.motto} titleId={data.doc.titleId || 'matra'} />
+		<Hero tokens={data.specimen} titleId={data.doc.titleId || 'matra'} />
 	{/snippet}
 </DocPage>

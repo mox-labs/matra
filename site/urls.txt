@@ -77,7 +77,7 @@ figures/federalist-10/parse.json
 figures/federalist-10/primitives.json
 figures/federalist-10/textrank.json
 figures/field-notes/pipeline.json
-figures/motto/parse.json
+figures/specimen/parse.json
 figures/origin-struggle/keyphrases.json
 figures/origin-struggle/textrank.json
 figures/pages/architecture/design/measures.json
