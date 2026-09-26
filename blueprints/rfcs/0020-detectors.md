@@ -2,7 +2,7 @@
 
 - Feature Name: `detectors`
 - Start Date: 2026-09-26
-- RFC PR: (this pull request)
+- RFC PR: [#122](https://github.com/mox-labs/matra/pull/122)
 - Tracking EP: (assigned when the EP opens)
 - Status: accepted (the file reaches `main` only by merging, which is what accepts it)
 
