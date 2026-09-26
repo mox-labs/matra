@@ -387,13 +387,13 @@
       "words": 55
     },
     {
-      "compression_ratio": 0.5465,
+      "compression_ratio": 0.5052,
       "in_blockquote": false,
-      "lexical_density": 0.6404,
-      "readability_grade": 7.3947,
-      "sentences": 3,
-      "text": "The check needs semgrep, at the version `.github/requirements/semgrep.txt` pins, and must run from the root of a git work tree: semgrep resolves each rule's paths against the work tree, and outside one a path-scoped rule matches nothing. Each finding prints the file, the line and the rule's message. On a clean tree the script ends with `check-boundaries: N of N Rust files in src/ read, 0 finding(s)`, and it exits non-zero on any finding, any failed rule test, or any Rust file under `src/` the scan did not read.",
-      "words": 94
+      "lexical_density": 0.6048,
+      "readability_grade": 7.9813,
+      "sentences": 4,
+      "text": "The check needs semgrep, at the version `.github/requirements/semgrep.txt` pins, and must run from the root of a git work tree: semgrep resolves each rule's paths against the work tree, and outside one a path-scoped rule matches nothing. Each finding prints the file, the line and the rule's message. On a clean tree the script ends with `check-boundaries: N of N Rust files in src/ read, 0 finding(s)`, and it exits non-zero on any finding, any failed rule test, any Rust file under `src/` the scan did not read, or any rule scoped to a path git no longer has. A rule scoped to a moved file would scan nothing and pass, so when a file moves, the rules that name it move with it.",
+      "words": 129
     },
     {
       "compression_ratio": 0.6189,

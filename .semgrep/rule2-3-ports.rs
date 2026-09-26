@@ -32,6 +32,15 @@ use crate::{
 };
 // ruleid: boundary-rule3-port-names-port
 use super::nlp::NlpProvider;
+// Nested groups, two and three levels deep, are walked item by item.
+// ruleid: boundary-rule3-port-names-port
+use crate::{domain::{tree::{Node}}, nlp::C};
+// ruleid: boundary-rule3-port-names-port
+use crate::{domain::{tree::{Node, Leaf}, x::{y::{Z}}}, embed};
+// ok: boundary-rule2-port-imports, boundary-rule3-port-names-port
+use crate::{domain::{tree::{Node}}, domain::B};
+// ruleid: boundary-rule2-port-imports
+use crate::{domain::{tree::{Node}}, config::Config};
 
 // ruleid: boundary-rule2-port-imports
 use crate::config::Config;

@@ -38,6 +38,27 @@ pub struct Holder {
     pub model: udpipe_rs::Model,
     // ruleid: boundary-rule4-udpipe-rs-outside-adapter
     model2: udpipe_rs::Model,
+    // A comma inside the field's generics does not end the field.
+    // ruleid: boundary-rule4-udpipe-rs-outside-adapter, boundary-rule4-udpipe-rs-exposed
+    pub by_name: HashMap<String, udpipe_rs::Model>,
+    // ruleid: boundary-rule4-udpipe-rs-outside-adapter, boundary-rule4-udpipe-rs-exposed
+    pub nested: HashMap<Vec<u8>, Vec<(u8, udpipe_rs::Model)>>,
+    // ruleid: boundary-rule4-udpipe-rs-outside-adapter, boundary-rule4-udpipe-rs-exposed
+    pub(crate) third: Triple<A, Vec<B>, udpipe_rs::Sentence>,
+    // ok: boundary-rule4-udpipe-rs-exposed
+    pub names: HashMap<String, Vec<u8>>,
+    // ruleid: boundary-rule4-udpipe-rs-outside-adapter
+    pub count: u8, private: udpipe_rs::Model,
+}
+// ruleid: boundary-rule4-udpipe-rs-outside-adapter, boundary-rule4-udpipe-rs-exposed
+pub struct OneLine { pub model: HashMap<String, udpipe_rs::Model> }
+pub struct Embeddings {
+    // ruleid: boundary-rule4-model2vec-crates-outside-adapter, boundary-rule4-model2vec-crates-exposed
+    pub by_name: HashMap<String, tokenizers::Tokenizer>,
+    // ruleid: boundary-rule4-model2vec-crates-outside-adapter, boundary-rule4-model2vec-crates-exposed
+    pub tensors: BTreeMap<u32, Vec<safetensors::tensor::TensorView<'static>>>,
+    // ok: boundary-rule4-model2vec-crates-exposed
+    pub dims: HashMap<String, usize>,
 }
 // ruleid: boundary-rule4-udpipe-rs-exposed
 pub(super) fn load(

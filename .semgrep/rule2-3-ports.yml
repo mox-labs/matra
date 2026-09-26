@@ -27,7 +27,7 @@ rules:
       let src/lib.rs wire the stages together. Read:
       site/content/reference/boundary-rules.md#rule-3-no-port-module-imports-another-port-module
     patterns:
-      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\b(?:crate|super)\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|\{[^{};]*\})*?,)?(?:\s|//[^\n]*\n)*)?(?:source|decompose|nlp|embed)\b'
+      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?(DEFINE)(?<nest>\{(?:[^{};]|(?&nest))*+\}))\b(?:crate|super)\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*?,)?(?:\s|//[^\n]*\n)*)?(?:source|decompose|nlp|embed)\b'
       - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
 
   - id: boundary-rule2-port-imports
@@ -55,7 +55,7 @@ rules:
           # crate:: or super:: (the crate root, here) into anything but
           # domain, directly or as an item of a brace group. Ports
           # themselves are rule 3's finding, so they are not repeated here.
-          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\b(?:crate|super)\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|\{[^{};]*\})*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:domain|source|decompose|nlp|embed)\b)(?:[A-Za-z_]\w*|\*)'
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?(DEFINE)(?<nest>\{(?:[^{};]|(?&nest))*+\}))\b(?:crate|super)\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:domain|source|decompose|nlp|embed)\b)(?:[A-Za-z_]\w*|\*)'
           # `use crate as c;` would let `c::nlp` past every other pattern.
           - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bcrate\s+as\b'
           # A use line rooted anywhere but std, core, alloc, crate or super.

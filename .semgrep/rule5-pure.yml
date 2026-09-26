@@ -30,7 +30,7 @@ rules:
       site/content/reference/boundary-rules.md#rule-5-metrics-extraction-and-structure-readers-stay-pure
     patterns:
       - pattern-either:
-          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bcrate\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|\{[^{};]*\})*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:domain|stopwords)\b)(?:[A-Za-z_]\w*|\*)'
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?(DEFINE)(?<nest>\{(?:[^{};]|(?&nest))*+\}))\bcrate\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:domain|stopwords)\b)(?:[A-Za-z_]\w*|\*)'
           - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bcrate\s+as\b'
           - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bsuper\s*::\s*super\b'
       - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
@@ -53,5 +53,5 @@ rules:
       Read:
       site/content/reference/boundary-rules.md#rule-5-metrics-extraction-and-structure-readers-stay-pure
     patterns:
-      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bsuper\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|\{[^{};]*\})*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:domain|stopwords)\b)(?:[A-Za-z_]\w*|\*)'
+      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?(DEFINE)(?<nest>\{(?:[^{};]|(?&nest))*+\}))\bsuper\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:domain|stopwords)\b)(?:[A-Za-z_]\w*|\*)'
       - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'

@@ -5,8 +5,11 @@
 # for. Runs from `just boundary` (and so `just check`), the pre-commit hook,
 # and the `Boundary check` job in .github/workflows/ci.yml.
 #
-# Three steps, each built to fail loudly rather than pass over nothing:
+# Four steps, each built to fail loudly rather than pass over nothing:
 #
+#   0. Path scopes. Every `paths: include:` entry must name a file git has,
+#      or a glob that matches one; a rule scoped to a moved file scans
+#      nothing. Runs in --scan-only mode too.
 #   1. Rule tests. Every .semgrep/NAME.yml has a fixture .semgrep/NAME.rs in
 #      which every rule id carries at least one `ruleid:` and one `ok:`
 #      annotation, and `semgrep --test` passes on the pair. The pairs are
@@ -83,6 +86,86 @@ shopt -u nullglob
 if [ "${#configs[@]}" -eq 0 ]; then
     echo "FAIL: no rule files in .semgrep/" >&2
     exit 2
+fi
+
+# --- 0. Path scopes ----------------------------------------------------------
+#
+# A rule whose `paths: include:` names a file that no longer exists, or a glob
+# that matches nothing, scans nothing and passes; `semgrep --test` ignores
+# paths, so the fixtures cannot notice. Moving a file is how that happens, so
+# this runs in --scan-only mode too, where the hook commits the move.
+
+git ls-files --cached --others --exclude-standard >"$tmp/tracked"
+python3 - "$tmp/tracked" "${configs[@]}" <<'PY' || fail=1
+import re, sys
+
+tracked = [line.strip() for line in open(sys.argv[1]) if line.strip()]
+
+def glob_to_regex(pattern):
+    # Semgrep's gitignore-style paths: a leading "/" anchors at the repo
+    # root, "**/" is any number of directories, "*" and "?" stay in one.
+    anchored = pattern.startswith("/")
+    body = pattern.lstrip("/")
+    out, i = [], 0
+    while i < len(body):
+        if body.startswith("**/", i):
+            out.append("(?:.*/)?"); i += 3
+        elif body.startswith("**", i):
+            out.append(".*"); i += 2
+        elif body[i] == "*":
+            out.append("[^/]*"); i += 1
+        elif body[i] == "?":
+            out.append("[^/]"); i += 1
+        else:
+            out.append(re.escape(body[i])); i += 1
+    return re.compile(("^" if anchored else "^(?:.*/)?") + "".join(out) + "(?:/.*)?$")
+
+def includes(path):
+    # Rule id -> include entries, from the two YAML shapes .semgrep/ uses:
+    # `include: ["/a", "/b"]` and a block list of `- "/a"` lines.
+    rules, rule, in_include = {}, None, False
+    for raw in open(path):
+        line = raw.rstrip("\n")
+        m = re.match(r"^  - id:\s*(\S+)", line)
+        if m:
+            rule, in_include = m.group(1), False
+            rules[rule] = []
+            continue
+        m = re.match(r"^\s+include:\s*(.*)$", line)
+        if m and rule:
+            rest = m.group(1).strip()
+            if rest.startswith("["):
+                rules[rule] += re.findall(r'"([^"]+)"', rest)
+                in_include = False
+            else:
+                in_include = True
+            continue
+        if in_include:
+            m = re.match(r'^\s+-\s*"([^"]+)"\s*$', line)
+            if m:
+                rules[rule].append(m.group(1))
+                continue
+            in_include = False
+    return rules
+
+dead = 0
+checked = 0
+for cfg in sys.argv[2:]:
+    for rule, entries in includes(cfg).items():
+        for entry in entries:
+            checked += 1
+            regex = glob_to_regex(entry)
+            if not any(regex.match(path) for path in tracked):
+                kind = "glob matches no file" if any(c in entry for c in "*?[") else "path does not exist"
+                print(f"FAIL: rule {rule} ({cfg}) scopes itself to {entry}, and that {kind} in git.")
+                print("      The rule now scans nothing and passes silently. Update the rule's paths when you move a file.")
+                dead += 1
+print(f"check-boundaries: {checked} path scopes checked, {dead} dead")
+sys.exit(1 if dead else 0)
+PY
+if [ "$fail" -ne 0 ]; then
+    echo "check-boundaries: a rule's path scope is dead; the scan did not run"
+    exit 1
 fi
 
 rule_count=0

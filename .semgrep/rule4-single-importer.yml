@@ -40,7 +40,7 @@ rules:
       the single entrance to the C++ code if no udpipe_rs value leaves it.
       Fix: keep the udpipe_rs item private and return a domain type. Read:
       site/content/reference/boundary-rules.md#rule-4-one-file-imports-udpipe_rs
-    pattern-regex: '(?m)^(?![ \t]*//)(?:[^\n]*?[;{}\]])?[ \t]*\Kpub(?:\s*\([^)]*\))?\s+(?:use\s+(?:::\s*)?udpipe_rs\b|(?:type|fn|struct|enum|const|static|trait)\b[^;{]*\budpipe_rs\b|\w+\s*:[^,;{}]*\budpipe_rs\b)'
+    pattern-regex: '(?m)^(?![ \t]*//)(?:[^\n]*?[;{}\]])?[ \t]*\K(?(DEFINE)(?<ang><(?:[^<>;{}]|(?&ang))*+>)(?<inner>(?:[^;{}<>]|(?&ang))*?(?:\budpipe_rs\b|<(?&inner))))pub(?:\s*\([^)]*\))?\s+(?:use\s+(?:::\s*)?udpipe_rs\b|(?:type|fn|struct|enum|const|static|trait)\b[^;{]*\budpipe_rs\b|\w+\s*:(?:[^;{}<>,\n]|(?&ang))*?(?:\budpipe_rs\b|<(?&inner)))'
 
   - id: boundary-rule4-model2vec-crates-outside-adapter
     languages: [regex]
@@ -76,4 +76,4 @@ rules:
       every other file's reach. Fix: keep the item private and return a
       domain type. Read:
       site/content/reference/boundary-rules.md#rule-4-one-file-imports-udpipe_rs
-    pattern-regex: '(?m)^(?![ \t]*//)(?:[^\n]*?[;{}\]])?[ \t]*\Kpub(?:\s*\([^)]*\))?\s+(?:use\s+(?:::\s*)?(?:safetensors|tokenizers)\b|(?:type|fn|struct|enum|const|static|trait)\b[^;{]*\b(?:safetensors|tokenizers)\b|\w+\s*:[^,;{}]*\b(?:safetensors|tokenizers)\b)'
+    pattern-regex: '(?m)^(?![ \t]*//)(?:[^\n]*?[;{}\]])?[ \t]*\K(?(DEFINE)(?<ang><(?:[^<>;{}]|(?&ang))*+>)(?<inner>(?:[^;{}<>]|(?&ang))*?(?:\b(?:safetensors|tokenizers)\b|<(?&inner))))pub(?:\s*\([^)]*\))?\s+(?:use\s+(?:::\s*)?(?:safetensors|tokenizers)\b|(?:type|fn|struct|enum|const|static|trait)\b[^;{]*\b(?:safetensors|tokenizers)\b|\w+\s*:(?:[^;{}<>,\n]|(?&ang))*?(?:\b(?:safetensors|tokenizers)\b|<(?&inner)))'
