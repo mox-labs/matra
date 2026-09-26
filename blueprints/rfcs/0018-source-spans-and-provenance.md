@@ -2,7 +2,7 @@
 
 - Feature Name: `source_spans`
 - Start Date: 2026-09-26
-- RFC PR: (this pull request)
+- RFC PR: [#121](https://github.com/mox-labs/matra/pull/121)
 - Tracking EP: (assigned when the EP opens)
 - Status: accepted (the file reaches `main` only by merging, which is what accepts it)
 
