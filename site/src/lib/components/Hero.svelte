@@ -78,6 +78,9 @@
 		if (active === null) return null;
 		const t = byId.get(active);
 		const set = new Set<number>([active]);
+		// The full stop is in the sentence but not in the drawing: it lights
+		// itself, and no arc or head, since none is drawn to it.
+		if (t && !drawn(t)) return set;
 		if (t && t.head !== 0) set.add(t.head);
 		for (const d of tokens) if (d.head === active && drawn(d)) set.add(d.id);
 		return set;

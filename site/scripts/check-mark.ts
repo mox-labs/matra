@@ -105,7 +105,24 @@ for (const variant of ['glyph', 'full', 'favicon', 'mono', 'paper'] as Variant[]
 		const m = layoutMark(withPunct as typeof tokens, variant);
 		const ids = [...m.strokes.map((s) => s.id), ...m.arcs.flatMap((a) => [a.head, a.dependent]), ...m.words.map((w) => w.id)];
 		check(!ids.includes(2) && !ids.includes(6), `${variant}: a parse's punctuation is drawn (${[...new Set(ids)].sort().join(',')})`);
+		// Token 5 hangs from punctuation. The glyph and the full mark keep its
+		// stroke with no arc; the favicon keeps only what reaches the root.
+		const five = m.strokes.some((s) => s.id === 5);
+		check(variant === 'favicon' ? !five : five, `${variant}: the word hanging from punctuation is ${five ? 'kept' : 'dropped'}`);
+		check(!m.arcs.some((a) => a.dependent === 5), `${variant}: an arc is drawn to the word hanging from punctuation`);
 	}
+}
+
+// A parse of nothing but punctuation has no mark; it fails by name, not with
+// a TypeError from an empty list.
+{
+	let message = '';
+	try {
+		layoutMark([{ id: 1, head: 0, dep: 'root', pos: 'PUNCT', text: '.', lemma: '.' }], 'glyph');
+	} catch (e) {
+		message = (e as Error).message;
+	}
+	check(message.includes('no token but punctuation'), `glyph: a parse of only punctuation fails with "${message}", not by name`);
 }
 
 // A malformed parse (a head that is not in the sentence, and a two-token
