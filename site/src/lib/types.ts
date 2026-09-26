@@ -190,6 +190,12 @@ export interface ExampleCall {
 	/** The file the call lives in, under site/examples/<name>/. */
 	file: string;
 	html: string;
+	/**
+	 * How to get from nothing to this call, when the example says so (the
+	 * quick start and the tutorial): the install command, and for a program,
+	 * where to save it and the command that runs it.
+	 */
+	start?: { installHtml: string; inputHtml?: string; save?: string; runHtml?: string };
 }
 
 /**

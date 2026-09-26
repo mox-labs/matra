@@ -93,36 +93,26 @@
 			<div class="state" class:focused={lit !== null} transition:fade={swap()}>
 				<p class="sentence"><span class="n">{current}</span>{shown.text}</p>
 
-				<!-- A region that scrolls must take focus, or it cannot be scrolled
-				     from the keyboard (WCAG 2.1.1); the page's own tables do the same. -->
-				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-				<div class="fig-twin" tabindex="0" role="region" aria-label="Tokens of sentence {current}">
-					<table data-twin-for={id}>
-						<thead>
-							<tr><th>#</th><th>Word</th><th>Lemma</th><th>POS</th><th>Head</th><th>Relation</th></tr>
-						</thead>
-						<tbody {@attach roving}>
-							{#each shown.tokens as t (t.id)}
-								<tr
-									data-row={t.id}
-									class:lit={lit?.has(t.id)}
-									class:dim={lit !== null && !lit.has(t.id)}
-									onpointerenter={() => (active = t.id)}
-									onpointerleave={() => (active = null)}
-									onfocus={() => (active = t.id)}
-									onblur={() => (active = null)}
-								>
-									<td class="num">{t.id}</td>
-									<td class="word">{t.text}</td>
-									<td>{t.lemma}</td>
-									<td class="pos">{t.pos}</td>
-									<td class="num">{t.head}<span class="head-word">{t.head === 0 ? 'root' : byId.get(t.head)?.text}</span></td>
-									<td><span class="swatch fam-{t.head === 0 ? 'root' : family(t.dep)}" aria-hidden="true"></span>{t.dep}</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+				<!-- The data, one line above the arcs, in the form a reader already
+				     reads: each word, its relation, and the word it depends on. The
+				     keyboard lights a word's arcs from here, as the pointer does. -->
+				<ol class="tokens" aria-label="Each word of sentence {current}, its relation and its head" {@attach roving}>
+					{#each shown.tokens as t (t.id)}
+						<li
+							data-row={t.id}
+							class:lit={lit?.has(t.id)}
+							class:dim={lit !== null && !lit.has(t.id)}
+							onpointerenter={() => (active = t.id)}
+							onpointerleave={() => (active = null)}
+							onfocus={() => (active = t.id)}
+							onblur={() => (active = null)}
+						>
+							<span class="tw">{t.text}</span>
+							{t.head === 0 ? 'root' : `${t.dep} of ${byId.get(t.head)?.text}`}
+						</li>
+					{/each}
+				</ol>
+
 
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 				<div class="fig-scroll" tabindex="0" role="region" aria-label="Arc diagram of sentence {current}" {@attach measure}>
@@ -170,6 +160,37 @@
 			</div>
 		{/key}
 	</div>
+
+	{#snippet twin()}
+		<!-- A region that scrolls must take focus, or it cannot be scrolled
+		     from the keyboard (WCAG 2.1.1); the page's own tables do the same. -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="fig-twin" tabindex="0" role="region" aria-label="Tokens of sentence {current}">
+			<table data-twin-for={id}>
+				<thead>
+					<tr><th>#</th><th>Word</th><th>Lemma</th><th>POS</th><th>Head</th><th>Relation</th></tr>
+				</thead>
+				<tbody>
+					{#each shown.tokens as t (t.id)}
+						<tr
+							data-row={t.id}
+							class:lit={lit?.has(t.id)}
+							class:dim={lit !== null && !lit.has(t.id)}
+							onpointerenter={() => (active = t.id)}
+							onpointerleave={() => (active = null)}
+						>
+							<td class="num">{t.id}</td>
+							<td class="word">{t.text}</td>
+							<td>{t.lemma}</td>
+							<td class="pos">{t.pos}</td>
+							<td class="num">{t.head}<span class="head-word">{t.head === 0 ? 'root' : byId.get(t.head)?.text}</span></td>
+							<td><span class="swatch fam-{t.head === 0 ? 'root' : family(t.dep)}" aria-hidden="true"></span>{t.dep}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/snippet}
 
 	{#snippet legend()}
 		<ul class="fig-legend" aria-label="Arc lines">
@@ -256,6 +277,42 @@
 		margin: 0 0 0.8rem;
 		font-size: 1.02rem;
 		line-height: 1.5;
+	}
+
+	/* The compact data line: word, relation, head, set small and wrapping,
+	   one line above the arcs. */
+	.tokens {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.15rem 0.9rem;
+		margin: 0 0 0.7rem;
+		padding: 0;
+		list-style: none;
+		font: var(--type-xs) / 1.5 var(--font-mono);
+		color: var(--text-muted);
+	}
+
+	.tokens li {
+		margin: 0;
+		transition: opacity var(--duration-fast) linear;
+	}
+
+	.tokens .tw {
+		color: var(--text);
+		font-weight: 600;
+	}
+
+	.tokens li.lit .tw {
+		color: var(--spark);
+	}
+
+	.tokens li.dim {
+		opacity: 0.4;
+	}
+
+	.tokens li:focus-visible {
+		outline: 2px solid var(--spark);
+		outline-offset: 2px;
 	}
 
 	.sentence .n {

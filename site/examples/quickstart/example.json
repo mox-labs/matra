@@ -1,0 +1,24 @@
+{
+  "input": "quickstart",
+  "file": "note.txt",
+  "save": "echo 'The committee approved the budget on Tuesday.' > note.txt",
+  "output": {
+    "path": "sections.0.paragraphs.0.sentences.0.tokens",
+    "keep": 1
+  },
+  "start": {
+    "rust": {
+      "install": "cargo new quickstart && cd quickstart\ncargo add matra serde_json",
+      "save": "src/main.rs",
+      "run": "cargo run"
+    },
+    "python": {
+      "install": "pip install matra",
+      "save": "quickstart.py",
+      "run": "python quickstart.py"
+    },
+    "cli": {
+      "install": "pip install matra   # or: cargo install matra --features cli"
+    }
+  }
+}

@@ -52,6 +52,8 @@ examples! {
     "summarize" => summarize,
     "keyphrases" => keyphrases,
     "markdown-structure" => markdown_structure,
+    "quickstart" => quickstart,
+    "first-analysis" => first_analysis,
 }
 
 fn main() -> ExitCode {

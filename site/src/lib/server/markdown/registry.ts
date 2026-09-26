@@ -59,7 +59,7 @@ export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 	details: {
 		kind: 'passthrough',
 		reason:
-			'A disclosure: the answer to a predict-then-reveal prompt (the semantic clusters guide), ' +
+			'A disclosure: the answer to a predict-then-reveal prompt (What the clustering threshold does), ' +
 			'kept closed until the reader opens it. It works without a script.'
 	},
 	svg: {

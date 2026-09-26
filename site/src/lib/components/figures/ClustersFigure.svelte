@@ -161,7 +161,28 @@
 </script>
 
 <FigureFrame {id} kind="clusters" title="Semantic clusters as the threshold moves" {file} {dataUrl}>
-	{#snippet controls()}
+	<ol class="sentences" aria-label="The sentences, numbered as in the figure">
+		{#each data.sentences as s, i (s.index)}
+			<!-- Each sentence takes focus, so the keyboard lights a cluster as
+			     the pointer does. -->
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<li
+				tabindex="0"
+				class:lit={litRows?.has(i)}
+				class:dim={litRows !== null && !litRows.has(i)}
+				onpointerenter={() => (focus = i)}
+				onpointerleave={() => (focus = null)}
+				onfocus={() => (focus = i)}
+				onblur={() => (focus = null)}
+			>
+				<span class="n">{s.index + 1}</span>{s.text}
+			</li>
+		{/each}
+	</ol>
+
+	<!-- The control sits on the diagram it drives: the threshold, its
+	     readout, then the arcs it sets. -->
+	<div class="drive">
 		{#if js}
 			<div class="scrub">
 				<label class="scrub-label" for="{id}-scrub">threshold</label>
@@ -196,147 +217,129 @@
 				</div>
 			</div>
 		{/if}
-	{/snippet}
+		<p class="state" aria-live="polite">
+			{#if between}
+				Between matra's runs at <strong>{fmt(data.grid[lo].threshold)}</strong> and
+				<strong>{fmt(data.grid[hi].threshold)}</strong>: the figure blends the two. Let go to settle on the nearer.
+			{:else}
+				At <strong>{fmt(point.threshold)}</strong>{#if Math.abs(point.threshold - data.default_threshold) < 1e-9}, matra's default{/if}:
+				{point.clusters.length} {point.clusters.length === 1 ? 'cluster' : 'clusters'}, {data.sentences.length -
+					layers[nearest].cluster.size} of {data.sentences.length} sentences in none.
+			{/if}
+		</p>
 
-	<ol class="sentences" aria-label="The sentences, numbered as in the figure">
-		{#each data.sentences as s, i (s.index)}
-			<!-- Each sentence takes focus, so the keyboard lights a cluster as
-			     the pointer does. -->
-			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-			<li
-				tabindex="0"
-				class:lit={litRows?.has(i)}
-				class:dim={litRows !== null && !litRows.has(i)}
-				onpointerenter={() => (focus = i)}
-				onpointerleave={() => (focus = null)}
-				onfocus={() => (focus = i)}
-				onblur={() => (focus = null)}
-			>
-				<span class="n">{s.index + 1}</span>{s.text}
-			</li>
-		{/each}
-	</ol>
-
-	<!-- A region that scrolls must take focus, or it cannot be scrolled from
-	     the keyboard (WCAG 2.1.1). -->
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-twin" tabindex="0" role="region" aria-label="Clusters and edges at every threshold">
-		<table data-twin-for={id}>
-			<thead><tr><th>Threshold</th><th>Clusters</th><th>Edges (cosine)</th></tr></thead>
-			<tbody>
-				{#each data.grid as g, i (g.threshold)}
-					<tr
-						class:current={i === nearest}
-						onpointerenter={() => js && (preview = i)}
-						onpointerleave={() => (preview = null)}
-						onclick={() => {
-							pos = i;
-							preview = null;
-						}}
-					>
-						<td class="num">{fmt(g.threshold)}</td>
-						<!-- Each cell wraps between whole items, never inside one, so no
-						     column runs off the figure's edge. -->
-						<td class="wrap"
-							>{#each g.clusters as c, k (k)}{k ? ' ' : ''}<span>{members(c.members)}</span>{:else}none{/each}</td
-						>
-						<td class="wrap edges"
-							>{#each g.clusters.flatMap((c) => c.edges) as e, k (`${e.a}-${e.b}`)}{k ? ', ' : ''}<span
-									>{edgeText(e)}</span
-								>{:else}none{/each}</td
-						>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
-
-	<p class="state" aria-live="polite">
-		{#if between}
-			Between matra's runs at <strong>{fmt(data.grid[lo].threshold)}</strong> and
-			<strong>{fmt(data.grid[hi].threshold)}</strong>: the figure blends the two. Let go to settle on the nearer.
-		{:else}
-			At <strong>{fmt(point.threshold)}</strong>{#if Math.abs(point.threshold - data.default_threshold) < 1e-9}, matra's default{/if}:
-			{point.clusters.length} {point.clusters.length === 1 ? 'cluster' : 'clusters'}, {data.sentences.length -
-				layers[nearest].cluster.size} of {data.sentences.length} sentences in none.
-		{/if}
-	</p>
-
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div
-		class="fig-scroll"
-		tabindex="0"
-		role="region"
-		aria-label="Clusters at threshold {fmt(point.threshold)}"
-		{@attach measure}
-	>
-		<svg
-			{width}
-			{height}
-			viewBox="0 0 {width} {height}"
-			role="img"
-			aria-label="Sentences with the similarities that cleared {fmt(point.threshold)} drawn as arcs"
-			data-clusters-for={id}
-			class:dragging
-			class:focused={litRows !== null}
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div
+			class="fig-scroll"
+			tabindex="0"
+			role="region"
+			aria-label="Clusters at threshold {fmt(point.threshold)}"
+			{@attach measure}
 		>
-			<title>Sentence similarities above {fmt(point.threshold)}</title>
-			{#each data.sentences as s, i (s.index)}
-				<!-- Pointer-only: the same lighting is on the sentence list above,
-				     which the keyboard reaches. -->
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<g
-					class="row"
-					class:dim={litRows !== null && !litRows.has(i)}
-					onpointerenter={() => (focus = i)}
-					onpointerleave={() => (focus = null)}
-				>
-					<rect class="hit" x={X0} y={rowY(i) - ROW / 2} width={width - X0} height={ROW} />
-					<text class="num" x={X0 + 38} y={rowY(i)}>{s.index + 1}</text>
-					<text class="sent" class:none={!layers[nearest].cluster.has(i)} x={textX} y={rowY(i)} font-size={FONT}
-						>{s.text}</text
+			<svg
+				{width}
+				{height}
+				viewBox="0 0 {width} {height}"
+				role="img"
+				aria-label="Sentences with the similarities that cleared {fmt(point.threshold)} drawn as arcs"
+				data-clusters-for={id}
+				class:dragging
+				class:focused={litRows !== null}
+			>
+				<title>Sentence similarities above {fmt(point.threshold)}</title>
+				{#each data.sentences as s, i (s.index)}
+					<!-- Pointer-only: the same lighting is on the sentence list above,
+					     which the keyboard reaches. -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<g
+						class="row"
+						class:dim={litRows !== null && !litRows.has(i)}
+						onpointerenter={() => (focus = i)}
+						onpointerleave={() => (focus = null)}
 					>
-				</g>
-			{/each}
-			{#each layers as layer, li (layer.g.threshold)}
-				<g
-					class="layer"
-					style="opacity: {weight(li)}"
-					data-threshold={fmt(layer.g.threshold)}
-					data-current={li === Math.round(pos) && preview === null ? 'true' : 'false'}
-					aria-hidden={li === nearest ? undefined : 'true'}
-				>
-					{#each layer.laid as e (`${e.a}-${e.b}`)}
-						{@const g = arc(e.a, e.b, e.level)}
-						<g class="edge" class:lit={edgeLit(e)} data-a={e.a + 1} data-b={e.b + 1} data-score={e.score}>
-							<path d={g.d} />
-							<text class="score" x={g.lx} y={g.ly}>{e.score.toFixed(2)}</text>
-						</g>
-					{/each}
-					{#each data.sentences as s, i (s.index)}
-						{@const k = layer.cluster.get(i)}
-						<g class="marker" class:lit={litRows?.has(i)}>
-							{#if k !== undefined}
-								<text class="letter" x={X0 + 22} y={rowY(i)}>{LETTERS[k] ?? k + 1}</text>
-							{/if}
-							<circle
-								class="mark"
-								class:none={k === undefined}
-								data-row={i + 1}
-								data-cluster={k === undefined ? '' : k + 1}
-								cx={X0 + 10}
-								cy={rowY(i)}
-								r="5"
-							/>
-						</g>
-					{/each}
-				</g>
-			{/each}
-		</svg>
+						<rect class="hit" x={X0} y={rowY(i) - ROW / 2} width={width - X0} height={ROW} />
+						<text class="num" x={X0 + 38} y={rowY(i)}>{s.index + 1}</text>
+						<text class="sent" class:none={!layers[nearest].cluster.has(i)} x={textX} y={rowY(i)} font-size={FONT}
+							>{s.text}</text
+						>
+					</g>
+				{/each}
+				{#each layers as layer, li (layer.g.threshold)}
+					<g
+						class="layer"
+						style="opacity: {weight(li)}"
+						data-threshold={fmt(layer.g.threshold)}
+						data-current={li === Math.round(pos) && preview === null ? 'true' : 'false'}
+						aria-hidden={li === nearest ? undefined : 'true'}
+					>
+						{#each layer.laid as e (`${e.a}-${e.b}`)}
+							{@const g = arc(e.a, e.b, e.level)}
+							<g class="edge" class:lit={edgeLit(e)} data-a={e.a + 1} data-b={e.b + 1} data-score={e.score}>
+								<path d={g.d} />
+								<text class="score" x={g.lx} y={g.ly}>{e.score.toFixed(2)}</text>
+							</g>
+						{/each}
+						{#each data.sentences as s, i (s.index)}
+							{@const k = layer.cluster.get(i)}
+							<g class="marker" class:lit={litRows?.has(i)}>
+								{#if k !== undefined}
+									<text class="letter" x={X0 + 22} y={rowY(i)}>{LETTERS[k] ?? k + 1}</text>
+								{/if}
+								<circle
+									class="mark"
+									class:none={k === undefined}
+									data-row={i + 1}
+									data-cluster={k === undefined ? '' : k + 1}
+									cx={X0 + 10}
+									cy={rowY(i)}
+									r="5"
+								/>
+							</g>
+						{/each}
+					</g>
+				{/each}
+			</svg>
+		</div>
+		{#if hint}
+			<p class="fig-hint" aria-hidden="true">Scroll sideways to read the whole sentences.</p>
+		{/if}
 	</div>
-	{#if hint}
-		<p class="fig-hint" aria-hidden="true">Scroll sideways to read the whole sentences.</p>
-	{/if}
+
+	{#snippet twin()}
+		<!-- A region that scrolls must take focus, or it cannot be scrolled from
+		     the keyboard (WCAG 2.1.1). -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="fig-twin" tabindex="0" role="region" aria-label="Clusters and edges at every threshold">
+			<table data-twin-for={id}>
+				<thead><tr><th>Threshold</th><th>Clusters</th><th>Edges (cosine)</th></tr></thead>
+				<tbody>
+					{#each data.grid as g, i (g.threshold)}
+						<tr
+							class:current={i === nearest}
+							onpointerenter={() => js && (preview = i)}
+							onpointerleave={() => (preview = null)}
+							onclick={() => {
+								pos = i;
+								preview = null;
+							}}
+						>
+							<td class="num">{fmt(g.threshold)}</td>
+							<!-- Each cell wraps between whole items, never inside one, so no
+							     column runs off the figure's edge. -->
+							<td class="wrap"
+								>{#each g.clusters as c, k (k)}{k ? ' ' : ''}<span>{members(c.members)}</span>{:else}none{/each}</td
+							>
+							<td class="wrap edges"
+								>{#each g.clusters.flatMap((c) => c.edges) as e, k (`${e.a}-${e.b}`)}{k ? ', ' : ''}<span
+										>{edgeText(e)}</span
+									>{:else}none{/each}</td
+							>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/snippet}
 
 	{#snippet legend()}
 		<ul class="fig-legend" aria-label="Markers">
@@ -361,11 +364,21 @@
 </FigureFrame>
 
 <style>
+	/* The threshold, its readout and the arcs, as one unit. */
+	.drive {
+		margin-top: 0.4rem;
+	}
+
 	.scrub {
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
-		min-width: min(100%, 24rem);
+		max-width: 32rem;
+	}
+
+	.state {
+		margin: 0.35rem 0 0.5rem;
+		font-size: 0.9rem;
 	}
 
 	.scrub-label {

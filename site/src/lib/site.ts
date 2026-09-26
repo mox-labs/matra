@@ -10,16 +10,17 @@ export const SITE_URL = 'https://mox-labs.github.io/matra';
  * The accent each SUMMARY part carries in the navigation, by the role of what
  * it holds. Chosen per part, and colour is never the only signal (the part
  * is named beside it):
- *   spark      the reader's own hands: installing and calling matra
- *   emergence  matra's output, run and shown: the worked examples
+ *   spark      the reader's own hands: the tutorials, installing and a
+ *              first run
+ *   emergence  matra's output, run and shown: the how-to guides
  *   planned    not shipped: a dashed neutral rule
  *   neutral    everything else, which is most of it
  */
 export type PartRole = 'spark' | 'emergence' | 'planned' | 'neutral';
 
 export const PART_ROLES: Readonly<Record<string, PartRole>> = {
-	'Using matra': 'spark',
-	Examples: 'emergence',
+	Tutorials: 'spark',
+	'How-to guides': 'emergence',
 	'What is planned': 'planned'
 };
 

@@ -9,13 +9,13 @@
   "page": "examples/README.md",
   "paragraphs": [
     {
-      "compression_ratio": 0.5735,
+      "compression_ratio": 0.5831,
       "in_blockquote": false,
-      "lexical_density": 0.5714,
-      "readability_grade": 6.0985,
-      "sentences": 4,
-      "text": "Six worked examples, each one task on one real text. Every example shows the input, the same call in Rust, Python and the command line, and what matra prints. The three calls print the same result. CI runs all three for every example and compares what they print with the output on the page, so an example cannot drift from what matra does.",
-      "words": 64
+      "lexical_density": 0.5246,
+      "readability_grade": 6.4613,
+      "sentences": 3,
+      "text": "Each guide does one task on one real text. Six show the input, the same call in Rust, Python and the command line, and what matra prints; the three calls print the same result, and CI runs all three and compares what they print with the page. The seventh has no command-line call, because the CLI has no command for it.",
+      "words": 62
     },
     {
       "compression_ratio": null,
@@ -36,13 +36,13 @@
       "words": 47
     },
     {
-      "compression_ratio": 0.555,
+      "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.4906,
-      "readability_grade": 9.7325,
-      "sentences": 3,
-      "text": "Two tasks are left out because the command line cannot do them, and an example here shows all three calls. The CLI refuses a directory, so analyzing a directory as a corpus is in the [Rust](../guides/rust.md#analyze-a-directory) and [Python](../guides/python.md#analyze-a-directory) guides. The CLI has no command for semantic clusters, which are in their [own guide](../guides/semantic-clusters.md).",
-      "words": 61
+      "lexical_density": 0.5667,
+      "readability_grade": 14.1925,
+      "sentences": 2,
+      "text": "Analyzing a directory as a corpus has no guide here, because the CLI refuses a directory and these guides show all three calls. The [Rust](../guides/rust.md#analyze-a-directory) and [Python](../guides/python.md#analyze-a-directory) references cover it.",
+      "words": 34
     }
   ]
 }
