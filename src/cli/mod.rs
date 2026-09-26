@@ -504,15 +504,29 @@ fn build_engine(cli: &Cli, cfg: &Config, err: &mut dyn Write) -> domain::Result<
     crate::Engine::from_config_with_notice(cfg, |notice| {
         // A diagnostic that cannot be written is not worth failing a
         // run over, and there is nowhere left to report it to.
-        let _ = writeln!(
-            err,
-            "matra: downloading {} ({}) into {}",
-            notice.artifact,
-            human_bytes(notice.bytes),
-            notice.destination.display()
-        );
+        let _ = err.write_all(notice_text(notice).as_bytes());
         let _ = err.flush();
     })
+}
+
+/// What a first run writes to stderr before the fetch: the artifact,
+/// its size and destination, then the license it is published under.
+///
+/// The second line exists because the model is a separate work from
+/// matra with terms of its own, and the download is the one moment
+/// every user of the command line passes through. The license and its
+/// URL come from the notice, pinned beside the model's URL, so a change
+/// of model cannot leave this line naming the old terms.
+fn notice_text(notice: &domain::ProvisionNotice) -> String {
+    format!(
+        "matra: downloading {} ({}) into {}\n\
+         matra: the model is licensed {}, separately from matra: {}\n",
+        notice.artifact,
+        human_bytes(notice.bytes),
+        notice.destination.display(),
+        notice.license,
+        notice.license_url
+    )
 }
 
 /// A byte count as a person reads a download size, in decimal units,
@@ -837,23 +851,25 @@ mod tests {
     /// size a person can read, and the directory it is going into. Every
     /// user meets that line on their first command, and before it
     /// existed they met 3 to 35 seconds of a blank terminal instead.
+    ///
+    /// The second line names the model's license. The parsing model is
+    /// CC BY-NC-SA 4.0, not matra's MIT, and until this line existed
+    /// nothing matra printed or published said so.
     #[test]
-    fn the_download_notice_names_the_artifact_size_and_destination() {
+    fn the_download_notice_names_the_artifact_size_destination_and_license() {
         let notice = domain::ProvisionNotice {
             artifact: "english-ewt-ud-2.5-191206.udpipe".to_string(),
             bytes: 16_309_608,
             destination: PathBuf::from("/home/u/.local/share/matra/models"),
+            license: "CC BY-NC-SA 4.0 (non-commercial)".to_string(),
+            license_url: "https://creativecommons.org/licenses/by-nc-sa/4.0/".to_string(),
         };
-        let line = format!(
-            "matra: downloading {} ({}) into {}",
-            notice.artifact,
-            human_bytes(notice.bytes),
-            notice.destination.display()
-        );
         assert_eq!(
-            line,
+            notice_text(&notice),
             "matra: downloading english-ewt-ud-2.5-191206.udpipe (16.3 MB) \
-into /home/u/.local/share/matra/models"
+into /home/u/.local/share/matra/models\n\
+matra: the model is licensed CC BY-NC-SA 4.0 (non-commercial), separately from matra: \
+https://creativecommons.org/licenses/by-nc-sa/4.0/\n"
         );
     }
 

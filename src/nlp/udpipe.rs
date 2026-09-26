@@ -31,6 +31,41 @@ const ENGLISH_MODEL_SIZE: u64 = 16_309_608;
 /// model name.
 const ENGLISH_MODEL_URL: &str = "https://lindat.mff.cuni.cz/repository/server/api/core/bitstreams/handle/11234/1-3131/english-ewt-ud-2.5-191206.udpipe?sequence=17&isAllowed=y";
 
+/// The pinned model's license, as its LINDAT record
+/// (<https://hdl.handle.net/11234/1-3131>) states it: Creative Commons
+/// Attribution-NonCommercial-ShareAlike 4.0 International. matra's code
+/// is MIT; this file is a separate work with its own terms, and the
+/// download notice carries them so the command line can say so. Beside
+/// the URL because a new model means checking both.
+const ENGLISH_MODEL_LICENSE: &str = "CC BY-NC-SA 4.0 (non-commercial)";
+
+/// Where the full text of [`ENGLISH_MODEL_LICENSE`] is published.
+const ENGLISH_MODEL_LICENSE_URL: &str = "https://creativecommons.org/licenses/by-nc-sa/4.0/";
+
+/// The pinned English model as one record, so the provisioning path
+/// takes the pin whole rather than six loose arguments.
+const ENGLISH_MODEL: Pin<'static> = Pin {
+    filename: ENGLISH_MODEL_FILENAME,
+    size: ENGLISH_MODEL_SIZE,
+    sha256: ENGLISH_MODEL_SHA256,
+    url: ENGLISH_MODEL_URL,
+    license: ENGLISH_MODEL_LICENSE,
+    license_url: ENGLISH_MODEL_LICENSE_URL,
+};
+
+/// A pinned artifact: what it is called on disk, what it must measure,
+/// where it comes from, and the terms it is published under. A test pins
+/// a fixture of its own through the same shape.
+#[derive(Debug, Clone, Copy)]
+struct Pin<'a> {
+    filename: &'a str,
+    size: u64,
+    sha256: &'a str,
+    url: &'a str,
+    license: &'a str,
+    license_url: &'a str,
+}
+
 /// Ceiling on the downloaded model. The pinned artifact is 16.3 MB, so
 /// this is four times the real thing: headroom for a later model version
 /// and small enough that a redirect to something enormous costs a
@@ -174,10 +209,7 @@ impl Udpipe {
     ) -> crate::domain::Result<Self> {
         let bytes = provision(
             model_dir.as_ref(),
-            ENGLISH_MODEL_FILENAME,
-            ENGLISH_MODEL_SIZE,
-            ENGLISH_MODEL_SHA256,
-            ENGLISH_MODEL_URL,
+            ENGLISH_MODEL,
             &mut notice,
             &fetch_capped,
         )?;
@@ -256,15 +288,12 @@ const ENGLISH_MODEL_FILENAME: &str = "english-ewt-ud-2.5-191206.udpipe";
 /// cost an offline user the only copy they had.
 fn provision(
     dir: &Path,
-    filename: &str,
-    expected_size: u64,
-    expected_hash: &str,
-    url: &str,
+    pin: Pin<'_>,
     notice: &mut dyn FnMut(&ProvisionNotice),
     fetch: &dyn Fn(&str) -> crate::domain::Result<Vec<u8>>,
 ) -> crate::domain::Result<Vec<u8>> {
     create_model_dir(dir)?;
-    let path = dir.join(filename);
+    let path = dir.join(pin.filename);
 
     if path.exists() {
         // A cached file that is not the pinned model is not removed here.
@@ -277,21 +306,13 @@ fn provision(
         // process would see no cache and pay a redundant 16 MB fetch.
         // Leaving it also means a refetch that cannot reach the network
         // leaves the user their old file rather than nothing.
-        if let Some(bytes) = read_and_verify(&path, expected_size, expected_hash)? {
+        if let Some(bytes) = read_and_verify(&path, pin.size, pin.sha256)? {
             return Ok(bytes);
         }
     }
 
-    let bytes = fetch_verified(
-        dir,
-        filename,
-        expected_size,
-        expected_hash,
-        url,
-        notice,
-        fetch,
-    )?;
-    install(dir, filename, &bytes)?;
+    let bytes = fetch_verified(dir, pin, notice, fetch)?;
+    install(dir, pin.filename, &bytes)?;
     Ok(bytes)
 }
 
@@ -307,20 +328,19 @@ fn provision(
 /// and the bound is not.
 fn fetch_verified(
     dir: &Path,
-    filename: &str,
-    expected_size: u64,
-    expected_hash: &str,
-    url: &str,
+    pin: Pin<'_>,
     notice: &mut dyn FnMut(&ProvisionNotice),
     fetch: &dyn Fn(&str) -> crate::domain::Result<Vec<u8>>,
 ) -> crate::domain::Result<Vec<u8>> {
     for _ in 0..2 {
         notice(&ProvisionNotice {
-            artifact: filename.to_string(),
-            bytes: expected_size,
+            artifact: pin.filename.to_string(),
+            bytes: pin.size,
             destination: dir.to_path_buf(),
+            license: pin.license.to_string(),
+            license_url: pin.license_url.to_string(),
         });
-        let bytes = fetch(url)?;
+        let bytes = fetch(pin.url)?;
         if bytes.len() > MAX_MODEL_BYTES {
             return Err(Error::InputTooLarge {
                 limit: MAX_MODEL_BYTES,
@@ -328,12 +348,13 @@ fn fetch_verified(
                 what: "udpipe_download",
             });
         }
-        if verified(&bytes, expected_size, expected_hash) {
+        if verified(&bytes, pin.size, pin.sha256) {
             return Ok(bytes);
         }
     }
     Err(Error::ModelInvalid(format!(
-        "SHA-256 mismatch after re-download from {url}"
+        "SHA-256 mismatch after re-download from {}",
+        pin.url
     )))
 }
 
@@ -907,6 +928,8 @@ mod tests {
     const FIXTURE: &[u8] = b"hello";
     const FIXTURE_NAME: &str = "fixture.udpipe";
     const FIXTURE_URL: &str = "https://models.example/fixture.udpipe";
+    const FIXTURE_LICENSE: &str = "Fixture License 1.0";
+    const FIXTURE_LICENSE_URL: &str = "https://licenses.example/fixture";
 
     /// Records what the fetcher was asked for and what the notice said.
     struct Recorder {
@@ -925,15 +948,15 @@ mod tests {
             body()
         };
         let mut notice = |n: &ProvisionNotice| recorder.notices.push(n.clone());
-        let result = provision(
-            dir,
-            FIXTURE_NAME,
-            FIXTURE.len() as u64,
-            HELLO_HASH,
-            FIXTURE_URL,
-            &mut notice,
-            &fetch,
-        );
+        let pin = Pin {
+            filename: FIXTURE_NAME,
+            size: FIXTURE.len() as u64,
+            sha256: HELLO_HASH,
+            url: FIXTURE_URL,
+            license: FIXTURE_LICENSE,
+            license_url: FIXTURE_LICENSE_URL,
+        };
+        let result = provision(dir, pin, &mut notice, &fetch);
         recorder.fetches += fetches.get();
         result
     }
@@ -960,6 +983,8 @@ mod tests {
         assert_eq!(rec.notices[0].artifact, FIXTURE_NAME);
         assert_eq!(rec.notices[0].bytes, FIXTURE.len() as u64);
         assert_eq!(rec.notices[0].destination, dir.path());
+        assert_eq!(rec.notices[0].license, FIXTURE_LICENSE);
+        assert_eq!(rec.notices[0].license_url, FIXTURE_LICENSE_URL);
         assert_eq!(
             std::fs::read(dir.path().join(FIXTURE_NAME)).unwrap(),
             FIXTURE
