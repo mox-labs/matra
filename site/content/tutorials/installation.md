@@ -94,6 +94,21 @@ matra holds the download (about 16 MB) in memory, checks it against a fixed hash
 
 ---
 
+## Model licenses
+
+matra's code is MIT. The models it downloads are separate files, published by other people under licenses of their own.
+
+| Model | Used for | Source | License |
+| --- | --- | --- | --- |
+| `english-ewt-ud-2.5-191206.udpipe` | every parse | [LINDAT record 11234/1-3131](https://hdl.handle.net/11234/1-3131), published by ÚFAL, Charles University | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) (Attribution-NonCommercial-ShareAlike 4.0 International) |
+| potion-base-8M | semantic clusters only | [minishlab/potion-base-8M](https://huggingface.co/minishlab/potion-base-8M) on Hugging Face | MIT, per its model card |
+
+The parsing model's license does not permit commercial use. The [UDPipe models page](https://ufal.mff.cuni.cz/udpipe/1/models) states that the UDPipe 1 models it publishes for Universal Dependencies are distributed under CC BY-NC-SA. This page reports what the licenses say and does not interpret them; read the license text for the terms.
+
+The command line prints the parsing model's license on the run that downloads it. The command line and the config file always use this model: `--model-dir`, `MATRA_MODEL_DIR` and the other settings under [where matra keeps things](../guides/cli.md#where-matra-keeps-things) change where it is stored, not which model it is, and `models.udpipe` is reported by `matra config show` but selects nothing. To parse with a different UDPipe model file, load it by path from the library: `Udpipe::from_path` in [Rust](../guides/rust.md#construct-a-provider) or `Matra.from_path` in [Python](../guides/python.md#load-the-model-from-a-directory-you-choose).
+
+---
+
 ## Verify the install
 
 Run this once. No arguments and no environment: it resolves the model directory, downloads and caches the model on this first run, then parses a sentence through it and prints two results:
@@ -117,7 +132,7 @@ sections: 1
 vocabulary_ttr: 0.8571428571428571
 ```
 
-That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. The command line does print a line naming the artifact and where it is going, because it opts into the notice; the library call above does not, so that a program embedding matra chooses its own reporting. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow or throttled network can take longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
+That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. The command line does print two lines, naming the artifact, where it is going, and the model's license, because it opts into the notice; the library call above does not, so that a program embedding matra chooses its own reporting. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow or throttled network can take longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
 
 If `Matra.english()` raises `OSError`, either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path. Check your network connection first; then run `matra config show` to see which directory matra resolved and check the permissions on it. If it raises `RuntimeError`, bytes did arrive and then failed the pinned hash check; run the snippet again.
 

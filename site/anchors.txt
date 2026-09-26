@@ -219,6 +219,7 @@ tutorials/installation.html#the-rust-library
 tutorials/installation.html#the-cli-binary
 tutorials/installation.html#the-python-package
 tutorials/installation.html#the-english-model
+tutorials/installation.html#model-licenses
 tutorials/installation.html#verify-the-install
 tutorials/installation.html#what-you-have
 

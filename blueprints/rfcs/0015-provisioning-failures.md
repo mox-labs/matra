@@ -7,6 +7,8 @@
 - Status: implemented
 - Decider(s): project maintainer; measured by a clean-room container pass on 2026-09-06
 
+> **Note (2026-09-25):** `domain::ProvisionNotice` gained two fields, `license` and `license_url`, pinned beside the model's URL, and the command line's notice gained a second line naming the model's license (CC BY-NC-SA 4.0, not matra's MIT). Additive on a `#[non_exhaustive]` struct; the notice is still data and the library still renders nothing. See the CHANGELOG under Unreleased.
+>
 > **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. The status moved from accepted to implemented because the CHANGELOG records it shipping in 0.2.0.
 
 ## Summary

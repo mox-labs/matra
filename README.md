@@ -162,3 +162,11 @@ you passed. The methodology page gives the exact form.
 
 MIT, Copyright (c) 2026 mox labs. See
 [`LICENSE`](https://github.com/mox-labs/matra/blob/main/LICENSE).
+
+The models matra downloads are separate files with their own licenses.
+The English parsing model, `english-ewt-ud-2.5-191206.udpipe` from
+[LINDAT](https://hdl.handle.net/11234/1-3131), is
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/),
+which does not permit commercial use. The embedding model,
+potion-base-8M, is MIT per its model card. See
+[model licenses](https://mox-labs.github.io/matra/tutorials/installation.html#model-licenses).

@@ -46,7 +46,7 @@ Members are positions in the sentence list you passed, so a result re-anchors ag
 
 ## The model and how it arrives
 
-The adapter loads static embedding models in the model2vec artifact format: three files in one directory, `model.safetensors`, `tokenizer.json` and `config.json`. The reference model is potion-base-8M, about 30 MB, 256 dimensions.
+The adapter loads static embedding models in the model2vec artifact format: three files in one directory, `model.safetensors`, `tokenizer.json` and `config.json`. The reference model is potion-base-8M, about 30 MB, 256 dimensions. Its Hugging Face model card (minishlab/potion-base-8M) gives its license as MIT, separate from the parsing model's CC BY-NC-SA 4.0.
 
 A static model is a lookup table, not a transformer: inference is a row gather, a mean, and a normalize. That costs roughly ten percent of a small transformer's benchmark quality and buys bit-identical vectors on every platform and in every language binding, which is what lets the conformance suite pin exact vectors rather than tolerances.
 
