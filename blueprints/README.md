@@ -99,6 +99,7 @@ tables. The docsite floor's em-dash gate covers this directory too.
 | [RFC-0015](rfcs/0015-provisioning-failures.md) | Provisioning is matra's own, and a failure to fetch is not an invalid model | implemented | none |
 | RFC-0016 | Release automation | open, reserved | none |
 | RFC-0017 | Harness layers | open, reserved | none |
+| [RFC-0018](rfcs/0018-source-spans-and-provenance.md) | Source spans and provenance | accepted | none |
 | [RFC-0019](rfcs/0019-rfc-and-ep-process.md) | The RFC and EP process | accepted | none |
 | [RFC-0000](rfcs/0000-template.md) | The template | not a record | none |
 
