@@ -175,9 +175,11 @@
 	.specimen {
 		/* The sentence is about 11.0em wide at this weight, measured in the
 		   browser with each word's padding: sized to its column with a little
-		   to spare, never wider, never above the display size. A new sentence
-		   needs this measured again. */
-		--size: clamp(1rem, 8.8cqi, var(--type-4xl));
+		   to spare, never wider, and never above the canon's hero size
+		   (--type-3xl, 54px), so a short sentence does not grow the hero past
+		   the scale a longer one set it at. A new sentence needs this
+		   measured again. */
+		--size: clamp(1rem, 8.8cqi, var(--type-3xl));
 		--u: calc(var(--size) * 0.125);
 		position: relative;
 		display: grid;
