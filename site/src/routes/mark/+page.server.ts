@@ -8,6 +8,7 @@ export const load: PageServerLoad = () => {
 	const glyph = layoutMark(tokens, 'glyph');
 	return {
 		tokens,
+		sentence: file.data.sentences[0].text,
 		generator: file.generator,
 		layouts: {
 			full,

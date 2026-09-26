@@ -3,60 +3,36 @@
     "sentences": [
       {
         "paragraph": 1,
-        "text": "Collective attention can restore a world.",
+        "text": "Attention restores worlds.",
         "tokens": [
           {
-            "dep": "amod",
+            "dep": "nsubj",
             "head": 2,
             "id": 1,
-            "lemma": "collective",
-            "pos": "ADJ",
-            "text": "Collective"
-          },
-          {
-            "dep": "nsubj",
-            "head": 4,
-            "id": 2,
             "lemma": "attention",
             "pos": "NOUN",
-            "text": "attention"
-          },
-          {
-            "dep": "aux",
-            "head": 4,
-            "id": 3,
-            "lemma": "can",
-            "pos": "AUX",
-            "text": "can"
+            "text": "Attention"
           },
           {
             "dep": "root",
             "head": 0,
-            "id": 4,
+            "id": 2,
             "lemma": "restore",
             "pos": "VERB",
-            "text": "restore"
-          },
-          {
-            "dep": "det",
-            "head": 6,
-            "id": 5,
-            "lemma": "a",
-            "pos": "DET",
-            "text": "a"
+            "text": "restores"
           },
           {
             "dep": "obj",
-            "head": 4,
-            "id": 6,
-            "lemma": "world",
+            "head": 2,
+            "id": 3,
+            "lemma": "worlds",
             "pos": "NOUN",
-            "text": "world"
+            "text": "worlds"
           },
           {
             "dep": "punct",
-            "head": 4,
-            "id": 7,
+            "head": 2,
+            "id": 4,
             "lemma": ".",
             "pos": "PUNCT",
             "text": "."
@@ -79,7 +55,7 @@
     "licence": "MIT, as part of the matra repository",
     "register": "specimen",
     "source": "A line by matra's authors, parsed as the docsite's specimen: the mark is drawn from this parse",
-    "title": "Collective attention can restore a world.",
+    "title": "Attention restores worlds.",
     "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/specimen.txt"
   }
 }

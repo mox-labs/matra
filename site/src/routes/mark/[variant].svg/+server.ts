@@ -23,8 +23,9 @@ export const entries: EntryGenerator = () => Object.keys(FILES).map((variant) =>
 export const GET: RequestHandler = ({ params }) => {
 	const file = Object.hasOwn(FILES, params.variant) ? FILES[params.variant] : undefined;
 	if (!file) error(404, 'No such variant of the mark');
-	const svg = markSvg(layoutMark(specimen().tokens, file.variant), file.palette, {
-		title: 'matra: its parse of "Collective attention can restore a world."'
+	const { tokens, file: data } = specimen();
+	const svg = markSvg(layoutMark(tokens, file.variant), file.palette, {
+		title: `matra: its parse of "${data.data.sentences[0].text}"`
 	});
 	return new Response(svg, { headers: { 'content-type': 'image/svg+xml' } });
 };

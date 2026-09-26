@@ -9,22 +9,22 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	const { layouts, rules, tokens, generator } = $derived(data);
+	const { layouts, rules, tokens, sentence, generator } = $derived(data);
 	const byId = $derived(new Map(tokens.map((t) => [t.id, t])));
 </script>
 
 <svelte:head>
 	<title>The mark · matra</title>
-	<meta name="description" content="matra's mark is matra's parse of Collective attention can restore a world., drawn." />
+	<meta name="description" content="matra's mark: its parse of “{sentence}”, drawn." />
 </svelte:head>
 
 <article class="sheet">
 	<nav class="crumbs" aria-label="Breadcrumb"><a href="{base}/">matra</a> <span aria-hidden="true">/</span> the mark</nav>
 	<h1>The mark</h1>
 	<p class="lede">
-		matra's parse of <q>Collective attention can restore a world.</q>, drawn. Every token hangs from a headline bar, as Devanagari
-		letters hang from theirs. The root hangs longest, in Emergence: a mātrā, the small vowel sign that attaches to a
-		letter and changes its sound without replacing it. The arcs below are the dependencies matra found.
+		matra's parse of <q>{sentence}</q>, drawn. Every word hangs from a headline bar, as Devanagari letters hang from
+		theirs. The root hangs longest, in Emergence: a mātrā, the small vowel sign that attaches to a letter and changes its
+		sound without replacing it. The arcs below are the dependencies matra found between the words.
 	</p>
 
 	<h2>The parse it is drawn from</h2>
@@ -97,6 +97,11 @@
 		<dd>
 			Ink, and the root in Emergence: the mark's one vivid moment. In one ink (mono), hierarchy is carried by opacity:
 			bar and root whole, arcs at 80%, strokes at 60%.
+		</dd>
+		<dt>Punctuation</dt>
+		<dd>
+			Not drawn, in any variant. The parse tags it (<code>PUNCT</code>), and the mark leaves it and its arc out, so what
+			remains is the words and how they depend on each other. The sentence as written keeps its full stop.
 		</dd>
 		<dt>Change</dt>
 		<dd>Only by matra. If its parse of the specimen changes, the mark changes with it, and review sees it.</dd>

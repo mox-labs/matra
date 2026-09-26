@@ -49,8 +49,8 @@ place".
 
 ### The decisions
 
-- **The mark is matra's parse of "Collective attention can restore a
-  world.".** Every token hangs from a headline bar (the shirorekha); the
+- **The mark is matra's parse of "Attention restores worlds.", and
+  punctuation is not drawn.** Every word hangs from a headline bar (the shirorekha); the
   root hangs longest, in Emergence, as a mātrā, the vowel sign that changes
   a letter without replacing it; each dependency hangs below as an arc. It is generated at
   build time from committed figure data that gate 8 regenerates, so it
@@ -155,3 +155,19 @@ Merged, deployed, and the live check after deploy passes.
   but assumed a small tree: six words at 2px on a 2px pitch fused into a
   block, so it now keeps the tree's levels nearest the root while their
   strokes stay a pixel apart, and the mark check holds that gap.
+- 2026-09-25: decision (owner): the mark reads as an inverted m (ɯ), a
+  central stem with two equal arcs, one to each neighbour. The sentence is
+  now "Attention restores worlds.", which matra parses with `restores` as the
+  root, `Attention` its subject and `worlds` its object. Punctuation is not
+  drawn in any variant: the favicon already dropped it, and the rule is now
+  general, read from the tree (UPOS `PUNCT`), so the glyph is a bar, three
+  stems with the root in the middle, and two equal arcs. The hero keeps the
+  full stop as written and draws no arc to it. The mark check asserts no
+  punctuation is drawn, on the specimen and on a planted parse, and was seen
+  to fail with the rule removed. The new sentence exposed a hero bug the old
+  one hid: an arc spanning one grid column sized that column to its border,
+  so the arc from the root to `worlds` drew 2px wide; arcs are now
+  positioned in their grid areas. In the hero and the full mark the two arcs
+  are not equal, because the root's stroke hangs after its word and the
+  words differ in width; the glyph, favicon, mono and paper variants are
+  equal.

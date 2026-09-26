@@ -1,5 +1,5 @@
 /**
- * The mark: matra's own parse of "Collective attention can restore a world.", drawn.
+ * The mark: matra's own parse of "Attention restores worlds.", drawn.
  *
  * A horizontal headline bar is the shirorekha, the line Devanagari letters
  * hang from. Each token of the sentence hangs from it as a stroke (or, in the
@@ -13,6 +13,12 @@
  * site/src/lib/figures/specimen/parse.json, which gate 8 regenerates and diffs,
  * so if matra's parse of the specimen changes, the mark changes, and review sees
  * it. The geometry is on the 9-grid (the unit U is 9).
+ *
+ * Punctuation is not drawn, in any variant. The tree says which tokens are
+ * punctuation (UPOS PUNCT); they are dropped before layout, with their arcs,
+ * so the mark is the words and the dependencies between them. For the
+ * specimen that is a bar, three stems with the root in the middle, and two
+ * equal arcs, one to each neighbour: an inverted m.
  *
  * Variants:
  *   glyph     bar, strokes and arcs; no words
@@ -77,14 +83,20 @@ export function specimenTokens(file: ParseFigureFile): ParseToken[] {
 	return sentence.tokens;
 }
 
+/** Whether a token is drawn in the mark: every token but punctuation. */
+export function drawn(t: ParseToken): boolean {
+	return t.pos !== 'PUNCT';
+}
+
 /**
  * Levels, as the parse figure levels them: shorter spans first, each one
  * level above the highest already-placed arc whose span overlaps its own.
  */
 function levelled(tokens: ParseToken[]): Omit<MarkArc, 'd'>[] {
 	const root = tokens.find((t) => t.head === 0)?.id;
+	const ids = new Set(tokens.map((t) => t.id));
 	const arcs = tokens
-		.filter((t) => t.head !== 0)
+		.filter((t) => t.head !== 0 && ids.has(t.head))
 		.map((t) => ({ head: t.head, dependent: t.id, dep: t.dep, fromRoot: t.head === root }))
 		.sort(
 			(p, q) =>
@@ -154,8 +166,7 @@ function fullLayout(tokens: ParseToken[]): MarkLayout {
 	const words: MarkWord[] = [];
 	const strokes: MarkStroke[] = [];
 	for (const [i, t] of tokens.entries()) {
-		const punct = t.dep === 'punct';
-		if (i > 0 && !punct) cursor += adv; // a space, but none before punctuation
+		if (i > 0) cursor += adv; // a space between words
 		const w = [...t.text].length * adv;
 		words.push({ id: t.id, text: t.text, x: cursor, y: baseline });
 		if (t.head === 0) {
@@ -222,22 +233,21 @@ function depths(tokens: ParseToken[]): Map<number, number> {
 
 /**
  * The favicon keeps what a 16px square can carry: the bar, and the tokens
- * nearest the root, with the arcs between them. The rule reads the tree.
- * Punctuation goes first. Then it keeps every token down to the deepest
- * level of the tree whose tokens all fit at a 3px pitch (so the 2px strokes
- * stay apart), and no deeper: a level is kept whole or not at all. The kept
+ * nearest the root, with the arcs between them. The rule reads the tree
+ * (punctuation is already gone, as in every variant): it keeps every token
+ * down to the deepest level of the tree whose tokens all fit at a 3px pitch
+ * (so the 2px strokes stay apart), and no deeper: a level is kept whole or not at all. The kept
  * tokens are always a subtree hanging from the root, so every kept arc has
  * both ends kept. (Keeping one arc alone reads as a letter U at 16px; the
  * mark check fails if fewer than two survive.) Strokes are 2px wide on
  * whole-pixel centres, so each covers two whole pixels and stays sharp.
  */
 function faviconLayout(tokens: ParseToken[]): MarkLayout {
-	const words = tokens.filter((t) => t.dep !== 'punct');
-	if (!words.some((t) => t.head === 0)) throw new Error('the specimen parse has no root');
-	const depth = depths(words);
+	if (!tokens.some((t) => t.head === 0)) throw new Error('the specimen parse has no root');
+	const depth = depths(tokens);
 	// Tokens that never reach the root (depth Infinity) are dropped here, so
 	// the loop below only counts finite depths and ends at the deepest one.
-	const reachable = words.filter((t) => Number.isFinite(depth.get(t.id)));
+	const reachable = tokens.filter((t) => Number.isFinite(depth.get(t.id)));
 	const room = Math.floor(FAVICON_SPAN / FAVICON_PITCH) + 1;
 	const deepestLevel = Math.max(0, ...reachable.map((t) => depth.get(t.id)!));
 	let level = 0;
@@ -279,9 +289,10 @@ function faviconLayout(tokens: ParseToken[]): MarkLayout {
 }
 
 export function layoutMark(tokens: ParseToken[], variant: Variant): MarkLayout {
-	if (variant === 'full') return fullLayout(tokens);
-	if (variant === 'favicon') return faviconLayout(tokens);
-	return glyphLayout(tokens);
+	const words = tokens.filter(drawn);
+	if (variant === 'full') return fullLayout(words);
+	if (variant === 'favicon') return faviconLayout(words);
+	return glyphLayout(words);
 }
 
 /** Inks for a standalone SVG file, where no page CSS reaches. */

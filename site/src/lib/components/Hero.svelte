@@ -25,6 +25,7 @@
 	 * without a script; its table twin is the parse as text.
 	 */
 	import { ALEGREYA_BLACK, inkTop, tallest } from '$lib/fonts';
+	import { drawn } from '$lib/mark';
 	import type { ParseToken } from '$lib/types';
 
 	let { tokens, titleId = 'matra' }: { tokens: ParseToken[]; titleId?: string } = $props();
@@ -33,16 +34,21 @@
 	const n = $derived(tokens.length);
 	const byId = $derived(new Map(tokens.map((t) => [t.id, t])));
 	/** The sentence as written: a space before each word, none before punctuation. */
-	const sentence = $derived(tokens.map((t, i) => (i > 0 && t.dep !== 'punct' ? ' ' : '') + t.text).join(''));
+	const sentence = $derived(tokens.map((t, i) => (i > 0 && drawn(t) ? ' ' : '') + t.text).join(''));
 	/** Where the tallest letter's top sits in a word's line box, in em. */
 	const top = $derived(
 		inkTop(ALEGREYA_BLACK, tallest(ALEGREYA_BLACK, tokens.map((t) => t.text).join(''))).toFixed(4)
 	);
 
-	/** Arcs, levelled as the mark levels them. */
+	/**
+	 * Arcs, levelled as the mark levels them. As in the mark, punctuation is
+	 * not drawn: the full stop stays in the sentence, as written, but no arc
+	 * hangs to it.
+	 */
 	const arcs = $derived.by(() => {
+		const ids = new Set(tokens.filter(drawn).map((t) => t.id));
 		const list = tokens
-			.filter((t) => t.head !== 0)
+			.filter((t) => t.head !== 0 && ids.has(t.id) && ids.has(t.head))
 			.map((t) => ({ head: t.head, dep: t.id, rel: t.dep }))
 			.sort(
 				(p, q) =>
@@ -73,7 +79,7 @@
 		const t = byId.get(active);
 		const set = new Set<number>([active]);
 		if (t && t.head !== 0) set.add(t.head);
-		for (const d of tokens) if (d.head === active) set.add(d.id);
+		for (const d of tokens) if (d.head === active && drawn(d)) set.add(d.id);
 		return set;
 	});
 	const arcLit = (a: { head: number; dep: number }) => active !== null && (a.head === active || a.dep === active);
@@ -97,7 +103,7 @@
 				type="button"
 				class="word"
 				class:root={t.head === 0}
-				class:punct={t.dep === 'punct'}
+				class:punct={!drawn(t)}
 				class:lit={lit?.has(t.id)}
 				style="grid-column: {2 * t.id - 1} / span 2"
 				aria-pressed={pinned === t.id}
@@ -164,11 +170,11 @@
 	 * the letters touch it from below and it never crosses them.
 	 */
 	.specimen {
-		/* The sentence is about 17.3em wide at this weight, measured in the
+		/* The sentence is about 11.0em wide at this weight, measured in the
 		   browser with each word's padding: sized to its column with a little
 		   to spare, never wider, never above the display size. A new sentence
 		   needs this measured again. */
-		--size: clamp(1rem, 5.6cqi, var(--type-4xl));
+		--size: clamp(1rem, 8.8cqi, var(--type-4xl));
 		--u: calc(var(--size) * 0.125);
 		position: relative;
 		display: grid;
@@ -180,6 +186,8 @@
 		font-size: var(--size);
 		--above: 1.3rem;
 		padding-top: var(--above);
+		/* As wide as the words, so the bar ends where they do. */
+		width: fit-content;
 		max-width: 100%;
 	}
 
@@ -247,11 +255,16 @@
 		transition: opacity var(--duration-normal) var(--easing-smooth);
 	}
 
-	/* Each arc hangs from its two anchors: a half ellipse below the words. */
+	/* Each arc hangs from its two anchors: a half ellipse below the words.
+	   Positioned in its grid area, not placed in the flow: an arc in the flow
+	   adds its own width to the columns it spans, and one spanning a single
+	   column (the root's edge to a neighbour's centre) would squeeze that
+	   column to its border and leave its word's other half the rest. */
 	.arc {
-		position: relative;
+		position: absolute;
+		inset-inline: 0;
+		top: 0;
 		grid-row: 2;
-		align-self: start;
 		height: calc(var(--level) * var(--u) * 2.6);
 		margin-top: calc(var(--u) * 0.6);
 		border: max(1.5px, 0.03em) solid var(--mark);
