@@ -1,0 +1,66 @@
+# Boundary rule 1: src/domain.rs depends on serde, thiserror and std only.
+#
+# How every rule in .semgrep/ is built, and why (EP-0014 has the
+# measurements):
+#
+# - `languages: [regex]`. Semgrep's Rust AST patterns miss brace groups and
+#   paths deeper than the pattern, and a `languages: [rust]` rule skips any
+#   file the Rust parser rejects with only a warning. A regex rule reads
+#   every byte of every file in its `paths`.
+# - Allowlists are negative lookaheads inside the regex, never a
+#   `metavariable-regex` filter afterwards: a filter rejects the first
+#   candidate and does not backtrack to the next one on the line.
+# - Comment lines are skipped by the positive regex itself:
+#   `(?m)^(?![ \t]*//)[^\n]*?\K` starts each match on a line that is not a
+#   comment, and `\K` reports the finding from the offending token. A
+#   `pattern-not-regex` for comments would be wrong: semgrep drops every
+#   finding that merely overlaps an excluded range, so a comment line inside
+#   a multi-line brace group would hide the whole group.
+# - `pattern-not-regex` is used only for ranges a finding sits wholly inside:
+#   `#[cfg(test)] mod name { ... }` (balanced braces, skipping braces in
+#   strings, raw strings, chars and comments), where test code may use
+#   dev-dependencies;
+#   and, for the inline-path rules, whole `use` statements, which the imports
+#   rules read instead.
+rules:
+  - id: boundary-rule1-domain-imports
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include: ["/src/domain.rs"]
+    message: >-
+      Boundary rule 1 (domain dependency set): src/domain.rs imports from
+      something other than std, core, alloc, serde or thiserror. That
+      includes other matra modules (crate::, super::, self::): the domain is
+      the innermost layer and imports nothing from the crate. Why: domain
+      types are what every language surface serializes, so a dependency added
+      here enters the closure of every caller on every target. Fix: move the
+      code that needs the dependency into an adapter, or propose an RFC that
+      changes the domain's dependency set. Read:
+      site/content/reference/boundary-rules.md#rule-1-the-domain-dependency-set
+    patterns:
+      - pattern-regex: '(?m)^(?![ \t]*//)(?:[^\n]*?[;{}\]])?[ \t]*\K(?:pub(?:\s*\([^)]*\))?\s+)?(?:use|extern\s+crate)\s+(?:::\s*)?(?!(?:std|core|alloc|serde|thiserror)\b)(?:\w+(?=\s*(?:::|;|as\b))|\{|\*)'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
+
+  - id: boundary-rule1-domain-inline-paths
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include: ["/src/domain.rs"]
+    message: >-
+      Boundary rule 1 (domain dependency set): src/domain.rs names a path
+      rooted outside std, core, alloc, serde and thiserror (for example
+      `somecrate::Type` or `crate::nlp::X` written inline, without a `use`
+      line). A crate listed in Cargo.toml can be reached this way with no
+      import at all, so the domain writes its std paths in full
+      (`std::fmt::Display`, not `fmt::Display` after `use std::fmt`) and this
+      check can tell a std module from a new dependency. Why: domain types
+      are what every language surface serializes, so a dependency added here
+      enters the closure of every caller on every target. Fix: spell a std
+      path from `std::`, or move the code into an adapter, or propose an RFC.
+      Read:
+      site/content/reference/boundary-rules.md#rule-1-the-domain-dependency-set
+    patterns:
+      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?<![\w:$.])(?!(?:std|core|alloc|serde|thiserror|self|bool|char|str|u8|u16|u32|u64|u128|usize|i8|i16|i32|i64|i128|isize|f32|f64)\b)[a-z_][a-z0-9_]*\s*::(?!\s*<)'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
+      - pattern-not-regex: '(?m)^[ \t]*(?:#\[[^\]]*\][ \t]*)*(?:pub(?:\s*\([^)]*\))?\s+)?(?:use|extern\s+crate)\s(?:[\w:\s,{}*]|//[^\n]*\n)*;'

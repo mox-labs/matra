@@ -67,7 +67,11 @@ test-cli:
 test-no-default:
     cargo test --no-default-features
 
-# Boundary check: hex-architecture rules from CLAUDE.md (3, 4, 8).
+# Boundary check: the semgrep rules in .semgrep/ for boundary rules 1, 2, 3,
+# 4, 5, 7 (its CLI part) and 8, plus the library's error conventions. Runs
+# each rule file against its fixture (`semgrep --test`), then scans src/ and
+# fails if any Rust file there went unread. Requires semgrep (the version in
+# .github/requirements/semgrep.txt) and a git work tree. EP-0014.
 boundary:
     bash scripts/check-boundaries.sh
 

@@ -1,0 +1,55 @@
+# Boundary rule 7, the part a check can read: src/cli/ uses the public surface
+# (Engine, Ingest), extraction, config and domain, and never a port module or
+# an adapter.
+#
+# This is an allowlist, not a list of forbidden modules, so a crate-root
+# re-export of an adapter (`crate::Udpipe`) is caught as well as
+# `crate::nlp::udpipe::Udpipe`. `crate::cli::` is the CLI's own tree. In
+# src/cli/mod.rs `super::` is the crate root, so it is read there the way
+# `crate::` is. How the regexes are built is explained at the top of
+# rule1-domain.yml.
+rules:
+  - id: boundary-rule7-cli-imports
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include: ["/src/cli/**/*.rs"]
+    message: >-
+      Boundary rule 7 (the composition root knows the whole): src/cli/
+      reaches a crate item outside the surface it may use, which is
+      crate::Engine, crate::Ingest, crate::extraction, crate::config,
+      crate::domain and its own crate::cli. A port module (crate::nlp,
+      crate::source, crate::decompose, crate::embed), an adapter, or anything
+      else at the crate root is out of bounds, by use line, brace group,
+      `use crate as`, super::super::, or an inline path in a function body.
+      Why: choosing and wiring adapters is the composition root's job
+      (src/lib.rs), and a command line that picked its own adapter would be a
+      second place that knows the wiring, which drifts from the first. Fix:
+      go through Engine::from_config and the Engine and Ingest methods; if
+      the CLI needs something new, expose it from src/lib.rs as part of the
+      public surface first. Read:
+      site/content/reference/boundary-rules.md#rule-7-the-composition-root-knows-the-whole
+    patterns:
+      - pattern-either:
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bcrate\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|\{[^{};]*\})*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:Engine|Ingest|extraction|config|domain|cli)\b)(?:[A-Za-z_]\w*|\*)'
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bcrate\s+as\b'
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bsuper\s*::\s*super\b'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
+
+  - id: boundary-rule7-cli-root-super
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include: ["/src/cli/mod.rs"]
+    message: >-
+      Boundary rule 7 (the composition root knows the whole): in
+      src/cli/mod.rs `super::` is the crate root, and it reaches an item
+      outside Engine, Ingest, extraction, config and domain. Why: choosing
+      and wiring adapters is the composition root's job (src/lib.rs), and a
+      command line that picked its own adapter would be a second place that
+      knows the wiring. Fix: go through Engine::from_config and the Engine
+      and Ingest methods. Read:
+      site/content/reference/boundary-rules.md#rule-7-the-composition-root-knows-the-whole
+    patterns:
+      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bsuper\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|\{[^{};]*\})*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:Engine|Ingest|extraction|config|domain)\b)(?:[A-Za-z_]\w*|\*)'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'

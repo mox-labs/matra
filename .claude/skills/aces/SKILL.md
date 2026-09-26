@@ -41,7 +41,7 @@ Matra's composable surface:
 - The hex layout (domain → ports → adapters → composition root).
 - `&dyn NlpProvider` runtime dispatch so the NLP backend is replaceable without recompiling the rest.
 - Per-paragraph parse so paragraph-level changes don't cascade into document-level rewrites.
-- The eight boundary rules, stated with motivation in `site/content/reference/boundary-rules.md`. Enforcement is mostly review: `scripts/check-boundaries.sh` greps rules 3, 4 and 8 from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job, and rule 6 is the only rule CI verifies by compiling.
+- The eight boundary rules, stated with motivation in `site/content/reference/boundary-rules.md`. Rules 1, 2, 3, 4, 5, 7 (its `src/cli/` part) and 8 are semgrep checks in `.semgrep/`, each tested against a fixture, run by `scripts/check-boundaries.sh` from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job; rule 6 is verified by compiling. The checks read import forms; review still reads intent (a port trait shaped around one adapter, a metric taking text instead of structure, wiring outside `lib.rs` beyond the CLI). EP-0014 lists what each check covers and misses.
 
 ### Extensible — clear interfaces that invite contribution without requiring full comprehension
 

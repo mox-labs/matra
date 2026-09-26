@@ -25,9 +25,10 @@ diffs it. Run `scripts/gen-llms-txt.sh` rather than editing it.
 
 ## Boundary rules
 
-Eight rules hold the hexagonal architecture in place. Rule 6 runs on every
-push; rules 3, 4 and 8 get a partial grep from `scripts/check-boundaries.sh`;
-the rest have no mechanical check, so review is the gate.
+Eight rules hold the hexagonal architecture in place. Rule 6 is compiled on
+every push; rules 1, 2, 3, 4, 5, 7 (its `src/cli/` part) and 8 are semgrep
+checks in `.semgrep/`, run by `scripts/check-boundaries.sh`. The checks read
+import forms, so review stays the gate for intent.
 
 1. `domain.rs` depends only on `serde`, `thiserror` and `std`.
 2. Port modules import only from `domain`.

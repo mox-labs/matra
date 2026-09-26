@@ -1,96 +1,162 @@
 #!/usr/bin/env bash
-# Verifies matra's hex-architecture boundary rules from CLAUDE.md.
-# Runs from 'just check', the opt-in pre-commit hook, and the `Boundary check`
-# job in .github/workflows/ci.yml.
+# Mechanical checks for matra's boundary rules and library conventions: the
+# semgrep rules in .semgrep/, one file per rule group. EP-0014 is the design
+# record; site/content/reference/boundary-rules.md says what each rule is
+# for. Runs from `just boundary` (and so `just check`), the pre-commit hook,
+# and the `Boundary check` job in .github/workflows/ci.yml.
 #
-# Rules enforced here:
-#   3. No port module imports another port module.
-#   4. nlp/udpipe.rs is the ONLY file that imports udpipe_rs.
-#   8. tracing is forbidden in domain.rs and port modules (Burner amendment, 2026-04-28).
+# Three steps, each built to fail loudly rather than pass over nothing:
 #
-# Rule 6 is gated by cargo check --no-default-features in ci.yml. Rules 1, 2, 5, 7
-# have no mechanical check (Rust offers no intra-crate directional-import control);
-# review is the gate. See site/content/reference/boundary-rules.md for the full table.
+#   1. Rule tests. Every .semgrep/NAME.yml has a fixture .semgrep/NAME.rs in
+#      which every rule id carries at least one `ruleid:` and one `ok:`
+#      annotation, and `semgrep --test` passes on the pair. The pairs are
+#      listed here rather than discovered: semgrep's test discovery skips a
+#      dot-directory such as .semgrep/ and reports "No unit tests found"
+#      with exit 0.
+#   2. The scan. Every rule runs over src/; any finding fails the check.
+#   3. Coverage. The scan must have read every Rust file under src/, with no
+#      semgrep error. Semgrep drops files quietly (its size cap, its default
+#      ignore list, which .semgrepignore replaces) and reports a timed-out
+#      rule as an error rather than a finding, so a clean scan is evidence
+#      only when this holds.
+#
+# Rule 6 (the no-default-features build) is compiled in ci.yml, not here.
 
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# rg is required. Every rule below is an rg search, and a search that never
-# ran returns the same empty output as a search that found nothing, so a
-# missing rg used to print a pass having examined nothing.
-if ! command -v rg >/dev/null 2>&1; then
-    echo "FAIL: check-boundaries needs ripgrep (rg), which is not on PATH" >&2
-    echo "      install: brew install ripgrep, apt-get install ripgrep, or cargo install ripgrep" >&2
+# Offline and deterministic: no usage metrics (also `--metrics=off` below)
+# and no call home to ask whether a newer semgrep exists.
+export SEMGREP_SEND_METRICS=off
+export SEMGREP_ENABLE_VERSION_CHECK=0
+
+if ! command -v semgrep >/dev/null 2>&1; then
+    echo "FAIL: check-boundaries needs semgrep, which is not on PATH" >&2
+    echo "      install the version CI pins:" >&2
+    echo "      pip install --require-hashes -r .github/requirements/semgrep.txt" >&2
+    exit 2
+fi
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "FAIL: check-boundaries needs python3 to read semgrep's JSON report" >&2
     exit 2
 fi
 
-# rg exits 0 on a match, 1 on no match, and 2 on an error such as a path that
-# does not exist. Only 0 and 1 are results. A renamed port file used to land
-# on 2, which the old `2>/dev/null || true` read as a clean pass.
-scan() {
-    local out rc=0
-    out=$(rg "$@") || rc=$?
-    if [ "$rc" -gt 1 ]; then
-        echo "FAIL: rg exited $rc for: rg $*" >&2
-        exit 2
-    fi
-    printf '%s' "$out"
-}
-
-# What the rules examine, counted so a pass over nothing is visible. Rule 4
-# and its analog walk all of src/; rules 3 and 8 read the named files below,
-# and scan() fails if any of those has moved.
-src_files=$(rg --files src/ | wc -l | tr -d ' ') || {
-    echo "FAIL: rg could not list src/" >&2
+# The rules scope themselves with `paths:`, and semgrep resolves those
+# against the git work tree: outside one, a scoped rule matches nothing and
+# the scan passes. Refuse to run anywhere but the root of a work tree.
+top=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    echo "FAIL: check-boundaries must run inside a git work tree;" >&2
+    echo "      semgrep's path-scoped rules match nothing outside one" >&2
     exit 2
 }
-if [ "$src_files" -eq 0 ]; then
-    echo "FAIL: check-boundaries found no files under src/" >&2
+if [ "$(cd "$top" && pwd -P)" != "$(pwd -P)" ]; then
+    echo "FAIL: check-boundaries expected the work tree root at $(pwd -P), git says $top" >&2
     exit 2
 fi
+
+pinned=$(sed -n 's/^semgrep==\([0-9.]*\).*/\1/p' .github/requirements/semgrep.txt)
+have=$(semgrep --version 2>/dev/null | tail -1)
+if [ "$have" != "$pinned" ]; then
+    echo "note: semgrep $have here, CI pins $pinned; the rule tests below say whether the rules behave the same" >&2
+fi
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
 
 fail=0
-violations=0
-flag() {
-    echo "$1"
-    echo "$2" | sed 's/^/  /'
-    violations=$((violations + $(printf '%s\n' "$2" | wc -l)))
+
+# --- 1. Rule tests -----------------------------------------------------------
+
+shopt -s nullglob
+configs=(.semgrep/*.yml)
+shopt -u nullglob
+if [ "${#configs[@]}" -eq 0 ]; then
+    echo "FAIL: no rule files in .semgrep/" >&2
+    exit 2
+fi
+
+rule_count=0
+for cfg in "${configs[@]}"; do
+    fixture="${cfg%.yml}.rs"
+    if [ ! -f "$fixture" ]; then
+        echo "FAIL: $cfg has no fixture $fixture"
+        fail=1
+        continue
+    fi
+    ids=$(sed -n 's/^  - id: *//p' "$cfg")
+    if [ -z "$ids" ]; then
+        echo "FAIL: $cfg declares no rule ids"
+        fail=1
+        continue
+    fi
+    for id in $ids; do
+        rule_count=$((rule_count + 1))
+        for kind in ruleid ok; do
+            if ! grep -Eq "//[[:space:]]*${kind}:([^,]*,)*[[:space:]]*${id}[[:space:]]*(,|$)" "$fixture"; then
+                echo "FAIL: rule $id has no \`// ${kind}: $id\` case in $fixture"
+                fail=1
+            fi
+        done
+    done
+    if ! semgrep --test --metrics=off --config "$cfg" "$fixture" >"$tmp/test.log" 2>&1; then
+        echo "FAIL: semgrep --test for $cfg"
+        sed 's/^/  /' "$tmp/test.log"
+        fail=1
+    fi
+done
+
+if [ "$fail" -ne 0 ]; then
+    echo "check-boundaries: rule tests failed; the scan did not run"
+    exit 1
+fi
+
+# --- 2. The scan -------------------------------------------------------------
+
+scan_rc=0
+semgrep scan \
+    --config .semgrep \
+    --metrics=off \
+    --error \
+    --max-target-bytes=0 \
+    --timeout=0 \
+    --json-output="$tmp/scan.json" \
+    src || scan_rc=$?
+
+# --- 3. Coverage -------------------------------------------------------------
+
+git ls-files --cached --others --exclude-standard -- 'src/*.rs' >"$tmp/expected"
+
+python3 - "$tmp/scan.json" "$tmp/expected" <<'PY' || fail=1
+import json, sys
+
+report = json.load(open(sys.argv[1]))
+expected = {line.strip() for line in open(sys.argv[2]) if line.strip()}
+scanned = set(report["paths"]["scanned"])
+ok = True
+
+if not expected:
+    print("FAIL: git lists no Rust files under src/")
+    ok = False
+missing = sorted(expected - scanned)
+if missing:
+    print(f"FAIL: semgrep did not read {len(missing)} Rust file(s) under src/:")
+    for path in missing:
+        print(f"  {path}")
+    ok = False
+for error in report.get("errors", []):
+    print(f"FAIL: semgrep error: {error.get('type')}: {error.get('message', '').strip()[:300]}")
+    ok = False
+
+findings = len(report["results"])
+print(f"check-boundaries: {len(scanned & expected)} of {len(expected)} Rust files in src/ read, "
+      f"{findings} finding(s)")
+sys.exit(0 if ok else 1)
+PY
+
+if [ "$scan_rc" -ne 0 ]; then
     fail=1
-}
-
-# Rule 4: only nlp/udpipe.rs imports udpipe_rs.
-hits=$(scan -l 'use udpipe_rs|udpipe_rs::' src/ --glob '!src/nlp/udpipe.rs')
-if [ -n "$hits" ]; then
-    flag "FAIL (rule 4): udpipe_rs imported outside src/nlp/udpipe.rs" "$hits"
 fi
 
-# Rule 4 analog: only embed/model2vec.rs imports safetensors and tokenizers.
-hits=$(scan -l 'use safetensors|safetensors::|use tokenizers|tokenizers::' src/ --glob '!src/embed/model2vec.rs')
-if [ -n "$hits" ]; then
-    flag "FAIL (rule 4 analog): safetensors/tokenizers imported outside src/embed/model2vec.rs" "$hits"
-fi
-
-# Rule 8: tracing forbidden in domain.rs and port modules.
-hits=$(scan -l '(^|\s)use tracing|tracing::' \
-    src/domain.rs \
-    src/source/mod.rs \
-    src/decompose/mod.rs \
-    src/nlp/mod.rs \
-    src/embed/mod.rs)
-if [ -n "$hits" ]; then
-    flag "FAIL (rule 8): tracing imported in domain.rs or a port module" "$hits"
-fi
-
-# Rule 3: port modules do not import each other.
-hits=$(scan -l 'use crate::source|use crate::decompose|use crate::nlp|use crate::embed' \
-    src/source/mod.rs \
-    src/decompose/mod.rs \
-    src/nlp/mod.rs \
-    src/embed/mod.rs)
-if [ -n "$hits" ]; then
-    flag "FAIL (rule 3): cross-port import detected" "$hits"
-fi
-
-echo "check-boundaries: 4 checks (rules 3, 4, 4 analog, 8) over $src_files files in src/, $violations violation(s)"
+echo "check-boundaries: ${#configs[@]} rule files, $rule_count rules, each tested against its fixture"
 exit "$fail"

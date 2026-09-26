@@ -24,7 +24,7 @@ New work is tracked as EPs in `blueprints/eps/`, beside the RFCs they implement 
 These are commitments, not preferences. Once locked, they hold:
 
 - **Domain purity.** `domain.rs` imports only `serde`, `thiserror`, and `std`. No further crates without an RFC.
-- **Single UDPipe importer.** Only `nlp/udpipe.rs` imports `udpipe_rs`. Adding a second site is a boundary failure. Enforced by `scripts/check-boundaries.sh`.
+- **Single UDPipe importer.** Only `nlp/udpipe.rs` imports `udpipe_rs`. Adding a second site is a boundary failure. Enforced by the rule 4 checks in `.semgrep/rule4-single-importer.yml`, run by `scripts/check-boundaries.sh`.
 - **`#[non_exhaustive]` on every public enum and every public struct with public fields.** Forward compatibility is non-negotiable; matra is a library.
 - **Hex layout.** Adapters do not import each other. Ports do not import each other. The composition root is the only file that knows the whole pipeline.
 - **No publish without explicit approval.** `cargo publish` and `maturin publish` always run with `--dry-run` first; explicit per-publish approval per the project memory.

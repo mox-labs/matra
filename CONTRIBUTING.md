@@ -258,10 +258,12 @@ boundary is checked against the antifragile checklist.
 **Boundary rules:** non-negotiable. See
 [`site/content/reference/boundary-rules.md`](site/content/reference/boundary-rules.md) for the
 canonical eight rules and how each is enforced; `CLAUDE.md` carries the
-summary. `scripts/check-boundaries.sh` greps three of them and runs from
-`just check`, the optional pre-commit hook and the `Boundary check` CI job;
-it sees the literal import form only. Rule 6 is verified by compiling. The
-rest rests on review, so run `just check` before opening a PR.
+summary. `scripts/check-boundaries.sh` checks seven of them with the semgrep
+rules in `.semgrep/` and runs from `just check`, the optional pre-commit hook
+and the `Boundary check` CI job; install the pinned semgrep once with
+`pip install --require-hashes -r .github/requirements/semgrep.txt`. Rule 6 is
+verified by compiling. The checks read import forms; what an import cannot
+show rests on review, so run `just check` before opening a PR.
 
 **Formatting:** `cargo fmt`. Enforced.
 

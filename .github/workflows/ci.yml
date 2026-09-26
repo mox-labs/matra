@@ -120,30 +120,36 @@ jobs:
         run: cargo check --no-default-features --features model2vec --target wasm32-unknown-unknown
 
   # The two script gates below used to run only from `just check` and the
-  # opt-in pre-commit hook. Each tool is a pinned release asset checked
-  # against a pinned SHA-256 before it is unpacked: the ripgrep, lychee and
-  # bun digests are the ones their releases publish.
+  # opt-in pre-commit hook. Each tool is pinned: semgrep and every package it
+  # pulls in by version and hash in .github/requirements/semgrep.txt, which
+  # pip refuses to install from if any hash differs; ripgrep, lychee and bun
+  # as release assets checked against the SHA-256 their releases publish.
+  #
+  # The job name is what branch protection requires; keep it.
   boundaries:
     name: Boundary check
     runs-on: ubuntu-latest
-    env:
-      RIPGREP_VERSION: 15.1.0
-      RIPGREP_SHA256: 1c9297be4a084eea7ecaedf93eb03d058d6faae29bbc57ecdaf5063921491599
     steps:
+      # The full checkout (with .git) matters: the rules scope themselves by
+      # path, semgrep resolves paths against the git work tree, and the check
+      # refuses to run without one.
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
-      - name: Install ripgrep
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install semgrep (pinned by hash)
         run: |
           set -euo pipefail
-          mkdir -p "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          asset="ripgrep-${RIPGREP_VERSION}-x86_64-unknown-linux-musl"
-          curl -sSLf -o "$RUNNER_TEMP/rg.tar.gz" \
-            "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/${asset}.tar.gz"
-          echo "${RIPGREP_SHA256}  $RUNNER_TEMP/rg.tar.gz" | sha256sum -c -
-          tar -xzf "$RUNNER_TEMP/rg.tar.gz" -C "$HOME/.local/bin" --strip-components=1 "${asset}/rg"
-      - name: Boundary rules 3, 4, 8
+          python -m venv "$RUNNER_TEMP/semgrep"
+          "$RUNNER_TEMP/semgrep/bin/python" -m pip install --quiet --require-hashes \
+            -r .github/requirements/semgrep.txt
+          echo "$RUNNER_TEMP/semgrep/bin" >> "$GITHUB_PATH"
+      # Rules 1, 2, 3, 4, 5, 7 (the CLI's part) and 8, and the library's
+      # error conventions. Each rule file is tested against its fixture
+      # first, then src/ is scanned, then the scan's coverage is checked.
+      - name: Boundary rules (semgrep)
         run: bash scripts/check-boundaries.sh
 
   docs-floor:

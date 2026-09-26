@@ -11,8 +11,10 @@ touched file in full, not just its hunks. The full review posture lives
 in `.claude/agents/reviewer.md`; this skill is the CI distillation.
 
 Verify claims by reading code, and where cheap, by running:
-`cargo test`, `cargo check --no-default-features`,
-`scripts/check-boundaries.sh`. Never run `cargo test --all-features`
+`cargo test`, `cargo check --no-default-features`, and
+`scripts/check-boundaries.sh` where semgrep is installed (where it is not,
+the script exits 2 and the `Boundary check` job's result is the evidence).
+Never run `cargo test --all-features`
 (links fail by design; not a regression). The UDPipe model is absent in
 CI, so model-gated tests stay ignored; say so rather than skipping the
 thought.
@@ -60,11 +62,15 @@ consumer must fall into correct usage, not climb into it.
 
 ## Gate 1: boundary rules, reviewed against motivation not pattern
 
-`site/content/reference/boundary-rules.md` is canonical. The script greps
-only rules 3, 4, 8 and only their literal spellings. You are the
-enforcement for the rest, and for the spellings greps cannot see:
-re-exports, grouped imports, inline qualified paths, laundering type
-aliases.
+`site/content/reference/boundary-rules.md` is canonical. The semgrep
+rules in `.semgrep/` check the import forms of rules 1, 2, 3, 4, 5, 7 (its
+`src/cli/` part) and 8, including grouped imports, inline qualified paths
+and `pub` re-exports of `udpipe_rs`. You are the enforcement for intent and
+for what the checks list as missed in EP-0014: a trait shaped around one
+adapter, a metric taking text instead of structure, wiring outside `lib.rs`
+beyond the CLI, a private alias made public under another name. A diff that
+edits a `.semgrep/` rule or fixture to make itself pass is a boundary change,
+not a fix.
 
 - `src/domain.rs` imports only `serde`, `thiserror`, `std`. A
   non-optional dependency used in domain compiles clean under every
