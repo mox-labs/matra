@@ -168,7 +168,9 @@ difference matters.
   `.semgrepignore`, `.github/requirements/semgrep.txt`,
   `scripts/check-boundaries.sh` rewritten around semgrep (the ripgrep checks
   retired), the `Boundary check` job installing the pinned semgrep, the
-  pre-commit hook running the check when semgrep is present, and the
+  pre-commit hook running the check when semgrep is present (the scan alone,
+  `--scan-only`, about 3 seconds, unless a rule, fixture or the script is
+  staged; the full run with rule tests takes about 70), and the
   enforcement text in `CLAUDE.md`, `boundary-rules.md`, `AGENTS.md`,
   `CONTRIBUTING.md` and the agent and skill files brought in line.
 - **Exit criterion.** `just check` passes; every rule fires on its fixture;
@@ -177,7 +179,9 @@ difference matters.
 
 ## Test plan
 
-- `semgrep --test` per rule file, from the script, on every run.
+- `semgrep --test` per rule file, from the script, on every run except the
+  pre-commit hook's `--scan-only` run when no rule, fixture or script is
+  staged.
 - Planted violations on a throwaway git copy of the real tree, one per rule,
   at the rule's real path: each must produce that rule's finding at the
   planted line. Negative controls (`udpipe_rs` in its adapter, an adapter

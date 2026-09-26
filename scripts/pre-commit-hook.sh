@@ -40,8 +40,14 @@ echo "  rust gates:   $rust_touched"
 # on, and the `Boundary check` job in CI runs it regardless. The script
 # itself is called with `bash`, not guarded by `[ -x ... ]`, which once
 # skipped it without a word whenever the file lost its mode bit.
+# The rule tests run only when a rule, a fixture or the script is staged;
+# otherwise the rules are unchanged and the scan alone answers.
 if command -v semgrep >/dev/null 2>&1; then
-    bash scripts/check-boundaries.sh
+    if git diff --cached --name-only | grep -Eq '^(\.semgrep/|scripts/check-boundaries\.sh$)'; then
+        bash scripts/check-boundaries.sh
+    else
+        bash scripts/check-boundaries.sh --scan-only
+    fi
 else
     echo "WARNING: semgrep is not on PATH, so the boundary check did not run;" >&2
     echo "         CI runs it. To run it here:" >&2
