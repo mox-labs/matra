@@ -56,6 +56,14 @@ pub struct ProvisionNotice {
     pub bytes: u64,
     /// The directory the artifact is being fetched into.
     pub destination: PathBuf,
+    /// The artifact's license, named for a reader, for example
+    /// `CC BY-NC-SA 4.0 (non-commercial)`. A model is a separate work
+    /// from matra and carries its own terms, which need not be matra's
+    /// MIT. Pinned in the source beside the URL, so a change of model
+    /// changes both.
+    pub license: String,
+    /// Where the full text of `license` is published.
+    pub license_url: String,
 }
 
 // ---------------------------------------------------------------------------
