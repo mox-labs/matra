@@ -111,7 +111,10 @@ place".
   the words touch the bar and none crosses it, everything hangs, and the
   favicon fits its square, keeps at least two arcs and leaves a pixel
   between its strokes. Seen to fail when the words were planted back at
-  their x-height, and when the favicon's pitch was planted at 2px.
+  their x-height, and when the favicon's pitch was planted at 2px. A
+  malformed parse (a dangling head and a cycle) must leave the favicon the
+  tokens that reach the root; the unbounded level loop review found was
+  seen to hang on it.
 - Gate 8 on the page measures and the specimen's parse; seen to fail on a hand
   edit of the parse.
 - Gate 9 on every margin note's text against its data; seen to fail on a

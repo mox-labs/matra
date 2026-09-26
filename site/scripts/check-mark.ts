@@ -80,6 +80,17 @@ for (const variant of ['glyph', 'full', 'favicon', 'mono', 'paper'] as Variant[]
 	}
 }
 
+// A malformed parse (a head that is not in the sentence, and a two-token
+// cycle) must not hang the favicon's reduction: it drops the tokens that
+// never reach the root and keeps the rest.
+{
+	const tok = (id: number, head: number, dep: string) => ({ id, head, dep, text: `w${id}`, lemma: `w${id}`, pos: 'X' });
+	const malformed = [tok(1, 2, 'nsubj'), tok(2, 0, 'root'), tok(3, 2, 'obj'), tok(4, 9, 'dep'), tok(5, 6, 'dep'), tok(6, 5, 'dep')];
+	const m = layoutMark(malformed as typeof tokens, 'favicon');
+	const ids = m.strokes.map((s) => s.id).join(',');
+	check(ids === '1,2,3', `favicon: a malformed parse keeps ${ids}, not the tokens that reach the root (1,2,3)`);
+}
+
 const heroTop = inkTop(ALEGREYA_BLACK, tallest(ALEGREYA_BLACK, text));
 check(heroTop >= 0 && heroTop < 1, `hero: the bar (${heroTop.toFixed(3)}em) falls outside the words' line box`);
 
