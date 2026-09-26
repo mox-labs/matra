@@ -83,7 +83,7 @@
 			{/if}
 			{@html call.html}
 			{#if call.start?.runHtml}{@html call.start.runHtml}{/if}
-			{#if call.lang === 'cli'}
+			{#if call.lang === 'cli' && !example.plain}
 				<p class="prints">It prints the output below, inside an envelope that names the command and the input:</p>
 				{@html example.cliEnvelopeHtml}
 			{/if}

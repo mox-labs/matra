@@ -58,6 +58,8 @@ interface Spec {
 	file: string;
 	/** One shell line that writes the input as `file`; the examples gate runs it. */
 	save?: string;
+	/** Show the call and output plainly: no CLI envelope and no trim note, the page's prose saying what is shown. */
+	plain?: boolean;
 	output?: OutputSpec;
 	start?: Record<'rust' | 'python' | 'cli', StartSpec>;
 }
@@ -266,21 +268,18 @@ export function exampleMarkdown(
 			ex.files['example.py'].trimEnd(),
 			'```',
 			'',
-			'The command line, which prints the output below inside an envelope:',
+			ex.spec.plain ? 'The command line:' : 'The command line, which prints the output below inside an envelope:',
 			'',
 			...start('cli'),
 			'```bash',
 			ex.files['cli.sh'].trim(),
 			'```',
-			'',
-			'```jsonc',
-			envelopeText(ex),
-			'```'
+			...(ex.spec.plain ? [] : ['', '```jsonc', envelopeText(ex), '```'])
 		].join('\n');
 	}
 	const shown = shownOutput(ex);
 	return [
-		...(shown.note ? [`Trimmed: ${shown.note}.`, ''] : []),
+		...(shown.note && !ex.spec.plain ? [`Trimmed: ${shown.note}.`, ''] : []),
 		shown.note ? '```jsonc' : '```json',
 		shown.text,
 		'```',
@@ -331,6 +330,7 @@ export function exampleView(ex: ExampleSource, figures: ReadonlyMap<string, Figu
 			};
 		}) as ExampleView['calls'],
 		cliEnvelopeHtml: hl(envelopeText(ex), 'jsonc'),
+		plain: ex.spec.plain === true,
 		output: {
 			html: hl(shown.text, shown.note ? 'jsonc' : 'json'),
 			trimmed: shown.note ? codeHtml(shown.note) : null,

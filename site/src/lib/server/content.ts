@@ -149,7 +149,10 @@ export async function loadDoc(route: string): Promise<Doc> {
 		base,
 		figures,
 		examples,
-		measures: measures.get(item.file)
+		// The home page is a quick start: the self-measuring margin is an
+		// explanation-grade device and stays off it. Every other page keeps it.
+		measures: i === 0 ? undefined : measures.get(item.file),
+		part
 	});
 	const link = (j: number) =>
 		j >= 0 && j < order.length ? { title: order[j].item.title, route: order[j].item.route } : null;
