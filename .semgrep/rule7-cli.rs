@@ -38,6 +38,13 @@ use crate::{domain::{tree::{Node}}, config::{self, Config}, Engine};
 // ruleid: boundary-rule7-cli-root-super
 use super::{config::{Config}, domain::{tree::{Node}}, source};
 // ruleid: boundary-rule7-cli-imports
+use crate::{
+    config::{
+        Config, // closes } early
+    },
+    nlp::udpipe::Udpipe,
+};
+// ruleid: boundary-rule7-cli-imports
 use crate::Udpipe;
 // ruleid: boundary-rule7-cli-imports
 use crate::*;
