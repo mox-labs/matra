@@ -34,6 +34,8 @@ $ matra --version
 
 The first command that needs a parse downloads the pinned English UDPipe model, about 16 MB, with no flag and no environment variable required. It is verified against a SHA-256 compiled into the library before it loads; a cached file that fails verification is replaced only once a verified download is in hand, so a failed fetch leaves the file that was there.
 
+That model is a separate file from matra with its own license: CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/), from LINDAT record 11234/1-3131, which does not permit commercial use. matra's code is MIT. The command line prints the license on the run that downloads the model. `--model-dir` and `MATRA_MODEL_DIR` change where the file is stored, not which model it is; a different UDPipe model file loads only through the library, by path. Tell a user this when their use is commercial rather than deciding for them what the license allows.
+
 Files land in XDG locations: the config at `$XDG_CONFIG_HOME/matra/config.toml` (else `~/.config/matra/config.toml`), the data root at `$XDG_DATA_HOME/matra` (else `~/.local/share/matra`), and models in that root's `models` directory. `MATRA_CONFIG_FILE`, `MATRA_DATA_DIR` and `MATRA_MODEL_DIR` override each in turn, and `--model-dir` outranks all of them. An existing `~/.matra/models` from an older install still wins while the new location is absent.
 
 ## The commands

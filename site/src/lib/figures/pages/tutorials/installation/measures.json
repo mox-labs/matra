@@ -237,6 +237,42 @@
       "compression_ratio": null,
       "in_blockquote": false,
       "lexical_density": 0.5,
+      "readability_grade": 7.19,
+      "sentences": 2,
+      "text": "matra's code is MIT. The models it downloads are separate files, published by other people under licenses of their own.",
+      "words": 21
+    },
+    {
+      "compression_ratio": 0.6342,
+      "in_blockquote": false,
+      "lexical_density": 0.5625,
+      "readability_grade": 8.9175,
+      "sentences": 4,
+      "text": "The parsing model's license does not permit commercial use. The [UDPipe models page](https://ufal.mff.cuni.cz/udpipe/1/models) states that the UDPipe 1 models it publishes for Universal Dependencies are distributed under CC BY-NC-SA. This page reports what the licenses say and does not interpret them; read the license text for the terms.",
+      "words": 52
+    },
+    {
+      "compression_ratio": 0.5402,
+      "in_blockquote": false,
+      "lexical_density": 0.5443,
+      "readability_grade": 9.912,
+      "sentences": 3,
+      "text": "The command line prints the parsing model's license on the run that downloads it. The command line and the config file always use this model: `--model-dir`, `MATRA_MODEL_DIR` and the other settings under [where matra keeps things](../guides/cli.md#where-matra-keeps-things) change where it is stored, not which model it is, and `models.udpipe` is reported by `matra config show` but selects nothing. To parse with a different UDPipe model file, load it by path from the library: `Udpipe::from_path` in [Rust](../guides/rust.md#construct-a-provider) or `Matra.from_path` in [Python](../guides/python.md#load-the-model-from-a-directory-you-choose).",
+      "words": 87
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": null,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "---",
+      "words": 0
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
       "readability_grade": 14.9588,
       "sentences": 2,
       "text": "Run this once. No arguments and no environment: it resolves the model directory, downloads and caches the model on this first run, then parses a sentence through it and prints two results:",
@@ -261,13 +297,13 @@
       "words": 2
     },
     {
-      "compression_ratio": 0.5226,
+      "compression_ratio": 0.5333,
       "in_blockquote": false,
-      "lexical_density": 0.5096,
-      "readability_grade": 9.3143,
+      "lexical_density": 0.5234,
+      "readability_grade": 9.7392,
       "sentences": 5,
-      "text": "That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. The command line does print a line naming the artifact and where it is going, because it opts into the notice; the library call above does not, so that a program embedding matra chooses its own reporting. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow or throttled network can take longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.",
-      "words": 104
+      "text": "That first run fetches about 16 MB from a university server in Prague, and prints nothing while it does. The command line does print two lines, naming the artifact, where it is going, and the model's license, because it opts into the notice; the library call above does not, so that a program embedding matra chooses its own reporting. Cold starts measured on a fast connection ranged from 3 to 35 seconds. A slow or throttled network can take longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.",
+      "words": 108
     },
     {
       "compression_ratio": 0.5405,

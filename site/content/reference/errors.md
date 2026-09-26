@@ -148,11 +148,14 @@ mv english-ewt-ud-2.5-191206.udpipe "<the model_dir above>/"
 
 ### The first run says so
 
-A cold run has to fetch 16.3 MB before it can answer, and how long that takes is the link's business rather than matra's. The command line writes one line to standard error before the transfer and nothing at all when the model is already there:
+A cold run has to fetch 16.3 MB before it can answer, and how long that takes is the link's business rather than matra's. The command line writes two lines to standard error before the transfer and nothing at all when the model is already there:
 
 ```text
 matra: downloading english-ewt-ud-2.5-191206.udpipe (16.3 MB) into /home/u/.local/share/matra/models
+matra: the model is licensed CC BY-NC-SA 4.0 (non-commercial), separately from matra: https://creativecommons.org/licenses/by-nc-sa/4.0/
 ```
+
+The second line is there because the model is a separate file with its own license, which is not matra's MIT; [model licenses](../tutorials/installation.md#model-licenses) has both models and their sources.
 
 Standard error, so `--json` output stays a single object on standard output. `--quiet` silences it. A library caller gets the same facts as a `domain::ProvisionNotice` from `Engine::from_config_with_notice`, `Udpipe::english_with_notice` or `Udpipe::from_config_with_notice`, and decides the wording itself.
 
