@@ -109,6 +109,8 @@ export interface RenderContext {
 	examples: ReadonlyMap<string, ExampleSource>;
 	/** matra's measures of this page, when it has them. */
 	measures?: PageMeasures;
+	/** The SUMMARY.md part the page is in, or null for the home page. */
+	part?: string | null;
 }
 
 export async function render(markdown: string, ctx: RenderContext): Promise<Rendered> {
@@ -410,7 +412,10 @@ function toSegments(
 					errors.push(`  ${at}: sentence="${attrs.sentence}" is not between 1 and ${total}`);
 					continue;
 				}
-				segment = { ...base, figure: 'parse', sentence, file: parse };
+				// The compact data line above the arcs is the table-first rule, which
+				// applies where a reader comes to understand (Explanation); elsewhere
+				// the figure and its "show the data" table are enough.
+				segment = { ...base, figure: 'parse', sentence, file: parse, line: ctx.part === 'Explanation' };
 				break;
 			}
 			case 'primitives':

@@ -8,11 +8,11 @@ Install matra, save one sentence, and run matra on it.
 
 <example-call name="quickstart" />
 
-All three routes print the same result: the whole document, with its sections, paragraphs, sentences and words. Here is the first word of the sentence, with its lemma, its part of speech, the id of the word it depends on (`head`) and the relation (`dep`):
+It prints JSON; here is the first word:
 
 <example-output name="quickstart" />
 
-Every word of the sentence, drawn. Each arc runs from a word to the word that depends on it, labelled with the relation:
+Every word, drawn. Each arc runs from a word to the word that depends on it:
 
 <figure-parse input="quickstart" />
 

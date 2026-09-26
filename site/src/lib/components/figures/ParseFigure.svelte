@@ -30,8 +30,9 @@
 		id,
 		file,
 		sentence,
+		line = true,
 		dataUrl
-	}: { id: string; file: ParseFigureFile; sentence: number; dataUrl: string } = $props();
+	}: { id: string; file: ParseFigureFile; sentence: number; line?: boolean; dataUrl: string } = $props();
 
 	const sentences = $derived(file.data.sentences);
 	// The sentence shown: the page's choice until the reader makes one.
@@ -96,6 +97,7 @@
 				<!-- The data, one line above the arcs, in the form a reader already
 				     reads: each word, its relation, and the word it depends on. The
 				     keyboard lights a word's arcs from here, as the pointer does. -->
+				{#if line}
 				<ol class="tokens" aria-label="Each word of sentence {current}, its relation and its head" {@attach roving}>
 					{#each shown.tokens as t (t.id)}
 						<li
@@ -112,6 +114,7 @@
 						</li>
 					{/each}
 				</ol>
+				{/if}
 
 
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -170,7 +173,8 @@
 				<thead>
 					<tr><th>#</th><th>Word</th><th>Lemma</th><th>POS</th><th>Head</th><th>Relation</th></tr>
 				</thead>
-				<tbody>
+				<!-- Without the data line, the table's rows carry the keyboard. -->
+				<tbody {@attach !line && roving}>
 					{#each shown.tokens as t (t.id)}
 						<tr
 							data-row={t.id}
@@ -178,6 +182,8 @@
 							class:dim={lit !== null && !lit.has(t.id)}
 							onpointerenter={() => (active = t.id)}
 							onpointerleave={() => (active = null)}
+							onfocus={() => (active = t.id)}
+							onblur={() => (active = null)}
 						>
 							<td class="num">{t.id}</td>
 							<td class="word">{t.text}</td>
