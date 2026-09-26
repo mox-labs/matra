@@ -383,7 +383,8 @@ sit a little off the bar. On the site the face is loaded, and the mark on
 `scripts/check-mark.ts` holds the geometry to those rules in every variant:
 the words touch the bar and none crosses it; every stroke hangs, with the root
 starting on the bar; the favicon fits its square, keeps at least two arcs, and leaves a pixel
-between its strokes.
+between its strokes; and a malformed parse leaves the favicon the tokens
+that reach the root, rather than hanging the build.
 It runs in `bun run check`, so in gate 4. Gate 8 guards what the mark is drawn
 from, and this guards how it is drawn.
 

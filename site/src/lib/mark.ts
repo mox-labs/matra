@@ -235,10 +235,14 @@ function faviconLayout(tokens: ParseToken[]): MarkLayout {
 	const words = tokens.filter((t) => t.dep !== 'punct');
 	if (!words.some((t) => t.head === 0)) throw new Error('the specimen parse has no root');
 	const depth = depths(words);
+	// Tokens that never reach the root (depth Infinity) are dropped here, so
+	// the loop below only counts finite depths and ends at the deepest one.
+	const reachable = words.filter((t) => Number.isFinite(depth.get(t.id)));
 	const room = Math.floor(FAVICON_SPAN / FAVICON_PITCH) + 1;
+	const deepestLevel = Math.max(0, ...reachable.map((t) => depth.get(t.id)!));
 	let level = 0;
-	while (words.filter((t) => depth.get(t.id)! <= level + 1).length <= room && words.some((t) => depth.get(t.id)! > level)) level++;
-	const kept = words.filter((t) => depth.get(t.id)! <= level);
+	while (level < deepestLevel && reachable.filter((t) => depth.get(t.id)! <= level + 1).length <= room) level++;
+	const kept = reachable.filter((t) => depth.get(t.id)! <= level);
 	const keep = new Set(kept.map((t) => t.id));
 	const n = kept.length;
 	// A 16 x 16 square: the bar 1px from the top, strokes 3px in from the
