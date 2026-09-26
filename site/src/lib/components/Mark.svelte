@@ -3,7 +3,7 @@
 	 * The mark in the page's own inks: the bar, strokes and arcs in the
 	 * current text colour, the root in Emergence. `mono` puts the root in the
 	 * ink too and carries the hierarchy with opacity. The geometry is
-	 * $lib/mark, generated from matra's parse of the motto.
+	 * $lib/mark, generated from matra's parse of the specimen.
 	 */
 	import type { MarkLayout } from '$lib/mark';
 

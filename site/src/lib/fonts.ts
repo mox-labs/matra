@@ -23,7 +23,7 @@ export interface FaceMetrics {
 	capHeight: number;
 }
 
-/** Alegreya ExtraBold (800), the motto's face in the home page's hero. l, f and d reach 0.742; A 0.655. */
+/** Alegreya ExtraBold (800), the specimen's face in the home page's hero. l, f and d reach 0.742; A 0.655. */
 export const ALEGREYA_BLACK: FaceMetrics = { ascent: 1.016, descent: 0.345, ascender: 0.742, capHeight: 0.637 };
 
 /**

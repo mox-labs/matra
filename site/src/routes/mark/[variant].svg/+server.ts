@@ -1,11 +1,11 @@
 import { error } from '@sveltejs/kit';
 import { layoutMark, markSvg, PALETTES, type Palette, type Variant } from '$lib/mark';
-import { motto } from '$lib/server/motto';
+import { specimen } from '$lib/server/specimen';
 import type { EntryGenerator, RequestHandler } from './$types';
 
 /**
  * Each variant of the mark as a file, for use off the site: generated from
- * the committed parse of the motto, like every figure.
+ * the committed parse of the specimen, like every figure.
  */
 export const prerender = true;
 
@@ -23,8 +23,8 @@ export const entries: EntryGenerator = () => Object.keys(FILES).map((variant) =>
 export const GET: RequestHandler = ({ params }) => {
 	const file = Object.hasOwn(FILES, params.variant) ? FILES[params.variant] : undefined;
 	if (!file) error(404, 'No such variant of the mark');
-	const svg = markSvg(layoutMark(motto().tokens, file.variant), file.palette, {
-		title: 'matra: its parse of "Amplify radical nonconformity."'
+	const svg = markSvg(layoutMark(specimen().tokens, file.variant), file.palette, {
+		title: 'matra: its parse of "Collective attention can restore a world."'
 	});
 	return new Response(svg, { headers: { 'content-type': 'image/svg+xml' } });
 };

@@ -2,7 +2,7 @@
  * The mark's geometry keeps the rules that make it read as the mark.
  *
  * Gate 8 guards what the mark is drawn from (the committed parse of the
- * motto); this guards how it is drawn, over every variant, from that same
+ * specimen); this guards how it is drawn, over every variant, from that same
  * data:
  *
  *   - the bar is a headline, never a strikethrough: in the full mark the
@@ -10,8 +10,9 @@
  *     it, and the words end above the arcs;
  *   - everything hangs: no stroke starts above the bar, and the root starts
  *     on it;
- *   - the favicon fits its 16px square, and keeps at least two arcs, since
- *     one arc under a bar reads as a letter U, not as the mark;
+ *   - the favicon fits its 16px square, keeps at least two arcs, since
+ *     one arc under a bar reads as a letter U, not as the mark, and leaves at
+ *     least a pixel between its strokes, which otherwise fuse into a block;
  *   - the hero's bar sits inside the words' line box.
  *
  * Runs from `bun run check`, so in gate 4 of the docsite floor.
@@ -21,12 +22,12 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ALEGREYA_BLACK, inkTop, PLEX_MONO, tallest } from '../src/lib/fonts';
-import { layoutMark, mottoTokens, type Variant } from '../src/lib/mark';
+import { layoutMark, specimenTokens, type Variant } from '../src/lib/mark';
 import type { ParseFigureFile } from '../src/lib/types';
 
 const SITE = resolve(import.meta.dir, '..');
-const file = JSON.parse(readFileSync(resolve(SITE, 'src/lib/figures/motto/parse.json'), 'utf8')) as ParseFigureFile;
-const tokens = mottoTokens(file);
+const file = JSON.parse(readFileSync(resolve(SITE, 'src/lib/figures/specimen/parse.json'), 'utf8')) as ParseFigureFile;
+const tokens = specimenTokens(file);
 const text = tokens.map((t) => t.text).join('');
 const EPS = 1e-9;
 
@@ -72,6 +73,9 @@ for (const variant of ['glyph', 'full', 'favicon', 'mono', 'paper'] as Variant[]
 			const depth = ys[0] + ((Math.max(...ys) - ys[0]) * 3) / 4;
 			check(depth + m.weight.arc / 2 <= 16, `favicon: the ${a.dep} arc hangs out of the square`);
 		}
+		const xs = m.strokes.map((s) => s.x).sort((p, q) => p - q);
+		for (let i = 1; i < xs.length; i++)
+			check(xs[i] - xs[i - 1] - m.weight.stroke >= 1, `favicon: strokes at ${xs[i - 1]} and ${xs[i]} touch; at 16px they fuse into a block`);
 		check(m.arcs.length >= 2, 'favicon: one arc or none; under a bar that reads as a letter U, not as the mark');
 	}
 }

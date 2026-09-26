@@ -15,14 +15,14 @@
 
 <svelte:head>
 	<title>The mark · matra</title>
-	<meta name="description" content="matra's mark is matra's parse of Amplify radical nonconformity., drawn." />
+	<meta name="description" content="matra's mark is matra's parse of Collective attention can restore a world., drawn." />
 </svelte:head>
 
 <article class="sheet">
 	<nav class="crumbs" aria-label="Breadcrumb"><a href="{base}/">matra</a> <span aria-hidden="true">/</span> the mark</nav>
 	<h1>The mark</h1>
 	<p class="lede">
-		matra's parse of <q>Amplify radical nonconformity.</q>, drawn. Every token hangs from a headline bar, as Devanagari
+		matra's parse of <q>Collective attention can restore a world.</q>, drawn. Every token hangs from a headline bar, as Devanagari
 		letters hang from theirs. The root hangs longest, in Emergence: a mātrā, the small vowel sign that attaches to a
 		letter and changes its sound without replacing it. The arcs below are the dependencies matra found.
 	</p>
@@ -46,7 +46,7 @@
 	</div>
 	<p class="note">
 		Produced by matra {generator.matra} with {generator.udpipe_model.name}. The data is
-		<a href="{base}/figures/motto/parse.json">motto/parse.json</a>; gate 8 regenerates it and fails on any change, so
+		<a href="{base}/figures/specimen/parse.json">specimen/parse.json</a>; gate 8 regenerates it and fails on any change, so
 		the mark cannot drift from what matra says.
 	</p>
 
@@ -99,7 +99,7 @@
 			bar and root whole, arcs at 80%, strokes at 60%.
 		</dd>
 		<dt>Change</dt>
-		<dd>Only by matra. If its parse of the motto changes, the mark changes with it, and review sees it.</dd>
+		<dd>Only by matra. If its parse of the specimen changes, the mark changes with it, and review sees it.</dd>
 	</dl>
 </article>
 

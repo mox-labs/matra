@@ -1,9 +1,9 @@
 import { layoutMark, U } from '$lib/mark';
-import { motto } from '$lib/server/motto';
+import { specimen } from '$lib/server/specimen';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	const { tokens, file } = motto();
+	const { tokens, file } = specimen();
 	const full = layoutMark(tokens, 'full');
 	const glyph = layoutMark(tokens, 'glyph');
 	return {

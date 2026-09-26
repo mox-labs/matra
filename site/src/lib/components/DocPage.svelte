@@ -166,7 +166,7 @@
 		margin-bottom: var(--space-2);
 	}
 
-	/* The home page: the line under the motto leads; the three ways on are
+	/* The home page: the line under the specimen leads; the three ways on are
 	   square cards, the whole card the link's target. */
 	.home :global(.body > p:first-of-type) {
 		font-size: var(--type-lg);
