@@ -38,6 +38,9 @@
 /justfile                              @yzavyas
 /scripts/changelog-release.sh          @yzavyas
 /scripts/check-boundaries.sh           @yzavyas
+/.semgrep/                             @yzavyas
+/.semgrepignore                        @yzavyas
+/.github/requirements/                 @yzavyas
 /scripts/check-docsite-floor.sh        @yzavyas
 /scripts/install-hooks.sh              @yzavyas
 /scripts/pre-commit-hook.sh            @yzavyas

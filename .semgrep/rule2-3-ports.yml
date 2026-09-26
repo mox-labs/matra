@@ -1,0 +1,88 @@
+# Boundary rules 2 and 3: the four port modules import only crate::domain
+# and std, and never name one another.
+#
+# Inside a port's mod.rs, `super::` is the crate root, so `super::nlp` is the
+# same reach as `crate::nlp`, and `self::udpipe` is the port reaching into
+# its own adapter. Both are read here. How the regexes are built (line
+# anchoring, `\K`, the test-module exclusion) is explained at the top of
+# rule1-domain.yml.
+rules:
+  - id: boundary-rule3-port-names-port
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include:
+        - "/src/source/mod.rs"
+        - "/src/decompose/mod.rs"
+        - "/src/nlp/mod.rs"
+        - "/src/embed/mod.rs"
+    message: >-
+      Boundary rule 3 (no port imports another port): this port module names
+      a port module (source, decompose, nlp or embed) through crate:: or
+      super::, in a use line, a brace group or an inline path. The four ports
+      are peers. Why: stage order belongs to the composition root, not to the
+      contracts; if one port's trait knew another's, the pipeline's shape
+      would be encoded in the traits and a stage could no longer be replaced
+      on its own. Fix: take what the trait needs as a crate::domain type, and
+      let src/lib.rs wire the stages together. Read:
+      site/content/reference/boundary-rules.md#rule-3-no-port-module-imports-another-port-module
+    patterns:
+      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\b(?:crate|super)\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|\{[^{};]*\})*?,)?(?:\s|//[^\n]*\n)*)?(?:source|decompose|nlp|embed)\b'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
+
+  - id: boundary-rule2-port-imports
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include:
+        - "/src/source/mod.rs"
+        - "/src/decompose/mod.rs"
+        - "/src/nlp/mod.rs"
+        - "/src/embed/mod.rs"
+    message: >-
+      Boundary rule 2 (ports import only from domain): this port module
+      imports something other than crate::domain and std. That covers a
+      crate module that is not domain (crate::config, crate::Engine, a glob
+      from the crate root), an external crate, and the port's own adapters
+      through self::. Why: a port is a contract, and whatever the contract
+      imports becomes a requirement on everyone who implements it; a
+      domain-only port stays implementable by someone who has never read
+      matra's adapters. Fix: express the trait in crate::domain types, and
+      keep the adapter-specific imports in the adapter file. Read:
+      site/content/reference/boundary-rules.md#rule-2-ports-import-only-from-domain
+    patterns:
+      - pattern-either:
+          # crate:: or super:: (the crate root, here) into anything but
+          # domain, directly or as an item of a brace group. Ports
+          # themselves are rule 3's finding, so they are not repeated here.
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\b(?:crate|super)\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|\{[^{};]*\})*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:domain|source|decompose|nlp|embed)\b)(?:[A-Za-z_]\w*|\*)'
+          # `use crate as c;` would let `c::nlp` past every other pattern.
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bcrate\s+as\b'
+          # A use line rooted anywhere but std, core, alloc, crate or super.
+          - pattern-regex: '(?m)^(?![ \t]*//)(?:[^\n]*?[;{}\]])?[ \t]*\K(?:pub(?:\s*\([^)]*\))?\s+)?(?:use|extern\s+crate)\s+(?:::\s*)?(?!(?:std|core|alloc|crate|super)\b)(?:\w+(?=\s*(?:::|;|as\b))|\{|\*)'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
+
+  - id: boundary-rule2-port-inline-paths
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include:
+        - "/src/source/mod.rs"
+        - "/src/decompose/mod.rs"
+        - "/src/nlp/mod.rs"
+        - "/src/embed/mod.rs"
+    message: >-
+      Boundary rule 2 (ports import only from domain): this port module names
+      a path rooted outside std, core, alloc, crate:: and a `domain` brought
+      in by `use crate::domain`, inline with no use line (for example
+      `serde::Serialize` in a bound, or `self::udpipe::Udpipe`). An external
+      crate needs no import to be reached, so the check reads inline roots
+      too; std paths are written in full from `std::`. Why: a port is a
+      contract, and whatever the contract imports becomes a requirement on
+      everyone who implements it. Fix: express the trait in crate::domain
+      types. Read:
+      site/content/reference/boundary-rules.md#rule-2-ports-import-only-from-domain
+    patterns:
+      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?<![\w:$.])(?!(?:std|core|alloc|crate|super|domain|bool|char|str|u8|u16|u32|u64|u128|usize|i8|i16|i32|i64|i128|isize|f32|f64)\b)[a-z_][a-z0-9_]*\s*::(?!\s*<)'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
+      - pattern-not-regex: '(?m)^[ \t]*(?:#\[[^\]]*\][ \t]*)*(?:pub(?:\s*\([^)]*\))?\s+)?(?:use|extern\s+crate)\s(?:[\w:\s,{}*]|//[^\n]*\n)*;'

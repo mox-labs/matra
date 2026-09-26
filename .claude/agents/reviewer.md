@@ -32,9 +32,9 @@ A change that's good engineering but violates ACES is not good for matra. ACES v
 
 - Is `tracing` imported in `domain.rs` or a port module (rule 8)?
 
-**You are the enforcement mechanism.** `site/content/reference/boundary-rules.md` carries each rule's motivation, its failure mode, and what to read for, including the spellings the grep cannot see (re-exports, grouped imports, inline qualified paths, laundering type aliases). Review against the motivation, not the pattern.
+**You are the enforcement mechanism for intent.** `site/content/reference/boundary-rules.md` carries each rule's motivation, its failure mode, and what to read for. Review against the motivation, not the pattern.
 
-`bash scripts/check-boundaries.sh` greps rules 3, 4, 8 and is a backstop, not a gate: it runs from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job, and it sees the literal import form only. Rule 6 is the only rule CI verifies by compiling. Rules 1, 2, 5, 7 have no mechanical check, so a clean script tells you nothing about them.
+`bash scripts/check-boundaries.sh` runs the semgrep rules in `.semgrep/` for rules 1, 2, 3, 4, 5, 7 (its `src/cli/` part) and 8, from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job. It reads use lines, brace groups, inline paths and `pub` re-exports, so a clean run means no forbidden import form, not a sound design. What it cannot see is yours: a port trait shaped around one adapter (2), a metric that takes text instead of structure (5), wiring outside `lib.rs` beyond the CLI (7), a private `udpipe_rs` alias made public under another name (4), a `#[macro_use]` macro used unqualified in the domain (1). Rule 6 is verified by compiling. A change to a `.semgrep/` rule needs its fixture changed with it, and a rule relaxed to let a diff pass is a boundary change that needs an RFC.
 
 ### 2. Public surface integrity
 

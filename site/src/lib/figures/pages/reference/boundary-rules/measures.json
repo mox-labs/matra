@@ -27,22 +27,31 @@
       "words": 11
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5987,
       "in_blockquote": false,
-      "lexical_density": 0.6087,
-      "readability_grade": 11.598,
+      "lexical_density": 0.5968,
+      "readability_grade": 8.2335,
       "sentences": 3,
-      "text": "Rust offers no directional import control between modules inside a single crate, and matra is a single crate by [RFC-0004](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0004-stay-single-crate.md). No compiler mechanism is available for most of these rules. Reasoned review is the primary enforcement; a script and one CI job cover the mechanical cases.",
-      "words": 48
+      "text": "Rust offers no directional import control between modules inside a single crate, and matra is a single crate by [RFC-0004](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0004-stay-single-crate.md), so the compiler enforces none of these rules except rule 6. Seven of the eight are checked by semgrep rules in `.semgrep/`, which read the import and path forms each rule forbids. Review remains the gate for what an import cannot show.",
+      "words": 65
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6424,
       "in_blockquote": false,
-      "lexical_density": 0.5526,
-      "readability_grade": 4.8905,
+      "lexical_density": 0.4688,
+      "readability_grade": 6.5489,
       "sentences": 3,
-      "text": "`scripts/check-boundaries.sh` runs from `just check`, from the pre-commit hook that `scripts/install-hooks.sh` installs, and from the `Boundary check` job in `ci.yml`. The hook is opt-in. The hook runs the script on every commit regardless of which files are staged.",
-      "words": 42
+      "text": "Each finding names its rule, says why the boundary exists, and links the section of this page to read. The full table, with every form each check covers and misses and the reasons the checks are built the way they are, is [EP-0014](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0014-architecture-guardrails.md). Code inside `#[cfg(test)]` modules is exempt from rules 1, 2, 3, 5 and 7, and read by rules 4 and 8.",
+      "words": 69
+    },
+    {
+      "compression_ratio": 0.5406,
+      "in_blockquote": false,
+      "lexical_density": 0.5301,
+      "readability_grade": 6.1544,
+      "sentences": 3,
+      "text": "`scripts/check-boundaries.sh` runs the checks: first each rule file against its fixture of violating and allowed code, then the scan of `src/`, then a check that the scan read every Rust file there. It runs from `just check`, from the pre-commit hook that `scripts/install-hooks.sh` installs, and from the `Boundary check` job in `ci.yml`. The hook is opt-in, runs on every commit regardless of which files are staged, and skips the check with a warning when semgrep is not installed; CI does not skip it.",
+      "words": 87
     },
     {
       "compression_ratio": 0.5294,
@@ -52,15 +61,6 @@
       "sentences": 4,
       "text": "Rule 6 is the only rule CI verifies by compiling. The `rust` job runs `cargo check`, `cargo clippy`, and `cargo test` with and without default features, on Linux and macOS. The `msrv` job runs `cargo check` on Rust 1.88, once with all features and once with no default features. CI fires on pushes to `main` and `alpha` and on pull requests targeting them, so work on a feature branch is ungated until the pull request opens.",
       "words": 76
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.5,
-      "readability_grade": 12.8286,
-      "sentences": 2,
-      "text": "Rule 6 also catches a subset of rules 1, 2, and 5: a violation that reaches for a feature-gated dependency fails the no-default-features build. A violation that adds an unconditional dependency compiles cleanly, and review is the only thing that catches it.",
-      "words": 45
     },
     {
       "compression_ratio": null,
@@ -90,13 +90,13 @@
       "words": 54
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5313,
       "in_blockquote": false,
-      "lexical_density": 0.7241,
-      "readability_grade": 6.7685,
-      "sentences": 3,
-      "text": "**Enforcement.** Review. Read the `use` lines at the top of `src/domain.rs`, new non-optional entries in `[dependencies]`, and any domain field whose type comes from outside the three allowed crates.",
-      "words": 29
+      "lexical_density": 0.6542,
+      "readability_grade": 8.7643,
+      "sentences": 4,
+      "text": "**Enforcement.** `boundary-rule1-domain-imports` fails on any `use` or `extern crate` in `src/domain.rs` rooted outside `std`, `core`, `alloc`, `serde` and `thiserror`, including `crate::`, `super::` and `self::`: the domain imports nothing from the rest of matra. `boundary-rule1-domain-inline-paths` fails on an inline path with any other lowercase root, because a crate listed in `Cargo.toml` can be named inline with no `use` line; for that reason the domain writes std paths in full (`std::fmt::Display`). A dependency added to `[dependencies]` and used in `domain.rs` is therefore caught wherever `domain.rs` names it. Review reads for the one route left, a macro or derive brought into scope crate-wide by `#[macro_use]` in `src/lib.rs` and invoked unqualified.",
+      "words": 111
     },
     {
       "compression_ratio": null,
@@ -126,13 +126,13 @@
       "words": 38
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5608,
       "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": 6.0267,
+      "lexical_density": 0.6133,
+      "readability_grade": 10.084,
       "sentences": 3,
-      "text": "**Enforcement.** Review. Read the import block and the trait method signatures in those four files.",
-      "words": 15
+      "text": "**Enforcement.** `boundary-rule2-port-imports` and `boundary-rule2-port-inline-paths` fail on any import or inline path in those four files that reaches past `crate::domain` and `std`: another crate module, a crate-root item such as `crate::Engine`, a glob, an external crate, or the port's own adapter through `self::`. In a port's `mod.rs`, `super::` is the crate root and is read as such. Review reads the trait method signatures for what an import cannot show: a contract shaped around one adapter's needs.",
+      "words": 87
     },
     {
       "compression_ratio": null,
@@ -162,13 +162,13 @@
       "words": 42
     },
     {
-      "compression_ratio": 0.5915,
+      "compression_ratio": 0.5278,
       "in_blockquote": false,
-      "lexical_density": 0.7069,
-      "readability_grade": 7.2443,
+      "lexical_density": 0.5663,
+      "readability_grade": 9.4206,
       "sentences": 3,
-      "text": "**Enforcement.** `scripts/check-boundaries.sh` greps the four port files for `use crate::source`, `use crate::decompose`, `use crate::nlp`, and `use crate::embed`. The check sees only that literal form. Grouped imports, fully qualified inline paths with no `use` line, a trait bound naming another port's trait, and a type alias that launders the path all pass the script and still violate the rule.",
-      "words": 62
+      "text": "**Enforcement.** `boundary-rule3-port-names-port` fails when one of the four files names a port through `crate::` or `super::`: in a `use` line, a brace group (a comment inside a multi-line group does not hide it), a fully qualified inline path, or a trait bound. A type alias cannot launder the path, because the only module a port may import is the domain, and the domain may import nothing from the crate (rule 1). A crate-root re-export of another port's trait is caught by rule 2.",
+      "words": 87
     },
     {
       "compression_ratio": null,
@@ -198,22 +198,22 @@
       "words": 99
     },
     {
-      "compression_ratio": 0.5714,
+      "compression_ratio": 0.5226,
       "in_blockquote": false,
-      "lexical_density": 0.6923,
-      "readability_grade": 7.7592,
+      "lexical_density": 0.6933,
+      "readability_grade": 12.2867,
       "sentences": 3,
-      "text": "**Enforcement.** `scripts/check-boundaries.sh` searches `src/` for `use udpipe_rs` and `udpipe_rs::`, excluding `src/nlp/udpipe.rs`. It cannot see re-exports: a `pub use udpipe_rs::Model;` inside the adapter would let any other file name the C-backed type while the check stays green. Review reads for re-exports and for any `udpipe_rs` type appearing in a signature outside that file.",
-      "words": 56
+      "text": "**Enforcement.** `boundary-rule4-udpipe-rs-outside-adapter` fails on `udpipe_rs` anywhere in code under `src/` outside `src/nlp/udpipe.rs`, test modules included. `boundary-rule4-udpipe-rs-exposed` fails inside the adapter on anything `pub`, at any restriction, that names `udpipe_rs`: a re-export, a type alias, a signature or a field, any of which would let another file hold the C-backed type while the first check stays green. Review reads for the laundering route left: a private alias (`use udpipe_rs::Model as M;`) made public under another name.",
+      "words": 78
     },
     {
-      "compression_ratio": 0.5864,
+      "compression_ratio": 0.5795,
       "in_blockquote": false,
-      "lexical_density": 0.5,
-      "readability_grade": 9.6699,
+      "lexical_density": 0.5068,
+      "readability_grade": 10.9561,
       "sentences": 4,
-      "text": "**The analog.** `src/embed/model2vec.rs` is the only file that imports `safetensors` and `tokenizers`, enforced by the same script with the same re-export blind spot. Those crates are pure Rust, so the confinement is not a C panic boundary; it is what keeps the adapter swappable and the model-format vocabulary out of every other file's reach. A second embedding backend gets its own adapter file with its own confinement line.",
-      "words": 72
+      "text": "**The analog.** `src/embed/model2vec.rs` is the only file that imports `safetensors` and `tokenizers`, enforced by the same pair of checks (`boundary-rule4-model2vec-crates-*`) with the same one route left to review. Those crates are pure Rust, so the confinement is not a C panic boundary; it is what keeps the adapter swappable and the model-format vocabulary out of every other file's reach. A second embedding backend gets its own adapter file with its own confinement line.",
+      "words": 80
     },
     {
       "compression_ratio": null,
@@ -243,13 +243,13 @@
       "words": 68
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5387,
       "in_blockquote": false,
-      "lexical_density": 0.7,
-      "readability_grade": 6.01,
+      "lexical_density": 0.6375,
+      "readability_grade": 7.9275,
       "sentences": 3,
-      "text": "**Enforcement.** Review. Read for any `use crate::` in those trees naming something beyond `domain` and `stopwords`, and for any function there taking `&dyn NlpProvider` or raw text instead of `&[Sentence]`.",
-      "words": 33
+      "text": "**Enforcement.** `boundary-rule5-pure-imports` fails on any `crate::` path in those trees, in a `use` line, a brace group or inline, naming something beyond `domain` and `stopwords`, and on `super::super::`, which leaves the tree. `boundary-rule5-root-super` reads `super::` the same way in `src/metrics/mod.rs`, `src/extraction/mod.rs` and `src/hearst.rs`, where it is the crate root. Sibling imports within a tree (`super::textrank`) and external crates stay allowed. Review reads for what purity means rather than what it imports: any function there taking raw text instead of `&[Sentence]`.",
+      "words": 90
     },
     {
       "compression_ratio": null,
@@ -317,11 +317,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5938,
-      "readability_grade": 7.0738,
+      "lexical_density": 0.6,
+      "readability_grade": 8.075,
       "sentences": 3,
-      "text": "**Enforcement.** Review. Read for any file other than `lib.rs` importing from two or more adapter modules, and for any helper outside the composition root that matches on `Format` to pick a decomposer.",
-      "words": 32
+      "text": "**Enforcement.** For `src/cli/`, the checks described below. Everywhere else, review: read for any file other than `lib.rs` importing from two or more adapter modules, and for any helper outside the composition root that matches on `Format` to pick a decomposer.",
+      "words": 40
     },
     {
       "compression_ratio": 0.5415,
@@ -342,13 +342,13 @@
       "words": 61
     },
     {
-      "compression_ratio": 0.5066,
+      "compression_ratio": 0.4936,
       "in_blockquote": false,
-      "lexical_density": 0.5727,
-      "readability_grade": 11.1191,
-      "sentences": 5,
-      "text": "Read for both spellings of a violation, because a grep over `use` lines alone is blind to the shape it would most likely take. The declared form is `use crate::nlp`, `use crate::source`, `use crate::decompose` or `use crate::embed` at the top of a file in `src/cli/`. The inline form is a qualified path in the body: `crate::nlp::`, `crate::source::`, `crate::decompose::` or `crate::embed::`. The CLI already reaches `Engine`, `Ingest` and the four extractors by inline path rather than by `use`, so the inline form is the ordinary idiom here and the one a violation would blend into. Either form would put adapter selection in the command line, which is the composition root's job.",
-      "words": 119
+      "lexical_density": 0.5652,
+      "readability_grade": 7.7485,
+      "sentences": 6,
+      "text": "`boundary-rule7-cli-imports` reads both spellings of a violation, because the inline one is the one it would most likely take. The declared form is a `use crate::...` line in `src/cli/`; the inline form is a qualified path in a function body. The CLI already reaches `Engine`, `Ingest` and the four extractors by inline path rather than by `use`, so the inline form is the ordinary idiom here and the one a violation would blend into. The check is an allowlist: any `crate::` path in `src/cli/` must start with `Engine`, `Ingest`, `extraction`, `config`, `domain` or `cli`, so a port, an adapter, or a crate-root re-export of an adapter fails it. `boundary-rule7-cli-root-super` reads `super::` in `src/cli/mod.rs`, where it is the crate root, the same way. Either spelling would put adapter selection in the command line, which is the composition root's job.",
+      "words": 144
     },
     {
       "compression_ratio": null,
@@ -378,31 +378,31 @@
       "words": 58
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.614,
       "in_blockquote": false,
-      "lexical_density": 0.5143,
-      "readability_grade": 5.0086,
+      "lexical_density": 0.5472,
+      "readability_grade": 8.502,
       "sentences": 3,
-      "text": "**Enforcement.** `scripts/check-boundaries.sh` greps those five files for `use tracing` and for `tracing::`. The rule is preemptive: `tracing` is not a dependency of matra at all. The line was drawn before the first import could land.",
-      "words": 36
+      "text": "**Enforcement.** `boundary-rule8-no-tracing` fails on the identifier `tracing` anywhere in code in those five files, test modules included, whether in a `use` line, a brace group, a path or an attribute. The rule is preemptive: `tracing` is not a dependency of matra at all. The line was drawn before the first import could land.",
+      "words": 55
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5465,
       "in_blockquote": false,
-      "lexical_density": 0.6364,
-      "readability_grade": 9.6173,
-      "sentences": 1,
-      "text": "The script prints the offending files and exits non-zero on any failure, and prints `boundary checks pass (rules 3, 4, 8)` otherwise.",
-      "words": 22
+      "lexical_density": 0.6404,
+      "readability_grade": 7.3947,
+      "sentences": 3,
+      "text": "The check needs semgrep, at the version `.github/requirements/semgrep.txt` pins, and must run from the root of a git work tree: semgrep resolves each rule's paths against the work tree, and outside one a path-scoped rule matches nothing. Each finding prints the file, the line and the rule's message. On a clean tree the script ends with `check-boundaries: N of N Rust files in src/ read, 0 finding(s)`, and it exits non-zero on any finding, any failed rule test, or any Rust file under `src/` the scan did not read.",
+      "words": 94
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6189,
       "in_blockquote": false,
-      "lexical_density": 0.4333,
-      "readability_grade": 5.2233,
-      "sentences": 3,
-      "text": "A violation is a merge blocker. The remedy is a change to the structure, or an RFC that changes the rule deliberately. It is never a change to the check.",
-      "words": 30
+      "lexical_density": 0.4727,
+      "readability_grade": 7.5086,
+      "sentences": 4,
+      "text": "A violation is a merge blocker. The remedy is a change to the structure, or an RFC that changes the rule deliberately. It is never a change to the check. A check that flags correct code is a bug in the check: fix the rule and add the case to its fixture, as [EP-0014](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0014-architecture-guardrails.md) describes.",
+      "words": 57
     }
   ]
 }

@@ -1,0 +1,57 @@
+# Boundary rule 5: src/metrics/, src/extraction/ and src/hearst.rs import from
+# no crate module other than crate::domain and crate::stopwords.
+#
+# Sibling imports inside a tree are fine (extraction/semantic.rs uses
+# `super::textrank`), and so are external crates the computation needs
+# (brotli, std::collections): the rule is about intra-crate reach. In
+# metrics/mod.rs, extraction/mod.rs and hearst.rs, `super::` is the crate
+# root, so it is read there the way `crate::` is read everywhere. How the
+# regexes are built is explained at the top of rule1-domain.yml.
+rules:
+  - id: boundary-rule5-pure-imports
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include:
+        - "/src/metrics/**/*.rs"
+        - "/src/extraction/**/*.rs"
+        - "/src/hearst.rs"
+    message: >-
+      Boundary rule 5 (metrics, extraction and structure readers stay pure):
+      this file reaches a crate module other than crate::domain and
+      crate::stopwords (through crate::, a brace group, `use crate as`, or
+      super::super:: out of its own tree). Why: these are pure functions over
+      already-parsed structure; purity is what lets them run with no model
+      loaded, be unit-tested without fixtures, and be called by someone who
+      parsed elsewhere, and a function here that reached for a parser would
+      re-parse a document the caller already parsed. Fix: take `&[Sentence]`
+      or `&Document` as input and let the caller (src/lib.rs, or the user)
+      produce it. Read:
+      site/content/reference/boundary-rules.md#rule-5-metrics-extraction-and-structure-readers-stay-pure
+    patterns:
+      - pattern-either:
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bcrate\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|\{[^{};]*\})*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:domain|stopwords)\b)(?:[A-Za-z_]\w*|\*)'
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bcrate\s+as\b'
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bsuper\s*::\s*super\b'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
+
+  - id: boundary-rule5-root-super
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include:
+        - "/src/metrics/mod.rs"
+        - "/src/extraction/mod.rs"
+        - "/src/hearst.rs"
+    message: >-
+      Boundary rule 5 (metrics, extraction and structure readers stay pure):
+      in this file `super::` is the crate root, and it reaches a module other
+      than domain or stopwords. Why: these are pure functions over
+      already-parsed structure; purity is what lets them run with no model
+      loaded and be called by someone who parsed elsewhere. Fix: import only
+      crate::domain and crate::stopwords, and take parsed structure as input.
+      Read:
+      site/content/reference/boundary-rules.md#rule-5-metrics-extraction-and-structure-readers-stay-pure
+    patterns:
+      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bsuper\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|\{[^{};]*\})*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:domain|stopwords)\b)(?:[A-Za-z_]\w*|\*)'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'

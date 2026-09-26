@@ -1,0 +1,79 @@
+# Boundary rule 4: src/nlp/udpipe.rs is the only file that names udpipe_rs,
+# and it hands none of udpipe_rs's types out. The analog: src/embed/model2vec.rs
+# is the only file that names safetensors and tokenizers, on the same terms.
+#
+# These rules cover test modules too: no test outside the adapter has a
+# reason to name the adapter's crate. How the regexes are built is explained
+# at the top of rule1-domain.yml.
+rules:
+  - id: boundary-rule4-udpipe-rs-outside-adapter
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include: ["/src/**/*.rs"]
+      exclude: ["/src/nlp/udpipe.rs"]
+    message: >-
+      Boundary rule 4 (one file imports udpipe_rs): this file names
+      udpipe_rs, and only src/nlp/udpipe.rs may. Why: UDPipe is C++ across an
+      FFI boundary holding state that is not Send, and a panic on the C side
+      aborts the host process (in Python, the interpreter dies); the
+      catch_unwind boundary in src/nlp/udpipe.rs converts that into a
+      domain::Error, and confining the import is what makes that boundary the
+      only entrance rather than one entrance among several. Fix: reach UDPipe
+      through the NlpProvider port and the Udpipe adapter. A second NLP
+      backend gets its own adapter file with its own panic boundary. Read:
+      site/content/reference/boundary-rules.md#rule-4-one-file-imports-udpipe_rs
+    pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\budpipe_rs\b'
+
+  - id: boundary-rule4-udpipe-rs-exposed
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include: ["/src/nlp/udpipe.rs"]
+    message: >-
+      Boundary rule 4 (one file imports udpipe_rs): src/nlp/udpipe.rs makes a
+      udpipe_rs item visible outside itself, through a pub re-export, a pub
+      type alias, or a pub signature or field that names a udpipe_rs type
+      (pub(crate) and pub(super) count). Any other file could then hold a
+      C-backed value without naming udpipe_rs, and the single-importer check
+      would stay green. Why: the catch_unwind boundary in this file is only
+      the single entrance to the C++ code if no udpipe_rs value leaves it.
+      Fix: keep the udpipe_rs item private and return a domain type. Read:
+      site/content/reference/boundary-rules.md#rule-4-one-file-imports-udpipe_rs
+    pattern-regex: '(?m)^(?![ \t]*//)(?:[^\n]*?[;{}\]])?[ \t]*\Kpub(?:\s*\([^)]*\))?\s+(?:use\s+(?:::\s*)?udpipe_rs\b|(?:type|fn|struct|enum|const|static|trait)\b[^;{]*\budpipe_rs\b|\w+\s*:[^,;{}]*\budpipe_rs\b)'
+
+  - id: boundary-rule4-model2vec-crates-outside-adapter
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include: ["/src/**/*.rs"]
+      exclude: ["/src/embed/model2vec.rs"]
+    message: >-
+      Boundary rule 4, analog (one file imports safetensors and tokenizers):
+      this file names safetensors or tokenizers, and only
+      src/embed/model2vec.rs may. Why: those crates are pure Rust, so this is
+      not a panic boundary; the confinement keeps the adapter swappable and
+      the model-format vocabulary out of every other file's reach. Fix: reach
+      embeddings through the Embedder port and the Model2Vec adapter. A second
+      embedding backend gets its own adapter file with its own confinement
+      line. Read:
+      site/content/reference/boundary-rules.md#rule-4-one-file-imports-udpipe_rs
+    pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\b(?:safetensors|tokenizers)\b'
+
+  - id: boundary-rule4-model2vec-crates-exposed
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include: ["/src/embed/model2vec.rs"]
+    message: >-
+      Boundary rule 4, analog (one file imports safetensors and tokenizers):
+      src/embed/model2vec.rs makes a safetensors or tokenizers item visible
+      outside itself, through a pub re-export, a pub type alias, or a pub
+      signature or field that names one (pub(crate) and pub(super) count).
+      Any other file could then hold such a value without naming the crate,
+      and the single-importer check would stay green. Why: the confinement
+      keeps the adapter swappable and the model-format vocabulary out of
+      every other file's reach. Fix: keep the item private and return a
+      domain type. Read:
+      site/content/reference/boundary-rules.md#rule-4-one-file-imports-udpipe_rs
+    pattern-regex: '(?m)^(?![ \t]*//)(?:[^\n]*?[;{}\]])?[ \t]*\Kpub(?:\s*\([^)]*\))?\s+(?:use\s+(?:::\s*)?(?:safetensors|tokenizers)\b|(?:type|fn|struct|enum|const|static|trait)\b[^;{]*\b(?:safetensors|tokenizers)\b|\w+\s*:[^,;{}]*\b(?:safetensors|tokenizers)\b)'

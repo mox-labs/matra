@@ -46,7 +46,7 @@ These are non-negotiable:
 
 Motivation, failure modes, and review guidance for each rule live in `site/content/reference/boundary-rules.md`. Read it before applying a rule you cannot justify from memory.
 
-Enforcement is thinner than it looks: only rule 6 is verified by compiling. `scripts/check-boundaries.sh` greps for rules 3, 4, 8 from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job, and it catches the literal import form only. Rules 1, 2, 5, 7 rest on review.
+Enforcement covers forms, not intent. Rule 6 is verified by compiling. Rules 1, 2, 3, 4, 5, 7 (its `src/cli/` part) and 8 are semgrep checks in `.semgrep/`, tested against fixtures and run by `scripts/check-boundaries.sh` from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job; they read use lines, brace groups and inline paths. Review still reads what an import cannot show: a port trait shaped around one adapter, a metric taking text instead of structure, and wiring outside `lib.rs` beyond the CLI. `blueprints/eps/0014-architecture-guardrails.md` lists what each check covers and misses.
 
 When you break a rule, you're either:
 

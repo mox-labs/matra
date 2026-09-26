@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # matra pre-commit hook.
 #
-# Runs the Rust gates plus the boundary check. CI runs both, and
+# Runs the Rust gates plus the boundary check (when semgrep is installed).
+# CI runs both, and
 # additionally the docsite floor, cargo-deny, cargo-semver-checks, the wheel
 # build and mypy. Green here is a strong signal, not a guarantee.
 #
@@ -33,11 +34,19 @@ echo "matra pre-commit gate"
 echo "  staged files: $(echo "$staged" | wc -l | tr -d ' ')"
 echo "  rust gates:   $rust_touched"
 
-# Boundary script always runs — catches accidental imports of forbidden
-# crates anywhere in src/, regardless of what was staged.
-# Unconditional: the old `[ -x ... ]` guard skipped it without a word
-# whenever the file lost its mode bit.
-bash scripts/check-boundaries.sh
+# The boundary check runs on every commit, regardless of what was staged:
+# the semgrep rules in .semgrep/ read all of src/. It needs semgrep, which a
+# contributor may not have installed; without it the hook says so and goes
+# on, and the `Boundary check` job in CI runs it regardless. The script
+# itself is called with `bash`, not guarded by `[ -x ... ]`, which once
+# skipped it without a word whenever the file lost its mode bit.
+if command -v semgrep >/dev/null 2>&1; then
+    bash scripts/check-boundaries.sh
+else
+    echo "WARNING: semgrep is not on PATH, so the boundary check did not run;" >&2
+    echo "         CI runs it. To run it here:" >&2
+    echo "         pip install --require-hashes -r .github/requirements/semgrep.txt" >&2
+fi
 
 if [ "$rust_touched" = true ]; then
     cargo fmt --all -- --check

@@ -1,0 +1,5 @@
+# Deliberately ignores nothing. Without this file semgrep applies its default
+# ignore list, which skips any directory named test/ or tests/, so a module
+# such as src/nlp/tests/ would pass the boundary check unread. .gitignore
+# still applies. scripts/check-boundaries.sh fails if any Rust file under
+# src/ goes unread (EP-0014).

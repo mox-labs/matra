@@ -1,0 +1,27 @@
+# Boundary rule 8: tracing is forbidden in src/domain.rs and the four port
+# modules. The rule is preemptive: tracing is not a dependency of matra.
+#
+# Any code occurrence of the identifier counts (use line, brace group,
+# `tracing::` path, attribute), test modules included. How the regexes are
+# built is explained at the top of rule1-domain.yml.
+rules:
+  - id: boundary-rule8-no-tracing
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include:
+        - "/src/domain.rs"
+        - "/src/source/mod.rs"
+        - "/src/decompose/mod.rs"
+        - "/src/nlp/mod.rs"
+        - "/src/embed/mod.rs"
+    message: >-
+      Boundary rule 8 (no tracing in the domain or the ports): this file names
+      tracing, and src/domain.rs and the four port modules may not. Why:
+      observability is an adapter and composition-root concern; a domain type
+      that emits spans holds an opinion about the host's runtime and
+      subscriber configuration, and a port that traces forces that opinion on
+      every implementor. In domain.rs it would also be a fourth dependency
+      (rule 1). Fix: instrument the adapter or src/lib.rs instead. Read:
+      site/content/reference/boundary-rules.md#rule-8-no-tracing-in-the-domain-or-the-ports
+    pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\btracing\b'
