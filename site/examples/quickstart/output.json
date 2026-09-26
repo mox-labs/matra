@@ -1,0 +1,137 @@
+{
+  "sections": [
+    {
+      "heading": null,
+      "level": 0,
+      "paragraphs": [
+        {
+          "text": "The committee approved the budget on Tuesday.",
+          "in_blockquote": false,
+          "sentences": [
+            {
+              "text": "The committee approved the budget on Tuesday.",
+              "tokens": [
+                {
+                  "id": 1,
+                  "text": "The",
+                  "lemma": "the",
+                  "pos": "DET",
+                  "xpos": "DT",
+                  "feats": "Definite=Def|PronType=Art",
+                  "head": 2,
+                  "dep": "det",
+                  "deps": "_",
+                  "misc": "",
+                  "is_punct": false
+                },
+                {
+                  "id": 2,
+                  "text": "committee",
+                  "lemma": "committee",
+                  "pos": "NOUN",
+                  "xpos": "NN",
+                  "feats": "Number=Sing",
+                  "head": 3,
+                  "dep": "nsubj",
+                  "deps": "_",
+                  "misc": "",
+                  "is_punct": false
+                },
+                {
+                  "id": 3,
+                  "text": "approved",
+                  "lemma": "approve",
+                  "pos": "VERB",
+                  "xpos": "VBD",
+                  "feats": "Mood=Ind|Tense=Past|VerbForm=Fin",
+                  "head": 0,
+                  "dep": "root",
+                  "deps": "_",
+                  "misc": "",
+                  "is_punct": false
+                },
+                {
+                  "id": 4,
+                  "text": "the",
+                  "lemma": "the",
+                  "pos": "DET",
+                  "xpos": "DT",
+                  "feats": "Definite=Def|PronType=Art",
+                  "head": 5,
+                  "dep": "det",
+                  "deps": "_",
+                  "misc": "",
+                  "is_punct": false
+                },
+                {
+                  "id": 5,
+                  "text": "budget",
+                  "lemma": "budget",
+                  "pos": "NOUN",
+                  "xpos": "NN",
+                  "feats": "Number=Sing",
+                  "head": 3,
+                  "dep": "obj",
+                  "deps": "_",
+                  "misc": "",
+                  "is_punct": false
+                },
+                {
+                  "id": 6,
+                  "text": "on",
+                  "lemma": "on",
+                  "pos": "ADP",
+                  "xpos": "IN",
+                  "feats": "",
+                  "head": 7,
+                  "dep": "case",
+                  "deps": "_",
+                  "misc": "",
+                  "is_punct": false
+                },
+                {
+                  "id": 7,
+                  "text": "Tuesday",
+                  "lemma": "Tuesday",
+                  "pos": "PROPN",
+                  "xpos": "NNP",
+                  "feats": "Number=Sing",
+                  "head": 5,
+                  "dep": "nmod",
+                  "deps": "_",
+                  "misc": "SpaceAfter=No",
+                  "is_punct": false
+                },
+                {
+                  "id": 8,
+                  "text": ".",
+                  "lemma": ".",
+                  "pos": "PUNCT",
+                  "xpos": ".",
+                  "feats": "",
+                  "head": 3,
+                  "dep": "punct",
+                  "deps": "_",
+                  "misc": "SpaceAfter=No",
+                  "is_punct": true
+                }
+              ],
+              "negations": [],
+              "modals": [],
+              "bare_assertion": true,
+              "reportings": [],
+              "root_adverbials": [],
+              "hearst_pairs": []
+            }
+          ],
+          "readability_grade": null,
+          "lexical_density": 0.5714285714285714,
+          "compression_ratio": null
+        }
+      ]
+    }
+  ],
+  "vocabulary_ttr": 0.8571428571428571,
+  "nominalization_ratio": 0.0,
+  "passive_ratio": 0.0
+}

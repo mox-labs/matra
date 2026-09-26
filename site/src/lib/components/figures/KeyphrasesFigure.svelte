@@ -102,35 +102,6 @@
 </script>
 
 <FigureFrame {id} kind="keyphrases" title="RAKE and YAKE on the same text" {file} {dataUrl}>
-	<!-- A region that scrolls must take focus, or it cannot be scrolled from
-	     the keyboard (WCAG 2.1.1). -->
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-twin tall" tabindex="0" role="region" aria-label="Ranks and scores under both methods">
-		<table data-twin-for={id}>
-			<thead>
-				<tr><th>Phrase</th><th>RAKE rank</th><th>RAKE score</th><th>YAKE rank</th><th>YAKE score</th></tr>
-			</thead>
-			<tbody {@attach roving}>
-				{#each rows as r (r.phrase)}
-					<tr
-						data-row={r.phrase}
-						class:lit={active === r.phrase}
-						onpointerenter={() => (active = r.phrase)}
-						onpointerleave={() => (active = null)}
-						onfocus={() => (active = r.phrase)}
-						onblur={() => (active = null)}
-					>
-						<td class="phrase">{r.phrase}</td>
-						<td class="num">{r.rake ? r.rake.rank : 'not ranked'}</td>
-						<td>{r.rake ? fmtScore(r.rake.score) : ''}</td>
-						<td class="num">{r.yake ? r.yake.rank : 'not ranked'}</td>
-						<td>{r.yake ? fmtScore(r.yake.score) : ''}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
-
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 	<div class="fig-scroll" tabindex="0" role="region" aria-label="Slopegraph of ranks" {@attach measure}>
 		<svg width={layout.width} height={layout.height} viewBox="0 0 {layout.width} {layout.height}" role="img" aria-label="Each phrase's RAKE rank joined to its YAKE rank, on a log scale" data-slopes-for={id}>
@@ -187,6 +158,37 @@
 	{#if hint}
 		<p class="fig-hint" aria-hidden="true">Scroll sideways to see both rankings.</p>
 	{/if}
+
+	{#snippet twin()}
+		<!-- A region that scrolls must take focus, or it cannot be scrolled from
+		     the keyboard (WCAG 2.1.1). -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="fig-twin tall" tabindex="0" role="region" aria-label="Ranks and scores under both methods">
+			<table data-twin-for={id}>
+				<thead>
+					<tr><th>Phrase</th><th>RAKE rank</th><th>RAKE score</th><th>YAKE rank</th><th>YAKE score</th></tr>
+				</thead>
+				<tbody {@attach roving}>
+					{#each rows as r (r.phrase)}
+						<tr
+							data-row={r.phrase}
+							class:lit={active === r.phrase}
+							onpointerenter={() => (active = r.phrase)}
+							onpointerleave={() => (active = null)}
+							onfocus={() => (active = r.phrase)}
+							onblur={() => (active = null)}
+						>
+							<td class="phrase">{r.phrase}</td>
+							<td class="num">{r.rake ? r.rake.rank : 'not ranked'}</td>
+							<td>{r.rake ? fmtScore(r.rake.score) : ''}</td>
+							<td class="num">{r.yake ? r.yake.rank : 'not ranked'}</td>
+							<td>{r.yake ? fmtScore(r.yake.score) : ''}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/snippet}
 
 	{#snippet legend()}
 		<ul class="fig-legend" aria-label="Line colours">

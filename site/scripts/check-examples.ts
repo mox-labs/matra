@@ -18,6 +18,11 @@
  * order. A tie at an example's cut, where which phrase makes the list
  * changes, is not allowed for; an example must not ask for one.
  *
+ * An example may carry `save`, the one shell line its page gives for writing
+ * the input (the quick start's `echo`). Then the calls read what that line
+ * writes, not a copy, and it must write the input byte for byte, so the step
+ * a reader copies is run like the calls are.
+ *
  * With --write, the Rust and CLI output are written as the new committed
  * files (`just docs-examples`), and the Python call is still compared.
  *
@@ -95,6 +100,7 @@ interface Example {
 	input: string;
 	file: string;
 	dir: string;
+	save?: string;
 }
 
 function readExample(name: string): Example {
@@ -102,6 +108,7 @@ function readExample(name: string): Example {
 	const spec = JSON.parse(readFileSync(join(dir, 'example.json'), 'utf8')) as {
 		input?: unknown;
 		file?: unknown;
+		save?: unknown;
 	};
 	if (typeof spec.input !== 'string' || typeof spec.file !== 'string') {
 		throw new Error(`site/examples/${name}/example.json needs input and file, as strings`);
@@ -115,7 +122,10 @@ function readExample(name: string): Example {
 	for (const part of ['main.rs', 'example.py', 'cli.sh']) {
 		if (!existsSync(join(dir, part))) throw new Error(`site/examples/${name}: no ${part}`);
 	}
-	return { name, input: spec.input, file: spec.file, dir };
+	if (spec.save !== undefined && (typeof spec.save !== 'string' || spec.save.includes('\n'))) {
+		throw new Error(`site/examples/${name}: save must be one shell line`);
+	}
+	return { name, input: spec.input, file: spec.file, dir, save: spec.save as string | undefined };
 }
 
 interface Run {
@@ -222,8 +232,17 @@ for (const name of names) {
 		continue;
 	}
 	const work = mkdtempSync(join(scratch, `${name}-`));
-	copyFileSync(join(INPUTS, `${ex.input}.txt`), join(work, ex.file));
 	const fail = (msg: string) => failures.push(`  ${name}: ${msg}`);
+	if (ex.save) {
+		const saved = run('sh', ['-c', ex.save], work);
+		const want = readFileSync(join(INPUTS, `${ex.input}.txt`));
+		if (saved.failure || !existsSync(join(work, ex.file)) || !readFileSync(join(work, ex.file)).equals(want)) {
+			fail(`the save line does not write site/inputs/${ex.input}.txt as ${ex.file}${saved.failure ? ` (${saved.failure})` : ''}`);
+			continue;
+		}
+	} else {
+		copyFileSync(join(INPUTS, `${ex.input}.txt`), join(work, ex.file));
+	}
 
 	const rust = run(runner, [name], work);
 	calls++;

@@ -119,40 +119,6 @@
 		</div>
 	{/snippet}
 
-	<!-- A region that scrolls must take focus, or it cannot be scrolled from
-	     the keyboard (WCAG 2.1.1). -->
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-twin" tabindex="0" role="region" aria-label="Every paragraph after annotate and after compose">
-		<table data-twin-for={id}>
-			<thead>
-				<tr>
-					<th>¶</th><th>Quote</th><th>Sentences</th><th>Tokens</th><th>Grade</th><th>Density</th><th>Compression</th>
-				</tr>
-			</thead>
-			<tbody {@attach roving}>
-				{#each paragraphsOf(data.annotated) as p (p.index)}
-					{@const c = composedByIndex.get(p.index) as PipelineParagraph}
-					<tr
-						data-row={p.index}
-						class:lit={active === p.index}
-						onpointerenter={() => (active = p.index)}
-						onpointerleave={() => (active = null)}
-						onfocus={() => (active = p.index)}
-						onblur={() => (active = null)}
-					>
-						<td class="num">{p.index}</td>
-						<td>{p.in_blockquote ? 'yes' : ''}</td>
-						<td>{p.sentences}</td>
-						<td>{p.tokens}</td>
-						<td>{fmt(c.readability_grade)}</td>
-						<td>{fmt(c.lexical_density)}</td>
-						<td>{fmt(c.compression_ratio)}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
-
 	<ol class="rail" aria-label="Stages">
 		{#each STAGES as s, i (s.key)}
 			<li>
@@ -177,6 +143,42 @@
 	{:else}
 		{#each STAGES as _, i (i)}{@render panel(i)}{/each}
 	{/if}
+
+	{#snippet twin()}
+		<!-- A region that scrolls must take focus, or it cannot be scrolled from
+		     the keyboard (WCAG 2.1.1). -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="fig-twin" tabindex="0" role="region" aria-label="Every paragraph after annotate and after compose">
+			<table data-twin-for={id}>
+				<thead>
+					<tr>
+						<th>¶</th><th>Quote</th><th>Sentences</th><th>Tokens</th><th>Grade</th><th>Density</th><th>Compression</th>
+					</tr>
+				</thead>
+				<tbody {@attach roving}>
+					{#each paragraphsOf(data.annotated) as p (p.index)}
+						{@const c = composedByIndex.get(p.index) as PipelineParagraph}
+						<tr
+							data-row={p.index}
+							class:lit={active === p.index}
+							onpointerenter={() => (active = p.index)}
+							onpointerleave={() => (active = null)}
+							onfocus={() => (active = p.index)}
+							onblur={() => (active = null)}
+						>
+							<td class="num">{p.index}</td>
+							<td>{p.in_blockquote ? 'yes' : ''}</td>
+							<td>{p.sentences}</td>
+							<td>{p.tokens}</td>
+							<td>{fmt(c.readability_grade)}</td>
+							<td>{fmt(c.lexical_density)}</td>
+							<td>{fmt(c.compression_ratio)}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/snippet}
 
 	{#snippet note()}
 		Each stage is the output of the public call named, run by matra on the text shown. The quote
