@@ -10,6 +10,8 @@
  *     it, and the words end above the arcs;
  *   - everything hangs: no stroke starts above the bar, and the root starts
  *     on it;
+ *   - punctuation is not drawn: no stroke, arc or word for a token the tree
+ *     tags PUNCT, in any variant;
  *   - the favicon fits its 16px square, keeps at least two arcs, since
  *     one arc under a bar reads as a letter U, not as the mark, and leaves at
  *     least a pixel between its strokes, which otherwise fuse into a block;
@@ -36,9 +38,15 @@ const check = (ok: boolean, what: string) => {
 	if (!ok) failures.push(what);
 };
 
+const punct = new Set(tokens.filter((t) => t.pos === 'PUNCT').map((t) => t.id));
+
 for (const variant of ['glyph', 'full', 'favicon', 'mono', 'paper'] as Variant[]) {
 	const m = layoutMark(tokens, variant);
 	const barBottom = m.bar.y + m.weight.bar / 2;
+	for (const s of m.strokes) check(!punct.has(s.id), `${variant}: punctuation (token ${s.id}) is drawn as a stroke`);
+	for (const a of m.arcs)
+		check(!punct.has(a.dependent) && !punct.has(a.head), `${variant}: the ${a.dep} arc to punctuation is drawn`);
+	for (const w of m.words) check(!punct.has(w.id), `${variant}: punctuation "${w.text}" is drawn as a word`);
 	for (const s of m.strokes) {
 		check(s.y1 >= m.bar.y - EPS, `${variant}: stroke ${s.id} starts above the bar (${s.y1} < ${m.bar.y})`);
 		if (s.root) check(Math.abs(s.y1 - m.bar.y) < EPS, `${variant}: the root does not start on the bar`);
@@ -77,6 +85,26 @@ for (const variant of ['glyph', 'full', 'favicon', 'mono', 'paper'] as Variant[]
 		for (let i = 1; i < xs.length; i++)
 			check(xs[i] - xs[i - 1] - m.weight.stroke >= 1, `favicon: strokes at ${xs[i - 1]} and ${xs[i]} touch; at 16px they fuse into a block`);
 		check(m.arcs.length >= 2, 'favicon: one arc or none; under a bar that reads as a letter U, not as the mark');
+	}
+}
+
+// The rule reads the tree, not the specimen: in a parse with punctuation in
+// the middle and at the end, and a token hanging from punctuation, no variant
+// draws the punctuation or an arc to it.
+{
+	const tok = (id: number, head: number, dep: string, pos = 'NOUN') => ({ id, head, dep, pos, text: `w${id}`, lemma: `w${id}` });
+	const withPunct = [
+		tok(1, 3, 'nsubj'),
+		tok(2, 1, 'punct', 'PUNCT'),
+		tok(3, 0, 'root', 'VERB'),
+		tok(4, 3, 'obj'),
+		tok(5, 2, 'dep'),
+		tok(6, 3, 'punct', 'PUNCT')
+	];
+	for (const variant of ['glyph', 'full', 'favicon'] as Variant[]) {
+		const m = layoutMark(withPunct as typeof tokens, variant);
+		const ids = [...m.strokes.map((s) => s.id), ...m.arcs.flatMap((a) => [a.head, a.dependent]), ...m.words.map((w) => w.id)];
+		check(!ids.includes(2) && !ids.includes(6), `${variant}: a parse's punctuation is drawn (${[...new Set(ids)].sort().join(',')})`);
 	}
 }
 

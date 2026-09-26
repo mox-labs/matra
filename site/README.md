@@ -333,27 +333,34 @@ URLs carry the base path, and preloads the reading face.
 
 ### The mark
 
-The mark is matra's parse of "Collective attention can restore a world.",
-drawn: a line by matra's authors, chosen the way a type specimen chooses its
-line, short and meaning something. Every token hangs from a headline bar,
-the shirorekha Devanagari letters hang from.
-The root (the one token matra says the others depend on) hangs longest, in
-Emergence: a mātrā, the small vowel sign that attaches to a letter and changes
-its sound without replacing it, which is what matra does to text. Below, each
-dependency hangs as an arc, levelled as the parse figure levels them.
+The mark is matra's parse of "Attention restores worlds.", drawn: a line by
+matra's authors, chosen the way a type specimen chooses its line, short and
+meaning something. Every word hangs from a headline bar, the shirorekha
+Devanagari letters hang from. The root (the one token matra says the others
+depend on) hangs longest, in Emergence: a mātrā, the small vowel sign that
+attaches to a letter and changes its sound without replacing it, which is
+what matra does to text. Below, each dependency hangs as an arc, levelled as
+the parse figure levels them.
+
+**Punctuation is not drawn**, in any variant. The rule reads the tree: a
+token matra tags `PUNCT` is dropped before layout, with its arc, so the mark
+is the words and the dependencies between them. For this sentence the glyph
+is a bar, three stems with the root in the middle, and two equal arcs, one to
+each neighbour: an inverted m (ɯ). The hero keeps the full stop in the
+sentence, since that is the sentence as written, and draws no arc to it.
 
 It is generated, not drawn. `src/lib/mark.ts` lays it out on the 9-grid from
 `src/lib/figures/specimen/parse.json`, parsed from `inputs/specimen.txt`,
 which is ordinary figure data: gate 8 regenerates it and fails on any change. So if matra's parse of the sentence ever
 changes, the mark changes, and review sees it. The variants (full, glyph, a
 16px favicon, mono, paper) are routes, built with the site: `/mark/*.svg` and
-`/favicon.svg`. The favicon's reduction is one the tree itself defines: it
-drops punctuation, then keeps every token down to the deepest level of the
-tree whose tokens all fit at a 3px pitch, so its 2px strokes stay a pixel
-apart; a level is kept whole or not at all. For this sentence that is the
-root and its dependents (attention, can, restore, world) with their three
-arcs, nested under the root. It must keep at least two arcs, because a
-single arc under a bar reads as a letter U at 16px. `/mark` is the sheet,
+`/favicon.svg`. The favicon's reduction is one the tree itself defines:
+with punctuation already gone, it keeps every token down to the deepest level
+of the tree whose tokens all fit at a 3px pitch, so its 2px strokes stay a
+pixel apart; a level is kept whole or not at all. For this sentence that is
+the whole tree (attention, restores, worlds) and both arcs, so the favicon is
+the glyph. It must keep at least two arcs, because a single arc under a bar
+reads as a letter U at 16px. `/mark` is the sheet,
 with the rules: clear space the root stroke's length; the glyph at least 24px
 tall; the full mark no narrower than where its words reach the 11px floor;
 mono carries hierarchy with opacity.
@@ -382,7 +389,8 @@ sit a little off the bar. On the site the face is loaded, and the mark on
 
 `scripts/check-mark.ts` holds the geometry to those rules in every variant:
 the words touch the bar and none crosses it; every stroke hangs, with the root
-starting on the bar; the favicon fits its square, keeps at least two arcs, and leaves a pixel
+starting on the bar; no stroke, arc or word is drawn for punctuation, in the
+specimen or in a planted parse with punctuation mid-sentence; the favicon fits its square, keeps at least two arcs, and leaves a pixel
 between its strokes; and a malformed parse leaves the favicon the tokens
 that reach the root, rather than hanging the build.
 It runs in `bun run check`, so in gate 4. Gate 8 guards what the mark is drawn
@@ -396,6 +404,10 @@ edge. The home page's
 hero is the mark at full scale, explaining itself: the sentence in Alegreya with
 the same parse drawn over it in CSS grid, lit word by word on hover or focus,
 pinned by a click, labelled by "show the parse", and still with no script.
+Each word spans two grid columns, so its centre is a grid line; the arcs are
+positioned in their grid areas rather than placed in the flow, because an arc
+in the flow adds its own width to the columns it spans and would split a word
+into unequal halves.
 
 ### The maker's mark
 
