@@ -26,6 +26,11 @@
  *                has the table's sentence and token counts, no measures
  *                after annotate, and the table's measures after compose
  *
+ * The twin is one click away, not in the reader's path: it must sit in a
+ * `details.fig-data` inside the figure, closed in the prerendered HTML, so
+ * the figure leads and the data is still in the page for anyone who reads
+ * HTML rather than pixels.
+ *
  * A figure with no twin fails, a kind this script cannot compare fails, and
  * so does a build with no figures at all: a check that examined nothing has
  * not passed.
@@ -365,6 +370,12 @@ for (const file of pages(dir)) {
 			fail(`no text twin (a table with data-twin-for="${id}")`);
 			continue;
 		}
+		const holder = all(fig, (e) => e.tagName === 'details' && hasClass(e, 'fig-data')).find(
+			(d) => all(d, (e) => e === table).length > 0
+		);
+		if (!holder) fail('the text twin is not behind the figure\'s "show the data" disclosure (details.fig-data)');
+		else if (holder.properties.open !== undefined && holder.properties.open !== false)
+			fail('the "show the data" disclosure is open in the prerendered HTML; it starts closed');
 		const compare = COMPARE[kind];
 		if (!compare) {
 			fail('no comparison for this kind of figure: teach site/scripts/check-figure-twins.ts');

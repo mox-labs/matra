@@ -4,44 +4,43 @@
 
 ## Introduction
 
-- [Home](https://mox-labs.github.io/matra/home.html): matra reads text into its structure and measures it, from Rust, Python or the command line; what the structure means is yours to decide.
-- [Introduction](https://mox-labs.github.io/matra/introduction.html): matra reports the structure of text and measurements over it.
+- [Home](https://mox-labs.github.io/matra/home.html): matra parses English text into sections, paragraphs, sentences and words, and returns measures, summaries and keyphrases over them, from Rust, Python or the command line.
 
-## Explanation
-
-- [Concepts](https://mox-labs.github.io/matra/explanation/concepts.html): Analysis returns one nested value. Each level owns the level below it and carries its own data.
-- [Situation model](https://mox-labs.github.io/matra/explanation/situation-model.html): matra reports the structure of text and measurements over it.
-- [Programming model](https://mox-labs.github.io/matra/explanation/programming-model.html): `Ingest` is where documents come from. `Engine` is what happens to each one.
-- [Pragmatics](https://mox-labs.github.io/matra/explanation/pragmatics.html): Run `matra --skill`. It prints, from the installed program itself, what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not license you to conclude, the limits, and the errors.
-
-## Using matra
+## Tutorials
 
 - [Installation](https://mox-labs.github.io/matra/tutorials/installation.html): matra ships three ways from one Rust core: a Rust library on crates.io, a command-line binary installed from the same crate, and a Python package on PyPI.
-- [Rust](https://mox-labs.github.io/matra/guides/rust.html): You already have `matra` in your `Cargo.toml`.
-- [Python](https://mox-labs.github.io/matra/guides/python.html): You installed matra with `uv add matra`.
-- [CLI](https://mox-labs.github.io/matra/guides/cli.html): `matra` reads a file (or stdin) and writes to stdout.
-- [Semantic clusters](https://mox-labs.github.io/matra/guides/semantic-clusters.html): Everything else matra returns is deterministic structure, checkable against the source bytes.
+- [Your first analysis](https://mox-labs.github.io/matra/tutorials/first-analysis.html): You will run matra on two short paragraphs of meeting minutes, then find four things in what it returns: the document's structure, the grammar it read off each sentence, the measures of each paragraph, and the measures of the whole document.
 
-## Examples
+## How-to guides
 
-- [Examples](https://mox-labs.github.io/matra/examples/index.html): Six worked examples, each one task on one real text.
-- [Parse one sentence](https://mox-labs.github.io/matra/examples/parse-a-sentence.html): The first sentence of Pride and Prejudice, parsed: every word with its lemma, its part of speech, the word it depends on, and the relation between them.
+- [How-to guides](https://mox-labs.github.io/matra/examples/index.html): Each guide does one task on one real text.
+- [Parse a sentence into its dependency tree](https://mox-labs.github.io/matra/examples/parse-a-sentence.html): The first sentence of Pride and Prejudice, parsed: every word with its lemma, its part of speech, the word it depends on, and the relation between them.
 - [Find negations and modals](https://mox-labs.github.io/matra/examples/negations-and-modals.html): Which sentences of a legal text are negated, and which carry a modal verb, read off each sentence's dependency tree.
 - [Compare readability across paragraphs](https://mox-labs.github.io/matra/examples/readability-by-paragraph.html): The three paragraph measures of The Federalist No. 10, to see where the essay is harder going and where it eases.
 - [Summarize a long document](https://mox-labs.github.io/matra/examples/summarize.html): The three sentences TextRank ranks highest in the opening of Darwin's chapter on the struggle for existence, 2,214 words.
-- [Extract keyphrases](https://mox-labs.github.io/matra/examples/keyphrases.html): The ten phrases RAKE ranks highest in the same Darwin text as the summary example.
+- [Extract a document's keyphrases](https://mox-labs.github.io/matra/examples/keyphrases.html): The ten phrases RAKE ranks highest in the same Darwin text as the summary example.
 - [Read a Markdown document's structure](https://mox-labs.github.io/matra/examples/markdown-structure.html): A short Markdown document with two headings and a quote, read into sections and paragraphs.
+- [Cluster sentences by meaning](https://mox-labs.github.io/matra/guides/semantic-clusters.html): Everything else matra returns is deterministic structure, checkable against the source bytes.
+
+## Explanation
+
+- [Introduction](https://mox-labs.github.io/matra/introduction.html): matra reports the structure of text and measurements over it.
+- [Concepts](https://mox-labs.github.io/matra/explanation/concepts.html): Analysis returns one nested value. Each level owns the level below it and carries its own data.
+- [Situation model](https://mox-labs.github.io/matra/explanation/situation-model.html): matra reports the structure of text and measurements over it.
+- [Programming model](https://mox-labs.github.io/matra/explanation/programming-model.html): `Ingest` is where documents come from. `Engine` is what happens to each one.
+- [What the clustering threshold does](https://mox-labs.github.io/matra/explanation/semantic-clusters.html): matra can group the sentences of a document that say the same thing in different words.
+- [Pragmatics](https://mox-labs.github.io/matra/explanation/pragmatics.html): Run `matra --skill`. It prints, from the installed program itself, what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not license you to conclude, the limits, and the errors.
+- [How matra runs](https://mox-labs.github.io/matra/architecture/design.html): `engine.analyze(Ingest::path("essay.md")?)` yields a `Document` or a `DocumentError`.
 
 ## Reference
 
 - [What matra gives you](https://mox-labs.github.io/matra/capabilities.html): Every value the pipeline returns, by tier.
 - [Domain model](https://mox-labs.github.io/matra/reference/domain-types.html): `matra::domain` holds every type the library hands back.
+- [Rust](https://mox-labs.github.io/matra/guides/rust.html): You already have `matra` in your `Cargo.toml`.
+- [Python](https://mox-labs.github.io/matra/guides/python.html): You installed matra with `uv add matra`.
+- [CLI](https://mox-labs.github.io/matra/guides/cli.html): `matra` reads a file (or stdin) and writes to stdout.
 - [Methodology](https://mox-labs.github.io/matra/reference/methodology.html): What each number matra reports is computed from, how to cite the work it comes from, and what it does not license you to conclude.
 - [Errors](https://mox-labs.github.io/matra/reference/errors.html): Every fallible function in matra returns `domain::Result<T>`, which is `std::result::Result<T, domain::Error>`.
-
-## Contributing
-
-- [Architecture](https://mox-labs.github.io/matra/architecture/design.html): `engine.analyze(Ingest::path("essay.md")?)` yields a `Document` or a `DocumentError`.
 - [Boundary rules](https://mox-labs.github.io/matra/reference/boundary-rules.html): Eight rules hold matra's hexagonal architecture in place.
 
 ## What is planned

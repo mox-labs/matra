@@ -190,6 +190,12 @@ export interface ExampleCall {
 	/** The file the call lives in, under site/examples/<name>/. */
 	file: string;
 	html: string;
+	/**
+	 * How to get from nothing to this call, when the example says so (the
+	 * quick start and the tutorial): the install command, and for a program,
+	 * where to save it and the command that runs it.
+	 */
+	start?: { installHtml: string; inputHtml?: string; save?: string; runHtml?: string };
 }
 
 /**
@@ -212,6 +218,8 @@ export interface ExampleView {
 	calls: ExampleCall[];
 	/** What the CLI prints around the result, highlighted, the result elided. */
 	cliEnvelopeHtml: string;
+	/** Show the call and output plainly: no CLI envelope, no trim note (the page's prose says what is shown). */
+	plain: boolean;
 	output: {
 		html: string;
 		/** How the shown output was trimmed, or null when it is whole. */
@@ -233,6 +241,8 @@ export type Segment =
 			/** The sentence shown first, 1-based. */
 			sentence: number;
 			file: ParseFigureFile;
+			/** Whether the compact data line (word, relation, head) sits above the arcs. */
+			line: boolean;
 	  })
 	| (FigureSegmentBase & { figure: 'primitives'; file: PrimitivesFigureFile })
 	| (FigureSegmentBase & { figure: 'metrics'; file: MetricsFigureFile })

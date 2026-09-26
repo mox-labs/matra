@@ -47,20 +47,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.4167,
-      "readability_grade": 4.8233,
+      "lexical_density": 0.5,
+      "readability_grade": 13.6983,
       "sentences": 1,
-      "text": "The same document at each stage of the pipeline, step by step:",
-      "words": 12
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<figure-pipeline input=\"field-notes\" />",
-      "words": 6
+      "text": "[Programming model](../explanation/programming-model.md#two-values-ingest-into-engine) steps this same document through each stage of the pipeline, to show what each stage adds.",
+      "words": 19
     },
     {
       "compression_ratio": 0.5443,

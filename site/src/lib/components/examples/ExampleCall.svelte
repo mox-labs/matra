@@ -5,6 +5,11 @@
 	 * highlighted at build time. Without scripts there are no tabs: the three
 	 * calls stand one after another, each labelled. Switching a tab moves
 	 * nothing; the panel is simply replaced.
+	 *
+	 * An example with a start (the quick start and the tutorial) numbers the
+	 * steps from nothing to the call: install, save the text if the page gives
+	 * a line for it, run. It opens on the command line, the shortest of the
+	 * three routes; the tabs stay in the same order everywhere.
 	 */
 	import { onMount } from 'svelte';
 	import type { ExampleView } from '$lib/types';
@@ -13,7 +18,8 @@
 
 	let js = $state(false);
 	onMount(() => (js = true));
-	let selected = $state(0);
+	// svelte-ignore state_referenced_locally
+	let selected = $state(example.calls[0].start ? example.calls.findIndex((c) => c.lang === 'cli') : 0);
 	const tabs: HTMLButtonElement[] = $state([]);
 	const id = $derived(`ex-${example.name}-call`);
 
@@ -63,8 +69,21 @@
 			hidden={js && selected !== i}
 		>
 			{#if !js}<p class="label">{call.label}</p>{/if}
+			{#if call.start}
+				<p class="step"><span class="n">1</span>Install</p>
+				{@html call.start.installHtml}
+				{#if call.start.inputHtml}
+					<p class="step"><span class="n">2</span>Save the text</p>
+					{@html call.start.inputHtml}
+				{/if}
+				<p class="step">
+					<span class="n">{call.start.inputHtml ? 3 : 2}</span>Run{#if call.start.save}: save this as <code>{call.start.save}</code>{#if call.start.runHtml},
+							then run it{/if}{/if}
+				</p>
+			{/if}
 			{@html call.html}
-			{#if call.lang === 'cli'}
+			{#if call.start?.runHtml}{@html call.start.runHtml}{/if}
+			{#if call.lang === 'cli' && !example.plain}
 				<p class="prints">It prints the output below, inside an envelope that names the command and the input:</p>
 				{@html example.cliEnvelopeHtml}
 			{/if}
@@ -108,6 +127,24 @@
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--text-muted);
+	}
+
+	.step {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5em;
+		margin: 0.9rem 0 0.35rem;
+		font-size: 0.9rem;
+		color: var(--text-muted);
+	}
+
+	.step:first-of-type {
+		margin-top: 0;
+	}
+
+	.step .n {
+		font: 600 var(--type-xs) var(--font-mono);
+		color: var(--text);
 	}
 
 	.prints {

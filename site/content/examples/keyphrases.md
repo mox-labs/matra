@@ -1,4 +1,4 @@
-# Extract keyphrases
+# Extract a document's keyphrases
 
 The ten phrases RAKE ranks highest in the same Darwin text as the [summary example](summarize.md).
 

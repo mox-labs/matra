@@ -1,0 +1,7 @@
+title = "The committee approved the budget on Tuesday."
+author = "matra contributors"
+source = "Written for matra's documentation: the quick start on the home page runs on it"
+url = "https://github.com/mox-labs/matra/blob/main/site/inputs/quickstart.txt"
+licence = "MIT, as part of the matra repository"
+register = "administrative"
+figures = ["parse"]

@@ -87,7 +87,8 @@ place".
 ## Non-goals
 
 - Changing any page's content beyond what the identity needs (the home page's
-  opening line, the predict-then-reveal prompt).
+  opening line, the predict-then-reveal prompt). Amended by the owner on
+  2026-09-26 for M2, which reorganizes the site and rewrites the landing.
 - A theme per surface: one identity, two grounds.
 
 ## Iterations and milestones
@@ -102,6 +103,23 @@ place".
   in gate 4 and the margin notes in gate 9; no page scrolls sideways at 360,
   390 or 1280px; everything renders with scripts off; the scrub holds 60fps
   on a throttled CPU.
+
+### M2: the reader's route
+
+- **Deliverable.** The navigation in Diátaxis's four parts (tutorials,
+  how-to guides, explanation, reference), then the roadmap, with every
+  published URL and heading anchor kept. A landing that is one screen of
+  intent: what matra is in one sentence, a quick start (install, save the
+  text, run, as tabs) whose output is committed and run by gate 11, one calm
+  figure of that output, and four routes, one per part. A first-analysis
+  tutorial. Every figure first, with its data one click away behind "show the
+  data" and each control beside what it changes; the explorables in
+  explanation. The rules written down in `site/README.md`.
+- **Exit criterion.** All eleven gates and `just check` pass; no sideways
+  scroll at 360, 390 or 1280; everything renders with scripts off; at 1280 by
+  800 the quick start's install command is on the first screen, measured;
+  two cold readers, one per landing, answer the same five questions, and the
+  times and answers are reported as they came.
 
 ## Test plan
 
@@ -118,7 +136,11 @@ place".
 - Gate 8 on the page measures and the specimen's parse; seen to fail on a hand
   edit of the parse.
 - Gate 9 on every margin note's text against its data; seen to fail on a
-  changed number.
+  changed number. From M2 it also holds every twin behind a closed "show the
+  data" disclosure; seen to fail on an opened disclosure and on a twin moved
+  out of one.
+- Gate 11 runs a quick start's `save` line and the calls read what it wrote;
+  seen to fail on a save line that writes a different sentence.
 - Interaction and frame timing in a browser, recorded in the pull request.
 
 ## Ship criteria
@@ -171,3 +193,17 @@ Merged, deployed, and the live check after deploy passes.
   are not equal, because the root's stroke hangs after its word and the
   words differ in width; the glyph, favicon, mono and paper variants are
   equal.
+- 2026-09-26: decision (owner): the site is organized by Diátaxis and the
+  landing is cut to a quick start, for uptake and a lower load on first
+  view. M2 added to this plan, and the non-goal on page content amended.
+  M2 delivered in one pull request: four parts in `SUMMARY.md` with every URL
+  and anchor kept (reworded or moved headings keep their ids through
+  `site/src/lib/moved-anchors.ts`); a landing of one sentence, a quick start
+  whose save line and calls gate 11 runs, a parse figure of its output, and
+  four routes; a first-analysis tutorial; the clusters explorable and its
+  prediction prompt moved to a new explanation page, the guide kept as a
+  how-to; the pipeline explorable left only on the Programming model page;
+  every figure's twin behind "show the data", with the clusters threshold on
+  its diagram and the parse's data as a compact line above its arcs. The
+  Rust, Python and CLI pages are placed in reference, and `site/README.md`
+  says why.

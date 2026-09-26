@@ -14,9 +14,7 @@ A short Markdown document with two headings and a quote, read into sections and 
 
 <example-output name="markdown-structure" />
 
-The same document at each stage of the pipeline, step by step:
-
-<figure-pipeline input="field-notes" />
+[Programming model](../explanation/programming-model.md#two-values-ingest-into-engine) steps this same document through each stage of the pipeline, to show what each stage adds.
 
 ## What to notice
 

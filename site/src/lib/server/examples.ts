@@ -41,10 +41,27 @@ interface OutputSpec {
 	keep?: number;
 }
 
+/**
+ * From nothing to the call, per language: the command that installs matra,
+ * and for a program, the file to save it as and the command that runs it.
+ * Optional; the quick start and the tutorial carry one. The examples gate
+ * runs the calls, not these lines: they are the installation page's commands.
+ */
+interface StartSpec {
+	install: string;
+	save?: string;
+	run?: string;
+}
+
 interface Spec {
 	input: string;
 	file: string;
+	/** One shell line that writes the input as `file`; the examples gate runs it. */
+	save?: string;
+	/** Show the call and output plainly: no CLI envelope and no trim note, the page's prose saying what is shown. */
+	plain?: boolean;
 	output?: OutputSpec;
+	start?: Record<'rust' | 'python' | 'cli', StartSpec>;
 }
 
 export interface ExampleSource {
@@ -222,33 +239,47 @@ export function exampleMarkdown(
 		].join('\n');
 	}
 	if (part === 'call') {
+		const start = (lang: 'rust' | 'python' | 'cli') => {
+			const s = ex.spec.start?.[lang];
+			if (!s) return [];
+			return [
+				'Install:',
+				'',
+				'```bash',
+				s.install,
+				'```',
+				'',
+				...(ex.spec.save ? ['Save the text:', '', '```bash', ex.spec.save, '```', ''] : []),
+				...(s.save ? [`Save the program below as \`${s.save}\`${s.run ? ` and run it with \`${s.run}\`` : ''}:`, ''] : [])
+			];
+		};
 		return [
 			'Rust:',
 			'',
+			...start('rust'),
 			'```rust',
 			ex.files['main.rs'].trimEnd(),
 			'```',
 			'',
 			'Python:',
 			'',
+			...start('python'),
 			'```python',
 			ex.files['example.py'].trimEnd(),
 			'```',
 			'',
-			'The command line, which prints the output below inside an envelope:',
+			ex.spec.plain ? 'The command line:' : 'The command line, which prints the output below inside an envelope:',
 			'',
+			...start('cli'),
 			'```bash',
 			ex.files['cli.sh'].trim(),
 			'```',
-			'',
-			'```jsonc',
-			envelopeText(ex),
-			'```'
+			...(ex.spec.plain ? [] : ['', '```jsonc', envelopeText(ex), '```'])
 		].join('\n');
 	}
 	const shown = shownOutput(ex);
 	return [
-		...(shown.note ? [`Trimmed: ${shown.note}.`, ''] : []),
+		...(shown.note && !ex.spec.plain ? [`Trimmed: ${shown.note}.`, ''] : []),
 		shown.note ? '```jsonc' : '```json',
 		shown.text,
 		'```',
@@ -277,8 +308,29 @@ export function exampleView(ex: ExampleSource, figures: ReadonlyMap<string, Figu
 			{ lang: 'rust', label: 'Rust', file: 'main.rs', html: hl(ex.files['main.rs'].trimEnd(), 'rust') },
 			{ lang: 'python', label: 'Python', file: 'example.py', html: hl(ex.files['example.py'].trimEnd(), 'python') },
 			{ lang: 'cli', label: 'CLI', file: 'cli.sh', html: hl(`$ ${command}`, 'shellsession') }
-		],
+		].map((call) => {
+			const s = ex.spec.start?.[call.lang as 'rust' | 'python' | 'cli'];
+			if (!s) return call;
+			const shell = (cmds: string) =>
+				hl(
+					cmds
+						.split('\n')
+						.map((c) => `$ ${c}`)
+						.join('\n'),
+					'shellsession'
+				);
+			return {
+				...call,
+				start: {
+					installHtml: shell(s.install),
+					inputHtml: ex.spec.save ? shell(ex.spec.save) : undefined,
+					save: s.save,
+					runHtml: s.run ? shell(s.run) : undefined
+				}
+			};
+		}) as ExampleView['calls'],
 		cliEnvelopeHtml: hl(envelopeText(ex), 'jsonc'),
+		plain: ex.spec.plain === true,
 		output: {
 			html: hl(shown.text, shown.note ? 'jsonc' : 'json'),
 			trimmed: shown.note ? codeHtml(shown.note) : null,
