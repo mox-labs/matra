@@ -31,7 +31,7 @@ rules:
       site/content/reference/boundary-rules.md#rule-7-the-composition-root-knows-the-whole
     patterns:
       - pattern-either:
-          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?(DEFINE)(?<nest>\{(?:[^{};]|(?&nest))*+\}))\bcrate\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:Engine|Ingest|extraction|config|domain|cli)\b)(?:[A-Za-z_]\w*|\*)'
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?(DEFINE)(?<nest>\{(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*+\}))\bcrate\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:Engine|Ingest|extraction|config|domain|cli)\b)(?:[A-Za-z_]\w*|\*)'
           - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bcrate\s+as\b'
           - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bsuper\s*::\s*super\b'
       - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
@@ -51,5 +51,5 @@ rules:
       and Ingest methods. Read:
       site/content/reference/boundary-rules.md#rule-7-the-composition-root-knows-the-whole
     patterns:
-      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?(DEFINE)(?<nest>\{(?:[^{};]|(?&nest))*+\}))\bsuper\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:Engine|Ingest|extraction|config|domain)\b)(?:[A-Za-z_]\w*|\*)'
+      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?(DEFINE)(?<nest>\{(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*+\}))\bsuper\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:Engine|Ingest|extraction|config|domain)\b)(?:[A-Za-z_]\w*|\*)'
       - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
