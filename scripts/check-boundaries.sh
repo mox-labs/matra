@@ -133,8 +133,14 @@ def includes(path):
     rules, unread, rule, in_include = {}, [], None, False
     for number, raw in enumerate(open(path), 1):
         line = raw.rstrip("\n")
+        # Inside a block list, a blank line or a `#` comment continues it.
+        if in_include and re.match(r"^\s*(#.*)?$", line):
+            continue
         m = re.match(r"^  - id:\s*(\S+)", line)
         if m:
+            # A new rule ends an include block that may have read nothing.
+            if in_include and not rules[rule]:
+                unread.append((rule, number, "an include: key with no entry read from it"))
             rule, in_include = m.group(1), False
             rules[rule] = []
             continue
