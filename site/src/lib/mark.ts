@@ -18,7 +18,10 @@
  * punctuation (UPOS PUNCT); they are dropped before layout, with their arcs,
  * so the mark is the words and the dependencies between them. For the
  * specimen that is a bar, three stems with the root in the middle, and two
- * equal arcs, one to each neighbour: an inverted m.
+ * equal arcs, one to each neighbour: an inverted m. A word that hangs from
+ * punctuation (Universal Dependencies makes punctuation a leaf, so a sound
+ * parse has none) keeps its stroke and loses its arc in the glyph and the
+ * full mark; the favicon, which keeps only what reaches the root, drops it.
  *
  * Variants:
  *   glyph     bar, strokes and arcs; no words
@@ -290,6 +293,7 @@ function faviconLayout(tokens: ParseToken[]): MarkLayout {
 
 export function layoutMark(tokens: ParseToken[], variant: Variant): MarkLayout {
 	const words = tokens.filter(drawn);
+	if (words.length === 0) throw new Error('the specimen parse has no token but punctuation, so there is no mark to draw');
 	if (variant === 'full') return fullLayout(words);
 	if (variant === 'favicon') return faviconLayout(words);
 	return glyphLayout(words);
