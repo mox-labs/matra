@@ -40,6 +40,13 @@ use crate::{domain::{tree::{Node}}, stopwords::is_stop_word};
 // ruleid: boundary-rule5-root-super
 use super::{domain::{tree::{Node}}, Engine};
 // ruleid: boundary-rule5-pure-imports
+use crate::{
+    domain::{
+        Document, // closes } early
+    },
+    nlp::NlpProvider,
+};
+// ruleid: boundary-rule5-pure-imports
 use crate as root;
 // ruleid: boundary-rule5-pure-imports, boundary-rule5-root-super
 use super::super::nlp::NlpProvider;

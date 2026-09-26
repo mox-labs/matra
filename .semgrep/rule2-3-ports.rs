@@ -39,6 +39,23 @@ use crate::{domain::{tree::{Node}}, nlp::C};
 use crate::{domain::{tree::{Node, Leaf}, x::{y::{Z}}}, embed};
 // ok: boundary-rule2-port-imports, boundary-rule3-port-names-port
 use crate::{domain::{tree::{Node}}, domain::B};
+// A comment holding a `}` inside a nested group does not close it early.
+// ruleid: boundary-rule3-port-names-port
+use crate::{
+    domain::{
+        Format, // closes } early
+        Section,
+    },
+    nlp::NlpProvider,
+};
+// ruleid: boundary-rule2-port-imports
+use crate::{
+    domain::{
+        Format, // a } and a ; in a comment
+        Section,
+    },
+    config::Config,
+};
 // ruleid: boundary-rule2-port-imports
 use crate::{domain::{tree::{Node}}, config::Config};
 

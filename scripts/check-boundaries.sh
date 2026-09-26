@@ -78,7 +78,7 @@ if [ "${1:-}" = "--scan-only" ]; then
     scan_only=1
 fi
 
-# --- 1. Rule tests -----------------------------------------------------------
+# --- The rule files ----------------------------------------------------------
 
 shopt -s nullglob
 configs=(.semgrep/*.yml)
@@ -120,11 +120,18 @@ def glob_to_regex(pattern):
             out.append(re.escape(body[i])); i += 1
     return re.compile(("^" if anchored else "^(?:.*/)?") + "".join(out) + "(?:/.*)?$")
 
+QUOTED = re.compile(r'^"([^"]+)"$')
+
 def includes(path):
-    # Rule id -> include entries, from the two YAML shapes .semgrep/ uses:
-    # `include: ["/a", "/b"]` and a block list of `- "/a"` lines.
-    rules, rule, in_include = {}, None, False
-    for raw in open(path):
+    # Rule id -> include entries, and the lines this reader could not read.
+    # It reads the two YAML shapes .semgrep/ uses, and only those:
+    # `include: ["/a", "/b"]` on one line, and a block list of `- "/a"`
+    # lines. No YAML parser is available to python3 both locally and in CI
+    # without a new dependency, so anything else (single quotes, no quotes,
+    # a flow list over several lines, a bare scalar) is reported rather than
+    # skipped: a skipped entry would be a scope nobody checks.
+    rules, unread, rule, in_include = {}, [], None, False
+    for number, raw in enumerate(open(path), 1):
         line = raw.rstrip("\n")
         m = re.match(r"^  - id:\s*(\S+)", line)
         if m:
@@ -134,24 +141,50 @@ def includes(path):
         m = re.match(r"^\s+include:\s*(.*)$", line)
         if m and rule:
             rest = m.group(1).strip()
-            if rest.startswith("["):
-                rules[rule] += re.findall(r'"([^"]+)"', rest)
-                in_include = False
-            else:
+            in_include = False
+            if rest == "":
                 in_include = True
+            elif rest.startswith("[") and rest.endswith("]"):
+                for item in (i.strip() for i in rest[1:-1].split(",")):
+                    q = QUOTED.match(item)
+                    if q:
+                        rules[rule].append(q.group(1))
+                    elif item:
+                        unread.append((rule, number, item))
+            else:
+                unread.append((rule, number, rest))
+            if not in_include and not rules[rule]:
+                unread.append((rule, number, "an include: key with no entry read from it"))
             continue
         if in_include:
-            m = re.match(r'^\s+-\s*"([^"]+)"\s*$', line)
+            m = re.match(r"^\s+-\s*(.*?)\s*$", line)
             if m:
-                rules[rule].append(m.group(1))
+                q = QUOTED.match(m.group(1))
+                if q:
+                    rules[rule].append(q.group(1))
+                else:
+                    unread.append((rule, number, m.group(1)))
                 continue
             in_include = False
-    return rules
+            if not rules[rule]:
+                unread.append((rule, number, "an include: key with no entry read from it"))
+    if in_include and not rules[rule]:
+        unread.append((rule, number, "an include: key with no entry read from it"))
+    return rules, unread
 
 dead = 0
 checked = 0
 for cfg in sys.argv[2:]:
-    for rule, entries in includes(cfg).items():
+    scoped, unread = includes(cfg)
+    for rule, number, text in unread:
+        if text.startswith("an include: key"):
+            print(f"FAIL: rule {rule} ({cfg}:{number}): {text}.")
+        else:
+            print(f"FAIL: rule {rule} ({cfg}:{number}): cannot read the include entry {text!r}.")
+        print('      Write each entry double-quoted, as `include: ["/src/x.rs"]` or a `- "/src/x.rs"` line;')
+        print("      an entry this check cannot read is a scope nobody checks.")
+        dead += 1
+    for rule, entries in scoped.items():
         for entry in entries:
             checked += 1
             regex = glob_to_regex(entry)
@@ -160,13 +193,15 @@ for cfg in sys.argv[2:]:
                 print(f"FAIL: rule {rule} ({cfg}) scopes itself to {entry}, and that {kind} in git.")
                 print("      The rule now scans nothing and passes silently. Update the rule's paths when you move a file.")
                 dead += 1
-print(f"check-boundaries: {checked} path scopes checked, {dead} dead")
+print(f"check-boundaries: {checked} path scopes checked, {dead} dead or unread")
 sys.exit(1 if dead else 0)
 PY
 if [ "$fail" -ne 0 ]; then
-    echo "check-boundaries: a rule's path scope is dead; the scan did not run"
+    echo "check-boundaries: a rule's path scope is dead or unread; the scan did not run"
     exit 1
 fi
+
+# --- 1. Rule tests -----------------------------------------------------------
 
 rule_count=0
 for cfg in "${configs[@]}"; do
