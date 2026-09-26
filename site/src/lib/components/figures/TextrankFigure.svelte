@@ -51,34 +51,6 @@
 </script>
 
 <FigureFrame {id} kind="textrank" title="TextRank: the summary and the scores it came from" {file} {dataUrl}>
-	<!-- A region that scrolls must take focus, or it cannot be scrolled from
-	     the keyboard (WCAG 2.1.1). -->
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-twin tall" tabindex="0" role="region" aria-label="Every sentence's TextRank score">
-		<table data-twin-for={id}>
-			<thead><tr><th>#</th><th>¶</th><th>Score</th><th>Summary</th><th>Sentence</th></tr></thead>
-			<tbody {@attach roving}>
-				{#each rows as r (r.position)}
-					<tr
-						class:picked={r.summary}
-						class:lit={active === r.position}
-						data-row={r.position}
-						onpointerenter={() => (active = r.position)}
-						onpointerleave={() => (active = null)}
-						onfocus={() => (active = r.position)}
-						onblur={() => (active = null)}
-					>
-						<td class="num">{r.position + 1}</td>
-						<td class="num">{r.paragraph ?? ''}</td>
-						<td>{fmt(r.score)}</td>
-						<td>{r.summary ? 'yes' : ''}</td>
-						<td class="text">{r.text}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
-
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 	<div class="fig-scroll" tabindex="0" role="region" aria-label="TextRank score of every sentence">
 		<svg class:active={active !== null} width={W} {height} viewBox="0 0 {W} {height}" role="img" aria-label="TextRank scores of {rows.length} sentences in document order; the {summary.length} summary sentences are marked" data-bars-for={id}>
@@ -129,6 +101,36 @@
 			<li><span class="n">{s.position + 1}</span>{s.text}</li>
 		{/each}
 	</ol>
+
+	{#snippet twin()}
+		<!-- A region that scrolls must take focus, or it cannot be scrolled from
+		     the keyboard (WCAG 2.1.1). -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="fig-twin tall" tabindex="0" role="region" aria-label="Every sentence's TextRank score">
+			<table data-twin-for={id}>
+				<thead><tr><th>#</th><th>¶</th><th>Score</th><th>Summary</th><th>Sentence</th></tr></thead>
+				<tbody {@attach roving}>
+					{#each rows as r (r.position)}
+						<tr
+							class:picked={r.summary}
+							class:lit={active === r.position}
+							data-row={r.position}
+							onpointerenter={() => (active = r.position)}
+							onpointerleave={() => (active = null)}
+							onfocus={() => (active = r.position)}
+							onblur={() => (active = null)}
+						>
+							<td class="num">{r.position + 1}</td>
+							<td class="num">{r.paragraph ?? ''}</td>
+							<td>{fmt(r.score)}</td>
+							<td>{r.summary ? 'yes' : ''}</td>
+							<td class="text">{r.text}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/snippet}
 
 	{#snippet legend()}
 		<ul class="fig-legend" aria-label="Bars">

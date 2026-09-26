@@ -1,0 +1,84 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "explanation/semantic-clusters.md",
+  "paragraphs": [
+    {
+      "compression_ratio": 0.5845,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 6.2836,
+      "sentences": 4,
+      "text": "matra can group the sentences of a document that say the same thing in different words. It embeds each sentence as a vector, scores every pair by cosine similarity, and links each pair whose score clears a threshold you choose. The clusters are the connected groups those links make. [Cluster sentences by meaning](../guides/semantic-clusters.md) has the calls.",
+      "words": 57
+    },
+    {
+      "compression_ratio": 0.5786,
+      "in_blockquote": false,
+      "lexical_density": 0.4828,
+      "readability_grade": 10.0569,
+      "sentences": 3,
+      "text": "Everything else matra returns is structure read off the text, checkable against its bytes. Clusters are not: they depend on a model's representation of meaning. So they arrive as their own value from a separate call, never as a field on `Document`, and they carry the identity of the model that produced them and the threshold you chose.",
+      "words": 59
+    },
+    {
+      "compression_ratio": 0.5285,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 6.6607,
+      "sentences": 9,
+      "text": "- **Co-membership is transitive, not pairwise.** Clusters are connected components, so sentence A and sentence C can share a cluster because both resemble B, without resembling each other. The edges travel in the result so you can see which pairs actually cleared the bar. A missing edge is no claim, not a low score.\n- **Singletons are always excluded.** A sentence with no pair above the threshold appears in no cluster, so \"not in any cluster\" is a meaningful count.\n- **The threshold is yours, and it does not travel.** Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus; the working value depends on the model, the domain and the text length. A cutoff calibrated on sentences is not the cutoff for whole documents, because a document vector is the mean over far more tokens.",
+      "words": 135
+    },
+    {
+      "compression_ratio": 0.5884,
+      "in_blockquote": false,
+      "lexical_density": 0.3929,
+      "readability_grade": 3.7387,
+      "sentences": 4,
+      "text": "Ten short sentences, with the reference model. Before you move the threshold, predict: sentence 8 is about a different decision by the same committee. As the threshold falls from 0.85, at which value do you expect it to join sentences 1, 2 and 3, and through which of them? Then drag the threshold and find out.",
+      "words": 56
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<figure-clusters input=\"paraphrases\" />",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.8,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "<details>\n<summary>What sentence 8 did</summary>",
+      "words": 7
+    },
+    {
+      "compression_ratio": 0.5606,
+      "in_blockquote": false,
+      "lexical_density": 0.4746,
+      "readability_grade": 3.212,
+      "sentences": 2,
+      "text": "It joins at 0.70, through sentence 1 alone: their pair scores 0.7239 and clears the bar, while its pairs with sentences 2 and 3 do not, yet it shares their cluster. A cluster can grow through a chain of pairs, on shared words (\"committee approved\") rather than shared meaning, and the clusters dissolve as the bar rises past 0.85.",
+      "words": 59
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 1.0,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "</details>",
+      "words": 2
+    }
+  ]
+}

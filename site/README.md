@@ -55,6 +55,63 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/components/examples/` | The input, the call as tabs, and the output. |
 | `scripts/check-examples.ts` | Runs every example's three calls and compares what they print with the committed output. |
 | `urls.txt`, `anchors.txt` | Every published path and heading anchor: the URL contract the build, the artifact and the live site are checked against. |
+| `src/lib/moved-anchors.ts` | Published heading ids whose heading moved to another page or was reworded, kept on their page and forwarded. |
+
+## How the site is organized
+
+The navigation follows [Diátaxis](https://diataxis.fr/): four parts, each for
+one kind of need, in `SUMMARY.md` in this order, with the roadmap after them.
+
+| Part | Serves | Holds |
+|---|---|---|
+| Tutorials | learning by doing | Installation, and a first analysis walked through on a short text |
+| How-to guides | a goal the reader already has | the six worked examples, titled as goals, and clustering sentences by meaning |
+| Explanation | understanding | the introduction, concepts, situation model, programming model, the clustering threshold, pragmatics, and how matra runs |
+| Reference | looking something up | what matra gives you, the domain model, the Rust, Python and CLI surfaces, methodology, errors, boundary rules |
+
+Where a page was not obviously one kind, the call and its reason:
+
+- **The Rust, Python and CLI pages are reference.** Each is organized by the
+  surface it describes (constructors, methods, returned shapes, errors, exit
+  codes, flags) and read to look up how one part behaves, not followed to
+  reach one goal. The Rust page has task-shaped headings, but each describes a
+  part of the surface; keeping the three siblings together keeps them where a
+  reader looks for one of them.
+- **The semantic clusters guide is a how-to, and its explorable moved to
+  explanation.** The guide's body is calls, model provisioning and a
+  calibration recipe. What the clusters mean, the predict-then-reveal prompt
+  and the threshold figure are understanding, so they are the page
+  `explanation/semantic-clusters.md`, which the guide links to.
+- **How matra runs (`architecture/design.md`) is explanation.** It explains
+  why the pipeline is shaped as it is (the model is the expensive thing, the
+  paragraph is the unit of work); the boundary rules, which it cites, are
+  reference.
+
+Two rules follow from the parts. **Explorables live in explanation**: a figure
+whose control asks "what if" of a parameter or a process (the clusters
+threshold, the pipeline's stages) is on an explanation page, and a how-to or
+reference page links to it rather than carrying it; a figure that draws the
+output a page just printed (the examples' figures) is part of that page.
+**Prediction prompts live in explanation only**, never in reference, because
+guidance that helps a newcomer costs a reader who already knows what they are
+looking for (the expertise reversal effect).
+
+A page's URL does not change when it moves in the navigation: only its place
+in `SUMMARY.md` and its breadcrumb do. A heading that is a published anchor
+keeps its id when it is reworded or moved, through `src/lib/moved-anchors.ts`.
+
+### The home page
+
+One screen of intent, in this order: the mark as the page's identity, one
+sentence saying what matra is, a quick start, one calm figure of the quick
+start's output, and four routes onward, one per part, each saying what the
+reader gets there. The quick start is the `quickstart` example: install, save
+the sentence and run, as tabs that open on the command line (the shortest
+route; the tab order is the same everywhere), then the output and a parse
+figure of exactly that output. Nothing on the home page has a slider or a
+table of values; the explorables are in explanation. At 1280 by 800 the quick
+start's heading, its tabs and its install command must be on the first
+screen; measure it after any change to the hero or the opening.
 
 ## Pages are Markdown
 
@@ -113,12 +170,32 @@ line. Each figure links to its data at `figures/<input>/<figure>.json` on the
 site, and says which matra version and model produced it.
 
 Every figure has a text twin in the same HTML, carrying the same data, for
-readers who do not see the picture and agents that read HTML. The twin is a
-table, and it leads: the figure follows it. Gate 9 holds every figure in the
-built site to its twin. Every figure is framed the same way by
-`FigureFrame.svelte`: a title, an optional control, a legend, a note on how
-to read it, and a provenance line naming the input, its licence, the matra
-version and model, with a link to the data.
+readers who do not see the picture and agents that read HTML. Every figure is
+framed the same way by `FigureFrame.svelte`: a title, the figure, its twin
+behind a "show the data" disclosure, a legend, a note on how to read it, and
+a provenance line naming the input, its licence, the matra version and
+model, with a link to the data.
+
+The rule, applied to every figure: **the figure first, the data one click
+away, and each control beside what it changes.** The twin is a table in a
+closed `<details>` under the figure, so it is in the prerendered HTML for a
+screen reader, an agent and gate 9, and a sighted reader does not read past
+a table of every value to reach the picture. A control that changes the
+figure sits on the diagram it drives (the clusters threshold directly above
+its arcs, the pipeline's rail directly above its stage), not in a header
+above data it does not change. Gate 9 holds every figure to its twin, and
+fails when the twin is not in a `details.fig-data` or that disclosure is
+open in the prerendered HTML.
+
+**The parse keeps its data first, compactly.** A dependency arc diagram is an
+encoding a newcomer may not read yet, and a table is the safe diagram for
+them (EP-0012). So the parse figure sets its data one line above the arcs, in
+the form a reader already reads: each word, its relation and the word it
+depends on (`committee nsubj of approved`). The keyboard lights a word's arcs
+from that line, as the pointer does; the full table (lemma, POS, head id) is
+in the disclosure. The other figures draw encodings a reader already has
+(bars, lines, marked words, stages), so their data needs no line above
+them.
 
 **Adding an input.** Put the text in `inputs/<name>.txt` (paragraphs
 separated by a blank line) and write `inputs/<name>.source.toml` with
@@ -196,7 +273,8 @@ from 0.50 to 0.95 (the shipped default must be on it), and the figure shows
 one value at a time: each sentence a row, each pair that clears the
 threshold an arc labelled with its cosine, a clustered sentence's marker in
 Emergence with its cluster's letter. Every grid state is drawn once, as a
-layer; the threshold scrub sets their opacities, blending the two runs either
+layer; the threshold scrub, set directly above the arcs with its readout,
+sets their opacities, blending the two runs either
 side of the pointer and settling on the nearer on release, and the twin's
 rows preview a state on hover. The twin lists the clusters and edges at every
 grid value; gate 9 compares the layer marked `data-current`.
@@ -224,7 +302,7 @@ calls print. It lives in `examples/<name>/`:
 
 | File | What it is |
 |---|---|
-| `example.json` | `input`, a name in `inputs/`; `file`, the name the calls read it under; and `output`, how the page trims what they print (`path` to show one part, `omit` to show keys' lists as a count, `keep` to cut lists). |
+| `example.json` | `input`, a name in `inputs/`; `file`, the name the calls read it under; and `output`, how the page trims what they print (`path` to show one part, `omit` to show keys' lists as a count, `keep` to cut lists). Two optional keys take a reader from nothing to the call: `start`, per language the install command and, for a program, the file to save it as and the command that runs it; and `save`, one shell line that writes the input. Gate 11 runs `save` and the calls then read what it wrote, which must be the input byte for byte; the install lines are the installation page's, not run by the gate. |
 | `main.rs` | The Rust call, a whole program a reader can paste into a new project. |
 | `example.py` | The Python call. |
 | `cli.sh` | The command line, one line starting `matra `. |

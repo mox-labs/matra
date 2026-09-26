@@ -94,35 +94,6 @@
 </script>
 
 <FigureFrame {id} kind="metrics" title="Paragraph measures across one document" {file} {dataUrl}>
-	<!-- A region that scrolls must take focus, or it cannot be scrolled from
-	     the keyboard (WCAG 2.1.1). -->
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-twin tall" tabindex="0" role="region" aria-label="Every paragraph's measures">
-		<table data-twin-for={id}>
-			<thead>
-				<tr><th>#</th><th>Opens with</th><th>Words</th><th>Grade</th><th>Density</th><th>Compression</th></tr>
-			</thead>
-			<tbody {@attach roving}>
-				{#each paragraphs as q (q.index)}
-					<tr
-						data-row={q.index}
-						class:lit={active === q.index}
-						onpointerenter={() => (active = q.index)}
-						onpointerleave={() => (active = null)}
-						onfocus={() => (active = q.index)}
-						onblur={() => (active = null)}
-					>
-						<td class="num">{q.index}</td>
-						<td class="opening">{q.opening}…</td>
-						<td class="num">{q.words}</td>
-						<td>{fmt(q.readability_grade)}</td>
-						<td>{fmt(q.lexical_density)}</td>
-						<td>{fmt(q.compression_ratio)}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
 	<dl class="doc">
 		<div><dt>Mean readability</dt><dd data-doc="mean_readability">{fmt(doc.mean_readability)}</dd></div>
 		<div><dt>Vocabulary TTR</dt><dd>{fmt(doc.vocabulary_ttr)}</dd></div>
@@ -191,6 +162,38 @@
 	{#if overflowing ?? false}
 		<p class="fig-hint" aria-hidden="true">Scroll sideways to see every paragraph.</p>
 	{/if}
+
+	{#snippet twin()}
+		<!-- A region that scrolls must take focus, or it cannot be scrolled from
+		     the keyboard (WCAG 2.1.1). -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="fig-twin tall" tabindex="0" role="region" aria-label="Every paragraph's measures">
+			<table data-twin-for={id}>
+				<thead>
+					<tr><th>#</th><th>Opens with</th><th>Words</th><th>Grade</th><th>Density</th><th>Compression</th></tr>
+				</thead>
+				<tbody {@attach roving}>
+					{#each paragraphs as q (q.index)}
+						<tr
+							data-row={q.index}
+							class:lit={active === q.index}
+							onpointerenter={() => (active = q.index)}
+							onpointerleave={() => (active = null)}
+							onfocus={() => (active = q.index)}
+							onblur={() => (active = null)}
+						>
+							<td class="num">{q.index}</td>
+							<td class="opening">{q.opening}…</td>
+							<td class="num">{q.words}</td>
+							<td>{fmt(q.readability_grade)}</td>
+							<td>{fmt(q.lexical_density)}</td>
+							<td>{fmt(q.compression_ratio)}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/snippet}
 
 	{#snippet note()}
 		One panel per paragraph measure, paragraphs in document order along the bottom. A cross marks a

@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import { base } from '$app/paths';
+	import { MOVED_ANCHORS } from '$lib/moved-anchors';
 	import { SITE_NAME } from '$lib/site';
 	import type { Doc, Segment } from '$lib/types';
 	import Body from './Body.svelte';
@@ -52,7 +53,17 @@
 	}
 
 	const m = $derived(doc.measured);
+
+	/** Published anchors whose heading moved or was reworded; see $lib/moved-anchors. */
+	const moved = $derived(MOVED_ANCHORS[doc.route] ?? []);
+	onMount(() => {
+		const id = decodeURIComponent(location.hash.slice(1));
+		const to = moved.find((a) => a.id === id)?.to;
+		if (to) location.replace(`${base}${to}`);
+	});
 </script>
+
+{#each moved as a (a.id)}<span id={a.id} hidden></span>{/each}
 
 <svelte:head>
 	<title>{home ? `${SITE_NAME}: text in, structure out` : `${doc.title} · ${SITE_NAME}`}</title>
@@ -166,8 +177,9 @@
 		margin-bottom: var(--space-2);
 	}
 
-	/* The home page: the line under the specimen leads; the three ways on are
-	   square cards, the whole card the link's target. */
+	/* The home page: the line under the specimen leads; the four ways on,
+	   one per part of the site, are square cards, the whole card the link's
+	   target. */
 	.home :global(.body > p:first-of-type) {
 		font-size: var(--type-lg);
 		line-height: var(--leading-snug);
@@ -175,7 +187,8 @@
 
 	.home :global(h2#where-to-go-next + ul) {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+		/* Four cards, two by two, one column on a phone. */
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
 		gap: var(--space-2);
 		max-width: none;
 		padding: 0;
@@ -194,9 +207,9 @@
 	}
 
 	/* Each card carries the accent of the part it leads to, the same roles
-	   the sidebar's parts carry ($lib/site PART_ROLES): installing is the
-	   reader's own hands (Spark), the examples are matra's output
-	   (Emergence), the concepts are neutral. */
+	   the sidebar's parts carry ($lib/site PART_ROLES): the tutorial is the
+	   reader's own hands (Spark), the how-to guides are matra's output
+	   (Emergence), explanation and reference are neutral. */
 	.home :global(h2#where-to-go-next + ul > li:has(a[href*='/tutorials/'])) {
 		border-top-color: var(--spark);
 	}

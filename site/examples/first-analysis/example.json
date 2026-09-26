@@ -1,0 +1,24 @@
+{
+  "input": "minutes",
+  "file": "minutes.txt",
+  "output": {
+    "omit": [
+      "tokens"
+    ]
+  },
+  "start": {
+    "rust": {
+      "install": "cargo new first-analysis && cd first-analysis\ncargo add matra serde_json",
+      "save": "src/main.rs",
+      "run": "cargo run"
+    },
+    "python": {
+      "install": "pip install matra",
+      "save": "first_analysis.py",
+      "run": "python first_analysis.py"
+    },
+    "cli": {
+      "install": "pip install matra   # or: cargo install matra --features cli"
+    }
+  }
+}

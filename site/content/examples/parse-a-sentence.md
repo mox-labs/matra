@@ -1,4 +1,4 @@
-# Parse one sentence
+# Parse a sentence into its dependency tree
 
 The first sentence of Pride and Prejudice, parsed: every word with its lemma, its part of speech, the word it depends on, and the relation between them.
 

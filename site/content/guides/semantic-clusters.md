@@ -1,10 +1,10 @@
-# Semantic clusters
+# Cluster sentences by meaning
 
 Everything else matra returns is deterministic structure, checkable against the source bytes. This page's output is not: semantic clusters depend on a model's representation of meaning, they cannot be verified against the text, and matra treats that difference structurally. Clusters arrive as a standalone `SemanticClusters` value from a separate call, never as a field on `Document`, and they carry the identity of the model that produced them plus the threshold you chose.
 
 ## What you get
 
-Feed a document and an embedding model, get connected components of sentences whose pairwise cosine similarity cleared your threshold. The intended use is auditing LLM output for restatement: the model catches paraphrase (same claim, different words) that lexical overlap cannot see.
+Feed a document and an embedding model, get connected components of sentences whose pairwise cosine similarity cleared your threshold. The intended use is auditing LLM output for restatement: the model catches paraphrase (same claim, different words) that lexical overlap cannot see. What the clusters mean, and what moving the threshold does to them, is in [What the clustering threshold does](../explanation/semantic-clusters.md), with a figure you can step through.
 
 ```text
 SemanticClusters
@@ -15,22 +15,7 @@ SemanticClusters
 
 `threshold` is an `f32`, because that is the precision the whole similarity computation runs at. An `f64` you passed comes back as the nearest `f32`, so a Python caller who passed `0.85` reads `0.8500000238418579` out of the result, and the equality `result["threshold"] == 0.85` does not hold. Echo back the value you passed, or compare with a tolerance. Values that are exact in binary, `0.5` and `0.75` among them, round-trip unchanged, which is what makes the surprise intermittent.
 
-Three things the shape means, stated once here and again in the type docs:
-
-- **Co-membership is transitive, not pairwise.** Clusters are connected components, so sentence A and sentence C can share a cluster because both resemble B, without resembling each other. The edges travel in the result precisely so you can see which pairs actually cleared the bar. A missing edge is no claim, not a low score.
-- **Singletons are always excluded.** A sentence with no above-threshold edge appears in no cluster, so "not in any cluster" is a meaningful count.
-- **The threshold is yours, and it does not travel.** Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus; the working value depends on the model, the domain, and the text length. Start around 0.85 with the reference model on sentences, and calibrate on your own corpus. A cutoff calibrated on sentences is not the cutoff for whole documents: a document vector is the mean over far more tokens, so unrelated documents sit well above zero and near-duplicates need not reach the sentence band. Read the raw scores at the granularity you are clustering before you pick a number.
-
-All three, on ten short sentences with the reference model. Before you scrub, predict: sentence 8 is about a different decision by the same committee. As the threshold falls from 0.85, at which value do you expect it to join sentences 1, 2 and 3, and through which of them? Then drag the threshold and find out.
-
-<figure-clusters input="paraphrases" />
-
-<details>
-<summary>What sentence 8 did</summary>
-
-It joins at 0.70, through sentence 1 alone: their pair scores 0.7239 and clears the bar, while its pairs with sentences 2 and 3 do not, yet it shares their cluster. A cluster can grow through a chain of pairs, on shared words ("committee approved") rather than shared meaning, and the clusters dissolve as the bar rises past 0.85.
-
-</details>
+Start around 0.85 with the reference model on sentences, and calibrate on your own corpus: the threshold does not travel between models, domains or text lengths. [Comparing whole documents](#comparing-whole-documents) shows how to read the raw scores before you choose one.
 
 ## The model
 

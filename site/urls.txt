@@ -20,6 +20,9 @@ architecture/design.html
 architecture/design.md
 capabilities.html
 capabilities.md
+example-files/first-analysis/cli.json
+example-files/first-analysis/minutes.txt
+example-files/first-analysis/output.json
 example-files/keyphrases/cli.json
 example-files/keyphrases/origin-struggle.txt
 example-files/keyphrases/output.json
@@ -32,6 +35,9 @@ example-files/negations-and-modals/output.json
 example-files/parse-a-sentence/austen-first-sentence.txt
 example-files/parse-a-sentence/cli.json
 example-files/parse-a-sentence/output.json
+example-files/quickstart/cli.json
+example-files/quickstart/note.txt
+example-files/quickstart/output.json
 example-files/readability-by-paragraph/cli.json
 example-files/readability-by-paragraph/federalist-10.txt
 example-files/readability-by-paragraph/output.json
@@ -58,6 +64,8 @@ explanation/pragmatics.html
 explanation/pragmatics.md
 explanation/programming-model.html
 explanation/programming-model.md
+explanation/semantic-clusters.html
+explanation/semantic-clusters.md
 explanation/situation-model.html
 explanation/situation-model.md
 figures/austen-first-sentence/parse.json
@@ -77,6 +85,10 @@ figures/federalist-10/parse.json
 figures/federalist-10/primitives.json
 figures/federalist-10/textrank.json
 figures/field-notes/pipeline.json
+figures/minutes/parse.json
+figures/pages/explanation/semantic-clusters/measures.json
+figures/pages/tutorials/first-analysis/measures.json
+figures/quickstart/parse.json
 figures/specimen/parse.json
 figures/origin-struggle/keyphrases.json
 figures/origin-struggle/textrank.json
@@ -145,6 +157,8 @@ reference/methodology.md
 roadmap.html
 roadmap.md
 toc.html
+tutorials/first-analysis.html
+tutorials/first-analysis.md
 tutorials/installation.html
 tutorials/installation.md
 api/index.html

@@ -18,13 +18,13 @@
       "words": 75
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5833,
       "in_blockquote": false,
-      "lexical_density": 0.7317,
-      "readability_grade": 15.1416,
-      "sentences": 2,
-      "text": "Feed a document and an embedding model, get connected components of sentences whose pairwise cosine similarity cleared your threshold. The intended use is auditing LLM output for restatement: the model catches paraphrase (same claim, different words) that lexical overlap cannot see.",
-      "words": 42
+      "lexical_density": 0.5821,
+      "readability_grade": 10.0754,
+      "sentences": 3,
+      "text": "Feed a document and an embedding model, get connected components of sentences whose pairwise cosine similarity cleared your threshold. The intended use is auditing LLM output for restatement: the model catches paraphrase (same claim, different words) that lexical overlap cannot see. What the clusters mean, and what moving the threshold does to them, is in [What the clustering threshold does](../explanation/semantic-clusters.md), with a figure you can step through.",
+      "words": 69
     },
     {
       "compression_ratio": 0.5782,
@@ -38,65 +38,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5714,
-      "readability_grade": 3.3557,
-      "sentences": 1,
-      "text": "Three things the shape means, stated once here and again in the type docs:",
-      "words": 14
-    },
-    {
-      "compression_ratio": 0.507,
-      "in_blockquote": false,
-      "lexical_density": 0.5138,
-      "readability_grade": 7.6411,
-      "sentences": 12,
-      "text": "- **Co-membership is transitive, not pairwise.** Clusters are connected components, so sentence A and sentence C can share a cluster because both resemble B, without resembling each other. The edges travel in the result precisely so you can see which pairs actually cleared the bar. A missing edge is no claim, not a low score.\n- **Singletons are always excluded.** A sentence with no above-threshold edge appears in no cluster, so \"not in any cluster\" is a meaningful count.\n- **The threshold is yours, and it does not travel.** Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus; the working value depends on the model, the domain, and the text length. Start around 0.85 with the reference model on sentences, and calibrate on your own corpus. A cutoff calibrated on sentences is not the cutoff for whole documents: a document vector is the mean over far more tokens, so unrelated documents sit well above zero and near-duplicates need not reach the sentence band. Read the raw scores at the granularity you are clustering before you pick a number.",
-      "words": 180
-    },
-    {
-      "compression_ratio": 0.6077,
-      "in_blockquote": false,
-      "lexical_density": 0.386,
-      "readability_grade": 3.5542,
-      "sentences": 4,
-      "text": "All three, on ten short sentences with the reference model. Before you scrub, predict: sentence 8 is about a different decision by the same committee. As the threshold falls from 0.85, at which value do you expect it to join sentences 1, 2 and 3, and through which of them? Then drag the threshold and find out.",
-      "words": 57
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<figure-clusters input=\"paraphrases\" />",
-      "words": 5
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.8,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<details>\n<summary>What sentence 8 did</summary>",
-      "words": 7
-    },
-    {
-      "compression_ratio": 0.5606,
-      "in_blockquote": false,
-      "lexical_density": 0.4746,
-      "readability_grade": 3.212,
-      "sentences": 2,
-      "text": "It joins at 0.70, through sentence 1 alone: their pair scores 0.7239 and clears the bar, while its pairs with sentences 2 and 3 do not, yet it shares their cluster. A cluster can grow through a chain of pairs, on shared words (\"committee approved\") rather than shared meaning, and the clusters dissolve as the bar rises past 0.85.",
-      "words": 59
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 1.0,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "</details>",
-      "words": 2
+      "lexical_density": 0.55,
+      "readability_grade": 9.375,
+      "sentences": 3,
+      "text": "Start around 0.85 with the reference model on sentences, and calibrate on your own corpus: the threshold does not travel between models, domains or text lengths. [Comparing whole documents](#comparing-whole-documents) shows how to read the raw scores before you choose one.",
+      "words": 43
     },
     {
       "compression_ratio": null,

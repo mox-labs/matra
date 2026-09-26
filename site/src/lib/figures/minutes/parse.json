@@ -1,0 +1,367 @@
+{
+  "data": {
+    "sentences": [
+      {
+        "paragraph": 1,
+        "text": "The committee did not approve the budget on Tuesday.",
+        "tokens": [
+          {
+            "dep": "det",
+            "head": 2,
+            "id": 1,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "The"
+          },
+          {
+            "dep": "nsubj",
+            "head": 5,
+            "id": 2,
+            "lemma": "committee",
+            "pos": "NOUN",
+            "text": "committee"
+          },
+          {
+            "dep": "aux",
+            "head": 5,
+            "id": 3,
+            "lemma": "do",
+            "pos": "AUX",
+            "text": "did"
+          },
+          {
+            "dep": "advmod",
+            "head": 5,
+            "id": 4,
+            "lemma": "not",
+            "pos": "PART",
+            "text": "not"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 5,
+            "lemma": "approve",
+            "pos": "VERB",
+            "text": "approve"
+          },
+          {
+            "dep": "det",
+            "head": 7,
+            "id": 6,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "obj",
+            "head": 5,
+            "id": 7,
+            "lemma": "budget",
+            "pos": "NOUN",
+            "text": "budget"
+          },
+          {
+            "dep": "case",
+            "head": 9,
+            "id": 8,
+            "lemma": "on",
+            "pos": "ADP",
+            "text": "on"
+          },
+          {
+            "dep": "obl",
+            "head": 5,
+            "id": 9,
+            "lemma": "Tuesday",
+            "pos": "PROPN",
+            "text": "Tuesday"
+          },
+          {
+            "dep": "punct",
+            "head": 5,
+            "id": 10,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 1,
+        "text": "The chair said that a second vote may follow next week.",
+        "tokens": [
+          {
+            "dep": "det",
+            "head": 2,
+            "id": 1,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "The"
+          },
+          {
+            "dep": "nsubj",
+            "head": 3,
+            "id": 2,
+            "lemma": "chair",
+            "pos": "NOUN",
+            "text": "chair"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 3,
+            "lemma": "say",
+            "pos": "VERB",
+            "text": "said"
+          },
+          {
+            "dep": "mark",
+            "head": 9,
+            "id": 4,
+            "lemma": "that",
+            "pos": "SCONJ",
+            "text": "that"
+          },
+          {
+            "dep": "det",
+            "head": 7,
+            "id": 5,
+            "lemma": "a",
+            "pos": "DET",
+            "text": "a"
+          },
+          {
+            "dep": "amod",
+            "head": 7,
+            "id": 6,
+            "lemma": "second",
+            "pos": "ADJ",
+            "text": "second"
+          },
+          {
+            "dep": "nsubj",
+            "head": 9,
+            "id": 7,
+            "lemma": "vote",
+            "pos": "NOUN",
+            "text": "vote"
+          },
+          {
+            "dep": "aux",
+            "head": 9,
+            "id": 8,
+            "lemma": "may",
+            "pos": "AUX",
+            "text": "may"
+          },
+          {
+            "dep": "ccomp",
+            "head": 3,
+            "id": 9,
+            "lemma": "follow",
+            "pos": "VERB",
+            "text": "follow"
+          },
+          {
+            "dep": "amod",
+            "head": 11,
+            "id": 10,
+            "lemma": "next",
+            "pos": "ADJ",
+            "text": "next"
+          },
+          {
+            "dep": "obl:tmod",
+            "head": 9,
+            "id": 11,
+            "lemma": "week",
+            "pos": "NOUN",
+            "text": "week"
+          },
+          {
+            "dep": "punct",
+            "head": 3,
+            "id": 12,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 2,
+        "text": "Three amendments were submitted by the working group.",
+        "tokens": [
+          {
+            "dep": "nummod",
+            "head": 2,
+            "id": 1,
+            "lemma": "three",
+            "pos": "NUM",
+            "text": "Three"
+          },
+          {
+            "dep": "nsubj:pass",
+            "head": 4,
+            "id": 2,
+            "lemma": "amendment",
+            "pos": "NOUN",
+            "text": "amendments"
+          },
+          {
+            "dep": "aux:pass",
+            "head": 4,
+            "id": 3,
+            "lemma": "be",
+            "pos": "AUX",
+            "text": "were"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 4,
+            "lemma": "submit",
+            "pos": "VERB",
+            "text": "submitted"
+          },
+          {
+            "dep": "case",
+            "head": 8,
+            "id": 5,
+            "lemma": "by",
+            "pos": "ADP",
+            "text": "by"
+          },
+          {
+            "dep": "det",
+            "head": 8,
+            "id": 6,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "amod",
+            "head": 8,
+            "id": 7,
+            "lemma": "work",
+            "pos": "VERB",
+            "text": "working"
+          },
+          {
+            "dep": "obl",
+            "head": 4,
+            "id": 8,
+            "lemma": "group",
+            "pos": "NOUN",
+            "text": "group"
+          },
+          {
+            "dep": "punct",
+            "head": 4,
+            "id": 9,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "paragraph": 2,
+        "text": "Each one narrows the scope of the plan.",
+        "tokens": [
+          {
+            "dep": "det",
+            "head": 2,
+            "id": 1,
+            "lemma": "each",
+            "pos": "DET",
+            "text": "Each"
+          },
+          {
+            "dep": "nsubj",
+            "head": 3,
+            "id": 2,
+            "lemma": "one",
+            "pos": "NOUN",
+            "text": "one"
+          },
+          {
+            "dep": "root",
+            "head": 0,
+            "id": 3,
+            "lemma": "narrow",
+            "pos": "VERB",
+            "text": "narrows"
+          },
+          {
+            "dep": "det",
+            "head": 5,
+            "id": 4,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "obj",
+            "head": 3,
+            "id": 5,
+            "lemma": "scope",
+            "pos": "NOUN",
+            "text": "scope"
+          },
+          {
+            "dep": "case",
+            "head": 8,
+            "id": 6,
+            "lemma": "of",
+            "pos": "ADP",
+            "text": "of"
+          },
+          {
+            "dep": "det",
+            "head": 8,
+            "id": 7,
+            "lemma": "the",
+            "pos": "DET",
+            "text": "the"
+          },
+          {
+            "dep": "nmod",
+            "head": 5,
+            "id": 8,
+            "lemma": "plan",
+            "pos": "NOUN",
+            "text": "plan"
+          },
+          {
+            "dep": "punct",
+            "head": 3,
+            "id": 9,
+            "lemma": ".",
+            "pos": "PUNCT",
+            "text": "."
+          }
+        ]
+      }
+    ]
+  },
+  "figure": "parse",
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "input": "minutes",
+  "source": {
+    "author": "matra contributors",
+    "licence": "MIT, as part of the matra repository",
+    "register": "administrative",
+    "source": "Written for matra's documentation: the first-analysis tutorial runs on it",
+    "title": "Minutes of a committee meeting, two paragraphs",
+    "url": "https://github.com/mox-labs/matra/blob/main/site/inputs/minutes.txt"
+  }
+}

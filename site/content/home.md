@@ -1,17 +1,24 @@
 # matra
 
-matra reads text into its structure and measures it, from Rust, Python or the command line; what the structure means is yours to decide.
+matra parses English text into sections, paragraphs, sentences and words, and returns measures, summaries and keyphrases over them, from Rust, Python or the command line.
 
-## One passage, and what matra returns
+## Quick start
 
-Ten short sentences, some saying the same thing in different words. matra turns each into a vector and groups the sentences whose similarity clears a threshold. The table lists the groups at every threshold; the figure draws one threshold at a time, and you can step it.
+Install matra, save one sentence, and run matra on it.
 
-<figure-clusters input="paraphrases" />
+<example-call name="quickstart" />
 
-This is one of the things matra returns, and it comes with the Python package and with the Rust library's `model2vec` feature; the command line has no clusters command. The [Examples](examples/README.md) show the parse, the measures, summaries and keyphrases the same way, on real texts.
+All three routes print the same result: the whole document, with its sections, paragraphs, sentences and words. Here is the first word of the sentence, with its lemma, its part of speech, the word it depends on (`head`) and the relation (`dep`):
+
+<example-output name="quickstart" />
+
+Every word of the sentence, drawn. Each arc runs from a word to the word that depends on it, labelled with the relation:
+
+<figure-parse input="quickstart" />
 
 ## Where to go next
 
-- **[Install](tutorials/installation.md):** the Rust library, the command line, or the Python package, and one call that proves the install works.
-- **[Examples](examples/README.md):** six tasks on real texts, each with the call in Rust, Python and the command line, and the output it prints.
-- **[Concepts](explanation/concepts.md):** the shape of what matra returns, from the document down to each word, and the grammatical facts matra reads off each sentence.
+- **[Tutorial](tutorials/first-analysis.md):** run matra on two short paragraphs and find each part of what it returns. About ten minutes.
+- **[How-to guides](examples/README.md):** one task each on real texts: summarize a document, extract keyphrases, find negations and modals, compare readability, cluster sentences by meaning.
+- **[Explanation](explanation/concepts.md):** why the output has the shape it has, with figures you can step through.
+- **[Reference](reference/domain-types.md):** every type and field, the Rust, Python and command-line surfaces, the methods behind each measure, and every error.

@@ -1,9 +1,18 @@
 <script lang="ts">
 	/**
 	 * What every figure shares: a titled card, an optional control in the
-	 * header, the body, a legend, a note on how to read it, and the provenance
-	 * line. The provenance names the input and its licence, the matra version
-	 * and model that produced the data, and links the data itself.
+	 * header, the body, its twin behind a disclosure, a legend, a note on how
+	 * to read it, and the provenance line. The provenance names the input and
+	 * its licence, the matra version and model that produced the data, and
+	 * links the data itself.
+	 *
+	 * The figure comes first and its data is one click away: `twin` is the
+	 * text twin, a table of everything the figure draws, rendered inside a
+	 * closed <details> under the figure. It is in the prerendered HTML either
+	 * way, so a reader without the picture, an agent reading HTML and the twin
+	 * test all get it; a sighted reader is not made to read past it to reach
+	 * the figure. A control sits beside what it changes, inside the body, not
+	 * in the header, unless the header is directly above it.
 	 */
 	import type { Snippet } from 'svelte';
 	import type { FigureFile } from '$lib/types';
@@ -15,6 +24,7 @@
 		file,
 		dataUrl,
 		controls,
+		twin,
 		legend,
 		note,
 		children
@@ -26,6 +36,7 @@
 		file: FigureFile;
 		dataUrl: string;
 		controls?: Snippet;
+		twin?: Snippet;
 		legend?: Snippet;
 		note?: Snippet;
 		children: Snippet;
@@ -42,6 +53,13 @@
 	</div>
 
 	{@render children()}
+
+	{#if twin}
+		<details class="fig-data">
+			<summary>show the data</summary>
+			{@render twin()}
+		</details>
+	{/if}
 
 	<figcaption>
 		{#if legend}{@render legend()}{/if}
@@ -84,6 +102,42 @@
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--text-muted);
+	}
+
+	/* The data, one click away. The summary is set like the site's other
+	   reveals ("show the parse", "show the measures"). */
+	.fig-data {
+		margin: 0.8rem 0 0;
+	}
+
+	.fig-data summary {
+		display: inline-block;
+		cursor: pointer;
+		padding: 0.1rem var(--space-1);
+		font: var(--type-xs) var(--font-mono);
+		color: var(--text-muted);
+		border: 1px solid var(--border-strong);
+		border-radius: var(--radius-control);
+		list-style: none;
+	}
+
+	.fig-data summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.fig-data summary:hover,
+	.fig-data[open] summary {
+		color: var(--spark);
+		border-color: var(--spark);
+	}
+
+	.fig-data summary:focus-visible {
+		outline: 2px solid var(--spark);
+		outline-offset: 2px;
+	}
+
+	.fig-data[open] summary {
+		margin-bottom: 0.6rem;
 	}
 
 	.mx-figure figcaption {

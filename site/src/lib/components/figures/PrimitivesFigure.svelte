@@ -146,43 +146,6 @@
 </script>
 
 <FigureFrame {id} kind="primitives" title="Structural primitives" {file} {dataUrl}>
-	<!-- A region that scrolls must take focus, or it cannot be scrolled from
-	     the keyboard (WCAG 2.1.1). -->
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-twin" tabindex="0" role="region" aria-label="Structural primitives, by sentence">
-		<table data-twin-for={id}>
-			<thead>
-				<tr><th>#</th><th>Primitive</th><th>Read from</th><th>Attaches to</th><th>Field and detail</th></tr>
-			</thead>
-			<tbody {@attach roving}>
-				{#each sentences as x (x.n)}
-					{#each x.list as it, j (j)}
-						<tr
-							class:first={j === 0}
-							data-row="{x.n}-{j}"
-							class:lit={rowLit(x.n, it, j)}
-							onpointerenter={() => (row = { n: x.n, j })}
-							onpointerleave={() => (row = null)}
-							onfocus={() => (row = { n: x.n, j })}
-							onblur={() => (row = null)}
-						>
-							<td class="num">{x.n}</td>
-							<td class="glyph-cell" data-glyph={GLYPH[it.kind]}>{LABEL[it.kind]}</td>
-							<td>{it.cue}<span class="w">{word(x.s, it.cue)}</span></td>
-							<td>{#if it.head === null}<span class="none">none</span>{:else}{it.head}<span class="w">{word(x.s, it.head)}</span>{/if}</td>
-							<td class="detail"><code>{FIELD[it.kind]}</code>{it.detail ? `, ${it.detail}` : ''}</td>
-						</tr>
-					{:else}
-						<tr class="first">
-							<td class="num">{x.n}</td>
-							<td colspan="4" class="none">no primitive</td>
-						</tr>
-					{/each}
-				{/each}
-			</tbody>
-		</table>
-	</div>
-
 	<ol class="sentences" class:active data-marks-for={id}>
 		{#each sentences as x (x.n)}
 			<li data-sentence={x.n}>
@@ -210,6 +173,45 @@
 			</li>
 		{/each}
 	</ol>
+
+	{#snippet twin()}
+		<!-- A region that scrolls must take focus, or it cannot be scrolled from
+		     the keyboard (WCAG 2.1.1). -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="fig-twin" tabindex="0" role="region" aria-label="Structural primitives, by sentence">
+			<table data-twin-for={id}>
+				<thead>
+					<tr><th>#</th><th>Primitive</th><th>Read from</th><th>Attaches to</th><th>Field and detail</th></tr>
+				</thead>
+				<tbody {@attach roving}>
+					{#each sentences as x (x.n)}
+						{#each x.list as it, j (j)}
+							<tr
+								class:first={j === 0}
+								data-row="{x.n}-{j}"
+								class:lit={rowLit(x.n, it, j)}
+								onpointerenter={() => (row = { n: x.n, j })}
+								onpointerleave={() => (row = null)}
+								onfocus={() => (row = { n: x.n, j })}
+								onblur={() => (row = null)}
+							>
+								<td class="num">{x.n}</td>
+								<td class="glyph-cell" data-glyph={GLYPH[it.kind]}>{LABEL[it.kind]}</td>
+								<td>{it.cue}<span class="w">{word(x.s, it.cue)}</span></td>
+								<td>{#if it.head === null}<span class="none">none</span>{:else}{it.head}<span class="w">{word(x.s, it.head)}</span>{/if}</td>
+								<td class="detail"><code>{FIELD[it.kind]}</code>{it.detail ? `, ${it.detail}` : ''}</td>
+							</tr>
+						{:else}
+							<tr class="first">
+								<td class="num">{x.n}</td>
+								<td colspan="4" class="none">no primitive</td>
+							</tr>
+						{/each}
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/snippet}
 
 	{#snippet legend()}
 		<ul class="fig-legend" aria-label="Primitive glyphs">
