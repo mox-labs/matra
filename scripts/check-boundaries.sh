@@ -66,6 +66,15 @@ trap 'rm -rf "$tmp"' EXIT
 
 fail=0
 
+# `--scan-only` skips the rule tests: the pre-commit hook passes it when no
+# rule or fixture is staged, because the tests cost a semgrep start per rule
+# file (about a minute) and the rules did not change. `just boundary` and CI
+# never pass it.
+scan_only=0
+if [ "${1:-}" = "--scan-only" ]; then
+    scan_only=1
+fi
+
 # --- 1. Rule tests -----------------------------------------------------------
 
 shopt -s nullglob
@@ -78,6 +87,7 @@ fi
 
 rule_count=0
 for cfg in "${configs[@]}"; do
+    [ "$scan_only" -eq 1 ] && continue
     fixture="${cfg%.yml}.rs"
     if [ ! -f "$fixture" ]; then
         echo "FAIL: $cfg has no fixture $fixture"
@@ -158,5 +168,9 @@ if [ "$scan_rc" -ne 0 ]; then
     fail=1
 fi
 
-echo "check-boundaries: ${#configs[@]} rule files, $rule_count rules, each tested against its fixture"
+if [ "$scan_only" -eq 1 ]; then
+    echo "check-boundaries: ${#configs[@]} rule files scanned; rule tests skipped (--scan-only)"
+else
+    echo "check-boundaries: ${#configs[@]} rule files, $rule_count rules, each tested against its fixture"
+fi
 exit "$fail"
