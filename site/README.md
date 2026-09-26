@@ -108,8 +108,11 @@ start's output, and four routes onward, one per part, each saying what the
 reader gets there. The quick start is the `quickstart` example: install, save
 the sentence and run, as tabs that open on the command line (the shortest
 route; the tab order is the same everywhere), then the output and a parse
-figure of exactly that output. Nothing on the home page has a slider or a
-table of values; the explorables are in explanation. At 1280 by 800 the quick
+figure of exactly that output. The quick start example is `plain`: no CLI
+envelope and no trim note, one output framed by one sentence. Nothing on the
+home page has a slider or a table of values; the explorables are in
+explanation. The self-measuring margin and its provenance line are left off
+the home page; every other page keeps them. At 1280 by 800 the quick
 start's heading, its tabs and its install command must be on the first
 screen; measure it after any change to the hero or the opening.
 
@@ -189,11 +192,14 @@ open in the prerendered HTML.
 
 **The parse keeps its data first, compactly.** A dependency arc diagram is an
 encoding a newcomer may not read yet, and a table is the safe diagram for
-them (EP-0012). So the parse figure sets its data one line above the arcs, in
-the form a reader already reads: each word, its relation and the word it
-depends on (`committee nsubj of approved`). The keyboard lights a word's arcs
-from that line, as the pointer does; the full table (lemma, POS, head id) is
-in the disclosure. The other figures draw encodings a reader already has
+them (EP-0012). So on an Explanation page, where a reader comes to
+understand the encoding, the parse figure sets its data one line above the
+arcs, in the form a reader already reads: each word, its relation and the
+word it depends on (`committee nsubj of approved`), and the keyboard lights
+a word's arcs from that line. Elsewhere (the home page, the how-to guides,
+where the output was just printed above the figure) the figure and its "show
+the data" table are enough, and the table's rows carry the keyboard. The
+renderer decides from the page's part in `SUMMARY.md`. The other figures draw encodings a reader already has
 (bars, lines, marked words, stages), so their data needs no line above
 them.
 
