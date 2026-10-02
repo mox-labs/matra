@@ -31,7 +31,7 @@ Pipeline: ingest → decompose → compose (RFC-0007, superseding RFC-0002). `ab
 
 The surface is `Ingest` (source variation as data: a string is a stream of one, a directory a stream of many) into `Engine` (`analyze` over a stream, `analyze_one`, or the stages `annotate` and `compose`). `annotate` is the only route from text to the parser, so the size cap holds pipeline-wide; seven equivalence laws in `src/lib.rs` tests pin the grains together. Trait names (`Source`, `Decomposer`, `NlpProvider`) keep their existing names.
 
-Domain depends on port traits (NlpProvider, Decomposer, Source), not on adapters directly. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
+The domain depends on nothing else in matra; the port traits (NlpProvider, Decomposer, Source, Embedder) depend only on the domain, and each adapter implements one of them. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
 
 Four layers, and the dependency arrows only ever point inward.
 
