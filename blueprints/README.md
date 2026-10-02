@@ -65,10 +65,13 @@ dropped, it is kept as the record of how the work went.
 
 ### Numbering
 
-Numbers are four digits, zero-padded, and never reused. RFC numbers carried
-over from the decision records keep their number. A number reserved for an
-open pull request is listed below as `open, reserved` so that no other record
-takes it.
+Numbers are four digits and zero-padded. RFC numbers carried over from the
+decision records keep their number. A number reserved for an open pull
+request is listed below as `open, reserved` so that no other record takes it.
+When that pull request closes without merging, the number is released and its
+row removed. A number whose record was merged to `main` is never reused.
+RFC-0018 was released this way when its proposal's design moved into EP-0012,
+as RFC-0017 was when its pull request closed.
 
 ### Checks
 
