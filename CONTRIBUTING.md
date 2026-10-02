@@ -36,9 +36,12 @@ series of small, auditable steps. After merge, the branch is deleted and
 the EP's status log gains a line if the status changed.
 
 The project's primary engineer is Claude (Anthropic's AI), working with
-human direction and review. Every commit carries a `Co-Authored-By` trailer
-identifying the model used. Humans review and approve every PR before
-merge; nothing lands without a human OK.
+human direction. Every commit carries a `Co-Authored-By` trailer
+identifying the model used. Claude reviews and merges a PR once CI is
+green and the review raises no blockers, and leaves a comment with its
+rationale as the audit trail. The maintainer makes the decisions and
+approves each release; approving the release's deployment environments is
+the release decision (see the release process below).
 
 ---
 
@@ -190,7 +193,10 @@ discussions into categories (configured in the GitHub UI):
 6. CI runs the Rust gates the hook ran, plus cargo-deny,
    cargo-semver-checks, the wheel build and mypy. If anything fails, fix
    and push.
-7. A human reviewer approves before merge.
+7. The PR is reviewed against the gates in
+   [`.claude/skills/pr-review/SKILL.md`](.claude/skills/pr-review/SKILL.md).
+   When CI is green and the review raises no blockers, Claude merges it and
+   comments its rationale on the PR.
 
 ### What "good" looks like in a commit
 
@@ -290,8 +296,10 @@ When Claude opens a PR:
 
 - Every commit has a `Co-Authored-By: Claude ...` trailer.
 - The PR body shows what Claude did and why.
-- The commit messages are written by Claude with human review.
-- A human (the maintainer) approves before merge.
+- The commit messages are written by Claude.
+- Claude merges once CI is green and the review raises no blockers, with a
+  comment giving its rationale. The maintainer decides what is built and
+  approves each release.
 
 When you (a human) open a PR with Claude's help:
 

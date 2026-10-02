@@ -20,9 +20,9 @@ Three roles, distinct responsibilities, both sides participate.
 
 | Role | Who | What it owns |
 |---|---|---|
-| Director | Human | What to build, why, and when to ship. Strategic judgment. Trade-off calls that depend on context outside the codebase. |
+| Director | Human | What to build, why, and when to ship. Strategic judgment. Trade-off calls that depend on context outside the codebase. Approves each release: approving the release workflow's deployment environments is the release decision. |
 | Executor | Claude | How to build it. Drafts, proposals, code, documentation. Mechanical rigor across the codebase. |
-| Reviewer | Human | The merge gate. Approves with rationale; rejects with rationale. Catches things the executor missed. |
+| Reviewer | Claude | The merge gate. Merges a pull request when CI is green and the review raises no blockers, and leaves a comment with the rationale; holds it, with the reason, when the review raises one. Catches things the executor missed. |
 
 The roles are not fixed to either side. A human can write code; Claude can suggest strategy. The labels mark default ownership. When a role swaps for a specific decision, the swap is visible in the audit trail (the commit message, the PR comment, the deliberation log).
 
@@ -61,7 +61,7 @@ Decisions go through one of three surfaces depending on stakes.
 
 **Architectural decisions that will bind future work** land as an RFC in `blueprints/rfcs/`, proposed as a pull request and accepted by merging it; a `decision` issue can come first when the options need airing. The RFC records the motivation, the design, the drawbacks, the alternatives rejected, and what would re-open the question. Each RFC is a load-bearing commitment. When one takes more than one PR to implement, an EP in `blueprints/eps/` plans the work and records its status.
 
-**Concrete changes** land as a regular issue and a PR. The PR's body explains why; the commits explain what. Every commit carries a `Co-Authored-By` trailer naming the participating model. Author is Claude; co-author is the human director. Merge is gated by the human reviewer's approval with rationale.
+**Concrete changes** land as a regular issue and a PR. The PR's body explains why; the commits explain what. Every commit carries a `Co-Authored-By` trailer naming the participating model. Author is Claude; co-author is the human director. Merge is gated by green CI and a review that raises no blockers; Claude merges and leaves its rationale as a comment on the PR, which is the audit trail.
 
 The three surfaces correspond to different layers of commitment. The lighter the commitment, the lighter the ceremony. The heavier the commitment, the heavier the audit trail.
 
