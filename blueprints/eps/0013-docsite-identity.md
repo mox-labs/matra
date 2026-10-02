@@ -216,3 +216,10 @@ Merged, deployed, and the live check after deploy passes.
   was just printed above the figure, its data is behind "show the data" like
   every other figure. The quick start shows one output, framed by one
   sentence.
+- 2026-10-01: an axe-core 4.13.0 pass over every built page, both themes, at
+  1280px and 320px (WCAG 2.0 to 2.2, A and AA) found three rules failing:
+  target size on the sidebar's section links and the hero's full stop
+  (2.5.8), a scrolling command line and raw-text block that took no focus
+  (2.1.1), and the search button with no name at 320px, where its label is
+  hidden (4.1.2). All three are fixed without moving the layout, and the pass
+  then reports none; `site/README.md` records the rules.

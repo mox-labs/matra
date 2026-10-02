@@ -362,7 +362,17 @@ The full reasoning is in EP-0012's Design section.
   column, prose plus margin, which is what the 720-unit diagrams need (66ch of
   Alegreya at 19px is 668px). A table wider than the column scrolls on its own;
   a diagram stops shrinking at 44rem and scrolls inside its own container. No
-  page scrolls sideways at 360px.
+  page scrolls sideways at 360px. Anything that scrolls takes keyboard focus
+  and a name (WCAG 2.1.1); a one-line command wraps instead, rather than add a
+  tab stop. Every link and button is at least 24px in each direction, or
+  widened to it without moving the layout, as the hero's punctuation is (WCAG
+  2.2, 2.5.8). An icon-only control carries a name that begins with its
+  visible label where it has one. Contrast is checked in gate 4; nothing else
+  here is checked in CI. An axe-core pass over every built page, both themes,
+  at 1280px and 320px, is run by hand when the layout changes. The pass on
+  2026-10-01 (axe 4.13.0, WCAG 2.0 to 2.2 A and AA) found three WCAG rules
+  failing and none after their fixes; a best-practice duplicate region name
+  on `/print`, where pages repeat a figure, remains.
 - **Motion only on request.** Nothing on the site animates on its own. What
   moves, moves because the reader changed it, as `figures/motion.ts` sets out
   from the motion research: one eased stage for a swapped state, reversible

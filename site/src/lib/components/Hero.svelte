@@ -227,6 +227,15 @@
 		padding-inline: 0.12em;
 	}
 
+	/* A punctuation mark is narrower than the 24px a target needs (WCAG
+	   2.2, 2.5.8). The padding widens the button to that and the equal
+	   negative margin gives the width back to the grid, so the column, and
+	   the mark's place against its word, stay as they were. */
+	.word.punct {
+		padding-inline: 10px;
+		margin-inline: -10px;
+	}
+
 	.word:focus-visible {
 		outline: 2px solid var(--spark);
 		outline-offset: 4px;

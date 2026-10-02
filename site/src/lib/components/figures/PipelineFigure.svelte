@@ -102,7 +102,9 @@
 			<p class="raw-meta">
 				<code>RawDocument</code>: format <strong>{data.raw.format}</strong>, {data.raw.bytes} bytes
 			</p>
-			<pre class="raw">{data.raw.text}</pre>
+			<!-- A region that scrolls must take focus (WCAG 2.1.1). -->
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<pre class="raw" tabindex="0" aria-label="The raw text">{data.raw.text}</pre>
 		{:else if i === 1}
 			{@render tree(data.annotated, 'annotated')}
 		{:else}
