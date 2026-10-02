@@ -48,7 +48,9 @@ One milestone per pull request, in the order its plan states. Conventional
 commits (`feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`, `ci`,
 `build`), and a commit body that says why, not what. Update `CHANGELOG.md`
 under `[Unreleased]` in the same PR as the code. A review harness runs on the
-pull request and its findings are applied before merge; a human approves.
+pull request and its findings are applied before merge. Claude merges once CI is
+green and the review raises no blockers, leaving a comment with its rationale as
+the audit trail; the maintainer makes the decisions and approves each release.
 
 ## Where to read next
 
