@@ -17,8 +17,12 @@ pub trait Source: Send {
     /// are documented per adapter; see [`crate::source::file::FileSource`]
     /// and [`crate::source::directory::DirectorySource`].
     fn read(&self, input: &Path) -> domain::Result<Vec<domain::RawDocument>>;
-    /// Cheap pre-check the composition root uses to pick the right
-    /// adapter for a given path (e.g. a file adapter vs a directory
-    /// adapter). Must not read file contents.
+    /// Cheap pre-check: whether this adapter can read `input`. Must not
+    /// read file contents.
+    ///
+    /// The composition root does not consult it to pick an adapter:
+    /// `Ingest::path` chooses by the path's own metadata. Its one caller
+    /// in the library is `DirectorySource`, which keeps only the listed
+    /// entries that `FileSource::accepts`.
     fn accepts(&self, input: &Path) -> bool;
 }

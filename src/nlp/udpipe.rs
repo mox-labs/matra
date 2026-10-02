@@ -164,6 +164,13 @@ impl Udpipe {
     /// `model_dir` who swaps the file after verification cannot affect
     /// the loaded model.
     ///
+    /// `model_dir` is used as given and created if it is missing. A `~`
+    /// in it is not expanded, so `"~/models"` names a directory literally
+    /// called `~` under the working directory. Pass a directory you own:
+    /// a shared one such as `/tmp` is writable by anybody on the machine.
+    /// [`Udpipe::from_config`] resolves the configured model directory
+    /// instead.
+    ///
     /// To refresh the pinned hash when the model version changes, run
     /// `scripts/fetch-model-hash.sh` and paste the output into this file.
     ///
