@@ -135,16 +135,14 @@ matra config show
 ```
 data_dir = "/home/you/.local/share/matra" # default
 model_dir = "/home/you/.local/share/matra/models" # default
-models.udpipe = "english-ewt-ud-2.5-191206" # default
 models.embedding = "potion-base-8M" # default
-semantic.threshold = 0.85 # /home/you/.config/matra/config.toml
-summarize.n = 3 # default
+summarize.n = 5 # /home/you/.config/matra/config.toml
 summarize.algorithm = "tfidf" # default
 keyphrases.n = 10 # default
 keyphrases.algorithm = "rake" # default
 ```
 
-Two of those keys change nothing. `models.udpipe` is printed here and read nowhere else: the parsing model's file name is pinned in the source beside its digest, so setting the key selects no model ([model licenses](../tutorials/installation.md#model-licenses) says how to load another one). `semantic.threshold` is printed here and read nowhere else either: there is no clustering command, and every clustering call in the library takes its threshold as an argument. `models.embedding` does act, as the name of the embedding model's directory under `model_dir`, which `Model2Vec::from_config` and `Model2Vec.potion_base_8m()` provision into and load from.
+`models.embedding` is the name of the embedding model's directory under `model_dir`, which `Model2Vec::from_config` and `Model2Vec.potion_base_8m()` provision into and load from. A config file written by an earlier `matra config init` also sets `models.udpipe` and `semantic.threshold`. Both are deprecated and ignored: the parsing model's file name is pinned in the source beside its digest, so the first selects no model ([model licenses](../tutorials/installation.md#model-licenses) says how to load another one), and every clustering call takes its threshold as an argument, so the second reaches nothing. The file still loads. `config show` leaves both out of the listing and writes a line on stderr for each one the file sets, naming the file, so you can delete them; `--quiet` silences that line.
 
 The origin is `default` for a value compiled into the crate, a path for one read from your config file, `environment variable ...` for one an environment variable set, and `command line` for one a flag set. With `--json`, each key carries its value, the rung, and what the rung pointed at.
 
@@ -154,7 +152,7 @@ What that listing does not carry is the config file path. Every key whose origin
 matra config show --json | jq -r .input
 ```
 
-`matra config init` writes the shipped defaults to the resolved config path and prints where it wrote them. It creates the parent directories, writes through a temporary file in the same directory so a reader never sees a half-written config, and refuses to overwrite an existing file unless you pass `--force`.
+`matra config init` writes the shipped defaults (`models.embedding` and the summary and keyphrase keys) to the resolved config path and prints where it wrote them. It creates the parent directories, writes through a temporary file in the same directory so a reader never sees a half-written config, and refuses to overwrite an existing file unless you pass `--force`.
 
 ```bash
 matra config init

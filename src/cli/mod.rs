@@ -396,7 +396,7 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
     // model nor any input, so they are dispatched before anything is
     // loaded.
     match command {
-        Command::Config { action } => return config_cmd::run(cli, action, out),
+        Command::Config { action } => return config_cmd::run(cli, action, out, err),
         Command::Completions { shell } => {
             let shell = match shell {
                 CompletionShell::Bash => clap_complete::Shell::Bash,

@@ -55,6 +55,16 @@ const SUMMARIZE_ALGORITHMS: [&str; 2] = ["tfidf", "textrank"];
 /// Keyphrase algorithms this build knows.
 const KEYPHRASE_ALGORITHMS: [&str; 2] = ["rake", "yake"];
 
+/// What the deprecated [`Config::udpipe_model`] returns when the config
+/// file sets no `models.udpipe`: the value `config/default.toml` carried
+/// until RFC-0020 took the key out of it.
+const FORMER_UDPIPE_MODEL: &str = "english-ewt-ud-2.5-191206";
+
+/// What the deprecated [`Config::semantic_threshold`] returns when the
+/// config file sets no `semantic.threshold`: the value
+/// `config/default.toml` carried until RFC-0020 took the key out of it.
+const FORMER_SEMANTIC_THRESHOLD: f32 = 0.85;
+
 /// The rung of the resolution order a value came from.
 ///
 /// Paired with a key by [`Config::sources`], this is what lets a caller
@@ -93,6 +103,8 @@ pub struct Config {
     udpipe_model: String,
     embedding_model: String,
     semantic_threshold: f32,
+    /// The deprecated keys the config file set (RFC-0020).
+    deprecated: Vec<&'static str>,
     summarize_n: usize,
     summarize_algorithm: String,
     keyphrases_n: usize,
@@ -170,30 +182,31 @@ impl Config {
         let models_file = from_file.models.unwrap_or_default();
         let models_default = from_default.models.unwrap_or_default();
         let semantic_file = from_file.semantic.unwrap_or_default();
-        let semantic_default = from_default.semantic.unwrap_or_default();
         let summarize_file = from_file.summarize.unwrap_or_default();
         let summarize_default = from_default.summarize.unwrap_or_default();
         let keyphrases_file = from_file.keyphrases.unwrap_or_default();
         let keyphrases_default = from_default.keyphrases.unwrap_or_default();
 
-        let udpipe_model = choose(
-            "models.udpipe",
-            models_file.udpipe,
-            models_default.udpipe,
-            &file_path,
-            &mut sources,
-        )?;
+        // `models.udpipe` and `semantic.threshold` are deprecated (RFC-0020):
+        // still accepted, so a file an earlier `config init` wrote keeps
+        // loading, but they have no default rung and no place in
+        // `sources`, because nothing reads them.
+        let mut deprecated = Vec::new();
+        if models_file.udpipe.is_some() {
+            deprecated.push("models.udpipe");
+        }
+        if semantic_file.threshold.is_some() {
+            deprecated.push("semantic.threshold");
+        }
+        let udpipe_model = models_file
+            .udpipe
+            .unwrap_or_else(|| FORMER_UDPIPE_MODEL.to_string());
+        let semantic_threshold = semantic_file.threshold.unwrap_or(FORMER_SEMANTIC_THRESHOLD);
+
         let embedding_model = choose(
             "models.embedding",
             models_file.embedding,
             models_default.embedding,
-            &file_path,
-            &mut sources,
-        )?;
-        let semantic_threshold = choose(
-            "semantic.threshold",
-            semantic_file.threshold,
-            semantic_default.threshold,
             &file_path,
             &mut sources,
         )?;
@@ -228,11 +241,13 @@ impl Config {
 
         // Validation is at resolve time so a typo in a config file
         // surfaces once, at construction, rather than at whichever call
-        // first reaches for the value.
+        // first reaches for the value. The deprecated threshold is still
+        // checked, as it was before RFC-0020, because the deprecated
+        // accessor still returns it. Only the file can set it now.
         if !semantic_threshold.is_finite() {
             return Err(Error::InvalidInput(format!(
                 "{}: semantic.threshold must be finite, got {semantic_threshold}",
-                origin_of("semantic.threshold", &sources, &file_path),
+                file_path.display(),
             )));
         }
         check_algorithm(
@@ -257,6 +272,7 @@ impl Config {
             udpipe_model,
             embedding_model,
             semantic_threshold,
+            deprecated,
             summarize_n,
             summarize_algorithm,
             keyphrases_n,
@@ -349,13 +365,17 @@ impl Config {
         &self.model_dir
     }
 
-    /// The UDPipe model name from `[models] udpipe`.
+    /// The UDPipe model name from `[models] udpipe` in the config file,
+    /// or `english-ewt-ud-2.5-191206` when the file sets none.
     ///
-    /// Informational only: nothing in the library or the command line
-    /// reads it except `matra config show`, which prints it. The UDPipe
-    /// adapter's model file is pinned in the source beside its digest,
-    /// so setting this key selects no model. To parse with another
-    /// model file, load it with `Udpipe::from_path`.
+    /// Deprecated by RFC-0020: nothing in the library or the command line
+    /// reads it. The UDPipe adapter's model file is pinned in the source
+    /// beside its digest, so the key selects no model, and it no longer
+    /// ships in `config/default.toml`. To parse with another model file,
+    /// load it with `Udpipe::from_path`.
+    #[deprecated(
+        note = "selects nothing: the UDPipe model is pinned in the adapter; load another with `Udpipe::from_path` (RFC-0020)"
+    )]
     pub fn udpipe_model(&self) -> &str {
         &self.udpipe_model
     }
@@ -368,13 +388,15 @@ impl Config {
         &self.embedding_model
     }
 
-    /// The cosine similarity threshold from `[semantic] threshold`.
+    /// The cosine similarity threshold from `[semantic] threshold` in the
+    /// config file, or 0.85 when the file sets none.
     ///
-    /// Informational only: nothing in the library or the command line
-    /// reads it except `matra config show`, which prints it. Every
+    /// Deprecated by RFC-0020: nothing in the library or the command line
+    /// reads it, and it no longer ships in `config/default.toml`. Every
     /// clustering call (`embed_and_cluster`,
     /// `extraction::semantic_clusters`, and their Python forms) takes its
     /// threshold as an argument, and there is no clustering command.
+    #[deprecated(note = "selects nothing: pass the threshold to the clustering call (RFC-0020)")]
     pub fn semantic_threshold(&self) -> f32 {
         self.semantic_threshold
     }
@@ -399,8 +421,30 @@ impl Config {
         &self.keyphrases_algorithm
     }
 
+    /// The deprecated keys the config file set, in a stable order:
+    /// `models.udpipe`, then `semantic.threshold` (RFC-0020).
+    ///
+    /// Both are still accepted, so a config file written by an earlier
+    /// `matra config init` keeps loading, but nothing reads either one.
+    /// `matra config show` names each on stderr so the line can be
+    /// removed. Neither appears in [`Config::sources`].
+    ///
+    /// ```
+    /// let file = "[semantic]\nthreshold = 0.6\n";
+    /// let cfg = matra::config::Config::from_sources(
+    ///     |k| (k == "HOME").then(|| "/tmp/matra-doctest".to_string()),
+    ///     Some(file),
+    /// )?;
+    /// assert_eq!(cfg.deprecated_keys().collect::<Vec<_>>(), ["semantic.threshold"]);
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    pub fn deprecated_keys(&self) -> impl Iterator<Item = &'static str> + '_ {
+        self.deprecated.iter().copied()
+    }
+
     /// Every resolved key paired with the rung it came from, in a stable
-    /// order. This is what a `config show` prints.
+    /// order. This is what a `config show` prints. The deprecated keys
+    /// are not resolved and are not here; see [`Config::deprecated_keys`].
     ///
     /// ```no_run
     /// let cfg = matra::config::Config::resolve()?;
@@ -437,10 +481,14 @@ struct FileConfig {
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ModelsSection {
+    /// Deprecated (RFC-0020): accepted so an old file loads, read by nothing.
     udpipe: Option<String>,
     embedding: Option<String>,
 }
 
+/// The whole section is deprecated (RFC-0020) and no longer in
+/// `config/default.toml`. It stays in the schema so a file that carries it
+/// loads.
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct SemanticSection {
@@ -535,7 +583,7 @@ fn check_algorithm(
 ///
 /// `models.udpipe` gets no such check because nothing joins it to a
 /// path: the UDPipe artifact's filename is pinned in the adapter beside
-/// its digest, and this value is only ever printed. Validating a value
+/// its digest, and the key is deprecated (RFC-0020). Validating a value
 /// nothing resolves would refuse configurations that harm nobody.
 fn check_path_component(
     key: &'static str,
@@ -708,9 +756,7 @@ mod tests {
     #[test]
     fn embedded_defaults_parse_and_carry_the_documented_values() {
         let cfg = Config::from_sources(env_of(&[("HOME", "/home/tester")]), None).unwrap();
-        assert_eq!(cfg.udpipe_model(), "english-ewt-ud-2.5-191206");
         assert_eq!(cfg.embedding_model(), "potion-base-8M");
-        assert_eq!(cfg.semantic_threshold(), 0.85);
         assert_eq!(cfg.summarize_n(), 3);
         assert_eq!(cfg.summarize_algorithm(), "tfidf");
         assert_eq!(cfg.keyphrases_n(), 10);
@@ -726,9 +772,7 @@ mod tests {
             vec![
                 "data_dir",
                 "model_dir",
-                "models.udpipe",
                 "models.embedding",
-                "semantic.threshold",
                 "summarize.n",
                 "summarize.algorithm",
                 "keyphrases.n",
@@ -755,14 +799,14 @@ mod tests {
     #[test]
     fn file_beats_the_built_in_default() {
         let file = r#"
-            [semantic]
-            threshold = 0.5
+            [keyphrases]
+            n = 5
 
             [summarize]
             algorithm = "textrank"
         "#;
         let cfg = Config::from_sources(env_of(&[("HOME", "/home/tester")]), Some(file)).unwrap();
-        assert_eq!(cfg.semantic_threshold(), 0.5);
+        assert_eq!(cfg.keyphrases_n(), 5);
         assert_eq!(cfg.summarize_algorithm(), "textrank");
         // Untouched keys still come from the built-in defaults.
         assert_eq!(cfg.summarize_n(), 3);
@@ -771,13 +815,81 @@ mod tests {
 
     #[test]
     fn sources_name_the_file_for_keys_the_file_set() {
-        let file = "[semantic]\nthreshold = 0.5\n";
+        let file = "[keyphrases]\nn = 5\n";
         let cfg = Config::from_sources(env_of(&[("HOME", "/home/tester")]), Some(file)).unwrap();
         assert_eq!(
-            source_of(&cfg, "semantic.threshold"),
+            source_of(&cfg, "keyphrases.n"),
             ValueSource::File(PathBuf::from("/home/tester/.config/matra/config.toml")),
         );
         assert_eq!(source_of(&cfg, "summarize.n"), ValueSource::Default);
+    }
+
+    // -- the deprecated keys (RFC-0020) -------------------------------
+
+    /// The file `matra config init` wrote before RFC-0020, byte for byte.
+    /// Every user who ran it has this file, and the parser rejects
+    /// unknown keys, so dropping the two keys from the schema would have
+    /// made it an error on the next run.
+    const CONFIG_FROM_0_2: &str = r#"[models]
+# Model directory defaults to $XDG_DATA_HOME/matra/models (~/.local/share/matra/models).
+# Override with MATRA_MODEL_DIR, or MATRA_DATA_DIR for the whole data root.
+udpipe = "english-ewt-ud-2.5-191206"
+embedding = "potion-base-8M"
+
+[semantic]
+threshold = 0.85
+
+[summarize]
+n = 3
+algorithm = "tfidf"
+
+[keyphrases]
+n = 10
+algorithm = "rake"
+"#;
+
+    #[test]
+    fn a_config_file_written_before_the_deprecation_still_loads() {
+        let cfg = Config::from_sources(env_of(&[("HOME", "/home/tester")]), Some(CONFIG_FROM_0_2))
+            .expect("an old config file loads");
+        assert_eq!(
+            cfg.deprecated_keys().collect::<Vec<_>>(),
+            ["models.udpipe", "semantic.threshold"]
+        );
+        let keys: Vec<&'static str> = cfg.sources().map(|(k, _)| k).collect();
+        assert!(
+            !keys.contains(&"models.udpipe") && !keys.contains(&"semantic.threshold"),
+            "a deprecated key is not a resolved setting: {keys:?}"
+        );
+        // Every key the file sets that is still read comes from the file.
+        assert_eq!(
+            source_of(&cfg, "summarize.n"),
+            ValueSource::File(PathBuf::from("/home/tester/.config/matra/config.toml")),
+        );
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn the_deprecated_accessors_return_the_file_value_or_the_former_default() {
+        let file = "[models]\nudpipe = \"mine\"\n\n[semantic]\nthreshold = 0.6\n";
+        let set = Config::from_sources(env_of(&[("HOME", "/home/tester")]), Some(file)).unwrap();
+        assert_eq!(set.udpipe_model(), "mine");
+        assert_eq!(set.semantic_threshold(), 0.6);
+
+        let unset = Config::from_sources(env_of(&[("HOME", "/home/tester")]), None).unwrap();
+        assert_eq!(unset.deprecated_keys().count(), 0);
+        assert_eq!(unset.udpipe_model(), "english-ewt-ud-2.5-191206");
+        assert_eq!(unset.semantic_threshold(), 0.85);
+    }
+
+    #[test]
+    fn the_shipped_defaults_carry_no_deprecated_key() {
+        let shipped = parse_toml(DEFAULT_TOML, Path::new("config/default.toml")).unwrap();
+        assert!(shipped.semantic.is_none(), "[semantic] is deprecated");
+        assert!(
+            shipped.models.unwrap_or_default().udpipe.is_none(),
+            "models.udpipe is deprecated"
+        );
     }
 
     // -- the environment rung -----------------------------------------
@@ -951,7 +1063,7 @@ mod tests {
 
     #[test]
     fn with_model_dir_leaves_every_other_key_and_its_source_alone() {
-        let file = "[semantic]\nthreshold = 0.5\n";
+        let file = "[keyphrases]\nn = 5\n";
         let before = Config::from_sources(env_of(&[("HOME", "/home/tester")]), Some(file)).unwrap();
         let before_sources: Vec<(&'static str, ValueSource)> = before.sources().collect();
         let after = before.clone().with_model_dir("/opt/models");
@@ -961,7 +1073,7 @@ mod tests {
             after.data_dir(),
             Path::new("/home/tester/.local/share/matra")
         );
-        assert_eq!(after.semantic_threshold(), 0.5);
+        assert_eq!(after.keyphrases_n(), 5);
         assert_eq!(after.summarize_algorithm(), "tfidf");
 
         // Only the model_dir key changed rung.

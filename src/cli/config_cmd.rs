@@ -17,9 +17,14 @@ use super::{Cli, ConfigAction, Fallible, Outcome, write_envelope};
 /// `config::DEFAULT_TOML` reads, so the two cannot disagree.
 const DEFAULT_TOML: &str = include_str!("../../config/default.toml");
 
-pub(super) fn run(cli: &Cli, action: &ConfigAction, out: &mut dyn Write) -> Fallible<Outcome> {
+pub(super) fn run(
+    cli: &Cli,
+    action: &ConfigAction,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> Fallible<Outcome> {
     match action {
-        ConfigAction::Show => show(cli, out),
+        ConfigAction::Show => show(cli, out, err),
         ConfigAction::Init { force } => init(cli, *force, out),
     }
 }
@@ -28,8 +33,11 @@ pub(super) fn run(cli: &Cli, action: &ConfigAction, out: &mut dyn Write) -> Fall
 // show
 // ---------------------------------------------------------------------------
 
-fn show(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
+fn show(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outcome> {
     let cfg = super::resolve_config(cli)?;
+    if !cli.quiet {
+        write_deprecation_notes(&cfg, err);
+    }
     // `input` names the document the command read. A config file that
     // is not there was not read, and naming it anyway asserts a file
     // this run never saw: `config show --json` reported
@@ -71,6 +79,37 @@ fn show(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
     Ok(Outcome::Found)
 }
 
+/// One stderr line per deprecated key the config file set (RFC-0020).
+///
+/// The keys are accepted so an old file keeps loading, and that is the
+/// silence `deny_unknown_fields` exists to prevent: a setting the author
+/// believes is in force when nothing reads it. `config show` is where
+/// matra reports where its configuration came from, so it is where the
+/// file is named and the line called out. Stdout stays the settings in
+/// force, so `--json` is still one object. `--quiet` silences it, as it
+/// silences the download notice: it is human-readable output.
+fn write_deprecation_notes(cfg: &Config, err: &mut dyn Write) {
+    let file = cfg.config_file().map_or_else(
+        || "the config file".to_string(),
+        |p| p.display().to_string(),
+    );
+    for key in cfg.deprecated_keys() {
+        let why = match key {
+            "models.udpipe" => {
+                "the UDPipe model is pinned in matra, and another one loads by path from the library"
+            }
+            "semantic.threshold" => "every clustering call takes its threshold as an argument",
+            _ => "nothing reads it",
+        };
+        // A diagnostic that cannot be written is not worth failing the
+        // command over, and there is nowhere left to report it to.
+        let _ = writeln!(
+            err,
+            "matra: {file} sets `{key}`, which is deprecated and ignored; {why}. Remove the line."
+        );
+    }
+}
+
 /// The config file this run actually read, if it read one.
 ///
 /// A path that resolves is where a file would go, not evidence that one
@@ -108,9 +147,7 @@ fn value_of(cfg: &Config, key: &str) -> Fallible<Value> {
     Ok(match key {
         "data_dir" => json!(cfg.data_dir().display().to_string()),
         "model_dir" => json!(cfg.model_dir().display().to_string()),
-        "models.udpipe" => json!(cfg.udpipe_model()),
         "models.embedding" => json!(cfg.embedding_model()),
-        "semantic.threshold" => json!(decimal(cfg.semantic_threshold())),
         "summarize.n" => json!(cfg.summarize_n()),
         "summarize.algorithm" => json!(cfg.summarize_algorithm()),
         "keyphrases.n" => json!(cfg.keyphrases_n()),
@@ -122,18 +159,6 @@ fn value_of(cfg: &Config, key: &str) -> Fallible<Value> {
             .into());
         }
     })
-}
-
-/// The `f32` a user wrote, not the `f64` its bits widen to.
-///
-/// `f64::from(0.85_f32)` is `0.8500000238418579`, a number nobody typed
-/// and nobody can compare against their own config file. Going through
-/// `f32`'s shortest round-trip decimal returns `0.85`.
-fn decimal(value: f32) -> f64 {
-    value
-        .to_string()
-        .parse()
-        .unwrap_or_else(|_| f64::from(value))
 }
 
 /// The origin, spelled for a person.
