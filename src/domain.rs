@@ -9,7 +9,9 @@ use serde::{Deserialize, Serialize};
 // Resource bounds
 // ---------------------------------------------------------------------------
 
-/// Default upper bound on text input to public `analyze*` and `parse` functions.
+/// The upper bound on text entering the pipeline, in bytes. A constant,
+/// not a setting: no configuration, argument or environment variable
+/// changes it.
 ///
 /// 8 MiB accommodates book-length English (a typical novel is ~1.5 MiB / 200k
 /// words) with headroom for multilingual prose and structured documents. Beyond
@@ -17,9 +19,12 @@ use serde::{Deserialize, Serialize};
 /// safe limits on a typical workstation (UDPipe's per-token allocations cross
 /// ~1 GiB resident at this input size).
 ///
-/// Public entry points enforce this and return [`Error::InputTooLarge`] with
-/// `what = "input"` when exceeded. Adapters may apply tighter bounds for their
-/// own constraints (e.g., `FileSource` checks file size before reading).
+/// `Engine::annotate`, the only route from text to the parser, enforces it
+/// and returns [`Error::InputTooLarge`] with `what = "input"` when it is
+/// exceeded, so every `Engine` method inherits it. `FileSource` applies the
+/// same limit to a file's size before reading it (`what = "file_source"`).
+/// A provider's own `NlpProvider::parse` has no limit: calling it directly
+/// bypasses this bound.
 pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;
 
 // ---------------------------------------------------------------------------
@@ -164,9 +169,11 @@ pub enum Error {
         limit: usize,
         /// The actual size that exceeded the cap.
         actual: usize,
-        /// Discriminator naming which gate fired (e.g. `"input"`,
-        /// `"file_source"`, `"tfidf"`, `"textrank"`, `"rake"`, `"yake"`).
-        /// Lets consumers route differently per gate.
+        /// Discriminator naming which gate fired, so consumers can route
+        /// differently per gate. The labels in use: `"input"`,
+        /// `"file_source"`, `"tfidf"`, `"textrank"`, `"rake"`, `"yake"`,
+        /// `"semantic_clusters"`, `"udpipe_download"`,
+        /// `"embedding_download"` and `"config_file"`.
         what: &'static str,
     },
     /// The document format has no registered decomposer in this build.
@@ -190,7 +197,7 @@ impl Error {
     /// The vocabulary is part of the public contract. A binding that
     /// cannot carry a Rust enum across (`DocumentError` has no serde
     /// form, because it wraps `std::io::Error`) materializes this string
-    /// instead, so every crust names a failure the same way.
+    /// instead, so every language binding names a failure the same way.
     /// `spec/tests/corpus/items.json` pins the list.
     ///
     /// Exhaustive with no wildcard: a new variant fails to compile until
@@ -218,9 +225,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// A parsed token carrying the full CoNLL-U annotation set.
 ///
-/// All ten CoNLL-U columns are preserved from the NLP provider plus
-/// one derived convenience field. Downstream algorithms should never
-/// need to re-parse to access annotation data.
+/// One field per CoNLL-U column plus one derived convenience field.
+/// Each column holds what the NLP provider emitted for it, so
+/// downstream algorithms never need to re-parse to read an annotation.
+/// The UDPipe adapter cannot fill column 9 (`deps`), which its binding
+/// does not surface, and sets it to `_`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Token {
@@ -240,7 +249,8 @@ pub struct Token {
     pub head: usize,
     /// Dependency relation to head (CoNLL-U column 8).
     pub dep: String,
-    /// Enhanced dependency graph (CoNLL-U column 9).
+    /// Enhanced dependency graph (CoNLL-U column 9). Always `_` from the
+    /// UDPipe adapter, whose binding does not surface this column.
     pub deps: String,
     /// Miscellaneous annotations (CoNLL-U column 10).
     pub misc: String,
@@ -368,7 +378,7 @@ impl TokenBuilder {
 ///
 /// Derived at [`Sentence`] construction from the dependency graph
 /// (see [`Sentence::new`]) and serialized with the sentence, so every
-/// crust reads the same detection (RFC-0008).
+/// language binding reads the same detection (RFC-0008).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Negation {
@@ -418,7 +428,7 @@ fn detect_negations(tokens: &[Token]) -> Vec<Negation> {
 ///
 /// Derived at [`Sentence`] construction from the dependency graph
 /// (see [`Sentence::new`]) and serialized with the sentence, so every
-/// crust reads the same detection (RFC-0008).
+/// language binding reads the same detection (RFC-0008).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Modal {
@@ -518,7 +528,7 @@ fn detect_bare_assertion(tokens: &[Token], modals: &[Modal]) -> bool {
 ///
 /// Derived at [`Sentence`] construction from the dependency graph
 /// (see [`Sentence::new`]) and serialized with the sentence, so every
-/// crust reads the same detection (RFC-0008).
+/// language binding reads the same detection (RFC-0008).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Reporting {
@@ -592,7 +602,7 @@ fn detect_reportings(tokens: &[Token]) -> Vec<Reporting> {
 ///
 /// Derived at [`Sentence`] construction from the dependency graph
 /// (see [`Sentence::new`]) and serialized with the sentence, so every
-/// crust reads the same detection (RFC-0008).
+/// language binding reads the same detection (RFC-0008).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct RootAdverbial {
@@ -680,7 +690,8 @@ pub struct HearstSpan {
 /// construction which conventionally signals one. Derived at the
 /// annotate stage by the pipeline (the detector lives in
 /// `matra::hearst`, outside the domain) and serialized with the
-/// sentence, so every crust reads the same detection (RFC-0008).
+/// sentence, so every language binding reads the same detection
+/// (RFC-0008).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct HearstPair {
@@ -692,17 +703,27 @@ pub struct HearstPair {
     pub hyponym: HearstSpan,
 }
 
-/// One parsed sentence: a verbatim text string plus its ordered tokens.
+/// One parsed sentence: its text plus its ordered tokens.
 ///
 /// Invariants downstream code relies on:
 /// - `tokens` are id-sorted ascending.
 /// - Exactly one token has `head == 0` (the syntactic root).
 /// - All `head` references point to another token in the same sentence
 ///   or to `0`.
+/// - Following `head` references never loops back on itself.
+///
+/// Nothing validates these: [`Sentence::new`] trusts its caller, and the
+/// `NlpProvider` contract states them for providers. The tree walks stay
+/// safe on input that breaks the last one: [`Sentence::tree_depth`]
+/// returns `usize::MAX` on a cycle and [`Sentence::subtree`] carries a
+/// visited set.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Sentence {
-    /// Verbatim sentence text as produced by the NLP provider.
+    /// Sentence text as the NLP provider reports it. The UDPipe adapter
+    /// rebuilds it from the token forms, joined by a space unless a token
+    /// carries `SpaceAfter=No` in `misc`, so its whitespace can differ
+    /// from the source.
     pub text: String,
     /// CoNLL-U tokens in id-sorted order.
     pub tokens: Vec<Token>,
@@ -981,44 +1002,49 @@ impl Sentence {
 }
 
 // ---------------------------------------------------------------------------
-// Document output -- what encoders produce
+// Document output -- what the annotate and compose stages fill
 // ---------------------------------------------------------------------------
 
-/// One paragraph of prose with metric slots filled in during the
-/// pipeline's `measure` stage.
+/// One paragraph of prose. `Engine::annotate` attaches its sentences and
+/// `Engine::compose`, which runs the metric suite, fills its metric slots.
 ///
-/// `in_blockquote = true` paragraphs are skipped during metric
-/// computation; their `Option<f64>` slots stay `None`.
+/// `in_blockquote = true` paragraphs are skipped by both stages: they keep
+/// no sentences, and their `Option<f64>` slots stay `None`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Paragraph {
-    /// Verbatim paragraph text.
+    /// Paragraph text as the decomposer cut it from the input: trimmed at
+    /// both ends, and for a blockquote with the `>` markers removed.
     pub text: String,
-    /// Whether the paragraph is inside a blockquote (skipped by metrics).
+    /// Whether the paragraph is inside a blockquote (never parsed, never
+    /// measured).
     ///
-    /// **Deprecation notice (v0.2):** this boolean field is planned to be
-    /// replaced with `kind: ParagraphKind` once the variant inventory
-    /// (Body / Quote / Code / List / Caption) is justified by real
-    /// consumer semantics. The boolean stays in the 0.0.x and 0.1.x lines
-    /// because its job (gate measure or not) is binary today. See
+    /// **Planned change:** this boolean may be replaced with
+    /// `kind: ParagraphKind` once the variant inventory (Body / Quote /
+    /// Code / List / Caption) is justified by real consumer semantics.
+    /// Nothing is deprecated today: the boolean stays while its job
+    /// (parse and measure the paragraph or not) is binary. See
     /// [RFC-0006](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0006-abstract-tier-vocabulary-lock.md)
     /// for the abstract-tier vocabulary lock.
     pub in_blockquote: bool,
-    /// Sentences produced by parsing this paragraph (populated by the
-    /// pipeline's `parse` stage).
+    /// Sentences produced by parsing this paragraph (attached by
+    /// `Engine::annotate`).
     pub sentences: Vec<Sentence>,
-    /// Flesch-Kincaid grade level, if `measure` ran on this paragraph.
+    /// Flesch-Kincaid grade level, if `Engine::compose` ran and the
+    /// paragraph met the metric's condition.
     pub readability_grade: Option<f64>,
-    /// Content-word ratio, if `measure` ran on this paragraph.
+    /// Content-word ratio, if `Engine::compose` ran and the paragraph met
+    /// the metric's condition.
     pub lexical_density: Option<f64>,
-    /// Brotli compression ratio (a redundancy proxy), if `measure` ran.
+    /// Brotli compression ratio (a redundancy proxy), if `Engine::compose`
+    /// ran and the paragraph met the metric's condition.
     pub compression_ratio: Option<f64>,
 }
 
 impl Paragraph {
     /// Construct a new `Paragraph` with empty sentences and `None`
-    /// metric slots. The pipeline's `parse` and `measure` stages fill
-    /// the slots in.
+    /// metric slots. `Engine::annotate` attaches the sentences and
+    /// `Engine::compose` fills the slots.
     pub fn new(text: String, in_blockquote: bool) -> Self {
         Self {
             text,
@@ -1066,7 +1092,9 @@ impl Section {
     }
 }
 
-/// The full analysis output. Encoders populate this from NLP parse results.
+/// The full analysis output. `Engine::annotate` builds the section tree
+/// and attaches each paragraph's parsed sentences; `Engine::compose` fills
+/// the metric slots.
 ///
 /// Paragraphs live in sections (single source of truth). Derived methods
 /// compute document-level metrics on the fly from the section tree.
@@ -1075,13 +1103,16 @@ impl Section {
 pub struct Document {
     /// Section tree (the single source of truth for paragraph ownership).
     pub sections: Vec<Section>,
-    /// Document-level vocabulary type-token ratio, if `measure` ran.
+    /// Document-level vocabulary type-token ratio, if `Engine::compose`
+    /// ran and the document holds a non-punctuation token.
     pub vocabulary_ttr: Option<f64>,
-    /// Document-level nominalization ratio, if `measure` ran.
+    /// Document-level nominalization ratio, if `Engine::compose` ran and
+    /// the document holds a non-punctuation token.
     pub nominalization_ratio: Option<f64>,
     /// Fraction of sentences containing a passive-voice construction,
-    /// if `measure` ran. Materialized so the aggregate crosses FFI as
-    /// data instead of being re-derived per crust (RFC-0008). Defaults
+    /// if `Engine::compose` ran and the document holds a sentence.
+    /// Materialized so the aggregate crosses FFI as data instead of
+    /// being re-derived per language binding (RFC-0008). Defaults
     /// to `None` when deserializing documents serialized before this
     /// field existed.
     #[serde(default)]
@@ -1090,7 +1121,7 @@ pub struct Document {
 
 impl Document {
     /// Construct a new `Document` from a section tree with `None` for
-    /// the document-level metric slots; `measure` fills them in.
+    /// the document-level metric slots; `Engine::compose` fills them in.
     pub fn new(sections: Vec<Section>) -> Self {
         Self {
             sections,
@@ -1194,7 +1225,7 @@ impl Document {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct ScoredSentence {
-    /// Verbatim sentence text.
+    /// The selected sentence's text, as on [`Sentence::text`].
     pub text: String,
     /// Relevance score, higher is more relevant.
     pub score: f64,

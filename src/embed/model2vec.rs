@@ -221,6 +221,10 @@ impl Model2Vec {
     /// bytes that get parsed; nothing re-reads the directory between
     /// verify and load.
     ///
+    /// `dir` is used as given; a `~` in it is not expanded.
+    /// [`Model2Vec::from_config`] resolves the configured directory
+    /// instead.
+    ///
     /// ```no_run
     /// use matra::config::Config;
     /// use matra::embed::model2vec::Model2Vec;

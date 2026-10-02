@@ -22,8 +22,10 @@ use super::file::FileSource;
 pub struct DirectorySource;
 
 impl DirectorySource {
-    /// List candidate paths in the directory, sorted, after the symlink and
-    /// extension-acceptance filters. Listing is separate from reading so
+    /// List candidate paths in the directory, sorted, after the symlink
+    /// filter and `FileSource::accepts` (a regular file). No extension
+    /// is filtered: every regular file is a candidate, and its format is
+    /// assigned from its extension when it is read. Listing is separate from reading so
     /// the composition root can enumerate eagerly and read lazily.
     pub(crate) fn candidate_paths(&self, input: &Path) -> domain::Result<Vec<PathBuf>> {
         let file_source = FileSource;

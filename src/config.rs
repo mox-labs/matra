@@ -22,6 +22,9 @@
 //! | `MATRA_DATA_DIR` | the data root |
 //! | `MATRA_MODEL_DIR` | the model directory |
 //!
+//! Their values are used as paths unchanged: matra expands no `~`, so a
+//! quoted `"~/models"` names a directory literally called `~`.
+//!
 //! Paths follow the XDG conventions on Linux and macOS: the config file
 //! is `$XDG_CONFIG_HOME/matra/config.toml`, defaulting to
 //! `~/.config/matra/config.toml`; the data root is
@@ -347,16 +350,31 @@ impl Config {
     }
 
     /// The UDPipe model name from `[models] udpipe`.
+    ///
+    /// Informational only: nothing in the library or the command line
+    /// reads it except `matra config show`, which prints it. The UDPipe
+    /// adapter's model file is pinned in the source beside its digest,
+    /// so setting this key selects no model. To parse with another
+    /// model file, load it with `Udpipe::from_path`.
     pub fn udpipe_model(&self) -> &str {
         &self.udpipe_model
     }
 
-    /// The embedding model name from `[models] embedding`.
+    /// The embedding model name from `[models] embedding`: the
+    /// subdirectory of [`Config::model_dir`] that `Model2Vec::from_config`
+    /// provisions into and loads from. It names a directory, not which
+    /// artifacts arrive; the downloaded set is pinned in the source.
     pub fn embedding_model(&self) -> &str {
         &self.embedding_model
     }
 
-    /// The default cosine similarity threshold for semantic clustering.
+    /// The cosine similarity threshold from `[semantic] threshold`.
+    ///
+    /// Informational only: nothing in the library or the command line
+    /// reads it except `matra config show`, which prints it. Every
+    /// clustering call (`embed_and_cluster`,
+    /// `extraction::semantic_clusters`, and their Python forms) takes its
+    /// threshold as an argument, and there is no clustering command.
     pub fn semantic_threshold(&self) -> f32 {
         self.semantic_threshold
     }
