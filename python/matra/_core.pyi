@@ -6,12 +6,17 @@ defined as runtime modules so they're available at runtime (not just at
 type-check time).
 
 Stubs are versioned alongside the Rust code; keep them in lockstep with
-`#[pyclass]`/`#[pymethods]` signatures and with `matra.types`.
+`#[pyclass]`/`#[pymethods]` signatures and with `matra.types`. CI checks
+the names, parameters, defaults and `@final` markers against the built
+module with `mypy.stubtest` (the `pytype` job); return types and the
+documented exceptions are read by review.
 """
 
 from __future__ import annotations
 
 import os
+from collections.abc import Sequence
+from typing import final
 
 from matra.types import (
     CorpusItem,
@@ -22,12 +27,18 @@ from matra.types import (
     SemanticClusters,
 )
 
+__all__ = ["Matra", "Model2Vec", "cli_main", "semantic_clusters"]
+
+@final
 class Matra:
     """Loaded NLP engine. Create once, reuse across calls.
 
+    Final: the extension class cannot be subclassed at runtime.
+
     The underlying UDPipe model holds C-side state that is not thread-safe;
     the Rust binding is `#[pyclass(unsendable)]`, so cross-thread access
-    panics at runtime. Multi-process Python (e.g. `ProcessPoolExecutor`)
+    raises `pyo3_runtime.PanicException`, which derives from
+    `BaseException`. Multi-process Python (e.g. `ProcessPoolExecutor`)
     is fine; multi-thread is not.
     """
 
@@ -57,8 +68,10 @@ class Matra:
         cannot corrupt each other's downloads.
 
         Raises:
-            ValueError: the config file is malformed, or the environment
-                names no home directory at all.
+            ValueError: with no argument, the config file is malformed,
+                exceeds 64 KiB, or the environment names no home
+                directory at all; and whatever the argument, the
+                download exceeded its 64 MiB cap.
             OSError: the config file could not be read, the model
                 directory could not be created or written, or the
                 download did not arrive (DNS, TLS, a timeout, or a
@@ -170,11 +183,13 @@ class Matra:
         """
         ...
 
+@final
 class Model2Vec:
     """A loaded static embedding model (model2vec artifact format).
 
     Tier 2: its vectors are model opinion; everything derived from them
-    carries this model's identity.
+    carries this model's identity. Final: the extension class cannot be
+    subclassed at runtime.
     """
 
     @staticmethod
@@ -212,7 +227,10 @@ class Model2Vec:
                 or a download failed at the transport or answered with a
                 non-2xx status. A filesystem failure names the operation
                 and the path; a transport failure names the URL.
-            ValueError: a download exceeded the artifact size cap.
+            ValueError: a download exceeded the 64 MiB artifact cap; or,
+                with no argument, the config file is malformed or
+                exceeds 64 KiB, or the environment names no home
+                directory.
             RuntimeError: the directory already holds artifacts that are
                 not the pinned set, the digest still mismatched after one
                 retry, or the verified bytes do not parse.
@@ -247,7 +265,7 @@ class Model2Vec:
         """
         ...
 
-def cli_main(argv: list[str]) -> int:
+def cli_main(argv: Sequence[str | bytes | os.PathLike[str] | os.PathLike[bytes]]) -> int:
     """Run the matra command line and return its exit code.
 
     `argv` excludes the program name; the Rust side supplies it, so

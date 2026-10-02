@@ -384,11 +384,22 @@ jobs:
           # No --system: install into the activated venv, where the
           # mypy step below runs. Newer uv treats --system literally.
           uv pip install maturin "mypy>=1.10" click rich
+      # The features the published wheel carries (pyproject.toml), so the
+      # module stubtest imports below holds every class the stub declares.
       - name: Build and install matra in venv (so the _core stub resolves)
         run: |
           . .venv/bin/activate
-          maturin develop --features "python,udpipe"
+          maturin develop --features "python,udpipe,model2vec"
       - name: mypy
         run: |
           . .venv/bin/activate
           python -m mypy
+      # mypy trusts the stub; this checks the stub against the module that
+      # was built: every name, parameter, default and @final marker in
+      # python/matra/_core.pyi against what PyO3 exposes. Return types and
+      # documented exceptions are not visible at runtime, so review reads
+      # those.
+      - name: Stub parity (stubtest)
+        run: |
+          . .venv/bin/activate
+          python -m mypy.stubtest matra._core
