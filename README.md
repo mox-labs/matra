@@ -114,7 +114,11 @@ The full walkthrough, with what is resident at each stage and what can fail wher
 matra is a **Claude-managed** open-source project, intended as an exemplar
 for both Claude-managed repositories and human–AI collaborative intelligence.
 The maintainer collaborates with Claude (Anthropic's AI) to plan, implement,
-and review changes; humans approve every PR before merge. The working values
+and review changes. Claude reviews and merges a pull request once CI is green
+and the review raises no blockers, and leaves a comment with its rationale as
+the audit trail. The maintainer makes the decisions and approves each release:
+approving the release workflow's deployment environments is the release
+decision. The working values
 are transparency (decisions are visible), auditability (every change has a
 trail), and reversibility (every change can be backed out cleanly).
 
