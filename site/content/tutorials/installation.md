@@ -105,7 +105,7 @@ matra's code is MIT. The models it downloads are separate files, published by ot
 
 The parsing model's license does not permit commercial use. The [UDPipe models page](https://ufal.mff.cuni.cz/udpipe/1/models) states that the UDPipe 1 models it publishes for Universal Dependencies are distributed under CC BY-NC-SA. This page reports what the licenses say and does not interpret them; read the license text for the terms.
 
-The command line prints the parsing model's license on the run that downloads it. The command line and the config file always use this model: `--model-dir`, `MATRA_MODEL_DIR` and the other settings under [where matra keeps things](../guides/cli.md#where-matra-keeps-things) change where it is stored, not which model it is, and `models.udpipe` is reported by `matra config show` but selects nothing. To parse with a different UDPipe model file, load it by path from the library: `Udpipe::from_path` in [Rust](../guides/rust.md#construct-a-provider) or `Matra.from_path` in [Python](../guides/python.md#load-the-model-from-a-directory-you-choose).
+The command line prints the parsing model's license on the run that downloads it. The command line and the config file always use this model: `--model-dir`, `MATRA_MODEL_DIR` and the other settings under [where matra keeps things](../guides/cli.md#where-matra-keeps-things) change where it is stored, not which model it is, and `models.udpipe`, which earlier releases wrote into the config file, is deprecated and selects nothing. To parse with a different UDPipe model file, load it by path from the library: `Udpipe::from_path` in [Rust](../guides/rust.md#construct-a-provider) or `Matra.from_path` in [Python](../guides/python.md#load-the-model-from-a-directory-you-choose).
 
 ---
 

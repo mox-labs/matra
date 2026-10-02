@@ -628,15 +628,17 @@ fn config_show_reports_where_every_value_came_from() {
     for key in [
         "data_dir",
         "model_dir",
-        "models.udpipe",
         "models.embedding",
-        "semantic.threshold",
         "summarize.n",
         "summarize.algorithm",
         "keyphrases.n",
         "keyphrases.algorithm",
     ] {
         assert!(out.contains(key), "missing `{key}` in:\n{out}");
+    }
+    // Deprecated keys nothing reads (RFC-0020) are not settings.
+    for key in ["models.udpipe", "semantic.threshold"] {
+        assert!(!out.contains(key), "`{key}` listed in:\n{out}");
     }
     // Every line carries its origin.
     for line in out.lines() {
@@ -669,7 +671,11 @@ fn config_init_writes_once_and_refuses_without_force() {
         .stdout(predicate::str::contains("config.toml"));
     let written = std::fs::read_to_string(&target).expect("the file exists");
     assert!(written.contains("[models]"), "{written}");
-    assert!(written.contains("threshold"), "{written}");
+    assert!(written.contains("[summarize]"), "{written}");
+    // RFC-0020: the keys nothing reads are no longer written.
+    assert!(!written.contains("udpipe"), "{written}");
+    assert!(!written.contains("[semantic]"), "{written}");
+    assert!(!written.contains("threshold"), "{written}");
 
     scoped(home.path())
         .args(["config", "init"])
@@ -707,6 +713,82 @@ fn a_written_config_becomes_the_source() {
         .clone();
     let out = String::from_utf8(out).expect("utf8");
     assert!(out.contains("config.toml"), "{out}");
+}
+
+/// The file `matra config init` wrote before RFC-0020 deprecated
+/// `models.udpipe` and `semantic.threshold`. Every user who ran it has
+/// this file, and the parser rejects unknown keys.
+const CONFIG_FROM_0_2: &str = r#"[models]
+# Model directory defaults to $XDG_DATA_HOME/matra/models (~/.local/share/matra/models).
+# Override with MATRA_MODEL_DIR, or MATRA_DATA_DIR for the whole data root.
+udpipe = "english-ewt-ud-2.5-191206"
+embedding = "potion-base-8M"
+
+[semantic]
+threshold = 0.85
+
+[summarize]
+n = 3
+algorithm = "tfidf"
+
+[keyphrases]
+n = 10
+algorithm = "rake"
+"#;
+
+/// Regression for RFC-0020: a config file carrying the deprecated keys
+/// still loads, `config show` keeps them out of what it prints, and names
+/// each on stderr with the file it came from.
+#[test]
+fn an_old_config_file_still_loads_and_its_deprecated_keys_are_named() {
+    let home = tempfile::tempdir().expect("temp dir");
+    let target = home.path().join("config").join("matra").join("config.toml");
+    std::fs::create_dir_all(target.parent().expect("a parent")).expect("config dir");
+    std::fs::write(&target, CONFIG_FROM_0_2).expect("write the old file");
+
+    let output = scoped(home.path())
+        .args(["config", "show"])
+        .assert()
+        .code(0)
+        .get_output()
+        .clone();
+    let out = String::from_utf8(output.stdout).expect("utf8");
+    let err = String::from_utf8(output.stderr).expect("utf8");
+
+    assert!(out.contains("summarize.n"), "{out}");
+    for key in ["models.udpipe", "semantic.threshold"] {
+        assert!(!out.contains(key), "`{key}` listed on stdout:\n{out}");
+        assert!(
+            err.contains(&format!("`{key}`")) && err.contains("deprecated"),
+            "`{key}` not named on stderr:\n{err}"
+        );
+    }
+    assert!(
+        err.contains(&target.display().to_string()),
+        "the note names the file:\n{err}"
+    );
+
+    // `--json` keeps stdout one object; the note stays on stderr.
+    let output = scoped(home.path())
+        .args(["config", "show", "--json"])
+        .assert()
+        .code(0)
+        .get_output()
+        .clone();
+    let json: serde_json::Value = serde_json::from_slice(&output.stdout).expect("one JSON object");
+    assert!(json["result"].get("semantic.threshold").is_none(), "{json}");
+    assert!(json["result"].get("models.udpipe").is_none(), "{json}");
+    assert!(
+        !output.stderr.is_empty(),
+        "the note is on stderr under --json"
+    );
+
+    // `--quiet` silences it, as it silences the download notice.
+    scoped(home.path())
+        .args(["config", "show", "--quiet"])
+        .assert()
+        .code(0)
+        .stderr(predicate::str::is_empty());
 }
 
 #[test]

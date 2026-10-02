@@ -7,13 +7,13 @@ summary: Similarity clusters over the sentences of one document, the threshold y
 
 Everything else matra returns is deterministic structure, checkable against the source bytes. This is not. Clusters depend on a model's representation of meaning, they cannot be verified against the text, and the library treats that difference structurally: clusters arrive as a standalone value from a separate call, never as a field on a document or a sentence, and they carry the identity of the model that produced them together with the threshold you chose.
 
-There is no command line for this. It is a library and Python call. What the command line does expose is the configured defaults:
+There is no command line for this. It is a library and Python call. What the command line does expose is where the embedding model lives:
 
 ```console
 $ matra config show
 ```
 
-`models.embedding` names the model directory (`potion-base-8M` as shipped), and `Model2Vec.potion_base_8m()` with no argument provisions into it. `semantic.threshold` shows `0.85`, the shipped starting point, but nothing reads it: every clustering call takes its threshold as an argument, so pass the number yourself.
+`models.embedding` names the model directory (`potion-base-8M` as shipped), and `Model2Vec.potion_base_8m()` with no argument provisions into it. There is no configured threshold: every clustering call takes its threshold as an argument, so pass the number yourself. A config file from an earlier `matra config init` may still set `semantic.threshold`; it is deprecated and ignored, and `config show` says so on stderr.
 
 ## What you get
 

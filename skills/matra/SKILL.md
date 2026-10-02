@@ -66,7 +66,7 @@ $ matra summarize notes.md -n 3 --json
 $ matra keyphrases notes.md -n 10 --json
 ```
 
-`config show` prints every resolved value with the rung it came from. Under `--json` each key carries its value, the rung, and what the rung pointed at, and `input` is the config file's path when that file exists, null when it does not. `models.udpipe` and `semantic.threshold` are printed but change nothing: the parsing model is pinned, and every clustering call takes its threshold as an argument. `config init` writes the shipped defaults there and refuses to overwrite without `--force`.
+`config show` prints every resolved value with the rung it came from. Under `--json` each key carries its value, the rung, and what the rung pointed at, and `input` is the config file's path when that file exists, null when it does not. A config file from an earlier `config init` may still set `models.udpipe` or `semantic.threshold`. Both are deprecated and ignored (the parsing model is pinned, and every clustering call takes its threshold as an argument): the file still loads, `config show` leaves them out, and it names each on stderr. `config init` writes the shipped defaults there and refuses to overwrite without `--force`.
 
 ```console
 $ matra config show --json

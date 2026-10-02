@@ -7,6 +7,8 @@
 - Status: implemented
 - Decider(s): project owner (direction), maintainer (shape)
 
+> **Note (2026-10-02):** [RFC-0020](0020-deprecate-unread-config-keys.md) deprecates two of the defaults this RFC gave `Config`: `models.udpipe`, which selects no model because the UDPipe model is pinned in the adapter, and `semantic.threshold`, which reaches no call because every clustering call takes its threshold as an argument. They leave `config/default.toml`, `Config::udpipe_model` and `Config::semantic_threshold` are deprecated, and a config file that sets them still loads.
+>
 > **Note (2026-09-24):** Converted from the decision-record layout to the RFC layout by [RFC-0019](0019-rfc-and-ep-process.md). Sections are reordered and re-headed; the decided text is unchanged apart from citations, which now read `RFC-NNNN`, links, which follow the move, and em dashes, which the house style rejects. The status moved from accepted to implemented because the CHANGELOG records it shipping in 0.2.0.
 
 ## Summary

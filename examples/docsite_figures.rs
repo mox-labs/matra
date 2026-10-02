@@ -12,9 +12,9 @@
 //! output changed: keys are sorted, every floating-point value is rounded to
 //! four decimal places, ties are broken by text rather than by hash order,
 //! there are no timestamps, and each file records the matra version and the
-//! models (name and SHA-256) that produced it. Figure parameters (the summary
-//! length, the default cluster threshold) are matra's shipped defaults, never
-//! a contributor's own config file.
+//! models (name and SHA-256) that produced it. Figure parameters are matra's
+//! shipped defaults (the summary length) or a constant here (the threshold
+//! the clusters figure opens at), never a contributor's own config file.
 //!
 //! Figures, one file each per input:
 //!
@@ -104,6 +104,18 @@ const KEYPHRASES_SHOWN: usize = 12;
 #[cfg(feature = "model2vec")]
 const CLUSTER_GRID: std::ops::RangeInclusive<u8> = 10..=19;
 
+/// The threshold the clusters figure opens at: 0.85, the starting point the
+/// semantic clusters guide and the agent skill give for the reference model.
+/// matra ships no default threshold; every clustering call takes one as an
+/// argument (RFC-0020).
+#[cfg(feature = "model2vec")]
+const STARTING_THRESHOLD: f32 = 0.85;
+
+/// The pinned UDPipe model's name, the stem of the file the adapter writes
+/// (`nlp/udpipe.rs`). If the pin moves and this does not, the read of the
+/// loaded model below fails and names the path.
+const UDPIPE_MODEL: &str = "english-ewt-ud-2.5-191206";
+
 /// A sidecar: its string fields, published with the figure, and the figures
 /// and format it asks for.
 struct Sidecar {
@@ -153,9 +165,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // The engine has loaded this file and verified it against the pinned
     // digest. Hashing it again names the model in the output without
     // reaching into matra's internals.
-    let model_path = cfg
-        .model_dir()
-        .join(format!("{}.udpipe", cfg.udpipe_model()));
+    let model_path = cfg.model_dir().join(format!("{UDPIPE_MODEL}.udpipe"));
     let model_sha256 = sha256_hex(&fs::read(&model_path).map_err(|e| {
         format!(
             "cannot read the loaded model at {}: {e}",
@@ -164,7 +174,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     })?);
     let generator = json!({
         "matra": env!("CARGO_PKG_VERSION"),
-        "udpipe_model": { "name": cfg.udpipe_model(), "sha256": model_sha256 },
+        "udpipe_model": { "name": UDPIPE_MODEL, "sha256": model_sha256 },
     });
 
     let wants_clusters = sidecars
@@ -519,7 +529,7 @@ fn clusters_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
     let embedder = input
         .embedder
         .ok_or("the clusters figure needs the embedding model")?;
-    let default = input.shipped.semantic_threshold();
+    let default = STARTING_THRESHOLD;
     let mut grid = Vec::new();
     let mut default_on_grid = false;
     for step in CLUSTER_GRID {
@@ -543,7 +553,7 @@ fn clusters_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
         grid.push(json!({ "threshold": round4(f64::from(threshold)), "clusters": clusters }));
     }
     if !default_on_grid {
-        return Err(format!("the shipped threshold {default} is not on the figure's grid").into());
+        return Err(format!("the starting threshold {default} is not on the figure's grid").into());
     }
     let sentences: Vec<Value> = input
         .doc
