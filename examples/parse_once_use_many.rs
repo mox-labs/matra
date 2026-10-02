@@ -7,16 +7,15 @@
 //! extractors are cheap functions over the sentences it attached.
 //!
 //! Run with: cargo run --example parse_once_use_many
-//! (requires UDPipe model at /tmp/matra-models/)
+//! (downloads the UDPipe model into the configured model directory on
+//! first use; `matra config show` prints where that is)
 
 use matra::Engine;
 use matra::domain::{Format, RawDocument, Sentence};
 use matra::extraction::{rake_keyphrases, tfidf_summarize};
-use matra::nlp::udpipe::Udpipe;
 
 fn main() -> matra::domain::Result<()> {
-    let nlp = Udpipe::english("/tmp/matra-models")?;
-    let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
+    let engine = Engine::with_defaults()?;
 
     let text = "\
 # Core libraries

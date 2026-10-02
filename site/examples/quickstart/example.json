@@ -9,17 +9,17 @@
   },
   "start": {
     "rust": {
-      "install": "cargo new quickstart && cd quickstart\ncargo add matra serde_json",
+      "install": "cargo new quickstart && cd quickstart\ncargo add matra@0.2 serde_json",
       "save": "src/main.rs",
       "run": "cargo run"
     },
     "python": {
-      "install": "pip install matra",
+      "install": "pip install 'matra>=0.2'",
       "save": "quickstart.py",
       "run": "python quickstart.py"
     },
     "cli": {
-      "install": "pip install matra   # or: cargo install matra --features cli"
+      "install": "pip install 'matra>=0.2'   # or: cargo install matra --version '^0.2' --features cli"
     }
   }
 }

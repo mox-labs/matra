@@ -8,17 +8,17 @@
   },
   "start": {
     "rust": {
-      "install": "cargo new first-analysis && cd first-analysis\ncargo add matra serde_json",
+      "install": "cargo new first-analysis && cd first-analysis\ncargo add matra@0.2 serde_json",
       "save": "src/main.rs",
       "run": "cargo run"
     },
     "python": {
-      "install": "pip install matra",
+      "install": "pip install 'matra>=0.2'",
       "save": "first_analysis.py",
       "run": "python first_analysis.py"
     },
     "cli": {
-      "install": "pip install matra   # or: cargo install matra --features cli"
+      "install": "pip install 'matra>=0.2'   # or: cargo install matra --version '^0.2' --features cli"
     }
   }
 }

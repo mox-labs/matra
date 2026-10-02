@@ -32,7 +32,7 @@ let engine = matra::Engine::with_defaults()?;
 
 The `uvx` line carries a version floor for the same reason the `--skill` line above does. Both registries serve 0.2.x, so a bare `uvx matra` resolves to it today; the floor says what these commands need rather than leaving it to whichever release is newest when you run them. 0.1.0 is still published, and its `analyze` is a separate Python implementation and not this one missing a flag: `--json` prints a bare document with no envelope, the table is a different renderer, and the model cache is hardcoded to `~/.matra/models`. That line does not fail, it succeeds and hands you something else.
 
-The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file names which models to use (`[models] udpipe`, `embedding`), not where they live. Every constructor takes the directory explicitly when you want it somewhere specific, and `matra config show` prints every resolved value and where it came from.
+The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file does not move the model directory: its `[models] embedding` key names the embedding model's subdirectory inside it, and `[models] udpipe` is printed by `matra config show` but selects nothing, because the parsing model is pinned in the source. Every constructor takes the directory explicitly when you want it somewhere specific, and `matra config show` prints every resolved value and where it came from.
 
 ## Install
 
@@ -58,16 +58,14 @@ use matra::{Engine, Ingest};
 
 let engine = Engine::with_defaults()?;
 
-let analysis = engine
-    .analyze(Ingest::path("essay.md")?)
-    .next()
-    .unwrap()
-    .map_err(|e| e.error)?
-    .analysis;
+// A file is a stream of one document, a directory a stream of many.
+for item in engine.analyze(Ingest::path("essay.md")?) {
+    let analysis = item.map_err(|e| e.error)?.analysis;
 
-println!("Sentences: {}", analysis.total_sentences());
-println!("Mean length: {:.1}", analysis.mean_sentence_length());
-println!("Passive: {:.1}%", analysis.passive_ratio() * 100.0);
+    println!("Sentences: {}", analysis.total_sentences());
+    println!("Mean length: {:.1}", analysis.mean_sentence_length());
+    println!("Passive: {:.1}%", analysis.passive_ratio() * 100.0);
+}
 ```
 
 `Engine::new(Box::new(Udpipe::english(dir)?), standard_decomposers())` is the explicit form, and it is what you reach for with your own provider or decomposer table.
@@ -105,7 +103,7 @@ matra config show              # every resolved value, with its origin
 
 ## Architecture
 
-Hex architecture. Domain depends on port traits (`Source`, `Decomposer`, `NlpProvider`), not on adapters directly. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
+Hex architecture. The pipeline depends on port traits (`Source`, `Decomposer`, `NlpProvider`), not on adapters directly. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
 
 The domain sits at the centre and depends on nothing. Four ports (`Source`, `Decomposer`, `NlpProvider`, `Embedder`) depend only on the domain. Adapters implement one port each, and `nlp/udpipe.rs` is the only file that imports the UDPipe bindings. Metrics and extractors are plain functions over the domain. `lib.rs` wires it together and is the only file that knows the whole shape.
 
