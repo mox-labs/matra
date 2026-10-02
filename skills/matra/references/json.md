@@ -22,7 +22,7 @@ summary: The JSON envelope the commands with JSON output emit, and the Document 
 |---|---|---|
 | `format_version` | integer | `1` today. It increments on any change to the envelope or to the meaning of a field inside `result` |
 | `command` | string | `analyze`, `summarize`, `keyphrases`, `config`, or `skill` |
-| `input` | string or null | The path that was read, or the name `--stdin-filename` gave stdin. For `config show` it is the config file path. Null for `skill`, which reads no document |
+| `input` | string or null | The path that was read, or the name `--stdin-filename` gave stdin. For `config show` it is the config file path when that file exists, and null when it does not. Null for `skill`, which reads no document |
 | `result` | varies | The serde form of the value the command produced |
 
 `result` is a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`, a map of resolved keys for `config show`, and for `skill` either `{"name", "body"}` or `{"references": [{"name", "summary"}]}`. Pin a consumer to a `format_version` it was tested against; that is the whole stability promise, and it is the same one cargo makes for `cargo metadata --format-version`.
@@ -51,7 +51,7 @@ $ matra analyze draft.txt --json
 | `nominalization_ratio` | float or null | Suffix-matched nouns over total lemmas |
 | `passive_ratio` | float or null | Sentences with a passive relation over all sentences |
 
-The three floats are null until the metric stage runs, and null is not zero. Aggregate methods on the Rust type (`total_words`, `mean_sentence_length`, `sentence_length_std`) are Rust only and are absent from the JSON; compute them from `sections` if you need them.
+The three floats are null until the metrics run, which `analyze` always does, and null where the document does not meet a metric's condition; null is not zero. Aggregate methods on the Rust type (`total_words`, `mean_sentence_length`, `sentence_length_std`) are Rust only and are absent from the JSON; compute them from `sections` if you need them.
 
 ## `Section`
 
@@ -65,7 +65,7 @@ The three floats are null until the metric stage runs, and null is not zero. Agg
 
 | Field | Type | Holds |
 |---|---|---|
-| `text` | string | Verbatim paragraph text from the source |
+| `text` | string | The paragraph's text as cut from the source: trimmed, with a blockquote's `>` markers removed |
 | `in_blockquote` | bool | True when the paragraph sits in a blockquote. Those are never parsed and never measured, so `sentences` is empty and all three slots stay null |
 | `sentences` | array | Sentences parsed from this paragraph alone |
 | `readability_grade` | float or null | Null unless the paragraph has more than 10 non-punctuation tokens |

@@ -90,13 +90,13 @@
       "words": 30
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5183,
       "in_blockquote": false,
-      "lexical_density": 0.5556,
-      "readability_grade": 9.6644,
-      "sentences": 3,
-      "text": "`Config` resolves locations and defaults, never behavior. It carries the model directory, the semantic threshold, and the default counts and algorithm names, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped.",
-      "words": 45
+      "lexical_density": 0.6429,
+      "readability_grade": 10.239,
+      "sentences": 5,
+      "text": "`Config` resolves locations and defaults, never behavior. It carries the model directory, the embedding model's directory name, and the default counts and algorithm names the command line uses, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped. It also carries two values nothing reads except `matra config show`: `models.udpipe`, because the parsing model is pinned in the source, and `semantic.threshold`, because every clustering call takes its threshold as an argument.",
+      "words": 85
     },
     {
       "compression_ratio": 0.5395,
@@ -164,11 +164,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
+      "lexical_density": 0.6087,
+      "readability_grade": 7.8776,
       "sentences": 2,
-      "text": "The domain depends on port traits. Adapters implement them.",
-      "words": 9
+      "text": "The pipeline depends on port traits, and adapters implement them. The domain depends on neither: the ports import the domain, never the reverse.",
+      "words": 23
     },
     {
       "compression_ratio": null,
@@ -252,13 +252,13 @@
       "words": 15
     },
     {
-      "compression_ratio": 0.5466,
+      "compression_ratio": 0.5195,
       "in_blockquote": false,
-      "lexical_density": 0.5556,
-      "readability_grade": 12.3958,
-      "sentences": 5,
-      "text": "Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `CorpusEntry` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. That arm needs no embedding adapter compiled in, so a build without `model2vec` still clusters with vectors the caller brings.",
-      "words": 120
+      "lexical_density": 0.5643,
+      "readability_grade": 13.1486,
+      "sentences": 6,
+      "text": "Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `CorpusEntry` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. In the extension module that arm needs no embedding adapter compiled in. The `matra` package itself still requires an extension built with `model2vec`: its `__init__` imports `Model2Vec` and raises `ImportError` naming the feature when it is absent, and every published wheel includes it.",
+      "words": 142
     },
     {
       "compression_ratio": null,

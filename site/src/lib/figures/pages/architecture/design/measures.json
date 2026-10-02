@@ -261,12 +261,12 @@
       "words": 62
     },
     {
-      "compression_ratio": 0.619,
+      "compression_ratio": 0.6165,
       "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": 10.4775,
+      "lexical_density": 0.6735,
+      "readability_grade": 11.3426,
       "sentences": 4,
-      "text": "The measure stage is four functions with one signature, `Box<dyn Fn(&mut Document)>`, run in sequence by `compose`. Readability, lexical density, and compression write per-paragraph slots. The document pass writes `vocabulary_ttr` and `nominalization_ratio`. None of the four reads another's output, so the suite is a list, not a chain.",
+      "text": "The metric suite is four functions with one signature, `Box<dyn Fn(&mut Document)>`, run in sequence by `compose`. Readability, lexical density, and compression write per-paragraph slots. The document pass writes `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. None of the four reads another's output, so the suite is a list, not a chain.",
       "words": 54
     },
     {
@@ -277,6 +277,15 @@
       "sentences": 1,
       "text": "Each carries its own applicability condition, and this is where unexplained `None` values come from:",
       "words": 15
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6364,
+      "readability_grade": 10.1545,
+      "sentences": 1,
+      "text": "A word here is a non-punctuation token, the count `Paragraph::word_count` returns.",
+      "words": 12
     },
     {
       "compression_ratio": 0.6281,
@@ -450,13 +459,13 @@
       "words": 54
     },
     {
-      "compression_ratio": 0.533,
+      "compression_ratio": 0.5403,
       "in_blockquote": false,
-      "lexical_density": 0.5556,
-      "readability_grade": 10.0632,
+      "lexical_density": 0.557,
+      "readability_grade": 10.2384,
       "sentences": 7,
-      "text": "Fields cross. Methods do not. `Document::mean_sentence_length()`, `total_words()`, and every other computed value is a Rust method with no serde representation, so it has nothing to cross with. A Python caller recomputes those from the `sections` data already in hand. `passive_ratio` is the one aggregate that does cross, because the measure stage stores the method's result in the field of the same name (RFC-0008), so a Python caller reads it rather than recomputing it. [Domain types](../reference/domain-types.md#what-crosses-the-language-boundary) draws that boundary member by member.",
-      "words": 83
+      "text": "Fields cross. Methods do not. `Document::mean_sentence_length()`, `total_words()`, and every other computed value is a Rust method with no serde representation, so it has nothing to cross with. A Python caller recomputes those from the `sections` data already in hand. `passive_ratio` is the one aggregate that does cross, because `compose` stores the method's result in the field of the same name (RFC-0008), so a Python caller reads it rather than recomputing it. [Domain types](../reference/domain-types.md#what-crosses-the-language-boundary) draws that boundary member by member.",
+      "words": 81
     },
     {
       "compression_ratio": null,

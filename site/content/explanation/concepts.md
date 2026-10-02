@@ -8,11 +8,11 @@ Analysis returns one nested value. Each level owns the level below it and carrie
 |---|---|---|
 | document | `Document` | the section list, plus `vocabulary_ttr`, `nominalization_ratio`, `passive_ratio` |
 | section | `Section` | `heading`, `level`, and its paragraphs in document order |
-| paragraph | `Paragraph` | verbatim `text`, `in_blockquote`, its sentences, plus `readability_grade`, `lexical_density`, `compression_ratio` |
-| sentence | `Sentence` | verbatim `text`, id-sorted tokens, and the structural primitive fields |
+| paragraph | `Paragraph` | its `text`, `in_blockquote`, its sentences, plus `readability_grade`, `lexical_density`, `compression_ratio` |
+| sentence | `Sentence` | its `text`, id-sorted tokens, and the structural primitive fields |
 | token | `Token` | the ten CoNLL-U columns (`text`, `lemma`, `pos`, `xpos`, `feats`, `head`, `dep`, `deps`, `misc`, plus `id`) and the derived `is_punct` |
 
-`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Each non-blockquote paragraph is parsed on its own, so a sentence always belongs to exactly one paragraph, rather than being matched back by text.
+`Paragraph.text` is the paragraph as the decomposer cut it from the input, trimmed, with a blockquote's `>` markers removed. `Sentence.text` is rebuilt from the tokens, so its spacing can differ from the source. Each non-blockquote paragraph is parsed on its own, so a sentence always belongs to exactly one paragraph, rather than being matched back by text.
 
 Inside a sentence, exactly one token has `head` equal to `0`: the root. Every other token names its governor in `head` and the relation in `dep`. Those two columns are what turn a flat token list into a tree.
 

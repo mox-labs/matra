@@ -159,7 +159,7 @@ The second line is there because the model is a separate file with its own licen
 
 Standard error, so `--json` output stays a single object on standard output. `--quiet` silences it. A library caller gets the same facts as a `domain::ProvisionNotice` from `Engine::from_config_with_notice`, `Udpipe::english_with_notice` or `Udpipe::from_config_with_notice`, and decides the wording itself.
 
-The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts with no notice form of its own, so the first `matra semantic` run is silent for the length of that download.
+The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts with no notice form of its own, so a first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config` (in Python, `Model2Vec.potion_base_8m()`) is silent for the length of that download. There is no clustering command, so the command line never makes that call.
 
 ## Per-document failures: `DocumentError` and `CorpusResult`
 

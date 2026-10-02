@@ -81,22 +81,22 @@
       "words": 21
     },
     {
-      "compression_ratio": 0.5485,
+      "compression_ratio": 0.5124,
       "in_blockquote": false,
-      "lexical_density": 0.5652,
-      "readability_grade": 20.9478,
-      "sentences": 2,
-      "text": "`Udpipe::english` creates the directory if it is missing, downloads the English model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.",
-      "words": 96
+      "lexical_density": 0.5235,
+      "readability_grade": 17.9442,
+      "sentences": 4,
+      "text": "`Udpipe::english` takes the directory as an argument, so a caller who keeps models somewhere specific names it there; the line above passes the configured one, which is what `Udpipe::from_config` does for you. Name a directory you own: provisioning trusts what it finds there, and a shared one such as `/tmp` is writable by anybody on the machine. `Udpipe::english` creates the directory if it is missing, downloads the English model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.",
+      "words": 153
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5971,
       "in_blockquote": false,
-      "lexical_density": 0.6,
-      "readability_grade": 10.7482,
+      "lexical_density": 0.5167,
+      "readability_grade": 13.45,
       "sentences": 3,
-      "text": "The path is passed to `std::fs::create_dir_all` unchanged. Rust does not expand `~`, so `Udpipe::english(\"~/.matra/models\")` creates a directory literally named `~` under your current working directory. Pass an absolute path, or expand the home directory yourself.",
-      "words": 37
+      "text": "The path is passed to `std::fs::create_dir_all` unchanged, and `~` in it is taken literally: neither Rust nor matra expands it, so `Udpipe::english(\"~/models\")` creates a directory literally named `~` under your current working directory. The same holds for `MATRA_MODEL_DIR` and the other variables when the shell has not already expanded them. Pass an absolute path, or expand the home directory yourself.",
+      "words": 61
     },
     {
       "compression_ratio": null,
@@ -200,11 +200,20 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5517,
-      "readability_grade": 7.5616,
+      "lexical_density": 0.5143,
+      "readability_grade": 9.1036,
       "sentences": 2,
-      "text": "Six caps guard the pipeline. Each one returns `Error::InputTooLarge`, and the `what` field names which gate fired so you can route on the label instead of guessing from context.",
-      "words": 30
+      "text": "Seven caps guard the pipeline and the functions over its output. Each one returns `Error::InputTooLarge`, and the `what` field names which gate fired so you can route on the label instead of guessing from context.",
+      "words": 36
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5714,
+      "readability_grade": 6.6943,
+      "sentences": 2,
+      "text": "Three more labels guard what matra reads that is not your text: `\"udpipe_download\"` and `\"embedding_download\"` cap a model download at 64 MiB, and `\"config_file\"` caps the config file at 64 KiB. [Errors](../reference/errors.md#inputtoolarge) lists all ten.",
+      "words": 36
     },
     {
       "compression_ratio": null,

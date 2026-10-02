@@ -5,7 +5,7 @@ summary: The Python API when the agent writes Python: every method, the Embedder
 
 # The Python API
 
-`pip install matra`, or `uv add matra`. The package exposes two classes, one module-level function, and a set of typed shapes.
+`pip install 'matra>=0.2'`, or `uv add 'matra>=0.2'`. The package exposes two classes, one module-level function, and a set of typed shapes.
 
 ```python
 from matra import Matra, Model2Vec, semantic_clusters
@@ -18,10 +18,12 @@ Everything returns plain dictionaries and lists. There are no wrapper objects to
 The loaded engine. Create it once and reuse it; loading the model is the expensive part.
 
 ```python
+from pathlib import Path
+
 from matra import Matra
 
 engine = Matra.english()
-doc = engine.analyze_markdown(open("notes.md").read())
+doc = engine.analyze_markdown(Path("notes.md").read_text(encoding="utf-8"))
 print(doc["passive_ratio"], len(doc["sections"]))
 ```
 

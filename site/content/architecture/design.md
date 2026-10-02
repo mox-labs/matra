@@ -156,23 +156,26 @@ Blockquote paragraphs are skipped at this stage, which is why they reach the end
 
 ## Measure fills slots, extract is a separate call
 
-The measure stage is four functions with one signature, `Box<dyn Fn(&mut Document)>`, run in sequence by `compose`. Readability, lexical density, and compression write per-paragraph slots. The document pass writes `vocabulary_ttr` and `nominalization_ratio`. None of the four reads another's output, so the suite is a list, not a chain.
+The metric suite is four functions with one signature, `Box<dyn Fn(&mut Document)>`, run in sequence by `compose`. Readability, lexical density, and compression write per-paragraph slots. The document pass writes `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. None of the four reads another's output, so the suite is a list, not a chain.
 
 Each carries its own applicability condition, and this is where unexplained `None` values come from:
 
 | Slot | Written when |
 |---|---|
-| `readability_grade` | more than 10 tokens, not a blockquote |
-| `lexical_density` | at least one token, not a blockquote |
-| `compression_ratio` | more than 50 tokens, not a blockquote, paragraph under 256 KiB |
-| `vocabulary_ttr`, `nominalization_ratio` | at least one non-punctuation token in the document |
+| `readability_grade` | more than 10 words, not a blockquote |
+| `lexical_density` | at least one word, not a blockquote |
+| `compression_ratio` | more than 50 words, not a blockquote, paragraph text at most 256 KiB |
+| `vocabulary_ttr`, `nominalization_ratio` | at least one word in the document |
+| `passive_ratio` | at least one sentence in the document |
+
+A word here is a non-punctuation token, the count `Paragraph::word_count` returns.
 
 `None` is not zero. A three-word paragraph has no meaningful Flesch-Kincaid grade, and the slot says so rather than reporting a number nobody should use. The compression cap is a CPU bound: the brotli window is 2^18 bytes, and a paragraph larger than one window is skipped instead of pegging a core on adversarial input.
 
 Summarization and keyphrase extraction are not part of this. The pipeline never calls them. They take `&[Sentence]` and are invoked directly by the caller, on sentences read back off the tree:
 
 ```rust
-let mut doc = engine.annotate(&raw)?;
+let doc = engine.annotate(&raw)?;
 let sentences: Vec<_> = doc.sentences().cloned().collect();
 let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
 let phrases = matra::extraction::rake_keyphrases(&sentences, 10)?;
@@ -355,7 +358,7 @@ What you gain from the arrangement is concrete and mostly shows up in test suite
 
 The Rust side runs the same pipeline, then hands the `Document` to `pythonize`, which walks the serde representation and builds a Python dict. That is a full deep copy. Every token becomes a dict of eleven keys. For a document with seven thousand tokens, that is seven thousand dicts allocated on the Python heap.
 
-Fields cross. Methods do not. `Document::mean_sentence_length()`, `total_words()`, and every other computed value is a Rust method with no serde representation, so it has nothing to cross with. A Python caller recomputes those from the `sections` data already in hand. `passive_ratio` is the one aggregate that does cross, because the measure stage stores the method's result in the field of the same name (RFC-0008), so a Python caller reads it rather than recomputing it. [Domain types](../reference/domain-types.md#what-crosses-the-language-boundary) draws that boundary member by member.
+Fields cross. Methods do not. `Document::mean_sentence_length()`, `total_words()`, and every other computed value is a Rust method with no serde representation, so it has nothing to cross with. A Python caller recomputes those from the `sections` data already in hand. `passive_ratio` is the one aggregate that does cross, because `compose` stores the method's result in the field of the same name (RFC-0008), so a Python caller reads it rather than recomputing it. [Domain types](../reference/domain-types.md#what-crosses-the-language-boundary) draws that boundary member by member.
 
 Errors cross by type. The conversion is a match with no wildcard arm, so adding a variant to `domain::Error` fails to compile until someone decides which Python exception class it becomes. A wildcard would let new failure modes fall through to `RuntimeError` unnoticed.
 

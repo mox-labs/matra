@@ -91,7 +91,7 @@ nominalization_ratio = nominalizing_nouns / total_lemmas
 passive_ratio = passive_sentences / total_sentences
 ```
 
-A sentence counts as passive when any token carries a `dep` of `nsubj:pass`, `nsubjpass`, or `aux:pass`. Returns 0.0 when there are no sentences; the field is null when the metric stage has not run.
+A sentence counts as passive when any token carries a `dep` of `nsubj:pass`, `nsubjpass`, or `aux:pass`. The field is null when the document has no sentences, and whenever the metrics have not run.
 
 **Cite** de Marneffe, Manning, Nivre and Zeman (2021), *Computational Linguistics* 47(2).
 

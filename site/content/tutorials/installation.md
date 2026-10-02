@@ -31,7 +31,7 @@ Windows is not a target yet. No wheel ships for it and the UDPipe build under MS
 ## The Rust library
 
 ```bash
-cargo add matra
+cargo add matra@0.2
 ```
 
 The default feature set includes `udpipe`, so `matra::nlp::udpipe::Udpipe` is available without enabling any extra feature flags.
@@ -41,7 +41,7 @@ The default feature set includes `udpipe`, so `matra::nlp::udpipe::Udpipe` is av
 ## The CLI binary
 
 ```bash
-cargo install matra --features cli
+cargo install matra --version '^0.2' --features cli
 ```
 
 matra's binary target is gated behind the `cli` feature, so `--features cli` is required. This compiles from source and places the binary in your cargo bin directory; the build can take a minute or more.
@@ -59,14 +59,14 @@ matra 0.2.1
 features: udpipe cli
 ```
 
-The second line names the features *this* build was compiled with, so it is not the same on every install route. `cargo install matra --features cli` prints the line above. The Python package is compiled with more features and prints a longer one; see below.
+The second line names the features *this* build was compiled with, so it is not the same on every install route. `cargo install matra --version '^0.2' --features cli` prints the line above. The Python package is compiled with more features and prints a longer one; see below.
 
 ---
 
 ## The Python package
 
 ```bash
-pip install matra    # or: uv add matra
+pip install 'matra>=0.2'    # or: uv add 'matra>=0.2'
 ```
 
 This installs the library and the `matra` command together. From 0.2.0 the command is the same Rust CLI, reached through the extension module rather than reimplemented in Python, so `uvx 'matra>=0.2' analyze essay.md` and the installed binary do the same thing.
@@ -140,7 +140,7 @@ If `Matra.english()` raises `OSError`, either the download never arrived or the 
 
 ## What you have
 
-- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.2.x core. Only the `uvx` line above carries a version requirement; the others take whatever the registry hands out, which is 0.2.x today and will not stay that way, so give them their own. The Python routes take the same floor as that line: `pip install 'matra>=0.2'` or `uv add 'matra>=0.2'`. The cargo routes take a caret requirement, which is how cargo states a version: `cargo add matra@0.2` and `cargo install matra --version '^0.2' --features cli` accept 0.2.0 or a later release semver-compatible with it, so unlike a floor they stop short of 0.3.0. The failure is the one the CLI guide describes: the command does not fail, it succeeds and gives you a program these pages do not describe, so the version banners above will not match.
+- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.2.x core. Every install line above names a version, because an unpinned one takes whatever the registry hands out, which is 0.2.x today and will not stay that way. The Python routes take a floor, `'matra>=0.2'`, like the `uvx` line. The cargo routes take a caret requirement, which is how cargo states a version: `matra@0.2` and `--version '^0.2'` accept 0.2.0 or a later release semver-compatible with it, so unlike a floor they stop short of 0.3.0. Drop the version and the failure is the one the CLI guide describes: the command does not fail, it succeeds and gives you a program these pages do not describe, so the version banners above will not match.
 - The English UDPipe model cached under the resolved model directory, verified against a pinned hash.
 - A confirmed working call from `Matra.english()` through `analyze()` to a result.
 

@@ -34,14 +34,15 @@ Everything below is the explicit path, which still works and still wins over the
 The pipeline owns a `Box<dyn NlpProvider>`. `Udpipe` is the adapter that ships with the `udpipe` feature (on by default):
 
 ```rust
+use matra::config::Config;
 use matra::nlp::udpipe::Udpipe;
 
-let nlp = Udpipe::english("/tmp/matra-models")?;
+let nlp = Udpipe::english(Config::resolve()?.model_dir())?;
 ```
 
-`Udpipe::english` creates the directory if it is missing, downloads the English model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.
+`Udpipe::english` takes the directory as an argument, so a caller who keeps models somewhere specific names it there; the line above passes the configured one, which is what `Udpipe::from_config` does for you. Name a directory you own: provisioning trusts what it finds there, and a shared one such as `/tmp` is writable by anybody on the machine. `Udpipe::english` creates the directory if it is missing, downloads the English model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.
 
-The path is passed to `std::fs::create_dir_all` unchanged. Rust does not expand `~`, so `Udpipe::english("~/.matra/models")` creates a directory literally named `~` under your current working directory. Pass an absolute path, or expand the home directory yourself.
+The path is passed to `std::fs::create_dir_all` unchanged, and `~` in it is taken literally: neither Rust nor matra expands it, so `Udpipe::english("~/models")` creates a directory literally named `~` under your current working directory. The same holds for `MATRA_MODEL_DIR` and the other variables when the shell has not already expanded them. Pass an absolute path, or expand the home directory yourself.
 
 If you already have a model file on disk, load it directly:
 
@@ -61,18 +62,15 @@ matra's public Rust surface is one pipeline assembled from two values. `Ingest` 
 
 ```rust
 use matra::domain::{CorpusResult, Format};
-use matra::nlp::udpipe::Udpipe;
 use matra::{Engine, Ingest};
 
-let nlp = Udpipe::english("/tmp/matra-models")?;
-let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
+let engine = Engine::with_defaults()?;
 
 // A string is a stream of one.
-let one = engine
-    .analyze(Ingest::text("Plain text in memory.", Format::PlainText))
-    .next()
-    .expect("a stream of one")
-    .map_err(|e| e.error)?;
+for item in engine.analyze(Ingest::text("Plain text in memory.", Format::PlainText)) {
+    let entry = item.map_err(|e| e.error)?;
+    println!("{} sentences", entry.analysis.total_sentences());
+}
 
 // A directory is a stream of many. Same call.
 let many: CorpusResult = engine.analyze(Ingest::path("./corpus")?).collect();
@@ -104,7 +102,7 @@ One ordering detail that shapes which error you actually see: `Ingest::path` rea
 
 ## What the size gates reject
 
-Six caps guard the pipeline. Each one returns `Error::InputTooLarge`, and the `what` field names which gate fired so you can route on the label instead of guessing from context.
+Seven caps guard the pipeline and the functions over its output. Each one returns `Error::InputTooLarge`, and the `what` field names which gate fired so you can route on the label instead of guessing from context.
 
 | `what` | Limit | Fires in |
 |---|---|---|
@@ -114,6 +112,9 @@ Six caps guard the pipeline. Each one returns `Error::InputTooLarge`, and the `w
 | `"textrank"` | 2000 sentences | `textrank_summarize` |
 | `"rake"` | 200000 tokens summed across all sentences | `rake_keyphrases` |
 | `"yake"` | 200000 tokens summed across all sentences | `yake_keyphrases` |
+| `"semantic_clusters"` | 2000 sentences | `embed_and_cluster`, before the embedding pass, and `extraction::semantic_clusters` |
+
+Three more labels guard what matra reads that is not your text: `"udpipe_download"` and `"embedding_download"` cap a model download at 64 MiB, and `"config_file"` caps the config file at 64 KiB. [Errors](../reference/errors.md#inputtoolarge) lists all ten.
 
 A document from disk passes two of these in sequence: the metadata check when `Ingest` reads it, then the text check inside `annotate`. A file at exactly the cap is accepted; one byte over is rejected.
 
@@ -150,6 +151,7 @@ Every metric slot is an `Option`, and each metric has its own threshold. A `None
 | `Paragraph::compression_ratio` | the paragraph has more than 50 words, is not in a blockquote, and its text is at most 256 KiB |
 | `Document::vocabulary_ttr` | the document's attached sentences hold at least one non-punctuation token |
 | `Document::nominalization_ratio` | the same condition as `vocabulary_ttr` |
+| `Document::passive_ratio` | the document holds at least one sentence |
 
 "Words" here means `Paragraph::word_count()`, the non-punctuation token count summed over the paragraph's attached sentences. A paragraph whose `sentences` vector is empty has a word count of zero and therefore no per-paragraph metrics at all.
 

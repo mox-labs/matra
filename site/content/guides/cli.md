@@ -12,21 +12,21 @@ uvx 'matra>=0.2' analyze essay.md
 
 The version floor is load-bearing. A bare `uvx matra` takes whatever release is newest, which is 0.2.x today and will not stay that way, and 0.1.0 is still on PyPI for anything pinned to it. 0.1.0's `analyze` is a separate Python implementation rather than this one missing a flag: `--json` prints a bare document with no envelope, the human table is a different renderer, and the model cache lands in `~/.matra/models` instead of the resolved model directory. It does not fail, it succeeds and gives you something else, so pin it.
 
-With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. `cargo install matra --features cli` reports `features: udpipe cli`, while the published wheel reports `features: udpipe model2vec python cli`, so the embedding adapter is present on the Python route and absent from a `--features cli` build. `matra --version` prints the list of the binary in front of you on its second line.
+With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. `cargo install matra --version '^0.2' --features cli` reports `features: udpipe cli`, while the published wheel reports `features: udpipe model2vec python cli`, so the embedding adapter is present on the Python route and absent from a `--features cli` build. `matra --version` prints the list of the binary in front of you on its second line.
 
 ```bash
 # Rust binary, no Python involved
-cargo install matra --features cli
+cargo install matra --version '^0.2' --features cli
 
 # or through the Python package
-uv add matra          # then: matra --help
+uv add 'matra>=0.2'   # then: matra --help
 ```
 
 Every route caches the model at the resolved model directory (about 16 MB) and downloads it the first time any command needs it. No flag and no environment variable is required to make that happen. If the cached file fails its SHA-256 check, matra never deletes it: a download that verifies replaces it through an atomic rename, and a download that fails leaves the file you had exactly as it was.
 
 ## Where matra keeps things
 
-| | Path | Override |
+| What | Path | Override |
 |---|---|---|
 | config file | `$XDG_CONFIG_HOME/matra/config.toml`, else `~/.config/matra/config.toml` | `MATRA_CONFIG_FILE` |
 | data root | `$XDG_DATA_HOME/matra`, else `~/.local/share/matra` | `MATRA_DATA_DIR` |
@@ -118,7 +118,7 @@ Phrases are printed as lowercased lemmas, not as the surface text of the documen
 
 Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word `lexical density` scores `5.667` and the three-word `model file name` scores `5.167`. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.
 
-Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE ties `dense similarity matrix` and `system trust store` for first at `9.000` and scores the bare `error` at `1.190`, while YAKE's first is `treat untrusted` at `81.811`. What is near the bottom there is the score, not the position: `1.190` sits just above `1.000`, the floor any single word scores, and 217 of the 471 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
+Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE ties `dense similarity matrix` and `system trust store` for first at `9.000` and scores the bare `error` at `1.190`, while YAKE's first is `treat untrusted` at `82.740`. What is near the bottom there is the score, not the position: `1.190` sits just above `1.000`, the floor any single word scores, and 218 of the 472 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
 
 ```bash
 matra keyphrases essay.md --json | jq -S '.result[0:3]'
@@ -144,9 +144,11 @@ keyphrases.n = 10 # default
 keyphrases.algorithm = "rake" # default
 ```
 
+Two of those keys change nothing. `models.udpipe` is printed here and read nowhere else: the parsing model's file name is pinned in the source beside its digest, so setting the key selects no model ([model licenses](../tutorials/installation.md#model-licenses) says how to load another one). `semantic.threshold` is printed here and read nowhere else either: there is no clustering command, and every clustering call in the library takes its threshold as an argument. `models.embedding` does act, as the name of the embedding model's directory under `model_dir`, which `Model2Vec::from_config` and `Model2Vec.potion_base_8m()` provision into and load from.
+
 The origin is `default` for a value compiled into the crate, a path for one read from your config file, `environment variable ...` for one an environment variable set, and `command line` for one a flag set. With `--json`, each key carries its value, the rung, and what the rung pointed at.
 
-What that listing does not carry is the config file path. Every key whose origin is `default` names no file, so a run with no config file on disk prints no path at all, and "where is my config" is not a question the human table answers. Two commands do answer it. `matra config show --json` puts the resolved path in the envelope's `input` field, whether or not the file exists; `matra config init` prints the path it wrote to.
+What that listing does not carry is the config file path. Every key whose origin is `default` names no file, so a run with no config file on disk prints no path at all, and "where is my config" is not a question the human table answers. Two commands do answer it, once there is a file. `matra config show --json` puts the config file's path in the envelope's `input` field when that file exists, and `null` when it does not: `input` names what the run read, and a run with no config file read none. `matra config init` prints the path it wrote to, which is also where `config show` looks.
 
 ```bash
 matra config show --json | jq -r .input
@@ -245,7 +247,7 @@ features: udpipe model2vec python cli
 }
 ```
 
-`command` is `analyze`, `summarize`, `keyphrases`, `config`, or `skill`. `input` is the path that was read, or the name `--stdin-filename` gave it, and it is null for `skill`, which reads no document. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`.
+`command` is `analyze`, `summarize`, `keyphrases`, `config`, or `skill`. `input` is the path that was read, or the name `--stdin-filename` gave it. For `config` it is the config file's path when that file exists and null when it does not, and for `skill`, which reads no document, it is always null. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`. For `config` it is an object keyed by setting, each carrying `value`, `source` and `origin`, and for `skill` the shapes shown above.
 
 Stability: `format_version` increments on any change to the envelope or to a field's meaning; the `result` value is the serde form of the documented domain types. That is the same promise cargo makes for `cargo metadata --format-version`, and it is the whole promise. Pin your consumer to a `format_version` you have tested against.
 

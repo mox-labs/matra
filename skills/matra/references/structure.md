@@ -13,11 +13,11 @@ One nested value. Each level owns the level below it and carries its own data.
 |---|---|
 | document | The section list, plus `vocabulary_ttr`, `nominalization_ratio`, `passive_ratio` |
 | section | `heading`, `level`, and its paragraphs in document order |
-| paragraph | Verbatim `text`, `in_blockquote`, its sentences, plus three metric slots |
+| paragraph | Its `text`, `in_blockquote`, its sentences, plus three metric slots |
 | sentence | `text`, id-sorted `tokens`, and the six structural fields |
 | token | The ten CoNLL-U columns plus the derived `is_punct` |
 
-`Paragraph.text` is a verbatim slice of the input. Each non-blockquote paragraph is parsed on its own, so a sentence always belongs to exactly one paragraph and is never matched back to it by comparing text. That is why the chain from a token up to its section always holds.
+`Paragraph.text` is the paragraph as the decomposer cut it from the input: trimmed, with a blockquote's `>` markers removed. `Sentence.text` is rebuilt from the tokens, so its spacing can differ from the source. Each non-blockquote paragraph is parsed on its own, so a sentence always belongs to exactly one paragraph and is never matched back to it by comparing text. That is why the chain from a token up to its section always holds.
 
 <!-- needs: model -->
 
@@ -63,7 +63,7 @@ The tree walkers (`root_token`, `head_of`, `children_of`, `subtree`, `tree_depth
 
 ## The six structural fields
 
-A structural field is a construction read off the dependency graph and reported as data. Five are computed when the sentence is constructed and the sixth, `hearst_pairs`, at the parse stage. They name an arc shape. They never name a judgment.
+A structural field is a construction read off the dependency graph and reported as data. Five are computed when the sentence is constructed and the sixth, `hearst_pairs`, by the pipeline right after the parse. They name an arc shape. They never name a judgment.
 
 | Field | The arc shape | Grounded example |
 |---|---|---|

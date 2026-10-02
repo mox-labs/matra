@@ -9,13 +9,13 @@
   "page": "guides/python.md",
   "paragraphs": [
     {
-      "compression_ratio": 0.5957,
+      "compression_ratio": 0.5874,
       "in_blockquote": false,
-      "lexical_density": 0.5088,
-      "readability_grade": 7.357,
+      "lexical_density": 0.5246,
+      "readability_grade": 5.7848,
       "sentences": 3,
-      "text": "You installed matra with `uv add matra`. That gave you two things: the library described on this page, and the `matra` command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the [CLI guide](cli.md); the Python package adds no behavior to it.",
-      "words": 58
+      "text": "You installed matra with `uv add 'matra>=0.2'` or `pip install 'matra>=0.2'`. That gave you two things: the library described on this page, and the `matra` command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the [CLI guide](cli.md); the Python package adds no behavior to it.",
+      "words": 65
     },
     {
       "compression_ratio": null,
@@ -36,13 +36,13 @@
       "words": 74
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5759,
       "in_blockquote": false,
-      "lexical_density": 0.575,
-      "readability_grade": 6.705,
-      "sentences": 4,
-      "text": "Pass a real path, not a shell shorthand. The string goes straight to Rust's `create_dir_all`, which does not expand `~`. `Matra.english(\"~/.matra/models\")` creates a directory literally named `~` under your current working directory and caches a 16 MB model inside it.",
-      "words": 42
+      "lexical_density": 0.4945,
+      "readability_grade": 6.5682,
+      "sentences": 7,
+      "text": "The argument is a `str` or any `os.PathLike`, such as the `pathlib.Path` above. Pass a real path, not a shell shorthand: `~` is taken literally. The path goes straight to Rust's `create_dir_all`, which does not expand it, so `Matra.english(\"~/models\")` creates a directory literally named `~` under your current working directory and caches a 16 MB model inside it. `Path.home()`, or `os.path.expanduser`, does the expansion in Python. Name a directory you own: provisioning trusts what it finds there, and a shared one such as `/tmp` is writable by anybody on the machine.",
+      "words": 96
     },
     {
       "compression_ratio": 0.5036,
@@ -227,11 +227,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5417,
-      "readability_grade": 17.8617,
+      "lexical_density": 0.5625,
+      "readability_grade": 21.965,
       "sentences": 2,
-      "text": "The per-algorithm caps apply on top: 2000 sentences for `tfidf_summarize` and `textrank_summarize`, and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `ValueError` when exceeded.",
-      "words": 24
+      "text": "The per-algorithm caps apply on top: 2000 sentences for `tfidf_summarize`, `textrank_summarize` and `semantic_clusters` (the method and the module-level function alike), and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `ValueError` when exceeded.",
+      "words": 33
     },
     {
       "compression_ratio": null,
@@ -353,11 +353,20 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.6071,
-      "readability_grade": 13.8729,
+      "lexical_density": 0.6429,
+      "readability_grade": 10.9414,
       "sentences": 1,
-      "text": "The message on each exception is the Rust error's own `Display` output, so an `InputTooLarge` message names the gate that fired: `input`, `file_source`, `tfidf`, `textrank`, `rake`, or `yake`.",
-      "words": 31
+      "text": "Loading the model and analyzing text fail in different ways, so catch them separately:",
+      "words": 14
+    },
+    {
+      "compression_ratio": 0.5681,
+      "in_blockquote": false,
+      "lexical_density": 0.5909,
+      "readability_grade": 13.5506,
+      "sentences": 3,
+      "text": "The message on each exception is the Rust error's own `Display` output, so an `InputTooLarge` message names the gate that fired. The text methods raise `input`, `tfidf`, `textrank`, `rake`, `yake` and `semantic_clusters`; the constructors that resolve or download a model raise `config_file`, `udpipe_download` and `embedding_download`. `analyze_path` raises none of them: an oversized file there is an item whose `kind` is `input_too_large`, with `file_source` in its message.",
+      "words": 71
     },
     {
       "compression_ratio": 0.6201,

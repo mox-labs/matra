@@ -306,13 +306,13 @@
       "words": 37
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5668,
       "in_blockquote": false,
-      "lexical_density": 0.5429,
-      "readability_grade": 7.5029,
-      "sentences": 2,
-      "text": "The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts with no notice form of its own, so the first `matra semantic` run is silent for the length of that download.",
-      "words": 35
+      "lexical_density": 0.5283,
+      "readability_grade": 9.4723,
+      "sentences": 3,
+      "text": "The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts with no notice form of its own, so a first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config` (in Python, `Model2Vec.potion_base_8m()`) is silent for the length of that download. There is no clustering command, so the command line never makes that call.",
+      "words": 53
     },
     {
       "compression_ratio": 0.5658,

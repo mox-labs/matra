@@ -13,7 +13,7 @@ There is no command line for this. It is a library and Python call. What the com
 $ matra config show
 ```
 
-`models.embedding` names the model directory (`potion-base-8M` as shipped) and `semantic.threshold` carries the shipped starting point of `0.85`.
+`models.embedding` names the model directory (`potion-base-8M` as shipped), and `Model2Vec.potion_base_8m()` with no argument provisions into it. `semantic.threshold` shows `0.85`, the shipped starting point, but nothing reads it: every clustering call takes its threshold as an argument, so pass the number yourself.
 
 ## What you get
 
@@ -90,7 +90,7 @@ From Python, `Matra.semantic_clusters(text, threshold, model)` takes a `Model2Ve
 
 **Every clustering call above is over the sentences of one document. There is no cross-document primitive, and matra has no per-document redundancy number at all.** Build the comparison out of the two pieces you already have: embed each document as one text with `Model2Vec.embed`, then cluster those vectors with the module-level `semantic_clusters`.
 
-**The embedder caps every text at 512 tokens, so a whole-document vector is a vector of roughly the document's first 512 tokens.** Truncation happens twice, on bytes before tokenizing and on the token ids after, and nothing past the cap reaches the mean. Tokens are not words, and the ratio depends on what the file holds, so name the basis with any figure. Swept over the 18 markdown pages of matra's own book by the recipe below, which embeds the raw file text, 512 tokens ran out between 141 and 368 words. Diagrams, code fences and tables pull the low end down, and a route that reads files off disk gets the low end. Two long texts agreeing for as few as their first 141 words can already embed to byte-identical vectors, so documents with a shared boilerplate opening report as near-duplicates on the opening alone, and paraphrases that diverge early are never compared on the rest. Say which part of the document a cross-document score covers. When the tail is the content, chunk, and size chunks from a token count: a word count is not a safe proxy on raw markup, where a 54-word window inside an inline SVG block already filled the cap. The 2,000 cap also still applies, and on this route it counts documents rather than sentences.
+**The embedder caps every text at 512 tokens, so a whole-document vector is a vector of roughly the document's first 512 tokens.** Truncation happens twice, on bytes before tokenizing and on the token ids after, and nothing past the cap reaches the mean. Tokens are not words, and the ratio depends on what the file holds, so name the basis with any figure. Swept over the 20 pages of matra's own book long enough to reach it, by the recipe below, which embeds the raw file text, 512 tokens ran out between 141 and 377 words. Diagrams, code fences and tables pull the low end down, and a route that reads files off disk gets the low end. Two long texts agreeing for as few as their first 141 words can already embed to byte-identical vectors, so documents with a shared boilerplate opening report as near-duplicates on the opening alone, and paraphrases that diverge early are never compared on the rest. Say which part of the document a cross-document score covers. When the tail is the content, chunk, and size chunks from a token count: a word count is not a safe proxy on raw markup, where a 54-word window inside an inline SVG block already filled the cap. The 2,000 cap also still applies, and on this route it counts documents rather than sentences.
 
 Pass a threshold of `-1.0` and every pair emits an edge, because a cosine is never below it. That is the sanctioned way to read raw pairwise scores, and it is what calibration looks like: read the scores first, choose the cutoff second.
 
@@ -116,8 +116,8 @@ for cluster in pairs["clusters"]:
 Three pages of matra's own book, run from a checkout: two covering the same ground for different surfaces, and one unrelated. Reproducible, unlike a corpus nobody else has.
 
 ```text
-0.8362  cli.md <-> rust.md
-0.5907  cli.md <-> roadmap.md
+0.8399  cli.md <-> rust.md
+0.5857  cli.md <-> roadmap.md
 0.6080  rust.md <-> roadmap.md
 ```
 

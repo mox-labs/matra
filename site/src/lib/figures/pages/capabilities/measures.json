@@ -146,11 +146,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5455,
-      "readability_grade": 3.7186,
+      "lexical_density": 0.5417,
+      "readability_grade": 8.265,
       "sentences": 2,
-      "text": "Behind the `model2vec` feature. Not a field on any type above.",
-      "words": 11
+      "text": "Not a field on any type above. The port and the clustering functions are always compiled; the `Model2Vec` adapter is behind the `model2vec` feature.",
+      "words": 25
     },
     {
       "compression_ratio": null,
@@ -180,13 +180,13 @@
       "words": 48
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5271,
       "in_blockquote": false,
-      "lexical_density": 0.5227,
-      "readability_grade": 8.8136,
-      "sentences": 2,
-      "text": "`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Nothing is normalized, re-wrapped, or rewritten, and each paragraph is parsed on its own, so the chain from a token up through its sentence, paragraph, and section always holds, rather than depending on text matching.",
-      "words": 44
+      "lexical_density": 0.4792,
+      "readability_grade": 8.8417,
+      "sentences": 4,
+      "text": "`Paragraph.text` is the paragraph as the decomposer cut it from the input, trimmed at both ends, with a blockquote's `>` markers removed. `Sentence.text` is rebuilt by the provider: the UDPipe adapter joins the token forms with a space unless a token carries `SpaceAfter=No`, so its whitespace can differ from the source. Neither is matched back to the input to place it. Each paragraph is parsed on its own and its sentences are attached to it, so the chain from a token up through its sentence, paragraph, and section holds by construction rather than by text matching.",
+      "words": 98
     },
     {
       "compression_ratio": null,
