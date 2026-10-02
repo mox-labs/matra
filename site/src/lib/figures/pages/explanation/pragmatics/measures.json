@@ -9,13 +9,13 @@
   "page": "explanation/pragmatics.md",
   "paragraphs": [
     {
-      "compression_ratio": 0.5045,
+      "compression_ratio": 0.6088,
       "in_blockquote": false,
-      "lexical_density": 0.5,
-      "readability_grade": 6.485,
-      "sentences": 5,
-      "text": "Run `matra --skill`. It prints, from the installed program itself, what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not license you to conclude, the limits, and the errors. `matra --skill -r` lists the deeper references and `matra --skill -r <name>` prints one. The text ships inside the binary and the wheel, so it matches the version that is running rather than a page that may have moved on, and every command in it is executed against the command line by the test suite. The [CLI guide](../guides/cli.md) has the flag's JSON shapes; the rest of this page is the same reasoning written for a person.",
-      "words": 123
+      "lexical_density": 0.4364,
+      "readability_grade": 8.1167,
+      "sentences": 3,
+      "text": "Which call to reach for, and how to read what it returns: the choices behind the summarizers, the keyphrase extractors, the document measures, the clustering threshold and the models, and why each answer is what it is. The caps each call enforces are listed under [`InputTooLarge`](../reference/errors.md#inputtoolarge); handing matra to an agent is [its own guide](../guides/agent.md).",
+      "words": 57
     },
     {
       "compression_ratio": null,
@@ -183,37 +183,19 @@
       "compression_ratio": null,
       "in_blockquote": false,
       "lexical_density": 0.6429,
-      "readability_grade": 9.6162,
+      "readability_grade": 12.7067,
       "sentences": 3,
-      "text": "The pinned model is part of the contract in every case. A different model produces a different parse or a different vector space, and the conformance fixtures will fail, correctly. The [semantic clusters guide](../guides/semantic-clusters.md) records the embedding digest the conformance suite pins.",
+      "text": "The pinned model is part of the contract in every case. A different model produces a different parse or a different vector space, and the conformance fixtures will fail, correctly. The [semantic clusters reference](../reference/semantic-clusters.md#the-reference-model) records the embedding digest the conformance suite pins.",
       "words": 43
     },
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.6,
-      "readability_grade": 8.3933,
-      "sentences": 2,
-      "text": "In Python every one of them surfaces as `ValueError`. [Errors](../reference/errors.md) has the full routing table.",
-      "words": 16
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.5758,
-      "readability_grade": 10.1541,
-      "sentences": 3,
-      "text": "`InvalidInput` is the other one worth recognizing: it means the call site is wrong, not the text. Vectors that disagree on dimension, a non-finite threshold, an `Embedder` returning the wrong number of vectors.",
-      "words": 33
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.4375,
-      "readability_grade": 2.28,
-      "sentences": 2,
-      "text": "The expensive thing is the model, not the call. Load an `Engine` once and reuse it.",
-      "words": 16
+      "lexical_density": 0.5,
+      "readability_grade": 12.52,
+      "sentences": 1,
+      "text": "The expensive thing is the model, not the call: [load an `Engine` once and reuse it](../architecture/design.md#the-model-is-the-expensive-thing).",
+      "words": 17
     }
   ]
 }

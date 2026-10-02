@@ -1,0 +1,75 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "guides/agent.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5,
+      "readability_grade": 9.32,
+      "sentences": 1,
+      "text": "Give an agent matra's own instructions, printed by the version it will run, rather than pointing it at these pages.",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4615,
+      "readability_grade": 4.9108,
+      "sentences": 1,
+      "text": "If the agent has a shell and nothing installed, give it this line:",
+      "words": 13
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4375,
+      "readability_grade": 9.5033,
+      "sentences": 2,
+      "text": "If matra is already installed, `matra --skill` prints the same text. It says what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not license the agent to conclude, the limits, and the errors.",
+      "words": 48
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5758,
+      "readability_grade": 3.3611,
+      "sentences": 2,
+      "text": "Keep the version floor in the `uvx` line. `--skill` arrived in 0.2.0, and an unpinned `uvx matra` takes whatever release is newest, which before 0.2.0 was a different command line without the flag.",
+      "words": 34
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5116,
+      "readability_grade": 9.2093,
+      "sentences": 2,
+      "text": "The text is compiled into the binary and the wheel, so it matches the version that is running, and the test suite executes every command in it against the command line. The [CLI reference](cli.md#for-an-agent) has the flag's exit codes and its `--json` shapes.",
+      "words": 48
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.64,
+      "readability_grade": 9.109,
+      "sentences": 2,
+      "text": "The same files install as a Claude Code plugin. Run `claude --plugin-dir <checkout>` over a clone of the repository, and plugin discovery picks up `skills/matra/`.",
+      "words": 29
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6522,
+      "readability_grade": 9.804,
+      "sentences": 1,
+      "text": "An agent reading the documentation instead of running matra starts at [`llms.txt`](https://mox-labs.github.io/matra/llms.txt), served at the site's root: every page with its one-line summary.",
+      "words": 26
+    }
+  ]
+}

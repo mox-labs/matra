@@ -68,7 +68,7 @@ The derived structural types (`Negation`, `Modal`, `Reporting`, `RootAdverbial`,
 | `Error` | every failure the library can return |
 | `DocumentError`, `CorpusResult` | one document's failure, and the partition of a stream into successes and failures |
 | `Embedding` | one vector from an `Embedder`, the input to clustering |
-| `SemanticClusters`, `SemanticCluster`, `SemanticEdge` | output of `embed_and_cluster` and `extraction::semantic_clusters`, described in [Cluster sentences by meaning](../guides/semantic-clusters.md) |
+| `SemanticClusters`, `SemanticCluster`, `SemanticEdge` | output of `embed_and_cluster` and `extraction::semantic_clusters`, described in [Semantic clusters](semantic-clusters.md) |
 | `ProvisionNotice` | what a model fetch is about to download, handed to the `_with_notice` constructors' callback, described in [Errors](errors.md#the-first-run-says-so) |
 
 Where each of those enters and leaves the pipeline is drawn in [Architecture](../architecture/design.md#one-call-end-to-end).

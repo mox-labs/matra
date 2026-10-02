@@ -256,3 +256,6 @@ examples/summarize.html#input
 examples/summarize.html#the-call
 examples/summarize.html#output
 examples/summarize.html#what-to-notice
+guides/agent.html#hand-matra-to-an-agent
+reference/platforms.html#model-licenses
+reference/semantic-clusters.html#bounds-and-failure

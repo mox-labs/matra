@@ -1,8 +1,6 @@
 # Pragmatics
 
-## For an agent
-
-Run `matra --skill`. It prints, from the installed program itself, what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not license you to conclude, the limits, and the errors. `matra --skill -r` lists the deeper references and `matra --skill -r <name>` prints one. The text ships inside the binary and the wheel, so it matches the version that is running rather than a page that may have moved on, and every command in it is executed against the command line by the test suite. The [CLI guide](../guides/cli.md) has the flag's JSON shapes; the rest of this page is the same reasoning written for a person.
+Which call to reach for, and how to read what it returns: the choices behind the summarizers, the keyphrase extractors, the document measures, the clustering threshold and the models, and why each answer is what it is. The caps each call enforces are listed under [`InputTooLarge`](../reference/errors.md#inputtoolarge); handing matra to an agent is [its own guide](../guides/agent.md).
 
 ## Choosing a summarizer
 
@@ -59,23 +57,6 @@ Both models work the same way, and the constructor you reach for is what decides
 
 **Bringing your own.** `Udpipe::from_path(path)` and `Model2Vec::from_dir(dir)` load what you supply and never reach the network, whatever the directory holds. That is the path for a model this build does not pin: a different UDPipe language, a different model2vec artifact. Nothing verifies it, so the `model_hash` on a result is identity rather than proof: it tells you which artifacts produced a score, not that they are the ones you meant to fetch.
 
-The pinned model is part of the contract in every case. A different model produces a different parse or a different vector space, and the conformance fixtures will fail, correctly. The [semantic clusters guide](../guides/semantic-clusters.md) records the embedding digest the conformance suite pins.
+The pinned model is part of the contract in every case. A different model produces a different parse or a different vector space, and the conformance fixtures will fail, correctly. The [semantic clusters reference](../reference/semantic-clusters.md#the-reference-model) records the embedding digest the conformance suite pins.
 
-## Cost and limits
-
-| You exceed | Cap | You get |
-|---|---|---|
-| input text through `annotate` | 8 MiB | `InputTooLarge` with `what` set to `"input"` |
-| a file on disk | 8 MiB | `InputTooLarge` with `what` set to `"file_source"` |
-| sentences into either summarizer | 2,000 | `InputTooLarge` with `what` set to `"tfidf"` or `"textrank"` |
-| sentences into clustering | 2,000 | `InputTooLarge` with `what` set to `"semantic_clusters"`, checked before the embedding pass runs |
-| tokens into either keyphrase extractor | 200,000 | `InputTooLarge` with `what` set to `"rake"` or `"yake"` |
-| the UDPipe model being downloaded | 64 MiB | `InputTooLarge` with `what` set to `"udpipe_download"`, the read stopping at the bound rather than continuing |
-| one embedding artifact being downloaded | 64 MiB | `InputTooLarge` with `what` set to `"embedding_download"`, the read stopping at the bound rather than continuing |
-| the config file matra is about to read | 64 KiB | `InputTooLarge` with `what` set to `"config_file"`, checked against the file's metadata before any read |
-
-In Python every one of them surfaces as `ValueError`. [Errors](../reference/errors.md) has the full routing table.
-
-`InvalidInput` is the other one worth recognizing: it means the call site is wrong, not the text. Vectors that disagree on dimension, a non-finite threshold, an `Embedder` returning the wrong number of vectors.
-
-The expensive thing is the model, not the call. Load an `Engine` once and reuse it.
+The expensive thing is the model, not the call: [load an `Engine` once and reuse it](../architecture/design.md#the-model-is-the-expensive-thing).

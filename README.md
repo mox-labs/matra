@@ -171,4 +171,4 @@ The English parsing model, `english-ewt-ud-2.5-191206.udpipe` from
 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/),
 which does not permit commercial use. The embedding model,
 potion-base-8M, is MIT per its model card. See
-[model licenses](https://mox-labs.github.io/matra/tutorials/installation.html#model-licenses).
+[model licenses](https://mox-labs.github.io/matra/reference/platforms.html#model-licenses).
