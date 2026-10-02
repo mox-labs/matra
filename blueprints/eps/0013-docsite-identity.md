@@ -207,3 +207,12 @@ Merged, deployed, and the live check after deploy passes.
   its diagram and the parse's data as a compact line above its arcs. The
   Rust, Python and CLI pages are placed in reference, and `site/README.md`
   says why.
+
+- 2026-10-01: the home page's polish, recorded here as `site/README.md`
+  records it. The home page carries no self-measuring margin and no
+  provenance line; every other page keeps them. The parse figure's compact
+  data line (each word, its relation and the word it depends on) shows only on
+  Explanation pages; on the home page and the how-to guides, where the output
+  was just printed above the figure, its data is behind "show the data" like
+  every other figure. The quick start shows one output, framed by one
+  sentence.
