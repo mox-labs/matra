@@ -64,10 +64,10 @@ one kind of need, in `SUMMARY.md` in this order, with the roadmap after them.
 
 | Part | Serves | Holds |
 |---|---|---|
-| Tutorials | learning by doing | Installation, and a first analysis walked through on a short text |
-| How-to guides | a goal the reader already has | the six worked examples, titled as goals, and clustering sentences by meaning |
-| Explanation | understanding | the introduction, concepts, situation model, programming model, the clustering threshold, pragmatics, and how matra runs |
-| Reference | looking something up | what matra gives you, the domain model, the Rust, Python and CLI surfaces, methodology, errors, boundary rules |
+| Tutorials | learning by doing | a first analysis walked through on a short text |
+| How-to guides | a goal the reader already has | installing matra, the six worked examples, titled as goals, clustering sentences by meaning, and handing matra to an agent |
+| Explanation | understanding | the introduction, concepts, situation model, programming model, the install routes, the clustering threshold, pragmatics, and how matra runs |
+| Reference | looking something up | what matra gives you, the domain model, platforms and models, semantic clusters, the Rust, Python and CLI surfaces, methodology, errors, boundary rules |
 
 Where a page was not obviously one kind, the call and its reason:
 
@@ -77,11 +77,25 @@ Where a page was not obviously one kind, the call and its reason:
   reach one goal. The Rust page has task-shaped headings, but each describes a
   part of the surface; keeping the three siblings together keeps them where a
   reader looks for one of them.
-- **The semantic clusters guide is a how-to, and its explorable moved to
-  explanation.** The guide's body is calls, model provisioning and a
-  calibration recipe. What the clusters mean, the predict-then-reveal prompt
-  and the threshold figure are understanding, so they are the page
-  `explanation/semantic-clusters.md`, which the guide links to.
+- **Installation is a how-to, in three pages.** Its route choice (library,
+  binary or package) is the reader's goal, so the page at
+  `tutorials/installation.md` is the steps and sits in the how-to part; its URL
+  keeps the path it was published at. The requirement tables, wheel
+  platforms, version requirements, model directory, download and licenses are
+  `reference/platforms.md`, and why the commands look as they do (one program,
+  version floors, two builds, a quiet library) is
+  `explanation/install-routes.md`.
+- **The semantic clusters guide is a how-to, in three pages.** The guide's
+  body is calls, model provisioning steps and a calibration recipe. What the
+  clusters mean, the predict-then-reveal prompt, the threshold figure and why
+  the model is static are understanding, so they are
+  `explanation/semantic-clusters.md`. The returned value, the model's digest
+  and provisioning rules, and the bounds are `reference/semantic-clusters.md`.
+- **Pragmatics is explanation.** It explains which call to reach for and how
+  to read what it returns. Handing matra to an agent is a goal, so it is the
+  how-to `guides/agent.md`; the cost and limits table repeated the
+  `InputTooLarge` table in `reference/errors.md`, so it was removed in favour
+  of a link, and the published anchor forwards there.
 - **How matra runs (`architecture/design.md`) is explanation.** It explains
   why the pipeline is shaped as it is (the model is the expensive thing, the
   paragraph is the unit of work); the boundary rules, which it cites, are
@@ -99,6 +113,9 @@ looking for (the expertise reversal effect).
 A page's URL does not change when it moves in the navigation: only its place
 in `SUMMARY.md` and its breadcrumb do. A heading that is a published anchor
 keeps its id when it is reworded or moved, through `src/lib/moved-anchors.ts`.
+When a split moves a section to a new page, the entry's `to` names the new
+page and section, and that target is added to `anchors.txt`, so the URL
+check holds the forward's destination as well as its source.
 
 ### The home page
 

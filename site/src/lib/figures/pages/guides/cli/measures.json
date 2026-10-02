@@ -234,13 +234,13 @@
       "words": 26
     },
     {
-      "compression_ratio": 0.5259,
+      "compression_ratio": 0.535,
       "in_blockquote": false,
-      "lexical_density": 0.6044,
-      "readability_grade": 9.5506,
+      "lexical_density": 0.5763,
+      "readability_grade": 8.845,
       "sentences": 5,
-      "text": "Two of those keys change nothing. `models.udpipe` is printed here and read nowhere else: the parsing model's file name is pinned in the source beside its digest, so setting the key selects no model ([model licenses](../tutorials/installation.md#model-licenses) says how to load another one). `semantic.threshold` is printed here and read nowhere else either: there is no clustering command, and every clustering call in the library takes its threshold as an argument. `models.embedding` does act, as the name of the embedding model's directory under `model_dir`, which `Model2Vec::from_config` and `Model2Vec.potion_base_8m()` provision into and load from.",
-      "words": 94
+      "text": "`models.embedding` is the name of the embedding model's directory under `model_dir`, which `Model2Vec::from_config` and `Model2Vec.potion_base_8m()` provision into and load from. A config file written by an earlier `matra config init` also sets `models.udpipe` and `semantic.threshold`. Both are deprecated and ignored: the parsing model's file name is pinned in the source beside its digest, so the first selects no model ([model licenses](../reference/platforms.md#model-licenses) says how to load another one), and every clustering call takes its threshold as an argument, so the second reaches nothing. The file still loads. `config show` leaves both out of the listing and writes a line on stderr for each one the file sets, naming the file, so you can delete them; `--quiet` silences that line.",
+      "words": 123
     },
     {
       "compression_ratio": 0.526,
@@ -261,13 +261,13 @@
       "words": 114
     },
     {
-      "compression_ratio": 0.5884,
+      "compression_ratio": 0.5831,
       "in_blockquote": false,
-      "lexical_density": 0.5882,
-      "readability_grade": 13.7903,
+      "lexical_density": 0.5862,
+      "readability_grade": 11.8879,
       "sentences": 2,
-      "text": "`matra config init` writes the shipped defaults to the resolved config path and prints where it wrote them. It creates the parent directories, writes through a temporary file in the same directory so a reader never sees a half-written config, and refuses to overwrite an existing file unless you pass `--force`.",
-      "words": 54
+      "text": "`matra config init` writes the shipped defaults (`models.embedding` and the summary and keyphrase keys) to the resolved config path and prints where it wrote them. It creates the parent directories, writes through a temporary file in the same directory so a reader never sees a half-written config, and refuses to overwrite an existing file unless you pass `--force`.",
+      "words": 61
     },
     {
       "compression_ratio": null,

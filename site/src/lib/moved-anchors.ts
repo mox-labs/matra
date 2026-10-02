@@ -20,6 +20,19 @@ export const MOVED_ANCHORS: Readonly<Record<string, readonly { id: string; to?: 
 		{ id: 'end-to-end', to: '/introduction#end-to-end' },
 		{ id: 'one-passage-and-what-matra-returns', to: '/explanation/semantic-clusters#watch-the-threshold-move' }
 	],
-	// The guide's title became the goal it serves.
-	'/guides/semantic-clusters': [{ id: 'semantic-clusters' }]
+	// The guide's title became the goal it serves; when the Diátaxis splits
+	// moved its reference sections to their own page, its bounds went with them.
+	'/guides/semantic-clusters': [
+		{ id: 'semantic-clusters' },
+		{ id: 'bounds-and-failure', to: '/reference/semantic-clusters#bounds-and-failure' }
+	],
+	// The installation page became the how-to "Install matra"; every section
+	// heading kept its id.
+	'/tutorials/installation': [{ id: 'installation' }],
+	// Pragmatics kept its explanation. Its how-to for agents became a guide of
+	// its own, and its table of caps repeated the InputTooLarge table.
+	'/explanation/pragmatics': [
+		{ id: 'for-an-agent', to: '/guides/agent' },
+		{ id: 'cost-and-limits', to: '/reference/errors#inputtoolarge' }
+	]
 };

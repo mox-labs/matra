@@ -79,6 +79,15 @@
       "sentences": 1,
       "text": "</details>",
       "words": 2
+    },
+    {
+      "compression_ratio": 0.5605,
+      "in_blockquote": false,
+      "lexical_density": 0.623,
+      "readability_grade": 16.423,
+      "sentences": 2,
+      "text": "The reference model is a static embedding model, a lookup table rather than a transformer: inference is a row gather, a mean, and a normalize. That costs roughly ten percent of a small transformer's benchmark quality, and buys bit-identical vectors on every platform and in every language binding, which is what lets the conformance suite pin exact vectors rather than tolerances.",
+      "words": 62
     }
   ]
 }

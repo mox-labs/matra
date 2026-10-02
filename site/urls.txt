@@ -60,6 +60,8 @@ examples/summarize.html
 examples/summarize.md
 explanation/concepts.html
 explanation/concepts.md
+explanation/install-routes.html
+explanation/install-routes.md
 explanation/pragmatics.html
 explanation/pragmatics.md
 explanation/programming-model.html
@@ -86,7 +88,11 @@ figures/federalist-10/primitives.json
 figures/federalist-10/textrank.json
 figures/field-notes/pipeline.json
 figures/minutes/parse.json
+figures/pages/explanation/install-routes/measures.json
 figures/pages/explanation/semantic-clusters/measures.json
+figures/pages/guides/agent/measures.json
+figures/pages/reference/platforms/measures.json
+figures/pages/reference/semantic-clusters/measures.json
 figures/pages/tutorials/first-analysis/measures.json
 figures/quickstart/parse.json
 figures/specimen/parse.json
@@ -130,6 +136,8 @@ figures/primitives/primitives.json
 figures/primitives/textrank.json
 fonts/OFL-Alegreya.txt
 fonts/OFL-IBM-Plex.txt
+guides/agent.html
+guides/agent.md
 guides/cli.html
 guides/cli.md
 guides/python.html
@@ -154,6 +162,10 @@ reference/errors.html
 reference/errors.md
 reference/methodology.html
 reference/methodology.md
+reference/platforms.html
+reference/platforms.md
+reference/semantic-clusters.html
+reference/semantic-clusters.md
 roadmap.html
 roadmap.md
 toc.html

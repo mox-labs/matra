@@ -223,3 +223,17 @@ Merged, deployed, and the live check after deploy passes.
   (2.1.1), and the search button with no name at 320px, where its label is
   hidden (4.1.2). All three are fixed without moving the layout, and the pass
   then reports none; `site/README.md` records the rules.
+- 2026-10-02: the three pages the standards pass found mixing Diátaxis modes
+  are split, one mode per page, as the owner decided. Installation becomes
+  the how-to "Install matra" at its old URL, moved to the how-to part, with
+  its tables and facts in the reference `reference/platforms.md` and its
+  reasons in the explanation `explanation/install-routes.md`. Pragmatics
+  keeps its explanation; "For an agent" becomes the how-to `guides/agent.md`,
+  and "Cost and limits" forwards to the `InputTooLarge` table it repeated.
+  The clusters guide keeps its steps; the value, the model's digest and
+  provisioning rules, and the bounds become `reference/semantic-clusters.md`,
+  and why the model is static joins the explanation. The Rust, Python and CLI
+  pages stay in reference, as decided in M2, until the API redesign. Every
+  published URL and anchor still resolves: a reworded title or a moved
+  section keeps its id through `moved-anchors.ts`, and the forwards' targets
+  are in `anchors.txt`.

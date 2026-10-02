@@ -90,13 +90,13 @@
       "words": 30
     },
     {
-      "compression_ratio": 0.5183,
+      "compression_ratio": 0.5251,
       "in_blockquote": false,
-      "lexical_density": 0.6429,
-      "readability_grade": 10.239,
+      "lexical_density": 0.5825,
+      "readability_grade": 9.7389,
       "sentences": 5,
-      "text": "`Config` resolves locations and defaults, never behavior. It carries the model directory, the embedding model's directory name, and the default counts and algorithm names the command line uses, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped. It also carries two values nothing reads except `matra config show`: `models.udpipe`, because the parsing model is pinned in the source, and `semantic.threshold`, because every clustering call takes its threshold as an argument.",
-      "words": 85
+      "text": "`Config` resolves locations and defaults, never behavior. It carries the model directory, the embedding model's directory name, and the default counts and algorithm names the command line uses, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped. A config file may still set `models.udpipe` or `semantic.threshold`, which earlier releases wrote: both are deprecated and nothing reads them, because the parsing model is pinned in the source and every clustering call takes its threshold as an argument. The file still loads, and `Config::deprecated_keys` reports which of the two it set.",
+      "words": 105
     },
     {
       "compression_ratio": 0.5395,

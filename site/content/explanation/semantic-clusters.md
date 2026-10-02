@@ -22,3 +22,7 @@ Ten short sentences, with the reference model. Before you move the threshold, pr
 It joins at 0.70, through sentence 1 alone: their pair scores 0.7239 and clears the bar, while its pairs with sentences 2 and 3 do not, yet it shares their cluster. A cluster can grow through a chain of pairs, on shared words ("committee approved") rather than shared meaning, and the clusters dissolve as the bar rises past 0.85.
 
 </details>
+
+## Why a static model
+
+The reference model is a static embedding model, a lookup table rather than a transformer: inference is a row gather, a mean, and a normalize. That costs roughly ten percent of a small transformer's benchmark quality, and buys bit-identical vectors on every platform and in every language binding, which is what lets the conformance suite pin exact vectors rather than tolerances.

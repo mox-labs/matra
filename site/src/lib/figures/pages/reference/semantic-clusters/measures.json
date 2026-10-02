@@ -1,0 +1,111 @@
+{
+  "generator": {
+    "matra": "0.2.1",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "reference/semantic-clusters.md",
+  "paragraphs": [
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5667,
+      "readability_grade": 10.2592,
+      "sentences": 2,
+      "text": "The value semantic clustering returns, the model it embeds with, and its bounds. [Cluster sentences by meaning](../guides/semantic-clusters.md) has the calls; [What the clustering threshold does](../explanation/semantic-clusters.md) explains what a cluster means.",
+      "words": 32
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6111,
+      "readability_grade": 17.6522,
+      "sentences": 1,
+      "text": "`embed_and_cluster`, `extraction::semantic_clusters` and their Python forms return a `SemanticClusters`, a standalone value and never a field on `Document`:",
+      "words": 19
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.4516,
+      "readability_grade": 5.3002,
+      "sentences": 2,
+      "text": "A sentence with no pair above the threshold is in no cluster. Two members of one cluster need not share an edge: they can be joined through a chain of edges.",
+      "words": 31
+    },
+    {
+      "compression_ratio": 0.5782,
+      "in_blockquote": false,
+      "lexical_density": 0.4744,
+      "readability_grade": 5.0362,
+      "sentences": 4,
+      "text": "`threshold` is an `f32`, because that is the precision the whole similarity computation runs at. An `f64` you passed comes back as the nearest `f32`, so a Python caller who passed `0.85` reads `0.8500000238418579` out of the result, and the equality `result[\"threshold\"] == 0.85` does not hold. Echo back the value you passed, or compare with a tolerance. Values that are exact in binary, `0.5` and `0.75` among them, round-trip unchanged, which is what makes the surprise intermittent.",
+      "words": 80
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6122,
+      "readability_grade": 12.3136,
+      "sentences": 2,
+      "text": "The `Model2Vec` adapter, behind the `model2vec` feature, loads static embedding models in the model2vec artifact format: an embedding matrix (`model.safetensors`), a `tokenizer.json`, and a `config.json` in one directory. The clustering functions and the `Embedder` port are always compiled; with your own `Embedder` implementation, clustering needs no feature at all.",
+      "words": 49
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.6923,
+      "readability_grade": 18.7142,
+      "sentences": 1,
+      "text": "The configured directory is `models.embedding` (`potion-base-8M` as shipped) inside the configured model directory.",
+      "words": 16
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5556,
+      "readability_grade": 14.5861,
+      "sentences": 2,
+      "text": "[potion-base-8M](https://huggingface.co/minishlab/potion-base-8M), about 30 MB, MIT per its model card. The SHA-256 over its three files, concatenated in the order above, is a constant compiled into the library:",
+      "words": 33
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5417,
+      "readability_grade": 12.0375,
+      "sentences": 2,
+      "text": "It is the digest `spec/tests/semantic/reference-model.json` pins and the value `model_hash` reports once the model is loaded. For files loaded with `from_dir`, `model_hash` is identity rather than verification: it names the artifacts that produced a score, and says nothing about whether they are the ones you meant to fetch.",
+      "words": 48
+    },
+    {
+      "compression_ratio": 0.505,
+      "in_blockquote": false,
+      "lexical_density": 0.4773,
+      "readability_grade": 9.2422,
+      "sentences": 6,
+      "text": "- The three artifacts are verified as a set, in memory, before anything is parsed. A mismatch downloads once more without writing anything; a second mismatch raises with the directory as the call found it.\n- Downloading happens only into a directory holding none of the three file names. If all three are there and the digest does not match, or only some of them are, the call raises and names the directory, having downloaded nothing and deleted nothing.\n- Each artifact download is capped at 64 MiB.",
+      "words": 85
+    },
+    {
+      "compression_ratio": 0.5836,
+      "in_blockquote": false,
+      "lexical_density": 0.5313,
+      "readability_grade": 11.905,
+      "sentences": 3,
+      "text": "A static model is a lookup table: inference is a row gather, a mean, and a normalize, and the vectors are bit-identical on every platform and in every language binding. Every text is capped at 512 tokens, pre-truncated on bytes and then truncated on token ids, so a longer text is embedded from its opening only. An empty text embeds to the zero vector.",
+      "words": 64
+    },
+    {
+      "compression_ratio": 0.5875,
+      "in_blockquote": false,
+      "lexical_density": 0.5846,
+      "readability_grade": 7.9969,
+      "sentences": 4,
+      "text": "The 2,000 cap counts whatever the vectors stand for, so clustering one vector per document caps the corpus at 2,000 documents. The contract violations mean the call site or the embedder is wrong, never the text. A zero-magnitude vector has no defined cosine with anything, so it gets no edge at any threshold and no cluster. [Errors](errors.md) has the full table, the provisioning failures included.",
+      "words": 68
+    }
+  ]
+}

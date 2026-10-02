@@ -1,25 +1,16 @@
 # Cluster sentences by meaning
 
-Everything else matra returns is deterministic structure, checkable against the source bytes. This page's output is not: semantic clusters depend on a model's representation of meaning, they cannot be verified against the text, and matra treats that difference structurally. Clusters arrive as a standalone `SemanticClusters` value from a separate call, never as a field on `Document`, and they carry the identity of the model that produced them plus the threshold you chose.
+Group the sentences of a document that say the same thing in different words, for example to audit LLM output for restatement, which lexical overlap cannot see. In Rust this needs the `model2vec` feature for the reference model; the Python package has it. [What the clustering threshold does](../explanation/semantic-clusters.md) explains what a cluster means, and [Semantic clusters](../reference/semantic-clusters.md) lists the value, the model and the bounds.
 
 ## What you get
 
-Feed a document and an embedding model, get connected components of sentences whose pairwise cosine similarity cleared your threshold. The intended use is auditing LLM output for restatement: the model catches paraphrase (same claim, different words) that lexical overlap cannot see. What the clusters mean, and what moving the threshold does to them, is in [What the clustering threshold does](../explanation/semantic-clusters.md), with a figure you can step through.
-
-```text
-SemanticClusters
-  model_hash   identity of the model whose vector space produced the scores
-  threshold    the cutoff you supplied, narrowed to f32
-  clusters     each: member sentence indices + the edges that cleared
-```
-
-`threshold` is an `f32`, because that is the precision the whole similarity computation runs at. An `f64` you passed comes back as the nearest `f32`, so a Python caller who passed `0.85` reads `0.8500000238418579` out of the result, and the equality `result["threshold"] == 0.85` does not hold. Echo back the value you passed, or compare with a tolerance. Values that are exact in binary, `0.5` and `0.75` among them, round-trip unchanged, which is what makes the surprise intermittent.
+A `SemanticClusters` value: the groups of sentences whose pairwise cosine similarity cleared the threshold you pass, each with the pairs that cleared it, plus the threshold and the identity of the model that scored them.
 
 Start around 0.85 with the reference model on sentences, and calibrate on your own corpus: the threshold does not travel between models, domains or text lengths. [Comparing whole documents](#comparing-whole-documents) shows how to read the raw scores before you choose one.
 
 ## The model
 
-The adapter loads static embedding models in the model2vec artifact format: an embedding matrix (`model.safetensors`), a `tokenizer.json`, and a `config.json` in one directory. The reference model is [potion-base-8M](https://huggingface.co/minishlab/potion-base-8M), about 30 MB, and you do not have to fetch it yourself:
+Take the reference model, potion-base-8M. The first call downloads it (about 30 MB) and verifies it against a digest compiled into matra; every later call loads it from disk:
 
 ```rust,ignore
 use matra::config::Config;
@@ -34,13 +25,9 @@ from matra import Model2Vec
 model = Model2Vec.potion_base_8m()
 ```
 
-On the first call the three artifacts are downloaded into a directory named for the configured embedding model (`models.embedding`, `potion-base-8M` as shipped) inside the configured model directory. On every later call they load from there. Name a directory instead of taking the configured one with `Model2Vec::potion_base_8m(dir)` or `Model2Vec.potion_base_8m(dir)`.
+It goes into a directory named for the configured embedding model (`models.embedding`, `potion-base-8M` as shipped) inside the configured model directory. To keep it somewhere else, name the directory: `Model2Vec::potion_base_8m(dir)` in Rust, `Model2Vec.potion_base_8m(dir)` in Python. The call refuses a directory that already holds another model's files and names it; remove them, or name another directory, or point `MATRA_MODEL_DIR` or `models.embedding` somewhere else.
 
-What arrives is one specific artifact set and nothing else. The SHA-256 over all three files, concatenated in the order above, must equal a constant compiled into the library: `81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4`, the same digest `spec/tests/semantic/reference-model.json` pins and the same value `model_hash` reports once the model is loaded. Verification happens before anything is parsed. The three are verified as a set in memory, so a mismatch downloads once more without writing anything, and a second mismatch raises with the directory still as the call found it. A partly-trusted model is never loaded and nothing is left behind for a later call to find.
-
-Files it did not download are never files it removes. Those three names belong to the artifact format rather than to this one model, so the directory may already hold a model of yours. Downloading happens only into a directory holding none of the three. If all three are there and the digest does not match, or if only some of them are there, the call raises and names the directory, having downloaded nothing and deleted nothing: load your own files with `Model2Vec::from_dir`, remove them to provision the pinned model in their place, or point `MATRA_MODEL_DIR` or the configured embedding model name somewhere else.
-
-Already have the files, or using a different model2vec artifact? `Model2Vec::from_dir(dir)` loads what is there and never reaches the network, whatever the directory holds:
+To use files you already have, or a different model2vec artifact, put the three files in one directory and load it with `Model2Vec::from_dir(dir)`, which never reaches the network:
 
 ```console
 $ mkdir -p ~/models/potion-base-8M && cd ~/models/potion-base-8M
@@ -49,9 +36,7 @@ $ for f in model.safetensors tokenizer.json config.json; do
   done
 ```
 
-For a hand-placed model the hash is identity rather than verification: it tells you which artifacts produced a score, not that they are the ones you meant to fetch. Compare it against the digest above if you care which you got.
-
-A static model is a lookup table, not a transformer: inference is a row gather, a mean, and a normalize. That costs roughly ten percent of a small transformer's benchmark quality and buys bit-identical vectors on every platform and in every language binding, which is what lets the conformance suite pin exact vectors rather than tolerances.
+Nothing verifies files you load this way. To check that you have the reference model, compare `model.model_hash` with the digest in [the reference](../reference/semantic-clusters.md#the-reference-model).
 
 ## Rust
 
@@ -73,7 +58,7 @@ for c in &clusters.clusters {
 }
 ```
 
-`embed_and_cluster` is behind the `model2vec` feature only through its adapter; with your own `Embedder` implementation it needs no feature at all.
+With your own `Embedder` implementation in place of `Model2Vec`, `embed_and_cluster` needs no feature at all.
 
 ## Python
 
@@ -90,11 +75,13 @@ for cluster in result["clusters"]:
 
 Already hold embeddings? The module-level function clusters raw vectors: `semantic_clusters(vectors, 0.85, model.model_hash)`. And `model.embed(texts)` returns the raw vectors when you want to do something else with them.
 
+When you report the threshold, report the number you passed: `result["threshold"]` comes back as an `f32`, so `0.85` reads as `0.8500000238418579`.
+
 ## Comparing whole documents
 
 `Matra.semantic_clusters` and `embed_and_cluster` both work over the sentences of one document. There is no cross-document primitive. Build one out of the two pieces above: embed each document as a single text, then cluster the resulting vectors.
 
-One bound decides what the answer means. `Model2Vec` caps every text at 512 tokens, pre-truncating on bytes and then truncating the token ids, so "embed each document as a single text" embeds roughly the first 512 tokens of it and nothing after. Tokens are not words, and how many words 512 tokens buys depends on what the file holds. Say which basis a figure is on. Swept over the 20 pages of this book long enough to reach it, with the call below, which embeds the raw file text, the cap ran out between 141 and 377 words. Diagrams, code fences and tables pull the low end down; the recipe below reads files off disk, so the low end is the one that applies to it. Two long texts that agree for as few as their first 141 words can already embed to byte-identical vectors. That cuts both ways: documents sharing a boilerplate opening score as near-duplicates on the opening alone, and two real paraphrases that diverge inside their first few hundred words never get compared on the part that matters.
+One bound decides what the answer means. `Model2Vec` caps every text at 512 tokens, pre-truncating on bytes and then truncating the token ids, so "embed each document as a single text" embeds roughly the first 512 tokens of it and nothing after. Tokens are not words, and how many words 512 tokens buys depends on what the file holds. Say which basis a figure is on. Swept over the 23 pages of this book long enough to reach it, with the call below, which embeds the raw file text, the cap ran out between 141 and 377 words. Diagrams, code fences and tables pull the low end down; the recipe below reads files off disk, so the low end is the one that applies to it. Two long texts that agree for as few as their first 141 words can already embed to byte-identical vectors. That cuts both ways: documents sharing a boilerplate opening score as near-duplicates on the opening alone, and two real paraphrases that diverge inside their first few hundred words never get compared on the part that matters.
 
 If the tail carries the content, split each document into chunks and compare the chunks, and size the chunks from a token count rather than a word count. A word count is not a safe proxy on raw markup, and the gap is not small: sliding a window across the same pages, a window of 54 words landed inside an inline SVG block and had already filled the cap. Any word figure has to be measured against your own files, because getting it wrong does not raise. It returns a score computed on less text than you handed it.
 
@@ -131,6 +118,5 @@ The separation is decisive, and the sentence-level starting point does not carry
 
 Two things this route does not change. Attribution still travels: the vectors do not carry the model identity, you hand `model.model_hash` to `semantic_clusters` and it comes back on the result, so a cross-document score is as attributable as a sentence one. And a zero-magnitude vector, which is what an empty document embeds to, still gets no edge at any threshold.
 
-## Bounds and failure
 
-The count cap is 2,000 sentences (the similarity matrix is quadratic), checked before the embedding pass runs, and it raises with the `"semantic_clusters"` gate label. It counts whatever the vectors stand for, so on the cross-document route above it caps the corpus at 2,000 documents. Contract violations (vectors disagreeing on dimension, non-finite values, a non-finite threshold) raise `InvalidInput` in Rust and `ValueError` in Python; they mean the call site is wrong, never the text. A zero-magnitude vector (an empty sentence embeds to zero) has no defined cosine with anything, so it gets no edges and no cluster: no claim rather than a fabricated score. [Errors](../reference/errors.md) has the full table.
+On this route the 2,000-sentence cap counts documents, so one call compares at most 2,000 of them; [Bounds and failure](../reference/semantic-clusters.md#bounds-and-failure) has the cap and the errors.
