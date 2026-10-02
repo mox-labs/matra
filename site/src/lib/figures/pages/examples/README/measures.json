@@ -21,9 +21,9 @@
       "compression_ratio": null,
       "in_blockquote": false,
       "lexical_density": 0.6053,
-      "readability_grade": 6.3161,
+      "readability_grade": 5.8221,
       "sentences": 2,
-      "text": "Install matra the way you mean to use it: the library, the CLI, or the Python package ([Installation](../tutorials/installation.md)). The Rust calls also need `serde_json` to print, which is the first line of each one: `cargo add matra serde_json`.",
+      "text": "Install matra the way you mean to use it: the library, the CLI, or the Python package ([Installation](../tutorials/installation.md)). The Rust calls also need `serde_json` to print, which is the first line of each one: `cargo add matra@0.2 serde_json`.",
       "words": 40
     },
     {

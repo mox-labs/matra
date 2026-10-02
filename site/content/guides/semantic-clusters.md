@@ -34,7 +34,7 @@ from matra import Model2Vec
 model = Model2Vec.potion_base_8m()
 ```
 
-On the first call the three artifacts are downloaded into the configured model directory. On every later call they load from there. Name a directory instead of taking the configured one with `Model2Vec::potion_base_8m(dir)` or `Model2Vec.potion_base_8m(dir)`.
+On the first call the three artifacts are downloaded into a directory named for the configured embedding model (`models.embedding`, `potion-base-8M` as shipped) inside the configured model directory. On every later call they load from there. Name a directory instead of taking the configured one with `Model2Vec::potion_base_8m(dir)` or `Model2Vec.potion_base_8m(dir)`.
 
 What arrives is one specific artifact set and nothing else. The SHA-256 over all three files, concatenated in the order above, must equal a constant compiled into the library: `81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4`, the same digest `spec/tests/semantic/reference-model.json` pins and the same value `model_hash` reports once the model is loaded. Verification happens before anything is parsed. The three are verified as a set in memory, so a mismatch downloads once more without writing anything, and a second mismatch raises with the directory still as the call found it. A partly-trusted model is never loaded and nothing is left behind for a later call to find.
 
@@ -94,7 +94,7 @@ Already hold embeddings? The module-level function clusters raw vectors: `semant
 
 `Matra.semantic_clusters` and `embed_and_cluster` both work over the sentences of one document. There is no cross-document primitive. Build one out of the two pieces above: embed each document as a single text, then cluster the resulting vectors.
 
-One bound decides what the answer means. `Model2Vec` caps every text at 512 tokens, pre-truncating on bytes and then truncating the token ids, so "embed each document as a single text" embeds roughly the first 512 tokens of it and nothing after. Tokens are not words, and how many words 512 tokens buys depends on what the file holds. Say which basis a figure is on. Swept over the 18 markdown pages of this book with the call below, which embeds the raw file text, the cap ran out between 141 and 368 words. Diagrams, code fences and tables pull the low end down; the recipe below reads files off disk, so the low end is the one that applies to it. Two long texts that agree for as few as their first 141 words can already embed to byte-identical vectors. That cuts both ways: documents sharing a boilerplate opening score as near-duplicates on the opening alone, and two real paraphrases that diverge inside their first few hundred words never get compared on the part that matters.
+One bound decides what the answer means. `Model2Vec` caps every text at 512 tokens, pre-truncating on bytes and then truncating the token ids, so "embed each document as a single text" embeds roughly the first 512 tokens of it and nothing after. Tokens are not words, and how many words 512 tokens buys depends on what the file holds. Say which basis a figure is on. Swept over the 20 pages of this book long enough to reach it, with the call below, which embeds the raw file text, the cap ran out between 141 and 377 words. Diagrams, code fences and tables pull the low end down; the recipe below reads files off disk, so the low end is the one that applies to it. Two long texts that agree for as few as their first 141 words can already embed to byte-identical vectors. That cuts both ways: documents sharing a boilerplate opening score as near-duplicates on the opening alone, and two real paraphrases that diverge inside their first few hundred words never get compared on the part that matters.
 
 If the tail carries the content, split each document into chunks and compare the chunks, and size the chunks from a token count rather than a word count. A word count is not a safe proxy on raw markup, and the gap is not small: sliding a window across the same pages, a window of 54 words landed inside an inline SVG block and had already filled the cap. Any word figure has to be measured against your own files, because getting it wrong does not raise. It returns a score computed on less text than you handed it.
 
@@ -122,8 +122,8 @@ for cluster in pairs["clusters"]:
 Those three are pages of this book, run from a checkout of the repository, so the numbers below are yours to reproduce. Two of them cover the same ground for different surfaces, and the third is unrelated. It prints:
 
 ```text
-0.8362  cli.md <-> rust.md
-0.5907  cli.md <-> roadmap.md
+0.8399  cli.md <-> rust.md
+0.5857  cli.md <-> roadmap.md
 0.6080  rust.md <-> roadmap.md
 ```
 

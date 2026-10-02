@@ -55,9 +55,9 @@ Seven types nest, each owning the next. Nothing is owned twice.
 <text class="mem" x="206" y="387">the ten CoNLL-U columns · is_punct</text>
 </svg>
 
-The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree, and the document-level numbers stored rather than derived are `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. `passive_ratio` is the one name in both columns: the measure stage stores the method's result in the field, which is how the aggregate crosses the language boundary.
+The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree, and the document-level numbers stored rather than derived are `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. `passive_ratio` is the one name in both columns: `Engine::compose` stores the method's result in the field, which is how the aggregate crosses the language boundary.
 
-Five more types sit outside the nest:
+The derived structural types (`Negation`, `Modal`, `Reporting`, `RootAdverbial`, `HearstPair` with its `HearstSpan` and `HearstPattern`) sit inside the nest, owned by `Sentence`. The other types sit outside it:
 
 | Type | Role |
 |---|---|
@@ -66,6 +66,10 @@ Five more types sit outside the nest:
 | `Keyphrase` | output of `rake_keyphrases` and `yake_keyphrases` |
 | `Format` | which decomposer a document needs |
 | `Error` | every failure the library can return |
+| `DocumentError`, `CorpusResult` | one document's failure, and the partition of a stream into successes and failures |
+| `Embedding` | one vector from an `Embedder`, the input to clustering |
+| `SemanticClusters`, `SemanticCluster`, `SemanticEdge` | output of `embed_and_cluster` and `extraction::semantic_clusters`, described in [Cluster sentences by meaning](../guides/semantic-clusters.md) |
+| `ProvisionNotice` | what a model fetch is about to download, handed to the `_with_notice` constructors' callback, described in [Errors](errors.md#the-first-run-says-so) |
 
 Where each of those enters and leaves the pipeline is drawn in [Architecture](../architecture/design.md#one-call-end-to-end).
 
@@ -81,15 +85,22 @@ Where each of those enters and leaves the pipeline is drawn in [Architecture](..
 | `Document` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `ScoredSentence` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Keyphrase` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
-| `Format` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
+| `Format` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `RawDocument` | `Debug`, `Clone` | yes |
 | `CorpusEntry` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Corpus` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Error` | `Debug`, `thiserror::Error` | yes |
+| `Negation`, `Modal`, `Reporting`, `RootAdverbial` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
+| `HearstPair`, `HearstSpan` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
+| `HearstPattern` | `Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
+| `DocumentError`, `CorpusResult` | `Debug` | yes |
+| `Embedding` | `Debug`, `Clone`, `PartialEq`, `Serialize`, `Deserialize` | no |
+| `SemanticClusters`, `SemanticCluster`, `SemanticEdge` | `Debug`, `Clone`, `PartialEq`, `Serialize`, `Deserialize` | yes |
+| `ProvisionNotice` | `Debug`, `Clone`, `PartialEq`, `Eq` | yes |
 
 `RawDocument` is the one structural type without serde derives. It is a transient value between the ingest and decompose stages and never appears in stored output.
 
-No type in the module derives `PartialEq`, `Eq`, or `Hash`. Two `Token` values cannot be compared with `==`, and a `Format` is distinguished by matching on its variants rather than by equality. `Error` additionally has no `Clone` and no serde derives.
+No type in the module derives `Hash`, and the parse tree derives no equality: two `Token`, `Sentence`, `Paragraph`, `Section` or `Document` values cannot be compared with `==`. `Format` derives `PartialEq` and `Eq`, which is what the decomposer table keys on, and the Hearst types, the semantic types, `Embedding` and `ProvisionNotice` derive `PartialEq`. `Error` has no `Clone`, no equality and no serde derives. `Embedding` is the one public type without `#[non_exhaustive]`: on a tuple struct the attribute would make the constructor private, and an `Embedder` implemented outside the crate has to build one.
 
 `#[non_exhaustive]` has two effects outside the crate. Struct literal syntax is unavailable, so you build values through the associated constructors listed below. Matches on `Format` and `Error` need a catch-all arm, because variants can be added in a minor release.
 
@@ -154,7 +165,7 @@ let token = matra::domain::Token::builder(
 
 | Field | Type | Contents |
 |---|---|---|
-| `text` | `String` | Sentence text as the NLP provider reports it |
+| `text` | `String` | Sentence text as the NLP provider reports it, not a slice of the input |
 | `tokens` | `Vec<Token>` | Tokens in ascending `id` order |
 | `negations` | `Vec<Negation>` | Negation cues, derived at construction |
 | `modals` | `Vec<Modal>` | Modal auxiliaries, derived at construction |
@@ -163,7 +174,7 @@ let token = matra::domain::Token::builder(
 | `root_adverbials` | `Vec<RootAdverbial>` | Adverbial modifiers attached to the root, derived at construction |
 | `hearst_pairs` | `Vec<HearstPair>` | Candidate hypernymy pairs from the six Hearst (1992) patterns, filled by the pipeline at the annotate stage |
 
-Invariants that downstream code relies on, and that a hand-built `Sentence` is expected to uphold: tokens are id-sorted; exactly one token has `head == 0`; every other `head` names a token in the same sentence.
+Invariants that downstream code relies on, and that a hand-built `Sentence` and every `NlpProvider` are expected to uphold: tokens are id-sorted; exactly one token has `head == 0`; every other `head` names a token in the same sentence; following `head` never loops. Nothing validates them, and the tree walks stay safe when the last one breaks (see `tree_depth` below).
 
 The UDPipe adapter builds `text` by joining token surface forms, inserting a space unless the preceding token carries `SpaceAfter=No` in `misc`. The string is a reconstruction, not a slice of the input, so whitespace can differ from the source text.
 
@@ -209,16 +220,16 @@ Most methods below are walks over the `head` and `dep` columns; the two `_in` fi
 
 | Field | Type | Contents |
 |---|---|---|
-| `text` | `String` | Paragraph text |
+| `text` | `String` | Paragraph text as the decomposer cut it: trimmed, and for a blockquote with the `>` markers removed |
 | `in_blockquote` | `bool` | Whether the paragraph came from a blockquote |
 | `sentences` | `Vec<Sentence>` | Sentences from parsing this paragraph |
 | `readability_grade` | `Option<f64>` | Flesch-Kincaid grade level |
 | `lexical_density` | `Option<f64>` | Content-word ratio, 0.0 to 1.0 |
 | `compression_ratio` | `Option<f64>` | Brotli compressed size over original size |
 
-The three metric slots hold `None` until the measure stage fills them, and stay `None` when the paragraph does not meet a metric's applicability condition.
+The three metric slots hold `None` until `Engine::compose` fills them, and stay `None` when the paragraph does not meet a metric's applicability condition.
 
-The pipeline skips blockquote paragraphs at the parse stage, so a paragraph with `in_blockquote == true` reaches the measure stage with no sentences and keeps all three slots at `None`.
+`Engine::annotate` skips blockquote paragraphs when it parses, so a paragraph with `in_blockquote == true` reaches `compose` with no sentences and keeps all three slots at `None`.
 
 ### Methods
 
@@ -249,7 +260,7 @@ The output of the pipeline.
 | `sections` | `Vec<Section>` | The section tree, which owns every paragraph, sentence, and token |
 | `vocabulary_ttr` | `Option<f64>` | Type-token ratio over lemmas |
 | `nominalization_ratio` | `Option<f64>` | Share of nominalizing nouns |
-| `passive_ratio` | `Option<f64>` | Passive sentences over total sentences, stored by the measure stage so it crosses the language boundary |
+| `passive_ratio` | `Option<f64>` | Passive sentences over total sentences, stored by `Engine::compose` so it crosses the language boundary |
 
 ### Methods
 
@@ -257,7 +268,7 @@ The output of the pipeline.
 |---|---|---|
 | `new(sections: Vec<Section>)` | `Document` | Constructor. All three metric slots `None` |
 | `paragraphs(&self)` | `impl Iterator<Item = &Paragraph>` | Every paragraph, in document order |
-| `paragraphs_mut(&mut self)` | `impl Iterator<Item = &mut Paragraph>` | The mutable form, used by the measure stage |
+| `paragraphs_mut(&mut self)` | `impl Iterator<Item = &mut Paragraph>` | The mutable form, used by `annotate` and by the metric suite `compose` runs |
 | `paragraph_count(&self)` | `usize` | Number of paragraphs |
 | `sentences(&self)` | `impl Iterator<Item = &Sentence>` | Every sentence across every paragraph |
 | `tokens(&self)` | `impl Iterator<Item = &Token>` | Every token across every sentence |
@@ -427,7 +438,7 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 <text class="nt" x="462" y="244">from the sections it already has</text>
 </svg>
 
-`Token::feat`, `Document::mean_sentence_length`, `Corpus::total_words`, `Sentence::tree_depth`, and every other method in the tables above are available to Rust callers only. `passive_ratio` is the one aggregate that crosses: the measure stage stores the method's result in the field of the same name.
+`Token::feat`, `Document::mean_sentence_length`, `Corpus::total_words`, `Sentence::tree_depth`, and every other method in the tables above are available to Rust callers only. `passive_ratio` is the one aggregate that crosses: `Engine::compose` stores the method's result in the field of the same name.
 
 | Rust type | Python shape |
 |---|---|

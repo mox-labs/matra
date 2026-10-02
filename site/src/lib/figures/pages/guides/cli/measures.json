@@ -36,13 +36,13 @@
       "words": 96
     },
     {
-      "compression_ratio": 0.5007,
+      "compression_ratio": 0.5,
       "in_blockquote": false,
-      "lexical_density": 0.5877,
-      "readability_grade": 11.1055,
+      "lexical_density": 0.5862,
+      "readability_grade": 9.65,
       "sentences": 5,
-      "text": "With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. `cargo install matra --features cli` reports `features: udpipe cli`, while the published wheel reports `features: udpipe model2vec python cli`, so the embedding adapter is present on the Python route and absent from a `--features cli` build. `matra --version` prints the list of the binary in front of you on its second line.",
-      "words": 116
+      "text": "With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. `cargo install matra --version '^0.2' --features cli` reports `features: udpipe cli`, while the published wheel reports `features: udpipe model2vec python cli`, so the embedding adapter is present on the Python route and absent from a `--features cli` build. `matra --version` prints the list of the binary in front of you on its second line.",
+      "words": 118
     },
     {
       "compression_ratio": 0.5693,
@@ -221,7 +221,7 @@
       "lexical_density": 0.5221,
       "readability_grade": 5.1254,
       "sentences": 5,
-      "text": "Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE ties `dense similarity matrix` and `system trust store` for first at `9.000` and scores the bare `error` at `1.190`, while YAKE's first is `treat untrusted` at `81.811`. What is near the bottom there is the score, not the position: `1.190` sits just above `1.000`, the floor any single word scores, and 217 of the 471 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.",
+      "text": "Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE ties `dense similarity matrix` and `system trust store` for first at `9.000` and scores the bare `error` at `1.190`, while YAKE's first is `treat untrusted` at `82.740`. What is near the bottom there is the score, not the position: `1.190` sits just above `1.000`, the floor any single word scores, and 218 of the 472 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.",
       "words": 120
     },
     {
@@ -234,6 +234,15 @@
       "words": 26
     },
     {
+      "compression_ratio": 0.5259,
+      "in_blockquote": false,
+      "lexical_density": 0.6044,
+      "readability_grade": 9.5506,
+      "sentences": 5,
+      "text": "Two of those keys change nothing. `models.udpipe` is printed here and read nowhere else: the parsing model's file name is pinned in the source beside its digest, so setting the key selects no model ([model licenses](../tutorials/installation.md#model-licenses) says how to load another one). `semantic.threshold` is printed here and read nowhere else either: there is no clustering command, and every clustering call in the library takes its threshold as an argument. `models.embedding` does act, as the name of the embedding model's directory under `model_dir`, which `Model2Vec::from_config` and `Model2Vec.potion_base_8m()` provision into and load from.",
+      "words": 94
+    },
+    {
       "compression_ratio": 0.526,
       "in_blockquote": false,
       "lexical_density": 0.5385,
@@ -243,13 +252,13 @@
       "words": 52
     },
     {
-      "compression_ratio": 0.5457,
+      "compression_ratio": 0.4796,
       "in_blockquote": false,
-      "lexical_density": 0.5625,
-      "readability_grade": 8.2875,
-      "sentences": 4,
-      "text": "What that listing does not carry is the config file path. Every key whose origin is `default` names no file, so a run with no config file on disk prints no path at all, and \"where is my config\" is not a question the human table answers. Two commands do answer it. `matra config show --json` puts the resolved path in the envelope's `input` field, whether or not the file exists; `matra config init` prints the path it wrote to.",
-      "words": 81
+      "lexical_density": 0.5357,
+      "readability_grade": 8.4228,
+      "sentences": 5,
+      "text": "What that listing does not carry is the config file path. Every key whose origin is `default` names no file, so a run with no config file on disk prints no path at all, and \"where is my config\" is not a question the human table answers. Two commands do answer it, once there is a file. `matra config show --json` puts the config file's path in the envelope's `input` field when that file exists, and `null` when it does not: `input` names what the run read, and a run with no config file read none. `matra config init` prints the path it wrote to, which is also where `config show` looks.",
+      "words": 114
     },
     {
       "compression_ratio": 0.5884,
@@ -387,13 +396,13 @@
       "words": 8
     },
     {
-      "compression_ratio": 0.5302,
+      "compression_ratio": 0.4763,
       "in_blockquote": false,
-      "lexical_density": 0.5254,
-      "readability_grade": 10.08,
-      "sentences": 4,
-      "text": "`command` is `analyze`, `summarize`, `keyphrases`, `config`, or `skill`. `input` is the path that was read, or the name `--stdin-filename` gave it, and it is null for `skill`, which reads no document. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`.",
-      "words": 63
+      "lexical_density": 0.5,
+      "readability_grade": 9.202,
+      "sentences": 6,
+      "text": "`command` is `analyze`, `summarize`, `keyphrases`, `config`, or `skill`. `input` is the path that was read, or the name `--stdin-filename` gave it. For `config` it is the config file's path when that file exists and null when it does not, and for `skill`, which reads no document, it is always null. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`. For `config` it is an object keyed by setting, each carrying `value`, `source` and `origin`, and for `skill` the shapes shown above.",
+      "words": 105
     },
     {
       "compression_ratio": 0.5633,

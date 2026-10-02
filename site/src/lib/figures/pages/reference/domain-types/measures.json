@@ -47,20 +47,20 @@
     {
       "compression_ratio": 0.5096,
       "in_blockquote": false,
-      "lexical_density": 0.5495,
-      "readability_grade": 13.3814,
-      "sentences": 5,
-      "text": "The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree, and the document-level numbers stored rather than derived are `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. `passive_ratio` is the one name in both columns: the measure stage stores the method's result in the field, which is how the aggregate crosses the language boundary.",
-      "words": 95
+      "lexical_density": 0.5506,
+      "readability_grade": 13.7706,
+      "sentences": 4,
+      "text": "The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree, and the document-level numbers stored rather than derived are `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. `passive_ratio` is the one name in both columns: `Engine::compose` stores the method's result in the field, which is how the aggregate crosses the language boundary.",
+      "words": 94
     },
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.7143,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "Five more types sit outside the nest:",
-      "words": 7
+      "lexical_density": 0.6667,
+      "readability_grade": 16.7919,
+      "sentences": 2,
+      "text": "The derived structural types (`Negation`, `Modal`, `Reporting`, `RootAdverbial`, `HearstPair` with its `HearstSpan` and `HearstPattern`) sit inside the nest, owned by `Sentence`. The other types sit outside it:",
+      "words": 28
     },
     {
       "compression_ratio": null,
@@ -81,13 +81,13 @@
       "words": 26
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5286,
       "in_blockquote": false,
-      "lexical_density": 0.5366,
-      "readability_grade": 9.0229,
-      "sentences": 3,
-      "text": "No type in the module derives `PartialEq`, `Eq`, or `Hash`. Two `Token` values cannot be compared with `==`, and a `Format` is distinguished by matching on its variants rather than by equality. `Error` additionally has no `Clone` and no serde derives.",
-      "words": 42
+      "lexical_density": 0.5978,
+      "readability_grade": 13.2604,
+      "sentences": 4,
+      "text": "No type in the module derives `Hash`, and the parse tree derives no equality: two `Token`, `Sentence`, `Paragraph`, `Section` or `Document` values cannot be compared with `==`. `Format` derives `PartialEq` and `Eq`, which is what the decomposer table keys on, and the Hearst types, the semantic types, `Embedding` and `ProvisionNotice` derive `PartialEq`. `Error` has no `Clone`, no equality and no serde derives. `Embedding` is the one public type without `#[non_exhaustive]`: on a tuple struct the attribute would make the constructor private, and an `Embedder` implemented outside the crate has to build one.",
+      "words": 97
     },
     {
       "compression_ratio": null,
@@ -171,13 +171,13 @@
       "words": 35
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5989,
       "in_blockquote": false,
-      "lexical_density": 0.5429,
-      "readability_grade": 16.2657,
-      "sentences": 1,
-      "text": "Invariants that downstream code relies on, and that a hand-built `Sentence` is expected to uphold: tokens are id-sorted; exactly one token has `head == 0`; every other `head` names a token in the same sentence.",
-      "words": 37
+      "lexical_density": 0.6102,
+      "readability_grade": 14.115,
+      "sentences": 2,
+      "text": "Invariants that downstream code relies on, and that a hand-built `Sentence` and every `NlpProvider` are expected to uphold: tokens are id-sorted; exactly one token has `head == 0`; every other `head` names a token in the same sentence; following `head` never loops. Nothing validates them, and the tree walks stay safe when the last one breaks (see `tree_depth` below).",
+      "words": 61
     },
     {
       "compression_ratio": null,
@@ -281,20 +281,20 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.64,
-      "readability_grade": 12.096,
+      "lexical_density": 0.6522,
+      "readability_grade": 13.3887,
       "sentences": 1,
-      "text": "The three metric slots hold `None` until the measure stage fills them, and stay `None` when the paragraph does not meet a metric's applicability condition.",
-      "words": 26
+      "text": "The three metric slots hold `None` until `Engine::compose` fills them, and stay `None` when the paragraph does not meet a metric's applicability condition.",
+      "words": 25
     },
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5667,
-      "readability_grade": 12.63,
+      "lexical_density": 0.5769,
+      "readability_grade": 13.1577,
       "sentences": 1,
-      "text": "The pipeline skips blockquote paragraphs at the parse stage, so a paragraph with `in_blockquote == true` reaches the measure stage with no sentences and keeps all three slots at `None`.",
-      "words": 30
+      "text": "`Engine::annotate` skips blockquote paragraphs when it parses, so a paragraph with `in_blockquote == true` reaches `compose` with no sentences and keeps all three slots at `None`.",
+      "words": 27
     },
     {
       "compression_ratio": null,
@@ -434,11 +434,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5385,
-      "readability_grade": 15.3124,
-      "sentences": 3,
-      "text": "`Token::feat`, `Document::mean_sentence_length`, `Corpus::total_words`, `Sentence::tree_depth`, and every other method in the tables above are available to Rust callers only. `passive_ratio` is the one aggregate that crosses: the measure stage stores the method's result in the field of the same name.",
-      "words": 41
+      "lexical_density": 0.5405,
+      "readability_grade": 16.5007,
+      "sentences": 2,
+      "text": "`Token::feat`, `Document::mean_sentence_length`, `Corpus::total_words`, `Sentence::tree_depth`, and every other method in the tables above are available to Rust callers only. `passive_ratio` is the one aggregate that crosses: `Engine::compose` stores the method's result in the field of the same name.",
+      "words": 40
     },
     {
       "compression_ratio": 0.5303,

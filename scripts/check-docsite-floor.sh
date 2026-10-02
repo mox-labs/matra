@@ -134,6 +134,7 @@ FileNotFoundError
 From
 Hash
 Ignore
+ImportError
 Into
 IntoIterator
 Iterator

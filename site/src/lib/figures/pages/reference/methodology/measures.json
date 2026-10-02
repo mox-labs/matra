@@ -351,12 +351,12 @@
       "words": 41
     },
     {
-      "compression_ratio": 0.5411,
+      "compression_ratio": 0.5516,
       "in_blockquote": false,
-      "lexical_density": 0.5,
-      "readability_grade": 10.52,
+      "lexical_density": 0.5273,
+      "readability_grade": 11.8707,
       "sentences": 3,
-      "text": "**Computed** by `Document::passive_ratio()` and `Corpus::passive_ratio()`, and per sentence by `Sentence::is_passive()`. The measure stage stores the document-level value in the `passive_ratio` field, which is how it crosses to Python; the `Corpus` aggregate and `is_passive` stay methods, Rust only. Returns 0.0 when there are no sentences, and the field is `None` when the measure stage has not run.",
+      "text": "**Computed** by `Document::passive_ratio()` and `Corpus::passive_ratio()`, and per sentence by `Sentence::is_passive()`. `Engine::compose` stores the document-level value in the `passive_ratio` field, which is how it crosses to Python; the `Corpus` aggregate and `is_passive` stay methods, Rust only. The method returns 0.0 when there are no sentences; the field stays `None` then, and whenever `compose` has not run.",
       "words": 59
     },
     {

@@ -37,7 +37,7 @@ let engine = Engine::with_defaults()?;
 
 That is `Config::resolve()` followed by `Engine::from_config(&cfg)`. Both are additive: `Engine::new`, `Udpipe::english` and `Udpipe::from_path` are unchanged, and an explicit path still wins over everything below.
 
-`Config` resolves locations and defaults, never behavior. It carries the model directory, the semantic threshold, and the default counts and algorithm names, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped.
+`Config` resolves locations and defaults, never behavior. It carries the model directory, the embedding model's directory name, and the default counts and algorithm names the command line uses, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped. It also carries two values nothing reads except `matra config show`: `models.udpipe`, because the parsing model is pinned in the source, and `semantic.threshold`, because every clustering call takes its threshold as an argument.
 
 Resolution order, per key: an explicit argument, then the environment, then the config file, then the defaults compiled into the crate from `config/default.toml`. The argument rung has one producer, `Config::with_model_dir`, which returns the same configuration with the model directory replaced and that one key's source changed. It is the rung a command line's `--model-dir` lands on, so the flag reaches the adapter through `Config` rather than past it.
 
@@ -69,7 +69,7 @@ It is also the cheap route when you want the extractors. Annotate once, read the
 
 ## Ports and adapters
 
-The domain depends on port traits. Adapters implement them.
+The pipeline depends on port traits, and adapters implement them. The domain depends on neither: the ports import the domain, never the reverse.
 
 | Port | Trait | Adapters this build ships | Feature |
 |---|---|---|---|
@@ -126,7 +126,7 @@ When an aggregate needs to be visible cross-language it is materialized as a fie
 | any object with `embed` and `identity` | an `Embedder` implementor, wrapped by an adapter in the binding |
 | `_core.cli_main(argv)` | `cli::run`, which is what the `matra` console script launches |
 
-Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `CorpusEntry` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. That arm needs no embedding adapter compiled in, so a build without `model2vec` still clusters with vectors the caller brings.
+Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `CorpusEntry` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. In the extension module that arm needs no embedding adapter compiled in. The `matra` package itself still requires an extension built with `model2vec`: its `__init__` imports `Model2Vec` and raises `ImportError` naming the feature when it is absent, and every published wheel includes it.
 
 Still not on the Python surface: the separate `annotate` and `compose` stages, the remaining corpus types (`Corpus`, `CorpusResult`), a custom `NlpProvider`, and a replaceable metric suite. Parsing is the one thing the caller cannot substitute, because the size cap and the panic boundary live behind it.
 

@@ -37,7 +37,7 @@
 - [What matra gives you](https://mox-labs.github.io/matra/capabilities.html): Every value the pipeline returns, by tier.
 - [Domain model](https://mox-labs.github.io/matra/reference/domain-types.html): `matra::domain` holds every type the library hands back.
 - [Rust](https://mox-labs.github.io/matra/guides/rust.html): You already have `matra` in your `Cargo.toml`.
-- [Python](https://mox-labs.github.io/matra/guides/python.html): You installed matra with `uv add matra`.
+- [Python](https://mox-labs.github.io/matra/guides/python.html): You installed matra with `uv add 'matra>=0.2'` or `pip install 'matra>=0.2'`.
 - [CLI](https://mox-labs.github.io/matra/guides/cli.html): `matra` reads a file (or stdin) and writes to stdout.
 - [Methodology](https://mox-labs.github.io/matra/reference/methodology.html): What each number matra reports is computed from, how to cite the work it comes from, and what it does not license you to conclude.
 - [Errors](https://mox-labs.github.io/matra/reference/errors.html): Every fallible function in matra returns `domain::Result<T>`, which is `std::result::Result<T, domain::Error>`.

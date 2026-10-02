@@ -20,7 +20,7 @@ The ten CoNLL-U columns plus one derived flag. All cross to Python.
 | `feats` | morphology (tense, number, person) |
 | `head` | `id` of the token this one depends on, `0` for the root |
 | `dep` | the dependency relation to that head |
-| `deps` | secondary dependencies |
+| `deps` | secondary dependencies, always `_` from the UDPipe adapter, whose binding does not surface them |
 | `misc` | annotation |
 | `is_punct` | punctuation flag |
 
@@ -30,7 +30,7 @@ The ten CoNLL-U columns plus one derived flag. All cross to Python.
 
 | Field | Holds |
 |---|---|
-| `text` | verbatim sentence text |
+| `text` | sentence text, rebuilt by the provider from its tokens |
 | `tokens` | `Vec<Token>`, id-sorted |
 | `negations` | `Vec<Negation>`: cue id, cue lemma, head id |
 | `modals` | `Vec<Modal>`: auxiliary id, lemma, head id |
@@ -71,8 +71,8 @@ Produced by `Engine::compose`. Each is `Option<f64>`, and `None` means not compu
 | `readability_grade` | `Paragraph` | Flesch-Kincaid grade level, from sentence and syllable length |
 | `lexical_density` | `Paragraph` | content words as a share of all words |
 | `compression_ratio` | `Paragraph` | brotli compressed size over raw size, a repetition proxy |
-| `vocabulary_ttr` | `Document` | distinct words over total words, and it falls as text grows, so documents of different lengths are not comparable on it |
-| `nominalization_ratio` | `Document` | share of nouns formed from verbs (`decide` becoming `decision`) |
+| `vocabulary_ttr` | `Document` | distinct lemmas over total words, and it falls as text grows, so documents of different lengths are not comparable on it |
+| `nominalization_ratio` | `Document` | nouns ending in a nominalizing suffix (`-tion`, `-ment`, `-ness`, `-ity`, `-ence`, `-ance`) over all words, a surface proxy for nouns formed from verbs (`decide` becoming `decision`) |
 | `passive_ratio` | `Document` | share of sentences carrying a passive construction |
 
 `Corpus` adds three Rust-only aggregates across the documents of a directory: `total_words()`, `passive_ratio()`, `mean_readability()`.
@@ -109,7 +109,7 @@ The two rank by different properties of the text, and on The Federalist No. 10 t
 
 ## 5. Semantic clusters
 
-Behind the `model2vec` feature. Not a field on any type above.
+Not a field on any type above. The port and the clustering functions are always compiled; the `Model2Vec` adapter is behind the `model2vec` feature.
 
 | Item | Is |
 |---|---|
@@ -136,7 +136,7 @@ Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `
 
 ## Traceability
 
-`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Nothing is normalized, re-wrapped, or rewritten, and each paragraph is parsed on its own, so the chain from a token up through its sentence, paragraph, and section always holds, rather than depending on text matching.
+`Paragraph.text` is the paragraph as the decomposer cut it from the input, trimmed at both ends, with a blockquote's `>` markers removed. `Sentence.text` is rebuilt by the provider: the UDPipe adapter joins the token forms with a space unless a token carries `SpaceAfter=No`, so its whitespace can differ from the source. Neither is matched back to the input to place it. Each paragraph is parsed on its own and its sentences are attached to it, so the chain from a token up through its sentence, paragraph, and section holds by construction rather than by text matching.
 
 ## Where to go next
 

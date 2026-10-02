@@ -18,13 +18,13 @@
       "words": 17
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5531,
       "in_blockquote": false,
-      "lexical_density": 0.5455,
-      "readability_grade": 8.0093,
-      "sentences": 2,
-      "text": "`Paragraph.text` and `Sentence.text` are verbatim slices of the input. Each non-blockquote paragraph is parsed on its own, so a sentence always belongs to exactly one paragraph, rather than being matched back by text.",
-      "words": 34
+      "lexical_density": 0.4912,
+      "readability_grade": 7.9016,
+      "sentences": 3,
+      "text": "`Paragraph.text` is the paragraph as the decomposer cut it from the input, trimmed, with a blockquote's `>` markers removed. `Sentence.text` is rebuilt from the tokens, so its spacing can differ from the source. Each non-blockquote paragraph is parsed on its own, so a sentence always belongs to exactly one paragraph, rather than being matched back by text.",
+      "words": 59
     },
     {
       "compression_ratio": null,

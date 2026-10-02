@@ -1,6 +1,6 @@
 # Use matra from Python
 
-You installed matra with `uv add matra`. That gave you two things: the library described on this page, and the `matra` command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the [CLI guide](cli.md); the Python package adds no behavior to it.
+You installed matra with `uv add 'matra>=0.2'` or `pip install 'matra>=0.2'`. That gave you two things: the library described on this page, and the `matra` command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the [CLI guide](cli.md); the Python package adds no behavior to it.
 
 ## The no-setup path
 
@@ -21,11 +21,10 @@ from pathlib import Path
 
 from matra import Matra
 
-model_dir = str(Path.home() / ".matra" / "models")
-v = Matra.english(model_dir)
+v = Matra.english(Path.home() / "models" / "matra")
 ```
 
-Pass a real path, not a shell shorthand. The string goes straight to Rust's `create_dir_all`, which does not expand `~`. `Matra.english("~/.matra/models")` creates a directory literally named `~` under your current working directory and caches a 16 MB model inside it.
+The argument is a `str` or any `os.PathLike`, such as the `pathlib.Path` above. Pass a real path, not a shell shorthand: `~` is taken literally. The path goes straight to Rust's `create_dir_all`, which does not expand it, so `Matra.english("~/models")` creates a directory literally named `~` under your current working directory and caches a 16 MB model inside it. `Path.home()`, or `os.path.expanduser`, does the expansion in Python. Name a directory you own: provisioning trusts what it finds there, and a shared one such as `/tmp` is writable by anybody on the machine.
 
 `Matra.english` downloads the English UDPipe model into that directory on first use, verifies it against a pinned SHA-256 hash, and loads from the cache on every call after that. The two ways that can fail raise different exceptions, and the split is the one the [errors reference](../reference/errors.md#provisioning-failures) describes: a download that never arrived, or a directory that could not be written, raises `OSError`; bytes that arrived and then failed the hash raise `RuntimeError`. A bootstrap that wants to survive both catches both. Before 0.2.0 a failed download also raised `RuntimeError`, so an `except RuntimeError` written against an older version stops catching network failures. If you already have a model file, load it directly; a missing path raises `FileNotFoundError`, a corrupt file raises `RuntimeError`:
 
@@ -139,7 +138,7 @@ The contract is the one the Rust port carries: exactly one vector per input text
 
 Every method that takes text rejects text over 8 MiB with `ValueError`. The gate lives in the pipeline stage every method routes through, not in each method, so there is no method that skips it.
 
-The per-algorithm caps apply on top: 2000 sentences for `tfidf_summarize` and `textrank_summarize`, and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `ValueError` when exceeded.
+The per-algorithm caps apply on top: 2000 sentences for `tfidf_summarize`, `textrank_summarize` and `semantic_clusters` (the method and the module-level function alike), and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `ValueError` when exceeded.
 
 ## The returned dicts and their shape
 
@@ -243,18 +242,25 @@ Every `domain::Error` variant crosses the FFI boundary as a specific Python exce
 | Model file corrupt or wrong format, or bytes that arrived and failed the pinned hash | `ModelInvalid` | `RuntimeError` |
 | NLP parsing failed, including a panic caught at the UDPipe boundary | `ParseFailed` | `RuntimeError` |
 
+Loading the model and analyzing text fail in different ways, so catch them separately:
+
 ```python
+from matra import Matra
+
+try:
+    v = Matra.from_path("models/english-ewt-ud-2.5-191206.udpipe")
+except FileNotFoundError as e:
+    raise SystemExit(f"model missing: {e}")
+
 try:
     result = v.analyze(text)
-except FileNotFoundError as e:
-    print(f"model missing: {e}")
 except ValueError as e:
-    print(f"bad input: {e}")
+    print(f"bad input: {e}")       # over the 8 MiB cap
 except RuntimeError as e:
     print(f"parse failed: {e}")
 ```
 
-The message on each exception is the Rust error's own `Display` output, so an `InputTooLarge` message names the gate that fired: `input`, `file_source`, `tfidf`, `textrank`, `rake`, or `yake`.
+The message on each exception is the Rust error's own `Display` output, so an `InputTooLarge` message names the gate that fired. The text methods raise `input`, `tfidf`, `textrank`, `rake`, `yake` and `semantic_clusters`; the constructors that resolve or download a model raise `config_file`, `udpipe_download` and `embedding_download`. `analyze_path` raises none of them: an oversized file there is an item whose `kind` is `input_too_large`, with `file_source` in its message.
 
 The mapping is exhaustive and enforced at compile time on the Rust side. The match that builds the Python exception has no wildcard arm, so adding a new `domain::Error` variant without also wiring it to a Python exception class fails to build. A new variant cannot fall through to `RuntimeError` by accident.
 

@@ -14,7 +14,7 @@ Each guide does one task on one real text. Six show the input, the same call in 
 
 ## Before you start
 
-Install matra the way you mean to use it: the library, the CLI, or the Python package ([Installation](../tutorials/installation.md)). The Rust calls also need `serde_json` to print, which is the first line of each one: `cargo add matra serde_json`.
+Install matra the way you mean to use it: the library, the CLI, or the Python package ([Installation](../tutorials/installation.md)). The Rust calls also need `serde_json` to print, which is the first line of each one: `cargo add matra@0.2 serde_json`.
 
 Each call reads its input from the directory it runs in, under the file name the page gives. Each page has the command that downloads it. The first call on a machine downloads the English model (about 16 MB), and every later call reads it from disk.
 

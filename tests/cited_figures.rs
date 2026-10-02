@@ -9,7 +9,7 @@
 //!
 //! That is not hypothetical. Three wrong figures shipped across three review
 //! rounds of one branch, and the margin that carries the whole lesson of the
-//! semantic example is 0.0138: a near-duplicate pair scores 0.8362 against a
+//! semantic example is 0.0101: a near-duplicate pair scores 0.8399 against a
 //! cutoff of 0.85, and the example exists to show that the cutoff calls them
 //! unrelated. An ordinary edit to either guide can push that pair over the
 //! line, at which point two pages teach the opposite of what they say, in
@@ -24,7 +24,7 @@
 //! its runner rather than trying to prove the command still works.
 //!
 //! The coverage is narrower for the figure swept over every page. The 141 to
-//! 368 word range pins only the two pages that set its ends, so an edit that
+//! 377 word range pins only the two pages that set its ends, so an edit that
 //! carries some other page past either end goes unnoticed.
 //!
 //! When a source page legitimately changes: re-measure the figures the
@@ -38,41 +38,41 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
             "site/content/guides/cli.md",
-            "17214:7f19b1fbef5947a0",
-            "the 0.8362 pair score in site/content/guides/semantic-clusters.md \
-             and skills/matra/references/semantic.md, and the 0.5907 unrelated score",
+            "18304:d6adeb864e05df01",
+            "the 0.8399 pair score in site/content/guides/semantic-clusters.md \
+             and skills/matra/references/semantic.md, and the 0.5857 unrelated score",
         ),
         (
             "site/content/guides/rust.md",
-            "18204:82b70f0e40a536ac",
-            "the 0.8362 pair score and the 0.6080 unrelated score, in the same two files",
+            "19153:1c825cfeed47c52f",
+            "the 0.8399 pair score and the 0.6080 unrelated score, in the same two files",
         ),
         (
             "site/content/roadmap.md",
             "29348:13e93baae2ced404",
-            "the 0.5907 and 0.6080 unrelated scores, in the same two files",
+            "the 0.5857 and 0.6080 unrelated scores, in the same two files",
         ),
         (
             "site/content/reference/errors.md",
-            "25459:cb434573d64fdaa5",
-            "the RAKE and YAKE figures in site/content/guides/cli.md: 471 phrases, \
-             the two tied at 9.000, 1.190, 217 at the floor, and YAKE's 81.811",
+            "25617:f117fd18ca58252c",
+            "the RAKE and YAKE figures in site/content/guides/cli.md: 472 phrases, \
+             the two tied at 9.000, 1.190, 218 at the floor, and YAKE's 82.740",
         ),
         (
             "site/content/reference/domain-types.md",
-            "32877:efa9451410f35008",
+            "34927:13952341e194bab8",
             "the 141-word saturation floor and the 54-word window in \
              site/content/guides/semantic-clusters.md and skills/matra/references/semantic.md",
         ),
         (
-            "site/content/explanation/situation-model.md",
-            "4109:d87ffe16d2fbc6f2",
-            "the 368-word saturation ceiling in site/content/guides/semantic-clusters.md \
+            "site/content/explanation/semantic-clusters.md",
+            "2357:7bf1e1efc915841e",
+            "the 377-word saturation ceiling in site/content/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md",
         ),
         (
             "site/content/reference/methodology.md",
-            "25301:b388f08ea871ff65",
+            "25317:f418607f15baf80d",
             "the RAKE length example in site/content/guides/cli.md: `lexical density` \
              at 5.667 over `model file name` at 5.167",
         ),

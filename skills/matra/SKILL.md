@@ -18,7 +18,7 @@ One Rust library, a Python API on top of it, and one command line reachable from
 
 Reach for matra when the user has prose in hand: documentation, a README, an essay, a specification, release notes, a draft, or text a model just produced.
 
-Reach for it when the question is about passive voice, lexical density, readability, vocabulary variety, nominalization, repetition in wording, repetition in paraphrase, which sentences carry a document, or which phrases it keeps returning to.
+Reach for it when the question is about passive voice, lexical density, readability, vocabulary variety, nominalization, repetition in wording, which sentences carry a document, or which phrases it keeps returning to. Repetition in paraphrase is a library and Python call, not a command: there is no clustering subcommand, and `semantic` says how to make the call.
 
 Reach for it when something downstream needs sentences and dependency arcs as input: a rule that fires on modal verbs, a prompt that quotes only bare assertions, a check that counts hedges, a diff that compares two drafts at the sentence level.
 
@@ -26,7 +26,7 @@ Do not reach for it to score quality, detect authorship, or judge an argument. I
 
 ## Install and first run
 
-The Python package ships the command, so `uvx 'matra>=0.2' --version` runs it with nothing installed and nothing configured. Pin the floor: a bare `uvx matra` resolves to whatever release is newest, and the command line before 0.2.0 was a different program without `--skill`. PyPI and crates.io serve 0.2.x, so the pinned line resolves; the floor is there so it keeps naming this program as later releases arrive. `cargo install matra --features cli` installs the Rust binary instead, and `uv add matra` puts the same command on a project.
+The Python package ships the command, so `uvx 'matra>=0.2' --version` runs it with nothing installed and nothing configured. Pin the floor: a bare `uvx matra` resolves to whatever release is newest, and the command line before 0.2.0 was a different program without `--skill`. PyPI and crates.io serve 0.2.x, so the pinned line resolves; the floor is there so it keeps naming this program as later releases arrive. `cargo install matra --version '^0.2' --features cli` installs the Rust binary instead, and `uv add 'matra>=0.2'` puts the same command on a project.
 
 ```console
 $ matra --version
@@ -40,7 +40,7 @@ Files land in XDG locations: the config at `$XDG_CONFIG_HOME/matra/config.toml` 
 
 ## The commands
 
-`analyze`, `summarize` and `keyphrases` each read one file, or `-` for stdin with `--stdin-filename` naming it. A directory is refused, because a command that reports on one document cannot report on a directory of them. Under `--json` each emits the same envelope, and so do `config show` and `--skill`; `completions` prints a script and ignores `--json`. Four keys at the top level: `format_version` (the integer `1` today), `command`, `input` (the path or the stdin name, and null for `--skill`, which reads none), and `result`. Pin a consumer to a `format_version` you tested against. See `json` for the field by field shape.
+`analyze`, `summarize` and `keyphrases` each read one file, or `-` for stdin with `--stdin-filename` naming it. A directory is refused, because a command that reports on one document cannot report on a directory of them. Under `--json` each emits the same envelope, and so do `config show` and `--skill`; `completions` prints a script and ignores `--json`. Four keys at the top level: `format_version` (the integer `1` today), `command`, `input` (the path or the stdin name; for `config show` the config file's path when it exists and null when not; null for `--skill`, which reads none), and `result`. Pin a consumer to a `format_version` you tested against. See `json` for the field by field shape.
 
 `analyze` parses the document and fills its metric slots. `result` is a `Document`: `sections`, each with `heading`, `level` and `paragraphs`, each paragraph with `text`, `in_blockquote`, `sentences` and three metric slots, plus the document-level `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. Add `--sections` for a per-section table of counts.
 
@@ -66,7 +66,7 @@ $ matra summarize notes.md -n 3 --json
 $ matra keyphrases notes.md -n 10 --json
 ```
 
-`config show` prints every resolved value with the rung it came from. Under `--json` each key carries its value, the rung, and what the rung pointed at, and `input` is the config file path. `config init` writes the shipped defaults there and refuses to overwrite without `--force`.
+`config show` prints every resolved value with the rung it came from. Under `--json` each key carries its value, the rung, and what the rung pointed at, and `input` is the config file's path when that file exists, null when it does not. `models.udpipe` and `semantic.threshold` are printed but change nothing: the parsing model is pinned, and every clustering call takes its threshold as an argument. `config init` writes the shipped defaults there and refuses to overwrite without `--force`.
 
 ```console
 $ matra config show --json
@@ -92,7 +92,7 @@ Branch on the code, not on the text. Exit 1 is not an error, and treating it as 
 
 ## Reading the numbers
 
-Every metric row below names a slot on the result. A slot is null when the metric stage has not run, and null where the paragraph did not meet the metric's threshold. Null is not zero. The last row is not a slot: `score` is the ordering number on a `Keyphrase`, never null and never a measurement of the text. Formulas and citations are in `metrics`.
+Every metric row below names a slot on the result. A slot is null when the metrics have not run, and null where the paragraph did not meet the metric's threshold. Null is not zero. The last row is not a slot: `score` is the ordering number on a `Keyphrase`, never null and never a measurement of the text. Formulas and citations are in `metrics`.
 
 | Field | Measures | Does not mean |
 |---|---|---|

@@ -163,7 +163,7 @@ passive_ratio = passive_sentences / total_sentences
 
 A sentence counts as passive when any of its tokens carries a `dep` of `nsubj:pass`, `nsubjpass`, or `aux:pass`. The first two are the Universal Dependencies and older Stanford spellings of a passive subject; the third is a passive auxiliary.
 
-**Computed** by `Document::passive_ratio()` and `Corpus::passive_ratio()`, and per sentence by `Sentence::is_passive()`. The measure stage stores the document-level value in the `passive_ratio` field, which is how it crosses to Python; the `Corpus` aggregate and `is_passive` stay methods, Rust only. Returns 0.0 when there are no sentences, and the field is `None` when the measure stage has not run.
+**Computed** by `Document::passive_ratio()` and `Corpus::passive_ratio()`, and per sentence by `Sentence::is_passive()`. `Engine::compose` stores the document-level value in the `passive_ratio` field, which is how it crosses to Python; the `Corpus` aggregate and `is_passive` stay methods, Rust only. The method returns 0.0 when there are no sentences; the field stays `None` then, and whenever `compose` has not run.
 
 **Citation.** de Marneffe, M.-C., Manning, C.D., Nivre, J., & Zeman, D. (2021). Universal Dependencies. *Computational Linguistics*, 47(2), 255-308.
 
