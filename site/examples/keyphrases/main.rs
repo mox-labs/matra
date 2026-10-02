@@ -1,4 +1,4 @@
-// cargo add matra serde_json
+// cargo add matra@0.2 serde_json
 use matra::extraction::rake_keyphrases;
 use matra::{Engine, Ingest};
 

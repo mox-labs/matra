@@ -11,10 +11,10 @@
 //! of the corpus intact and the failure recorded in the error vector.
 //!
 //! Run with: cargo run --example corpus -- <directory>
-//! (requires UDPipe model at /tmp/matra-models/)
+//! (downloads the UDPipe model into the configured model directory on
+//! first use; `matra config show` prints where that is)
 
 use matra::domain::CorpusResult;
-use matra::nlp::udpipe::Udpipe;
 use matra::{Engine, Ingest};
 use std::path::PathBuf;
 
@@ -24,8 +24,7 @@ fn main() -> matra::domain::Result<()> {
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("./"));
 
-    let nlp = Udpipe::english("/tmp/matra-models")?;
-    let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
+    let engine = Engine::with_defaults()?;
     let result: CorpusResult = engine.analyze(Ingest::path(&dir)?).collect();
 
     println!(

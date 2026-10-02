@@ -1,4 +1,4 @@
-// cargo add matra serde_json
+// cargo add matra@0.2 serde_json
 use matra::{Engine, Ingest};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
