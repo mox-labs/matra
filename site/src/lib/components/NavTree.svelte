@@ -98,8 +98,12 @@
 		padding-inline-start: var(--space-2);
 	}
 
+	/* At least 24px tall, so the smaller section links still meet the WCAG
+	   2.2 target size (2.5.8). */
 	a {
 		display: block;
+		box-sizing: border-box;
+		min-height: 24px;
 		padding: 0.2rem 0 0.2rem var(--space-1);
 		margin-inline-start: calc(-1 * var(--space-1));
 		border-inline-start: 2px solid transparent;

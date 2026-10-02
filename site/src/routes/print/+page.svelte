@@ -14,7 +14,9 @@
 <div class="print-page">
 	<p class="print-note">Every page of this documentation, in reading order.</p>
 	{#each data.docs as doc (doc.route)}
-		<section class="prose print-section" aria-label={doc.title}>
+		<!-- Two pages can share a title (the home page and the introduction
+		     are both "matra"), and a region's name has to tell it apart. -->
+		<section class="prose print-section" aria-label="{doc.title}, {doc.route}">
 			<h1>{@html doc.titleHtml}</h1>
 			<Body segments={doc.segments} />
 		</section>

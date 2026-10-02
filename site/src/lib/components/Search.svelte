@@ -69,7 +69,16 @@
 
 <svelte:window onkeydown={onKey} />
 
-<button type="button" class="search-trigger" onclick={open} aria-haspopup="dialog">
+<!-- Named here because the visible label is hidden on a narrow screen,
+     where the button is the icon alone. The name begins with that label
+     (WCAG 2.5.3). -->
+<button
+	type="button"
+	class="search-trigger"
+	onclick={open}
+	aria-haspopup="dialog"
+	aria-label="Search the documentation"
+>
 	<Icon name="search" size={16} />
 	<span class="label">search</span>
 	<kbd aria-hidden="true">/</kbd>

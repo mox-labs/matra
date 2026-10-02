@@ -56,10 +56,14 @@
 		color: var(--text-muted);
 	}
 
+	/* Wrapped rather than scrolled: a region that scrolls has to take
+	   keyboard focus (WCAG 2.1.1), and one command line is better read
+	   whole than given a tab stop. */
 	.fetch {
 		margin: 0.4rem 0;
 		font-size: 0.82rem;
-		overflow-x: auto;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 	}
 
 	details.text {
