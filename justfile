@@ -26,6 +26,13 @@ check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc t
 typecheck:
     python -m mypy
 
+# Compares python/matra/_core.pyi with the built extension: names,
+# parameters, defaults, @final. Requires `maturin develop` first; CI runs
+# it in the pytype job.
+# Check the Python stub against the built extension module.
+stubtest:
+    python -m mypy.stubtest matra._core
+
 # Format check (read-only).
 fmt-check:
     cargo fmt --all -- --check
