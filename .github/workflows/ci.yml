@@ -224,6 +224,26 @@ jobs:
         with:
           path: ${{ runner.temp }}/matra-models
           key: models-${{ steps.model.outputs.key }}
+      # Gate 12 loads every page in Chromium. The browser is the headless
+      # shell the pinned playwright-core names, so its cache entry is keyed
+      # by that version, read from site/package.json: a new pin is a new
+      # entry. On a miss the gate installs it through Playwright's own
+      # installer; either way, if it cannot be had gate 12 fails.
+      - name: Read the pinned Playwright version
+        id: playwright
+        run: |
+          set -euo pipefail
+          version=$(grep -o '"playwright-core": "[0-9.]*"' site/package.json | grep -o '[0-9][0-9.]*' || true)
+          if [ -z "$version" ]; then
+            echo "::error::could not read the playwright-core pin from site/package.json"
+            exit 1
+          fi
+          echo "key=playwright-core-${version}-chromium-headless-shell" >> "$GITHUB_OUTPUT"
+      - name: Cache the browser by the Playwright pin
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ${{ runner.temp }}/ms-playwright
+          key: ${{ runner.os }}-${{ steps.playwright.outputs.key }}
       # Gate 11 runs every worked example's Python call, so matra is built
       # from this tree into a virtualenv (maturin develop needs one) with the
       # features pyproject.toml pins for the published wheel.
@@ -237,14 +257,16 @@ jobs:
           . "$RUNNER_TEMP/venv/bin/activate"
           python -m pip install --quiet maturin
           maturin develop
-      # Eleven gates: links, orphans, type names, the site build, em dashes,
+      # Twelve gates: links, orphans, type names, the site build, em dashes,
       # llms.txt, the published URL manifest, figures current, figure twins,
-      # input licences, and the worked examples run in Rust, Python and the
-      # CLI. EXAMPLES_REQUIRED makes a Python that cannot import matra a
-      # failure here, where locally it is a skip.
+      # input licences, the worked examples run in Rust, Python and the CLI,
+      # and every page at phone and desktop widths. EXAMPLES_REQUIRED makes a
+      # Python that cannot import matra a failure here, where locally it is a
+      # skip.
       - name: Docsite gates
         env:
           MATRA_MODEL_DIR: ${{ runner.temp }}/matra-models
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
           EXAMPLES_PYTHON: ${{ runner.temp }}/venv/bin/python
           EXAMPLES_REQUIRED: "1"
         run: bash scripts/check-docsite-floor.sh

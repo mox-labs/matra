@@ -2,7 +2,7 @@
 # Floor gates for the docsite. Runs in CI (the `Docsite floor` job in
 # .github/workflows/ci.yml); can be invoked locally via `just docs-floor`.
 #
-# Eleven gates protect against the cheap-to-introduce, expensive-to-find
+# Twelve gates protect against the cheap-to-introduce, expensive-to-find
 # regressions. The pages live in site/content/ and the SvelteKit site in site/
 # builds them (EP-0012). roadmap.md there is a symlink to the repository's
 # ROADMAP.md, and gates 2 and 5 follow it.
@@ -52,15 +52,25 @@
 #                            Rust, Python and the CLI, and what each prints
 #                            is compared with the committed output
 #                            (site/scripts/check-examples.ts).
+#  12. Responsive:          every page in site/urls.txt, loaded from the build
+#                            in Chromium at 320, 390, 768 and 1280px wide,
+#                            closed and with every <details> open, never
+#                            scrolls sideways and has no element past the
+#                            window outside a box that scrolls; and on an
+#                            emulated touch screen a tap pins a word in the
+#                            parse figure (site/scripts/check-responsive.ts).
 #
-# Execution order is 2, 3, 5, 6, 10, 8, 11, 4, 1, 7, 9: the build comes before the
-# link check, the manifest check and the twin test that read its output.
+# Execution order is 2, 3, 5, 6, 10, 8, 11, 4, 1, 7, 9, 12: the build comes
+# before the link check, the manifest check, the twin test and the responsive
+# check that read its output.
 #
 # Local invocation: lychee is optional locally (skip-with-warning); CI installs it.
 # bun and cargo are required (gates 4 and 8 fail without them). Gate 8
 # downloads the UDPipe and embedding models on first run, each verified
 # against the digest compiled into matra; with no model and no network it
-# fails, never skips.
+# fails, never skips. Gate 12 likewise installs the Chromium headless shell
+# the pinned playwright-core names on first run, into Playwright's cache
+# (PLAYWRIGHT_BROWSERS_PATH, when set), and fails without it.
 #
 # Tunables:
 #   LYCHEE_REQUIRED=1:    turn the "lychee missing" skip into a hard failure.
@@ -658,9 +668,42 @@ fi
 echo ""
 
 # ---------------------------------------------------------------------------
+# Gate 12: every page works at a phone's width and a desktop's
+# ---------------------------------------------------------------------------
+# The page never scrolls sideways; a table, code or a diagram scrolls inside
+# its own box (site/README.md, Design rules). Read in a browser, not from the
+# HTML, because overflow is a property of layout: the build is served from its
+# own root and each page in urls.txt is loaded at four widths, then again with
+# every <details> open, so a table behind "show the data" is held to the rule.
+# On an emulated touch screen a tap must pin a parse figure's word, because a
+# hover-only highlight flashes and vanishes under a finger.
+#
+# The browser is Playwright's Chromium headless shell at the revision the
+# pinned playwright-core (site/package.json, site/bun.lock) names. Installing
+# it is a no-op when it is present; --no-remove leaves any other Playwright
+# browsers on the machine alone.
+echo "=== Gate 12: responsive (320, 390, 768, 1280px; touch) ==="
+pw_log=$(mktemp)
+if [ ! -d site/build ]; then
+    echo "FAIL (gate 12): no site/build to check; gate 4 did not build it"
+    fail=$((fail + 1))
+elif ! command -v bun >/dev/null 2>&1 || [ ! -f site/node_modules/playwright-core/cli.js ]; then
+    echo "FAIL (gate 12): bun and site/node_modules/playwright-core are needed; gate 4 installs the latter"
+    fail=$((fail + 1))
+elif ! (cd site && bun node_modules/playwright-core/cli.js install --no-remove chromium-headless-shell) >"$pw_log" 2>&1; then
+    echo "FAIL (gate 12): could not install the Chromium headless shell"
+    sed 's/^/  /' "$pw_log"
+    fail=$((fail + 1))
+elif ! (cd site && bun scripts/check-responsive.ts build); then
+    fail=$((fail + 1))
+fi
+rm -f "$pw_log"
+echo ""
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
-gates=11
+gates=12
 if [ "$fail" -eq 0 ]; then
     echo "docsite floor: $gates gates, $((gates - skipped)) passed, $skipped skipped"
     exit 0
