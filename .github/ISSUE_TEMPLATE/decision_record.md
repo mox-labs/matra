@@ -41,5 +41,6 @@ labels: ["type:decision", "status:open"]
 ## Outcome
 
 <!-- Filled in when the decision is made, before this issue closes. Links to
-     the RFC pull request that carries the proposal (merging it accepts the
-     RFC under blueprints/rfcs/) and to any EP under blueprints/eps/. -->
+     the RFC pull request that carries the proposal (the owner's merge accepts
+     the RFC under blueprints/rfcs/) and to its tracking issue, or to the API
+     change proposal if the change turned out minor. -->
