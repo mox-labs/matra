@@ -7,7 +7,7 @@ introduced it.
 | Kind | Where | Cited as | What it records |
 |---|---|---|---|
 | RFC | `rfcs/NNNN-name.md` | `RFC-NNNN` | A change to matra itself: its architecture, its affordances (what a caller can do), or its tuning. What and why. |
-| EP | `eps/NNNN-name.md` | `EP-NNNN` | An enhancement plan: how work gets from decision to shipping. Iterations, milestones, test plan, ship criteria, status. Implements an accepted RFC, or stands alone. |
+| EP | `eps/NNNN-name.md` | `EP-NNNN` | An enhancement plan: how work gets from decision to shipping. Laid out with the Rust RFC template, like an RFC, with its milestones, test plan, ship criteria and risks under Reference-level explanation and a status log after it. Implements an accepted RFC, or stands alone. |
 
 Records cited as `ADR-NNNN` before 2026-09-24 are the RFC of the same
 number: `ADR-0008` is [RFC-0008](rfcs/0008-structural-primitives-are-fields.md).
@@ -33,12 +33,25 @@ next free EP number and fill `Implements`. Work that one
 pull request delivers needs no EP; the RFC and the pull request are the
 record.
 
+**An EP is laid out with the Rust RFC template**, as an RFC is: Summary,
+Motivation, Guide-level explanation, Reference-level explanation, Drawbacks,
+Rationale and alternatives, Prior art, Unresolved questions, Future
+possibilities. The plan is part of the reference-level explanation, as its
+subsections: the milestones and iterations, the test plan, the ship
+criteria, and the risks. The status log follows the sections, as the one
+appendix the process requires. An EP that implements an RFC keeps its
+Motivation and Guide-level explanation to a few lines and a link, because
+the RFC holds the argument.
+
 **Work that does not change matra itself gets an EP and no RFC.** The
 docsite, the harness, CI and release tooling change how matra is built,
 checked, documented or delivered, not what it is or what a caller can do
-with it. Their plan is a standalone EP with `Implements: none` and a Design
-section holding the choices a later contributor needs. When in doubt, ask
-whether a caller of matra would notice the change: if so, it is an RFC.
+with it. Their plan is a standalone EP with `Implements: none`, which
+carries its own design in the template's sections: the argument in
+Motivation, how it is used in Guide-level explanation, and the choices a
+later contributor needs in Reference-level explanation, beside the plan.
+When in doubt, ask whether a caller of matra would notice the change: if
+so, it is an RFC.
 
 **An RFC is not rewritten after acceptance.** Two edits are allowed: the
 status line, and a dated note directly under the header saying what changed
@@ -50,6 +63,30 @@ readable because nothing in it is overwritten.
 ambiguous, the plan is the bug: edit the plan first, then the code. Every
 change of status adds a dated line to its status log. Once it ships or is
 dropped, it is kept as the record of how the work went.
+
+**The EPs written before 2026-10-03 keep their layout.** EP-0007 to EP-0014
+were written to the earlier EP template (Summary, Design, Goals, Non-goals,
+Iterations and milestones, Test plan, Ship criteria, Risks, Status log).
+They are records, and they stay as written; the Rust layout applies from
+EP-0015, the plan that changed the template.
+
+### On the docsite
+
+The docsite renders this directory as its Blueprints part, at `/blueprints/`
+for this file and `/blueprints/rfcs/<name>` and `/blueprints/eps/<name>` for
+the records, read from these files at build time; nothing is copied. It is
+the one part of the site that shows a status: each record's, read from its
+header, beside it in the navigation and under its title. The pages that
+describe what ships carry none. A link from a record to a file outside
+`blueprints/` leads to that file on GitHub; a link between records stays on
+the site.
+
+Locally, the docsite is also where the owner and Claude converge on a
+record: in `just docs-serve`, text on any page can be selected and
+commented on, and the threads are files in `discussion/` that any session
+reads (`just comments`) and Claude answers in (`just comment-reply`). The
+published site has no local comments; giscus is its public channel.
+`site/README.md` describes both.
 
 ### Status
 
@@ -124,4 +161,5 @@ in git.
 | [EP-0012](eps/0012-docsite.md) | The docsite on SvelteKit, with figures and examples | shipped (docsite) | none |
 | [EP-0013](eps/0013-docsite-identity.md) | The docsite's identity, drawn from matra's own output | in progress | none |
 | [EP-0014](eps/0014-architecture-guardrails.md) | Architecture guardrails: the boundary rules as semgrep checks | shipped (CI) | none |
+| [EP-0015](eps/0015-docsite-blueprints.md) | Blueprints on the docsite, and local comments to converge on them | in progress | none |
 | [EP-0000](eps/0000-template.md) | The template | not a record | none |
