@@ -22,6 +22,7 @@
 - [Read a Markdown document's structure](https://mox-labs.github.io/matra/examples/markdown-structure.html): A short Markdown document with two headings and a quote, read into sections and paragraphs.
 - [Cluster sentences by meaning](https://mox-labs.github.io/matra/guides/semantic-clusters.html): Group the sentences of a document that say the same thing in different words, for example to audit LLM output for restatement, which lexical overlap cannot see.
 - [Hand matra to an agent](https://mox-labs.github.io/matra/guides/agent.html): Give an agent matra's own instructions, printed by the version it will run, rather than pointing it at these pages.
+- [Install the model behind a TLS-intercepting proxy](https://mox-labs.github.io/matra/guides/tls-proxy.html): Place the parsing model by hand when a proxy that re-signs TLS stops matra from downloading it.
 
 ## Explanation
 
@@ -33,6 +34,7 @@
 - [What the clustering threshold does](https://mox-labs.github.io/matra/explanation/semantic-clusters.html): matra can group the sentences of a document that say the same thing in different words.
 - [Pragmatics](https://mox-labs.github.io/matra/explanation/pragmatics.html): Which call to reach for, and how to read what it returns: the choices behind the summarizers, the keyphrase extractors, the document measures, the clustering threshold and the models, and why each answer is what it is.
 - [How matra runs](https://mox-labs.github.io/matra/architecture/design.html): `engine.analyze(Ingest::path("essay.md")?)` yields a `Document` or a `DocumentError`.
+- [How matra is maintained](https://mox-labs.github.io/matra/explanation/how-matra-is-maintained.html): matra is maintained by its owner and by Claude, Anthropic's AI, working through a set of agents, skills and checks that live in the repository beside the code.
 
 ## Reference
 

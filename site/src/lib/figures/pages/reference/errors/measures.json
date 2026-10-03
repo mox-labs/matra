@@ -252,31 +252,22 @@
       "words": 196
     },
     {
-      "compression_ratio": 0.5967,
+      "compression_ratio": 0.5797,
       "in_blockquote": false,
-      "lexical_density": 0.5769,
-      "readability_grade": 13.8385,
-      "sentences": 3,
-      "text": "matra verifies TLS against root certificates compiled into the binary and never reads the system trust store. That is why it needs no `ca-certificates` package, on any platform, and it is also why a proxy that re-signs TLS cannot be trusted by installing its CA anywhere on the machine. The failure reads:",
-      "words": 54
-    },
-    {
-      "compression_ratio": 0.4955,
-      "in_blockquote": false,
-      "lexical_density": 0.5164,
-      "readability_grade": 10.6588,
-      "sentences": 5,
-      "text": "Place the model by hand. `matra config show` prints the model directory this machine resolves, and the artifact is pinned by name, size and SHA-256, so a hand-placed file is exactly as trustworthy as a fetched one: it goes through the same verification on load. A file that is not the pinned model is never used and never deleted. matra tries to download the pinned model in its place, and where that download cannot get through, which is the reason to place the file by hand, the call fails and the file stays exactly as you left it. Check the SHA-256 before moving the file in, as below, so a truncated or proxy-rewritten download fails here rather than on the next run.",
-      "words": 127
+      "lexical_density": 0.6333,
+      "readability_grade": 25.51,
+      "sentences": 2,
+      "text": "matra verifies TLS against root certificates compiled into the binary and never reads the system trust store, so a proxy that re-signs TLS cannot be made trusted. The fetch fails as `Io`, kind `io`, and the message names the host, says why its certificate cannot be trusted, names the file to fetch by hand, and ends with the underlying failure:",
+      "words": 63
     },
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5143,
-      "readability_grade": 11.7514,
-      "sentences": 2,
-      "text": "`MATRA_MODEL_DIR` points at a directory of your own if the resolved one is not writable. The reference embedding model has the same route, three artifacts into a directory loaded with `Model2Vec::from_dir`, described in [semantic clusters](../guides/semantic-clusters.md).",
-      "words": 37
+      "lexical_density": 0.6,
+      "readability_grade": 10.165,
+      "sentences": 1,
+      "text": "[Install the model behind a TLS-intercepting proxy](../guides/tls-proxy.md) has the steps.",
+      "words": 13
     },
     {
       "compression_ratio": null,

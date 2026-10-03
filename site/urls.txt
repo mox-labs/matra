@@ -117,6 +117,8 @@ examples/summarize.html
 examples/summarize.md
 explanation/concepts.html
 explanation/concepts.md
+explanation/how-matra-is-maintained.html
+explanation/how-matra-is-maintained.md
 explanation/install-routes.html
 explanation/install-routes.md
 explanation/pragmatics.html
@@ -147,7 +149,9 @@ figures/field-notes/pipeline.json
 figures/minutes/parse.json
 figures/pages/explanation/install-routes/measures.json
 figures/pages/explanation/semantic-clusters/measures.json
+figures/pages/explanation/how-matra-is-maintained/measures.json
 figures/pages/guides/agent/measures.json
+figures/pages/guides/tls-proxy/measures.json
 figures/pages/reference/platforms/measures.json
 figures/pages/reference/semantic-clusters/measures.json
 figures/pages/tutorials/first-analysis/measures.json
@@ -203,6 +207,8 @@ guides/rust.html
 guides/rust.md
 guides/semantic-clusters.html
 guides/semantic-clusters.md
+guides/tls-proxy.html
+guides/tls-proxy.md
 home.html
 home.md
 index.html

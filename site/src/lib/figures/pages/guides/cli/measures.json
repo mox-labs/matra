@@ -216,13 +216,13 @@
       "words": 140
     },
     {
-      "compression_ratio": 0.5674,
+      "compression_ratio": 0.5708,
       "in_blockquote": false,
-      "lexical_density": 0.5221,
-      "readability_grade": 5.1254,
+      "lexical_density": 0.5185,
+      "readability_grade": 5.1795,
       "sentences": 5,
-      "text": "Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE ties `dense similarity matrix` and `system trust store` for first at `9.000` and scores the bare `error` at `1.190`, while YAKE's first is `treat untrusted` at `82.740`. What is near the bottom there is the score, not the position: `1.190` sits just above `1.000`, the floor any single word scores, and 218 of the 472 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.",
-      "words": 120
+      "text": "Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE puts `dense similarity matrix` first at `9.000` and scores the bare `error` at `1.190`, while YAKE's first is `treat untrusted` at `75.556`. What is near the bottom there is the score, not the position: `1.190` sits just above `1.000`, the floor any single word scores, and 210 of the 459 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.",
+      "words": 115
     },
     {
       "compression_ratio": null,
