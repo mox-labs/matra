@@ -1,6 +1,11 @@
 ---
 name: docs-lockstep
-description: Documentation hygiene for matra — CHANGELOG conventional-commit mapping, the RFC and EP process + supersede protocol, arch docs sync with code, README elevator pitch, aspirational-claim discipline. Use when a change lands and CHANGELOG / RFCs / arch docs / README need to update in lockstep.
+description: >-
+  Documentation hygiene for matra: the CHANGELOG mapping from conventional commits, which record a
+  change takes (RFC, API change proposal, plain pull request, EP) and the supersede protocol,
+  tracking issues, the README pitch, and the rule that shipping docs describe only what ships. Use
+  when a change lands and the records must follow, or when deciding whether a change needs an RFC
+  at all. Not for: docsite page design and gates (site/README.md).
 ---
 
 # docs-lockstep
@@ -11,7 +16,7 @@ Documentation discipline for matra. The audit trail is the only durable artifact
 
 - A change has landed in `src/` and the documentation needs to follow.
 - Preparing for a release.
-- Writing a new RFC or EP.
+- Deciding which record a change takes, or writing an RFC, an API change proposal or an EP.
 - Reviewing whether a doc claim still holds.
 
 ## The lockstep contract
@@ -26,14 +31,14 @@ When code changes, exactly the right docs change in the same PR. The mapping:
 | Internal refactor | usually nothing (unless invariants change) |
 | New module under `src/` | `site/content/architecture/design.md` (the diagram) |
 | New adapter | `site/content/architecture/design.md` |
-| New port | `site/content/architecture/design.md` + RFC |
+| New port | `site/content/architecture/design.md` + RFC (an architecture boundary) |
 | New domain type or field | `site/content/reference/domain-types.md` |
 | Boundary rule change | `site/content/architecture/design.md` + RFC |
 | New feature flag | `Cargo.toml`, `site/content/architecture/design.md`, `README.md` (if user-visible), `CLAUDE.md` (if structural) |
-| Dep added/removed/bumped | `Cargo.toml`, `CHANGELOG.md`, RFC (if non-trivial) |
-| Public surface change | All of the above + RFC |
+| Dep added/removed/bumped | `Cargo.toml`, `CHANGELOG.md`; an RFC only if it moves a boundary (a new dependency in `domain.rs`) |
+| Public surface change | All of the above, plus an RFC if substantial or an accepted API change proposal if minor |
 
-When the change is non-trivial and you cannot tell which docs are affected, run the audit: read each `.claude/arch/*.md` and ask "does any claim here mention what I just changed?"
+When the change is non-trivial and you cannot tell which docs are affected, search `site/content/` and `.claude/` for the names you changed and ask of each hit "does this claim still hold?" `scripts/check-claude-citations.sh` catches a `path:line` citation in `.claude/` that points past its file; it cannot tell whether the line still says what the citation claims.
 
 ## CHANGELOG conventions
 
@@ -57,14 +62,17 @@ Conventional-commit mapping:
 
 The `scripts/changelog-release.sh` script rolls `## [Unreleased]` into a versioned section when preparing a release. Run `just release-prep VERSION` to invoke it.
 
-## RFC and EP conventions
+## RFC, API change proposal and EP conventions
 
-The process is `blueprints/README.md`, and RFC-0019 records why it has this shape. It follows the Rust RFC process.
+The process is `blueprints/README.md`, and RFC-0019 records why it has this shape; its dated notes record each change since. It follows the Rust RFC process, grain included.
 
-- **RFC** (`blueprints/rfcs/NNNN-<slug>.md`, cited `RFC-NNNN`): a design-level change to the architecture, the systems around it, the framework, or the toolchain. Copy `blueprints/rfcs/0000-template.md`. Header: Feature Name, Start Date, RFC PR, Tracking EP, Status. Sections: Summary, Motivation, Guide-level explanation, Reference-level explanation, Drawbacks, Rationale and alternatives, Prior art, Unresolved questions, Future possibilities.
-- **EP** (`blueprints/eps/NNNN-<slug>.md`, cited `EP-NNNN`): the enhancement plan that takes an accepted RFC to shipping, written when the implementation spans more than one PR. Copy `blueprints/eps/0000-template.md`. Header: EP, Implements, Status, Shipped in. Sections: Summary, Goals, Non-goals, Iterations and milestones (each with a deliverable and an exit criterion), Test plan, Ship criteria, Risks, Status log.
-- **Acceptance.** An unaccepted RFC is an open pull request. Merging it accepts it, and it lands with `Status: accepted`.
-- **Status.** RFC: `accepted`, `implemented` (once the CHANGELOG records it shipping), or `superseded by RFC-NNNN`. EP: `planned`, `in progress`, `shipped in X.Y.Z`, or `dropped`, with a dated status-log line for each change.
+- **Which record.** A substantial change matra's users notice (the public surface in Rust, Python, the CLI or the JSON schema; semantics or behaviour, the default model included; removing or deprecating a substantial feature; an architecture boundary) is an RFC. A minor addition to or removal from the public surface is an API change proposal. Tooling, docs, CI, the harness, refactors, measured performance improvements and bug fixes are plain pull requests, and a rule they leave behind lives in the file that governs it. A change to the process itself is tooling: a pull request and a dated note on RFC-0019.
+- **RFC** (`blueprints/rfcs/NNNN-<slug>.md`, cited `RFC-NNNN`). Copy `blueprints/rfcs/0000-template.md`. Header: Feature Name, Start Date, RFC PR, Tracking issue, Status. Sections: Summary, Motivation, Guide-level explanation, Reference-level explanation, Drawbacks, Rationale and alternatives, Prior art, Unresolved questions, Future possibilities. Records written before 2026-10-03 keep `Tracking EP` in their header.
+- **Acceptance.** An unaccepted RFC is an open pull request, labelled `rfc`. Merging it accepts it, and only the owner merges or closes one; it lands with `Status: accepted`. Claude writes and argues RFCs and never merges one.
+- **Tracking issue.** Each accepted RFC has one, labelled `tracking` and opened from `.github/ISSUE_TEMPLATE/tracking.md` before the owner merges, so the header can link it. It holds the milestone checklist, links each delivering PR, and closes when the work ships.
+- **API change proposal.** An issue labelled `acp`, from `.github/ISSUE_TEMPLATE/api-change-proposal.md`. Only the owner accepts one; the PR that carries it out links and closes it.
+- **EP** (`blueprints/eps/NNNN-<slug>.md`, cited `EP-NNNN`): only for a plan several agents execute in parallel. Copy `blueprints/eps/0000-template.md`, which keeps the Rust RFC layout with the plan (milestones, test plan, ship criteria, risks) under Reference-level explanation and a status log after it. Header: EP, Implements, Start Date, EP PR, Status, Shipped in.
+- **Status.** RFC: `accepted`, `implemented` (once the CHANGELOG records it shipping and its tracking issue is closed), or `superseded by RFC-NNNN`. EP: `planned`, `in progress`, `shipped in X.Y.Z`, or `dropped`, with a dated status-log line for each change.
 - **Index.** Every RFC and EP has a row in `blueprints/README.md`. `scripts/check-blueprint-refs.sh` (in `just check` and the `Docsite floor` CI job) fails when a file has no row or a cited `RFC-NNNN` / `EP-NNNN` resolves to nothing.
 
 Records cited as `ADR-` plus a number before 2026-09-24 are the RFC of the same number; released CHANGELOG entries keep that wording.
@@ -89,21 +97,9 @@ The new RFC has `- Supersedes: [RFC-NNNN](NNNN-slug.md)` in its header and expla
 
 Example: `blueprints/rfcs/0003-workspace-with-rumi-nlp.md` was superseded by `blueprints/rfcs/0004-stay-single-crate.md` on 2026-05-20, and `blueprints/rfcs/0001-record-architectural-decisions.md` by `blueprints/rfcs/0019-rfc-and-ep-process.md` on 2026-09-24.
 
-## Arch doc structure
+## Arch notes
 
-`.claude/arch/` has six files; each has a specific scope:
-
-| File | Scope |
-|---|---|
-| `README.md` | Index. Brief. Points at the others. |
-| `architecture.md` | Big picture: hex layout, composition root, boundary rules. |
-| `domain-model.md` | The types. Every field, every variant, every method. |
-| `ports.md` | The boundary traits. |
-| `adapters.md` | Concrete adapter implementations. |
-| `evolution.md` | What's locked, what's allowed to change, what's deferred. |
-| `boundary-rules.md` | The eight boundary rules, with motivation, failure modes, and review guidance. |
-
-If a single code change requires updating more than two of these, you're probably changing the architecture and need an RFC.
+`.claude/arch/` holds two files: `README.md`, which points at the docsite pages that replaced the old architecture notes, and `evolution.md`, the decisions considered and rejected. The architecture of record is on the docsite (`site/content/architecture/design.md`, `site/content/reference/`), where `just docs-floor` gates it; a fact about the architecture goes there, not here.
 
 ## Aspirational-claim discipline
 
@@ -112,7 +108,7 @@ Matra's docs went through a substantial cleanup on 2026-05-20 because they had d
 **Rule**: every claim in a shipping doc must be grounded in either:
 
 - Code that exists in `src/`, `python/`, or `Cargo.toml`.
-- A clear "planned" marker for intended-but-not-shipped capabilities.
+- `ROADMAP.md`, for intended-but-not-shipped capabilities. It is the only page that describes what does not ship; no other page carries a planned marker.
 
 When in doubt, check the claim against the code.
 
@@ -144,5 +140,5 @@ Then `just release-prep VERSION` rolls the CHANGELOG only. It does not touch `Ca
 ## What this skill won't tell you
 
 - How to write the substance of an RFC — that's a thinking activity per case.
-- Whether a specific change deserves an RFC — judgment call; default to "yes" if you'd want a stranger to know in six months.
+- Whether a borderline change is substantial (an RFC) or minor (an API change proposal): the test in `blueprints/README.md` decides most cases, and the owner decides the rest.
 - Specific commit message wording — follow conventional commits, keep the imperative mood.

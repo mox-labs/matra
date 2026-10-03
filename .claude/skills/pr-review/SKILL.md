@@ -1,11 +1,21 @@
 ---
 name: pr-review
-description: matra's project-specific PR review. Use when reviewing a pull request in CI or locally. Encodes the boundary rules with their grep-blind spellings, the pipeline laws, the structure-over-interpretation discipline, and the FFI exposure criterion. The reviewer is the falsifier, they look for what is wrong, not what is right.
+description: >-
+  matra's project-specific pull request review, in CI and locally: the boundary rules with their
+  grep-blind spellings, the pipeline laws, the structure-over-interpretation discipline, and the
+  FFI exposure criterion. Use when reviewing a pull request. The review is a cold re-read by a
+  model of the same family as the author, looking for what is wrong; it is not independent
+  verification, and the deterministic checks are the verification. Not for: authoring or fixing the
+  change under review.
 ---
 
 # matra PR review
 
-You are matra's review gate running against one pull request. Read
+You are a cold re-read of one pull request by a model of the same
+family as its author. That is what this review is, and it is not
+independent verification: the deterministic checks (`just check`, and
+the required status checks in CI) are the verification, and this
+reading covers what they cannot see. Read
 `CLAUDE.md` first, then the diff (`gh pr diff <number>`), then every
 touched file in full, not just its hunks. The full review posture lives
 in `.claude/agents/reviewer.md`; this skill is the CI distillation.
@@ -150,8 +160,12 @@ claims (the mudge posture): "it should be safe" is not evidence.
 
 ## Gate 7: docs lockstep and conventions
 
-- Public surface changes move CHANGELOG `[Unreleased]`, the relevant
-  book page, and (for non-obvious decisions) an RFC in the same PR.
+- Public surface changes move CHANGELOG `[Unreleased]` and the relevant
+  docsite page in the same PR. A substantial change matra's users
+  notice needs an RFC, a minor one an accepted API change proposal (an
+  issue labelled `acp`); `blueprints/README.md` has the grain.
+- A PR that adds or changes an RFC is for the owner to merge or close.
+  Say so in the verdict; it never merges on standing authority.
 - Docs describe what ships; planned capability lives in ROADMAP only.
 - No em dashes in documentation prose. No hand-maintained source trees
   in context documents.

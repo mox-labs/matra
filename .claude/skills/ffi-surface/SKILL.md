@@ -1,6 +1,11 @@
 ---
 name: ffi-surface
-description: PyO3 dual-publish discipline for matra — `unsendable`/`frozen`/`Bound<'py, T>` discipline, pythonize 4 blind spots, maturin dual-manifest contract, pyo3/pythonize/maturin version-pin rule, From<domain::Error> for PyErr routing. Use when touching the Python bindings or planning the future WASM/TS crust.
+description: >-
+  PyO3 dual-publish discipline for matra, and the one list of what the Python module exposes:
+  unsendable and frozen, Bound<'py, T>, the four pythonize blind spots, the maturin dual-manifest
+  contract, the pin rule, and From<domain::Error> for PyErr routing. Use when touching the Python
+  bindings, python/matra/ or pyproject.toml, or planning the WASM/TS crust. Not for: Rust-only
+  surface that never crosses into Python.
 ---
 
 # ffi-surface
@@ -17,13 +22,16 @@ The Rust↔Python FFI surface for matra. This skill codifies the disciplines tha
 
 ## The PyO3 surface — what exists today
 
-The single `Matra` class in `src/lib.rs::python`:
+The `_core` module in `src/lib.rs::python` (matched by pyproject.toml's `module-name = "matra._core"`) registers two classes and two functions. This section is the one place in `.claude/` that lists them; the `ffi-keeper` agent points here.
 
-- `#[pyclass(unsendable)]` — UDPipe is `!Send` due to internal C state; cross-thread access panics at runtime.
-- Constructors: `from_path(model_path)`, `english(model_dir)` (both gated on `udpipe` feature).
-- Methods: `analyze`, `analyze_markdown`, `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`.
-- Module: `_core` (matched by pyproject.toml's `module-name = "matra._core"`).
-- Error routing: `MatraError` wrapper + `From<MatraError> for PyErr` with exhaustive variant match.
+- **`Matra`** (`src/lib.rs:461`), `#[pyclass(unsendable)]`: UDPipe is `!Send` due to internal C state, so cross-thread access panics at runtime.
+  - Constructors: `from_path(model_path)`, `english(model_dir=None)` (both gated on the `udpipe` feature).
+  - Methods: `analyze`, `analyze_markdown`, `analyze_path`, `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`, `semantic_clusters`.
+- **`Model2Vec`** (`src/lib.rs:676`), `#[pyclass(frozen)]`, registered only under the `model2vec` feature: an immutable embedder.
+  - Constructors: `from_dir(dir)`, `potion_base_8m(dir=None)`.
+  - Getters `model_hash` and `dimensions`; methods `identity` and `embed`.
+- **Functions**: `semantic_clusters` (clusters vectors the caller already holds) and `cli_main` (the command line, which `python/matra/cli.py` launches).
+- Error routing: `MatraError` wrapper + `From<MatraError> for PyErr` with exhaustive variant match (below).
 
 ## The four PyO3 disciplines
 
@@ -37,7 +45,7 @@ The single `Matra` class in `src/lib.rs::python`:
 ### 2. `#[pyclass]` option matrix
 
 - `unsendable` — for `!Send` wrappers like UDPipe. Compile-time admission of thread-confinement; runtime ThreadId panic on cross-thread access. **Required** on the `Matra` class.
-- `frozen` — for immutable config types. Eliminates runtime borrow check at three structural levels. **Not applicable** to `Matra` because the NLP provider is mutable state.
+- `frozen`: for immutable config types. Eliminates runtime borrow check at three structural levels. **Not applicable** to `Matra` because the NLP provider is mutable state; `Model2Vec` is `frozen`.
 - `hash` + `eq` together (or neither) — partial impl is rejected at codegen. None of matra's pyclasses need hash/eq today.
 - `subclass` + `extends` — for inheritance. Not used in matra.
 
@@ -65,7 +73,9 @@ Matra doesn't use either today (single-threaded composition), but if a future fe
 ```rust
 match e.0 {
     ModelNotFound(_) => PyFileNotFoundError::new_err(msg),
-    InputTooLarge { .. } | UnsupportedFormat(_) => PyValueError::new_err(msg),
+    InputTooLarge { .. } | UnsupportedFormat(_) | InvalidInput(_) => {
+        PyValueError::new_err(msg)
+    }
     Io(_) => PyOSError::new_err(msg),
     ModelInvalid(_) | ParseFailed(_) => PyRuntimeError::new_err(msg),
 }

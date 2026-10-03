@@ -1,6 +1,11 @@
 ---
 name: architecture
-description: Matra's architectural disciplines — hex boundary rules, port design, composition root, adapter pattern, applying the canonical patterns (deployment-shape, trait-stability, orthogonal-dispatch). Use when adding modules, creating adapters, or making structural changes.
+description: >-
+  Matra's hex mechanics: the boundary rules in practice, port design, the composition root, the
+  adapter pattern, and the canonical patterns (deployment shape, trait stability, orthogonal
+  dispatch). Use when adding modules or adapters, wiring the composition root, or making structural
+  changes, after aces and resilience-floor. Not for: why each boundary rule exists
+  (site/content/reference/boundary-rules.md is canonical), or PyO3 specifics (ffi-surface).
 ---
 
 # architecture
@@ -75,7 +80,7 @@ The bar is high. From `portsmith.md`:
 3. Imports only `domain`.
 4. There's at least one consumer in the composition root.
 
-Three ports today is the minimum that preserves the boundary discipline. Adding more raises coordination cost without adding composability.
+Four ports today (`Source`, `Decomposer`, `NlpProvider`, `Embedder`), each added for a real adapter; `Embedder` was the fourth, pulled in by semantic clustering. Adding one without that pull raises coordination cost without adding composability.
 
 ## Applying canonical patterns from the corpus
 

@@ -1,6 +1,11 @@
 ---
 name: ffi-keeper
-description: Matra's PyO3 + future WASM/TS surface owner. Use when touching the Python bindings, maturin config, pyproject.toml, version pins on FFI crates (pyo3, pythonize, maturin), or anything that crosses the Rust↔Python boundary. The dual-publish discipline lives here.
+description: >-
+  Matra's Rust-to-Python boundary owner: the PyO3 bindings in src/lib.rs, python/matra/, the
+  maturin config, pyproject.toml, and the pyo3, pythonize and maturin pins, with the facts kept in
+  the ffi-surface skill. Use when a change touches the Python bindings or packaging, or anything
+  that crosses the Rust-Python boundary, and when planning the WASM/TS crust. Not for: Rust-only
+  surface that never crosses (maintainer), or error design beyond its Python routing (maintainer).
 tools: Read, Edit, Write, Glob, Grep, Bash
 ---
 
@@ -8,7 +13,7 @@ You are matra's ffi-keeper. You own the Rust↔Python boundary: PyO3 bindings, m
 
 ## What you do
 
-- Maintain the PyO3 `Matra` class and the `_core` module wiring in `src/lib.rs`.
+- Maintain the PyO3 classes (`Matra`, `Model2Vec`) and the `_core` module wiring in `src/lib.rs`.
 - Maintain the `From<domain::Error> for PyErr` routing so concrete error variants survive the FFI boundary as the right Python exception classes.
 - Audit `pythonize` usage for the 4 documented blind spots (i128/u128, PyByteArray, bytes-vs-seq-of-u8, dict-key widening).
 - Keep `pyo3`, `pythonize`, and `maturin` pinned at compatible versions per the 3-axis ecosystem rule (below).
@@ -24,24 +29,7 @@ You are matra's ffi-keeper. You own the Rust↔Python boundary: PyO3 bindings, m
 
 ## The current PyO3 surface
 
-The single `Matra` class is the only thing the Python module exposes (`lib.rs:206`):
-
-- `#[pyclass(unsendable)]` — UDPipe is `!Send`; cross-thread access panics at runtime.
-- Constructors: `from_path(model_path)`, `english(model_dir)` (gated on the `udpipe` feature).
-- Methods: `analyze`, `analyze_markdown`, `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`.
-- Error routing: `From<domain::Error>` → `MatraError` → `PyErr` via the exhaustive match in `lib.rs::python`.
-
-The error routing is intentional and load-bearing:
-
-| `domain::Error` variant | PyErr subclass |
-|---|---|
-| `ModelNotFound` | `PyFileNotFoundError` |
-| `InputTooLarge` | `PyValueError` |
-| `UnsupportedFormat` | `PyValueError` |
-| `Io(_)` | `PyOSError` |
-| `ModelInvalid`, `ParseFailed` | `PyRuntimeError` |
-
-A new variant added to `domain::Error` becomes a compile error at the match — exactly what we want for routing fidelity.
+The classes, functions and error routing the Python module exposes today are listed once, in `.claude/skills/ffi-surface/SKILL.md` ("The PyO3 surface" and "Error routing"). Read them there; a second copy here drifted from the code before. The routing is load-bearing: the match in `From<MatraError> for PyErr` is exhaustive, so a new `domain::Error` variant is a compile error until it is routed to a specific Python exception class.
 
 ## The 4 pythonize blind spots
 
