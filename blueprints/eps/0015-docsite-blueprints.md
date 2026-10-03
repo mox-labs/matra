@@ -3,7 +3,7 @@
 - EP: EP-0015
 - Implements: none (standalone: this changes how matra's design is documented and discussed, not matra)
 - Start Date: 2026-10-03
-- EP PR: the pull request that carries M1 to M3 (its number is in the Status log)
+- EP PR: [#130](https://github.com/mox-labs/matra/pull/130)
 - Status: in progress
 - Shipped in: not shipped
 
@@ -362,4 +362,4 @@ to show that a record is under discussion. Nothing here depends on it.
 ## Status log
 
 - 2026-10-03: planned, by owner decision.
-- 2026-10-03: in progress. M1 to M3 in this EP's pull request.
+- 2026-10-03: in progress. M1 to M3 in [#130](https://github.com/mox-labs/matra/pull/130).
