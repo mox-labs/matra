@@ -20,8 +20,10 @@
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { roving } from './motion';
+	import { scopedRegion } from './region';
 
 	let { id, file, dataUrl }: { id: string; file: MetricsFigureFile; dataUrl: string } = $props();
+	const region = scopedRegion();
 
 	/** The paragraph the reader points at. */
 	const link = new Linked<number>();
@@ -105,7 +107,7 @@
 	</dl>
 
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-scroll" tabindex="0" role="region" aria-label="Measures by paragraph" {@attach measure}>
+	<div class="fig-scroll" tabindex="0" role="region" aria-label={region('Measures by paragraph')} {@attach measure}>
 		<svg width={W} {height} viewBox="0 0 {W} {height}" role="img" aria-label="Readability grade, lexical density and compression ratio for each of {paragraphs.length} paragraphs" data-points-for={id}>
 			<title>Paragraph measures across the document</title>
 			{#if panels.length}
@@ -169,7 +171,7 @@
 		<!-- A region that scrolls must take focus, or it cannot be scrolled from
 		     the keyboard (WCAG 2.1.1). -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div class="fig-twin tall" tabindex="0" role="region" aria-label="Every paragraph's measures">
+		<div class="fig-twin tall" tabindex="0" role="region" aria-label={region("Every paragraph's measures")}>
 			<table data-twin-for={id}>
 				<thead>
 					<tr><th>#</th><th>Opens with</th><th>Words</th><th>Grade</th><th>Density</th><th>Compression</th></tr>

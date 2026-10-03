@@ -8,7 +8,10 @@
 - Shipped in: (the release that carries the finished work, or `not shipped`)
 
 <!--
-Copy this file to NNNN-short-name.md with the next free number, fill every
+An EP exists only for a plan that several agents execute in parallel. Work
+carried out in sequence needs none: an RFC's tracking issue holds its
+checklist, and tooling is a plain pull request. Copy this file to
+NNNN-short-name.md with the next free number, fill every
 section, and open a pull request. An EP is laid out with the Rust RFC
 template, as an RFC is, so the two read the same way; what makes it a plan is
 in Reference-level explanation (the milestones, the test plan, the ship
@@ -17,9 +20,8 @@ criteria and the risks) and in the Status log after it.
 An EP that implements an RFC does not restate it: its Motivation and its
 Guide-level explanation say in a few lines what the RFC decided and link it,
 and the sections that follow are about getting the work done. A standalone
-EP (`Implements: none`) is for work that changes how matra is built, checked,
-documented or delivered rather than matra itself, so it carries its own
-design, in full, in the same sections an RFC would.
+EP (`Implements: none`) is parallel work that implements no RFC, so it
+carries its own design, in full, in the same sections an RFC would.
 
 Status is one of `planned`, `in progress`, `shipped in X.Y.Z`, or `dropped`.
 Every change of status adds a dated line to the Status log. A section with

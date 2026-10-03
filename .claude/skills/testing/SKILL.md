@@ -1,6 +1,10 @@
 ---
 name: testing
-description: Test strategy for matra — regression discipline (every fixed bug gets a test so it cannot recur), unit + integration + doctest layout, property tests where useful, complexity benches for algorithmic code. Use when writing tests, reviewing coverage, or debugging test failures.
+description: >-
+  Test strategy for matra: regression discipline (every fixed bug gets a test so it cannot recur),
+  the unit, integration and doctest layout, property tests where useful, complexity benches for
+  algorithmic code. Use when writing tests, reviewing coverage, or debugging test failures. Not
+  for: checking that a built artifact installs for a user (e2e-validation).
 ---
 
 # testing

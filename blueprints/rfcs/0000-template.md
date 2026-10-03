@@ -3,13 +3,17 @@
 - Feature Name: (a unique snake_case identifier, e.g. `semantic_clusters`)
 - Start Date: (the day the pull request opens, YYYY-MM-DD)
 - RFC PR: (the pull request that proposes this RFC, e.g. [#0](https://github.com/mox-labs/matra/pull/0))
-- Tracking EP: (the EP that carries the implementation, or `none` when one PR delivers it)
+- Tracking issue: (the issue labelled `tracking` that follows the implementation, e.g. [#0](https://github.com/mox-labs/matra/issues/0), opened before the owner merges; an EP, if parallel work needs one, is linked from that issue)
 - Status: accepted (the file reaches `main` only by merging, which is what accepts it)
 
 <!--
 Copy this file to NNNN-short-name.md with the next free number, fill every
 section, and open a pull request. The pull request is the proposal; merging
-it accepts the RFC. See blueprints/README.md for the process.
+it accepts the RFC, and only the project owner merges one. An RFC is for a
+substantial change matra's users notice; a minor change to the public
+surface is an API change proposal (an issue labelled `acp`), and tooling,
+docs, CI, refactors and bug fixes are plain pull requests. See
+blueprints/README.md for the process.
 
 A section with nothing to say says so in one line rather than being deleted,
 so that a reader can tell "considered, nothing to add" from "forgotten".

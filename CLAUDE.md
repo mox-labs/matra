@@ -8,7 +8,7 @@ Rule evaluation over parsed text structure is part of the intended scope and lan
 
 ## Session start
 
-On session start in this directory, read `blueprints/README.md`: the RFC index says what is accepted, and the EP index and its statuses say what is in flight. Then Observe (the branch and open pull requests), Orient (which EP milestone is next), Decide, Act, and continue with the operational sections below.
+On session start in this directory, read `blueprints/README.md`: the RFC index says what is accepted and the process says which record a change takes. Then Observe (the branch, open pull requests, and open issues labelled `tracking` or `acp`), Orient (which tracking issue's next milestone is next, or an EP's when parallel work has one), Decide, Act, and continue with the operational sections below.
 
 A local, untracked `.claude/logs/SESSION-RESUME.md` may hold session notes. It is a convenience, not a record: anything a later session must rely on belongs in an RFC, an EP status log, or the CHANGELOG.
 
@@ -21,7 +21,7 @@ matra is a public OSS package intended as an exemplar for both Claude-managed re
 
 The quality bar is high because the public surface is a contract across Rust, Python, and (when the WASM crust lands) TypeScript. Names are forever; the API surface, once published, locks downstream costs in.
 
-For the working model that frames how humans and AI collaborate on this project (roles, discourse-to-docs-to-code discipline, audit trail), see `docs/collaboration-model.md`. For PR mechanics, see `CONTRIBUTING.md`.
+For how the project is maintained (the agents and their methods, routing, the verification gate, who decides what, the process grain), see `site/content/explanation/how-matra-is-maintained.md`. For PR mechanics, see `CONTRIBUTING.md`.
 
 ## Architecture
 
@@ -76,8 +76,10 @@ Non-obvious gotchas. Each is a behavior plus the failure mode if you violate it.
 - **A semgrep rule that silently matches nothing is the failure to fear.** Semgrep's Rust AST patterns miss brace groups and deep paths, its test discovery skips `.semgrep/`, and outside a git work tree its path-scoped rules match nothing. That is why every rule is a tested regex, why `scripts/check-boundaries.sh` pairs each rule file with its fixture itself, refuses to run outside a work tree, fails when a rule's `paths: include:` names a file git no longer has (so **when you move a file, update the `.semgrep/` rules that scope to it**; the check tells you which), and fails unless the scan read every Rust file in `src/`. Run it through the script or `just boundary`, never as a bare `semgrep` call, and when adding a rule, plant a violation in the real file and watch it fail.
 - **PyErr routing is exhaustive at compile time.** Adding a variant to `domain::Error` will fail to compile until you wire it into `From<MatraError> for PyErr` with a specific Python exception class. The no-wildcard match exists so new variants do not silently route to `PyRuntimeError`.
 - **Methods do not cross FFI. Only fields do.** Aggregate Rust methods (`Document::passive_ratio()`, `Corpus::total_words()`) are invisible to Python and (future) WASM consumers. If a value needs to be visible cross-language, materialize it as a field on a summary type, not a method.
+- **A `path:line` citation in `.claude/` is checked.** `scripts/check-claude-citations.sh` (from `just check` and the `Boundary check` CI job) fails when one names a missing file or a line past its end, because the agent and skill files drifted from the code twice. When you move a file or shorten one, fix the citations the check names. It cannot see a line that still exists but now says something else, so name the item beside the line, as in `Matra` (`src/lib.rs:461`), and a reader can still find it after the line moves.
 - **Em dashes get rejected.** Project convention forbids them in documentation prose. `scripts/check-docsite-floor.sh` gate 5 rejects em dashes in `site/content/`, `skills/` and `blueprints/`; reviewers catch them elsewhere.
-- **Publishing is hand-gated.** `cargo publish` and `maturin publish` are always preceded by `--dry-run`. The publish step itself requires explicit per-publish approval per the project memory. Do not script away the gate; it exists because publishing is irreversible and visible to every downstream consumer.
+- **Publishing is hand-gated.** `cargo publish` and `maturin publish` are always preceded by `--dry-run`. A release publishes only through `release.yml`, whose `crates-io` and `pypi` environments wait for the owner; that approval is the release decision, and an agent never approves a deployment environment. Do not script away the gate; it exists because publishing is irreversible and visible to every downstream consumer.
+- **Only the owner accepts a decision.** Claude writes and argues RFCs and API change proposals, and never merges or closes an RFC pull request or accepts a proposal. Standing merge authority (green CI, a review with no blockers, a rationale comment) covers everything else: code, docs, tooling, dependency updates. `CONTRIBUTING.md` (How decisions are made) has the detail.
 
 ## Conventions
 
@@ -107,31 +109,9 @@ maturin build                                  # Python wheel
 
 Features are additive: `udpipe` (default), `model2vec`, `python`, `cli`. **Do not run `cargo test --all-features`.** It enables `python`, which builds against libpython with symbols deliberately left undefined until the interpreter loads them, so it fails at link with an arm64 symbol error that looks like a regression and is not.
 
-## DAO — practitioner agents
+## Practitioner agents and skills
 
-| Agent | When to use | File |
-|-------|-------------|------|
-| `maintainer` | Architectural decisions, adding features, fixing bugs, long-term maintenance | `.claude/agents/maintainer.md` |
-| `reviewer` | PR reviews, boundary compliance audits, pre-release readiness checks | `.claude/agents/reviewer.md` |
-| `portsmith` | Port trait design, extension points, Pattern 6 evaluation | `.claude/agents/portsmith.md` |
-| `ffi-keeper` | PyO3 + future WASM/TS surface integrity, dual-publish discipline | `.claude/agents/ffi-keeper.md` |
-| `resilience` | Failure modes, bounds, panics, TOCTOU, security, atomic operations | `.claude/agents/resilience.md` |
-| `archivist` | CHANGELOG, RFCs, EPs, README, arch docs in lockstep with code | `.claude/agents/archivist.md` |
-| `newcomer` | What the experience is actually like from a cold install: first-run passes before a release, following the pages literally and fixing nothing | `.claude/agents/newcomer.md` |
-
-## Skills
-
-| Skill | When to use | File |
-|-------|-------------|------|
-| `aces` | **Non-negotiable.** ACES design philosophy: Adaptable, Composable, Extensible. The three counter-forces to stasis/drag/opacity. Run the boundary test on every structural change. | `.claude/skills/aces/SKILL.md` |
-| `rust-craft` | Rust design decisions: error tier, dep pin, trait shape, version pin | `.claude/skills/rust-craft/SKILL.md` |
-| `testing` | Test strategy: regression discipline, property tests, complexity benches | `.claude/skills/testing/SKILL.md` |
-| `architecture` | Hex boundary, port design, composition root, canonical pattern application | `.claude/skills/architecture/SKILL.md` |
-| `ffi-surface` | PyO3 dual-publish: unsendable/Bound/pythonize/maturin/pin discipline | `.claude/skills/ffi-surface/SKILL.md` |
-| `resilience-floor` | Taleb patterns: catch_unwind, atomic ops, TOCTOU closure, size caps | `.claude/skills/resilience-floor/SKILL.md` |
-| `docs-lockstep` | CHANGELOG, RFCs and EPs, arch docs in sync with shipping code | `.claude/skills/docs-lockstep/SKILL.md` |
-| `pr-review` | The gates a pull request is read against before it merges | `.claude/skills/pr-review/SKILL.md` |
-| `e2e-validation` | Verifying a built artifact installs and works for a real user: the mechanical CI gates, and the exploratory pass that produces a report rather than a verdict | `.claude/skills/e2e-validation/SKILL.md` |
+The agents live in `.claude/agents/` and the skills in `.claude/skills/`, and each routes by its frontmatter `description`: what it is for and what it is not for. Those descriptions are the one routing table; `/review` (`.claude/commands/review.md`) convenes the agents for a pull request by the paths its diff touches.
 
 ## Docsite
 

@@ -1,6 +1,11 @@
 ---
 name: e2e-validation
-description: How matra verifies that a built artifact actually installs and works for a real user. Two layers, deliberately separate: mechanical gates that run in CI and block a release, and an exploratory pass an agent runs before a release that produces a report a human judges. Use before cutting a release, after changing how matra is built or distributed, or when a documentation page makes a claim nobody has executed.
+description: >-
+  How matra verifies that a built artifact actually installs and works for a real user. Two layers,
+  deliberately separate: mechanical gates that run in CI and block a release, and an exploratory
+  pass an agent runs before a release that produces a report a human judges. Use before cutting a
+  release, after changing how matra is built or distributed, or when a documentation page makes a
+  claim nobody has executed. Not for: unit and integration test design (testing).
 ---
 
 # e2e-validation

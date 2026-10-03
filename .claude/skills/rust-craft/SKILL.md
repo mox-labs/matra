@@ -1,6 +1,10 @@
 ---
 name: rust-craft
-description: Rust design decisions specific to matra — error tier choice, dep pin rules, trait shape, version pinning, feature-flag composition, `#[non_exhaustive]` discipline. Use when making any non-trivial Rust design decision in this codebase.
+description: >-
+  Rust design decisions specific to matra: error tier choice, dependency pin rules, trait shape,
+  version pinning, feature-flag composition, the non_exhaustive discipline. Use when making any
+  non-trivial Rust design decision in this codebase. Not for: where a module sits in the hex layout
+  (architecture) or PyO3 specifics (ffi-surface).
 ---
 
 # rust-craft

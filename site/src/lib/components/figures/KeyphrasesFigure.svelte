@@ -23,8 +23,10 @@
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { roving } from './motion';
+	import { scopedRegion } from './region';
 
 	let { id, file, dataUrl }: { id: string; file: KeyphrasesFigureFile; dataUrl: string } = $props();
+	const region = scopedRegion();
 
 	const CHAR = 11 * 0.6; // monospace 11px advance
 	const ROW = 15;
@@ -106,7 +108,7 @@
 
 <FigureFrame {id} kind="keyphrases" title="RAKE and YAKE on the same text" {file} {dataUrl}>
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-scroll" tabindex="0" role="region" aria-label="Slopegraph of ranks" {@attach measure}>
+	<div class="fig-scroll" tabindex="0" role="region" aria-label={region('Slopegraph of ranks')} {@attach measure}>
 		<svg width={layout.width} height={layout.height} viewBox="0 0 {layout.width} {layout.height}" role="img" aria-label="Each phrase's RAKE rank joined to its YAKE rank, on a log scale" data-slopes-for={id}>
 			<title>RAKE rank against YAKE rank for the top phrases of each</title>
 			<text class="head" x={layout.L} y={14} text-anchor="end">RAKE rank</text>
@@ -165,7 +167,7 @@
 		<!-- A region that scrolls must take focus, or it cannot be scrolled from
 		     the keyboard (WCAG 2.1.1). -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div class="fig-twin tall" tabindex="0" role="region" aria-label="Ranks and scores under both methods">
+		<div class="fig-twin tall" tabindex="0" role="region" aria-label={region('Ranks and scores under both methods')}>
 			<table data-twin-for={id}>
 				<thead>
 					<tr><th>Phrase</th><th>RAKE rank</th><th>RAKE score</th><th>YAKE rank</th><th>YAKE score</th></tr>

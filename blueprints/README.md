@@ -2,12 +2,12 @@
 
 matra's design record. Two kinds of document live here, and the process
 around them follows the Rust RFC process. [RFC-0019](rfcs/0019-rfc-and-ep-process.md)
-introduced it.
+introduced it, and its dated notes record each change to it since.
 
 | Kind | Where | Cited as | What it records |
 |---|---|---|---|
-| RFC | `rfcs/NNNN-name.md` | `RFC-NNNN` | A change to matra itself: its architecture, its affordances (what a caller can do), or its tuning. What and why. |
-| EP | `eps/NNNN-name.md` | `EP-NNNN` | An enhancement plan: how work gets from decision to shipping. Laid out with the Rust RFC template, like an RFC, with its milestones, test plan, ship criteria and risks under Reference-level explanation and a status log after it. Implements an accepted RFC, or stands alone. |
+| RFC | `rfcs/NNNN-name.md` | `RFC-NNNN` | A substantial change that matra's users notice. What and why. |
+| EP | `eps/NNNN-name.md` | `EP-NNNN` | An enhancement plan for work that several agents carry out in parallel. Laid out with the Rust RFC template, like an RFC, with its milestones, test plan, ship criteria and risks under Reference-level explanation and a status log after it. |
 
 Records cited as `ADR-NNNN` before 2026-09-24 are the RFC of the same
 number: `ADR-0008` is [RFC-0008](rfcs/0008-structural-primitives-are-fields.md).
@@ -17,21 +17,78 @@ one exists: `i9` is
 
 ## The process
 
+### Which record a change takes
+
+The grain follows the Rust project's: the bigger the change and the more
+of matra's users who notice it, the heavier its record.
+
+| Change | Record | Where it lives |
+|---|---|---|
+| A substantial change matra's users notice: the public surface in Rust, Python, the command line or the JSON schema; semantics or behaviour, the default model included; removing or deprecating a substantial feature; an architecture boundary | RFC | A pull request adding `rfcs/NNNN-name.md` |
+| A minor addition to the public surface, or a minor removal from it | API change proposal | A short issue labelled `acp` |
+| Tooling, docs, CI, the harness, a refactor, a measured performance improvement, a bug fix | None beyond the pull request | The pull request. A rule it leaves behind lives in the file that governs it. |
+
+An API change proposal is enough when the change adds or removes one item a
+caller may use and changes nothing about what the existing calls do or
+return. A change to what an existing call returns or means, or one that
+reshapes several items at once, is an RFC. When in doubt whether a change
+needs a record at all, ask whether a caller of matra would notice it: if
+not, the pull request is the record.
+
+A change to this process is tooling too. It takes a pull request and a dated
+note on [RFC-0019](rfcs/0019-rfc-and-ep-process.md), not a new RFC.
+
+**Records written before 2026-10-03 stay as written.** Some of them would
+take a lighter record under this grain:
+[RFC-0020](rfcs/0020-deprecate-unread-config-keys.md) would be an API change
+proposal, and the standalone EPs for tooling (EP-0012, EP-0013, EP-0014) would
+be pull requests. Their headers keep the fields they were written with,
+`Tracking EP` included.
+
+### RFCs
+
 **An RFC is proposed as a pull request.** Copy
 [`rfcs/0000-template.md`](rfcs/0000-template.md) to the next free number,
 fill every section, and open a pull request with the RFC alone or beside the
-code it binds. An unaccepted RFC lives only as that open pull request.
-Discussion happens there.
+code it binds, labelled `rfc`. An unaccepted RFC lives only as that open pull
+request. Discussion happens there.
 
-**Merging the pull request accepts the RFC.** The file reaches `main` with
-its status set to `accepted`. Closing the pull request without merging
-declines it, and nothing lands here.
+**Only the owner accepts an RFC.** Merging its pull request accepts it, and
+only the project owner merges an RFC pull request; the file reaches `main`
+with its status set to `accepted`. Closing the pull request without merging
+declines it, and nothing lands here. Claude writes RFCs and argues for them,
+and never merges or closes an RFC pull request.
 
-**An accepted RFC gets an EP when its implementation spans more than one
-pull request.** Copy [`eps/0000-template.md`](eps/0000-template.md) to the
-next free EP number and fill `Implements`. Work that one
-pull request delivers needs no EP; the RFC and the pull request are the
-record.
+**Each accepted RFC has a tracking issue.** It is labelled `tracking`, opened
+from [`tracking.md`](../.github/ISSUE_TEMPLATE/tracking.md) when the RFC pull
+request is ready for the owner's decision, so the RFC's `Tracking issue`
+header can link it before the merge. It carries the milestone checklist and
+links each pull request that delivers a milestone, and it closes when the
+work ships. If the RFC is declined, the issue closes as not planned.
+
+**An RFC is not rewritten after acceptance.** Two edits are allowed: the
+status line, and a dated note directly under the header saying what changed
+and why. A change of mind is a new RFC that supersedes the old one, and the
+old one's status then reads `superseded by RFC-NNNN`. The lineage stays
+readable because nothing in it is overwritten.
+
+### API change proposals
+
+**A minor change to the public surface is an issue**, opened from
+[`api-change-proposal.md`](../.github/ISSUE_TEMPLATE/api-change-proposal.md)
+and labelled `acp`: the item, what a caller writes with it, and why it is
+minor. Only the owner accepts one, by saying so on the issue. Claude writes
+and argues them, and never accepts one. The pull request that carries an
+accepted proposal out links the issue and closes it.
+
+### EPs
+
+**An EP exists only for a plan that several agents execute in parallel.**
+It says who carries which milestone, in what order, and what each hands the
+next. Work carried out in sequence, however many pull requests it takes,
+needs no EP: the RFC's tracking issue holds its checklist. Copy
+[`eps/0000-template.md`](eps/0000-template.md) to the next free EP number and
+fill `Implements`, which is `none` when the parallel work implements no RFC.
 
 **An EP is laid out with the Rust RFC template**, as an RFC is: Summary,
 Motivation, Guide-level explanation, Reference-level explanation, Drawbacks,
@@ -42,22 +99,6 @@ criteria, and the risks. The status log follows the sections, as the one
 appendix the process requires. An EP that implements an RFC keeps its
 Motivation and Guide-level explanation to a few lines and a link, because
 the RFC holds the argument.
-
-**Work that does not change matra itself gets an EP and no RFC.** The
-docsite, the harness, CI and release tooling change how matra is built,
-checked, documented or delivered, not what it is or what a caller can do
-with it. Their plan is a standalone EP with `Implements: none`, which
-carries its own design in the template's sections: the argument in
-Motivation, how it is used in Guide-level explanation, and the choices a
-later contributor needs in Reference-level explanation, beside the plan.
-When in doubt, ask whether a caller of matra would notice the change: if
-so, it is an RFC.
-
-**An RFC is not rewritten after acceptance.** Two edits are allowed: the
-status line, and a dated note directly under the header saying what changed
-and why. A change of mind is a new RFC that supersedes the old one, and the
-old one's status then reads `superseded by RFC-NNNN`. The lineage stays
-readable because nothing in it is overwritten.
 
 **An EP is a living plan until it ships.** If a milestone turns out to be
 ambiguous, the plan is the bug: edit the plan first, then the code. Every
@@ -93,7 +134,7 @@ published site has no local comments; giscus is its public channel.
 | Kind | Status | Meaning |
 |---|---|---|
 | RFC | `accepted` | Merged; the decision is in effect. |
-| RFC | `implemented` | Accepted, and the CHANGELOG records it shipping. |
+| RFC | `implemented` | Accepted, the CHANGELOG records it shipping, and its tracking issue is closed. |
 | RFC | `superseded by RFC-NNNN` | A later RFC replaced it. Kept unchanged apart from the status line and a dated note. |
 | EP | `planned` | Written, not started. |
 | EP | `in progress` | At least one milestone has landed. |

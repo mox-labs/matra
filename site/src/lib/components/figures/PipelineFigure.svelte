@@ -17,8 +17,10 @@
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { roving, swap } from './motion';
+	import { scopedRegion } from './region';
 
 	let { id, file, dataUrl }: { id: string; file: PipelineFigureFile; dataUrl: string } = $props();
+	const region = scopedRegion();
 
 	const STAGES = [
 		{ key: 'raw', name: 'Ingest', call: 'Ingest::text', adds: 'the text and its format' },
@@ -151,7 +153,7 @@
 		<!-- A region that scrolls must take focus, or it cannot be scrolled from
 		     the keyboard (WCAG 2.1.1). -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div class="fig-twin" tabindex="0" role="region" aria-label="Every paragraph after annotate and after compose">
+		<div class="fig-twin" tabindex="0" role="region" aria-label={region('Every paragraph after annotate and after compose')}>
 			<table data-twin-for={id}>
 				<thead>
 					<tr>

@@ -151,6 +151,14 @@ jobs:
       # first, then src/ is scanned, then the scan's coverage is checked.
       - name: Boundary rules (semgrep)
         run: bash scripts/check-boundaries.sh
+      # Every path:line citation in a tracked file under .claude/ names a file
+      # that exists and a line inside it; the test plants each failure first.
+      # A step here rather than a job of its own, so the set of required
+      # check names does not change.
+      - name: Citations under .claude/
+        run: |
+          bash scripts/test-claude-citations.sh
+          bash scripts/check-claude-citations.sh
 
   docs-floor:
     name: Docsite floor
