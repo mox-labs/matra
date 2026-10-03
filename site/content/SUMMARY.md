@@ -18,6 +18,7 @@
   - [Read a Markdown document's structure](examples/markdown-structure.md)
   - [Cluster sentences by meaning](guides/semantic-clusters.md)
 - [Hand matra to an agent](guides/agent.md)
+- [Install the model behind a TLS-intercepting proxy](guides/tls-proxy.md)
 
 # Explanation
 
@@ -29,6 +30,7 @@
 - [What the clustering threshold does](explanation/semantic-clusters.md)
 - [Pragmatics](explanation/pragmatics.md)
 - [How matra runs](architecture/design.md)
+- [How matra is maintained](explanation/how-matra-is-maintained.md)
 
 # Reference
 

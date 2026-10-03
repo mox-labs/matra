@@ -71,8 +71,8 @@ one kind of need, in `SUMMARY.md` in this order, with the roadmap after them.
 | Part | Serves | Holds |
 |---|---|---|
 | Tutorials | learning by doing | a first analysis walked through on a short text |
-| How-to guides | a goal the reader already has | installing matra, the six worked examples, titled as goals, clustering sentences by meaning, and handing matra to an agent |
-| Explanation | understanding | the introduction, concepts, situation model, programming model, the install routes, the clustering threshold, pragmatics, and how matra runs |
+| How-to guides | a goal the reader already has | installing matra, the six worked examples, titled as goals, clustering sentences by meaning, handing matra to an agent, and installing the model behind a TLS-intercepting proxy |
+| Explanation | understanding | the introduction, concepts, situation model, programming model, the install routes, the clustering threshold, pragmatics, how matra runs, and how matra is maintained |
 | Reference | looking something up | what matra gives you, the domain model, platforms and models, semantic clusters, the Rust, Python and CLI surfaces, methodology, errors, boundary rules |
 
 Where a page was not obviously one kind, the call and its reason:
@@ -102,6 +102,13 @@ Where a page was not obviously one kind, the call and its reason:
   how-to `guides/agent.md`; the cost and limits table repeated the
   `InputTooLarge` table in `reference/errors.md`, so it was removed in favour
   of a link, and the published anchor forwards there.
+- **Installing the model behind a TLS-intercepting proxy is a how-to.** Its
+  steps were a section of Errors; the error itself and its message stay there,
+  under the same heading and anchor, and the steps are
+  `guides/tls-proxy.md`.
+- **How matra is maintained is explanation.** It explains how the project is
+  run and why (the agents, the gates, who decides what) for a reader outside
+  it; the mechanics of contributing are `CONTRIBUTING.md`, outside the site.
 - **How matra runs (`architecture/design.md`) is explanation.** It explains
   why the pipeline is shaped as it is (the model is the expensive thing, the
   paragraph is the unit of work); the boundary rules, which it cites, are

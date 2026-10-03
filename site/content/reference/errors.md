@@ -123,7 +123,7 @@ Nothing that failed the digest is ever written. Both provisioners fetch into mem
 
 ### Behind a TLS-intercepting proxy
 
-matra verifies TLS against root certificates compiled into the binary and never reads the system trust store. That is why it needs no `ca-certificates` package, on any platform, and it is also why a proxy that re-signs TLS cannot be trusted by installing its CA anywhere on the machine. The failure reads:
+matra verifies TLS against root certificates compiled into the binary and never reads the system trust store, so a proxy that re-signs TLS cannot be made trusted. The fetch fails as `Io`, kind `io`, and the message names the host, says why its certificate cannot be trusted, names the file to fetch by hand, and ends with the underlying failure:
 
 ```text
 matra: io error: download https://lindat.mff.cuni.cz/...: the TLS certificate offered for
@@ -133,18 +133,7 @@ installing its CA. Fetch english-ewt-ud-2.5-191206.udpipe by hand and put it in 
 directory instead. Underlying failure: io: invalid peer certificate: ...
 ```
 
-Place the model by hand. `matra config show` prints the model directory this machine resolves, and the artifact is pinned by name, size and SHA-256, so a hand-placed file is exactly as trustworthy as a fetched one: it goes through the same verification on load. A file that is not the pinned model is never used and never deleted. matra tries to download the pinned model in its place, and where that download cannot get through, which is the reason to place the file by hand, the call fails and the file stays exactly as you left it. Check the SHA-256 before moving the file in, as below, so a truncated or proxy-rewritten download fails here rather than on the next run.
-
-```bash
-mkdir -p "$(matra config show | awk -F\" '/^model_dir/ {print $2}')"
-curl -L -o english-ewt-ud-2.5-191206.udpipe \
-  "https://lindat.mff.cuni.cz/repository/server/api/core/bitstreams/handle/11234/1-3131/english-ewt-ud-2.5-191206.udpipe?sequence=17&isAllowed=y"
-shasum -a 256 english-ewt-ud-2.5-191206.udpipe
-# 784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957
-mv english-ewt-ud-2.5-191206.udpipe "<the model_dir above>/"
-```
-
-`MATRA_MODEL_DIR` points at a directory of your own if the resolved one is not writable. The reference embedding model has the same route, three artifacts into a directory loaded with `Model2Vec::from_dir`, described in [semantic clusters](../guides/semantic-clusters.md).
+[Install the model behind a TLS-intercepting proxy](../guides/tls-proxy.md) has the steps.
 
 ### The first run says so
 
