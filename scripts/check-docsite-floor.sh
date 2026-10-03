@@ -52,7 +52,8 @@
 #                            Rust, Python and the CLI, and what each prints
 #                            is compared with the committed output
 #                            (site/scripts/check-examples.ts).
-#  12. Responsive:          every page in site/urls.txt, loaded from the build
+#  12. Responsive:          every docsite page in site/urls.txt (rustdoc's
+#                            api/ pages excepted), loaded from the build
 #                            in Chromium at 320, 390, 768 and 1280px wide,
 #                            closed and with every <details> open, never
 #                            scrolls sideways and has no element past the
@@ -673,7 +674,8 @@ echo ""
 # The page never scrolls sideways; a table, code or a diagram scrolls inside
 # its own box (site/README.md, Design rules). Read in a browser, not from the
 # HTML, because overflow is a property of layout: the build is served from its
-# own root and each page in urls.txt is loaded at four widths, then again with
+# own root and every docsite page in site/urls.txt (rustdoc's api/ pages
+# excepted) is loaded at four widths, then again with
 # every <details> open, so a table behind "show the data" is held to the rule.
 # On an emulated touch screen a tap must pin a parse figure's word, because a
 # hover-only highlight flashes and vanishes under a finger.

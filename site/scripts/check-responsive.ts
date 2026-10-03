@@ -4,8 +4,8 @@
  *
  * The rule (site/README.md, Design rules): a table, a block of code or a
  * diagram may scroll inside its own box; the page never scrolls sideways.
- * This loads every page listed in urls.txt from the built site, in a real
- * browser engine, at 320, 390, 768 and 1280 CSS pixels wide, and fails when:
+ * This loads every docsite page in site/urls.txt (rustdoc's api/ pages
+ * excepted) from the built site, in a real browser engine, at 320, 390, 768 and 1280 CSS pixels wide, and fails when:
  *
  *   page       the document is wider than the window (scrollWidth > innerWidth)
  *   element    a rendered element extends past the window's left or right
@@ -32,8 +32,8 @@
  *
  * Usage: bun scripts/check-responsive.ts <build-dir>
  */
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { join, resolve, sep } from 'node:path';
 import { chromium, type Browser, type Page } from 'playwright-core';
 
 const dir = process.argv[2];
@@ -62,12 +62,14 @@ if (paths.length === 0) {
 // The build, served from its own root as gate 1 reads it: an extensionless
 // route resolves to its .html file, as GitHub Pages does.
 const server = Bun.serve({
+	hostname: '127.0.0.1',
 	port: 0,
 	fetch(req) {
 		let p = decodeURIComponent(new URL(req.url).pathname);
 		if (p.endsWith('/')) p += 'index.html';
 		let file = join(root, p);
-		if (!file.startsWith(root)) return new Response('forbidden', { status: 403 });
+		// Inside the build only: a sibling such as build-x shares the prefix.
+		if (!(file === root || file.startsWith(root + sep))) return new Response('not found', { status: 404 });
 		if (!existsSync(file) || statSync(file).isDirectory()) {
 			if (existsSync(file + '.html')) file += '.html';
 			else return new Response('not found', { status: 404 });
@@ -75,7 +77,27 @@ const server = Bun.serve({
 		return new Response(Bun.file(file));
 	}
 });
-const origin = `http://localhost:${server.port}`;
+const origin = `http://127.0.0.1:${server.port}`;
+
+// The server must not reach outside the build, even into a sibling whose
+// name starts with the build's: one is made for the probe, then removed.
+{
+	const sibling = `${root}-x${process.pid}`;
+	mkdirSync(sibling);
+	writeFileSync(join(sibling, 'index.html'), 'outside the build');
+	let status: number;
+	try {
+		const name = encodeURIComponent(sibling.split(sep).pop() ?? '');
+		status = (await fetch(`${origin}/..%2F${name}/index.html`)).status;
+	} finally {
+		rmSync(sibling, { recursive: true });
+	}
+	if (status !== 404) {
+		console.log(`FAIL (responsive): the test server answered ${status} for a path outside the build`);
+		server.stop();
+		process.exit(1);
+	}
+}
 
 /** What the page itself measures: run in the browser. */
 function measure(slack: number) {
