@@ -21,8 +21,9 @@
 #
 # A last section, Blueprints, lists the design records the site renders from
 # blueprints/ (site/src/lib/server/blueprints.ts): the process and index,
-# every RFC, then every EP, each titled by its `# ` heading and summarized by
-# its first prose sentence. The templates come last in their kind.
+# every RFC, then every EP, each titled by its `# ` heading, with its status
+# as the site's navigation shows it, and summarized by its first prose
+# sentence. The templates come last in their kind.
 #
 # The output goes under site/content/ beside the pages it maps. The site
 # serves it at its root with no step in the deploy workflow to keep in sync
@@ -204,7 +205,26 @@ trap 'rm -f "$tmp"' EXIT
             echo "gen-llms-txt: no prose paragraph found in $f" >&2
             exit 1
         fi
-        printf -- '- [%s](%s/%s.html): %s\n' "$title" "$BASE_URL" "$page" "$summary"
+        # The record's status, as the navigation shows it (shortStatus in
+        # site/src/lib/server/blueprints.ts): the header's `- Status:` value,
+        # links reduced to their text, backticks and any parenthetical dropped.
+        case "$f" in
+        blueprints/README.md) status="" ;;
+        */0000-template.md) status="template" ;;
+        *)
+            status=$(sed -n 's/^- Status:[[:space:]]*//p' "$f" | head -1 |
+                sed -e 's/\[\([^]]*\)\]([^)]*)/\1/g' -e 's/`//g' -e 's/[[:space:]]*(.*$//' -e 's/[[:space:]]*$//')
+            if [ -z "$status" ]; then
+                echo "gen-llms-txt: $f has no - Status: line" >&2
+                exit 1
+            fi
+            ;;
+        esac
+        if [ -n "$status" ]; then
+            printf -- '- [%s](%s/%s.html): Status: %s. %s\n' "$title" "$BASE_URL" "$page" "$status" "$summary"
+        else
+            printf -- '- [%s](%s/%s.html): %s\n' "$title" "$BASE_URL" "$page" "$summary"
+        fi
     done
 } > "$tmp"
 

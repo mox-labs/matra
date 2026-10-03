@@ -159,11 +159,16 @@ field of every line it reads or writes, and a line that fails is reported
 with its number, never dropped.
 
 **Writes.** `site/src/lib/dev/comments/store.ts` serves both writers. A write
-takes a lock file with O_EXCL (a lock older than ten seconds is a dead
-writer's and is taken over), reads the file, writes the file plus the new
+takes a lock file with O_EXCL, reads the file, writes the file plus the new
 line to a temporary file beside it, flushes it and renames it over the
 original, so a reader sees the file before or after the line, never part
-of it. The route is checked against the shape of a site route (lowercase
+of it. A lock older than ten seconds is a dead writer's and is taken over,
+but only by the holder of a second O_EXCL guard file, who looks at the lock
+again under the guard, so two waiters that both saw it stale cannot both
+remove it and let two writers in. `site/scripts/test-comments-store.ts`
+(in `bun run check`) runs two writer processes against a planted stale lock
+50 times and fails on any lost or torn line; with the guard removed it loses
+lines. The route is checked against the shape of a site route (lowercase
 segments, no `.` or `..`, at most 200 characters), the file is resolved and
 held inside `discussion/`, and the deepest existing part of the path must
 resolve inside it too, so a symlink cannot lead out. A body is at most 8,000
