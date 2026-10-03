@@ -22,8 +22,10 @@
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { roving } from './motion';
+	import { scopedRegion } from './region';
 
 	let { id, file, dataUrl }: { id: string; file: PrimitivesFigureFile; dataUrl: string } = $props();
+	const region = scopedRegion();
 
 	type Kind = 'negation' | 'modal' | 'reporting' | 'root_adverbial' | 'hearst_pair' | 'bare_assertion';
 	const LABEL: Record<Kind, string> = {
@@ -188,7 +190,7 @@
 		<!-- A region that scrolls must take focus, or it cannot be scrolled from
 		     the keyboard (WCAG 2.1.1). -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div class="fig-twin" tabindex="0" role="region" aria-label="Structural primitives, by sentence">
+		<div class="fig-twin" tabindex="0" role="region" aria-label={region('Structural primitives, by sentence')}>
 			<table data-twin-for={id}>
 				<thead>
 					<tr><th>#</th><th>Primitive</th><th>Read from</th><th>Attaches to</th><th>Field and detail</th></tr>

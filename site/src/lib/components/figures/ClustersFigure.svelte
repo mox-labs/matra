@@ -29,6 +29,7 @@
 	import type { ClusterGridPoint, ClustersFigureFile } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
+	import { scopedRegion } from './region';
 
 	let {
 		id,
@@ -36,6 +37,7 @@
 		threshold,
 		dataUrl
 	}: { id: string; file: ClustersFigureFile; threshold: number; dataUrl: string } = $props();
+	const region = scopedRegion();
 
 	const ROW = 30;
 	const TOP = 14;
@@ -233,7 +235,7 @@
 			class="fig-scroll"
 			tabindex="0"
 			role="region"
-			aria-label="Clusters at threshold {fmt(point.threshold)}"
+			aria-label={region(`Clusters at threshold ${fmt(point.threshold)}`)}
 			{@attach measure}
 		>
 			<svg
@@ -308,7 +310,7 @@
 		<!-- A region that scrolls must take focus, or it cannot be scrolled from
 		     the keyboard (WCAG 2.1.1). -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div class="fig-twin" tabindex="0" role="region" aria-label="Clusters and edges at every threshold">
+		<div class="fig-twin" tabindex="0" role="region" aria-label={region('Clusters and edges at every threshold')}>
 			<table data-twin-for={id}>
 				<thead><tr><th>Threshold</th><th>Clusters</th><th>Edges (cosine)</th></tr></thead>
 				<tbody>
