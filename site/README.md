@@ -49,7 +49,7 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/components/figures/` | One component per kind of figure, with its layout. |
 | `scripts/check-figure-twins.ts` | The twin test: every figure in the built HTML against its text twin. |
 | `src/lib/components/figures/linked.svelte.ts` | Linked highlighting for the hero and every figure: a mouse points, the keyboard focuses, a finger taps to pin. |
-| `scripts/check-responsive.ts` | Every page at 320, 390, 768 and 1280px in Chromium, with every `<details>` open too, and a tap on the parse figure on an emulated touch screen. |
+| `scripts/check-responsive.ts` | Every docsite page in `urls.txt` (rustdoc's `api/` pages excepted) at 320, 390, 768 and 1280px in Chromium, with every `<details>` open too, and a tap on the parse figure on an emulated touch screen. |
 | `src/lib/mark.ts`, `src/lib/fonts.ts` | The mark's layout from the specimen sentence's parse, and the font metrics that hang words from its bar. |
 | `scripts/check-mark.ts` | The mark's geometry held to its rules, in every variant. |
 | `examples/` | The worked examples, one directory each: which input, the call in Rust, Python and the CLI, and what the calls print. |
@@ -396,7 +396,8 @@ The full reasoning is in EP-0012's Design section.
   a diagram stops shrinking at 44rem and scrolls inside its own container. No
   page scrolls sideways at any width from 320px up, with its disclosures open
   or closed: a table, code or a diagram scrolls in its own box, and the page
-  never does. Gate 12 checks that on every page at 320, 390, 768 and 1280px.
+  never does. Gate 12 checks that on every docsite page in `site/urls.txt` (rustdoc's `api/` pages excepted)
+  at 320, 390, 768 and 1280px.
   Anything that scrolls takes keyboard focus
   and a name (WCAG 2.1.1); a one-line command wraps instead, rather than add a
   tab stop. Every link and button is at least 24px in each direction, or
@@ -578,7 +579,7 @@ manifest (gate 7); and the twin test over the built HTML (gate 9). Gate 8
 regenerates the figure data into a temporary directory and diffs it against
 `src/lib/figures/` (the page measures and the specimen's parse included); gate
 10 checks every input's licence; gate 11 runs the
-worked examples; gate 12 loads every built page in Chromium at four widths
+worked examples; gate 12 loads every docsite page in `site/urls.txt` (rustdoc's `api/` pages excepted) in Chromium at four widths
 and taps the parse figure on an emulated touch screen. The other gates read
 `content/`. In CI the UDPipe and
 embedding models are cached under the digests matra pins them to, and fetched
@@ -592,7 +593,12 @@ and CI caches it keyed by that pin.
 
 Dependencies are pinned exactly in `package.json` and locked in `bun.lock`;
 Dependabot moves the pins. The Bun binary is pinned by version and SHA-256 in
-the workflows.
+the workflows. Gate 12's browser is not: Playwright's installer fetches the
+Chromium headless shell its pinned version names and verifies no published
+SHA-256, unlike the bun, lychee and ripgrep fetches, and CI's cache key is the
+`playwright-core` pin, not a digest. That is an accepted risk. A possible
+later hardening is to record the archive's digest on first install and check
+it on every install after.
 
 ## Comments
 
