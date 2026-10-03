@@ -19,6 +19,11 @@
 # Only top-level SUMMARY.md entries are listed. A nested entry is reachable
 # from its parent's page.
 #
+# A last section, Blueprints, lists the design records the site renders from
+# blueprints/ (site/src/lib/server/blueprints.ts): the process and index,
+# every RFC, then every EP, each titled by its `# ` heading and summarized by
+# its first prose sentence. The templates come last in their kind.
+#
 # The output goes under site/content/ beside the pages it maps. The site
 # serves it at its root with no step in the deploy workflow to keep in sync
 # with this script: site/src/routes/llms.txt prerenders it as committed.
@@ -68,7 +73,10 @@ first_sentence() {
     perl -0777 -ne '
         my $line;
         my $in_fence = 0;
+        my $in_comment = 0;
         for my $l (split /\n/, $_) {
+            if ($in_comment) { $in_comment = 0 if $l =~ /-->/; next; }
+            if ($l =~ /^\s*<!--/ && $l !~ /-->/) { $in_comment = 1; next; }
             if ($l =~ /^\s*(```|~~~)/) { $in_fence = !$in_fence; next; }
             next if $in_fence;
             next if $l =~ /^\s*$/;          # blank
@@ -79,8 +87,13 @@ first_sentence() {
             next if $l =~ /^\s*\|/;         # table row
             next if $l =~ /^\s*</;          # html / comment
             next if $l =~ /^\s*!\[/;        # image
+            if (defined $line) { $line .= " $l"; next; }
             $line = $l;
-            last;
+            next;
+        } continue {
+            # A paragraph hard-wrapped over several lines (the design records
+            # are) is read whole: it ends at the first line that is not prose.
+            last if defined $line && $l =~ /^\s*$|^\s*(#|>|[-*+]\s|\d+\.\s|\||<|!\[|```|~~~)/;
         }
         exit 1 unless defined $line;
 
@@ -167,6 +180,32 @@ trap 'rm -f "$tmp"' EXIT
         printf -- '- [%s](%s/%s.html): %s\n' \
             "$title" "$BASE_URL" "$page" "$summary"
     done < "$SUMMARY"
+
+    # The design records, in the order the site's navigation lists them.
+    printf '\n## Blueprints\n\n'
+    records=(blueprints/README.md)
+    for kind in rfcs eps; do
+        for f in "blueprints/$kind"/[0-9][0-9][0-9][0-9]-*.md; do
+            case "$f" in */0000-template.md) ;; *) records+=("$f") ;; esac
+        done
+        records+=("blueprints/$kind/0000-template.md")
+    done
+    for f in "${records[@]}"; do
+        if [ ! -f "$f" ]; then
+            echo "gen-llms-txt: missing design record $f" >&2
+            exit 1
+        fi
+        case "$f" in
+        blueprints/README.md) title="Blueprints: the process and the index"; page="blueprints/index" ;;
+        */0000-template.md) title="$(sed -n 's/^# \([A-Z]*-0000\):.*/\1/p' "$f" | head -1): the template"; page="${f%.md}" ;;
+        *) title=$(sed -n 's/^# //p' "$f" | head -1); page="${f%.md}" ;;
+        esac
+        if ! summary=$(first_sentence "$f"); then
+            echo "gen-llms-txt: no prose paragraph found in $f" >&2
+            exit 1
+        fi
+        printf -- '- [%s](%s/%s.html): %s\n' "$title" "$BASE_URL" "$page" "$summary"
+    done
 } > "$tmp"
 
 mkdir -p "$(dirname "$OUT")"
