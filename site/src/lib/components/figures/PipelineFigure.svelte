@@ -15,6 +15,7 @@
 	import { fade } from 'svelte/transition';
 	import type { PipelineFigureFile, PipelineParagraph, PipelineStage } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { Linked } from './linked.svelte';
 	import { roving, swap } from './motion';
 
 	let { id, file, dataUrl }: { id: string; file: PipelineFigureFile; dataUrl: string } = $props();
@@ -35,7 +36,8 @@
 	const composedByIndex = $derived(new Map(paragraphsOf(data.composed).map((p) => [p.index, p])));
 	const fmt = (v: number | null) => (v === null ? 'none' : v.toFixed(2));
 	/** The paragraph the reader points at, in the table or the tree. */
-	let active = $state<number | null>(null);
+	const link = new Linked<number>();
+	const active = $derived(link.active);
 </script>
 
 {#snippet tree(stage: PipelineStage, key: 'annotated' | 'composed')}
@@ -52,8 +54,7 @@
 							class="para"
 							class:quote={p.in_blockquote}
 							class:lit={active === p.index}
-							onpointerenter={() => (active = p.index)}
-							onpointerleave={() => (active = null)}
+							{...link.on(p.index)}
 							data-paragraph={p.index}
 							data-sentences={p.sentences}
 							data-tokens={p.tokens}
@@ -163,10 +164,7 @@
 						<tr
 							data-row={p.index}
 							class:lit={active === p.index}
-							onpointerenter={() => (active = p.index)}
-							onpointerleave={() => (active = null)}
-							onfocus={() => (active = p.index)}
-							onblur={() => (active = null)}
+							{...link.on(p.index)}
 						>
 							<td class="num">{p.index}</td>
 							<td>{p.in_blockquote ? 'yes' : ''}</td>

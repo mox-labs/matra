@@ -13,8 +13,9 @@
 	 *
 	 * Linked highlighting: pointing at or focusing a word, in the table or the
 	 * diagram, keeps its arc from its head and its arcs to its dependents, and
-	 * dims the rest, at once. The table's rows are one tab stop; the arrow
-	 * keys walk them.
+	 * dims the rest, at once. A tap pins a word and a second tap, or one
+	 * anywhere else, clears it (./linked.svelte). The table's rows are one
+	 * tab stop; the arrow keys walk them.
 	 *
 	 * Motion follows the research (./motion): nothing moves unless the reader
 	 * picks another sentence, and then the two cross in one eased stage that
@@ -23,6 +24,7 @@
 	import { fade } from 'svelte/transition';
 	import type { ParseFigureFile } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { Linked } from './linked.svelte';
 	import { FAMILY_LABELS, family, layoutParse, TYPE, type Family } from './parse-layout';
 	import { roving, swap } from './motion';
 
@@ -59,7 +61,8 @@
 	const hint = $derived(overflowing ?? layout.width > 882);
 
 	/** The word the reader points at or focuses, and the words it connects to. */
-	let active = $state<number | null>(null);
+	const link = new Linked<number>();
+	const active = $derived(link.active);
 	const lit = $derived.by(() => {
 		if (active === null) return null;
 		const set = new Set<number>([active]);
@@ -82,7 +85,10 @@
 						aria-pressed={current === i + 1}
 						aria-label="Sentence {i + 1}: {s.text}"
 						title={s.text}
-						onclick={() => (current = i + 1)}>{i + 1}</button
+						onclick={() => {
+							current = i + 1;
+							link.pinned = null;
+						}}>{i + 1}</button
 					>
 				{/each}
 			</div>
@@ -104,10 +110,7 @@
 							data-row={t.id}
 							class:lit={lit?.has(t.id)}
 							class:dim={lit !== null && !lit.has(t.id)}
-							onpointerenter={() => (active = t.id)}
-							onpointerleave={() => (active = null)}
-							onfocus={() => (active = t.id)}
-							onblur={() => (active = null)}
+							{...link.on(t.id)}
 						>
 							<span class="tw">{t.text}</span>
 							{t.head === 0 ? 'root' : `${t.dep} of ${byId.get(t.head)?.text}`}
@@ -148,8 +151,7 @@
 							<g
 								class="tok"
 								class:lit={lit?.has(t.id)}
-								onpointerenter={() => (active = t.id)}
-								onpointerleave={() => (active = null)}
+								{...link.on(t.id)}
 							>
 								<text class="word" data-id={t.id} x={t.x} y={layout.wordY} font-size={TYPE.word}>{t.text}</text>
 								<text class="pos" x={t.x} y={layout.posY} font-size={TYPE.pos}>{t.pos}</text>
@@ -180,10 +182,7 @@
 							data-row={t.id}
 							class:lit={lit?.has(t.id)}
 							class:dim={lit !== null && !lit.has(t.id)}
-							onpointerenter={() => (active = t.id)}
-							onpointerleave={() => (active = null)}
-							onfocus={() => (active = t.id)}
-							onblur={() => (active = null)}
+							{...link.on(t.id)}
 						>
 							<td class="num">{t.id}</td>
 							<td class="word">{t.text}</td>
@@ -213,8 +212,8 @@
 	{#snippet note()}
 		Each arc runs from a word's head to the word, whose arrow it ends at, labelled with the
 		relation. The line groups the relations the way Universal Dependencies does: the core
-		arguments of a predicate, the modifiers, and the function words. Point at a word, here or in
-		the table, to keep its arcs and dim the rest.
+		arguments of a predicate, the modifiers, and the function words. Point at or tap a word, here
+		or in the table, to keep its arcs and dim the rest.
 	{/snippet}
 </FigureFrame>
 

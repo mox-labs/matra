@@ -18,15 +18,17 @@
 	 * motion states jump. Nothing moves on load.
 	 *
 	 * Linked highlighting: pointing at a sentence (in the list or the figure)
-	 * keeps its cluster and edges and dims the rest; pointing at a row of the
-	 * table previews that threshold. Colour is by role and never alone: a
-	 * clustered sentence's marker is filled, in Emergence (the converged
-	 * role), with its cluster's letter beside it; a hollow marker is in none;
-	 * what the reader points at is Spark.
+	 * keeps its cluster and edges and dims the rest, and a tap pins it
+	 * (./linked.svelte); pointing a mouse at a row of the table previews that
+	 * threshold, and a click or a tap moves the scrub to it. Colour is by
+	 * role and never alone: a clustered sentence's marker is filled, in
+	 * Emergence (the converged role), with its cluster's letter beside it; a
+	 * hollow marker is in none; what the reader points at is Spark.
 	 */
 	import { onMount } from 'svelte';
 	import type { ClusterGridPoint, ClustersFigureFile } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { Linked } from './linked.svelte';
 
 	let {
 		id,
@@ -112,8 +114,9 @@
 		};
 	}
 
-	/** The sentence the reader is pointing at, and what it lights at the state shown. */
-	let focus = $state<number | null>(null);
+	/** The sentence the reader points at, focuses or tapped, and what it lights at the state shown. */
+	const link = new Linked<number>();
+	const focus = $derived(link.active);
 	const litRows = $derived.by(() => {
 		if (focus === null) return null;
 		const k = layers[nearest].cluster.get(focus);
@@ -170,10 +173,7 @@
 				tabindex="0"
 				class:lit={litRows?.has(i)}
 				class:dim={litRows !== null && !litRows.has(i)}
-				onpointerenter={() => (focus = i)}
-				onpointerleave={() => (focus = null)}
-				onfocus={() => (focus = i)}
-				onblur={() => (focus = null)}
+				{...link.on(i)}
 			>
 				<span class="n">{s.index + 1}</span>{s.text}
 			</li>
@@ -254,8 +254,7 @@
 					<g
 						class="row"
 						class:dim={litRows !== null && !litRows.has(i)}
-						onpointerenter={() => (focus = i)}
-						onpointerleave={() => (focus = null)}
+						{...link.on(i)}
 					>
 						<rect class="hit" x={X0} y={rowY(i) - ROW / 2} width={width - X0} height={ROW} />
 						<text class="num" x={X0 + 38} y={rowY(i)}>{s.index + 1}</text>
@@ -316,7 +315,7 @@
 					{#each data.grid as g, i (g.threshold)}
 						<tr
 							class:current={i === nearest}
-							onpointerenter={() => js && (preview = i)}
+							onpointerenter={(e) => js && e.pointerType === 'mouse' && (preview = i)}
 							onpointerleave={() => (preview = null)}
 							onclick={() => {
 								pos = i;
@@ -349,7 +348,7 @@
 				>in a cluster, named by its letter
 			</li>
 			<li><svg width="12" height="12" aria-hidden="true"><circle class="mark none" cx="6" cy="6" r="5" /></svg>in no cluster</li>
-			<li><span class="swatch-spark" aria-hidden="true"></span>what you point at, with its cluster</li>
+			<li><span class="swatch-spark" aria-hidden="true"></span>what you point at or tap, with its cluster</li>
 		</ul>
 	{/snippet}
 
@@ -397,7 +396,7 @@
 		margin: 0;
 		accent-color: var(--spark);
 		cursor: grab;
-		touch-action: none;
+		touch-action: pan-y;
 	}
 
 	.track input:active {
