@@ -21,6 +21,8 @@ That is the one thing the docsite cannot carry. The docsite describes what matra
 
 Five files here duplicated the pages above: `architecture.md`, `ports.md`, `adapters.md`, `domain-model.md`, `boundary-rules.md`. Duplication is not free. Nothing under `.claude/` is gated, so the copies drifted silently and one of them still carried the project's previous name three months after the rename.
 
+The same drift reached the agent files after this note was written: one cited a class at a line it had long left, another counted these five files as still here. A note did not stop it, so since 2026-10-03 a gate does, in part: `scripts/check-claude-citations.sh` (from `just check` and the `Boundary check` CI job) fails when a `path:line` citation under `.claude/` names a missing file or a line past its end. It cannot tell whether prose still describes the code; the docsite can, which is why architecture prose belongs there.
+
 The docsite is gated by `just docs-floor`: every page reachable from `SUMMARY.md`, every backticked type name resolving in `src/`, every link resolving, a clean build, no em dashes outside quotations, and `site/content/llms.txt` current with `SUMMARY.md`. Architecture prose that lives there gets checked. Architecture prose that lives here does not.
 
 So the rule is: if a fact about the architecture is worth writing down, it goes in the docsite. This directory holds only what the docsite has no place for.

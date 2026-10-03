@@ -1,6 +1,11 @@
 ---
 name: resilience-floor
-description: Antifragile operational discipline for matra — size caps at the entry point, symlink rejection, atomic file writes, TOCTOU closure on hash-verified loads, `catch_unwind` panic boundaries at C/C++ FFI, cycle-safety in graph walks. The Taleb principles applied. Use when adding or auditing I/O, external library boundaries, user-input handling, or failure modes. Pair with `aces` for the structural design philosophy.
+description: >-
+  Antifragile operational discipline for matra: size caps at the entry point, symlink rejection,
+  atomic file writes, TOCTOU closure on hash-verified loads, catch_unwind panic boundaries at C/C++
+  FFI, cycle-safety in graph walks. The Taleb principles applied. Use when adding or auditing I/O,
+  external library boundaries, user-input handling, or failure modes, and with aces on every
+  structural change. Not for: performance tuning with no failure mode in it.
 ---
 
 # resilience-floor

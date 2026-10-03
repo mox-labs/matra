@@ -11,26 +11,30 @@ the report.
 
 Always:
 
-- **reviewer** — the gate. Runs the boundary-compliance audit (rules 1-7),
-  public-surface integrity check, error-tier discipline, resilience-floor
-  checklist, cost discipline (no silent O(n²)), docs lockstep, test coverage.
+- **reviewer**: a cold re-read by a model of the same family as the author,
+  not independent verification; `just check` and the required CI checks are
+  the verification. Runs the boundary-compliance audit (rules 1-8),
+  public-surface integrity check, error-tier discipline, cost discipline (no
+  silent O(n²)), docs lockstep, test coverage.
   ACES is Gate 0 — does the change make the system more adaptable / composable
   / extensible, or less?
 
 Conditionally:
 
-- **portsmith** — if the diff touches `src/source/`, `src/decompose/`, `src/nlp/`,
-  or any port trait. Audits the port contract, pre/post-conditions, object-safety,
+- **portsmith**: if the diff touches `src/source/`, `src/decompose/`, `src/nlp/`,
+  `src/embed/`, or any port trait. Audits the port contract, pre/post-conditions, object-safety,
   Pattern 6 criterion.
-- **ffi-keeper** — if the diff touches `src/lib.rs` (PyO3 layer), `pyproject.toml`,
+- **ffi-keeper**: if the diff touches `src/lib.rs` (PyO3 layer), `pyproject.toml`,
   `python/matra/`, the `pyo3` / `pythonize` / `maturin` deps. Audits the dual-publish
   contract, error routing per variant, 4 pythonize blind spots, the 3-axis pin rule.
-- **resilience** — if the diff adds I/O, external library calls, user-input handling,
+- **resilience**: if the diff adds I/O, external library calls, user-input handling,
   file writes, hash verification, or graph-walk algorithms. Audits the six
   antifragility disciplines (entry-point size cap, symlink rejection, atomic file
-  write, TOCTOU closure, catch_unwind boundary, cycle-safety).
-- **archivist** — if the diff touches the public surface or the boundary rules.
-  Audits CHANGELOG.md `[Unreleased]`, the relevant RFC, the relevant arch doc.
+  write, TOCTOU closure, catch_unwind boundary, cycle-safety). The one agent
+  that blocks on these; the reviewer does not repeat them.
+- **archivist**: if the diff touches the public surface, the boundary rules, or
+  `blueprints/`. Audits CHANGELOG.md `[Unreleased]`, the blueprints index and
+  statuses, the tracking issue, and the docsite page that describes the change.
 
 ## What to filter for
 
@@ -69,5 +73,7 @@ grounds in. No paraphrase; quote the offending code if it helps.
 
 End with a **ship / return** verdict per the reviewer agent's standard.
 Ship if all blockers clear. Return with the specific changes required if not.
+A PR that adds or changes an RFC is never shipped on this verdict: it goes to
+the owner, who alone merges or closes it.
 
 If no findings: say so explicitly. Do not invent issues.

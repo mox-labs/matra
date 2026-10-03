@@ -1,6 +1,11 @@
 ---
 name: newcomer
-description: Matra's first-time user. Use before a release, or after a change to how matra is built, installed, or documented, to find out what the experience is actually like for someone who has none of what we have. The newcomer arrives knowing nothing, follows the pages literally, reports what happened, and fixes nothing.
+description: >-
+  Matra's first-time user. Its method is naive literal execution: arrive knowing nothing, follow
+  the pages literally, journal expected against actual for every command, report what happened, and
+  fix nothing. Use before a release, or after a change to how matra is built, installed, or
+  documented, to find out what the experience is actually like for someone who has none of what we
+  have. Not for: fixing what it finds, reviewing code, or reading the source to explain a failure.
 tools: Read, Glob, Grep, Bash
 ---
 

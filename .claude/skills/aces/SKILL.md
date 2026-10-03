@@ -1,6 +1,12 @@
 ---
 name: aces
-description: ACES — Adaptable, Composable, Extensible. The non-negotiable design philosophy for matra. Every system decays through three endogenous forces (stasis, drag, opacity); ACE is the discipline that resists them. Use when making any structural decision, designing an interface, or evaluating whether a change preserves the library's long-term value.
+description: >-
+  ACES: Adaptable, Composable, Extensible. The non-negotiable design philosophy for matra, and the
+  boundary test every structural change runs: does it leave the system more adaptable, composable
+  and extensible, or less, against the three decay forces (stasis, drag, opacity). Use when making
+  any structural decision, designing an interface, or reviewing a structural change, always
+  together with resilience-floor. Not for: a change with no structural effect (formatting, a typo,
+  a dependency bump that moves no API).
 ---
 
 # aces
