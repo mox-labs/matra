@@ -12,12 +12,13 @@ default:
 # ---------------------------------------------------------------------------
 
 # Run the local gate suite: the Rust gates, the boundary check, the docsite
-# floor and the blueprint citation check, which CI also runs, plus the Python
+# floor, the blueprint citation check and the .claude/ citation check, which
+# CI also runs, plus the Python
 # lint, the end-to-end sandbox test and the version sync, which CI does not run
 # on a pull request.
 # CI additionally runs cargo-deny, cargo-semver-checks, the wheel build and
 # mypy.
-check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary test-sandbox docs-floor blueprint-refs version-sync
+check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary test-sandbox docs-floor blueprint-refs claude-citations version-sync
     @echo ""
     @echo "all gates pass"
 
@@ -87,6 +88,13 @@ boundary:
 # in blueprints/README.md. Requires ripgrep.
 blueprint-refs:
     bash scripts/check-blueprint-refs.sh
+
+# Every `path:line` citation in a tracked file under .claude/ names a file
+# that exists and a line inside it. Runs the check's own tests first, which
+# plant each kind of failure and watch it fail.
+claude-citations:
+    bash scripts/test-claude-citations.sh
+    bash scripts/check-claude-citations.sh
 
 # The end-to-end sandbox script cannot report a clean result for a tree it did
 # not examine without saying so. Needs an unprivileged user for the unreadable and unwritable
