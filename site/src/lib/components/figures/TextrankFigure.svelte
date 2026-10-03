@@ -17,8 +17,10 @@
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { roving } from './motion';
+	import { scopedRegion } from './region';
 
 	let { id, file, dataUrl }: { id: string; file: TextrankFigureFile; dataUrl: string } = $props();
+	const region = scopedRegion();
 
 	/** The sentence the reader points at, by position. */
 	const link = new Linked<number>();
@@ -54,7 +56,7 @@
 
 <FigureFrame {id} kind="textrank" title="TextRank: the summary and the scores it came from" {file} {dataUrl}>
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="fig-scroll" tabindex="0" role="region" aria-label="TextRank score of every sentence">
+	<div class="fig-scroll" tabindex="0" role="region" aria-label={region('TextRank score of every sentence')}>
 		<svg class:active={active !== null} width={W} {height} viewBox="0 0 {W} {height}" role="img" aria-label="TextRank scores of {rows.length} sentences in document order; the {summary.length} summary sentences are marked" data-bars-for={id}>
 			<title>TextRank score of each sentence, in document order</title>
 			{#each layout.bands as b, i (i)}
@@ -107,7 +109,7 @@
 		<!-- A region that scrolls must take focus, or it cannot be scrolled from
 		     the keyboard (WCAG 2.1.1). -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div class="fig-twin tall" tabindex="0" role="region" aria-label="Every sentence's TextRank score">
+		<div class="fig-twin tall" tabindex="0" role="region" aria-label={region("Every sentence's TextRank score")}>
 			<table data-twin-for={id}>
 				<thead><tr><th>#</th><th>¶</th><th>Score</th><th>Summary</th><th>Sentence</th></tr></thead>
 				<tbody {@attach roving}>

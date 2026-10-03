@@ -27,6 +27,7 @@
 	import { Linked } from './linked.svelte';
 	import { FAMILY_LABELS, family, layoutParse, TYPE, type Family } from './parse-layout';
 	import { roving, swap } from './motion';
+	import { scopedRegion } from './region';
 
 	let {
 		id,
@@ -35,6 +36,7 @@
 		line = true,
 		dataUrl
 	}: { id: string; file: ParseFigureFile; sentence: number; line?: boolean; dataUrl: string } = $props();
+	const region = scopedRegion();
 
 	const sentences = $derived(file.data.sentences);
 	// The sentence shown: the page's choice until the reader makes one.
@@ -121,7 +123,7 @@
 
 
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-				<div class="fig-scroll" tabindex="0" role="region" aria-label="Arc diagram of sentence {current}" {@attach measure}>
+				<div class="fig-scroll" tabindex="0" role="region" aria-label={region(`Arc diagram of sentence ${current}`)} {@attach measure}>
 					<svg
 						width={layout.width}
 						height={layout.height}
@@ -170,7 +172,7 @@
 		<!-- A region that scrolls must take focus, or it cannot be scrolled
 		     from the keyboard (WCAG 2.1.1); the page's own tables do the same. -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div class="fig-twin" tabindex="0" role="region" aria-label="Tokens of sentence {current}">
+		<div class="fig-twin" tabindex="0" role="region" aria-label={region(`Tokens of sentence ${current}`)}>
 			<table data-twin-for={id}>
 				<thead>
 					<tr><th>#</th><th>Word</th><th>Lemma</th><th>POS</th><th>Head</th><th>Relation</th></tr>

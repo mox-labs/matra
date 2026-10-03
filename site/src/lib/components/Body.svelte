@@ -14,8 +14,15 @@
 	import ExampleCall from './examples/ExampleCall.svelte';
 	import ExampleInput from './examples/ExampleInput.svelte';
 	import ExampleOutput from './examples/ExampleOutput.svelte';
+	import { setRegionScope } from './figures/region';
 
-	let { segments }: { segments: Segment[] } = $props();
+	// `scope` names the page this body belongs to where one document holds
+	// several (/print), so the figures' regions keep unique names there.
+	let { segments, scope }: { segments: Segment[]; scope?: string } = $props();
+	// Context is set once, while the component initialises, so the initial
+	// value is the one wanted: a body's page does not change under it.
+	// svelte-ignore state_referenced_locally
+	if (scope) setRegionScope(scope);
 </script>
 
 {#each segments as segment, i (i)}
