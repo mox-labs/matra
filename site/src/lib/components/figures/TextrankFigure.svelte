@@ -10,17 +10,19 @@
 	 * The summary's bars are Emergence, the converged result, and each is also
 	 * numbered above and listed below; the rest are neutral. Pointing at or
 	 * focusing a row lights its bar in Spark, and pointing at a bar lights its
-	 * row, at once. Nothing else moves.
+	 * row, at once; a tap pins either (./linked.svelte). Nothing else moves.
 	 */
 	import { scaleLinear } from 'd3-scale';
 	import type { TextrankFigureFile } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { Linked } from './linked.svelte';
 	import { roving } from './motion';
 
 	let { id, file, dataUrl }: { id: string; file: TextrankFigureFile; dataUrl: string } = $props();
 
 	/** The sentence the reader points at, by position. */
-	let active = $state<number | null>(null);
+	const link = new Linked<number>();
+	const active = $derived(link.active);
 
 	const W = 640;
 	const LEFT = 44;
@@ -71,8 +73,7 @@
 					y={TOP}
 					width={layout.step}
 					height={H}
-					onpointerenter={() => (active = r.position)}
-					onpointerleave={() => (active = null)}
+					{...link.on(r.position)}
 				/>
 				<rect
 					class="bar"
@@ -115,10 +116,7 @@
 							class:picked={r.summary}
 							class:lit={active === r.position}
 							data-row={r.position}
-							onpointerenter={() => (active = r.position)}
-							onpointerleave={() => (active = null)}
-							onfocus={() => (active = r.position)}
-							onblur={() => (active = null)}
+							{...link.on(r.position)}
 						>
 							<td class="num">{r.position + 1}</td>
 							<td class="num">{r.paragraph ?? ''}</td>

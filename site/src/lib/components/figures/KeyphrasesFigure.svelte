@@ -15,11 +15,13 @@
 	 * a solid line, one in YAKE's by a dashed line, one in both by a heavy
 	 * line; the side a label sits on already says which method ranks it.
 	 * Pointing at or focusing a row lights its line and labels in Spark, and
-	 * pointing at a line lights its row, at once.
+	 * pointing at a line lights its row, at once. A tap pins either
+	 * (./linked.svelte).
 	 */
 	import { scaleLog } from 'd3-scale';
 	import type { KeyphrasesFigureFile } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { Linked } from './linked.svelte';
 	import { roving } from './motion';
 
 	let { id, file, dataUrl }: { id: string; file: KeyphrasesFigureFile; dataUrl: string } = $props();
@@ -33,7 +35,8 @@
 
 	const data = $derived(file.data);
 	/** The phrase the reader points at. */
-	let active = $state<string | null>(null);
+	const link = new Linked<string>();
+	const active = $derived(link.active);
 	const inRake = $derived(new Set(data.rake.map((p) => p.phrase)));
 	const inYake = $derived(new Set(data.yake.map((p) => p.phrase)));
 
@@ -124,8 +127,7 @@
 					data-phrase={l.phrase}
 					data-rake={l.rake ?? ''}
 					data-yake={l.yake ?? ''}
-					onpointerenter={() => (active = l.phrase)}
-					onpointerleave={() => (active = null)}
+					{...link.on(l.phrase)}
 				>
 					{#if l.y1 !== null && l.y2 !== null}
 						<line x1={layout.L} y1={l.y1} x2={layout.R} y2={l.y2} />
@@ -173,10 +175,7 @@
 						<tr
 							data-row={r.phrase}
 							class:lit={active === r.phrase}
-							onpointerenter={() => (active = r.phrase)}
-							onpointerleave={() => (active = null)}
-							onfocus={() => (active = r.phrase)}
-							onblur={() => (active = null)}
+							{...link.on(r.phrase)}
 						>
 							<td class="phrase">{r.phrase}</td>
 							<td class="num">{r.rake ? r.rake.rank : 'not ranked'}</td>

@@ -14,11 +14,13 @@
 	 * reported speech; √ for an adverbial on the root.
 	 *
 	 * Linked highlighting: pointing at or focusing a row lights its words in
-	 * the sentence, in Spark; pointing at a marked word lights its rows. The
-	 * rows are one tab stop, walked with the arrow keys. Nothing else moves.
+	 * the sentence, in Spark; pointing at a marked word lights its rows. A
+	 * tap pins either (./linked.svelte). The rows are one tab stop, walked
+	 * with the arrow keys. Nothing else moves.
 	 */
 	import type { PrimitiveSentence, PrimitivesFigureFile } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { Linked } from './linked.svelte';
 	import { roving } from './motion';
 
 	let { id, file, dataUrl }: { id: string; file: PrimitivesFigureFile; dataUrl: string } = $props();
@@ -126,8 +128,17 @@
 	}
 
 	/** The row the reader points at (sentence and item), or a word (sentence and token id). */
-	let row = $state<{ n: number; j: number } | null>(null);
-	let tok = $state<{ n: number; id: number } | null>(null);
+	const rows = new Linked<string>();
+	const toks = new Linked<string>();
+	const split = (k: string | null) => (k === null ? null : k.split('-').map(Number));
+	const row = $derived.by(() => {
+		const k = split(rows.active);
+		return k && { n: k[0], j: k[1] };
+	});
+	const tok = $derived.by(() => {
+		const k = split(toks.active);
+		return k && { n: k[0], id: k[1] };
+	});
 	const rowLit = (n: number, it: Item, j: number) =>
 		(row !== null && row.n === n && row.j === j) ||
 		(tok !== null && tok.n === n && (it.cue === tok.id || it.head === tok.id));
@@ -154,8 +165,7 @@
 					{#each x.spans.parts as p (p.id)}{p.gap}{#if x.roles.has(p.id)}{@const r = x.roles.get(p.id) ?? []}<!-- svelte-ignore a11y_no_static_element_interactions --><ruby
 								class="k-{r[0].kind}"
 								class:lit={tokLit(x.n, x.list, p.id)}
-								onpointerenter={() => (tok = { n: x.n, id: p.id })}
-								onpointerleave={() => (tok = null)}
+								{...toks.on(`${x.n}-${p.id}`)}
 								><span
 									class="tok"
 									class:cue={r.some((q) => q.cue)}
@@ -190,10 +200,7 @@
 								class:first={j === 0}
 								data-row="{x.n}-{j}"
 								class:lit={rowLit(x.n, it, j)}
-								onpointerenter={() => (row = { n: x.n, j })}
-								onpointerleave={() => (row = null)}
-								onfocus={() => (row = { n: x.n, j })}
-								onblur={() => (row = null)}
+								{...rows.on(`${x.n}-${j}`)}
 							>
 								<td class="num">{x.n}</td>
 								<td class="glyph-cell" data-glyph={GLYPH[it.kind]}>{LABEL[it.kind]}</td>

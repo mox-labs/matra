@@ -12,17 +12,20 @@
 	 *
 	 * The marks are neutral ink. Pointing at or focusing a paragraph's row
 	 * draws a rule through its three values and lights them in Spark;
-	 * pointing at a value lights its row. At once; nothing else moves.
+	 * pointing at a value lights its row. A tap pins either
+	 * (./linked.svelte). At once; nothing else moves.
 	 */
 	import { scaleLinear } from 'd3-scale';
 	import type { MetricsFigureFile, MetricsParagraph } from '$lib/types';
 	import FigureFrame from './FigureFrame.svelte';
+	import { Linked } from './linked.svelte';
 	import { roving } from './motion';
 
 	let { id, file, dataUrl }: { id: string; file: MetricsFigureFile; dataUrl: string } = $props();
 
 	/** The paragraph the reader points at. */
-	let active = $state<number | null>(null);
+	const link = new Linked<number>();
+	const active = $derived(link.active);
 
 	type Metric = 'readability_grade' | 'lexical_density' | 'compression_ratio';
 	const PANELS: { metric: Metric; title: string; hint: string; reference?: 'mean_readability' }[] = [
@@ -142,8 +145,7 @@
 								cx={x(q.index)}
 								cy={p.y(q[p.metric] as number)}
 								r="3.2"
-								onpointerenter={() => (active = q.index)}
-								onpointerleave={() => (active = null)}
+								{...link.on(q.index)}
 							/>
 						{/if}
 					{/each}
@@ -177,10 +179,7 @@
 						<tr
 							data-row={q.index}
 							class:lit={active === q.index}
-							onpointerenter={() => (active = q.index)}
-							onpointerleave={() => (active = null)}
-							onfocus={() => (active = q.index)}
-							onblur={() => (active = null)}
+							{...link.on(q.index)}
 						>
 							<td class="num">{q.index}</td>
 							<td class="opening">{q.opening}…</td>

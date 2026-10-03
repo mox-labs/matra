@@ -20,13 +20,15 @@
 	 *
 	 * Nothing moves on load. The reader lights a word by pointing at it or
 	 * focusing it: its head, its dependents and the arcs between them stay,
-	 * the rest dims (opacity only), and a click pins it. "Show the parse"
+	 * the rest dims (opacity only), and a click or a tap pins it; a tap
+	 * elsewhere clears the pin (./figures/linked.svelte). "Show the parse"
 	 * reveals each word's part of speech and each arc's relation, and works
 	 * without a script; its table twin is the parse as text.
 	 */
 	import { ALEGREYA_BLACK, inkTop, tallest } from '$lib/fonts';
 	import { drawn } from '$lib/mark';
 	import type { ParseToken } from '$lib/types';
+	import { Linked } from './figures/linked.svelte';
 
 	let { tokens, titleId = 'matra' }: { tokens: ParseToken[]; titleId?: string } = $props();
 
@@ -70,9 +72,8 @@
 	});
 	const deepest = $derived(Math.max(1, ...arcs.map((a) => a.level)));
 
-	let hover = $state<number | null>(null);
-	let pinned = $state<number | null>(null);
-	const active = $derived(hover ?? pinned);
+	const link = new Linked<number>({ clickPins: true });
+	const active = $derived(link.active);
 	/** The active word, its head and its dependents. */
 	const lit = $derived.by(() => {
 		if (active === null) return null;
@@ -109,13 +110,9 @@
 				class:punct={!drawn(t)}
 				class:lit={lit?.has(t.id)}
 				style="grid-column: {2 * t.id - 1} / span 2"
-				aria-pressed={pinned === t.id}
+				aria-pressed={link.pinned === t.id}
 				aria-label="{t.text}: {t.pos}, {t.head === 0 ? 'the root' : `${t.dep} of ${byId.get(t.head)?.text}`}"
-				onpointerenter={() => (hover = t.id)}
-				onpointerleave={() => (hover = null)}
-				onfocus={() => (hover = t.id)}
-				onblur={() => (hover = null)}
-				onclick={() => (pinned = pinned === t.id ? null : t.id)}
+				{...link.on(t.id)}
 			>
 				<span class="w">{t.text}</span>
 				<span class="pos" aria-hidden="true">{t.pos}</span>
@@ -136,20 +133,26 @@
 
 	<details class="show-parse">
 		<summary>show the parse</summary>
-		<table>
-			<thead><tr><th>#</th><th>Word</th><th>POS</th><th>Head</th><th>Relation</th></tr></thead>
-			<tbody>
-				{#each tokens as t (t.id)}
-					<tr>
-						<td>{t.id}</td>
-						<td>{t.text}</td>
-						<td>{t.pos}</td>
-						<td>{t.head === 0 ? '0 (root)' : `${t.head} ${byId.get(t.head)?.text}`}</td>
-						<td>{t.dep}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
+		<!-- Wider than a narrow phone's column, so it scrolls in its own box
+		     and the page does not; a box that scrolls takes focus and a name
+		     (WCAG 2.1.1). -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="parse-scroll" tabindex="0" role="region" aria-label="The parse, word by word">
+			<table>
+				<thead><tr><th>#</th><th>Word</th><th>POS</th><th>Head</th><th>Relation</th></tr></thead>
+				<tbody>
+					{#each tokens as t (t.id)}
+						<tr>
+							<td>{t.id}</td>
+							<td>{t.text}</td>
+							<td>{t.pos}</td>
+							<td>{t.head === 0 ? '0 (root)' : `${t.head} ${byId.get(t.head)?.text}`}</td>
+							<td>{t.dep}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	</details>
 </section>
 
@@ -344,8 +347,13 @@
 		color: var(--spark);
 	}
 
-	.show-parse table {
+	.parse-scroll {
 		margin-top: var(--space-2);
+		max-width: 100%;
+		overflow-x: auto;
+	}
+
+	.show-parse table {
 		border-collapse: collapse;
 	}
 
