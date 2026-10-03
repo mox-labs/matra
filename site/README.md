@@ -48,6 +48,8 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/figures/` | Figure data, generated from `inputs/` by `examples/docsite_figures.rs` and committed. Never edited by hand. |
 | `src/lib/components/figures/` | One component per kind of figure, with its layout. |
 | `scripts/check-figure-twins.ts` | The twin test: every figure in the built HTML against its text twin. |
+| `src/lib/components/figures/linked.svelte.ts` | Linked highlighting for the hero and every figure: a mouse points, the keyboard focuses, a finger taps to pin. |
+| `scripts/check-responsive.ts` | Every page at 320, 390, 768 and 1280px in Chromium, with every `<details>` open too, and a tap on the parse figure on an emulated touch screen. |
 | `src/lib/mark.ts`, `src/lib/fonts.ts` | The mark's layout from the specimen sentence's parse, and the font metrics that hang words from its bar. |
 | `scripts/check-mark.ts` | The mark's geometry held to its rules, in every variant. |
 | `examples/` | The worked examples, one directory each: which input, the call in Rust, Python and the CLI, and what the calls print. |
@@ -258,7 +260,17 @@ dashed), shown in its legend; the root is Emergence, as in the mark. Words
 are set in the monospace face so their widths, and so the layout, are known
 without measuring text. Arcs are levelled so none collide, and a sentence
 wider than the column scrolls inside the figure. Pointing at a word, in the
-table or the diagram, keeps its arcs and dims the rest.
+table or the diagram, keeps its arcs and dims the rest; a tap pins it.
+
+Every figure's linked highlighting answers a mouse, a keyboard and a finger,
+through `figures/linked.svelte.ts`. A mouse lights what it points at, from
+`pointerenter` and `pointerleave` with `pointerType` `mouse`. The keyboard
+lights what has visible focus. A finger has no hover: a tap fires enter and
+leave together, so a highlight bound to them flashes and is gone. A tap
+(`pointerup` from a touch or a pen) pins the item instead, within the frame
+of the tap, and a second tap on it or a tap anywhere else clears the pin. A
+pan cancels the pointer, so scrolling a figure sideways pins nothing. Gate 12
+taps a word in the parse figure and fails if the highlight does not stay.
 
 `figure-primitives` answers "which words did matra read each primitive off?".
 Each sentence is set as written, with the word a primitive is read from
@@ -299,7 +311,10 @@ Emergence with its cluster's letter. Every grid state is drawn once, as a
 layer; the threshold scrub, set directly above the arcs with its readout,
 sets their opacities, blending the two runs either
 side of the pointer and settling on the nearer on release, and the twin's
-rows preview a state on hover. The twin lists the clusters and edges at every
+rows preview a state when a mouse points at them and move the scrub to it on
+a click or a tap. The scrub takes `touch-action: pan-y`: a horizontal drag
+moves it, and a vertical swipe that starts on it still scrolls the page. The
+twin lists the clusters and edges at every
 grid value; gate 9 compares the layer marked `data-current`.
 
 `figure-pipeline` answers "what does each stage add?": one Markdown
@@ -379,22 +394,29 @@ The full reasoning is in EP-0012's Design section.
   column, prose plus margin, which is what the 720-unit diagrams need (66ch of
   Alegreya at 19px is 668px). A table wider than the column scrolls on its own;
   a diagram stops shrinking at 44rem and scrolls inside its own container. No
-  page scrolls sideways at 360px. Anything that scrolls takes keyboard focus
+  page scrolls sideways at any width from 320px up, with its disclosures open
+  or closed: a table, code or a diagram scrolls in its own box, and the page
+  never does. Gate 12 checks that on every page at 320, 390, 768 and 1280px.
+  Anything that scrolls takes keyboard focus
   and a name (WCAG 2.1.1); a one-line command wraps instead, rather than add a
   tab stop. Every link and button is at least 24px in each direction, or
   widened to it without moving the layout, as the hero's punctuation is (WCAG
   2.2, 2.5.8). An icon-only control carries a name that begins with its
-  visible label where it has one. Contrast is checked in gate 4; nothing else
-  here is checked in CI. An axe-core pass over every built page, both themes,
-  at 1280px and 320px, is run by hand when the layout changes. The pass on
-  2026-10-01 (axe 4.13.0, WCAG 2.0 to 2.2 A and AA) found three WCAG rules
-  failing and none after their fixes; a best-practice duplicate region name
-  on `/print`, where pages repeat a figure, remains.
+  visible label where it has one. Contrast is checked in gate 4 and sideways
+  scrolling in gate 12; nothing else here is checked in CI. An axe-core pass
+  over every built page, both themes, at 1280px and 320px, is run by hand
+  when the layout changes. The pass on 2026-10-01 (axe 4.13.0, WCAG 2.0 to
+  2.2 A and AA) found three WCAG rules failing and none after their fixes; a
+  best-practice duplicate region name on `/print`, where pages repeat a
+  figure, remains. The pass on 2026-10-02, at 320px after the touch changes,
+  found none.
 - **Motion only on request.** Nothing on the site animates on its own. What
   moves, moves because the reader changed it, as `figures/motion.ts` sets out
   from the motion research: one eased stage for a swapped state, reversible
   mid-flight; a scrub that follows the pointer linearly and settles on
-  release; opacity only. `prefers-reduced-motion` makes states jump.
+  release; opacity only. `prefers-reduced-motion` makes states jump. A tap
+  that pins a highlight is the same state change as pointing, so it fades
+  the same way and jumps under reduced motion.
 - **URLs are a contract.** `/guides/cli` is written as `guides/cli.html`, the
   path the mdBook-era site served. `urls.txt` lists every published path, and
   `anchors.txt` every published heading anchor: the 208 ids that site served.
@@ -514,7 +536,7 @@ deepest arc) leaves more than the mark's clear space above the header's lower
 edge. The home page's
 hero is the mark at full scale, explaining itself: the sentence in Alegreya with
 the same parse drawn over it in CSS grid, lit word by word on hover or focus,
-pinned by a click, labelled by "show the parse", and still with no script.
+pinned by a click or a tap and cleared by a tap elsewhere, labelled by "show the parse", and still with no script.
 Each word spans two grid columns, so its centre is a grid line; the arcs are
 positioned in their grid areas rather than placed in the flow, because an arc
 in the flow adds its own width to the columns it spans and would split a word
@@ -556,12 +578,17 @@ manifest (gate 7); and the twin test over the built HTML (gate 9). Gate 8
 regenerates the figure data into a temporary directory and diffs it against
 `src/lib/figures/` (the page measures and the specimen's parse included); gate
 10 checks every input's licence; gate 11 runs the
-worked examples. The other gates read `content/`. In CI the UDPipe and
+worked examples; gate 12 loads every built page in Chromium at four widths
+and taps the parse figure on an emulated touch screen. The other gates read
+`content/`. In CI the UDPipe and
 embedding models are cached under the digests matra pins them to, and fetched
 through matra's own verified download on a miss; a model that cannot be had
 fails gate 8. The job builds matra into a virtualenv with `maturin develop` for
 gate 11's Python calls, and sets `EXAMPLES_REQUIRED=1` so a Python that cannot
-import matra fails rather than skips.
+import matra fails rather than skips. Gate 12's browser is Playwright's
+Chromium headless shell at the revision the pinned `playwright-core` names;
+the gate installs it on first run (into `PLAYWRIGHT_BROWSERS_PATH` when set),
+and CI caches it keyed by that pin.
 
 Dependencies are pinned exactly in `package.json` and locked in `bun.lock`;
 Dependabot moves the pins. The Bun binary is pinned by version and SHA-256 in

@@ -13,7 +13,7 @@ cargo test                                   # unit tests and doctests
 cargo test --features cli                    # the command line and the skill test
 cargo test --test integration -- --ignored   # needs the UDPipe model
 just conformance                             # every crust against spec/tests/
-just docs-floor                              # the six docsite gates
+just docs-floor                              # the twelve docsite gates
 ```
 
 Do not run `cargo test --all-features`. It turns on `python`, which links
