@@ -44,13 +44,33 @@ when reviewing: [`site/content/reference/boundary-rules.md`](site/content/refere
 
 ## Proposing a change
 
-One milestone per pull request, in the order its plan states. Conventional
-commits (`feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`, `ci`,
-`build`), and a commit body that says why, not what. Update `CHANGELOG.md`
-under `[Unreleased]` in the same PR as the code. A review harness runs on the
-pull request and its findings are applied before merge. Claude merges once CI is
-green and the review raises no blockers, leaving a comment with its rationale as
-the audit trail; the maintainer makes the decisions and approves each release.
+Which record a change takes is in [`blueprints/README.md`](blueprints/README.md).
+A substantial change matra's users notice (the public surface in Rust, Python,
+the command line or the JSON schema; semantics or behaviour; removing a
+substantial feature; an architecture boundary) is an RFC, proposed as a pull
+request. A minor addition or removal is an API change proposal, an issue
+labelled `acp`. Tooling, docs, CI, refactors, measured performance work and
+bug fixes are plain pull requests.
+
+One milestone per pull request, in the order the RFC's tracking issue states.
+Conventional commits (`feat`, `fix`, `docs`, `chore`, `refactor`, `perf`,
+`test`, `ci`, `build`), and a commit body that says why, not what. Update
+`CHANGELOG.md` under `[Unreleased]` in the same PR as the code. A review harness
+runs on the pull request and its findings are applied before merge.
+
+## Who decides
+
+- **Only the owner accepts a decision.** An agent writes and argues RFCs and
+  API change proposals, and never merges or closes an RFC pull request, and
+  never accepts a proposal. Merging an RFC pull request is what accepts it, and
+  only the owner does that.
+- **Everything else merges on standing authority.** Claude merges code, docs,
+  tooling and dependency updates once CI is green and the review raises no
+  blockers, and leaves a comment with its rationale as the audit trail.
+- **An agent never approves a deployment environment.** A release stops at the
+  `crates-io` and `pypi` environments until the owner approves each; that
+  approval is the release decision. An agent may prepare and dispatch a release,
+  and never clicks through its gates.
 
 ## Where to read next
 
@@ -59,4 +79,6 @@ the audit trail; the maintainer makes the decisions and approves each release.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): the working model, how decisions get
   made, how releases work, the full PR mechanics.
 - [`blueprints/`](blueprints/README.md): the RFCs that record each design
-  decision and the EPs that plan their implementation, with ship criteria.
+  decision, and the process that says which record a change takes.
+- [How matra is maintained](site/content/explanation/how-matra-is-maintained.md):
+  the agents, the gates, and who decides what.

@@ -9,9 +9,11 @@ If you are an agent contributing to matra, [AGENTS.md](./AGENTS.md) is the
 short form of this document: the build and gate commands, the boundary
 rules, and the shape of a pull request.
 
-For the deeper exposition of *how* humans and AI work together on matra
-(roles, discipline, the discourse-to-docs-to-code chain, the
-two-state model), see [docs/collaboration-model.md](./docs/collaboration-model.md).
+For how the project is maintained, explained for an outside reader (the
+agents and their methods, routing, the verification gate, who decides what,
+and how lessons become gates), see
+[How matra is maintained](site/content/explanation/how-matra-is-maintained.md)
+on the docsite.
 
 The working values are **transparency** (decisions are visible),
 **auditability** (every change has a trail), and **reversibility** (every
@@ -21,27 +23,41 @@ change can be backed out cleanly).
 
 ## The working model
 
-A design change starts as an RFC: a pull request adding a file to
-`blueprints/rfcs/`, discussed there and accepted by merging it. When the
-accepted RFC takes more than one pull request to implement, an EP in
-`blueprints/eps/` plans the work as milestones, each with a deliverable and
-an exit criterion, and records its status as it goes. The process and the
-index of both are in [`blueprints/README.md`](blueprints/README.md); read it
-before opening an issue or PR.
+A change takes the record its size calls for, after the Rust process
+([`blueprints/README.md`](blueprints/README.md) has the full rule; read it
+before opening an issue or PR):
 
-Each EP milestone is one pull request: a sequence of atomic commits on a
+- **An RFC** for a substantial change matra's users notice: the public
+  surface in Rust, Python, the command line or the JSON schema; semantics or
+  behaviour, the default model included; removing or deprecating a
+  substantial feature; an architecture boundary. It is a pull request adding
+  a file to `blueprints/rfcs/`, discussed there, and accepted when the owner
+  merges it. Each accepted RFC has a tracking issue, labelled `tracking`,
+  with its milestone checklist.
+- **An API change proposal** for a minor addition to the public surface or
+  a minor removal from it: a short issue labelled `acp`, accepted by the
+  owner on the issue.
+- **A plain pull request** for tooling, docs, CI, the harness, a refactor, a
+  measured performance improvement or a bug fix. A rule it leaves behind
+  lives in the file that governs it.
+- **An EP** in `blueprints/eps/` only for a plan several agents execute in
+  parallel.
+
+Each milestone is one pull request: a sequence of atomic commits on a
 short-lived branch, opened against `main`, reviewed, then merged. Every
 commit on the branch is its own logical unit so the history reads as a
 series of small, auditable steps. After merge, the branch is deleted and
-the EP's status log gains a line if the status changed.
+the tracking issue ticks the milestone and links the pull request.
 
 The project's primary engineer is Claude (Anthropic's AI), working with
 human direction. Every commit carries a `Co-Authored-By` trailer
 identifying the model used. Claude reviews and merges a PR once CI is
 green and the review raises no blockers, and leaves a comment with its
-rationale as the audit trail. The maintainer makes the decisions and
-approves each release; approving the release's deployment environments is
-the release decision (see the release process below).
+rationale as the audit trail, with one exception: a pull request that adds
+or changes an RFC is merged or closed only by the owner. The owner makes
+the decisions and approves each release; approving the release's
+deployment environments is the release decision (see the release process
+below).
 
 ---
 
@@ -49,18 +65,19 @@ the release decision (see the release process below).
 
 | Location | What lives there |
 |---|---|
-| `.claude/arch/` | Architecture docs: ports, adapters, domain model, evolution. Read this before changing structure. |
-| `blueprints/rfcs/` | RFCs: one file per design-level decision, in the Rust RFC layout. The process and the index are `blueprints/README.md`. |
-| `blueprints/eps/` | Enhancement plans (EPs): how an accepted RFC gets to shipping, with milestones, test plan, ship criteria, and a status log. |
+| `site/content/` | The docsite. The architecture of record is `architecture/design.md` and the `reference/` pages. Read them before changing structure. |
+| `.claude/` | The agents, skills and review command Claude Code loads, and `arch/evolution.md`, the designs considered and rejected. |
+| `blueprints/rfcs/` | RFCs: one file per substantial change, in the Rust RFC layout. The process and the index are `blueprints/README.md`. |
+| `blueprints/eps/` | Enhancement plans (EPs): plans several agents execute in parallel, with milestones, test plan, ship criteria, and a status log. |
 | `CHANGELOG.md` | What shipped per release, with prose Highlights for load-bearing changes. |
 | `CLAUDE.md` | Working rules for AI collaborators: pipeline shape, boundary rules, conventions. |
 | `scripts/` | Versioned tooling: pre-commit hook, boundary check, changelog rollover, etc. |
 | `justfile` | Single source of truth for repeatable workflows. |
-| GitHub Issues | Tracking: bugs, features, decisions. Labels (`type:` / `status:` / `area:`) classify. |
+| GitHub Issues | Bugs and features; API change proposals (label `acp`); one tracking issue per accepted RFC (label `tracking`). |
 | GitHub Discussions | Open-ended design space: early proposals, retrospectives, ideas, Q&A. |
 
 If something is unclear or contradictory across these surfaces, the order
-of authority is: code > tests > `.claude/arch/` > EPs > RFCs >
+of authority is: code > tests > the docsite > EPs > RFCs >
 CHANGELOG > Issues > Discussions. Closer to the running system
 wins.
 
@@ -68,23 +85,94 @@ wins.
 
 ## How decisions are made
 
-Decisions go through three surfaces depending on stakes.
+Decisions go through four surfaces depending on stakes.
 
 **Open-ended exploration** -> GitHub Discussions. Early proposals, "should
 we consider X", retrospectives. No commitment, no labels.
 
-**Architectural decisions that will bind future work** -> an RFC. Copy
+**A substantial change matra's users notice** -> an RFC. Copy
 `blueprints/rfcs/0000-template.md` to the next free number and open it as a
 pull request; the pull request is the proposal and the place it is
-discussed, and merging it accepts it. A `decision` issue
+discussed, and the owner's merge accepts it. A `decision` issue
 (`.github/ISSUE_TEMPLATE/decision_record.md`) can come first when the
 options need airing before anyone writes the RFC; it closes pointing at the
-RFC pull request. When the accepted RFC takes more than one PR to
-implement, an EP in `blueprints/eps/` plans the work. The full process is
-`blueprints/README.md`.
+RFC pull request. Before the owner decides, a tracking issue
+(`.github/ISSUE_TEMPLATE/tracking.md`) is opened for the RFC's milestones.
 
-**Concrete changes** -> a regular issue (bug or feature) plus a PR that
-closes it. The PR's body explains the why; the commits explain the what.
+**A minor addition to or removal from the public surface** -> an API change
+proposal (`.github/ISSUE_TEMPLATE/api-change-proposal.md`), labelled `acp`.
+The owner accepts or declines it on the issue.
+
+**Everything else** -> a regular issue (bug or feature) if one is useful,
+plus a PR. The PR's body explains the why; the commits explain the what. A
+rule the change leaves behind goes in the file that governs it.
+
+The full process is `blueprints/README.md`.
+
+### Who decides
+
+- **Only the owner accepts a decision.** Claude writes RFCs and API change
+  proposals and argues for them, and never merges or closes an RFC pull
+  request, and never accepts a proposal. Merging an RFC pull request is what
+  accepts it, and only the owner merges one.
+- **Claude's standing merge authority covers everything else**: code, docs,
+  tooling and dependency updates, once CI is green and the review raises no
+  blockers, each with a merge comment giving the rationale.
+- **An agent never approves a deployment environment.** Claude may prepare
+  and dispatch a release; the run then waits at the `crates-io` and `pypi`
+  environments for the owner, and the owner's approval is the release
+  decision.
+
+Today these rules hold by practice, not by a branch rule: every act is
+recorded under one GitHub login, and nothing yet makes an RFC merge wait for
+the owner. The next section is how that changes.
+
+### Identity
+
+Claude is to get its own GitHub identity, a GitHub App, so that its merges
+and comments can be told apart from the owner's on the record, and so that
+a branch rule can require the owner's review where only the owner decides.
+The owner creates it; until then this section is the plan, not the state.
+
+1. **Create the App** (GitHub, Settings, Developer settings, GitHub Apps,
+   New GitHub App), with no webhook and these repository permissions, and
+   nothing else:
+   - Contents: read and write (push branches, merge pull requests);
+   - Pull requests: read and write (open, comment on, merge);
+   - Issues: read and write (API change proposals, tracking issues).
+
+   GitHub adds Metadata (read) to every App; it grants no write access.
+   Leaving out the Workflows permission has one consequence: GitHub refuses
+   an App's push that changes a file under `.github/workflows/`. Such a
+   change is pushed by the owner, or the owner grants that permission later
+   on purpose.
+2. **Install it on this repository only** (the App's page, Install App,
+   Only select repositories, `matra`), and generate a private key. The key
+   stays with the owner, outside the repository.
+3. **Run Claude's GitHub calls as the App.** A session mints an
+   installation access token from the App's ID and private key (a signed
+   JWT exchanged at `POST /app/installations/{installation_id}/access_tokens`;
+   the token lasts an hour) and exports it as `GH_TOKEN`. Every `gh pr
+   merge`, `gh pr comment` and `gh issue` call then acts as the App's bot
+   account, `<app-slug>[bot]`, and so does every branch pushed over HTTPS
+   with that token. The owner's login then means the owner.
+4. **Then make RFC acceptance need the owner.** In a pull request, reduce
+   `.github/CODEOWNERS` to the decision path, `/blueprints/rfcs/ @yzavyas`.
+   Then, on `main`'s branch protection, turn on "Require a pull request
+   before merging" with required approvals at 0, and "Require review from
+   Code Owners". A pull request that touches `blueprints/rfcs/` then cannot
+   merge without the owner's approval, and every other pull request merges
+   as it does now: required code-owner review applies only to pull requests
+   that touch an owned path. That is why CODEOWNERS shrinks first. Today it
+   lists `CHANGELOG.md`, the `justfile` and the workflows, and under the
+   rule every pull request touching them would wait for the owner. GitHub
+   does not let an author approve their own pull request, so RFC pull
+   requests are opened by the App; one the owner opens under their own
+   login has no one who can approve it. After turning the rule on, open one
+   pull request that touches an owned path and one that does not, and check
+   that only the first waits.
+
+Branch protection is the owner's to change; no agent changes it.
 
 ---
 
@@ -97,13 +185,15 @@ on a calendar.
 **Cadence:** pre-1.0, releases typically follow an EP shipping. Post-1.0,
 semver discipline binds.
 
-**Process:**
-1. Maintainer runs `just release-prep VERSION`. This rolls
+**Process:** Claude prepares and dispatches a release, and the owner
+decides when it publishes.
+
+1. Run `just release-prep VERSION`. This rolls
    `[Unreleased]` -> `[VERSION]` in CHANGELOG.md.
-2. Maintainer reviews the diff, ensures the [VERSION] section has 2-4
+2. Review the diff, and ensure the [VERSION] section has 2-4
    Highlight paragraphs (for the load-bearing changes) plus the
    structured Keep-a-Changelog bullets.
-3. Maintainer bumps `Cargo.toml` version and every other
+3. Bump the `Cargo.toml` version and every other
    version-carrying file (`just version-sync` names them), commits, and
    lands it on `main`.
 4. `cargo publish --dry-run --features udpipe` for sanity check.
@@ -115,9 +205,10 @@ semver discipline binds.
    other than `main`, and a version that disagrees with `Cargo.toml`
    stops the run before anything is built.
 6. **Two manual approval gates.** The run pauses at the `crates-io`
-   environment and again at `pypi`. Approving each deployment in the
-   Actions UI is the per-publish approval point for that registry.
-   Nothing publishes from a laptop.
+   environment and again at `pypi`. The owner approving each deployment in
+   the Actions UI is the per-publish approval for that registry, and the
+   release decision. An agent never approves one. Nothing publishes from a
+   laptop.
 7. After both publishes, a smoke job installs the released version from
    PyPI and from crates.io, on Linux and macOS, under a CPython one
    minor above the abi3 floor, and runs `matra --version` and
@@ -159,7 +250,11 @@ web UIs, and the 0.2.0 release is what proved each one matters:
 - Bug: `.github/ISSUE_TEMPLATE/bug_report.md` (auto-applied).
 - Feature: `.github/ISSUE_TEMPLATE/feature_request.md`. Ask whether the
   feature belongs in matra itself or in a downstream caller.
-- Architectural decision: `.github/ISSUE_TEMPLATE/decision_record.md`.
+- API change proposal (a minor change to the public surface):
+  `.github/ISSUE_TEMPLATE/api-change-proposal.md`.
+- Tracking an accepted RFC: `.github/ISSUE_TEMPLATE/tracking.md`.
+- A decision whose options need airing before an RFC:
+  `.github/ISSUE_TEMPLATE/decision_record.md`.
 
 ### Open a discussion
 
@@ -196,7 +291,8 @@ discussions into categories (configured in the GitHub UI):
 7. The PR is reviewed against the gates in
    [`.claude/skills/pr-review/SKILL.md`](.claude/skills/pr-review/SKILL.md).
    When CI is green and the review raises no blockers, Claude merges it and
-   comments its rationale on the PR.
+   comments its rationale on the PR. A PR that adds or changes an RFC is
+   merged or closed by the owner alone.
 
 ### What "good" looks like in a commit
 
@@ -298,8 +394,8 @@ When Claude opens a PR:
 - The PR body shows what Claude did and why.
 - The commit messages are written by Claude.
 - Claude merges once CI is green and the review raises no blockers, with a
-  comment giving its rationale. The maintainer decides what is built and
-  approves each release.
+  comment giving its rationale, except an RFC pull request, which only the
+  owner merges. The owner decides what is built and approves each release.
 
 When you (a human) open a PR with Claude's help:
 
@@ -309,7 +405,7 @@ When you (a human) open a PR with Claude's help:
 
 If you want to work on matra with Claude Code on your machine, the
 `.claude/` directory in this repo is preloaded with the agent
-definitions, the skills, and the architecture history, and `CLAUDE.md`
+definitions, the skills, and the rejected designs, and `CLAUDE.md`
 points it at the design record in `blueprints/`. Claude Code will read
 those automatically.
 
