@@ -57,6 +57,10 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/components/examples/` | The input, the call as tabs, and the output. |
 | `scripts/check-examples.ts` | Runs every example's three calls and compares what they print with the committed output. |
 | `urls.txt`, `anchors.txt` | Every published path and heading anchor: the URL contract the build, the artifact and the live site are checked against. |
+| `src/lib/server/blueprints.ts` | Reads `blueprints/` in place for the Blueprints part: each record, its route and its status. |
+| `src/lib/dev/comments/` | Local comments, dev server only: the record format (`model.ts`), the store (`store.ts`), the `/__comments` endpoint (`plugin.ts`), anchoring (`anchor.ts`) and the UI. |
+| `scripts/comments.ts` | `just comments` and `just comment-reply`. |
+| `scripts/check-no-dev-comments.ts` | Fails the build when the static site holds any local comments code. |
 | `src/lib/moved-anchors.ts` | Published heading ids whose heading moved to another page or was reworded, kept on their page and forwarded. |
 
 ## How the site is organized
@@ -134,6 +138,32 @@ explanation. The self-measuring margin and its provenance line are left off
 the home page; every other page keeps them. At 1280 by 800 the quick
 start's heading, its tabs and its install command must be on the first
 screen; measure it after any change to the hero or the opening.
+
+### The Blueprints part
+
+After the four parts and the roadmap, the navigation carries a fifth,
+Blueprints: matra's design records, rendered from `blueprints/` at the
+repository root (`src/lib/server/blueprints.ts`). Nothing is copied into
+`content/`. `blueprints/README.md` is `/blueprints/` (written as
+`blueprints/index.html`), and each record is `/blueprints/rfcs/<name>` or
+`/blueprints/eps/<name>`, with its `.md` twin. The part is not in
+`SUMMARY.md`: it is built from the directory, so a new record appears
+without an edit here, and gate 2 and the product sections of `llms.txt`
+stay about the product pages. The records have their own previous and next.
+
+This is the only part with statuses. Each record's is read from its
+header's `- Status:` line and shown beside it in the navigation and under
+its title; a record without one fails the build. The product pages keep
+the rule that they describe what ships, with no status anywhere.
+
+Links resolve in the repository's tree, so the relative link that works on
+GitHub works here: a link between records stays on the site, and a link
+from a record to any other file in the repository goes to that file on
+GitHub, on `main`. A link to nothing fails the build. Records are not
+measured, and gate 3 does not read them, because a record names types that
+do not exist yet or no longer exist; every other gate covers them. A new
+record adds its `.html` and `.md` lines to `urls.txt`, its section anchors
+to `anchors.txt`, and a regenerated `llms.txt`.
 
 ## Pages are Markdown
 
@@ -646,3 +676,44 @@ To try it locally before step 4, set both variables when starting the dev
 server: `PUBLIC_GISCUS_REPO_ID=... PUBLIC_GISCUS_CATEGORY_ID=... just
 docs-serve`. Once `giscus.json` restricts origins, a local server is refused
 unless its origin is listed there too.
+
+## Local comments
+
+In `just docs-serve`, and only there, any page can be commented on. It is
+how the owner and Claude converge on a design record (EP-0015): the owner
+comments where they read, Claude answers in the files, and the conversation
+is committed beside what it is about.
+
+- **Comment.** Select text on a page; a "Comment" button appears under the
+  selection. A marker with the message count sits level with the quote;
+  it opens the thread, with its replies, a reply box and Resolve (Reopen
+  once resolved). "Comments (n open)", fixed in the corner, lists every
+  thread on the page and reaches all of it from the keyboard.
+- **Files.** Each page's comments are `discussion/<route>.jsonl` at the
+  repository root, one JSON object per line, appended and never rewritten:
+  a comment (`id`, `thread`, `parent`, `author`, `created`, `page`,
+  `selector`, `body`) or a status event (`status`: `resolved` or `open`).
+  Commit them like any other file. `src/lib/dev/comments/model.ts` documents
+  every field and its limit.
+- **Claude's side.** `just comments` lists every open thread (`--all` adds
+  resolved ones), and `just comment-reply <page> <thread> "<body>"` appends a
+  reply as Claude, which appears in an open page without a reload.
+- **Anchoring.** A comment records the quote as a W3C Web Annotation
+  TextQuoteSelector (the text, and 32 characters before and after it) and
+  the nearest heading's id. On every render the quote is found again in the
+  page's text; one that no longer occurs leaves its thread orphaned, listed
+  and marked in the panel, never dropped.
+
+**Dev only, by construction.** The endpoint, `/__comments`, is a Vite plugin
+with `apply: 'serve'`, which `vite build` never runs, and the layout imports
+the UI only inside `if (import.meta.env.DEV)`, which a build turns into dead
+code. `scripts/check-no-dev-comments.ts`, part of `bun run build`, fails the
+build if any emitted script or stylesheet holds the endpoint's path or the
+UI's names, or any page an element of the UI. The dev server listens on
+`localhost` only, the endpoint answers loopback requests with a loopback
+`Host`, and a write must come from the dev server's own page as JSON. The
+author of anything posted there is `owner`; the script writes `claude`.
+Writes are serialized by a lock file and land by renaming a complete file
+over the old one, so no reader sees part of a line.
+
+The published site has none of this. giscus, above, is its public channel.

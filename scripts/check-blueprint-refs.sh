@@ -13,7 +13,8 @@
 # word. Placeholders spelled with letters (the N-for-digit form the templates
 # and the process docs use) never match.
 #
-# Scope is every file `git ls-files` lists, CHANGELOG.md included. Released
+# Scope is every file `git ls-files` lists but the local comments in
+# discussion/, CHANGELOG.md included. Released
 # CHANGELOG entries cite the older ADR prefix, which this does not match, so
 # they need no exclusion; blueprints/README.md maps that prefix to the RFC of
 # the same number. A new entry citing an RFC or an EP is checked like any
@@ -47,8 +48,12 @@ fi
 
 # The tracked tree. A symlink (site/content/roadmap.md) is searched through, so
 # its target's citations are counted twice; that changes a count, not a result.
+# discussion/ is left out: it is the docsite's local comments, a conversation
+# about the records rather than a record, and a comment may name the RFC it
+# proposes before that number has a file.
 tracked=()
 while IFS= read -r -d '' f; do
+    case "$f" in discussion/*) continue ;; esac
     [ -f "$f" ] && tracked+=("$f")
 done < <(git ls-files -z)
 if [ "${#tracked[@]}" -eq 0 ]; then

@@ -10,6 +10,7 @@
 	 * its end.
 	 */
 	import '../app.css';
+	import { onMount, type Component } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
@@ -36,6 +37,20 @@
 	});
 
 	const toc = $derived(((page.data as { doc?: Doc }).doc?.toc ?? []).filter((t) => t.depth === 2));
+
+	/**
+	 * Local comments, in the dev server only (site/README.md, Local comments).
+	 * `import.meta.env.DEV` is the literal `false` in a build, so the import
+	 * below is dead code there and the bundle never holds the UI;
+	 * scripts/check-no-dev-comments.ts fails the build if it ever does.
+	 */
+	let DevComments = $state<Component<{ route: string }> | null>(null);
+	const commentRoute = $derived((page.data as { doc?: Doc }).doc?.route ?? null);
+	if (import.meta.env.DEV) {
+		onMount(async () => {
+			DevComments = (await import('$lib/dev/comments/DevComments.svelte')).default;
+		});
+	}
 
 	/** The glyph's height in the header, in px (the /mark page's minimum is 24). */
 	const GLYPH_H = 36;
@@ -128,6 +143,10 @@
 	</nav>
 	<p>matra is MIT licensed. Type: Alegreya and IBM Plex, both SIL OFL 1.1.</p>
 </footer>
+
+{#if DevComments && commentRoute}
+	<DevComments route={commentRoute} />
+{/if}
 
 <style>
 	.skip {

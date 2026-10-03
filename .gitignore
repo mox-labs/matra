@@ -66,3 +66,8 @@ coverage.xml
 
 # Local session notes (a convenience, not a record; see CLAUDE.md)
 .claude/logs/
+
+# The docsite's local comments (discussion/<route>.jsonl) are committed; the
+# lock and temporary files a write leaves for a moment are not.
+discussion/**/*.lock
+discussion/**/*.tmp
