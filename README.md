@@ -113,12 +113,14 @@ The full walkthrough, with what is resident at each stage and what can fail wher
 
 matra is a **Claude-managed** open-source project, intended as an exemplar
 for both Claude-managed repositories and human–AI collaborative intelligence.
-The maintainer collaborates with Claude (Anthropic's AI) to plan, implement,
+The owner collaborates with Claude (Anthropic's AI) to plan, implement,
 and review changes. Claude reviews and merges a pull request once CI is green
 and the review raises no blockers, and leaves a comment with its rationale as
-the audit trail. The maintainer makes the decisions and approves each release:
-approving the release workflow's deployment environments is the release
-decision. The working values
+the audit trail. The owner makes the decisions: only the owner merges an RFC
+pull request, which is what accepts it, and only the owner approves the
+release workflow's deployment environments, which is the release decision.
+[How matra is maintained](https://mox-labs.github.io/matra/explanation/how-matra-is-maintained.html)
+explains the whole arrangement. The working values
 are transparency (decisions are visible), auditability (every change has a
 trail), and reversibility (every change can be backed out cleanly).
 
@@ -140,7 +142,7 @@ participate without re-deriving the design.
 | Where to look | What's there |
 |---|---|
 | [`.claude/arch/`](https://github.com/mox-labs/matra/tree/main/.claude/arch) | Rejected-decision history: what was proposed, why it was turned down. The architecture itself is in the docsite's [architecture page](https://mox-labs.github.io/matra/architecture/design.html) |
-| [`blueprints/`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md) | RFCs (design decisions) and EPs (the plans that ship them) |
+| [`blueprints/`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md) | RFCs (substantial changes, accepted by the owner) and EPs (plans several agents carry out in parallel) |
 | [`CHANGELOG.md`](https://github.com/mox-labs/matra/blob/main/CHANGELOG.md) | What changed and why, per release |
 | [`CONTRIBUTING.md`](https://github.com/mox-labs/matra/blob/main/CONTRIBUTING.md) | How to participate, commit conventions, decision flow |
 | [`SECURITY.md`](https://github.com/mox-labs/matra/blob/main/SECURITY.md) | Vulnerability disclosure policy, and how to verify a release with `gh attestation verify` |

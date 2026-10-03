@@ -1,11 +1,20 @@
-# CODEOWNERS for matra — change-gate protection on the load-bearing surfaces.
+# CODEOWNERS for matra: the paths where a change should reach the owner.
 #
-# GitHub uses this file to automatically request review from the listed
-# owner(s) when a PR touches a matching path. Today's role: ensure the
-# maintainer reviews any change to the docsite structure, CI workflows,
-# release scripts, RFCs, and the public manifest before merge. Future:
-# when contributors join, the path list stays the same but the owners
-# scale.
+# What this file does today: GitHub asks the listed owner to review a pull
+# request that touches a matching path. It enforces nothing. Branch
+# protection on main does not require code-owner review, and Claude's pull
+# requests are opened under the owner's own login, so on those GitHub does
+# not even request the review: an author is never asked to review their own
+# pull request. The owner's decisions are held by practice for now
+# (CONTRIBUTING.md, How decisions are made).
+#
+# Enforcement waits on Claude's own GitHub identity, a GitHub App
+# (CONTRIBUTING.md, Identity). Once Claude opens pull requests as the App,
+# this file shrinks to the decision path, /blueprints/rfcs/, and main's
+# branch protection turns on "Require review from Code Owners", so an RFC
+# pull request cannot merge without the owner. It shrinks first because that
+# rule makes every path listed here wait for the owner; the list below would
+# hold almost every pull request.
 #
 # Pattern syntax follows GitHub's CODEOWNERS spec.
 
@@ -60,12 +69,13 @@
 /src/source/mod.rs       @yzavyas
 /src/decompose/mod.rs    @yzavyas
 /src/nlp/mod.rs          @yzavyas
+/src/embed/mod.rs        @yzavyas
 
 # The constitution. CLAUDE.md is loaded as agent context; CONTRIBUTING.md
-# is the human contributor's first stop; the collaboration model is the
-# exemplar document. None should drift without review.
-/CLAUDE.md                       @yzavyas
-/CONTRIBUTING.md                 @yzavyas
-/docs/collaboration-model.md     @yzavyas
+# is the human contributor's first stop; the maintenance page explains the
+# arrangement to an outside reader. None should drift without review.
+/CLAUDE.md                                               @yzavyas
+/CONTRIBUTING.md                                         @yzavyas
+/site/content/explanation/how-matra-is-maintained.md     @yzavyas
 /README.md                       @yzavyas
 /CHANGELOG.md                    @yzavyas
