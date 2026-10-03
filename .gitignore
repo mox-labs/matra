@@ -71,3 +71,4 @@ coverage.xml
 # lock and temporary files a write leaves for a moment are not.
 discussion/**/*.lock
 discussion/**/*.tmp
+discussion/**/*.takeover

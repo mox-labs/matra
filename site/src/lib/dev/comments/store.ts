@@ -170,6 +170,7 @@ export class Store {
 			// A file edited by hand may have lost its last newline; the new line
 			// must not join it.
 			if (current !== '' && !current.endsWith('\n')) current += '\n';
+			testPause('hold');
 			const tmp = `${file}.${process.pid}.${randomBytes(4).toString('hex')}.tmp`;
 			const fd = openSync(tmp, 'wx', 0o644);
 			try {
@@ -191,32 +192,102 @@ export class Store {
 	}
 }
 
+/** A lock older than this belongs to a writer that died: a write holds it for milliseconds. */
+const STALE_MS = 10_000;
+const WAIT_MS = 2000;
+
 /**
- * An exclusive lock: a file created with O_EXCL. Waits up to two seconds; a
- * lock older than ten seconds belongs to a writer that died, and is taken over.
+ * Test only: scripts/test-comments-store.ts sets these to widen the two
+ * windows a broken lock loses lines in, so its test fails on a broken
+ * takeover every time rather than by chance: `judged`, between judging a lock
+ * stale and acting on it, and `hold`, between reading the file and replacing
+ * it. Unset, they do nothing.
+ */
+function testPause(at: 'judged' | 'hold') {
+	const ms = Number(process.env[`MATRA_COMMENTS_TEST_${at.toUpperCase()}_MS`] ?? 0);
+	if (ms > 0) sleep(Math.min(ms, 1000));
+}
+
+const sleep = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+const ageOf = (path: string): number | null => {
+	try {
+		return Date.now() - statSync(path).mtimeMs;
+	} catch {
+		return null;
+	}
+};
+
+/**
+ * An exclusive lock: a file created with O_EXCL, holding its owner's token
+ * (pid and a random nonce). Waits up to two seconds.
+ *
+ * Taking over a stale lock is where a naive lock breaks: two waiters both see
+ * the stale file, the first removes it and creates its own, and the second
+ * then removes the first's fresh lock, so two writers proceed. So a takeover
+ * is itself serialized, by a second O_EXCL file (`<lock>.takeover`): only its
+ * holder may remove the lock, and it removes it only after looking again,
+ * under that guard, and finding it still stale. A waiter that saw the old
+ * stale lock and gets the guard later finds the new holder's fresh lock and
+ * leaves it alone. Ordinary release removes only a lock that still holds its
+ * own token. The guard is held for one stat and one unlink, so it is never
+ * taken over: one older than STALE_MS means a process died inside that
+ * window, and the error names the file to delete.
+ *
+ * This was chosen over the alternatives: renaming the stale lock aside still
+ * lets a late waiter rename a fresh one, and comparing a token before
+ * unlinking leaves a window between the read and the unlink; dropping
+ * staleness altogether would leave the owner's comments refused after any
+ * killed dev server until someone deleted the file by hand.
  */
 function lock(path: string): () => void {
-	const deadline = Date.now() + 2000;
+	const token = `${process.pid}.${randomBytes(8).toString('hex')}`;
+	const guard = `${path}.takeover`;
+	const deadline = Date.now() + WAIT_MS;
 	for (;;) {
 		try {
-			closeSync(openSync(path, 'wx'));
+			const fd = openSync(path, 'wx', 0o644);
+			try {
+				writeSync(fd, token);
+			} finally {
+				closeSync(fd);
+			}
 			return () => {
 				try {
-					unlinkSync(path);
+					if (readFileSync(path, 'utf8') === token) unlinkSync(path);
 				} catch {
-					// Already gone: a writer that judged it stale took it over.
+					// Already gone.
 				}
 			};
 		} catch (err) {
 			if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err;
-			try {
-				if (Date.now() - statSync(path).mtimeMs > 10_000) unlinkSync(path);
-			} catch {
-				// Released between the two calls; try again.
-			}
-			if (Date.now() > deadline) throw new CommentError(`${path} is locked by another writer`, 503);
-			Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20);
 		}
+		const age = ageOf(path);
+		if (age !== null && age > STALE_MS) {
+			testPause('judged');
+			takeOver(path, guard);
+		}
+		if (Date.now() > deadline) throw new CommentError(`${path} is locked by another writer`, 503);
+		sleep(5 + Math.floor(Math.random() * 15));
+	}
+}
+
+/** Remove the lock at `path` if, under the takeover guard, it is still stale. */
+function takeOver(path: string, guard: string) {
+	try {
+		closeSync(openSync(guard, 'wx'));
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err;
+		const age = ageOf(guard);
+		if (age !== null && age > STALE_MS) {
+			throw new CommentError(`${guard} was left by a writer that died; delete it if no writer is running`, 503);
+		}
+		return; // Another waiter is taking over; wait for its outcome.
+	}
+	try {
+		const age = ageOf(path);
+		if (age !== null && age > STALE_MS) unlinkSync(path);
+	} finally {
+		unlinkSync(guard);
 	}
 }
 

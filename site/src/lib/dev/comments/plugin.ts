@@ -25,13 +25,12 @@
 import { relative, sep } from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin, ViteDevServer } from 'vite';
+import { CHANGED, ENDPOINT } from './constants.ts';
 import { CommentError, Store } from './store.ts';
 
 const MAX_REQUEST = 64 * 1024;
 const LOOPBACK_HOST = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
 const LOOPBACK_ADDR = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
-/** The custom event the UI listens for. */
-export const CHANGED = 'matra:comments';
 
 export function devComments({ repoRoot }: { repoRoot: string }): Plugin {
 	const store = new Store(repoRoot);
@@ -48,7 +47,7 @@ export function devComments({ repoRoot }: { repoRoot: string }): Plugin {
 			server.watcher.on('add', changed);
 			server.watcher.on('change', changed);
 
-			server.middlewares.use('/__comments', (req, res) => {
+			server.middlewares.use(ENDPOINT, (req, res) => {
 				handle(store, req, res).catch((err: unknown) => {
 					const status = err instanceof CommentError ? err.status : 500;
 					send(res, status, { error: (err as Error).message });

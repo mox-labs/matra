@@ -24,12 +24,11 @@
 	import { onMount, tick } from 'svelte';
 	import { Linked } from '$lib/components/figures/linked.svelte';
 	import { anchor, describe, textIndex } from './anchor';
+	import { CHANGED, ENDPOINT } from './constants';
 	import type { Problem, Selector, Thread } from './model';
 
 	let { route }: { route: string } = $props();
 
-	const ENDPOINT = '/__comments';
-	const CHANGED = 'matra:comments';
 
 	let threads = $state<Thread[]>([]);
 	let problems = $state<Problem[]>([]);
