@@ -10,7 +10,7 @@
 
 > **Note (2026-09-24):** Amended by the owner on the day of acceptance. An RFC is for a change to matra itself: its architecture, its affordances, or its tuning. Work that changes how matra is built, checked, documented or delivered (the docsite, the harness, CI, release tooling) takes a standalone EP with `Implements: none` and a Design section, and no RFC. `blueprints/README.md` and the EP template carry the rule.
 
-> **Note (2026-10-03):** Two points below no longer hold, by owner decision, recorded in [EP-0015](../eps/0015-docsite-blueprints.md). An EP is now laid out with the Rust RFC template, as an RFC is, with its milestones, test plan, ship criteria and risks under Reference-level explanation and its status log after the sections; the EPs written before then keep their layout. And the docsite renders `blueprints/` as its Blueprints part, read from these files, so the records are part of the docsite after all, as the one part that shows a status. `blueprints/README.md` carries both.
+> **Note (2026-10-03):** Two points below no longer hold, by owner decision, made in [#130](https://github.com/mox-labs/matra/pull/130). An EP is now laid out with the Rust RFC template, as an RFC is, with its milestones, test plan, ship criteria and risks under Reference-level explanation and its status log after the sections; the EPs written before then keep their layout. And the docsite renders `blueprints/` as its Blueprints part, read from these files, so the records are part of the docsite after all, as the one part that shows a status. `blueprints/README.md` carries both, and `site/README.md` describes the Blueprints part.
 
 ## Summary
 

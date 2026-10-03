@@ -16,12 +16,12 @@
  */
 import { mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { parseLines } from '../src/lib/dev/comments/model.ts';
 import { Store } from '../src/lib/dev/comments/store.ts';
 
 const ROUNDS = 50;
-const route = '/blueprints/eps/0015-docsite-blueprints';
+const route = '/blueprints/rfcs/0019-rfc-and-ep-process';
 const root = mkdtempSync(join(tmpdir(), 'matra-comments-'));
 const worker = join(import.meta.dir, 'comments-append-worker.ts');
 const fail = (msg: string): never => {
@@ -66,7 +66,7 @@ try {
 	const missing = expected.filter((b) => !bodies.includes(b));
 	if (missing.length) fail(`${missing.length} lines lost, e.g. "${missing[0]}"`);
 	if (bodies.length !== expected.length) fail(`${bodies.length} replies for ${expected.length} writes`);
-	const leftover = readdirSync(join(root, 'discussion', 'blueprints', 'eps')).filter((f) => !f.endsWith('.jsonl'));
+	const leftover = readdirSync(dirname(file)).filter((f) => !f.endsWith('.jsonl'));
 	if (leftover.length) fail(`left behind: ${leftover.join(', ')}`);
 	console.log(`PASS (comments store): ${ROUNDS} rounds of two writers over a stale lock, ${expected.length} lines, none lost or torn`);
 } finally {
