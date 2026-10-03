@@ -588,6 +588,7 @@ else
         echo "  ${contrast_line:-contrast: no summary line}"
         echo "  ${mark_line:-mark: no summary line}"
         echo "  $(grep 'verify-base-path:' "$site_log")"
+        echo "  $(grep 'check-no-dev-comments:' "$site_log")"
         echo "  pagefind: ${indexed:-no index summary}"
         echo "PASS (gate 4): site/build holds $html pages and $twins Markdown twins"
     fi
@@ -623,7 +624,7 @@ if command -v lychee >/dev/null 2>&1; then
         gate1_ok=0
     fi
     if [ "$gate1_ok" -eq 1 ]; then
-        echo "PASS (gate 1): all links in site/content/ and site/build/ resolve"
+        echo "PASS (gate 1): all links in site/content/, blueprints/ and site/build/ resolve"
     else
         fail=$((fail + 1))
     fi
