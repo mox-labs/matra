@@ -10,7 +10,8 @@
 #   --dir _site          docs.yml, before upload: every path, rustdoc included
 #   --live <url>         docs.yml, after deploy: every path answers 200
 #
-# A new page adds its .html and .md lines here. Removing or renaming a path
+# A new page adds its .html and .md lines here; so does a new design record
+# in blueprints/, which the site renders as its Blueprints part. Removing or renaming a path
 # breaks a published URL; keep a page at the old path instead.
 #
 # Paths are relative to the site root. api/ is rustdoc, added at deploy.
@@ -18,6 +19,64 @@
 404.html
 architecture/design.html
 architecture/design.md
+blueprints/eps/0000-template.html
+blueprints/eps/0000-template.md
+blueprints/eps/0007-structural-primitives.html
+blueprints/eps/0007-structural-primitives.md
+blueprints/eps/0008-pipeline-surface.html
+blueprints/eps/0008-pipeline-surface.md
+blueprints/eps/0009-embeddings-adapter.html
+blueprints/eps/0009-embeddings-adapter.md
+blueprints/eps/0010-foundations.html
+blueprints/eps/0010-foundations.md
+blueprints/eps/0011-agent-surface.html
+blueprints/eps/0011-agent-surface.md
+blueprints/eps/0012-docsite.html
+blueprints/eps/0012-docsite.md
+blueprints/eps/0013-docsite-identity.html
+blueprints/eps/0013-docsite-identity.md
+blueprints/eps/0014-architecture-guardrails.html
+blueprints/eps/0014-architecture-guardrails.md
+blueprints/eps/0015-docsite-blueprints.html
+blueprints/eps/0015-docsite-blueprints.md
+blueprints/index.html
+blueprints/index.md
+blueprints/rfcs/0000-template.html
+blueprints/rfcs/0000-template.md
+blueprints/rfcs/0001-record-architectural-decisions.html
+blueprints/rfcs/0001-record-architectural-decisions.md
+blueprints/rfcs/0002-pipeline-vocabulary.html
+blueprints/rfcs/0002-pipeline-vocabulary.md
+blueprints/rfcs/0003-workspace-with-rumi-nlp.html
+blueprints/rfcs/0003-workspace-with-rumi-nlp.md
+blueprints/rfcs/0004-stay-single-crate.html
+blueprints/rfcs/0004-stay-single-crate.md
+blueprints/rfcs/0005-supply-chain-hardening.html
+blueprints/rfcs/0005-supply-chain-hardening.md
+blueprints/rfcs/0006-abstract-tier-vocabulary-lock.html
+blueprints/rfcs/0006-abstract-tier-vocabulary-lock.md
+blueprints/rfcs/0007-one-pipeline.html
+blueprints/rfcs/0007-one-pipeline.md
+blueprints/rfcs/0008-structural-primitives-are-fields.html
+blueprints/rfcs/0008-structural-primitives-are-fields.md
+blueprints/rfcs/0009-feats-lookup-accessor.html
+blueprints/rfcs/0009-feats-lookup-accessor.md
+blueprints/rfcs/0010-embeddings-adapter.html
+blueprints/rfcs/0010-embeddings-adapter.md
+blueprints/rfcs/0011-out-of-the-box.html
+blueprints/rfcs/0011-out-of-the-box.md
+blueprints/rfcs/0012-agent-surface.html
+blueprints/rfcs/0012-agent-surface.md
+blueprints/rfcs/0013-attribution-and-citation.html
+blueprints/rfcs/0013-attribution-and-citation.md
+blueprints/rfcs/0014-distribution-matrix.html
+blueprints/rfcs/0014-distribution-matrix.md
+blueprints/rfcs/0015-provisioning-failures.html
+blueprints/rfcs/0015-provisioning-failures.md
+blueprints/rfcs/0019-rfc-and-ep-process.html
+blueprints/rfcs/0019-rfc-and-ep-process.md
+blueprints/rfcs/0020-deprecate-unread-config-keys.html
+blueprints/rfcs/0020-deprecate-unread-config-keys.md
 capabilities.html
 capabilities.md
 example-files/first-analysis/cli.json

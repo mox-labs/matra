@@ -5,21 +5,37 @@
 	 * named beside it so the colour is never the only signal. The current
 	 * page is marked by shape (a rule and weight), and its sections are listed
 	 * under it, so the page's map sits where the site's map is.
+	 *
+	 * The Blueprints part is the design records. It says so under its title,
+	 * each record names its status beside it, and its two groups (the RFCs,
+	 * the EPs) fold, opened on the group that holds the current page. Nothing
+	 * else in the navigation carries a status.
 	 */
 	import { base } from '$app/paths';
 	import { PART_ROLES } from '$lib/site';
 	import type { NavItem, NavPart, TocEntry } from '$lib/types';
 
 	let { nav, current, toc = [] }: { nav: NavPart[]; current: string | null; toc?: TocEntry[] } = $props();
+
+	const holds = (item: NavItem): boolean => item.children.some((c) => c.route === current || holds(c));
 </script>
 
 {#snippet items(list: NavItem[])}
 	<ul>
 		{#each list as item (item.route)}
 			<li>
-				<a href="{base}{item.route}" aria-current={item.route === current ? 'page' : undefined}
-					>{item.title}</a
+				{#if item.group}
+					<details class="group" open={holds(item)}>
+						<summary>{item.title} <span class="count">{item.children.length}</span></summary>
+						{@render items(item.children)}
+					</details>
+				{:else}
+				<a
+					href="{base}{item.route}"
+					aria-current={item.route === current ? 'page' : undefined}
+					>{item.title}{#if item.status}<span class="status"><span class="visually-hidden">, status: </span>{item.status}</span>{/if}</a
 				>
+				{/if}
 				{#if item.route === current && toc.length > 0}
 					<ul class="sections" aria-label="On this page">
 						{#each toc as entry (entry.id)}
@@ -27,7 +43,7 @@
 						{/each}
 					</ul>
 				{/if}
-				{#if item.children.length > 0}
+				{#if item.children.length > 0 && !item.group}
 					{@render items(item.children)}
 				{/if}
 			</li>
@@ -40,6 +56,9 @@
 		<div class="part" data-role={part.title ? (PART_ROLES[part.title] ?? 'neutral') : 'none'}>
 			{#if part.title}
 				<p class="part-title">{part.title}</p>
+			{/if}
+			{#if part.note}
+				<p class="part-note">{part.note}</p>
 			{/if}
 			{@render items(part.items)}
 		</div>
@@ -76,6 +95,44 @@
 	.part[data-role='planned'] {
 		border-inline-start-style: dashed;
 		border-inline-start-color: var(--border-strong);
+	}
+
+	.part[data-role='record'] {
+		border-inline-start-style: double;
+		border-inline-start-color: var(--border-strong);
+	}
+
+	.part-note {
+		margin: calc(-1 * var(--space-0-5)) 0 var(--space-0-5);
+		font-size: var(--type-xs);
+		color: var(--text-muted);
+	}
+
+	.group > summary {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		min-height: 24px;
+		cursor: pointer;
+		color: var(--text);
+		line-height: 1.4;
+	}
+
+	.group > summary:hover {
+		color: var(--spark);
+	}
+
+	.count {
+		font-size: var(--type-xs);
+		color: var(--text-muted);
+	}
+
+	/* A record's status, in words, under its title: the text is the signal. */
+	.status {
+		display: block;
+		font-size: var(--type-xs);
+		color: var(--text-muted);
+		font-weight: 400;
 	}
 
 	.part-title {

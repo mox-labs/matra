@@ -14,14 +14,18 @@ export const SITE_URL = 'https://mox-labs.github.io/matra';
  *              first run
  *   emergence  matra's output, run and shown: the how-to guides
  *   planned    not shipped: a dashed neutral rule
+ *   record     the design records (blueprints/), each with a status: a
+ *              double neutral rule, apart from the pages that describe
+ *              what ships
  *   neutral    everything else, which is most of it
  */
-export type PartRole = 'spark' | 'emergence' | 'planned' | 'neutral';
+export type PartRole = 'spark' | 'emergence' | 'planned' | 'record' | 'neutral';
 
 export const PART_ROLES: Readonly<Record<string, PartRole>> = {
 	Tutorials: 'spark',
 	'How-to guides': 'emergence',
-	'What is planned': 'planned'
+	'What is planned': 'planned',
+	Blueprints: 'record'
 };
 
 /** The GitHub edit link for a file, given its path from the repository root. */

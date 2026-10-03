@@ -6,12 +6,26 @@ export interface NavItem {
 	/** The route it is served at, without the base path, e.g. `/guides/cli`. */
 	route: string;
 	children: NavItem[];
+	/**
+	 * A design record's status, read from its header (`accepted`, `shipped in
+	 * 0.2.0`). Only the Blueprints part carries one: the product pages describe
+	 * what ships and are never marked.
+	 */
+	status?: string;
+	/**
+	 * A heading over records that is not a page of its own (the RFCs, the EPs).
+	 * Its route is its section of the Blueprints index, and it is never in the
+	 * reading order.
+	 */
+	group?: boolean;
 }
 
 /** A `# Heading` part of SUMMARY.md. Prefix chapters sit in a part with no title. */
 export interface NavPart {
 	title: string | null;
 	items: NavItem[];
+	/** A line under the part's title saying what it holds. */
+	note?: string;
 }
 
 export interface TocEntry {
@@ -320,4 +334,6 @@ export interface Doc {
 	editUrl: string;
 	prev: PageLink | null;
 	next: PageLink | null;
+	/** On a design record in blueprints/: its kind and its status, from its header. */
+	record?: { kind: 'RFC' | 'EP' | 'index'; status: string } | null;
 }

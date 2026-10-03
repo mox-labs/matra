@@ -7,16 +7,21 @@
 # builds them (EP-0012). roadmap.md there is a symlink to the repository's
 # ROADMAP.md, and gates 2 and 5 follow it.
 #
-#   1. Link integrity:      lychee verifies every link in site/content/ and in
-#                            the built SvelteKit site, fragments included.
+#   1. Link integrity:      lychee verifies every link in site/content/, in
+#                            blueprints/ (which the site renders as its
+#                            Blueprints part), and in the built SvelteKit
+#                            site, fragments included.
 #   2. Orphan detect:       every page under site/content/ is referenced in SUMMARY.md.
 #   3. Type-name parity:    every backtick-inline PascalCase identifier in site/content/
 #                            and skills/ either exists as an identifier in src/,
 #                            or is on the external-types allowlist below. Catches
-#                            rename drift. Plans and design records live in
-#                            blueprints/, outside the docsite, and are not scanned:
-#                            an RFC or an EP names types that do not exist yet,
-#                            which is what makes it a proposal or a plan.
+#                            rename drift. blueprints/ is exempt, explicitly
+#                            (gate3_exempt below), although the docsite renders
+#                            it as its Blueprints part: an RFC or an EP names
+#                            types that do not exist yet, or no longer exist,
+#                            which is what makes it a proposal, a plan or a
+#                            record. The pages that describe what ships are held
+#                            to src/; the records are held to their status line.
 #   4. Site build:          bun install --frozen-lockfile, svelte-check with
 #                            warnings as failures, the WCAG AA contrast check
 #                            of every text and mark pair in both themes
@@ -296,7 +301,12 @@ if ! command -v rg >/dev/null 2>&1; then
 else
     # rg exits 1 on no match and 2 on an error; only the error is a failure.
     rg_rc=0
-    names=$(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' site/content/ skills/) || rg_rc=$?
+    # The design records are rendered on the site but not scanned: they name
+    # proposed and retired types by design (see the header). Named here so the
+    # exemption is a decision in the code, not an accident of the paths.
+    gate3_exempt="blueprints/"
+    names=$(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' \
+        --glob "!${gate3_exempt}**" site/content/ skills/) || rg_rc=$?
     if [ "$rg_rc" -gt 1 ]; then
         echo "FAIL (gate 3): rg exited $rg_rc extracting names from site/content/ and skills/"
         gate3_ok=0
@@ -587,8 +597,8 @@ echo ""
 # ---------------------------------------------------------------------------
 # Gate 1: link integrity (lychee)
 # ---------------------------------------------------------------------------
-# Two inputs. The Markdown in site/content/, as authored: relative links
-# between pages resolve on disk. And the built site/build/, as served: every
+# Two inputs. The Markdown in site/content/ and blueprints/, as authored:
+# relative links between pages resolve on disk. And the built site/build/, as served: every
 # link, asset and #fragment in the prerendered HTML resolves from the site
 # root, extensionless routes resolving to their .html file as GitHub Pages
 # does. /api/ is the one exclusion: rustdoc is assembled beside the site at
@@ -596,8 +606,8 @@ echo ""
 echo "=== Gate 1: link integrity (lychee) ==="
 if command -v lychee >/dev/null 2>&1; then
     gate1_ok=1
-    if ! lychee --no-progress --offline 'site/content/**/*.md'; then
-        echo "FAIL (gate 1): broken links in site/content/"
+    if ! lychee --no-progress --offline 'site/content/**/*.md' 'blueprints/**/*.md'; then
+        echo "FAIL (gate 1): broken links in site/content/ or blueprints/"
         gate1_ok=0
     fi
     if [ ! -d site/build ]; then

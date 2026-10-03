@@ -14,6 +14,7 @@ import type { Crumb, Doc, FigureFile, NavItem, NavPart, PageMeasures } from '$li
 import { flatten, parseSummary } from './summary';
 import { render } from './markdown/render';
 import { exampleMarkdown, examples } from './examples';
+import { blueprintSources, blueprintsPart, records } from './blueprints';
 
 const SOURCES = import.meta.glob('/content/**/*.md', {
 	query: '?raw',
@@ -67,14 +68,50 @@ function source(file: string): string {
 	return text;
 }
 
-export const nav: NavPart[] = parseSummary(source('SUMMARY.md'));
-const order = flatten(nav);
+/**
+ * The navigation: SUMMARY.md's parts, then the Blueprints part, which is
+ * read from blueprints/ itself (./blueprints.ts) rather than listed in
+ * SUMMARY.md, so the product pages' gates and llms.txt sections stay theirs.
+ */
+const summaryNav = parseSummary(source('SUMMARY.md'));
+export const nav: NavPart[] = [...summaryNav, blueprintsPart];
+
+/**
+ * Two reading orders, each with its own previous and next: the product pages
+ * in SUMMARY.md order, and the design records. The last product page does
+ * not lead into the records.
+ */
+const order = flatten(summaryNav);
+const recordOrder = flatten([blueprintsPart]).filter((o) => !o.item.group);
 
 /** Every page in SUMMARY.md, in reading order. */
 export const pages = order.map((o) => o.item);
 
-const routes: ReadonlyMap<string, string> = new Map(pages.map((p) => [p.file, p.route]));
-for (const p of pages) source(p.file);
+/** Every page the site renders: the SUMMARY.md pages and the design records. */
+export const allPages = [...pages, ...recordOrder.map((o) => o.item)];
+
+const isRecord = (file: string) => file.startsWith('blueprints/');
+
+/** A page's path from the repository root. */
+function repoFileOf(file: string): string {
+	return isRecord(file) ? file : `site/content/${file}`;
+}
+
+/**
+ * Every page by its path from the repository root, mapped to its route. Links
+ * are resolved in the repository's own tree, so a record can link a page and a
+ * page a record with the relative link that works on GitHub.
+ */
+const routes: ReadonlyMap<string, string> = new Map(allPages.map((p) => [repoFileOf(p.file), p.route]));
+for (const p of allPages) pageSource(p.file);
+if (records.length !== recordOrder.length) throw new Error('a blueprint is missing from the navigation');
+
+function pageSource(file: string): string {
+	if (!isRecord(file)) return source(file);
+	const text = blueprintSources.get(file);
+	if (text === undefined) throw new Error(`no blueprint at ${file}`);
+	return text;
+}
 
 export function llmsTxt(): string {
 	const text = LLMS['/content/llms.txt'];
@@ -89,8 +126,11 @@ export function llmsTxt(): string {
  * nothing it can run.
  */
 export function markdownOf(route: string): string {
-	const page = pages.find((p) => p.route === route);
+	const page = allPages.find((p) => p.route === route);
 	if (!page) error(404, `No page at ${route}`);
+	// A record is served as written: it has no example tags, and its relative
+	// links resolve beside it, to the other records' twins.
+	if (isRecord(page.file)) return pageSource(page.file);
 	// The spellings the renderer's tag pattern accepts (FIGURE_TAG in
 	// markdown/render.ts), so a tag that renders on the page cannot survive
 	// raw in the twin; and if one does anyway, the build fails.
@@ -116,6 +156,7 @@ const REPO_ROOT = resolve('..');
  * goes to ROADMAP.md itself.
  */
 function repoPathOf(file: string): string {
+	if (isRecord(file)) return file;
 	const real = realpathSync(resolve(SITE_ROOT, 'content', file));
 	return relative(realpathSync(REPO_ROOT), real).split('\\').join('/');
 }
@@ -140,23 +181,29 @@ function crumbsOf(target: NavItem): Crumb[] {
 }
 
 export async function loadDoc(route: string): Promise<Doc> {
-	const i = order.findIndex((o) => o.item.route === route);
+	const chain = order.some((o) => o.item.route === route) ? order : recordOrder;
+	const i = chain.findIndex((o) => o.item.route === route);
 	if (i === -1) error(404, `No page at ${route}`);
-	const { item, part } = order[i];
-	const rendered = await render(source(item.file), {
+	const { item, part } = chain[i];
+	const record = isRecord(item.file);
+	const rendered = await render(pageSource(item.file), {
 		file: item.file,
+		repoFile: repoFileOf(item.file),
 		routes,
 		base,
 		figures,
 		examples,
 		// The home page is a quick start: the self-measuring margin is an
 		// explanation-grade device and stays off it. Every other page keeps it.
-		measures: i === 0 ? undefined : measures.get(item.file),
+		// The records are not measured: matra measures the pages under content/.
+		measures: i === 0 || record ? undefined : measures.get(item.file),
 		part
 	});
 	const link = (j: number) =>
-		j >= 0 && j < order.length ? { title: order[j].item.title, route: order[j].item.route } : null;
+		j >= 0 && j < chain.length ? { title: chain[j].item.title, route: chain[j].item.route } : null;
+	const meta = record ? records.find((r) => r.file === item.file) : undefined;
 	return {
+		record: meta ? { kind: meta.kind, status: meta.status } : null,
 		...rendered,
 		part,
 		crumbs: crumbsOf(item),

@@ -94,6 +94,17 @@
 					</nav>
 				{/if}
 				<h1 id={doc.titleId || undefined}>{@html doc.titleHtml}</h1>
+				{#if doc.record}
+					<!-- Only a design record says where it stands; a product page
+					     describes what ships and carries no status. -->
+					<p class="record-line" data-pagefind-ignore>
+						{#if doc.record.kind === 'index'}
+							design records: the process, every RFC and every EP
+						{:else}
+							design record, {doc.record.kind}: <span class="record-status">{doc.record.status}</span>
+						{/if}
+					</p>
+				{/if}
 			</header>
 		{/if}
 
@@ -285,6 +296,17 @@
 		font-weight: var(--weight-black);
 		letter-spacing: var(--tracking-title);
 		scroll-margin-top: calc(var(--header-h) + var(--space-3));
+	}
+
+	.record-line {
+		margin: var(--space-1) 0 0;
+		font: var(--type-sm) / 1.6 var(--font-mono);
+		color: var(--text-muted);
+	}
+
+	.record-status {
+		color: var(--text);
+		font-weight: 600;
 	}
 
 	/* One line where the column allows: it may use the margin's width too. */

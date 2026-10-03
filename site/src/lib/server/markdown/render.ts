@@ -15,7 +15,10 @@
  *   checkTags                     every element Markdown did not produce is
  *                                 in the tag registry, or the build fails
  *   rewriteLinks                  `../guides/cli.md#x` to the route it is
- *                                 served at; a link to no page fails the build
+ *                                 served at; a link to no page fails the
+ *                                 build. In a design record, a link to a
+ *                                 repository file that is not a page goes to
+ *                                 that file on GitHub
  *   rehype-slug                   heading ids, the same ids mdBook produced
  *   collectHeadings               the table of contents, and heading anchors
  *   shiki                         syntax highlighting, as CSS variables the
@@ -31,7 +34,8 @@
  *   toSegments                    the body as runs of HTML, with each figure
  *                                 between them, validated against its data
  */
-import { posix } from 'node:path';
+import { existsSync } from 'node:fs';
+import { posix, resolve } from 'node:path';
 import { unified, type Plugin } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
@@ -61,6 +65,7 @@ import type {
 } from '$lib/types';
 import { MARKDOWN_ELEMENTS, REGISTRY } from './registry';
 import { exampleView, type ExampleSource } from '../examples';
+import { REPO_URL } from '$lib/site';
 
 /**
  * The grammars the pages use. A fence in a language not listed here fails the
@@ -68,7 +73,7 @@ import { exampleView, type ExampleSource } from '../examples';
  * decision someone makes here. `text` and an unlabelled fence need no grammar.
  * `console` is shiki's alias for shellsession.
  */
-const LANGUAGES = ['rust', 'python', 'bash', 'shellsession', 'json', 'jsonc'];
+const LANGUAGES = ['rust', 'python', 'bash', 'shellsession', 'json', 'jsonc', 'toml'];
 /**
  * The syntax theme. Each token kind is a CSS variable (`--syntax-token-*`),
  * and app.css gives each a role: literals Emergence, comments and
@@ -97,9 +102,14 @@ export interface Rendered {
 }
 
 export interface RenderContext {
-	/** The page's path under site/content/, for error messages and link resolution. */
+	/** The page's path under site/content/ (or blueprints/), for error messages. */
 	file: string;
-	/** Every page in SUMMARY.md, by file, mapped to the route it is served at. */
+	/**
+	 * The page's path from the repository root (`site/content/guides/cli.md`,
+	 * `blueprints/rfcs/0007-one-pipeline.md`). Relative links resolve from it.
+	 */
+	repoFile: string;
+	/** Every page the site renders, by its path from the repository root, mapped to its route. */
 	routes: ReadonlyMap<string, string>;
 	/** The configured base path, `''` locally and `/matra` on GitHub Pages. */
 	base: string;
@@ -501,22 +511,39 @@ const rewriteLinks: Plugin<[RenderContext], Root> = (ctx) => (tree) => {
 		if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('#')) return;
 
 		const [target, hash] = splitHash(href);
-		if (href.startsWith('/') || !target.endsWith('.md')) {
+		const record = ctx.repoFile.startsWith('blueprints/');
+		if (href.startsWith('/') || (!record && !target.endsWith('.md'))) {
 			broken.push(`  ${ctx.file}: ${href} (a relative link to a .md page is the only local form)`);
 			return;
 		}
-		const resolved = posix.normalize(posix.join(posix.dirname(ctx.file), target));
+		const resolved = posix.normalize(posix.join(posix.dirname(ctx.repoFile), target));
 		const route = ctx.routes.get(resolved);
-		if (!route) {
-			broken.push(`  ${ctx.file}: ${href} (resolves to ${resolved}, which is not in SUMMARY.md)`);
+		if (route) {
+			node.properties.href = `${ctx.base}${route}${hash}`;
 			return;
 		}
-		node.properties.href = `${ctx.base}${route}${hash}`;
+		// A design record cites the code and the tooling it decides about
+		// (`../../src/lib.rs`). Those files are not pages, so the link goes to
+		// the file on main, on GitHub, where the record's own links lead too.
+		// A path that leaves the repository or names nothing on disk fails.
+		if (record && !resolved.startsWith('../') && resolved !== '..' && !resolved.startsWith('blueprints/')) {
+			const path = resolved.replace(/\/$/, '');
+			if (existsSync(resolve(REPO_ROOT, path))) {
+				node.properties.href = `${REPO_URL}/blob/main/${path}${hash}`;
+				return;
+			}
+			broken.push(`  ${ctx.file}: ${href} (resolves to ${resolved}, which is not in the repository)`);
+			return;
+		}
+		broken.push(`  ${ctx.file}: ${href} (resolves to ${resolved}, which is no page of the site)`);
 	});
 	if (broken.length > 0) {
 		throw new Error(`links that resolve to no page:\n${broken.join('\n')}`);
 	}
 };
+
+/** The repository root: the site is built from site/. */
+const REPO_ROOT = resolve('..');
 
 function splitHash(href: string): [string, string] {
 	const i = href.indexOf('#');
