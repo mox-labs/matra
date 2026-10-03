@@ -37,8 +37,6 @@ blueprints/eps/0013-docsite-identity.html
 blueprints/eps/0013-docsite-identity.md
 blueprints/eps/0014-architecture-guardrails.html
 blueprints/eps/0014-architecture-guardrails.md
-blueprints/eps/0015-docsite-blueprints.html
-blueprints/eps/0015-docsite-blueprints.md
 blueprints/index.html
 blueprints/index.md
 blueprints/rfcs/0000-template.html

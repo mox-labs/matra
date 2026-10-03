@@ -135,7 +135,7 @@ Features are additive: `udpipe` (default), `model2vec`, `python`, `cli`. **Do no
 
 ## Docsite
 
-Content lives in `site/content/`. Every page describes what ships today; `site/content/roadmap.md` is the only page describing what does not, and it links each fired trigger to its enhancement plan in `blueprints/eps/`. Design records are `blueprints/rfcs/` and `blueprints/eps/`; the process is `blueprints/README.md`. The site renders `blueprints/` in place as its Blueprints part, the only part that shows a status (EP-0015); gate 3 does not read it, every other gate does.
+Content lives in `site/content/`. Every page describes what ships today; `site/content/roadmap.md` is the only page describing what does not, and it links each fired trigger to its enhancement plan in `blueprints/eps/`. Design records are `blueprints/rfcs/` and `blueprints/eps/`; the process is `blueprints/README.md`. The site renders `blueprints/` in place as its Blueprints part, the only part that shows a status (`site/README.md`, Blueprints and local comments); gate 3 does not read it, every other gate does.
 
 Local comments: in `just docs-serve` only, text on any page can be selected and commented on; threads are `discussion/<route>.jsonl`, committed. `just comments` lists open threads and `just comment-reply <page> <thread> "<body>"` answers as Claude. The static build carries none of it, and `site/scripts/check-no-dev-comments.ts` fails the build if it does. Check `just comments` at session start when the owner has been reviewing.
 

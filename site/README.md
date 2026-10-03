@@ -139,31 +139,8 @@ the home page; every other page keeps them. At 1280 by 800 the quick
 start's heading, its tabs and its install command must be on the first
 screen; measure it after any change to the hero or the opening.
 
-### The Blueprints part
-
-After the four parts and the roadmap, the navigation carries a fifth,
-Blueprints: matra's design records, rendered from `blueprints/` at the
-repository root (`src/lib/server/blueprints.ts`). Nothing is copied into
-`content/`. `blueprints/README.md` is `/blueprints/` (written as
-`blueprints/index.html`), and each record is `/blueprints/rfcs/<name>` or
-`/blueprints/eps/<name>`, with its `.md` twin. The part is not in
-`SUMMARY.md`: it is built from the directory, so a new record appears
-without an edit here, and gate 2 and the product sections of `llms.txt`
-stay about the product pages. The records have their own previous and next.
-
-This is the only part with statuses. Each record's is read from its
-header's `- Status:` line and shown beside it in the navigation and under
-its title; a record without one fails the build. The product pages keep
-the rule that they describe what ships, with no status anywhere.
-
-Links resolve in the repository's tree, so the relative link that works on
-GitHub works here: a link between records stays on the site, and a link
-from a record to any other file in the repository goes to that file on
-GitHub, on `main`. A link to nothing fails the build. Records are not
-measured, and gate 3 does not read them, because a record names types that
-do not exist yet or no longer exist; every other gate covers them. A new
-record adds its `.html` and `.md` lines to `urls.txt`, its section anchors
-to `anchors.txt`, and a regenerated `llms.txt`.
+The navigation's fifth part, Blueprints, is matra's design records; see
+[Blueprints and local comments](#blueprints-and-local-comments).
 
 ## Pages are Markdown
 
@@ -677,43 +654,146 @@ server: `PUBLIC_GISCUS_REPO_ID=... PUBLIC_GISCUS_CATEGORY_ID=... just
 docs-serve`. Once `giscus.json` restricts origins, a local server is refused
 unless its origin is listed there too.
 
-## Local comments
+## Blueprints and local comments
 
-In `just docs-serve`, and only there, any page can be commented on. It is
-how the owner and Claude converge on a design record (EP-0015): the owner
-comments where they read, Claude answers in the files, and the conversation
-is committed beside what it is about.
+The docsite is where the owner and Claude read matra's design records and
+converge on them: the records are rendered as a part of the site, and in
+the dev server any page can be commented on, with the comments committed as
+files any session reads. This section is the design; the code it names
+carries the detail.
+
+### The Blueprints part
+
+After the four parts and the roadmap, the navigation carries a fifth,
+Blueprints, marked "design records, with their status". It is rendered from
+`blueprints/` at the repository root (`src/lib/server/blueprints.ts`, a Vite
+`import.meta.glob`, with `../blueprints` in the dev server's `fs.allow`);
+nothing is copied into `content/`.
+
+| File | Route | Written as |
+|---|---|---|
+| `blueprints/README.md` | `/blueprints/index` | `blueprints/index.html`, which Pages serves at `/blueprints/` |
+| `blueprints/rfcs/<name>.md` | `/blueprints/rfcs/<name>` | `.html`, and the `.md` twin |
+| `blueprints/eps/<name>.md` | `/blueprints/eps/<name>` | `.html`, and the `.md` twin |
+
+The part is not in `SUMMARY.md`: it is built from the directory, so a new
+record appears without an edit here, and gate 2 and the product sections
+of `llms.txt` stay about the product pages. The RFCs and the EPs fold, each
+opened on the record being read; the templates come last in their group.
+The records have their own previous and next; the last product page does
+not lead into them.
+
+**Statuses appear here and nowhere else.** Each record's is read from its
+header's `- Status:` line (links reduced to their text, any parenthetical
+dropped) and shown beside it in the navigation, under its title ("design
+record, RFC: implemented") and in `llms.txt`; a record without one fails
+the build. The product pages keep the rule that they describe what ships,
+with no status anywhere.
+
+**Links resolve in the repository's tree**, so the relative link that works
+on GitHub works here: every page is keyed by its path from the repository
+root. A link between records stays on the site; a link from a record to any
+other file in the repository goes to that file on GitHub, on `main`,
+fragment kept; a link to nothing fails the build. Product pages keep their
+rule that a local link names a `.md` page.
+
+**Gates.** Records are not measured (the margin is for `content/`), and
+gate 3 does not read them (`gate3_exempt` in `scripts/check-docsite-floor.sh`),
+because a record names types that do not exist yet or no longer exist.
+Every other gate covers them: gate 5 reads `blueprints/`, lychee reads
+their Markdown and the built pages, gate 7 holds their paths and section
+anchors, gate 12 loads them at every width, and gate 6 holds their entries
+in `llms.txt`. A new record adds its `.html` and `.md` lines to `urls.txt`,
+its `##` anchors to `anchors.txt`, and a regenerated `llms.txt`.
+
+### Local comments
+
+In `just docs-serve`, and only there, any page can be commented on.
 
 - **Comment.** Select text on a page; a "Comment" button appears under the
-  selection. A marker with the message count sits level with the quote;
-  it opens the thread, with its replies, a reply box and Resolve (Reopen
-  once resolved). "Comments (n open)", fixed in the corner, lists every
-  thread on the page and reaches all of it from the keyboard.
-- **Files.** Each page's comments are `discussion/<route>.jsonl` at the
-  repository root, one JSON object per line, appended and never rewritten:
-  a comment (`id`, `thread`, `parent`, `author`, `created`, `page`,
-  `selector`, `body`) or a status event (`status`: `resolved` or `open`).
-  Commit them like any other file. `src/lib/dev/comments/model.ts` documents
-  every field and its limit.
-- **Claude's side.** `just comments` lists every open thread (`--all` adds
-  resolved ones), and `just comment-reply <page> <thread> "<body>"` appends a
-  reply as Claude, which appears in an open page without a reload.
-- **Anchoring.** A comment records the quote as a W3C Web Annotation
-  TextQuoteSelector (the text, and 32 characters before and after it) and
-  the nearest heading's id. On every render the quote is found again in the
-  page's text; one that no longer occurs leaves its thread orphaned, listed
-  and marked in the panel, never dropped.
+  selection. A marker with the message count sits in the margin level with
+  the quote, which it lights for a mouse that points, a keyboard that
+  focuses and a finger that taps (the figures' `Linked`). The marker opens
+  the thread: its messages, a reply box, and Resolve (Reopen once
+  resolved). "Comments (n open)", fixed in the corner, lists every thread
+  on the page and reaches all of it from the keyboard, commenting on the
+  current selection included. Below 40rem a thread is a sheet along the
+  bottom. Bodies are set as text through Svelte's escaping, never as HTML.
+- **Claude's side.** `just comments` lists every open thread on every page
+  (page, thread id, quote, last message; `--all` adds resolved ones).
+  `just comment-reply <page> <thread> "<body>"` appends a reply as
+  `claude`, which appears in an open page without a reload: the dev server
+  watches `discussion/` and tells the page over Vite's socket. Both run
+  `scripts/comments.ts`. Whether a thread still anchors is decided in the
+  browser, so the script lists every thread and does not guess.
 
-**Dev only, by construction.** The endpoint, `/__comments`, is a Vite plugin
-with `apply: 'serve'`, which `vite build` never runs, and the layout imports
-the UI only inside `if (import.meta.env.DEV)`, which a build turns into dead
-code. `scripts/check-no-dev-comments.ts`, part of `bun run build`, fails the
-build if any emitted script or stylesheet holds the endpoint's path or the
-UI's names, or any page an element of the UI. The dev server listens on
-`localhost` only, the endpoint answers loopback requests with a loopback
-`Host`, and a write must come from the dev server's own page as JSON. The
-author of anything posted there is `owner`; the script writes `claude`.
-Writes are serialized by a lock file and land by renaming a complete file
-over the old one, so no reader sees part of a line.
+**Storage.** Each page's comments are `discussion/<route>.jsonl` at the
+repository root, one JSON object per line, appended and never rewritten.
+Commit them like any other file. A thread's root:
+
+```json
+{"id":"972b6852","thread":"972b6852","parent":null,"author":"owner","created":"2026-10-03T01:09:31.799Z","page":"/blueprints/rfcs/0019-rfc-and-ep-process","selector":{"type":"TextQuoteSelector","exact":"the shape of the Rust RFC process","prefix":" folder, blueprints/, and takes ","suffix":". Two kinds of record replace th","heading":"summary"},"body":"Say where the files live."}
+```
+
+A reply has the root's id as `thread`, the message it answers as `parent`,
+and `selector` null. A status event is a line of its own, with `status`
+(`resolved` or `open`) and no `body`; the last one wins. `author` is
+`owner` or `claude`: the endpoint writes `owner` whatever the request
+says, and the script writes `claude`. `src/lib/dev/comments/model.ts` checks
+every field of every line it reads or writes; a line that fails is reported
+with its number, never dropped. Limits: a body of 8,000 characters, a quote
+of 2,000 and 64 of context either side, no control characters but tab and
+newline, 4 MiB per page. `scripts/check-blueprint-refs.sh` leaves
+`discussion/` out, because a comment may name an RFC number before it has a
+file.
+
+**Anchoring.** The selector is the W3C Web Annotation TextQuoteSelector:
+`exact`, and 32 characters of `prefix` and `suffix`, plus the id of the
+nearest heading before the quote. `src/lib/dev/comments/anchor.ts` reads the
+page's text from the DOM with whitespace collapsed (so rewrapping the
+Markdown moves nothing), leaving out the margin notes, heading anchors and
+buttons, and keeps each character's text node and offset. On every render,
+and whenever the page's DOM changes, every occurrence of `exact` is scored
+by how much of `prefix` ends just before it and of `suffix` starts just
+after it, with a bonus under the same heading, and the best wins. A quote
+that occurs nowhere leaves its thread **orphaned**: listed in the panel and
+marked so, with its messages and reply box, never dropped. Quotes are lit
+with the CSS Custom Highlight API, so the page's DOM is not touched. An
+edited Markdown source shows after a browser reload, as for any page.
+
+**Writes and the lock.** `src/lib/dev/comments/store.ts` serves both writers,
+the dev server and the script, which are separate processes. A write takes
+`<file>.lock` with O_EXCL, writing a token (pid and nonce) into it; reads
+the file; writes the file plus the new line to a temporary file beside it,
+flushes it, and renames it over the original, so a reader sees the file
+before the line or after it, never part of a line; and removes the lock if
+it still holds its token. A waiter retries for two seconds. A lock older
+than ten seconds belongs to a writer that died and is taken over, but only
+by the holder of a second O_EXCL file, `<file>.lock.takeover`, who looks at
+the lock again under it and removes it only if it is still stale: two
+waiters that both saw the stale lock cannot both remove it, the second
+taking the first's fresh lock with it. The guard is never taken over; one
+left by a dead process is an error naming the file. The path is held
+inside `discussion/`: the route must look like a site route, and the
+deepest existing part of the path must resolve inside it, symlinks
+included. `scripts/test-comments-store.ts`, in `bun run check`, runs two
+writer processes against a planted stale lock 50 times and fails on any
+lost or torn line; with a naive takeover it loses lines.
+
+**Dev only, by construction.** The endpoint, `/__comments`
+(`src/lib/dev/comments/plugin.ts`; the path and the change event are in
+`constants.ts`), is a Vite plugin with `apply: 'serve'`, which `vite build`
+never runs. The layout imports the UI only inside `if
+(import.meta.env.DEV)`, which a build turns into dead code.
+`scripts/check-no-dev-comments.ts`, part of `bun run build` (so gate 4 and
+the deploy), fails the build if any emitted script or stylesheet holds the
+endpoint's path, the UI's attribute or its highlight names, or any built
+page has an element with that attribute; it reads code and elements, not
+page text, which may name the endpoint. The dev server listens on
+`localhost` only; the endpoint answers a loopback address with a loopback
+`Host` (so a DNS-rebinding page cannot reach it); a write must carry the
+dev server's own `Origin` and `Content-Type: application/json`, which a page
+elsewhere cannot send without a preflight the server never answers; a
+request is at most 64 KiB.
 
 The published site has none of this. giscus, above, is its public channel.

@@ -260,7 +260,7 @@ guides/agent.html#hand-matra-to-an-agent
 reference/platforms.html#model-licenses
 reference/semantic-clusters.html#bounds-and-failure
 
-# The design records (blueprints/), rendered as the Blueprints part (EP-0015):
+# The design records (blueprints/), rendered as the Blueprints part (site/README.md):
 # each record's sections. A living EP that renames a section removes its line
 # on purpose in review.
 blueprints/index.html#the-process
@@ -505,13 +505,3 @@ blueprints/eps/0014-architecture-guardrails.html#test-plan
 blueprints/eps/0014-architecture-guardrails.html#ship-criteria
 blueprints/eps/0014-architecture-guardrails.html#risks
 blueprints/eps/0014-architecture-guardrails.html#status-log
-blueprints/eps/0015-docsite-blueprints.html#summary
-blueprints/eps/0015-docsite-blueprints.html#motivation
-blueprints/eps/0015-docsite-blueprints.html#guide-level-explanation
-blueprints/eps/0015-docsite-blueprints.html#reference-level-explanation
-blueprints/eps/0015-docsite-blueprints.html#drawbacks
-blueprints/eps/0015-docsite-blueprints.html#rationale-and-alternatives
-blueprints/eps/0015-docsite-blueprints.html#prior-art
-blueprints/eps/0015-docsite-blueprints.html#unresolved-questions
-blueprints/eps/0015-docsite-blueprints.html#future-possibilities
-blueprints/eps/0015-docsite-blueprints.html#status-log

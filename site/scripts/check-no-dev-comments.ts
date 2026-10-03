@@ -13,8 +13,8 @@
  *            names, and of the event the dev server sends it
  *   pages    no element in any built page carries the UI's attribute
  *
- * Page text is not code: the Blueprints part documents the endpoint (EP-0015),
- * and that prose is in the HTML, its data and its Markdown twin. So pages are
+ * Page text is not code: a page may document the endpoint, and that prose
+ * would be in the HTML, its data and its Markdown twin. So pages are
  * read for the attribute on an element, never for the words.
  *
  * Usage: bun scripts/check-no-dev-comments.ts <build-dir>

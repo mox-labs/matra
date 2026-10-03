@@ -67,8 +67,8 @@ dropped, it is kept as the record of how the work went.
 **The EPs written before 2026-10-03 keep their layout.** EP-0007 to EP-0014
 were written to the earlier EP template (Summary, Design, Goals, Non-goals,
 Iterations and milestones, Test plan, Ship criteria, Risks, Status log).
-They are records, and they stay as written; the Rust layout applies from
-EP-0015, the plan that changed the template.
+They are records, and they stay as written; the Rust layout applies to
+every EP written since.
 
 ### On the docsite
 
@@ -109,7 +109,10 @@ When that pull request closes without merging, the number is released and its
 row removed. A number whose record was merged to `main` is never reused.
 RFC number 0018 was released this way when its proposal's design moved into
 EP-0012, as 0017 was when its pull request closed; a released number cites no
-record, so it is written without the `RFC-` prefix.
+record, so it is written without the `RFC-` prefix. EP number 0015 was
+released the same way: its pull request planned the docsite's Blueprints
+part as an EP, and the plan left the record when developer tooling stopped
+taking one; the design is in `site/README.md`.
 
 ### Checks
 
@@ -161,5 +164,4 @@ in git.
 | [EP-0012](eps/0012-docsite.md) | The docsite on SvelteKit, with figures and examples | shipped (docsite) | none |
 | [EP-0013](eps/0013-docsite-identity.md) | The docsite's identity, drawn from matra's own output | in progress | none |
 | [EP-0014](eps/0014-architecture-guardrails.md) | Architecture guardrails: the boundary rules as semgrep checks | shipped (CI) | none |
-| [EP-0015](eps/0015-docsite-blueprints.md) | Blueprints on the docsite, and local comments to converge on them | in progress | none |
 | [EP-0000](eps/0000-template.md) | The template | not a record | none |
