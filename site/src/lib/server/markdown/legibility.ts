@@ -26,7 +26,7 @@
  *   record-index    the Blueprints index as cards, the table their twin
  *
  * Provenance is pinned. A record's header names the commit its citations
- * were read at (`- Read at:` and a full SHA). Every link from the record to
+ * were read at (`- Pinned at:` and a full SHA). Every link from the record to
  * a repository file with a line fragment (`../../src/lib.rs#L250`) then
  * opens that file at that commit, not at `main`, and must carry, as its
  * Markdown title, text the cited lines contain: the build reads the lines at
@@ -132,12 +132,12 @@ export interface LegibilityContext {
 	records?: readonly RecordCard[];
 }
 
-/** The commit a record names in its header (`- Read at: <sha>`), or null. */
+/** The commit a record names in its header (`- Pinned at: <sha>`), or null. */
 export function readPin(markdown: string, file: string): string | null {
-	const line = /^- Read at:\s*(.*)$/m.exec(markdown)?.[1];
+	const line = /^- Pinned at:\s*(.*)$/m.exec(markdown)?.[1];
 	if (line === undefined) return null;
 	const sha = /\b([0-9a-f]{40})\b/.exec(line)?.[1];
-	if (!sha) throw new Error(`${file}: "- Read at:" names no full 40-character commit SHA`);
+	if (!sha) throw new Error(`${file}: "- Pinned at:" names no full 40-character commit SHA`);
 	return sha;
 }
 
@@ -286,7 +286,7 @@ export const legibility: Plugin<[LegibilityContext], Root> = (ctx) => (tree) => 
 	const record = ctx.repoFile.startsWith('blueprints/') || ctx.repoFile.startsWith('lab/');
 	if (ctx.pin) {
 		const problem = commitProblem(ctx.repoRoot, ctx.pin);
-		if (problem) p.add(undefined, `"- Read at:" ${problem}`);
+		if (problem) p.add(undefined, `"- Pinned at:" ${problem}`);
 	}
 	if (/^blueprints\/(proposals|plans)\//.test(ctx.repoFile)) masthead(tree, ctx);
 	if (record) pinLines(tree, ctx, p);
@@ -331,7 +331,7 @@ export const legibility: Plugin<[LegibilityContext], Root> = (ctx) => (tree) => 
 /* ------------------------------------------------------------------------ */
 
 /** The header's lines, in the order a reader looks for them. Status is under the title already. */
-const MASTHEAD_ORDER = ['Start Date', 'Read at', 'Proposal PR', 'Plan PR', 'Tracking issue', 'Implements', 'Feature Name'];
+const MASTHEAD_ORDER = ['Start Date', 'Pinned at', 'Proposal PR', 'Plan PR', 'Tracking issue', 'Implements', 'Feature Name'];
 const MASTHEAD_LABEL: Record<string, string> = { 'Start Date': 'Started', 'Feature Name': 'Feature name' };
 
 /**
@@ -357,7 +357,7 @@ function masthead(tree: Root, ctx: LegibilityContext) {
 		rows.set(key, rest);
 	}
 	if (ctx.pin) {
-		rows.set('Read at', [
+		rows.set('Pinned at', [
 			h('a', { href: `${ctx.repoUrl}/tree/${ctx.pin}` }, [h('code', {}, [ctx.pin.slice(0, 7)])]),
 			', the commit every code citation below opens at'
 		]);
@@ -378,10 +378,13 @@ function masthead(tree: Root, ctx: LegibilityContext) {
 const LINES = /^L(\d+)(?:-L(\d+))?$/;
 
 /**
- * Every relative link to a repository file with a line fragment opens the
- * file at the record's commit and must name, as its title, text the cited
- * lines hold. The link keeps the quoted lines in `data-quote`, for the
- * chip's sheet.
+ * In a record whose header names a commit, every relative link to a
+ * repository file with a line fragment opens the file at that commit, and
+ * the lines must exist there. A title names text the cited lines must hold,
+ * and the build checks it; a chip (a link in a claim, or the cause in
+ * `changed`) must carry one. The link keeps the quoted lines in
+ * `data-quote`, for the chip's sheet. A record with no commit in its header
+ * keeps its links on `main`, as before pinning.
  */
 function pinLines(tree: Root, ctx: LegibilityContext, p: Problems) {
 	visit(tree, 'element', (a) => {
@@ -397,10 +400,8 @@ function pinLines(tree: Root, ctx: LegibilityContext, p: Problems) {
 			p.add(a, `${href} leaves the repository`);
 			return;
 		}
-		if (!ctx.pin) {
-			p.add(a, `${href} cites lines, so the record's header needs "- Read at:" and the commit they were read at`);
-			return;
-		}
+		// A record with no commit in its header keeps its links on main.
+		if (!ctx.pin) return;
 		const from = Number(m[1]);
 		const to = m[2] ? Number(m[2]) : from;
 		const has = attr(a, 'title');
@@ -414,9 +415,7 @@ function pinLines(tree: Root, ctx: LegibilityContext, p: Problems) {
 			return;
 		}
 		const quoted = lines.slice(from - 1, to);
-		if (!has) {
-			p.add(a, `${href} needs a title naming text on those lines, [label](${href} "text"), so a moved line fails the build`);
-		} else if (!squash(quoted.join('\n')).includes(squash(has))) {
+		if (has && !squash(quoted.join('\n')).includes(squash(has))) {
 			p.add(a, `${path} lines ${from} to ${to} at ${ctx.pin.slice(0, 12)} do not contain "${has}"`);
 		}
 		a.properties.href = `${ctx.repoUrl}/blob/${ctx.pin}/${path}#L${from}${to !== from ? `-L${to}` : ''}`;
@@ -426,6 +425,7 @@ function pinLines(tree: Root, ctx: LegibilityContext, p: Problems) {
 		a.properties.dataFrom = String(from);
 		a.properties.dataTo = String(to);
 		a.properties.dataQuote = quoted.join('\n');
+		if (has) a.properties.dataChecked = '';
 	});
 }
 
@@ -479,8 +479,11 @@ function reflowClaimTables(tree: Root) {
 }
 
 /** Makes a link a chip; a pinned line link also gets its sheet, pushed onto `sheets`. */
-function chipify(a: Element, sheetId: string, sheets: Element[]) {
+function chipify(a: Element, sheetId: string, sheets: Element[], p: Problems) {
 	const kind = chipKind(a);
+	if (kind === 'lines' && a.properties.dataChecked === undefined) {
+		p.add(a, `${String(a.properties.dataPath)}: a chip names, as its title, text on the lines it cites, [label](path#L1 "text"), so a moved line fails the build`);
+	}
 	a.properties.className = ['chip', `chip-${kind}`];
 	a.properties.dataChip = kind;
 	if (kind === 'lines') {
@@ -523,7 +526,7 @@ function transformClaims(tree: Root, ctx: LegibilityContext, p: Problems): Claim
 			const body: ElementContent[] = [];
 			for (const c of claim.children) {
 				if (isEl(c) && c.tagName === 'a') {
-					chipify(c, `${id}-src-${chips.length + 1}`, sheets);
+					chipify(c, `${id}-src-${chips.length + 1}`, sheets, p);
 					chips.push(c);
 				} else body.push(c);
 			}
@@ -771,7 +774,7 @@ function changed(node: Element, p: Problems): Element {
 		visit(now, 'element', (a) => {
 			if (a.tagName !== 'a') return;
 			k += 1;
-			chipify(a, `changed-${i + 1}-src-${k}`, sheets);
+			chipify(a, `changed-${i + 1}-src-${k}`, sheets, p);
 		});
 	});
 	// Struck through and named "was", so the change never rests on the line alone.

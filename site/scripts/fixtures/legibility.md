@@ -2,7 +2,7 @@
 
 - Feature Name: `fixture`
 - Start Date: 2026-10-04
-- Read at: `4fcfb4adc85524243c5e392becd4f490e3e42252`
+- Pinned at: `4fcfb4adc85524243c5e392becd4f490e3e42252`
 - Status: proposed
 
 A test fixture, never published: scripts/check-legibility.ts renders it to

@@ -11,3 +11,11 @@ evidence for a decision rather than the decision itself. When an
 experiment's result changes what matra does, the change goes through the
 process in [Blueprints](../blueprints/README.md), and the experiment is
 cited there.
+
+Each experiment will be set as a card: the hypothesis and its prediction,
+recorded with the day and the commit before the run; the result in words,
+with its interval stated as a sentence; every run as a dot, never a bare
+mean; the method; what the result does not show; and the inputs, licences,
+matra version and model digests that produced it. The card's syntax and the
+research behind it are in the docsite's
+[README](../site/README.md#the-blueprints-components).

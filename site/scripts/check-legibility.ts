@@ -105,13 +105,13 @@ if (import.meta.main) {
 	}
 
 	// Refusals: each planted mistake must fail, with its reason.
-	const HEAD = `# EPR-9999: Refusal\n\n- Read at: \`${PIN}\`\n- Status: proposed\n\n`;
+	const HEAD = `# EPR-9999: Refusal\n\n- Pinned at: \`${PIN}\`\n- Status: proposed\n\n`;
 	const DECISION = (inner: string) =>
 		`<decision id="x" title="X">\n\n<choice key="a" title="A">\n\nA.\n\n</choice>\n\n<choice key="b" title="B">\n\nB.\n\n</choice>\n\n${inner}\n\n</decision>\n`;
 	const refusals: [string, string, string][] = [
 		['an observed claim with no evidence', 'Text <claim basis="observed">no chip</claim>.', 'points at its evidence'],
 		['a citation whose lines lack its text', '[x](../../src/lib.rs#L250 "not on that line")', 'do not contain'],
-		['a citation with no text to check', '[x](../../src/lib.rs#L250)', 'needs a title'],
+		['a chip with no text to check', 'A <claim basis="observed">x [y](../../src/lib.rs#L250)</claim>.', 'a chip names, as its title'],
 		['a citation past the end of its file', '[x](../../Cargo.toml#L99999 "x")', 'past the file'],
 		['a likelihood on an observation', 'A <claim basis="observed" likelihood="likely">x [y](../../src/lib.rs#L250 "compose")</claim>.', 'not a prediction'],
 		['a likelihood outside the vocabulary', 'A <claim basis="inferred" likelihood="probable">x</claim>.', 'closed vocabulary'],

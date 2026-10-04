@@ -46,7 +46,7 @@ file, with the reason in its description.
 **A proposal is a pull request.** Copy
 [`proposals/0000-template.md`](proposals/0000-template.md) to the next free
 number, fill every section, and open a pull request with the proposal alone
-or beside the code it binds, labelled `rfc`. Discussion happens there.
+or beside the code it binds, labelled `epr`. Discussion happens there.
 
 **A proposal can merge before it is accepted.** Its status line then reads
 `proposed`, and the docsite renders it, so the owner can read it in place
@@ -129,7 +129,70 @@ files at build time; and Lab, for evals and experiments. Blueprints is the
 one area that shows a status: each record's, read from its header, beside it
 in the navigation and under its title. The pages in Docs describe what ships
 and carry none. A link from a record to a file outside the rendered records
-leads to that file on GitHub.
+leads to that file on GitHub, on `main`, except a citation of lines, which
+opens at the commit the record was read at (below).
+
+### Reading a proposal
+
+A proposal is Claude's understanding of the code, its history and the
+owner's intent, written so the owner can check it and answer it. Its parts
+are components the docsite draws, each a tag in the Markdown, so they read
+the same in the file and on the site. `site/README.md` ("The Blueprints
+components") gives their syntax and the research behind each.
+
+**The masthead** under the title gives the status, the start date, the
+commit the proposal was read at, who decides (the owner), and the pull
+request and tracking issue.
+
+**The pragmatics block** follows the Summary: the ask, what Claude will do
+if the proposal is accepted, what it needs from the owner, what it will not
+do, and what happens if nobody answers. Silence is not assent. The owner's
+answer to a proposal or to one of its decisions is one of four: accept,
+accept with a reservation, object, or redirect.
+
+**A claim** that the proposal rests on carries its basis, a word and a
+glyph, and chips that open its grounds:
+
+| Glyph | Basis | Meaning |
+|---|---|---|
+| ● | observed | Claude read it or ran it; a chip points at the evidence. |
+| ◐ | inferred | Reasoned from observed claims; the reasoning is written out. |
+| ○ | assumed | No grounds yet; the owner should confirm or strike it. The assumptions are also collected in one list. |
+
+A chip to code opens the cited lines at the commit in the proposal's `Pinned
+at` line, never at `main`, so the evidence cannot move under the claim.
+The build reads those lines at that commit and fails when they no longer
+hold the text the citation names. A check that a model made, a reading, is
+said to be one; a test or a compiler is a different kind of evidence, and
+several readings by Claude agents count as one source, not several.
+
+#### Likelihood
+
+A claim about what will happen, and only such a claim, may carry one word
+from this closed list, whose meaning is the range beside it (the bands of
+US Intelligence Community Directive 203). A proposal never puts a number on
+its own confidence.
+
+| Word | Means |
+|---|---|
+| almost no chance | 1 to 5% |
+| very unlikely | 5 to 20% |
+| unlikely | 20 to 45% |
+| roughly even chance | 45 to 55% |
+| likely | 55 to 80% |
+| very likely | 80 to 95% |
+| almost certain | 95 to 99% |
+
+**A decision block** sets out the options, Claude's recommendation apart from
+them as a judgment, the strongest case against it, and the owner's decision
+once made. **What changed in my understanding** lists, on a revision, what
+Claude understood before, what it understands now, and what changed it.
+
+**A sketchy diagram means proposed.** Structure drawn with a hand-drawn line
+is what the proposal would build, not what ships; structure drawn crisp
+ships, at the commit the proposal was read at. Every such figure says so in
+its legend and in words, and carries the structure as a table under "show
+the data". Sketchiness is never used for numbers.
 
 The legacy records are not rendered. Their old addresses,
 `/blueprints/rfcs/<name>` and `/blueprints/eps/<name>`, still answer, each
@@ -161,7 +224,8 @@ row below. The docsite floor's em-dash gate covers this directory too.
 
 ## Proposals
 
-The enhancement proposals since 2026-10-04.
+The enhancement proposals since 2026-10-04. On the docsite each is a card
+with its status and its open decisions; the table is the same index.
 
 **Baseline.** EPR-0001 to EPR-0005 describe matra's foundation as it
 stands at the commit each one names on its `Pinned at` line, and carry
@@ -172,6 +236,8 @@ docsite (EP-0012, EP-0013) are not carried into a proposal: under this
 process that work is tooling, and its rules live in this file and in
 `site/README.md`.
 
+<record-index kind="proposals" />
+
 | Proposal | Title | Status | Tracking issue |
 |---|---|---|---|
 | [EPR-0000](proposals/0000-template.md) | The template | not a record | none |
@@ -180,10 +246,13 @@ process that work is tooling, and its rules live in this file and in
 | [EPR-0003](proposals/0003-distribution-and-provisioning.md) | Distribution and provisioning | proposed | none |
 | [EPR-0004](proposals/0004-command-line-and-configuration.md) | The command line, configuration and the agent skill | proposed | none |
 | [EPR-0005](proposals/0005-embeddings-and-semantic-clusters.md) | Embeddings and semantic clusters | proposed | none |
+| [EPR-0006](proposals/0006-the-0-3-0-surface.md) | The 0.3.0 surface | proposed | none yet |
 
 ## Plans
 
 The enhancement plans since 2026-10-04. None yet.
+
+<record-index kind="plans" />
 
 | Plan | Title | Status | Implements |
 |---|---|---|---|
