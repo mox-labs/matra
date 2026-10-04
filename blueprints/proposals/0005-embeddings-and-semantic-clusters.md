@@ -27,6 +27,45 @@ changes any of it says so. Unmarked statements about the code are observed
 at the pinned commit through the link beside them; a claim that is
 inferred or assumed says so.
 
+<pragmatics>
+
+<ask>
+
+Accept EPR-0005 as the record of embeddings and semantic clusters as they stand at `4fcfb4a`. It has no open decision of its own: the questions about the embedding model's licence and its silent first run are decision 2 of [EPR-0003](0003-distribution-and-provisioning.md), where provisioning lives.
+
+</ask>
+
+<will>
+
+- Cite this proposal, rather than the legacy records it carries forward, when a change touches the `Embedder` port, the `Model2Vec` adapter or clustering; a change to what it describes goes in a new proposal that says so.
+- Carry out the ruling on the embedding model's licence and notice under EPR-0003, not here.
+- If the cited code moves before you decide, move the `Pinned at` line forward in a revision, so every citation is checked again, and say what changed.
+
+</will>
+
+<needs>
+
+- An answer to the proposal: accept, accept with a reservation, object or redirect.
+- For the assumption listed under Unresolved questions: confirm it or strike it.
+
+</needs>
+
+<wont>
+
+- Change the status to `accepted`, or merge a pull request that does.
+- Mark RFC-0010's quality figures as observed before a measurement in this repository supports them.
+- Edit a legacy record, or edit this proposal to describe a later change.
+
+</wont>
+
+<silence>
+
+The proposal stays `proposed`. The embedding adapter and clustering ship as they are, since a baseline decides nothing new, and Claude raises the proposal again at the start of the next session that touches embeddings.
+
+</silence>
+
+</pragmatics>
+
 ## Motivation
 
 Lexical overlap cannot see a paraphrase: "the committee approved the
@@ -84,24 +123,24 @@ model = Model2Vec.potion_base_8m()
 result = m.semantic_clusters(text, 0.8, model)
 ```
 
-`model` may be any object with `embed(texts) -> list[list[float]]` and
-`identity() -> str`; `matra.types.Embedder` is the protocol. A module-level
-`semantic_clusters(embeddings, threshold, model_hash)` clusters vectors the
-caller already holds.
+<claim basis="observed">`model` may be any object with `embed(texts) -> list[list[float]]` and `identity() -> str`; `matra.types.Embedder` is the protocol [types.py:305][py-protocol]</claim>.
+A module-level `semantic_clusters(embeddings, threshold, model_hash)`
+clusters vectors the caller already holds.
 
 There is no command-line form.
 
 ### Reading the result
 
-- **Clusters are connected components.** If a restates b and b restates c,
-  all three are one cluster even when a and c did not clear the threshold
-  together. Co-membership is not pairwise similarity; the `edges` say which
-  pairs actually cleared it.
-- **A sentence with no edge is in no cluster.** Singletons are excluded, so
-  "in no cluster" is a meaningful count.
+- **Clusters are connected components.**
+  <claim basis="observed">If a restates b and b restates c, all three are one cluster even when a and c did not clear the threshold together [domain.rs:95-145][clusters-components]</claim>.
+  Co-membership is not pairwise similarity; the `edges` say which pairs
+  actually cleared it.
+- **A sentence with no edge is in no cluster.**
+  <claim basis="observed">Singletons are excluded, so "in no cluster" is a meaningful count [domain.rs:95-145][clusters-singletons]</claim>.
 - **The threshold is yours.** Published paraphrase cutoffs run from 0.67 to
   0.9 with no consensus, so matra has no default; every call takes it as an
-  argument. An edge is kept when its score is at or above it.
+  argument.
+  <claim basis="observed">An edge is kept when its score is at or above it [extraction/semantic.rs:1-155][semantic-geq]</claim>.
 - **Scores belong to one model.** Compare clusters only across results with
   the same `model_hash`.
 
@@ -109,45 +148,41 @@ There is no command-line form.
 
 ### The port and its carrier
 
-[`Embedder`][embed-port] lives in `src/embed/mod.rs`, imports only
-`domain`, and requires `Send`. `embed` returns one vector per input, in
+<claim basis="observed">`Embedder` lives in `src/embed/mod.rs`, imports only `domain`, and requires `Send` [embed/mod.rs:1-43][embed-port]</claim>.
+`embed` returns one vector per input, in
 order, all of one dimension, or an error; `identity` returns a stable
 identifier for the geometry, and two embedders that can disagree must not
 share one. The name follows the agent-noun pattern of `Decomposer` and
 `Source` (RFC-0010, decision 2).
 
-The carrier [`Embedding`][embedding] is `pub struct Embedding(pub Vec<f32>)`
-in `domain.rs`, because a port may name only domain types. It serializes as
-a bare array. It is the one public type with public fields that is not
-`#[non_exhaustive]`, deliberately: on a tuple struct the attribute makes
-the constructor private to the crate, and an external `Embedder` must
-construct these values. RFC-0010 records the departure so review does not
-"fix" it.
+<claim basis="observed">The carrier `Embedding` is `pub struct Embedding(pub Vec<f32>)` in `domain.rs`, because a port may name only domain types [domain.rs:78-93][embedding]</claim>.
+It serializes as a bare array.
+<claim basis="observed">It is the one public type with public fields that is not `#[non_exhaustive]`, deliberately: on a tuple struct the attribute makes the constructor private to the crate, and an external `Embedder` must construct these values [domain.rs:78-93][embedding-ne]</claim>.
+RFC-0010 records the departure so review does not "fix" it.
 
 ### The static adapter
 
 [`Model2Vec`][m2v-struct] loads `model.safetensors`, `tokenizer.json` and
 `config.json`, and embeds by tokenizing, dropping the unknown token,
 gathering rows of the matrix, applying optional per-token weights, mean
-pooling, and normalizing when the config says so. Its identity is the
-SHA-256 over the three files in order ([`Embedder` impl][m2v-embedder]).
+pooling, and normalizing when the config says so.
+<claim basis="observed">Its identity is the SHA-256 over the three files in order [embed/model2vec.rs:115-140][m2v-identity] [embed/model2vec.rs:598-606][m2v-embedder]</claim>.
 `src/embed/model2vec.rs` is the only file that names `safetensors` and
 `tokenizers`, checked by the rule 4 analog in `.semgrep/`
-([EP-0014](../legacy/eps/0014-architecture-guardrails.md)). A panic in
-either crate's parsing is caught and returned as `Error::ModelInvalid`
-([`catch_embed_panic`][m2v-panic]). `tokenizers` is built with
-`default-features = false` and `unstable_wasm`, which keeps the closure
-pure Rust ([`Cargo.toml`][cargo-tokenizers]).
+([EP-0014](../legacy/eps/0014-architecture-guardrails.md)).
+<claim basis="observed">A panic in either crate's parsing is caught and returned as `Error::ModelInvalid` [embed/model2vec.rs:1186-1209][m2v-panic]</claim>.
+<claim basis="observed">`tokenizers` is built with `default-features = false` and `unstable_wasm`, which keeps the closure pure Rust [Cargo.toml:61-67][cargo-tokenizers]</claim>.
 
 Static first, transformer later, for one decisive reason and three
 supporting ones (RFC-0010, decision 3): a static embedding is a table gather
 and a mean, with no kernel dispatch, so its vectors are bit-identical
 across targets and across bindings, which lets conformance assert exact
-vectors rather than tolerances. The quality cost is about ten percent
-against a small transformer at a third of the size; the dependency closure
-stays two crates; and a candle BERT adapter can arrive later behind the same
-port. Those quality and size figures are RFC-0010's, from a survey outside
-this repository, and are assumed here rather than re-measured.
+vectors rather than tolerances.
+<claim basis="assumed">The quality cost is about ten percent against a small transformer at a third of the size</claim>;
+the dependency closure stays two crates; and a candle BERT adapter can
+arrive later behind the same port. Those quality and size figures are
+RFC-0010's, from a survey outside this repository, and are assumed here
+rather than re-measured.
 
 How that is checked at the pinned commit:
 
@@ -165,23 +200,16 @@ the pinned reference model, potion-base-8M (256 dimensions), as
 
 ### Clustering
 
-[`semantic_clusters`][semantic-clusters] is a plain function in
-`extraction/`, over domain values, so it never calls the port (boundary
-rule 5) and tests without a model. It refuses a non-finite threshold, a
-non-finite value, or vectors that disagree on dimension
-(`InvalidInput`), and more than 2000 vectors (`InputTooLarge`,
-`what = "semantic_clusters"`), the same O(n²) bound TextRank uses, imported
-rather than copied. It computes every pairwise cosine, keeps the pairs at
+<claim basis="observed">`semantic_clusters` is a plain function in `extraction/`, over domain values, so it never calls the port (boundary rule 5) and tests without a model [extraction/semantic.rs:1-155][semantic-clusters]</claim>.
+<claim basis="observed">It refuses a non-finite threshold, a non-finite value, or vectors that disagree on dimension (`InvalidInput`), and more than 2000 vectors (`InputTooLarge`, `what = "semantic_clusters"`), the same O(n²) bound TextRank uses, imported rather than copied [extraction/semantic.rs:1-155][semantic-finite] [extraction/mod.rs:12][semantic-cap]</claim>.
+It computes every pairwise cosine, keeps the pairs at
 or above the threshold, joins them with union-find (cycle-safe by
 construction), and returns clusters with sorted members and edges, ordered
-by their first member. A zero vector, which is what an empty sentence
-embeds to, has no defined cosine and gets no edge.
+by their first member.
+<claim basis="observed">A zero vector, which is what an empty sentence embeds to, has no defined cosine and gets no edge [extraction/semantic.rs:1-155][semantic-zero]</claim>.
 
-[`embed_and_cluster`][embed-and-cluster] in the composition root holds both
-halves: it collects the document's sentence texts, refuses more than the
-cap before running the embedder, embeds, checks the embedder returned one
-vector per sentence, and clusters with `embedder.identity()` as the
-`model_hash`. Sentence text has already passed the pipeline's size cap in
+<claim basis="observed">`embed_and_cluster` in the composition root holds both halves: it collects the document's sentence texts, refuses more than the cap before running the embedder, embeds, checks the embedder returned one vector per sentence, and clusters with `embedder.identity()` as the `model_hash` [lib.rs:360-399][embed-and-cluster]</claim>.
+Sentence text has already passed the pipeline's size cap in
 `annotate`, so no second byte cap applies.
 
 [`SemanticClusters`][clusters-types] carries `model_hash`, `threshold` and
@@ -191,14 +219,8 @@ vector per sentence, and clusters with `embedder.identity()` as the
 
 ### From Python
 
-`Matra.semantic_clusters` uses the built-in adapter directly when given a
-`Model2Vec`, and otherwise wraps the object in [`PyEmbedder`][py-embedder],
-which reads `identity()` once at construction (so one result cannot carry
-two identities), calls `embed` under the GIL, narrows each float to `f32`,
-and turns a Python exception or a malformed return into
-`Error::InvalidInput`, which raises `ValueError`. The wrap happens before
-the parse, so an object that cannot name its geometry costs one method
-call, not a document's parse ([`semantic_clusters`][py-semantic]).
+<claim basis="observed">`Matra.semantic_clusters` uses the built-in adapter directly when given a `Model2Vec`, and otherwise wraps the object in `PyEmbedder`, which reads `identity()` once at construction (so one result cannot carry two identities), calls `embed` under the GIL, narrows each float to `f32`, and turns a Python exception or a malformed return into `Error::InvalidInput`, which raises `ValueError` [lib.rs:601-636][py-semantic] [lib.rs:890-981][py-embedder]</claim>.
+<claim basis="observed">The wrap happens before the parse, so an object that cannot name its geometry costs one method call, not a document's parse [lib.rs:601-636][py-semantic-order]</claim>.
 
 ### No longer in force
 
@@ -278,6 +300,11 @@ silent first run are recorded in
 [EPR-0003](0003-distribution-and-provisioning.md), where provisioning
 lives.
 
+What the owner should confirm or strike, collected from the claims above
+that stand on no grounds yet:
+
+<assumptions />
+
 ## Future possibilities
 
 - A transformer adapter behind the same port, with a feature named for its
@@ -288,20 +315,30 @@ lives.
 - The same port used by a binding for TypeScript, which the wasm32 check
   keeps open for the embedding half.
 
-[embed-port]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/embed/mod.rs#L1-L43
-[embedding]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L78-L93
-[clusters-types]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L95-L145
-[m2v-struct]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/embed/model2vec.rs#L115-L140
-[m2v-embedder]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/embed/model2vec.rs#L598-L606
-[m2v-panic]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/embed/model2vec.rs#L1186-L1209
-[py-parity]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/embed/model2vec.rs#L1490-L1542
-[bit-parity]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/embed/model2vec.rs#L1544-L1580
-[semantic-clusters]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/extraction/semantic.rs#L1-L155
-[embed-and-cluster]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L360-L399
-[py-semantic]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L601-L636
-[py-embedder]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L890-L981
-[cargo-tokenizers]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/Cargo.toml#L61-L67
-[reference-model]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/spec/tests/semantic/reference-model.json#L1-L37
-[justfile-conformance]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/justfile#L166-L174
-[ci-rust]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/.github/workflows/ci.yml#L18-L68
-[ci-wasm]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/.github/workflows/ci.yml#L102-L120
+[embed-port]: ../../src/embed/mod.rs#L1-L43 "pub trait Embedder: Send {"
+[embedding]: ../../src/domain.rs#L78-L93 "pub struct Embedding(pub Vec<f32>);"
+[embedding-ne]: ../../src/domain.rs#L78-L93 "Deliberately not `#[non_exhaustive]`"
+[clusters-types]: ../../src/domain.rs#L95-L145 "pub struct SemanticClusters {"
+[clusters-components]: ../../src/domain.rs#L95-L145 "so co-membership is transitive: two sentences can"
+[clusters-singletons]: ../../src/domain.rs#L95-L145 "singletons are excluded by construction"
+[m2v-struct]: ../../src/embed/model2vec.rs#L115-L140 "pub struct Model2Vec {"
+[m2v-identity]: ../../src/embed/model2vec.rs#L115-L140 "SHA-256 over matrix, tokenizer, and config bytes, lowercase hex."
+[m2v-embedder]: ../../src/embed/model2vec.rs#L598-L606 "self.model_hash()"
+[m2v-panic]: ../../src/embed/model2vec.rs#L1186-L1209 "fn catch_embed_panic<F, T>(f: F) -> domain::Result<T>"
+[py-parity]: ../../src/embed/model2vec.rs#L1490-L1542 "fn matches_python_reference_on_pinned_inputs()"
+[bit-parity]: ../../src/embed/model2vec.rs#L1544-L1580 "fn vectors_are_bit_identical_across_targets()"
+[semantic-clusters]: ../../src/extraction/semantic.rs#L1-L155 "A pure function over domain values (rule 5): it never calls the embed"
+[semantic-finite]: ../../src/extraction/semantic.rs#L1-L155 "if !threshold.is_finite() {"
+[semantic-geq]: ../../src/extraction/semantic.rs#L1-L155 "if score >= threshold {"
+[semantic-zero]: ../../src/extraction/semantic.rs#L1-L155 "if norms[a] == 0.0 {"
+[semantic-cap]: ../../src/extraction/mod.rs#L12 "pub(crate) use textrank::MAX_SENTENCES as MAX_SEMANTIC_SENTENCES;"
+[embed-and-cluster]: ../../src/lib.rs#L360-L399 "extraction::semantic_clusters(&embeddings, threshold, embedder.identity())"
+[py-semantic]: ../../src/lib.rs#L601-L636 "if let Ok(loaded) = model.cast::<Model2Vec>() {"
+[py-semantic-order]: ../../src/lib.rs#L601-L636 "let embedder = PyEmbedder::new(model)?;"
+[py-embedder]: ../../src/lib.rs#L890-L981 "The identity is read once, at construction."
+[py-protocol]: ../../python/matra/types.py#L305 "class Embedder(Protocol):"
+[cargo-tokenizers]: ../../Cargo.toml#L61-L67 'features = ["unstable_wasm"]'
+[reference-model]: ../../spec/tests/semantic/reference-model.json#L1-L37 '"vectors_sha256":'
+[justfile-conformance]: ../../justfile#L166-L174 "conformance:"
+[ci-rust]: ../../.github/workflows/ci.yml#L18-L68 "features: [default, no-default-features, model2vec, cli]"
+[ci-wasm]: ../../.github/workflows/ci.yml#L102-L120 "cargo check --no-default-features --features model2vec --target wasm32-unknown-unknown"

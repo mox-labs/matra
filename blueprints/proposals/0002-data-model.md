@@ -26,12 +26,52 @@ RFC-0015 settled. A later proposal that changes any of it says so. Unmarked
 statements about the code are observed at the pinned commit through the link
 beside them; a claim that is inferred or assumed says so.
 
+<pragmatics>
+
+<ask>
+
+Accept EPR-0002 as the record of matra's data model as it stands at `4fcfb4a`, and settle the two decisions under [Unresolved questions](#unresolved-questions). Each can be answered on its own.
+
+</ask>
+
+<will>
+
+- Cite this proposal, rather than the legacy records it carries forward, when a change touches a domain type, a derived field or the error vocabulary; a change to what it describes goes in a new proposal that says so.
+- Carry out each decision as you rule it, through the record the process names for that change.
+- If the cited code moves before you decide, move the `Pinned at` line forward in a revision, so every citation is checked again, and say what changed.
+
+</will>
+
+<needs>
+
+- An answer to the proposal and to each of the two decisions: accept, accept with a reservation, object or redirect.
+- For the assumption listed under Unresolved questions: confirm it or strike it.
+
+</needs>
+
+<wont>
+
+- Change the status to `accepted`, or merge a pull request that does.
+- Rename a field or change an exception mapping either decision names before you rule on it.
+- Edit a legacy record, or edit this proposal to describe a later change.
+
+</wont>
+
+<silence>
+
+The proposal stays `proposed`. The types it describes ship as they are, since a baseline decides nothing new, and Claude lists the open decisions again at the start of the next session that touches the domain.
+
+</silence>
+
+</pragmatics>
+
 ## Motivation
 
 The data model is the contract that crosses languages. Rust callers read the
-types; Python callers read the dicts `pythonize` builds from their `serde`
-form ([`to_dict`][to-dict]); command-line callers read the same form inside
-the JSON envelope. Three decisions make that contract hold.
+types;
+<claim basis="observed">Python callers read the dicts `pythonize` builds from their `serde` form [lib.rs:452-455][to-dict]</claim>;
+command-line callers read the same form inside the JSON envelope. Three
+decisions make that contract hold.
 
 **Fields cross the language boundary, methods do not.** The Python surface
 is the `Serialize` derive and nothing else, so a Rust method on a domain
@@ -68,9 +108,7 @@ for sentence in doc.sentences() {
 let ratio = doc.passive_ratio; // Option<f64>, filled by compose
 ```
 
-In Python the same document is a dict with the same keys
-(`doc["sections"][0]["paragraphs"][0]["sentences"][0]["negations"]`), typed
-by `TypedDict`s in `matra.types` ([`types.py`][py-types]).
+<claim basis="observed">In Python the same document is a dict with the same keys (`doc["sections"][0]["paragraphs"][0]["sentences"][0]["negations"]`), typed by `TypedDict`s in `matra.types` [types.py:155-201][py-types]</claim>.
 
 What a caller should hold on to:
 
@@ -80,10 +118,8 @@ What a caller should hold on to:
 - **Ids are sentence-scoped.** Every derived fact points into
   `sentence.tokens` by token id, so provenance is checkable against the
   parse.
-- **Lexicons are the caller's.** Reporting verbs and evidential adverbs are
-  open classes, so matra reports every construction and lets the caller
-  filter: `sentence.reportings_in(&["claim", "report"])` in Rust, a filter on
-  `verb_lemma` elsewhere ([`reportings_in`][reportings-in]).
+- **Lexicons are the caller's.**
+  <claim basis="observed">Reporting verbs and evidential adverbs are open classes, so matra reports every construction and lets the caller filter: `sentence.reportings_in(&["claim", "report"])` in Rust, a filter on `verb_lemma` elsewhere [domain.rs:822-851][reportings-in]</claim>.
 - **Errors are matched, not read.** A caller branches on the `Error`
   variant in Rust, on the exception class in Python, and on `kind` wherever
   an error is materialized as data.
@@ -100,11 +136,8 @@ What a caller should hold on to:
 | [`Sentence`][sentence] | `text`, `tokens`, `negations`, `modals`, `bare_assertion`, `reportings`, `root_adverbials`, `hearst_pairs` | the provider, through `Sentence::new`; `hearst_pairs` by `annotate` |
 | [`Token`][token] | the ten CoNLL-U columns plus `is_punct` | the provider |
 
-`Sentence` documents four invariants (ids sorted, one root, heads in range,
-no cycle) and does not validate them; the `NlpProvider` contract states them
-for providers. The tree walks stay safe on input that breaks the last one:
-[`tree_depth`][tree-depth] returns `usize::MAX` on a cycle, using a visited
-set rather than a depth ceiling, and `subtree` carries a visited set too.
+<claim basis="observed">`Sentence` documents four invariants (ids sorted, one root, heads in range, no cycle) and does not validate them; the `NlpProvider` contract states them for providers [domain.rs:706-790][sentence]</claim>.
+<claim basis="observed">The tree walks stay safe on input that breaks the last one: `tree_depth` returns `usize::MAX` on a cycle, using a visited set rather than a depth ceiling, and `subtree` carries a visited set too [domain.rs:875-956][tree-depth] [domain.rs:706-790][sentence-subtree]</claim>.
 
 ### The structural primitives
 
@@ -117,67 +150,48 @@ set rather than a depth ceiling, and `subtree` carries a visited set too.
 | `root_adverbials` | each `advmod` attached to the root | [`detect_root_adverbials`][root-adv] |
 | `hearst_pairs` | candidate hypernym and hyponym spans from the six Hearst (1992) patterns, with the pattern tag | `hearst::hypernymy_pairs` ([types][hearst-types]) |
 
-Five are computed in [`Sentence::new`][sentence-new]. `hearst_pairs` is filled
-at the annotate stage ([`annotate`][annotate-hearst]) because its detector
-lives in `src/hearst.rs`, outside the domain, which imports only domain
-types ([`hearst.rs`][hearst-imports]). That is the amendment
+<claim basis="observed">Five are computed in `Sentence::new` [domain.rs:792-820][sentence-new]</claim>.
+<claim basis="observed">`hearst_pairs` is filled at the annotate stage because its detector lives in `src/hearst.rs`, outside the domain, which imports only domain types [lib.rs:235-243][annotate-hearst] [hearst.rs:28][hearst-imports]</claim>.
+That is the amendment
 [RFC-0008](../legacy/rfcs/0008-structural-primitives-are-fields.md)
 recorded for EP-0007's fifth milestone: the field still crosses as data;
 only the point that fills it moved. A hand-built `Sentence` carries an empty
 `hearst_pairs` until the caller runs the detector.
 
-Every derived field is `#[serde(default)]`, so a document serialized before
-the field existed still deserializes. Derived fields reflect `tokens` as
-passed to `Sentence::new`; mutating `tokens` afterwards does not recompute
-them, and keeping them consistent is the caller's side of the documented
-contract.
+<claim basis="observed">Every derived field is `#[serde(default)]`, so a document serialized before the field existed still deserializes [domain.rs:706-790][sentence-serde]</claim>.
+<claim basis="observed">Derived fields reflect `tokens` as passed to `Sentence::new`; mutating `tokens` afterwards does not recompute them, and keeping them consistent is the caller's side of the documented contract [domain.rs:792-820][sentence-new-stale]</claim>.
 
 ### Views stay methods
 
-[`Token::feat`][feat] looks up one key in the `feats` string by a linear
-scan with no allocation, and returns the raw value, so `Case=Nom,Acc` comes
-back unsplit. It is Rust-only by design
+<claim basis="observed">`Token::feat` looks up one key in the `feats` string by a linear scan with no allocation, and returns the raw value, so `Case=Nom,Acc` comes back unsplit [domain.rs:287-308][feat]</claim>.
+It is Rust-only by design
 ([RFC-0009](../legacy/rfcs/0009-feats-lookup-accessor.md)): `feats` already
 crosses as a string, so the lookup adds nothing to the wire.
 `reportings_in`, `root_adverbials_in`, `is_passive`, `tree_depth`,
 `subtree`, the `Document` iterators and the `Corpus` aggregates are views of
 the same kind.
 
-`Document::passive_ratio()` the method and `Document::passive_ratio` the
-field both exist ([method][passive-method], [field][document]). The method
-computes the ratio on any document; the metric suite stores it in the field
-so it crosses ([`document::compute`][doc-metrics]).
+<claim basis="observed">`Document::passive_ratio()` the method and `Document::passive_ratio` the field both exist [domain.rs:1178-1191][passive-method] [domain.rs:1095-1120][document-passive]</claim>.
+<claim basis="observed">The method computes the ratio on any document; the metric suite stores it in the field so it crosses [metrics/document.rs:12-22][doc-metrics]</claim>.
 
 ### Errors
 
-[`Error`][error] has seven variants, each with a stable kind string from
-[`Error::kind`][error-kind], an exhaustive match with no wildcard so a new
-variant cannot inherit another's key. The vocabulary is pinned for every
-binding in [`spec/tests/corpus/items.json`][items-kinds] and mirrored in
-Python as `ERROR_KINDS` ([`types.py`][py-kinds]). `InputTooLarge` carries a
-`what` label naming which gate fired.
+<claim basis="observed">`Error` has seven variants, each with a stable kind string from `Error::kind`, an exhaustive match with no wildcard so a new variant cannot inherit another's key [domain.rs:151-191][error] [domain.rs:193-217][error-kind]</claim>.
+<claim basis="observed">The vocabulary is pinned for every binding in `spec/tests/corpus/items.json` and mirrored in Python as `ERROR_KINDS` [items.json:4-12][items-kinds] [types.py:15-31][py-kinds]</claim>.
+`InputTooLarge` carries a `what` label naming which gate fired.
 
-In Python each variant maps to one exception class through an exhaustive
-match ([`From<MatraError> for PyErr`][pyerr]): `ModelNotFound` to
-`FileNotFoundError`; `InputTooLarge`, `UnsupportedFormat` and
-`InvalidInput` to `ValueError`; `Io` to `OSError`; `ModelInvalid` and
-`ParseFailed` to `RuntimeError`. A new variant fails to compile until it is
-routed.
+<claim basis="observed">In Python each variant maps to one exception class through an exhaustive match: `ModelNotFound` to `FileNotFoundError`; `InputTooLarge`, `UnsupportedFormat` and `InvalidInput` to `ValueError`; `Io` to `OSError`; `ModelInvalid` and `ParseFailed` to `RuntimeError` [lib.rs:417-450][pyerr]</claim>.
+A new variant fails to compile until it is routed.
 
-`DocumentError` and `CorpusResult` are not `Serialize`, because `Error`
-wraps `std::io::Error` ([corpus types][corpus-result]). Where a per-document
-failure crosses, it is materialized as `{kind, message}` by hand
-([`document_error_dict`][doc-error-dict]).
+<claim basis="observed">`DocumentError` and `CorpusResult` are not `Serialize`, because `Error` wraps `std::io::Error` [domain.rs:1448-1464][corpus-result]</claim>.
+<claim basis="observed">Where a per-document failure crosses, it is materialized as `{kind, message}` by hand [lib.rs:1036-1055][doc-error-dict]</claim>.
 
 ### Forward compatibility
 
-Every public struct with public fields and every public enum in the library
-is `#[non_exhaustive]`, observed by listing them at the pinned commit. The
-one exception is `Embedding`, a tuple struct whose constructor external
-`Embedder` implementors must call; [RFC-0010](../legacy/rfcs/0010-embeddings-adapter.md)
-records why ([EPR-0005](0005-embeddings-and-semantic-clusters.md)).
-`Token::builder` exists because the attribute forbids struct literals
-outside the crate ([`TokenBuilder`][token-builder]).
+<claim basis="observed">Every public struct with public fields and every public enum in the library is `#[non_exhaustive]`, observed by listing them at the pinned commit, and the one exception is `Embedding`, a tuple struct whose constructor external `Embedder` implementors must call [domain.rs:93][embedding]</claim>;
+[RFC-0010](../legacy/rfcs/0010-embeddings-adapter.md) records why
+([EPR-0005](0005-embeddings-and-semantic-clusters.md)).
+<claim basis="observed">`Token::builder` exists because the attribute forbids struct literals outside the crate [domain.rs:261-285][token-builder]</claim>.
 
 ### Reserved vocabulary still in force
 
@@ -211,9 +225,8 @@ vocabulary ([roadmap][roadmap-rules]).
   before 0.1.0. The alias is gone: no type named `Analysis` exists in
   `src/`.
 - **`in_blockquote` as a deprecation signal.** RFC-0006 says the field's
-  rustdoc signals its replacement by `ParagraphKind`. The rustdoc now says
-  the replacement is planned and that nothing is deprecated, because the
-  field's job is still binary ([`Paragraph`][paragraph-blockquote]).
+  rustdoc signals its replacement by `ParagraphKind`.
+  <claim basis="observed">The rustdoc now says the replacement is planned and that nothing is deprecated, because the field's job is still binary [domain.rs:1019-1029][paragraph-blockquote]</claim>.
 - **The `measure` and `extract` split as a type distinction.**
   [RFC-0002](../legacy/rfcs/0002-pipeline-vocabulary.md) called extraction
   a peer of measurement; [RFC-0007](../legacy/rfcs/0007-one-pipeline.md)
@@ -227,15 +240,14 @@ vocabulary ([roadmap][roadmap-rules]).
   JSON. A rename is a breaking change in all three
   ([RFC-0008](../legacy/rfcs/0008-structural-primitives-are-fields.md)).
 - **Everyone pays for every primitive.** Each sentence stores its derived
-  facts whether or not the caller reads them. RFC-0008 judged this small
-  beside the tokens already on the wire; assumed, because no benchmark at
-  the pinned commit measures it.
+  facts whether or not the caller reads them.
+  <claim basis="assumed">That storage is small beside the tokens already on the wire</claim>:
+  RFC-0008 judged so, and no benchmark at the pinned commit measures it.
 - **Derived fields go stale under mutation** of `tokens`, by the documented
   contract rather than by a check.
 - **Two spellings of one value.** `passive_ratio` is both a method and a
-  field on `Document`, and they disagree on a document with no sentences:
-  the method returns `0.0` ([method][passive-method]) and the field stays
-  `None` even after `compose` ([`document::compute`][doc-metrics]).
+  field on `Document`, and
+  <claim basis="observed">they disagree on a document with no sentences: the method returns `0.0` and the field stays `None` even after `compose` [domain.rs:1178-1191][passive-method] [metrics/document.rs:12-22][doc-metrics]</claim>.
 
 ## Rationale and alternatives
 
@@ -275,16 +287,88 @@ vocabulary ([roadmap][roadmap-rules]).
 
 ## Unresolved questions
 
-- **`CorpusEntry.analysis` still carries the rejected name.** RFC-0006's
-  deferred list, extended by RFC-0010, records that the field should be
-  renamed, and that the rename became a breaking change once 0.1.0 shipped
-  ([`CorpusEntry`][corpus-entry]). When, and folded into what, is open.
-- **`Error::Io` routes to `OSError` whatever its kind.** A missing directory
-  arrives in Python as `OSError`, not `FileNotFoundError`, although the
-  wrapped `io::ErrorKind` is `NotFound`
-  ([RFC-0011](../legacy/rfcs/0011-out-of-the-box.md), unresolved questions;
-  [routing][pyerr]). Routing on the wrapped kind would change a shipped
-  mapping.
+For the owner to settle in this proposal's review. Each is a decision of its
+own.
+
+**`CorpusEntry.analysis` still carries the rejected name.**
+<claim basis="observed">The field is `analysis`, holding a `Document` [domain.rs:1338-1346][corpus-entry]</claim>.
+RFC-0006's deferred list, extended by RFC-0010, records that the field
+should be renamed, and that the rename became a breaking change once 0.1.0
+shipped. When, and folded into what, is open.
+
+<decision id="corpus-entry-name" title="1. When is CorpusEntry.analysis renamed?">
+
+<choice key="a" title="With the next release that breaks the schema">
+
+The rename is folded into a release whose callers migrate anyway, so they migrate once.
+
+</choice>
+
+<choice key="b" title="In a release of its own">
+
+The rename ships as soon as possible, on its own, with the old key still accepted when a document is read back.
+
+</choice>
+
+<choice key="c" title="Never">
+
+The field keeps `analysis`, and its documentation says it holds a `Document`.
+
+</choice>
+
+<recommendation choice="a">
+
+Every crossing field is a schema commitment in Rust, Python and the JSON, so the rename costs every caller a migration whenever it lands. Landing it where callers migrate anyway pays that cost once.
+
+</recommendation>
+
+<against>
+
+Until then every new caller learns a name the records already rejected, and each release that ships it adds callers who will have to move.
+
+</against>
+
+</decision>
+
+**`Error::Io` routes to `OSError` whatever its kind.**
+<claim basis="observed">Every `Io` variant becomes `OSError` [lib.rs:417-450][pyerr-io]</claim>.
+A missing directory arrives in Python as `OSError`, not
+`FileNotFoundError`, although the wrapped `io::ErrorKind` is `NotFound`
+([RFC-0011](../legacy/rfcs/0011-out-of-the-box.md), unresolved questions).
+Routing on the wrapped kind would change a shipped mapping.
+
+<decision id="io-routing" title="2. Does Error::Io route on the kind it wraps?">
+
+<choice key="a" title="Route on the wrapped kind">
+
+`NotFound` becomes `FileNotFoundError`, `PermissionDenied` becomes `PermissionError`, and every other kind stays `OSError`.
+
+</choice>
+
+<choice key="b" title="Keep one class">
+
+Every `Error::Io` stays `OSError`, and the mapping's documentation says so on purpose.
+
+</choice>
+
+<recommendation choice="a">
+
+Python's `FileNotFoundError` and `PermissionError` are subclasses of `OSError`, so an `except OSError` clause written today keeps catching them, and a caller who expected `FileNotFoundError` for a missing path gets it.
+
+</recommendation>
+
+<against>
+
+It changes a shipped mapping: code that tests an exception's exact class, rather than catching it, sees a different class. And the kind string stays `io` for all of them, so the exception class would name a failure more finely than the kind beside it.
+
+</against>
+
+</decision>
+
+What the owner should confirm or strike, collected from the claims above
+that stand on no grounds yet:
+
+<assumptions />
 
 ## Future possibilities
 
@@ -294,35 +378,41 @@ vocabulary ([roadmap][roadmap-rules]).
 - `ParagraphKind` replacing `in_blockquote` once a paragraph needs more than
   parse-or-skip.
 
-[to-dict]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L452-L455
-[pyerr]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L417-L450
-[doc-error-dict]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L1036-L1055
-[annotate-hearst]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L235-L243
-[error]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L151-L191
-[error-kind]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L193-L217
-[token]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L226-L259
-[feat]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L287-L308
-[token-builder]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L261-L285
-[negation]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L373-L418
-[modal]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L420-L481
-[bare]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L483-L514
-[reporting]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L516-L587
-[root-adv]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L589-L636
-[hearst-types]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L638-L704
-[sentence]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L706-L790
-[sentence-new]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L792-L820
-[reportings-in]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L822-L851
-[tree-depth]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L875-L956
-[paragraph]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L1008-L1042
-[paragraph-blockquote]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L1019-L1029
-[section]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L1070-L1082
-[document]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L1095-L1120
-[passive-method]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L1178-L1191
-[corpus-entry]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L1338-L1346
-[corpus-result]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L1448-L1464
-[doc-metrics]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/metrics/document.rs#L12-L22
-[hearst-imports]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/hearst.rs#L28
-[items-kinds]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/spec/tests/corpus/items.json#L4-L12
-[py-types]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/python/matra/types.py#L155-L201
-[py-kinds]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/python/matra/types.py#L15-L31
-[roadmap-rules]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/ROADMAP.md#L24-L48
+[to-dict]: ../../src/lib.rs#L452-L455 "pythonize::pythonize(py, val)"
+[pyerr]: ../../src/lib.rs#L417-L450 "impl From<MatraError> for PyErr {"
+[pyerr-io]: ../../src/lib.rs#L417-L450 "Io(_) => PyOSError::new_err(msg),"
+[doc-error-dict]: ../../src/lib.rs#L1036-L1055 "fn document_error_dict<'py>("
+[annotate-hearst]: ../../src/lib.rs#L235-L243 "sentence.hearst_pairs = hearst::hypernymy_pairs(&sentence.tokens);"
+[error]: ../../src/domain.rs#L151-L191 "pub enum Error {"
+[error-kind]: ../../src/domain.rs#L193-L217 "pub fn kind(&self) -> &'static str {"
+[embedding]: ../../src/domain.rs#L93 "pub struct Embedding(pub Vec<f32>);"
+[token]: ../../src/domain.rs#L226-L259 "pub struct Token {"
+[feat]: ../../src/domain.rs#L287-L308 "pub fn feat(&self, key: &str) -> Option<&str> {"
+[token-builder]: ../../src/domain.rs#L261-L285 "prevents struct literal syntax outside the crate"
+[negation]: ../../src/domain.rs#L373-L418 "fn detect_negations(tokens: &[Token]) -> Vec<Negation> {"
+[modal]: ../../src/domain.rs#L420-L481 "fn detect_modals(tokens: &[Token]) -> Vec<Modal> {"
+[bare]: ../../src/domain.rs#L483-L514 "fn detect_bare_assertion(tokens: &[Token], modals: &[Modal]) -> bool {"
+[reporting]: ../../src/domain.rs#L516-L587 "fn detect_reportings(tokens: &[Token]) -> Vec<Reporting> {"
+[root-adv]: ../../src/domain.rs#L589-L636 "fn detect_root_adverbials(tokens: &[Token]) -> Vec<RootAdverbial> {"
+[hearst-types]: ../../src/domain.rs#L638-L704 "pub struct HearstPair {"
+[sentence]: ../../src/domain.rs#L706-L790 "Nothing validates these"
+[sentence-subtree]: ../../src/domain.rs#L706-L790 "[`Sentence::subtree`] carries a"
+[sentence-serde]: ../../src/domain.rs#L706-L790 "#[serde(default)]"
+[sentence-new]: ../../src/domain.rs#L792-L820 "pub fn new(text: String, tokens: Vec<Token>) -> Self {"
+[sentence-new-stale]: ../../src/domain.rs#L792-L820 "mutating `tokens` afterwards does not recompute them"
+[reportings-in]: ../../src/domain.rs#L822-L851 "pub fn reportings_in(&self, lexicon: &[&str]) -> Vec<&Reporting> {"
+[tree-depth]: ../../src/domain.rs#L875-L956 "usize::MAX is the cycle sentinel"
+[paragraph]: ../../src/domain.rs#L1008-L1042 "pub struct Paragraph {"
+[paragraph-blockquote]: ../../src/domain.rs#L1019-L1029 "Nothing is deprecated today"
+[section]: ../../src/domain.rs#L1070-L1082 "pub struct Section {"
+[document]: ../../src/domain.rs#L1095-L1120 "pub struct Document {"
+[document-passive]: ../../src/domain.rs#L1095-L1120 "pub passive_ratio: Option<f64>,"
+[passive-method]: ../../src/domain.rs#L1178-L1191 "pub fn passive_ratio(&self) -> f64 {"
+[corpus-entry]: ../../src/domain.rs#L1338-L1346 "pub analysis: Document,"
+[corpus-result]: ../../src/domain.rs#L1448-L1464 "Not `Serialize`"
+[doc-metrics]: ../../src/metrics/document.rs#L12-L22 "if analysis.total_sentences() > 0 {"
+[hearst-imports]: ../../src/hearst.rs#L28 "use crate::domain::{HearstPair, HearstPattern, HearstSpan, Token};"
+[items-kinds]: ../../spec/tests/corpus/items.json#L4-L12 '"error_kinds": ['
+[py-types]: ../../python/matra/types.py#L155-L201 "class Sentence(TypedDict):"
+[py-kinds]: ../../python/matra/types.py#L15-L31 "ERROR_KINDS: Final[tuple[str, ...]] = ("
+[roadmap-rules]: ../../ROADMAP.md#L24-L48 "## Rule evaluation over parsed structure"

@@ -27,6 +27,44 @@ it says so. Unmarked statements about the code are observed at the pinned
 commit through the link beside them; a claim that is inferred or assumed
 says so.
 
+<pragmatics>
+
+<ask>
+
+Accept EPR-0001 as the record of matra's pipeline and ports as they stand at `4fcfb4a`, and settle the two decisions under [Unresolved questions](#unresolved-questions). Each can be answered on its own.
+
+</ask>
+
+<will>
+
+- Cite this proposal, rather than the legacy records it carries forward, when a change touches the pipeline, its ports or the boundary rules; a change to what it describes goes in a new proposal that says so.
+- Carry out each decision as you rule it, through the record the process names for that change.
+- If the cited code moves before you decide, move the `Pinned at` line forward in a revision, so every citation is checked again, and say what changed.
+
+</will>
+
+<needs>
+
+- An answer to the proposal and to each of the two decisions: accept, accept with a reservation, object or redirect.
+
+</needs>
+
+<wont>
+
+- Change the status to `accepted`, or merge a pull request that does.
+- Change the code either decision names before you rule on it.
+- Edit a legacy record, or edit this proposal to describe a later change.
+
+</wont>
+
+<silence>
+
+The proposal stays `proposed`. The code it describes ships as it is, since a baseline decides nothing new, and Claude lists the open decisions again at the start of the next session that touches the pipeline or its ports.
+
+</silence>
+
+</pragmatics>
+
 ## Motivation
 
 Why this is the foundation, rather than any other shape, comes down to four
@@ -40,17 +78,14 @@ other four, and `analyze_from` returned documents whose paragraph metrics
 were always `None` because the sentence set travelled twice with nothing
 enforcing agreement ([EP-0008](../legacy/eps/0008-pipeline-surface.md),
 "The two defects"). [RFC-0007](../legacy/rfcs/0007-one-pipeline.md) replaced
-the six with one pipeline so each invariant has one home. Today the size
-check sits in [`check_input_size`][size-fn], called first thing in
-[`Engine::annotate`][annotate], and the metric suite takes the document
-alone ([`Metric`][metric]), so the sentence set exists once.
+the six with one pipeline so each invariant has one home.
+<claim basis="observed">Today the size check sits in `check_input_size`, called first thing in `Engine::annotate`, and the metric suite takes the document alone (`Metric`), so the sentence set exists once [lib.rs:23-38][size-fn] [lib.rs:212-253][annotate] [metrics/mod.rs:22-57][metric]</claim>.
 
 **Per-paragraph parsing.** An earlier pipeline joined paragraphs, parsed
 once, and wired sentences back to paragraphs by prefix match. Two paragraphs
 sharing their first 30 characters had their sentences silently reassigned
-(the failure the project calls FM1). `annotate` parses each paragraph on its
-own ([lines 235 to 243][annotate-loop]), and a regression test pins the
-case ([`parse_per_paragraph_scopes_sentences_to_originating_paragraph`][fm1-test]).
+(the failure the project calls FM1).
+<claim basis="observed">`annotate` parses each paragraph on its own, and a regression test, `parse_per_paragraph_scopes_sentences_to_originating_paragraph`, pins the case [lib.rs:235-243][annotate-loop] [lib.rs:1475-1496][fm1-test]</claim>.
 
 **Ports factored by dependency and failure mode.** A port exists where the
 outside world differs in what it depends on and how it fails: reading bytes
@@ -63,8 +98,8 @@ for this reason: they are ports, not stages.
 **One crate.** [RFC-0004](../legacy/rfcs/0004-stay-single-crate.md) kept
 matra a single crate because the test for splitting out a port crate is
 whether external implementors need to pin the contract apart from the main
-crate's version churn, and no such implementors exist. Observed: one
-`[package]` in [`Cargo.toml`][cargo-package] and no workspace.
+crate's version churn, and no such implementors exist.
+<claim basis="observed">There is one `[package]` in `Cargo.toml` and no workspace [Cargo.toml:1-14][cargo-package]</claim>.
 
 ## Guide-level explanation
 
@@ -91,25 +126,22 @@ let many: CorpusResult = engine.analyze(Ingest::path("docs/")?).collect();
 for failure in &many.errors { /* failure.path, failure.error */ }
 ```
 
-`analyze` is lazy: nothing is read or parsed until the iterator is pulled,
-and each pull runs one document to completion ([`Engine::analyze`][analyze]).
+<claim basis="observed">`analyze` is lazy: nothing is read or parsed until the iterator is pulled, and each pull runs one document to completion [lib.rs:163-192][analyze]</claim>.
 So `Ingest::path(dir)?` returning `Ok` means the directory listed, not that
-every file read. Per-file failures arrive as `DocumentError` items carrying
-the path ([`Ingest::path`][ingest-path]), and collecting into
-`CorpusResult` partitions successes from failures.
+every file read.
+<claim basis="observed">Per-file failures arrive as `DocumentError` items carrying the path [lib.rs:89-113][ingest-path]</claim>,
+and collecting into `CorpusResult` partitions successes from failures.
 
-The two stages are public. `annotate` returns a `Document` with structure
-and sentences and every metric slot `None`; `compose` fills the slots and
-cannot fail ([`annotate` and `compose`][annotate]). `analyze_one` is exactly
-`annotate` then `compose` ([`analyze_one`][analyze-one]).
+The two stages are public.
+<claim basis="observed">`annotate` returns a `Document` with structure and sentences and every metric slot `None`; `compose` fills the slots and cannot fail [lib.rs:212-253][annotate]</claim>.
+<claim basis="observed">`analyze_one` is exactly `annotate` then `compose` [lib.rs:194-210][analyze-one]</claim>.
 
-Text over 8 MiB is refused with `Error::InputTooLarge { what: "input" }`
-before any parse ([`MAX_INPUT_BYTES`][max-input]). Blockquote paragraphs are
-kept in the structure but never parsed or measured.
+<claim basis="observed">Text over 8 MiB is refused with `Error::InputTooLarge { what: "input" }` before any parse [domain.rs:12-28][max-input] [lib.rs:23-38][size-fn]</claim>.
+Blockquote paragraphs are kept in the structure but never parsed or
+measured.
 
-The Python `Matra` class wraps one `Engine` and routes every method through
-it ([`Matra`][py-matra]), so the cap and the per-paragraph parse hold there
-too.
+<claim basis="observed">The Python `Matra` class wraps one `Engine` and routes every method through it [lib.rs:457-496][py-matra]</claim>,
+so the cap and the per-paragraph parse hold there too.
 
 ### For a contributor
 
@@ -135,6 +167,30 @@ appended to the suite. Neither adds an entry point.
 
 ## Reference-level explanation
 
+<sketch-figure id="pipeline" seed="1" title="The pipeline and its ports, as they ship">
+
+```text
+width 400
+state shipped shipped "the pipeline at 4fcfb4a; each arrow is a call, and each port box names its adapters"
+box caller "Caller" 4 78 72 40
+box engine "Engine\nanalyze\nannotate, compose" 96 4 140 56
+box ingest "Ingest\n(text, path)" 96 92 140 40
+box cluster "embed_and_cluster" 96 156 140 40
+box decomposer "Decomposer\nMarkdown, PlainText" 256 4 140 40
+box nlp "NlpProvider\nUdpipe" 256 52 140 40
+box source "Source\nFileSource,\nDirectorySource" 256 100 140 48
+box embedder "Embedder\nModel2Vec" 256 156 140 40
+edge caller engine
+edge caller cluster
+edge engine ingest
+edge engine decomposer
+edge engine nlp
+edge ingest source
+edge cluster embedder
+```
+
+</sketch-figure>
+
 ### The stages
 
 | Stage | Where | What it does |
@@ -147,7 +203,7 @@ appended to the suite. Neither adds an entry point.
 `abstract` is reserved by [RFC-0007](../legacy/rfcs/0007-one-pipeline.md) as
 the empty tier between structure and purpose-fitted output, where rule
 evaluation lands. It is a Rust keyword, so it names the tier and never code.
-Observed: no module, type or function in `src/` occupies it.
+<claim basis="observed">No module, type or function in `src/` occupies it [lib.rs:1-21][lib-mods]</claim>.
 
 ### The ports
 
@@ -160,11 +216,9 @@ Observed: no module, type or function in `src/` occupies it.
 
 The format table is data. [`Decomposers`][decomposers] is a `Vec` keyed on
 `Format`; `with` replaces on a duplicate key; lookup is the partial step and
-each decomposer stays total. The composition root fills it through
-[`default_decomposer`][default-decomposer], a match over `Format` with no
-wildcard, so a new `Format` variant fails to compile until someone decides
-whether it has a decomposer. `Pdf` and `Docx` are reserved variants with
-none.
+each decomposer stays total.
+<claim basis="observed">The composition root fills it through `default_decomposer`, a match over `Format` with no wildcard, so a new `Format` variant fails to compile until someone decides whether it has a decomposer [lib.rs:325-358][default-decomposer]</claim>.
+`Pdf` and `Docx` are reserved variants with none.
 
 ### The composition root
 
@@ -178,12 +232,9 @@ the same file behind `python`.
 
 ### The size gate
 
-[`MAX_INPUT_BYTES`][max-input] is a constant (8 MiB), not a setting. Two
-places enforce it: [`Engine::annotate`][annotate] for text
-(`what = "input"`), and [`FileSource`][file-source] on a file's metadata
-size before reading (`what = "file_source"`). The domain documents the gap
-honestly: a caller who invokes `NlpProvider::parse` directly bypasses the
-bound.
+[`MAX_INPUT_BYTES`][max-input] is a constant (8 MiB), not a setting.
+<claim basis="observed">Two places enforce it: `Engine::annotate` for text (`what = "input"`), and `FileSource` on a file's metadata size before reading (`what = "file_source"`) [lib.rs:212-253][annotate] [source/file.rs:9-58][file-source]</claim>.
+<claim basis="observed">The domain documents the gap honestly: a caller who invokes `NlpProvider::parse` directly bypasses the bound [domain.rs:12-28][max-input-bypass]</claim>.
 
 ### The laws
 
@@ -201,9 +252,8 @@ L6  Err input item             => identical Err output, analyze_one not called
 L7  no text over MAX_INPUT_BYTES reaches NlpProvider::parse
 ```
 
-L1 to L3 say a single document is a collection of one. L7 is provable
-rather than empirical because `annotate` is the only caller of the parser
-in the pipeline.
+L1 to L3 say a single document is a collection of one.
+<claim basis="inferred">L7 is provable rather than empirical because `annotate` is the only caller of the parser in the pipeline [lib.rs:212-253][annotate-only]</claim>.
 
 ### The boundary rules and how they are checked
 
@@ -217,25 +267,19 @@ port (3); only `nlp/udpipe.rs` names `udpipe_rs` (4); `metrics/` and
 knows every adapter and port, and `src/cli/` uses only the public surface
 (7); no `tracing` in the domain or the ports (8).
 
-Rule 6 is compiled by the `rust` and `msrv` jobs in CI
-([`ci.yml`][ci-msrv]). Rules 1, 2, 3, 4, 5, the `src/cli/` part of 7, and 8
-are semgrep rules under `.semgrep/`, each tested against a fixture of the
-forms it claims, run by `scripts/check-boundaries.sh` from `just check` and
-the `Boundary check` job ([`ci.yml`][ci-boundaries]).
+<claim basis="observed">Rule 6 is compiled by the `rust` and `msrv` jobs in CI [ci.yml:18-100][ci-msrv]</claim>.
+<claim basis="observed">Rules 1, 2, 3, 4, 5, the `src/cli/` part of 7, and 8 are semgrep rules under `.semgrep/`, each tested against a fixture of the forms it claims, run by `scripts/check-boundaries.sh` from `just check` and the `Boundary check` job [ci.yml:122-153][ci-boundaries]</claim>.
 [EP-0014](../legacy/eps/0014-architecture-guardrails.md) records what each
 rule catches and what it leaves to review: whether a trait's shape leaks an
 adapter, whether a function takes text where it should take structure, and
 whether a file other than `src/lib.rs` wires adapters together.
 
-The panic boundary that rule 4 protects is
-[`catch_parse_panic`][udpipe-panic], which wraps `Model::parse` and turns a
-panic into `Error::ParseFailed`.
+<claim basis="observed">The panic boundary that rule 4 protects is `catch_parse_panic`, which wraps `Model::parse` and turns a panic into `Error::ParseFailed` [nlp/udpipe.rs:704-734][udpipe-panic]</claim>.
 
 ### Features
 
-`udpipe` is the default; `model2vec`, `cli` and `python` are opt-in
-([features][cargo-features]). `cli` enables `udpipe`; `python` enables
-`cli`. Disabling defaults removes the UDPipe adapter and leaves the domain,
+<claim basis="observed">`udpipe` is the default and `model2vec`, `cli` and `python` are opt-in; `cli` enables `udpipe`, and `python` enables `cli` [Cargo.toml:92-97][cargo-features]</claim>.
+Disabling defaults removes the UDPipe adapter and leaves the domain,
 the ports, the pipeline, the metrics and the extractors.
 
 ### No longer in force
@@ -251,10 +295,9 @@ the ports, the pipeline, the metrics and the extractors.
   `[package]` and no `[workspace]` in [`Cargo.toml`][cargo-package].
 - **"No function name mentions a format or a source kind" holds for the
   Rust surface only.** [RFC-0007](../legacy/rfcs/0007-one-pipeline.md)
-  states it for the whole surface. The Python class still has
-  `analyze_markdown` and `analyze_path` ([Python methods][py-methods]),
-  each a thin call into the one `Engine`. The invariants still live in one
-  place; the names do not.
+  states it for the whole surface.
+  <claim basis="observed">The Python class still has `analyze_markdown` and `analyze_path`, each a thin call into the one `Engine` [lib.rs:534-548][py-methods] [lib.rs:658][py-analyze-path]</claim>.
+  The invariants still live in one place; the names do not.
 - **Boundary enforcement by grep and review alone.** Records before
   2026-09-26 say rules 1, 2, 5 and 7 have no mechanical check and that 3, 4
   and 8 are a ripgrep over literal imports.
@@ -269,15 +312,14 @@ the ports, the pipeline, the metrics and the extractors.
   provider; free functions could not.
 - **Work moves to consumption time.** A directory that lists is not a
   directory that reads; failures surface as items.
-- **The result stream is not `Send`.** It borrows the engine, and
-  `NlpProvider` is `Send` without `Sync` ([`analyze`][analyze]).
-- **One parse call per paragraph.** Inferred, not measured: a document of
-  many short paragraphs pays the per-call overhead many times. The
-  correctness argument (FM1) outranks it until a measurement says
+- **The result stream is not `Send`.**
+  <claim basis="observed">It borrows the engine, and `NlpProvider` is `Send` without `Sync` [lib.rs:163-192][analyze-send]</claim>.
+- **One parse call per paragraph.** Not measured:
+  <claim basis="inferred">a document of many short paragraphs pays the per-call overhead many times</claim>.
+  The correctness argument (FM1) outranks it until a measurement says
   otherwise.
-- **The cap is bypassable below the pipeline.** Calling
-  `NlpProvider::parse` directly skips it; the domain documents this rather
-  than enforcing it ([`MAX_INPUT_BYTES`][max-input]).
+- **The cap is bypassable below the pipeline.**
+  <claim basis="observed">Calling `NlpProvider::parse` directly skips it; the domain documents this rather than enforcing it [domain.rs:12-28][max-input-bypass]</claim>.
 
 ## Rationale and alternatives
 
@@ -331,21 +373,78 @@ current shape removed.
 
 ## Unresolved questions
 
-- **An adapter imports a sibling adapter.** `src/source/directory.rs`
-  imports `FileSource` from `src/source/file.rs` and reads each listed file
-  through it ([`DirectorySource`][directory-source]). The boundary rules do
-  not name adapter-to-adapter imports, and
-  [EP-0014](../legacy/eps/0014-architecture-guardrails.md) leaves "one
-  adapter importing another" to review. Is an adapter composing another
-  adapter of the same port acceptable, or should the composition root do
-  it, as `Ingest::path` already does for the streaming route?
-- **`Decomposer` has no `Send` bound.** `Source`, `NlpProvider` and
-  `Embedder` require `Send`; [`Decomposer`][decompose-port] does not.
-  `Decomposers` holds `Box<dyn Decomposer>`, so `Engine` is not `Send`
-  either: observed by compiling a `Send` assertion on `Engine` at the pinned
-  commit, which fails on `dyn Decomposer`. Nothing in matra needs it today
-  (the Python class is `unsendable`), but the asymmetry is unrecorded. Is it
-  intended?
+For the owner to settle in this proposal's review. Each is a decision of its
+own.
+
+**An adapter imports a sibling adapter.**
+<claim basis="observed">`src/source/directory.rs` imports `FileSource` from `src/source/file.rs` and reads each listed file through it [source/directory.rs:1-62][directory-source]</claim>.
+The boundary rules do not name adapter-to-adapter imports, and
+[EP-0014](../legacy/eps/0014-architecture-guardrails.md) leaves "one
+adapter importing another" to review.
+
+<decision id="sibling-adapter" title="1. May an adapter compose another adapter of its own port?">
+
+<choice key="a" title="Yes, within one port">
+
+`DirectorySource` keeps reading each file through `FileSource`, and the boundary rules page records that an adapter may compose another adapter of the same port.
+
+</choice>
+
+<choice key="b" title="No; the composition root does it">
+
+`DirectorySource` is given the `Source` it reads each file through, and `src/lib.rs` passes it `FileSource`, as the composition root already does its own wiring for the streaming route in `Ingest::path`.
+
+</choice>
+
+<recommendation choice="a">
+
+Both adapters implement one port, and the symlink refusal and the size cap live once, in `FileSource`; reading through it is what keeps them in one place. An import inside one port does not cross a layer, which is what the boundary rules exist to hold. Recording the case turns an unrecorded exception into a reviewed one.
+
+</recommendation>
+
+<against>
+
+Rule 7 makes the composition root the only place adapters are wired together, and an import inside one port looks the same to a reviewer as one across ports, so an accepted exception rests on review alone. `Ingest::path` shows the composition root can do this wiring.
+
+</against>
+
+</decision>
+
+**`Decomposer` has no `Send` bound.**
+<claim basis="observed">`Source`, `NlpProvider` and `Embedder` require `Send`; `Decomposer` does not [decompose/mod.rs:11-18][decompose-port] [source/mod.rs:13-28][source-port] [nlp/mod.rs:11-51][nlp-port] [embed/mod.rs:18-43][embed-port]</claim>.
+<claim basis="observed">`Decomposers` holds `Box<dyn Decomposer>`, so `Engine` is not `Send` either: observed by compiling a `Send` assertion on `Engine` at the pinned commit, which fails on `dyn Decomposer` [decompose/mod.rs:20-63][decomposers]</claim>.
+<claim basis="observed">Nothing in matra needs it today (the Python class is `unsendable`) [lib.rs:457-496][py-matra]</claim>,
+but the asymmetry is unrecorded.
+
+<decision id="decomposer-send" title="2. Is Engine meant to be single-threaded?">
+
+<choice key="a" title="No: Decomposer requires Send">
+
+`Decomposer` gains `Send` as a supertrait, as the other three ports have, so an `Engine` can move to another thread.
+
+</choice>
+
+<choice key="b" title="Yes: record the asymmetry as intended">
+
+`Decomposer` stays as it is, and its documentation and the ports table say that `Engine` is not `Send` and why.
+
+</choice>
+
+<recommendation choice="a">
+
+The other three ports require `Send`, which pays off only if an `Engine` holding them can move between threads, and `Decomposer` is the one bound that stops it. The two decomposers matra ships are unit structs with no state to make them unsendable.
+
+</recommendation>
+
+<against>
+
+A new supertrait breaks any decomposer written outside matra that holds a non-`Send` value, and nothing in matra needs `Send` today. A bound added without a caller who needs it is a constraint chosen in advance.
+
+</against>
+
+</decision>
+
+<assumptions />
 
 ## Future possibilities
 
@@ -357,34 +456,38 @@ current shape removed.
   [RFC-0004](../legacy/rfcs/0004-stay-single-crate.md)'s re-open conditions
   fires, chiefly a third-party `NlpProvider` crate.
 
-[size-fn]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L23-L38
-[ingest]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L59-L141
-[ingest-path]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L89-L113
-[analyze]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L163-L192
-[analyze-one]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L194-L210
-[annotate]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L212-L253
-[annotate-loop]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L235-L243
-[compose]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L247-L253
-[engine-config]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L256-L323
-[default-decomposer]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L325-L358
-[embed-and-cluster]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L360-L399
-[lib-mods]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L1-L21
-[py-matra]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L457-L496
-[py-methods]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L534-L548
-[laws]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L1163-L1296
-[fm1-test]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L1475-L1496
-[max-input]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/domain.rs#L12-L28
-[metric]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/metrics/mod.rs#L22-L57
-[source-port]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/source/mod.rs#L13-L28
-[decompose-port]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/decompose/mod.rs#L11-L18
-[decomposers]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/decompose/mod.rs#L20-L63
-[nlp-port]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/nlp/mod.rs#L11-L51
-[embed-port]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/embed/mod.rs#L18-L43
-[file-source]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/source/file.rs#L9-L58
-[directory-source]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/source/directory.rs#L1-L62
-[udpipe-panic]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/nlp/udpipe.rs#L704-L734
-[cargo-package]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/Cargo.toml#L1-L14
-[cargo-features]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/Cargo.toml#L92-L97
-[ci-msrv]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/.github/workflows/ci.yml#L18-L100
-[ci-boundaries]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/.github/workflows/ci.yml#L122-L153
+[size-fn]: ../../src/lib.rs#L23-L38 "fn check_input_size(text: &str)"
+[ingest]: ../../src/lib.rs#L59-L141 "pub struct Ingest {"
+[ingest-path]: ../../src/lib.rs#L89-L113 "so one bad file cannot abort a directory walk"
+[analyze]: ../../src/lib.rs#L163-L192 "Lazy: nothing is parsed until the returned iterator is pulled"
+[analyze-send]: ../../src/lib.rs#L163-L192 "is `Send` without `Sync`"
+[analyze-one]: ../../src/lib.rs#L194-L210 "Analyze one document: annotate, then compose."
+[annotate]: ../../src/lib.rs#L212-L253 "check_input_size(&raw.text)?;"
+[annotate-only]: ../../src/lib.rs#L212-L253 "This is the only route from text to the parser"
+[annotate-loop]: ../../src/lib.rs#L235-L243 "para.sentences = self.nlp.parse(&para.text)?;"
+[compose]: ../../src/lib.rs#L247-L253 "pub fn compose(&self, doc: &mut Document)"
+[engine-config]: ../../src/lib.rs#L256-L323 "pub fn with_defaults() -> domain::Result<Engine>"
+[default-decomposer]: ../../src/lib.rs#L325-L358 "deliberately exhaustive with no wildcard"
+[embed-and-cluster]: ../../src/lib.rs#L360-L399 "pub fn embed_and_cluster("
+[lib-mods]: ../../src/lib.rs#L1-L21 "pub mod source;"
+[py-matra]: ../../src/lib.rs#L457-L496 "#[pyclass(unsendable)]"
+[py-methods]: ../../src/lib.rs#L534-L548 "fn analyze_markdown<'py>("
+[py-analyze-path]: ../../src/lib.rs#L658 "fn analyze_path<'py>"
+[laws]: ../../src/lib.rs#L1163-L1296 "fn law_l7_no_oversized_text_reaches_the_parser()"
+[fm1-test]: ../../src/lib.rs#L1475-L1496 "fn parse_per_paragraph_scopes_sentences_to_originating_paragraph()"
+[max-input]: ../../src/domain.rs#L12-L28 "pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;"
+[max-input-bypass]: ../../src/domain.rs#L12-L28 "bypasses this bound"
+[metric]: ../../src/metrics/mod.rs#L22-L57 "pub type Metric = Box<dyn Fn(&mut Document)>;"
+[source-port]: ../../src/source/mod.rs#L13-L28 "pub trait Source: Send {"
+[decompose-port]: ../../src/decompose/mod.rs#L11-L18 "pub trait Decomposer {"
+[decomposers]: ../../src/decompose/mod.rs#L20-L63 "entries: Vec<(Format, Box<dyn Decomposer>)>,"
+[nlp-port]: ../../src/nlp/mod.rs#L11-L51 "pub trait NlpProvider: Send {"
+[embed-port]: ../../src/embed/mod.rs#L18-L43 "pub trait Embedder: Send {"
+[file-source]: ../../src/source/file.rs#L9-L58 'what: "file_source",'
+[directory-source]: ../../src/source/directory.rs#L1-L62 "use super::file::FileSource;"
+[udpipe-panic]: ../../src/nlp/udpipe.rs#L704-L734 "fn catch_parse_panic<F, T>(f: F)"
+[cargo-package]: ../../Cargo.toml#L1-L14 "[package]"
+[cargo-features]: ../../Cargo.toml#L92-L97 'python = ["dep:pyo3", "dep:pythonize", "cli"]'
+[ci-msrv]: ../../.github/workflows/ci.yml#L18-L100 "cargo check --all-targets --no-default-features"
+[ci-boundaries]: ../../.github/workflows/ci.yml#L122-L153 "run: bash scripts/check-boundaries.sh"
 [boundary-rules]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/site/content/reference/boundary-rules.md
