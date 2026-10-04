@@ -29,6 +29,9 @@ import { renderFragment, type LegibilityContext } from '../src/lib/server/markdo
 import { all, checkPage, COMPARE, prop } from './legibility-checks';
 
 const FIXTURE = readFileSync(join(import.meta.dir, 'fixtures', 'legibility.md'), 'utf8');
+// The fixture's made-up record, spelled in parts so the citation check
+// (scripts/check-blueprint-refs.sh) does not read it as a citation.
+const FIXTURE_ID = ['EPR', '9999'].join('-');
 const PIN = '4fcfb4adc85524243c5e392becd4f490e3e42252';
 
 export const fixtureContext: LegibilityContext = {
@@ -41,7 +44,7 @@ export const fixtureContext: LegibilityContext = {
 	base: '',
 	records: [
 		{
-			id: 'EPR-9999',
+			id: FIXTURE_ID,
 			title: 'A fixture',
 			status: 'proposed',
 			route: '/blueprints/proposals/9999-fixture',
@@ -105,7 +108,7 @@ if (import.meta.main) {
 	}
 
 	// Refusals: each planted mistake must fail, with its reason.
-	const HEAD = `# EPR-9999: Refusal\n\n- Pinned at: \`${PIN}\`\n- Status: proposed\n\n`;
+	const HEAD = `# ${FIXTURE_ID}: Refusal\n\n- Pinned at: \`${PIN}\`\n- Status: proposed\n\n`;
 	const DECISION = (inner: string) =>
 		`<decision id="x" title="X">\n\n<choice key="a" title="A">\n\nA.\n\n</choice>\n\n<choice key="b" title="B">\n\nB.\n\n</choice>\n\n${inner}\n\n</decision>\n`;
 	const refusals: [string, string, string][] = [

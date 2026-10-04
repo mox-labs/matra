@@ -228,8 +228,15 @@ async function layout(browser: Browser, width: number) {
 
 /** A proposal's chip and sketch, on an emulated touch screen. */
 async function touchProposal(browser: Browser) {
-	const page_ = paths.find((p) => p.startsWith('blueprints/proposals/') && p.endsWith('.html'));
-	if (!page_) return;
+	// The first proposal that has a code chip; a record written without the
+	// components (the baseline proposals) has none to tap.
+	const page_ = paths.find(
+		(p) => p.startsWith('blueprints/proposals/') && readFileSync(join(root, p), 'utf8').includes('data-sheet=')
+	);
+	if (!page_) {
+		failures.push('touch: no proposal in urls.txt carries a code chip to tap; the chip and sketch go untested');
+		return;
+	}
 	const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
 	const page = await context.newPage();
 	await page.goto(`${origin}/${page_}`, { waitUntil: 'networkidle' });
