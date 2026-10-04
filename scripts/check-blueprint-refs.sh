@@ -20,7 +20,8 @@
 # the process docs use) never match.
 #
 # Scope is every file `git ls-files` lists but the local comments in
-# discussion/, CHANGELOG.md included.
+# discussion/ and the components fixture in site/scripts/fixtures/,
+# CHANGELOG.md included.
 #
 # Exit status: 0 when both properties hold, 1 on a violation, 2 when the check
 # could not run (rg or git missing, the index absent, nothing to examine).
@@ -51,10 +52,12 @@ fi
 # its target's citations are counted twice; that changes a count, not a result.
 # discussion/ is left out: it is the docsite's local comments, a conversation
 # about the records rather than a record, and a comment may name the proposal
-# it suggests before that number has a file.
+# it suggests before that number has a file. site/scripts/fixtures/ is left
+# out too: the Blueprints components' test fixture numbers a made-up record
+# (numbered 9999) to draw its index card, and that number cites nothing.
 tracked=()
 while IFS= read -r -d '' f; do
-    case "$f" in discussion/*) continue ;; esac
+    case "$f" in discussion/* | site/scripts/fixtures/*) continue ;; esac
     [ -f "$f" ] && tracked+=("$f")
 done < <(git ls-files -z)
 if [ "${#tracked[@]}" -eq 0 ]; then

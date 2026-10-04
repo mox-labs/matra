@@ -179,6 +179,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+          # Full history: a design record's citations open at the commit it
+          # was read at, and the build reads those lines there
+          # (site/README.md, The Blueprints components).
+          fetch-depth: 0
       - name: Install ripgrep, lychee and bun
         run: |
           set -euo pipefail

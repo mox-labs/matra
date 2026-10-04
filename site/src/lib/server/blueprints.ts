@@ -18,6 +18,7 @@
  */
 import { REPO_URL } from '$lib/site';
 import type { NavItem, NavPart } from '$lib/types';
+import { readPin, type RecordCard } from './markdown/legibility';
 
 /** The area's title in the navigation. */
 export const BLUEPRINTS_PART = 'Blueprints';
@@ -83,6 +84,43 @@ const plans = all.filter((r) => r.kind === 'EPL').sort(byNumber);
 
 /** Every blueprint page, in reading order: the index, the proposals, the plans. */
 export const records: Record_[] = [index, ...proposals, ...plans];
+
+/** The first sentence of a record's Summary, as text. */
+function summaryOf(text: string): string {
+	const body = /(?:^|\n)## Summary[ \t]*\n+([\s\S]*?)(?:\n[ \t]*\n|$)/.exec(text)?.[1] ?? '';
+	const plain = body
+		.replace(/<[^>]+>/g, '')
+		.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+		.replace(/[`*_]/g, '')
+		.replace(/\s+/g, ' ')
+		.trim();
+	return /^(.{20,}?[.!?])(\s|$)/.exec(plain)?.[1] ?? plain;
+}
+
+/**
+ * What the index's cards show of each record (the record-index component):
+ * its status, the first sentence of its Summary, the commit its citations
+ * were read at, and its open decisions and assumptions, read from the
+ * components in its source.
+ */
+export const recordCards: RecordCard[] = [...proposals, ...plans].map((r) => {
+	const text = blueprintSources.get(r.file)!;
+	const decisions = [...text.matchAll(/<decision\b([^>]*)>([\s\S]*?)<\/decision>/g)].map((m) => {
+		const id = /\bid="([^"]*)"/.exec(m[1])?.[1] ?? '';
+		const title = /\btitle="([^"]*)"/.exec(m[1])?.[1] ?? '';
+		return { id: id.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), title, open: !/<ruling\b/.test(m[2]) };
+	});
+	return {
+		id: r.id!,
+		title: r.title,
+		status: r.status,
+		route: r.route,
+		summary: summaryOf(text),
+		readAt: readPin(text, r.file),
+		decisions,
+		assumptions: [...text.matchAll(/<claim\b[^>]*\bbasis="assumed"/g)].length
+	};
+});
 
 const item = (r: Record_): NavItem => ({
 	title: r.id ? `${r.id} ${r.title}` : r.title,

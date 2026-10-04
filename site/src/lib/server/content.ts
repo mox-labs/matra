@@ -14,7 +14,7 @@ import type { Crumb, Doc, FigureFile, NavItem, NavPart, PageMeasures } from '$li
 import { flatten, parseSummary } from './summary';
 import { render } from './markdown/render';
 import { exampleMarkdown, examples } from './examples';
-import { blueprintSources, blueprintsPart, records } from './blueprints';
+import { blueprintSources, blueprintsPart, recordCards, records } from './blueprints';
 import { labPart, labSources } from './lab';
 
 const SOURCES = import.meta.glob('/content/**/*.md', {
@@ -204,7 +204,8 @@ export async function loadDoc(route: string): Promise<Doc> {
 		// explanation-grade device and stays off it. Every other page keeps it.
 		// The records are not measured: matra measures the pages under content/.
 		measures: i === 0 || record ? undefined : measures.get(item.file),
-		part
+		part,
+		records: record ? recordCards : undefined
 	});
 	const link = (j: number) =>
 		j >= 0 && j < chain.length ? { title: chain[j].item.title, route: chain[j].item.route } : null;

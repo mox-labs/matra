@@ -15,11 +15,20 @@
  *   details    the same two, with every `<details>` on the page opened, so a
  *              table behind "show the data" is held to the rule too
  *
+ *   fixture    every Blueprints component, from the components' fixture
+ *              (scripts/fixtures/legibility.md, rendered by
+ *              check-legibility.ts), set into the Blueprints index's body
+ *              and measured the same way, with no script's enhancements and
+ *              then with the sketch's toggle shown, so a component no record
+ *              uses yet (the Lab's experiment card) is held to the rule too
+ *
  * Then it emulates a touch screen at 390 pixels and taps a word in the parse
  * figure. A tap fires pointerenter and pointerleave together, so a figure
  * that lights only on hover flashes and goes dark; this asserts that the tap
  * pins the word's arcs, that a second tap clears them, and that a tap
- * elsewhere clears a pin.
+ * elsewhere clears a pin. On a proposal it taps a code chip, which must open
+ * its sheet inside the window, and the sheet's close button, which must
+ * close it; and the sketch's toggle, which must swap the state shown.
  *
  * The windows are desktop windows of that width (no mobile viewport
  * emulation for the layout pass): a mobile browser zooms out to fit a page
@@ -35,6 +44,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { chromium, type Browser, type Page } from 'playwright-core';
+import { renderFixture } from './check-legibility';
 
 const dir = process.argv[2];
 if (!dir) {
@@ -156,6 +166,7 @@ async function settle(page: Page) {
 }
 
 const failures: string[] = [];
+const fixture = await renderFixture();
 
 /** One width, every page; the widths run side by side. */
 async function layout(browser: Browser, width: number) {
@@ -187,8 +198,80 @@ async function layout(browser: Browser, width: number) {
 			checked++;
 		}
 	}
+	// The components' fixture, in the Blueprints index's body.
+	await page.goto(`${origin}/blueprints/index.html`, { waitUntil: 'networkidle' });
+	await page.evaluate((html) => {
+		const body = document.querySelector('.prose .body');
+		if (body) body.innerHTML = html;
+	}, fixture);
+	await settle(page);
+	for (const state of ['plain', 'enhanced', 'open'] as const) {
+		if (state === 'enhanced') {
+			await page.evaluate(() => {
+				for (const f of document.querySelectorAll('figure.sketch')) {
+					f.setAttribute('data-enhanced', '');
+					f.querySelector<HTMLElement>('.sk-toggle')?.removeAttribute('hidden');
+				}
+			});
+		}
+		if (state === 'open') await page.evaluate(() => document.querySelectorAll('details').forEach((d) => (d.open = true)));
+		await settle(page);
+		const m = await page.evaluate(measure, SLACK);
+		const where = `the components fixture @${width}px (${state})`;
+		if (m.scroll > m.vw) failures.push(`${where}: the page scrolls sideways (scrollWidth ${m.scroll} > ${m.vw})`);
+		for (const s of m.spills.slice(0, 5)) failures.push(`${where}: ${s}, past the window with nothing to scroll it`);
+		checked++;
+	}
 	await context.close();
 	return checked;
+}
+
+/** A proposal's chip and sketch, on an emulated touch screen. */
+async function touchProposal(browser: Browser) {
+	const page_ = paths.find((p) => p.startsWith('blueprints/proposals/') && p.endsWith('.html'));
+	if (!page_) return;
+	const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+	const page = await context.newPage();
+	await page.goto(`${origin}/${page_}`, { waitUntil: 'networkidle' });
+	await settle(page);
+	const where = `touch @390px, ${page_}`;
+	const chip = page.locator('a.chip[data-sheet]').first();
+	if ((await chip.count()) === 0) {
+		failures.push(`${where}: no code chip to tap`);
+	} else {
+		await chip.scrollIntoViewIfNeeded();
+		await chip.tap();
+		await page.waitForTimeout(200);
+		const id = (await chip.getAttribute('data-sheet')) ?? '';
+		const sheet = page.locator(`[id="${id}"]`);
+		const open = await sheet.evaluate((e) => e.matches(':popover-open'));
+		if (!open) failures.push(`${where}: tapping a chip does not open its sheet`);
+		else {
+			const box = await sheet.boundingBox();
+			if (!box || box.x < -SLACK || box.x + box.width > 390 + SLACK || box.y + box.height > 844 + SLACK) {
+				failures.push(`${where}: the chip's sheet is not inside the window`);
+			}
+			await sheet.locator('.sheet-close').tap();
+			await page.waitForTimeout(200);
+			if (await sheet.evaluate((e) => e.matches(':popover-open'))) failures.push(`${where}: the sheet's close button does not close it`);
+		}
+	}
+	const figure = page.locator('figure.sketch[data-enhanced]').first();
+	if ((await page.locator('figure.sketch').count()) > 0) {
+		if ((await figure.count()) === 0) failures.push(`${where}: the sketch's toggle was not turned on`);
+		else {
+			const buttons = figure.locator('.sk-toggle button');
+			const last = buttons.last();
+			const target = (await last.getAttribute('data-show')) ?? '';
+			await last.scrollIntoViewIfNeeded();
+			await last.tap();
+			await page.waitForTimeout(400);
+			const shown = await figure.locator('.sk-state[data-current]').getAttribute('data-state');
+			if (shown !== target) failures.push(`${where}: tapping "${target}" shows "${shown}"`);
+			if ((await last.getAttribute('aria-pressed')) !== 'true') failures.push(`${where}: the pressed toggle does not say so (aria-pressed)`);
+		}
+	}
+	await context.close();
 }
 
 /** Taps a word in the parse figure on an emulated touch screen. */
@@ -241,7 +324,7 @@ try {
 }
 let checked = 0;
 try {
-	const counts = await Promise.all([...WIDTHS.map((w) => layout(browser, w)), touch(browser).then(() => 0)]);
+	const counts = await Promise.all([...WIDTHS.map((w) => layout(browser, w)), touch(browser).then(() => 0), touchProposal(browser).then(() => 0)]);
 	checked = counts.reduce((a, b) => a + b, 0);
 } finally {
 	await browser.close();
@@ -258,4 +341,7 @@ if (failures.length > 0) {
 	for (const f of failures) console.log(`  ${f}`);
 	process.exit(1);
 }
-console.log('PASS (responsive): no page scrolls sideways at any width, and a tap pins a parse word');
+console.log(
+	'PASS (responsive): no page or component scrolls sideways at any width, a tap pins a parse word, ' +
+		"and a proposal's chip and sketch answer a finger"
+);

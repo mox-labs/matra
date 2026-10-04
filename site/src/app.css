@@ -30,6 +30,7 @@
  */
 
 @import './lib/brand/mox.tokens.css';
+@import './lib/legibility.css';
 
 :root {
 	color-scheme: dark;
