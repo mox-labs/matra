@@ -13,16 +13,25 @@ export interface NavItem {
 	 */
 	status?: string;
 	/**
-	 * A heading over records that is not a page of its own (the RFCs, the EPs).
+	 * A heading over records that is not a page of its own (the proposals, the
+	 * plans).
 	 * Its route is its section of the Blueprints index, and it is never in the
 	 * reading order.
 	 */
 	group?: boolean;
 }
 
+/**
+ * The site's three areas: Docs (the SUMMARY.md parts, for matra's users),
+ * Blueprints (the design records) and Lab (evals and experiments).
+ */
+export type Area = 'docs' | 'blueprints' | 'lab';
+
 /** A `# Heading` part of SUMMARY.md. Prefix chapters sit in a part with no title. */
 export interface NavPart {
 	title: string | null;
+	/** The area the part belongs to; a SUMMARY.md part is in Docs. */
+	area?: Area;
 	items: NavItem[];
 	/** A line under the part's title saying what it holds. */
 	note?: string;
@@ -335,5 +344,5 @@ export interface Doc {
 	prev: PageLink | null;
 	next: PageLink | null;
 	/** On a design record in blueprints/: its kind and its status, from its header. */
-	record?: { kind: 'RFC' | 'EP' | 'index'; status: string } | null;
+	record?: { kind: 'EPR' | 'EPL' | 'index'; status: string } | null;
 }

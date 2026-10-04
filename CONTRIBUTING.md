@@ -27,21 +27,28 @@ A change takes the record its size calls for, after the Rust process
 ([`blueprints/README.md`](blueprints/README.md) has the full rule; read it
 before opening an issue or PR):
 
-- **An RFC** for a substantial change matra's users notice: the public
-  surface in Rust, Python, the command line or the JSON schema; semantics or
-  behaviour, the default model included; removing or deprecating a
-  substantial feature; an architecture boundary. It is a pull request adding
-  a file to `blueprints/rfcs/`, discussed there, and accepted when the owner
-  merges it. Each accepted RFC has a tracking issue, labelled `tracking`,
-  with its milestone checklist.
+- **An enhancement proposal** (`EPR-NNNN`) for a substantial change
+  matra's users notice: the public surface in Rust, Python, the command
+  line or the JSON schema; semantics or behaviour, the default model
+  included; removing or deprecating a substantial feature; an architecture
+  boundary. It is a pull request adding a file to `blueprints/proposals/`,
+  discussed there. It may merge with its status `proposed`, so it renders
+  on the docsite for review; it is accepted when the owner merges the
+  change of its status line to `accepted`. Each accepted proposal has a
+  tracking issue, labelled `tracking`, with its milestone checklist.
 - **An API change proposal** for a minor addition to the public surface or
   a minor removal from it: a short issue labelled `acp`, accepted by the
   owner on the issue.
 - **A plain pull request** for tooling, docs, CI, the harness, a refactor, a
   measured performance improvement or a bug fix. A rule it leaves behind
   lives in the file that governs it.
-- **An EP** in `blueprints/eps/` only for a plan several agents execute in
-  parallel.
+- **An enhancement plan** (`EPL-NNNN`) in `blueprints/plans/` only for a
+  plan several agents execute in parallel.
+
+Proposals and plans are numbered from 0001, from the 2026-10-04 baseline.
+The RFCs and EPs written before it are in `blueprints/legacy/`, unchanged:
+they are the reasons behind the code that exists, and `RFC-NNNN` and
+`EP-NNNN` cite them.
 
 Each milestone is one pull request: a sequence of atomic commits on a
 short-lived branch, opened against `main`, reviewed, then merged. Every
@@ -53,8 +60,8 @@ The project's primary engineer is Claude (Anthropic's AI), working with
 human direction. Every commit carries a `Co-Authored-By` trailer
 identifying the model used. Claude reviews and merges a PR once CI is
 green and the review raises no blockers, and leaves a comment with its
-rationale as the audit trail, with one exception: a pull request that adds
-or changes an RFC is merged or closed only by the owner. The owner makes
+rationale as the audit trail, with one exception: a pull request that
+sets a proposal's status to `accepted` is merged only by the owner. The owner makes
 the decisions and approves each release; approving the release's
 deployment environments is the release decision (see the release process
 below).
@@ -67,17 +74,18 @@ below).
 |---|---|
 | `site/content/` | The docsite. The architecture of record is `architecture/design.md` and the `reference/` pages. Read them before changing structure. |
 | `.claude/` | The agents, skills and review command Claude Code loads, and `arch/evolution.md`, the designs considered and rejected. |
-| `blueprints/rfcs/` | RFCs: one file per substantial change, in the Rust RFC layout. The process and the index are `blueprints/README.md`. |
-| `blueprints/eps/` | Enhancement plans (EPs): plans several agents execute in parallel, with milestones, test plan, ship criteria, and a status log. |
+| `blueprints/proposals/` | Enhancement proposals: one file per substantial change, in the Rust RFC layout. The process and the index are `blueprints/README.md`. |
+| `blueprints/plans/` | Enhancement plans: plans several agents execute in parallel, with milestones, test plan, ship criteria, and a status log. |
+| `blueprints/legacy/` | The RFCs and EPs written before 2026-10-04, unchanged: the reasons behind the code that exists. |
 | `CHANGELOG.md` | What shipped per release, with prose Highlights for load-bearing changes. |
 | `CLAUDE.md` | Working rules for AI collaborators: pipeline shape, boundary rules, conventions. |
 | `scripts/` | Versioned tooling: pre-commit hook, boundary check, changelog rollover, etc. |
 | `justfile` | Single source of truth for repeatable workflows. |
-| GitHub Issues | Bugs and features; API change proposals (label `acp`); one tracking issue per accepted RFC (label `tracking`). |
+| GitHub Issues | Bugs and features; API change proposals (label `acp`); one tracking issue per accepted proposal (label `tracking`). |
 | GitHub Discussions | Open-ended design space: early proposals, retrospectives, ideas, Q&A. |
 
 If something is unclear or contradictory across these surfaces, the order
-of authority is: code > tests > the docsite > EPs > RFCs >
+of authority is: code > tests > the docsite > plans > proposals > legacy records >
 CHANGELOG > Issues > Discussions. Closer to the running system
 wins.
 
@@ -90,14 +98,17 @@ Decisions go through four surfaces depending on stakes.
 **Open-ended exploration** -> GitHub Discussions. Early proposals, "should
 we consider X", retrospectives. No commitment, no labels.
 
-**A substantial change matra's users notice** -> an RFC. Copy
-`blueprints/rfcs/0000-template.md` to the next free number and open it as a
-pull request; the pull request is the proposal and the place it is
-discussed, and the owner's merge accepts it. A `decision` issue
+**A substantial change matra's users notice** -> an enhancement proposal.
+Copy `blueprints/proposals/0000-template.md` to the next free number and
+open it as a pull request; the pull request is where it is discussed. It
+may merge with its status `proposed`, which decides nothing and puts it on
+the docsite for the owner to read; the owner accepts it by merging the
+change of its status line to `accepted`. A `decision` issue
 (`.github/ISSUE_TEMPLATE/decision_record.md`) can come first when the
-options need airing before anyone writes the RFC; it closes pointing at the
-RFC pull request. Before the owner decides, a tracking issue
-(`.github/ISSUE_TEMPLATE/tracking.md`) is opened for the RFC's milestones.
+options need airing before anyone writes the proposal; it closes pointing at
+the proposal's pull request. Before the owner decides, a tracking issue
+(`.github/ISSUE_TEMPLATE/tracking.md`) is opened for the proposal's
+milestones.
 
 **A minor addition to or removal from the public surface** -> an API change
 proposal (`.github/ISSUE_TEMPLATE/api-change-proposal.md`), labelled `acp`.
@@ -111,21 +122,22 @@ The full process is `blueprints/README.md`.
 
 ### Who decides
 
-- **Only the owner accepts a decision.** Claude writes RFCs and API change
-  proposals and argues for them, and never merges or closes an RFC pull
-  request, and never accepts a proposal. Merging an RFC pull request is what
-  accepts it, and only the owner merges one.
+- **Only the owner accepts a decision.** Claude writes enhancement
+  proposals and API change proposals and argues for them, and never accepts
+  one. A proposal is accepted by a change of its status line to `accepted`,
+  and only the owner merges a pull request that makes that change.
 - **Claude's standing merge authority covers everything else**: code, docs,
-  tooling and dependency updates, once CI is green and the review raises no
-  blockers, each with a merge comment giving the rationale.
+  tooling and dependency updates, and a proposal whose status is
+  `proposed`, once CI is green and the review raises no blockers, each with
+  a merge comment giving the rationale.
 - **An agent never approves a deployment environment.** Claude may prepare
   and dispatch a release; the run then waits at the `crates-io` and `pypi`
   environments for the owner, and the owner's approval is the release
   decision.
 
 Today these rules hold by practice, not by a branch rule: every act is
-recorded under one GitHub login, and nothing yet makes an RFC merge wait for
-the owner. The next section is how that changes.
+recorded under one GitHub login, and nothing yet makes an acceptance wait
+for the owner. The next section is how that changes.
 
 ### Identity
 
@@ -156,21 +168,20 @@ The owner creates it; until then this section is the plan, not the state.
    merge`, `gh pr comment` and `gh issue` call then acts as the App's bot
    account, `<app-slug>[bot]`, and so does every branch pushed over HTTPS
    with that token. The owner's login then means the owner.
-4. **Then make RFC acceptance need the owner.** In a pull request, reduce
-   `.github/CODEOWNERS` to the decision path, `/blueprints/rfcs/ @yzavyas`.
-   Then, on `main`'s branch protection, turn on "Require a pull request
-   before merging" with required approvals at 0, and "Require review from
-   Code Owners". A pull request that touches `blueprints/rfcs/` then cannot
-   merge without the owner's approval, and every other pull request merges
-   as it does now: required code-owner review applies only to pull requests
-   that touch an owned path. That is why CODEOWNERS shrinks first. Today it
-   lists `CHANGELOG.md`, the `justfile` and the workflows, and under the
-   rule every pull request touching them would wait for the owner. GitHub
-   does not let an author approve their own pull request, so RFC pull
-   requests are opened by the App; one the owner opens under their own
-   login has no one who can approve it. After turning the rule on, open one
-   pull request that touches an owned path and one that does not, and check
-   that only the first waits.
+4. **Then make acceptance need the owner.** A proposal may merge as
+   `proposed` without the owner, so a path rule on `blueprints/proposals/`
+   would hold too much: acceptance is a change to one line. The check that
+   fits is a required status check that fails when a pull request changes
+   a proposal's `- Status:` line to `accepted` and carries no approving
+   review from the owner. Then, on `main`'s branch protection, turn on
+   "Require a pull request before merging" with required approvals at 0,
+   and make that check required. GitHub does not let an author approve
+   their own pull request, so a pull request that accepts a proposal is
+   opened by the App; one the owner opens under their own login has no one
+   who can approve it. After turning the rule on, open one pull request
+   that accepts a proposal and one that only adds a `proposed` one, and
+   check that only the first waits. CODEOWNERS can then shrink to what
+   should still reach the owner.
 
 Branch protection is the owner's to change; no agent changes it.
 
@@ -182,7 +193,7 @@ Branch protection is the owner's to change; no agent changes it.
 change, breaking surface change, security-relevant fix, new feature. Not
 on a calendar.
 
-**Cadence:** pre-1.0, releases typically follow an EP shipping. Post-1.0,
+**Cadence:** pre-1.0, releases typically follow a proposal's work shipping. Post-1.0,
 semver discipline binds.
 
 **Process:** Claude prepares and dispatches a release, and the owner
@@ -252,8 +263,8 @@ web UIs, and the 0.2.0 release is what proved each one matters:
   feature belongs in matra itself or in a downstream caller.
 - API change proposal (a minor change to the public surface):
   `.github/ISSUE_TEMPLATE/api-change-proposal.md`.
-- Tracking an accepted RFC: `.github/ISSUE_TEMPLATE/tracking.md`.
-- A decision whose options need airing before an RFC:
+- Tracking an accepted proposal: `.github/ISSUE_TEMPLATE/tracking.md`.
+- A decision whose options need airing before a proposal:
   `.github/ISSUE_TEMPLATE/decision_record.md`.
 
 ### Open a discussion
@@ -263,13 +274,13 @@ discussions into categories (configured in the GitHub UI):
 
 - **Announcements**: release notes, project status.
 - **Ideas**: half-formed thoughts, "what if" questions.
-- **RFCs**: design proposals you want feedback on before opening an issue.
+- **Ideas for proposals**: design ideas you want feedback on before writing an enhancement proposal.
 - **Q&A**: usage questions.
 - **Show and tell**: things you built with matra.
 
 ### Open a PR
 
-1. Fork; create a branch named after the work (e.g. `ep-0011/m2-skill-references`,
+1. Fork; create a branch named after the work (e.g. `epr-0001/m2-skill-references`,
    `fix/symlink-rejection`, `docs/clarify-tree-walk`).
 2. Run `just install-hooks` once on a fresh clone. The hook runs the Rust
    gates (fmt, check, clippy, doc, test on both feature configurations)
@@ -291,8 +302,8 @@ discussions into categories (configured in the GitHub UI):
 7. The PR is reviewed against the gates in
    [`.claude/skills/pr-review/SKILL.md`](.claude/skills/pr-review/SKILL.md).
    When CI is green and the review raises no blockers, Claude merges it and
-   comments its rationale on the PR. A PR that adds or changes an RFC is
-   merged or closed by the owner alone.
+   comments its rationale on the PR. A PR that sets a proposal's status to
+   `accepted` is merged by the owner alone.
 
 ### What "good" looks like in a commit
 
@@ -394,8 +405,8 @@ When Claude opens a PR:
 - The PR body shows what Claude did and why.
 - The commit messages are written by Claude.
 - Claude merges once CI is green and the review raises no blockers, with a
-  comment giving its rationale, except an RFC pull request, which only the
-  owner merges. The owner decides what is built and approves each release.
+  comment giving its rationale, except a pull request that accepts a
+  proposal, which only the owner merges. The owner decides what is built and approves each release.
 
 When you (a human) open a PR with Claude's help:
 

@@ -1,6 +1,6 @@
 # Evolution
 
-> Iterations were the unit of work before RFC-0019; each maps to the EP of the same number in `blueprints/eps/` where one exists (I9 is EP-0009). The table below is kept as history.
+> Iterations were the unit of work before RFC-0019; each maps to the legacy EP of the same number in `blueprints/legacy/eps/` where one exists (I9 is EP-0009). The table below is kept as history.
 
 Architecture is a sequence of decisions across iterations. This file is the change history of the boundary, not the change history of the code (that's in git and CHANGELOG.md).
 
@@ -17,13 +17,13 @@ Architecture is a sequence of decisions across iterations. This file is the chan
 | I10 | `Config` resolves locations and defaults per key (argument, environment, config file, compiled defaults) and carries locations and defaults only, never behavior; the command line moves into the library as `src/cli/`, with `src/bin/matra.rs` and `python/matra/cli.py` as launchers over one implementation. RFC-0011 | shipped 2026-09-06 |
 | I11 | The agent surface (RFC-0012): `--skill` and `--skill -r <name>` print `skills/matra/` out of the binary via `include_str!`, so instructions match the version that prints them, and a test executes the commands the skill names. `--help` stays the human reference | shipped 2026-09-06 |
 
-New work is tracked as EPs in `blueprints/eps/`, beside the RFCs they implement in `blueprints/rfcs/`. Past iterations are not rewritten; commitments only get superseded by new RFCs, never edited out.
+The plans and decisions from before 2026-10-04 are in `blueprints/legacy/`; new work is an enhancement proposal in `blueprints/proposals/` with a tracking issue, and an enhancement plan in `blueprints/plans/` only when several agents carry it out in parallel. Past iterations are not rewritten; commitments only get superseded by new proposals, never edited out.
 
 ## What never gets undone
 
 These are commitments, not preferences. Once locked, they hold:
 
-- **Domain purity.** `domain.rs` imports only `serde`, `thiserror`, and `std`. No further crates without an RFC.
+- **Domain purity.** `domain.rs` imports only `serde`, `thiserror`, and `std`. No further crates without an enhancement proposal.
 - **Single UDPipe importer.** Only `nlp/udpipe.rs` imports `udpipe_rs`. Adding a second site is a boundary failure. Enforced by the rule 4 checks in `.semgrep/rule4-single-importer.yml`, run by `scripts/check-boundaries.sh`.
 - **`#[non_exhaustive]` on every public enum and every public struct with public fields.** Forward compatibility is non-negotiable; matra is a library.
 - **Hex layout.** Adapters do not import each other. Ports do not import each other. The composition root is the only file that knows the whole pipeline.
@@ -85,21 +85,21 @@ Planned capabilities, not yet shipped. Each carries its trigger condition:
 
 ## Origin notes
 
-Two memory entries shape every EP:
+Two memory entries shape every plan:
 
 1. **Ontology-first.** Names settle first, code moves second. This is why renames precede structural work: renaming a stable surface is cheaper than renaming a freshly restructured one.
 
-2. **Never publish without approval.** Each EP's ship criteria stop at `cargo publish --dry-run`. Explicit per-publish approval is required. One approval authorizes one publish; do not reuse across versions or packages.
+2. **Never publish without approval.** Each plan's ship criteria stop at `cargo publish --dry-run`. Explicit per-publish approval is required. One approval authorizes one publish; do not reuse across versions or packages.
 
-These hold across the whole project, not per EP.
+These hold across the whole project, not per plan.
 
-## How to add new work: an RFC, then an EP
+## How to add new work: an enhancement proposal, then a plan
 
 The process is `blueprints/README.md`. In short:
 
 1. Identify the trigger. What changed in the world that requires a new boundary? (Consumer report, performance ceiling, new requirement.)
-2. If the change touches the design (the public surface, a boundary rule, the systems around the code, the toolchain), write an RFC in `blueprints/rfcs/` from `0000-template.md` and open it as a pull request. Merging it accepts it.
-3. If the implementation spans more than one PR, write an EP in `blueprints/eps/` from `0000-template.md` that names the RFC it implements, and add both to the index in `blueprints/README.md`.
+2. If the change touches the design (the public surface, a boundary rule, the systems around the code, the toolchain), write an enhancement proposal in `blueprints/proposals/` from `0000-template.md` and open it as a pull request. It may merge as `proposed`; the owner accepts it by merging the change of its status to `accepted`.
+3. Track the implementation in the proposal's tracking issue. Only if several agents carry it out in parallel, write a plan in `blueprints/plans/` from `0000-template.md` that names the proposal it implements. Add each record to the index in `blueprints/README.md`.
 4. Land. Validate. Update CHANGELOG.md.
 
-The iteration table above is closed: it records the work before RFC-0019 and is not extended. New work is recorded as EPs, whose statuses live in the index in `blueprints/README.md`.
+The iteration table above is closed: it records the work before RFC-0019 and is not extended. New work is recorded as plans, whose statuses live in the index in `blueprints/README.md`.

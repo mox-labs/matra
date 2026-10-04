@@ -99,9 +99,10 @@
 					     describes what ships and carries no status. -->
 					<p class="record-line" data-pagefind-ignore>
 						{#if doc.record.kind === 'index'}
-							design records: the process, every RFC and every EP
+							design records: the process, every proposal and every plan
 						{:else}
-							design record, {doc.record.kind}: <span class="record-status">{doc.record.status}</span>
+							{doc.record.kind === 'EPR' ? 'enhancement proposal' : 'enhancement plan'}:
+							<span class="record-status">{doc.record.status}</span>
 						{/if}
 					</p>
 				{/if}

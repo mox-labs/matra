@@ -2,7 +2,7 @@
 
 The documentation at <https://mox-labs.github.io/matra/>, built with SvelteKit
 and prerendered to static HTML. The plan it follows, and the reasons for its
-shape, are in [EP-0012](../blueprints/eps/0012-docsite.md). Its Design section
+shape, are in [EP-0012](../blueprints/legacy/eps/0012-docsite.md). Its Design section
 is the reference; this file is how to work on the site.
 
 `.github/workflows/docs.yml` builds it on every push to `main`, adds the
@@ -57,7 +57,8 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/components/examples/` | The input, the call as tabs, and the output. |
 | `scripts/check-examples.ts` | Runs every example's three calls and compares what they print with the committed output. |
 | `urls.txt`, `anchors.txt` | Every published path and heading anchor: the URL contract the build, the artifact and the live site are checked against. |
-| `src/lib/server/blueprints.ts` | Reads `blueprints/` in place for the Blueprints part: each record, its route and its status. |
+| `src/lib/server/blueprints.ts` | Reads `blueprints/` in place for the Blueprints area: each record, its route and its status, and the legacy records' old addresses. |
+| `src/lib/server/lab.ts` | Reads `lab/` in place for the Lab area. |
 | `src/lib/dev/comments/` | Local comments, dev server only: the record format (`model.ts`), the store (`store.ts`), the `/__comments` endpoint (`plugin.ts`), anchoring (`anchor.ts`) and the UI. |
 | `scripts/comments.ts` | `just comments` and `just comment-reply`. |
 | `scripts/check-no-dev-comments.ts` | Fails the build when the static site holds any local comments code. |
@@ -146,8 +147,8 @@ the home page; every other page keeps them. At 1280 by 800 the quick
 start's heading, its tabs and its install command must be on the first
 screen; measure it after any change to the hero or the opening.
 
-The navigation's fifth part, Blueprints, is matra's design records; see
-[Blueprints and local comments](#blueprints-and-local-comments).
+Beside the Docs area, the site has two more, Blueprints (matra's design
+records) and Lab; see [Areas, Blueprints and local comments](#areas-blueprints-and-local-comments).
 
 ## Pages are Markdown
 
@@ -661,18 +662,27 @@ server: `PUBLIC_GISCUS_REPO_ID=... PUBLIC_GISCUS_CATEGORY_ID=... just
 docs-serve`. Once `giscus.json` restricts origins, a local server is refused
 unless its origin is listed there too.
 
-## Blueprints and local comments
+## Areas, Blueprints and local comments
 
-The docsite is where the owner and Claude read matra's design records and
-converge on them: the records are rendered as a part of the site, and in
+The site has three areas, named in the header on every page and marked
+where the reader is: **Docs**, the `SUMMARY.md` parts this file describes
+above; **Blueprints**, matra's design records; and **Lab**, evals and
+experiments. On a phone the three sit in a row of their own under the
+header's rule. The sidebar holds the current area's navigation only, and
+each area has its own previous and next: the last page of one does not lead
+into the next. Blueprints and Lab are not Diátaxis parts and are not in
+`SUMMARY.md`; each is built from its directory, so a new record or
+experiment appears without an edit here, and gate 2 and the product
+sections of `llms.txt` stay about the product pages.
+
+The docsite is also where the owner and Claude converge on a record: in
 the dev server any page can be commented on, with the comments committed as
 files any session reads. This section is the design; the code it names
 carries the detail.
 
-### The Blueprints part
+### The Blueprints area
 
-After the four parts and the roadmap, the navigation carries a fifth,
-Blueprints, marked "design records, with their status". It is rendered from
+Marked "design records, with their status", it is rendered from
 `blueprints/` at the repository root (`src/lib/server/blueprints.ts`, a Vite
 `import.meta.glob`, with `../blueprints` in the dev server's `fs.allow`);
 nothing is copied into `content/`.
@@ -680,38 +690,52 @@ nothing is copied into `content/`.
 | File | Route | Written as |
 |---|---|---|
 | `blueprints/README.md` | `/blueprints/index` | `blueprints/index.html`, which Pages serves at `/blueprints/` |
-| `blueprints/rfcs/<name>.md` | `/blueprints/rfcs/<name>` | `.html`, and the `.md` twin |
-| `blueprints/eps/<name>.md` | `/blueprints/eps/<name>` | `.html`, and the `.md` twin |
+| `blueprints/proposals/<name>.md` | `/blueprints/proposals/<name>` | `.html`, and the `.md` twin |
+| `blueprints/plans/<name>.md` | `/blueprints/plans/<name>` | `.html`, and the `.md` twin |
 
-The part is not in `SUMMARY.md`: it is built from the directory, so a new
-record appears without an edit here, and gate 2 and the product sections
-of `llms.txt` stay about the product pages. The RFCs and the EPs fold, each
-opened on the record being read; the templates come last in their group.
-The records have their own previous and next; the last product page does
-not lead into them.
+The proposals and the plans are groups in the navigation, by number. The
+templates (`0000-template.md`) are not records and are not rendered; the
+index links them on GitHub. The legacy records in `blueprints/legacy/`, the
+RFCs and EPs written before 2026-10-04, are not rendered either. The
+addresses they were published at, `/blueprints/rfcs/<name>` and
+`/blueprints/eps/<name>` with their `.md` twins, keep a short page that says
+the record moved and links it on GitHub (`legacyForwards` in
+`blueprints.ts`, `LegacyRecord.svelte`). Those paths stay in `urls.txt`; the
+section anchors those records had left `anchors.txt`, since no page holds
+those sections any more.
 
 **Statuses appear here and nowhere else.** Each record's is read from its
 header's `- Status:` line (links reduced to their text, any parenthetical
-dropped) and shown beside it in the navigation, under its title ("design
-record, RFC: implemented") and in `llms.txt`; a record without one fails
-the build. The product pages keep the rule that they describe what ships,
-with no status anywhere.
+dropped) and shown beside it in the navigation, under its title
+("enhancement proposal: proposed") and in `llms.txt`; a record without one
+fails the build, as does a title whose `EPR-` or `EPL-` number does not
+match its path. The product pages keep the rule that they describe what
+ships, with no status anywhere.
 
 **Links resolve in the repository's tree**, so the relative link that works
 on GitHub works here: every page is keyed by its path from the repository
-root. A link between records stays on the site; a link from a record to any
-other file in the repository goes to that file on GitHub, on `main`,
-fragment kept; a link to nothing fails the build. Product pages keep their
-rule that a local link names a `.md` page.
+root. A link between rendered records stays on the site; a link from a
+record, or from a Lab page, to any other file in the repository (the
+templates and the legacy records included) goes to that file on GitHub, on
+`main`, fragment kept; a link to nothing fails the build. Product pages keep
+their rule that a local link names a `.md` page.
 
 **Gates.** Records are not measured (the margin is for `content/`), and
 gate 3 does not read them (`gate3_exempt` in `scripts/check-docsite-floor.sh`),
 because a record names types that do not exist yet or no longer exist.
-Every other gate covers them: gate 5 reads `blueprints/`, lychee reads
-their Markdown and the built pages, gate 7 holds their paths and section
+Every other gate covers them: gate 5 reads `blueprints/` and `lab/`, lychee
+reads their Markdown (`blueprints/legacy/` aside, which is unrendered and
+kept as written) and the built pages, gate 7 holds their paths and section
 anchors, gate 12 loads them at every width, and gate 6 holds their entries
 in `llms.txt`. A new record adds its `.html` and `.md` lines to `urls.txt`,
 its `##` anchors to `anchors.txt`, and a regenerated `llms.txt`.
+
+### The Lab area
+
+Rendered from `lab/` at the repository root (`src/lib/server/lab.ts`, with
+`../lab` in `fs.allow`), as Blueprints is from `blueprints/`. Today it is
+its landing page, `lab/README.md` at `/lab/index`, which Pages serves at
+`/lab/`. It carries no status and is not measured.
 
 ### Local comments
 
@@ -739,7 +763,7 @@ repository root, one JSON object per line, appended and never rewritten.
 Commit them like any other file. A thread's root:
 
 ```json
-{"id":"972b6852","thread":"972b6852","parent":null,"author":"owner","created":"2026-10-03T01:09:31.799Z","page":"/blueprints/rfcs/0019-rfc-and-ep-process","selector":{"type":"TextQuoteSelector","exact":"the shape of the Rust RFC process","prefix":" folder, blueprints/, and takes ","suffix":". Two kinds of record replace th","heading":"summary"},"body":"Say where the files live."}
+{"id":"972b6852","thread":"972b6852","parent":null,"author":"owner","created":"2026-10-03T01:09:31.799Z","page":"/blueprints/index","selector":{"type":"TextQuoteSelector","exact":"the shape of the Rust RFC process","prefix":" folder, blueprints/, and takes ","suffix":". Two kinds of record replace th","heading":"summary"},"body":"Say where the files live."}
 ```
 
 A reply has the root's id as `thread`, the message it answers as `parent`,
@@ -751,8 +775,8 @@ every field of every line it reads or writes; a line that fails is reported
 with its number, never dropped. Limits: a body of 8,000 characters, a quote
 of 2,000 and 64 of context either side, no control characters but tab and
 newline, 4 MiB per page. `scripts/check-blueprint-refs.sh` leaves
-`discussion/` out, because a comment may name an RFC number before it has a
-file.
+`discussion/` out, because a comment may name a proposal number before it has
+a file.
 
 **Anchoring.** The selector is the W3C Web Annotation TextQuoteSelector:
 `exact`, and 32 characters of `prefix` and `suffix`, plus the id of the

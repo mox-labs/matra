@@ -63,17 +63,17 @@ Group findings by severity:
 1. **Block merge** — boundary violation, missing regression test on a fix, new
    public surface without rustdoc, new error variant unrouted at the PyO3
    boundary, aspirational claim in shipping docs.
-2. **Suggest** — non-blocking but worth addressing now (an RFC that should have
+2. **Suggest** — non-blocking but worth addressing now (an enhancement proposal that should have
    been written, a CHANGELOG entry missing, a pythonize blind spot the new type
    needs to internalize).
 3. **Nit** — small clarifications the author may take or leave.
 
-For each finding: file:line, the specific concern, the corpus Frame or RFC it
+For each finding: file:line, the specific concern, the corpus Frame or proposal it
 grounds in. No paraphrase; quote the offending code if it helps.
 
 End with a **ship / return** verdict per the reviewer agent's standard.
 Ship if all blockers clear. Return with the specific changes required if not.
-A PR that adds or changes an RFC is never shipped on this verdict: it goes to
-the owner, who alone merges or closes it.
+A PR that sets a proposal's status to `accepted` is never shipped on this verdict: it goes
+to the owner, who alone merges it. A `proposed` proposal ships like any other PR.
 
 If no findings: say so explicitly. Do not invent issues.

@@ -9,8 +9,8 @@
  * `just comments` and `just comment-reply` run these. They read and write the
  * same `discussion/<route>.jsonl` files as the dev server, through the same
  * store (src/lib/dev/comments/store.ts): validated, locked, written whole and
- * renamed into place. A page is its route (`/blueprints/eps/0015-...`); the
- * forms `blueprints/eps/0015-...`, `.html` and the discussion file's own
+ * renamed into place. A page is its route (`/blueprints/proposals/0001-...`); the
+ * forms `blueprints/proposals/0001-...`, `.html` and the discussion file's own
  * path are read as the same page.
  *
  * Whether a thread still anchors is decided in the browser, against the page

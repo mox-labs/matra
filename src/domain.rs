@@ -1024,7 +1024,7 @@ pub struct Paragraph {
     /// Code / List / Caption) is justified by real consumer semantics.
     /// Nothing is deprecated today: the boolean stays while its job
     /// (parse and measure the paragraph or not) is binary. See
-    /// [RFC-0006](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0006-abstract-tier-vocabulary-lock.md)
+    /// [RFC-0006](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0006-abstract-tier-vocabulary-lock.md)
     /// for the abstract-tier vocabulary lock.
     pub in_blockquote: bool,
     /// Sentences produced by parsing this paragraph (attached by

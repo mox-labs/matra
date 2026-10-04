@@ -21,7 +21,7 @@ import { parseLines } from '../src/lib/dev/comments/model.ts';
 import { Store } from '../src/lib/dev/comments/store.ts';
 
 const ROUNDS = 50;
-const route = '/blueprints/rfcs/0019-rfc-and-ep-process';
+const route = '/blueprints/index';
 const root = mkdtempSync(join(tmpdir(), 'matra-comments-'));
 const worker = join(import.meta.dir, 'comments-append-worker.ts');
 const fail = (msg: string): never => {

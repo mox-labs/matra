@@ -182,14 +182,14 @@ trap 'rm -f "$tmp"' EXIT
             "$title" "$BASE_URL" "$page" "$summary"
     done < "$SUMMARY"
 
-    # The design records, in the order the site's navigation lists them.
+    # The design records, in the order the site's navigation lists them. The
+    # templates and the legacy records are not rendered, so not listed.
     printf '\n## Blueprints\n\n'
     records=(blueprints/README.md)
-    for kind in rfcs eps; do
+    for kind in proposals plans; do
         for f in "blueprints/$kind"/[0-9][0-9][0-9][0-9]-*.md; do
-            case "$f" in */0000-template.md) ;; *) records+=("$f") ;; esac
+            case "$f" in */0000-template.md) ;; *) [ -f "$f" ] && records+=("$f") ;; esac
         done
-        records+=("blueprints/$kind/0000-template.md")
     done
     for f in "${records[@]}"; do
         if [ ! -f "$f" ]; then
@@ -198,7 +198,6 @@ trap 'rm -f "$tmp"' EXIT
         fi
         case "$f" in
         blueprints/README.md) title="Blueprints: the process and the index"; page="blueprints/index" ;;
-        */0000-template.md) title="$(sed -n 's/^# \([A-Z]*-0000\):.*/\1/p' "$f" | head -1): the template"; page="${f%.md}" ;;
         *) title=$(sed -n 's/^# //p' "$f" | head -1); page="${f%.md}" ;;
         esac
         if ! summary=$(first_sentence "$f"); then
@@ -210,7 +209,6 @@ trap 'rm -f "$tmp"' EXIT
         # links reduced to their text, backticks and any parenthetical dropped.
         case "$f" in
         blueprints/README.md) status="" ;;
-        */0000-template.md) status="template" ;;
         *)
             status=$(sed -n 's/^- Status:[[:space:]]*//p' "$f" | head -1 |
                 sed -e 's/\[\([^]]*\)\]([^)]*)/\1/g' -e 's/`//g' -e 's/[[:space:]]*(.*$//' -e 's/[[:space:]]*$//')
@@ -226,6 +224,14 @@ trap 'rm -f "$tmp"' EXIT
             printf -- '- [%s](%s/%s.html): %s\n' "$title" "$BASE_URL" "$page" "$summary"
         fi
     done
+
+    # The Lab: evals and experiments, read from lab/.
+    printf '\n## Lab\n\n'
+    if ! summary=$(first_sentence lab/README.md); then
+        echo "gen-llms-txt: no prose paragraph found in lab/README.md" >&2
+        exit 1
+    fi
+    printf -- '- [Lab](%s/lab/index.html): %s\n' "$BASE_URL" "$summary"
 } > "$tmp"
 
 mkdir -p "$(dirname "$OUT")"

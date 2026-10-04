@@ -1,38 +1,45 @@
 /**
- * The Blueprints part: matra's design records, rendered from blueprints/ at
+ * The Blueprints area: matra's design records, rendered from blueprints/ at
  * the repository root. Nothing is copied into site/content/; the files the
  * process edits are the files the site reads.
  *
- *   blueprints/README.md        /blueprints/index   (served as /blueprints/)
- *   blueprints/rfcs/<name>.md   /blueprints/rfcs/<name>
- *   blueprints/eps/<name>.md    /blueprints/eps/<name>
+ *   blueprints/README.md             /blueprints/index   (served as /blueprints/)
+ *   blueprints/proposals/<name>.md   /blueprints/proposals/<name>
+ *   blueprints/plans/<name>.md       /blueprints/plans/<name>
  *
- * This is the one part of the site where a status appears. Each record's
+ * The templates (0000-template.md) are not records and are not rendered;
+ * the index links them on GitHub. Neither are the legacy records in
+ * blueprints/legacy/, the RFCs and EPs written before 2026-10-04: their old
+ * addresses keep a page that links each on GitHub (legacyForwards).
+ *
+ * This is the one area of the site where a status appears. Each record's
  * status is read from the `- Status:` line of its header, so the navigation
  * says what the record says, and nothing is written twice.
  */
+import { REPO_URL } from '$lib/site';
 import type { NavItem, NavPart } from '$lib/types';
 
-/** The part's title in SUMMARY order; it follows every SUMMARY.md part. */
+/** The area's title in the navigation. */
 export const BLUEPRINTS_PART = 'Blueprints';
 
-const RAW = import.meta.glob('../../../../blueprints/**/*.md', {
-	query: '?raw',
-	import: 'default',
-	eager: true
-}) as Record<string, string>;
+const RAW = import.meta.glob(
+	['../../../../blueprints/README.md', '../../../../blueprints/proposals/*.md', '../../../../blueprints/plans/*.md'],
+	{ query: '?raw', import: 'default', eager: true }
+) as Record<string, string>;
 
-/** Each record's source, keyed by its path from the repository root (`blueprints/rfcs/0007-one-pipeline.md`). */
+/** Each rendered file's source, keyed by its path from the repository root (`blueprints/proposals/NNNN-name.md`). */
 export const blueprintSources: ReadonlyMap<string, string> = new Map(
-	Object.entries(RAW).map(([key, text]) => [key.replace(/^(\.\.\/)+/, ''), text])
+	Object.entries(RAW)
+		.map(([key, text]): [string, string] => [key.replace(/^(\.\.\/)+/, ''), text])
+		.filter(([file]) => !file.endsWith('/0000-template.md'))
 );
 
 export interface Record_ {
 	/** The path from the repository root. */
 	file: string;
 	route: string;
-	kind: 'RFC' | 'EP' | 'index';
-	/** `RFC-0007`, or null for the index. */
+	kind: 'EPR' | 'EPL' | 'index';
+	/** `EPR-NNNN`, or null for the index. */
 	id: string | null;
 	title: string;
 	status: string;
@@ -49,42 +56,33 @@ export function shortStatus(line: string): string {
 
 function parse(file: string, text: string): Record_ {
 	const index = file === 'blueprints/README.md';
-	const m = /^blueprints\/(rfcs|eps)\/(\d{4})-[^/]+\.md$/.exec(file);
+	const m = /^blueprints\/(proposals|plans)\/(\d{4})-[^/]+\.md$/.exec(file);
 	if (!index && !m) {
-		throw new Error(`${file}: a blueprint is blueprints/README.md or blueprints/{rfcs,eps}/NNNN-name.md`);
+		throw new Error(`${file}: a blueprint is blueprints/README.md or blueprints/{proposals,plans}/NNNN-name.md`);
 	}
 	const h1 = /^# (.+)$/m.exec(text)?.[1]?.trim();
 	if (!h1) throw new Error(`${file}: a record must open with its # title`);
 	const route = `/${file.replace(/\.md$/, '').replace(/README$/, 'index')}`;
 	if (index) return { file, route, kind: 'index', id: null, title: 'Process and index', status: '' };
-	const kind = m![1] === 'rfcs' ? 'RFC' : 'EP';
+	const kind = m![1] === 'proposals' ? 'EPR' : 'EPL';
 	const id = `${kind}-${m![2]}`;
-	const template = m![2] === '0000';
-	const status = /^- Status:\s*(.+)$/m.exec(text)?.[1];
-	if (!status && !template) {
-		throw new Error(`${file}: a record's header carries a "- Status:" line`);
+	if (!h1.startsWith(`${id}: `)) {
+		throw new Error(`${file}: its title begins "${id}: ", the kind and number its path gives it`);
 	}
-	return {
-		file,
-		route,
-		kind,
-		id,
-		title: template ? 'The template' : h1.replace(/^(RFC|EP)-\d{4}:\s*/, ''),
-		status: template ? 'template' : shortStatus(status!)
-	};
+	const status = /^- Status:\s*(.+)$/m.exec(text)?.[1];
+	if (!status) throw new Error(`${file}: a record's header carries a "- Status:" line`);
+	return { file, route, kind, id, title: h1.slice(id.length + 2), status: shortStatus(status) };
 }
 
 const all = [...blueprintSources.entries()].map(([file, text]) => parse(file, text));
-// By number, with the template, which is not a record, last (as in the index).
-const sortKey = (r: Record_) => (r.status === 'template' ? '9999' : (r.id ?? ''));
-const byNumber = (a: Record_, b: Record_) => sortKey(a).localeCompare(sortKey(b));
+const byNumber = (a: Record_, b: Record_) => (a.id ?? '').localeCompare(b.id ?? '');
 const index = all.find((r) => r.kind === 'index');
 if (!index) throw new Error('blueprints/README.md, the index, is missing');
-const rfcs = all.filter((r) => r.kind === 'RFC').sort(byNumber);
-const eps = all.filter((r) => r.kind === 'EP').sort(byNumber);
+const proposals = all.filter((r) => r.kind === 'EPR').sort(byNumber);
+const plans = all.filter((r) => r.kind === 'EPL').sort(byNumber);
 
-/** Every blueprint page, in reading order: the index, the RFCs, the EPs. */
-export const records: Record_[] = [index, ...rfcs, ...eps];
+/** Every blueprint page, in reading order: the index, the proposals, the plans. */
+export const records: Record_[] = [index, ...proposals, ...plans];
 
 const item = (r: Record_): NavItem => ({
 	title: r.id ? `${r.id} ${r.title}` : r.title,
@@ -95,15 +93,84 @@ const item = (r: Record_): NavItem => ({
 });
 
 /**
- * The part in the navigation. The RFCs and the EPs are groups whose own link
- * is their table in the index; each record names its status beside it.
+ * The area in the navigation. The proposals and the plans are groups whose
+ * own link is their section of the index; each record names its status
+ * beside it.
  */
 export const blueprintsPart: NavPart = {
 	title: BLUEPRINTS_PART,
+	area: 'blueprints',
 	note: 'design records, with their status',
 	items: [
 		item(index),
-		{ title: 'RFCs', file: index.file, route: `${index.route}#rfcs`, group: true, children: rfcs.map(item) },
-		{ title: 'EPs', file: index.file, route: `${index.route}#eps`, group: true, children: eps.map(item) }
+		{ title: 'Proposals', file: index.file, route: `${index.route}#proposals`, group: true, children: proposals.map(item) },
+		{ title: 'Plans', file: index.file, route: `${index.route}#plans`, group: true, children: plans.map(item) }
 	]
 };
+
+/**
+ * The addresses the legacy records were published at before 2026-10-04, as
+ * the site's own Blueprints part. Each still answers, with a page that links
+ * the record on GitHub. The list is fixed; never remove an entry, since the
+ * link it keeps is still out there.
+ */
+const LEGACY: Readonly<Record<'rfcs' | 'eps', readonly string[]>> = {
+	rfcs: [
+		'0001-record-architectural-decisions',
+		'0002-pipeline-vocabulary',
+		'0003-workspace-with-rumi-nlp',
+		'0004-stay-single-crate',
+		'0005-supply-chain-hardening',
+		'0006-abstract-tier-vocabulary-lock',
+		'0007-one-pipeline',
+		'0008-structural-primitives-are-fields',
+		'0009-feats-lookup-accessor',
+		'0010-embeddings-adapter',
+		'0011-out-of-the-box',
+		'0012-agent-surface',
+		'0013-attribution-and-citation',
+		'0014-distribution-matrix',
+		'0015-provisioning-failures',
+		'0019-rfc-and-ep-process',
+		'0020-deprecate-unread-config-keys'
+	],
+	eps: [
+		'0007-structural-primitives',
+		'0008-pipeline-surface',
+		'0009-embeddings-adapter',
+		'0010-foundations',
+		'0011-agent-surface',
+		'0012-docsite',
+		'0013-docsite-identity',
+		'0014-architecture-guardrails'
+	]
+};
+
+const LEGACY_FILES = import.meta.glob('../../../../blueprints/legacy/*/*.md', { query: '?raw', import: 'default' });
+
+export interface LegacyForward {
+	/** The old route, `/blueprints/rfcs/0007-one-pipeline`. */
+	from: string;
+	/** `RFC-0007`, or the template's kind. */
+	id: string;
+	/** The file it is now, from the repository root. */
+	file: string;
+	/** The file on GitHub, on main. */
+	url: string;
+}
+
+function forward(from: string, id: string, file: string): LegacyForward {
+	if (!LEGACY_FILES[`../../../../${file}`] && !RAW[`../../../../${file}`]) {
+		throw new Error(`${from} forwards to ${file}, which does not exist`);
+	}
+	return { from, id, file, url: `${REPO_URL}/blob/main/${file}` };
+}
+
+/** Every old record address and where it now leads; one that names no file fails the build. */
+export const legacyForwards: LegacyForward[] = [
+	...LEGACY.rfcs.map((n) => forward(`/blueprints/rfcs/${n}`, `RFC-${n.slice(0, 4)}`, `blueprints/legacy/rfcs/${n}.md`)),
+	...LEGACY.eps.map((n) => forward(`/blueprints/eps/${n}`, `EP-${n.slice(0, 4)}`, `blueprints/legacy/eps/${n}.md`)),
+	// The templates moved to the new kinds rather than into legacy.
+	forward('/blueprints/rfcs/0000-template', 'the proposal template', 'blueprints/proposals/0000-template.md'),
+	forward('/blueprints/eps/0000-template', 'the plan template', 'blueprints/plans/0000-template.md')
+];

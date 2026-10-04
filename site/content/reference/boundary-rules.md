@@ -6,7 +6,7 @@ Eight rules hold matra's hexagonal architecture in place.
 
 ## What enforcement means here
 
-Rust offers no directional import control between modules inside a single crate, and matra is a single crate by [RFC-0004](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0004-stay-single-crate.md), so the compiler enforces none of these rules except rule 6. Seven of the eight are checked by semgrep rules in `.semgrep/`, which read the import and path forms each rule forbids. Review remains the gate for what an import cannot show.
+Rust offers no directional import control between modules inside a single crate, and matra is a single crate by [RFC-0004](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0004-stay-single-crate.md), so the compiler enforces none of these rules except rule 6. Seven of the eight are checked by semgrep rules in `.semgrep/`, which read the import and path forms each rule forbids. Review remains the gate for what an import cannot show.
 
 | Rule | Checked by | What the check catches | What review still reads for |
 |---|---|---|---|
@@ -19,7 +19,7 @@ Rust offers no directional import control between modules inside a single crate,
 | 7. Composition root knows the whole | `boundary-rule7-*` | `src/cli/` reaching past `Engine`, `Ingest`, `extraction`, `config` and `domain` | wiring outside `src/lib.rs` in any other file |
 | 8. No `tracing` in domain or ports | `boundary-rule8-*` | the identifier in code in the five files | |
 
-Each finding names its rule, says why the boundary exists, and links the section of this page to read. The full table, with every form each check covers and misses and the reasons the checks are built the way they are, is [EP-0014](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0014-architecture-guardrails.md). Code inside `#[cfg(test)]` modules is exempt from rules 1, 2, 3, 5 and 7, and read by rules 4 and 8.
+Each finding names its rule, says why the boundary exists, and links the section of this page to read. The full table, with every form each check covers and misses and the reasons the checks are built the way they are, is [EP-0014](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/eps/0014-architecture-guardrails.md). Code inside `#[cfg(test)]` modules is exempt from rules 1, 2, 3, 5 and 7, and read by rules 4 and 8.
 
 `scripts/check-boundaries.sh` runs the checks: first each rule file against its fixture of violating and allowed code, then the scan of `src/`, then a check that the scan read every Rust file there. It runs from `just check`, from the pre-commit hook that `scripts/install-hooks.sh` installs, and from the `Boundary check` job in `ci.yml`. The hook is opt-in, runs on every commit regardless of which files are staged, and skips the check with a warning when semgrep is not installed; CI does not skip it.
 
@@ -138,4 +138,4 @@ just install-hooks # install the pre-commit hook that runs it
 
 The check needs semgrep, at the version `.github/requirements/semgrep.txt` pins, and must run from the root of a git work tree: semgrep resolves each rule's paths against the work tree, and outside one a path-scoped rule matches nothing. Each finding prints the file, the line and the rule's message. On a clean tree the script ends with `check-boundaries: N of N Rust files in src/ read, 0 finding(s)`, and it exits non-zero on any finding, any failed rule test, any Rust file under `src/` the scan did not read, or any rule scoped to a path git no longer has. A rule scoped to a moved file would scan nothing and pass, so when a file moves, the rules that name it move with it.
 
-A violation is a merge blocker. The remedy is a change to the structure, or an RFC that changes the rule deliberately. It is never a change to the check. A check that flags correct code is a bug in the check: fix the rule and add the case to its fixture, as [EP-0014](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0014-architecture-guardrails.md) describes.
+A violation is a merge blocker. The remedy is a change to the structure, or an RFC that changes the rule deliberately. It is never a change to the check. A check that flags correct code is a bug in the check: fix the rule and add the case to its fixture, as [EP-0014](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/eps/0014-architecture-guardrails.md) describes.

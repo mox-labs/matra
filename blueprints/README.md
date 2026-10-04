@@ -1,19 +1,22 @@
 # Blueprints
 
-matra's design record. Two kinds of document live here, and the process
-around them follows the Rust RFC process. [RFC-0019](rfcs/0019-rfc-and-ep-process.md)
-introduced it, and its dated notes record each change to it since.
+matra's design records, and the process that says which record a change
+takes. The process follows the Rust RFC process. Two kinds of record live
+here.
 
 | Kind | Where | Cited as | What it records |
 |---|---|---|---|
-| RFC | `rfcs/NNNN-name.md` | `RFC-NNNN` | A substantial change that matra's users notice. What and why. |
-| EP | `eps/NNNN-name.md` | `EP-NNNN` | An enhancement plan for work that several agents carry out in parallel. Laid out with the Rust RFC template, like an RFC, with its milestones, test plan, ship criteria and risks under Reference-level explanation and a status log after it. |
+| Enhancement proposal | `proposals/NNNN-name.md` | `EPR-NNNN` | A substantial change that matra's users notice: the decision, what and why, laid out with the Rust RFC template. |
+| Enhancement plan | `plans/NNNN-name.md` | `EPL-NNNN` | A plan for work that several agents carry out in parallel. Rare: work done in sequence is a tracking issue instead. Laid out with the Rust RFC template, with its milestones, test plan, ship criteria and risks under Reference-level explanation and a status log after it. |
 
-Records cited as `ADR-NNNN` before 2026-09-24 are the RFC of the same
-number: `ADR-0008` is [RFC-0008](rfcs/0008-structural-primitives-are-fields.md).
-Iteration plans cited as `iN` or `IN` are the EP of the same number, where
-one exists: `i9` is
-[EP-0009](eps/0009-embeddings-adapter.md).
+**A new series, from 2026-10-04.** That day is the baseline: proposals and
+plans are numbered from 0001, and each kind has its own sequence. The
+records written before it, the RFCs and the EPs, are in
+[`legacy/`](legacy/) unchanged: they are the
+reasons behind the code that exists, and a comment or a page that cites
+`RFC-NNNN` or `EP-NNNN` means one of them. They are not rendered on the
+docsite and not counted here. A new proposal that changes what a legacy
+record decided says so and cites it; the legacy record is not edited.
 
 ## The process
 
@@ -24,53 +27,54 @@ of matra's users who notice it, the heavier its record.
 
 | Change | Record | Where it lives |
 |---|---|---|
-| A substantial change matra's users notice: the public surface in Rust, Python, the command line or the JSON schema; semantics or behaviour, the default model included; removing or deprecating a substantial feature; an architecture boundary | RFC | A pull request adding `rfcs/NNNN-name.md` |
+| A substantial change matra's users notice: the public surface in Rust, Python, the command line or the JSON schema; semantics or behaviour, the default model included; removing or deprecating a substantial feature; an architecture boundary | Enhancement proposal | A pull request adding `proposals/NNNN-name.md` |
 | A minor addition to the public surface, or a minor removal from it | API change proposal | A short issue labelled `acp` |
 | Tooling, docs, CI, the harness, a refactor, a measured performance improvement, a bug fix | None beyond the pull request | The pull request. A rule it leaves behind lives in the file that governs it. |
 
 An API change proposal is enough when the change adds or removes one item a
 caller may use and changes nothing about what the existing calls do or
 return. A change to what an existing call returns or means, or one that
-reshapes several items at once, is an RFC. When in doubt whether a change
-needs a record at all, ask whether a caller of matra would notice it: if
-not, the pull request is the record.
+reshapes several items at once, is an enhancement proposal. When in doubt
+whether a change needs a record at all, ask whether a caller of matra would
+notice it: if not, the pull request is the record.
 
-A change to this process is tooling too. It takes a pull request and a dated
-note on [RFC-0019](rfcs/0019-rfc-and-ep-process.md), not a new RFC.
+A change to this process is tooling too: a pull request that edits this
+file, with the reason in its description.
 
-**Records written before 2026-10-03 stay as written.** Some of them would
-take a lighter record under this grain:
-[RFC-0020](rfcs/0020-deprecate-unread-config-keys.md) would be an API change
-proposal, and the standalone EPs for tooling (EP-0012, EP-0013, EP-0014) would
-be pull requests. Their headers keep the fields they were written with,
-`Tracking EP` included.
+### Enhancement proposals
 
-### RFCs
+**A proposal is a pull request.** Copy
+[`proposals/0000-template.md`](proposals/0000-template.md) to the next free
+number, fill every section, and open a pull request with the proposal alone
+or beside the code it binds, labelled `rfc`. Discussion happens there.
 
-**An RFC is proposed as a pull request.** Copy
-[`rfcs/0000-template.md`](rfcs/0000-template.md) to the next free number,
-fill every section, and open a pull request with the RFC alone or beside the
-code it binds, labelled `rfc`. An unaccepted RFC lives only as that open pull
-request. Discussion happens there.
+**A proposal can merge before it is accepted.** Its status line then reads
+`proposed`, and the docsite renders it, so the owner can read it in place
+and comment on it before deciding. Claude may merge a pull request that adds
+or edits a `proposed` proposal, on the same standing authority as any other
+pull request. A `proposed` proposal decides nothing: no code may rely on it.
 
-**Only the owner accepts an RFC.** Merging its pull request accepts it, and
-only the project owner merges an RFC pull request; the file reaches `main`
-with its status set to `accepted`. Closing the pull request without merging
-declines it, and nothing lands here. Claude writes RFCs and argues for them,
-and never merges or closes an RFC pull request.
+**Only the owner accepts a proposal.** Acceptance is a change of the status
+line to `accepted`, and only the owner merges a pull request that makes that
+change, whether it is the proposal's first pull request or a later one.
+Claude writes proposals, argues for them and merges them while they are
+`proposed`, and never merges a pull request that sets a status to
+`accepted`. A proposal the owner declines leaves `main`: the pull request
+that removes it says why, and its number is not reused.
 
-**Each accepted RFC has a tracking issue.** It is labelled `tracking`, opened
-from [`tracking.md`](../.github/ISSUE_TEMPLATE/tracking.md) when the RFC pull
-request is ready for the owner's decision, so the RFC's `Tracking issue`
-header can link it before the merge. It carries the milestone checklist and
-links each pull request that delivers a milestone, and it closes when the
-work ships. If the RFC is declined, the issue closes as not planned.
+**Each accepted proposal has a tracking issue.** It is labelled `tracking`,
+opened from [`tracking.md`](../.github/ISSUE_TEMPLATE/tracking.md) when the
+proposal is ready for the owner's decision, so the proposal's `Tracking
+issue` header can link it before acceptance. It carries the milestone
+checklist and links each pull request that delivers a milestone, and it
+closes when the work ships.
 
-**An RFC is not rewritten after acceptance.** Two edits are allowed: the
+**A proposal is not rewritten after acceptance.** Two edits are allowed: the
 status line, and a dated note directly under the header saying what changed
-and why. A change of mind is a new RFC that supersedes the old one, and the
-old one's status then reads `superseded by RFC-NNNN`. The lineage stays
-readable because nothing in it is overwritten.
+and why. A change of mind is a new proposal that supersedes the old one, and
+the old one's status then reads `superseded by EPR-NNNN`. While it is
+`proposed`, a proposal may be edited freely; its pull requests are its
+history.
 
 ### API change proposals
 
@@ -81,46 +85,55 @@ minor. Only the owner accepts one, by saying so on the issue. Claude writes
 and argues them, and never accepts one. The pull request that carries an
 accepted proposal out links the issue and closes it.
 
-### EPs
+### Enhancement plans
 
-**An EP exists only for a plan that several agents execute in parallel.**
-It says who carries which milestone, in what order, and what each hands the
+**A plan exists only when several agents execute one plan in parallel.** It
+says who carries which milestone, in what order, and what each hands the
 next. Work carried out in sequence, however many pull requests it takes,
-needs no EP: the RFC's tracking issue holds its checklist. Copy
-[`eps/0000-template.md`](eps/0000-template.md) to the next free EP number and
-fill `Implements`, which is `none` when the parallel work implements no RFC.
+needs no plan: the proposal's tracking issue holds its checklist. Copy
+[`plans/0000-template.md`](plans/0000-template.md) to the next free plan
+number and fill `Implements`, which is `none` when the parallel work
+implements no proposal.
 
-**An EP is laid out with the Rust RFC template**, as an RFC is: Summary,
-Motivation, Guide-level explanation, Reference-level explanation, Drawbacks,
-Rationale and alternatives, Prior art, Unresolved questions, Future
-possibilities. The plan is part of the reference-level explanation, as its
-subsections: the milestones and iterations, the test plan, the ship
-criteria, and the risks. The status log follows the sections, as the one
-appendix the process requires. An EP that implements an RFC keeps its
+**A plan is laid out with the Rust RFC template**, as a proposal is. The plan
+itself is part of the reference-level explanation, as its subsections: the
+milestones, the test plan, the ship criteria, and the risks. The status log
+follows the sections. A plan that implements a proposal keeps its
 Motivation and Guide-level explanation to a few lines and a link, because
-the RFC holds the argument.
+the proposal holds the argument.
 
-**An EP is a living plan until it ships.** If a milestone turns out to be
+**A plan is living until it ships.** If a milestone turns out to be
 ambiguous, the plan is the bug: edit the plan first, then the code. Every
 change of status adds a dated line to its status log. Once it ships or is
 dropped, it is kept as the record of how the work went.
 
-**The EPs written before 2026-10-03 keep their layout.** EP-0007 to EP-0014
-were written to the earlier EP template (Summary, Design, Goals, Non-goals,
-Iterations and milestones, Test plan, Ship criteria, Risks, Status log).
-They are records, and they stay as written; the Rust layout applies to
-every EP written since.
+### Status
+
+| Kind | Status | Meaning |
+|---|---|---|
+| Proposal | `proposed` | Merged for review; the docsite renders it. Not a decision: nothing may rely on it. Claude may merge it. |
+| Proposal | `accepted` | The owner merged the change of its status line; the decision is in effect. |
+| Proposal | `implemented` | Accepted, the CHANGELOG records it shipping, and its tracking issue is closed. |
+| Proposal | `superseded by EPR-NNNN` | A later proposal replaced it. Kept unchanged apart from the status line and a dated note. |
+| Plan | `planned` | Written, not started. |
+| Plan | `in progress` | At least one milestone has landed. |
+| Plan | `shipped in X.Y.Z` | Every milestone landed, and release X.Y.Z carries the work. |
+| Plan | `dropped` | Will not be carried out as written. The status log says why. |
 
 ### On the docsite
 
-The docsite renders this directory as its Blueprints part, at `/blueprints/`
-for this file and `/blueprints/rfcs/<name>` and `/blueprints/eps/<name>` for
-the records, read from these files at build time; nothing is copied. It is
-the one part of the site that shows a status: each record's, read from its
-header, beside it in the navigation and under its title. The pages that
-describe what ships carry none. A link from a record to a file outside
-`blueprints/` leads to that file on GitHub; a link between records stays on
-the site.
+The docsite has three areas: Docs, the pages for matra's users; Blueprints,
+this file at `/blueprints/` and each proposal and plan at
+`/blueprints/proposals/<name>` and `/blueprints/plans/<name>`, read from these
+files at build time; and Lab, for evals and experiments. Blueprints is the
+one area that shows a status: each record's, read from its header, beside it
+in the navigation and under its title. The pages in Docs describe what ships
+and carry none. A link from a record to a file outside the rendered records
+leads to that file on GitHub.
+
+The legacy records are not rendered. Their old addresses,
+`/blueprints/rfcs/<name>` and `/blueprints/eps/<name>`, still answer, each
+with a short page that links the record on GitHub.
 
 Locally, the docsite is also where the owner and Claude converge on a
 record: in `just docs-serve`, text on any page can be selected and
@@ -129,80 +142,47 @@ reads (`just comments`) and Claude answers in (`just comment-reply`). The
 published site has no local comments; giscus is its public channel.
 `site/README.md` describes both.
 
-### Status
-
-| Kind | Status | Meaning |
-|---|---|---|
-| RFC | `accepted` | Merged; the decision is in effect. |
-| RFC | `implemented` | Accepted, the CHANGELOG records it shipping, and its tracking issue is closed. |
-| RFC | `superseded by RFC-NNNN` | A later RFC replaced it. Kept unchanged apart from the status line and a dated note. |
-| EP | `planned` | Written, not started. |
-| EP | `in progress` | At least one milestone has landed. |
-| EP | `shipped in X.Y.Z` | Every milestone landed, and release X.Y.Z carries the work. |
-| EP | `dropped` | Will not be carried out as written. The status log says why. |
-
 ### Numbering
 
-Numbers are four digits and zero-padded. RFC numbers carried over from the
-decision records keep their number. A number reserved for an open pull
-request is listed below as `open, reserved` so that no other record takes it.
-When that pull request closes without merging, the number is released and its
-row removed. A number whose record was merged to `main` is never reused.
-RFC number 0018 was released this way when its proposal's design moved into
-EP-0012, as 0017 was when its pull request closed; a released number cites no
-record, so it is written without the `RFC-` prefix. EP number 0015 was
-released the same way: its pull request planned the docsite's Blueprints
-part as an EP, and the plan left the record when developer tooling stopped
-taking one; the design is in `site/README.md`.
+Numbers are four digits and zero-padded, and each kind has its own sequence
+from 0001. A number whose record was merged to `main` is never reused. A
+number taken by an open pull request is that pull request's until it merges
+or closes.
 
 ### Checks
 
 `scripts/check-blueprint-refs.sh` runs from `just check` and in the
-`Docsite floor` CI job. It fails when an `RFC-NNNN` or `EP-NNNN` cited
-anywhere in the tracked tree resolves to no file here and to no reserved
-row below, and when a file in `rfcs/` or `eps/` is missing from these
-tables. The docsite floor's em-dash gate covers this directory too.
+`Docsite floor` CI job. Every citation in the tracked tree must resolve to a
+record of its own kind: `EPR-NNNN` to a file in `proposals/`, `EPL-NNNN` to
+one in `plans/`, `RFC-NNNN` to one in `legacy/rfcs/` and `EP-NNNN` to one in
+`legacy/eps/`. A citation whose number exists only as another kind is named
+as a wrong-kind citation. Every file in `proposals/` and `plans/` must have a
+row below. The docsite floor's em-dash gate covers this directory too.
 
-## RFCs
+## Proposals
 
-| RFC | Title | Status | EP |
+The enhancement proposals since 2026-10-04. None yet.
+
+| Proposal | Title | Status | Tracking issue |
 |---|---|---|---|
-| [RFC-0001](rfcs/0001-record-architectural-decisions.md) | Record architectural decisions | superseded by RFC-0019 | none |
-| [RFC-0002](rfcs/0002-pipeline-vocabulary.md) | Pipeline vocabulary: ingest / decompose / parse / measure (+ peer extract) | superseded by RFC-0007 | none |
-| [RFC-0003](rfcs/0003-workspace-with-rumi-nlp.md) | Cargo workspace with `matra-core` and `rumi-nlp` | superseded by RFC-0004 | none |
-| [RFC-0004](rfcs/0004-stay-single-crate.md) | Stay single-crate; supersede the workspace split proposal | accepted | none |
-| [RFC-0005](rfcs/0005-supply-chain-hardening.md) | Supply-chain hardening posture | accepted | none |
-| [RFC-0006](rfcs/0006-abstract-tier-vocabulary-lock.md) | Abstract-tier vocabulary lock | accepted | none |
-| [RFC-0007](rfcs/0007-one-pipeline.md) | One pipeline: ingest -> decompose -> compose, with abstract reserved | implemented | [EP-0008](eps/0008-pipeline-surface.md) |
-| [RFC-0008](rfcs/0008-structural-primitives-are-fields.md) | Structural primitives are fields | implemented | [EP-0007](eps/0007-structural-primitives.md) |
-| [RFC-0009](rfcs/0009-feats-lookup-accessor.md) | Feats lookup accessor, Rust-only | implemented | [EP-0007](eps/0007-structural-primitives.md) |
-| [RFC-0010](rfcs/0010-embeddings-adapter.md) | Embeddings: a Tier-2 channel behind an Embedder port, static adapter first | implemented | [EP-0009](eps/0009-embeddings-adapter.md) |
-| [RFC-0011](rfcs/0011-out-of-the-box.md) | Out of the box: configuration, paths, and one CLI | implemented | [EP-0010](eps/0010-foundations.md) |
-| [RFC-0012](rfcs/0012-agent-surface.md) | The agent surface: a skill the binary prints | implemented | [EP-0011](eps/0011-agent-surface.md) |
-| [RFC-0013](rfcs/0013-attribution-and-citation.md) | Attribution and Citation | implemented | none |
-| [RFC-0014](rfcs/0014-distribution-matrix.md) | The Distribution Matrix | implemented | none |
-| [RFC-0015](rfcs/0015-provisioning-failures.md) | Provisioning is matra's own, and a failure to fetch is not an invalid model | implemented | none |
-| RFC-0016 | Release automation | open, reserved | none |
-| [RFC-0019](rfcs/0019-rfc-and-ep-process.md) | The RFC and EP process | accepted | none |
-| [RFC-0020](rfcs/0020-deprecate-unread-config-keys.md) | Deprecate the config keys nothing reads | accepted | none |
-| [RFC-0000](rfcs/0000-template.md) | The template | not a record | none |
+| [EPR-0000](proposals/0000-template.md) | The template | not a record | none |
 
-## EPs
+## Plans
 
-EP numbers follow the plans they replace, so the sequence has gaps. Plans
-that were retired once their work landed, retracted when RFC-0004
-superseded RFC-0003, or
-written against surfaces that no longer exist have no EP; their history is
-in git.
+The enhancement plans since 2026-10-04. None yet.
 
-| EP | Title | Status | Implements |
+| Plan | Title | Status | Implements |
 |---|---|---|---|
-| [EP-0007](eps/0007-structural-primitives.md) | Five structural primitives | shipped in 0.1.0 | RFC-0008, RFC-0009 |
-| [EP-0008](eps/0008-pipeline-surface.md) | One pipeline, not six entry points | shipped in 0.1.0 | RFC-0007 |
-| [EP-0009](eps/0009-embeddings-adapter.md) | Embeddings as a specialist adapter | shipped in 0.2.0 | RFC-0010 |
-| [EP-0010](eps/0010-foundations.md) | Out of the box | shipped in 0.2.0 | RFC-0011 |
-| [EP-0011](eps/0011-agent-surface.md) | The agent surface | shipped in 0.2.0 | RFC-0012 |
-| [EP-0012](eps/0012-docsite.md) | The docsite on SvelteKit, with figures and examples | shipped (docsite) | none |
-| [EP-0013](eps/0013-docsite-identity.md) | The docsite's identity, drawn from matra's own output | in progress | none |
-| [EP-0014](eps/0014-architecture-guardrails.md) | Architecture guardrails: the boundary rules as semgrep checks | shipped (CI) | none |
-| [EP-0000](eps/0000-template.md) | The template | not a record | none |
+| [EPL-0000](plans/0000-template.md) | The template | not a record | none |
+
+## Legacy
+
+The records written before 2026-10-04, in `legacy/rfcs/` and `legacy/eps/`,
+cited as `RFC-NNNN` and `EP-NNNN`. Records cited as `ADR-NNNN` before
+2026-09-24 are the RFC of the same number, and iteration plans cited as `iN`
+are the EP of the same number where one exists. One RFC number appears in
+them without a file:
+
+| Legacy number | Why it has no file |
+|---|---|
+| RFC-0016 | Reserved for release automation by a pull request that never merged. |

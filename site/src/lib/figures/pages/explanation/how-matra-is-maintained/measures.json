@@ -108,13 +108,13 @@
       "words": 14
     },
     {
-      "compression_ratio": 0.5211,
+      "compression_ratio": 0.5082,
       "in_blockquote": false,
-      "lexical_density": 0.587,
-      "readability_grade": 8.5183,
-      "sentences": 7,
-      "text": "- **Decisions.** An RFC is accepted only when the owner merges its pull request, and an API change proposal only when the owner says so on its issue. Claude writes and argues both, and never merges or closes an RFC pull request.\n- **Releases.** Claude prepares a release and dispatches the workflow, which verifies, tags, builds and attests it, then stops at two deployment environments, one per registry, each requiring the owner's approval. That approval is the release decision, because a published version cannot be withdrawn. An agent never approves a deployment.",
-      "words": 93
+      "lexical_density": 0.55,
+      "readability_grade": 9.8774,
+      "sentences": 6,
+      "text": "- **Decisions.** An enhancement proposal is accepted only when the owner merges the change of its status line to `accepted`, and an API change proposal only when the owner says so on its issue. Claude writes and argues both, and may merge a proposal while its status is `proposed`, so it can be read on this site; that decides nothing, and Claude never merges a pull request that accepts one.\n- **Releases.** Claude prepares a release and dispatches the workflow, which verifies, tags, builds and attests it, then stops at two deployment environments, one per registry, each requiring the owner's approval. That approval is the release decision, because a published version cannot be withdrawn. An agent never approves a deployment.",
+      "words": 121
     },
     {
       "compression_ratio": 0.5876,
@@ -126,13 +126,13 @@
       "words": 62
     },
     {
-      "compression_ratio": 0.5634,
+      "compression_ratio": 0.5639,
       "in_blockquote": false,
-      "lexical_density": 0.5647,
-      "readability_grade": 8.8587,
+      "lexical_density": 0.5488,
+      "readability_grade": 9.4127,
       "sentences": 4,
-      "text": "One limit is worth stating plainly. Today every merge, comment and approval is recorded under the owner's GitHub login, so the record alone cannot show which of them the owner made by hand, and no branch rule yet makes an RFC merge wait for the owner. The rules above hold by practice. The [Identity section of CONTRIBUTING.md](https://github.com/mox-labs/matra/blob/main/CONTRIBUTING.md#identity) sets out how Claude is to get a GitHub identity of its own, and how a branch rule then requires the owner's review on an RFC pull request.",
-      "words": 90
+      "text": "One limit is worth stating plainly. Today every merge, comment and approval is recorded under the owner's GitHub login, so the record alone cannot show which of them the owner made by hand, and no branch rule yet makes an acceptance wait for the owner. The rules above hold by practice. The [Identity section of CONTRIBUTING.md](https://github.com/mox-labs/matra/blob/main/CONTRIBUTING.md#identity) sets out how Claude is to get a GitHub identity of its own, and how a required check then holds an acceptance for the owner's review.",
+      "words": 87
     },
     {
       "compression_ratio": null,
@@ -144,22 +144,31 @@
       "words": 21
     },
     {
-      "compression_ratio": 0.5776,
+      "compression_ratio": 0.5648,
       "in_blockquote": false,
-      "lexical_density": 0.5854,
-      "readability_grade": 9.1249,
+      "lexical_density": 0.5926,
+      "readability_grade": 10.3377,
       "sentences": 4,
-      "text": "Each accepted RFC gets a tracking issue, labelled `tracking`, that holds its milestone checklist and links the pull request for each milestone; it closes when the work ships. A plan that several agents carry out in parallel gets an enhancement plan (an EP) beside the RFC. An accepted RFC is never rewritten: a change of mind is a new RFC that supersedes it, so the reasoning behind every decision stays readable. The full process and the index of records are in [`blueprints/README.md`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md).",
+      "text": "Each accepted proposal gets a tracking issue, labelled `tracking`, that holds its milestone checklist and links the pull request for each milestone; it closes when the work ships. A plan that several agents carry out in parallel gets an enhancement plan (`EPL-NNNN`) beside the proposal. An accepted proposal is never rewritten: a change of mind is a new proposal that supersedes it, so the reasoning behind every decision stays readable. The full process and the index of records are in [`blueprints/README.md`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md).",
       "words": 84
     },
     {
-      "compression_ratio": 0.5053,
+      "compression_ratio": 0.6341,
       "in_blockquote": false,
-      "lexical_density": 0.4623,
-      "readability_grade": 10.8865,
+      "lexical_density": 0.4468,
+      "readability_grade": 10.6051,
+      "sentences": 3,
+      "text": "Proposals and plans are numbered from 0001, from a baseline on 2026-10-04. The records written before it, cited as `RFC-NNNN` and `EP-NNNN`, are kept unchanged in [`blueprints/legacy/`](https://github.com/mox-labs/matra/tree/main/blueprints/legacy): they are the reasons behind the code that exists, and the comments and pages that cite them still mean them.",
+      "words": 56
+    },
+    {
+      "compression_ratio": 0.496,
+      "in_blockquote": false,
+      "lexical_density": 0.4615,
+      "readability_grade": 12.156,
       "sentences": 4,
-      "text": "The records are rendered on this site, under Blueprints, each with its status; it is the one part of the site that shows a status. Before a record is settled, the owner reads it there in the local development server, where any passage on any page can be selected and commented on. The threads are saved as files in the repository, so the next Claude session reads them, answers in them and changes the record, and the owner reads the answer in the same place. The discussion that shaped a record stays beside it rather than in a chat log that is gone the next day.",
-      "words": 106
+      "text": "The proposals and plans are rendered on this site, in its Blueprints area, each with its status; it is the one area of the site that shows a status, and the documentation keeps to what ships. Before a record is settled, the owner reads it there in the local development server, where any passage on any page can be selected and commented on. The threads are saved as files in the repository, so the next Claude session reads them, answers in them and changes the record, and the owner reads the answer in the same place. The discussion that shaped a record stays beside it rather than in a chat log that is gone the next day.",
+      "words": 117
     },
     {
       "compression_ratio": 0.5704,
@@ -171,13 +180,13 @@
       "words": 57
     },
     {
-      "compression_ratio": 0.5078,
+      "compression_ratio": 0.5129,
       "in_blockquote": false,
-      "lexical_density": 0.5306,
-      "readability_grade": 6.5133,
+      "lexical_density": 0.5127,
+      "readability_grade": 6.9402,
       "sentences": 10,
-      "text": "- The boundary rules were partly a text search and partly review alone, and the search missed whole forms of import. They are now semgrep rules, each tested against a fixture that holds a violation.\n- A check twice passed silently on a machine where the tool it needed was missing. Every check now fails when its tool is absent.\n- When the design records moved to their present process, every citation of a record in the tree changed at once. A check now fails when any cited RFC or EP number has no record.\n- The agent and skill files drifted from the code twice: an agent cited a class at a line it had long left, and another counted files that had been removed. A check now fails when a file and line cited under `.claude/` points at a missing file or past its end.",
-      "words": 146
+      "text": "- The boundary rules were partly a text search and partly review alone, and the search missed whole forms of import. They are now semgrep rules, each tested against a fixture that holds a violation.\n- A check twice passed silently on a machine where the tool it needed was missing. Every check now fails when its tool is absent.\n- When the design records moved to their present process, every citation of a record in the tree changed at once. A check now fails when a cited record has no file of its own kind: a proposal, a plan, or a legacy RFC or EP.\n- The agent and skill files drifted from the code twice: an agent cited a class at a line it had long left, and another counted files that had been removed. A check now fails when a file and line cited under `.claude/` points at a missing file or past its end.",
+      "words": 155
     },
     {
       "compression_ratio": 0.6245,

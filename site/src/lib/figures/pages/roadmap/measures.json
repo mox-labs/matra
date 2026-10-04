@@ -147,9 +147,9 @@
       "compression_ratio": null,
       "in_blockquote": false,
       "lexical_density": 0.5,
-      "readability_grade": 13.8146,
+      "readability_grade": 14.9384,
       "sentences": 2,
-      "text": "**The five primitives shipped, 2026-08-21**, in [`blueprints/eps/0007-structural-primitives.md`](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0007-structural-primitives.md), which carries the milestones, their rubrics, and the reasoning trail. `Rule` and `Predicate` are designed after them, from the shape the five actually took, which is what \"pulled from real use, not anticipated\" asked for.",
+      "text": "**The five primitives shipped, 2026-08-21**, in [`blueprints/legacy/eps/0007-structural-primitives.md`](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/eps/0007-structural-primitives.md), which carries the milestones, their rubrics, and the reasoning trail. `Rule` and `Predicate` are designed after them, from the shape the five actually took, which is what \"pulled from real use, not anticipated\" asked for.",
       "words": 46
     },
     {
@@ -459,12 +459,12 @@
       "words": 11
     },
     {
-      "compression_ratio": 0.4987,
+      "compression_ratio": 0.5,
       "in_blockquote": false,
       "lexical_density": 0.5683,
-      "readability_grade": 12.8591,
+      "readability_grade": 13.0289,
       "sentences": 8,
-      "text": "matra reports the clusters and the numbers; whether they constitute fluff is the caller's reading. The word never appears in the output. That restraint is now empirical as well as principled: the 2026 slop-measurement literature found repetition and templatedness are weak predictors of human quality judgments on their own, so these are structural facts for a caller's argument, never a judgment. Synonym-level paraphrase (different vocabulary, same meaning) is out of reach of lexical overlap by design; catching it needs semantic similarity, which sits above the verifiable tier. That half shipped 2026-09-05 via [EP-0009](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0009-embeddings-adapter.md): the `Embedder` port, the model2vec static adapter, and `semantic_clusters` (see the [semantic clusters guide](https://github.com/mox-labs/matra/blob/main/site/content/guides/semantic-clusters.md)). The deterministic family above remains the open half of this entry. Published similarity thresholds for that task span 0.67 to 0.9 with no consensus, which is why every threshold here is caller-supplied.",
+      "text": "matra reports the clusters and the numbers; whether they constitute fluff is the caller's reading. The word never appears in the output. That restraint is now empirical as well as principled: the 2026 slop-measurement literature found repetition and templatedness are weak predictors of human quality judgments on their own, so these are structural facts for a caller's argument, never a judgment. Synonym-level paraphrase (different vocabulary, same meaning) is out of reach of lexical overlap by design; catching it needs semantic similarity, which sits above the verifiable tier. That half shipped 2026-09-05 via [EP-0009](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/eps/0009-embeddings-adapter.md): the `Embedder` port, the model2vec static adapter, and `semantic_clusters` (see the [semantic clusters guide](https://github.com/mox-labs/matra/blob/main/site/content/guides/semantic-clusters.md)). The deterministic family above remains the open half of this entry. Published similarity thresholds for that task span 0.67 to 0.9 with no consensus, which is why every threshold here is caller-supplied.",
       "words": 150
     },
     {
@@ -549,21 +549,21 @@
       "words": 38
     },
     {
-      "compression_ratio": 0.5643,
+      "compression_ratio": 0.5629,
       "in_blockquote": false,
       "lexical_density": 0.6444,
-      "readability_grade": 12.4178,
+      "readability_grade": 12.68,
       "sentences": 4,
-      "text": "**Shipped, 2026-09-05**, via [EP-0010](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0010-foundations.md): `Config` resolves locations and defaults per key from argument, environment, config file, then the defaults compiled into the crate; `Engine::with_defaults()`, `Matra.english()` and the `from_config` constructors are the no-setup path on every surface; `matra config show` and `matra config init` are the command-line half. The question this entry asks is answered narrowly: the file carries locations and defaults, never which metrics run or how output is shaped. Selecting behavior from a file remains unbuilt, and reopening it needs its own RFC rather than a wider schema here.",
+      "text": "**Shipped, 2026-09-05**, via [EP-0010](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/eps/0010-foundations.md): `Config` resolves locations and defaults per key from argument, environment, config file, then the defaults compiled into the crate; `Engine::with_defaults()`, `Matra.english()` and the `from_config` constructors are the no-setup path on every surface; `matra config show` and `matra config init` are the command-line half. The question this entry asks is answered narrowly: the file carries locations and defaults, never which metrics run or how output is shaped. Selecting behavior from a file remains unbuilt, and reopening it needs its own RFC rather than a wider schema here.",
       "words": 96
     },
     {
-      "compression_ratio": 0.5057,
+      "compression_ratio": 0.4963,
       "in_blockquote": false,
       "lexical_density": 0.6047,
-      "readability_grade": 13.8338,
-      "sentences": 6,
-      "text": "**Trigger condition. FIRED, 2026-09-05.** The condition was a caller running matra repeatedly with the same non-default selection, with agent-driven use the likely first instance. It fired as owner direction: matra works with no setup on every surface, follows developer-tool conventions for config and paths, and keeps Rust as the core with Python and TypeScript as thin reach layers. [RFC-0011](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0011-out-of-the-box.md) settles the library-or-application question the paragraph above asks (a resolver for locations and defaults in the library, behavior selection in the application), and [`blueprints/eps/0010-foundations.md`](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0010-foundations.md) carries the milestones.",
+      "readability_grade": 14.7942,
+      "sentences": 7,
+      "text": "**Trigger condition. FIRED, 2026-09-05.** The condition was a caller running matra repeatedly with the same non-default selection, with agent-driven use the likely first instance. It fired as owner direction: matra works with no setup on every surface, follows developer-tool conventions for config and paths, and keeps Rust as the core with Python and TypeScript as thin reach layers. [RFC-0011](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0011-out-of-the-box.md) settles the library-or-application question the paragraph above asks (a resolver for locations and defaults in the library, behavior selection in the application), and [`blueprints/legacy/eps/0010-foundations.md`](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/eps/0010-foundations.md) carries the milestones.",
       "words": 95
     },
     {
@@ -594,22 +594,22 @@
       "words": 82
     },
     {
-      "compression_ratio": 0.5695,
+      "compression_ratio": 0.5722,
       "in_blockquote": false,
       "lexical_density": 0.6122,
-      "readability_grade": 9.0626,
+      "readability_grade": 9.3034,
       "sentences": 4,
-      "text": "**Shipped, 2026-09-06**, via [EP-0011](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0011-agent-surface.md): `matra --skill` prints the top level, `matra --skill -r` lists the references and `matra --skill -r <name>` prints one. The text is embedded with `include_str!`, so an installed program's instructions are the ones that match it, and a test executes the commands the skill names, so an incantation that stops working fails a gate rather than a reader. `--help` is unchanged and stays the reference for humans. The surrounding conventions the precedent paragraph names landed alongside it: `llms.txt` on the docsite with a currency gate, `AGENTS.md` in the repository, a plugin manifest, and `CITATION.cff`.",
+      "text": "**Shipped, 2026-09-06**, via [EP-0011](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/eps/0011-agent-surface.md): `matra --skill` prints the top level, `matra --skill -r` lists the references and `matra --skill -r <name>` prints one. The text is embedded with `include_str!`, so an installed program's instructions are the ones that match it, and a test executes the commands the skill names, so an incantation that stops working fails a gate rather than a reader. `--help` is unchanged and stays the reference for humans. The surrounding conventions the precedent paragraph names landed alongside it: `llms.txt` on the docsite with a currency gate, `AGENTS.md` in the repository, a plugin manifest, and `CITATION.cff`.",
       "words": 108
     },
     {
-      "compression_ratio": 0.5213,
+      "compression_ratio": 0.5078,
       "in_blockquote": false,
       "lexical_density": 0.6047,
-      "readability_grade": 15.5946,
-      "sentences": 4,
-      "text": "**Trigger condition. FIRED, 2026-09-05**, by owner direction, sequenced after EP-0010: the skill documents the CLI contract, so the CLI had to be one implementation with a pinned JSON shape first. EP-0010 landed on 2026-09-06; [RFC-0012](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0012-agent-surface.md) records the decisions and [`blueprints/eps/0011-agent-surface.md`](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0011-agent-surface.md) carries the milestones.",
-      "words": 53
+      "readability_grade": 17.5156,
+      "sentences": 3,
+      "text": "**Trigger condition. FIRED, 2026-09-05**, by owner direction, sequenced after EP-0010: the skill documents the CLI contract, so the CLI had to be one implementation with a pinned JSON shape first. EP-0010 landed on 2026-09-06; [RFC-0012](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0012-agent-surface.md) records the decisions and [`blueprints/legacy/eps/0011-agent-surface.md`](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/eps/0011-agent-surface.md) carries the milestones.",
+      "words": 55
     },
     {
       "compression_ratio": null,

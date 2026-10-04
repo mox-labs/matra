@@ -1,20 +1,21 @@
 ---
 name: Tracking issue
-about: Track an RFC's implementation from acceptance to shipping
-title: "tracking: RFC-NNNN "
+about: Track an enhancement proposal's implementation from acceptance to shipping
+title: "tracking: EPR-NNNN "
 labels: ["tracking"]
 ---
 
 <!--
-One tracking issue per RFC. It is opened when the RFC pull request is ready
-for the owner's decision, so the RFC's `Tracking issue` header can link it
-before the merge. If the owner declines the RFC, close this as not planned.
-It closes when the work ships: the CHANGELOG records it and the RFC's status
+One tracking issue per enhancement proposal. It is opened when the proposal
+is ready for the owner's decision, so the proposal's `Tracking issue` header
+can link it before acceptance. If the owner declines the proposal, close this
+as not planned.
+It closes when the work ships: the CHANGELOG records it and the proposal's status
 moves to `implemented`. blueprints/README.md has the process.
 -->
 
-**RFC:** <!-- link to blueprints/rfcs/NNNN-name.md, or to the RFC pull request until it merges -->
-**EP:** <!-- only when several agents execute the plan in parallel; otherwise `none` -->
+**Proposal:** <!-- link to blueprints/proposals/NNNN-name.md, or to its pull request until it merges -->
+**Plan:** <!-- an EPL-NNNN, only when several agents execute the plan in parallel; otherwise `none` -->
 
 ## Milestones
 

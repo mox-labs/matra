@@ -8,8 +8,8 @@ The owner decides, and Claude does most of the engineering. The owner brings wha
 
 | Who | What they do | What only they do |
 |---|---|---|
-| The owner | Sets direction, reviews what matters to them, comments on records in progress | Accepts an RFC by merging its pull request, accepts an API change proposal, approves each release |
-| Claude | Writes code, docs and proposals; reviews; merges; prepares and dispatches releases | Nothing the owner cannot also do. Claude merges every pull request except an RFC's, each with a comment giving its reason |
+| The owner | Sets direction, reviews what matters to them, comments on records in progress | Accepts an enhancement proposal by merging the change of its status to `accepted`, accepts an API change proposal, approves each release |
+| Claude | Writes code, docs and proposals; reviews; merges; prepares and dispatches releases | Nothing the owner cannot also do. Claude merges every pull request except one that accepts a proposal, each with a comment giving its reason |
 
 ## The agents
 
@@ -49,12 +49,12 @@ Two layers stand between a pull request and `main`, and they are not equal.
 
 Two kinds of act are the owner's alone, whatever trust has built up.
 
-- **Decisions.** An RFC is accepted only when the owner merges its pull request, and an API change proposal only when the owner says so on its issue. Claude writes and argues both, and never merges or closes an RFC pull request.
+- **Decisions.** An enhancement proposal is accepted only when the owner merges the change of its status line to `accepted`, and an API change proposal only when the owner says so on its issue. Claude writes and argues both, and may merge a proposal while its status is `proposed`, so it can be read on this site; that decides nothing, and Claude never merges a pull request that accepts one.
 - **Releases.** Claude prepares a release and dispatches the workflow, which verifies, tags, builds and attests it, then stops at two deployment environments, one per registry, each requiring the owner's approval. That approval is the release decision, because a published version cannot be withdrawn. An agent never approves a deployment.
 
 Everything else merges on Claude's standing authority: once CI is green and the review raises no blockers, Claude merges and leaves a comment giving its reasoning, which is the audit trail. Every commit Claude makes carries a `Co-Authored-By` trailer naming the model, and every release the release workflow builds carries an attestation that [SECURITY.md](https://github.com/mox-labs/matra/blob/main/SECURITY.md) shows how to verify.
 
-One limit is worth stating plainly. Today every merge, comment and approval is recorded under the owner's GitHub login, so the record alone cannot show which of them the owner made by hand, and no branch rule yet makes an RFC merge wait for the owner. The rules above hold by practice. The [Identity section of CONTRIBUTING.md](https://github.com/mox-labs/matra/blob/main/CONTRIBUTING.md#identity) sets out how Claude is to get a GitHub identity of its own, and how a branch rule then requires the owner's review on an RFC pull request.
+One limit is worth stating plainly. Today every merge, comment and approval is recorded under the owner's GitHub login, so the record alone cannot show which of them the owner made by hand, and no branch rule yet makes an acceptance wait for the owner. The rules above hold by practice. The [Identity section of CONTRIBUTING.md](https://github.com/mox-labs/matra/blob/main/CONTRIBUTING.md#identity) sets out how Claude is to get a GitHub identity of its own, and how a required check then holds an acceptance for the owner's review.
 
 ## Which record a change takes
 
@@ -62,15 +62,17 @@ The process follows the Rust project's RFC process, and the size of a change set
 
 | Change | Record |
 |---|---|
-| A substantial change users notice: the public surface in Rust, Python, the command line or the JSON output; behaviour, including the default model; removing a substantial feature; an architecture boundary | An RFC, proposed as a pull request and accepted when the owner merges it |
+| A substantial change users notice: the public surface in Rust, Python, the command line or the JSON output; behaviour, including the default model; removing a substantial feature; an architecture boundary | An enhancement proposal (`EPR-NNNN`), proposed as a pull request. It may merge as `proposed`, so it renders for review, and is accepted when the owner merges the change of its status to `accepted` |
 | A minor addition to the public surface, or a minor removal | An API change proposal: a short issue labelled `acp` |
 | Tooling, docs, CI, refactors, measured performance work, bug fixes | The pull request itself. A rule it leaves behind lives in the file that governs it |
 
-Each accepted RFC gets a tracking issue, labelled `tracking`, that holds its milestone checklist and links the pull request for each milestone; it closes when the work ships. A plan that several agents carry out in parallel gets an enhancement plan (an EP) beside the RFC. An accepted RFC is never rewritten: a change of mind is a new RFC that supersedes it, so the reasoning behind every decision stays readable. The full process and the index of records are in [`blueprints/README.md`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md).
+Each accepted proposal gets a tracking issue, labelled `tracking`, that holds its milestone checklist and links the pull request for each milestone; it closes when the work ships. A plan that several agents carry out in parallel gets an enhancement plan (`EPL-NNNN`) beside the proposal. An accepted proposal is never rewritten: a change of mind is a new proposal that supersedes it, so the reasoning behind every decision stays readable. The full process and the index of records are in [`blueprints/README.md`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md).
+
+Proposals and plans are numbered from 0001, from a baseline on 2026-10-04. The records written before it, cited as `RFC-NNNN` and `EP-NNNN`, are kept unchanged in [`blueprints/legacy/`](https://github.com/mox-labs/matra/tree/main/blueprints/legacy): they are the reasons behind the code that exists, and the comments and pages that cite them still mean them.
 
 ## Where a record converges
 
-The records are rendered on this site, under Blueprints, each with its status; it is the one part of the site that shows a status. Before a record is settled, the owner reads it there in the local development server, where any passage on any page can be selected and commented on. The threads are saved as files in the repository, so the next Claude session reads them, answers in them and changes the record, and the owner reads the answer in the same place. The discussion that shaped a record stays beside it rather than in a chat log that is gone the next day.
+The proposals and plans are rendered on this site, in its Blueprints area, each with its status; it is the one area of the site that shows a status, and the documentation keeps to what ships. Before a record is settled, the owner reads it there in the local development server, where any passage on any page can be selected and commented on. The threads are saved as files in the repository, so the next Claude session reads them, answers in them and changes the record, and the owner reads the answer in the same place. The discussion that shaped a record stays beside it rather than in a chat log that is gone the next day.
 
 ## How a lesson becomes a check
 
@@ -78,7 +80,7 @@ When something goes wrong twice, the fix is a check rather than a note, because 
 
 - The boundary rules were partly a text search and partly review alone, and the search missed whole forms of import. They are now semgrep rules, each tested against a fixture that holds a violation.
 - A check twice passed silently on a machine where the tool it needed was missing. Every check now fails when its tool is absent.
-- When the design records moved to their present process, every citation of a record in the tree changed at once. A check now fails when any cited RFC or EP number has no record.
+- When the design records moved to their present process, every citation of a record in the tree changed at once. A check now fails when a cited record has no file of its own kind: a proposal, a plan, or a legacy RFC or EP.
 - The agent and skill files drifted from the code twice: an agent cited a class at a line it had long left, and another counted files that had been removed. A check now fails when a file and line cited under `.claude/` points at a missing file or past its end.
 
 What a check cannot see, such as whether a design is sound or whether a paragraph still describes the code it names, stays with review. The repository's own check scripts say which is which: each ends by naming what it examined, so a pass is not mistaken for a reading.

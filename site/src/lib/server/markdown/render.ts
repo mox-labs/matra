@@ -102,11 +102,11 @@ export interface Rendered {
 }
 
 export interface RenderContext {
-	/** The page's path under site/content/ (or blueprints/), for error messages. */
+	/** The page's path under site/content/ (or blueprints/, or lab/), for error messages. */
 	file: string;
 	/**
 	 * The page's path from the repository root (`site/content/guides/cli.md`,
-	 * `blueprints/rfcs/0007-one-pipeline.md`). Relative links resolve from it.
+	 * `blueprints/proposals/0001-name.md`). Relative links resolve from it.
 	 */
 	repoFile: string;
 	/** Every page the site renders, by its path from the repository root, mapped to its route. */
@@ -511,7 +511,7 @@ const rewriteLinks: Plugin<[RenderContext], Root> = (ctx) => (tree) => {
 		if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('#')) return;
 
 		const [target, hash] = splitHash(href);
-		const record = ctx.repoFile.startsWith('blueprints/');
+		const record = ctx.repoFile.startsWith('blueprints/') || ctx.repoFile.startsWith('lab/');
 		if (href.startsWith('/') || (!record && !target.endsWith('.md'))) {
 			broken.push(`  ${ctx.file}: ${href} (a relative link to a .md page is the only local form)`);
 			return;
@@ -523,10 +523,11 @@ const rewriteLinks: Plugin<[RenderContext], Root> = (ctx) => (tree) => {
 			return;
 		}
 		// A design record cites the code and the tooling it decides about
-		// (`../../src/lib.rs`). Those files are not pages, so the link goes to
-		// the file on main, on GitHub, where the record's own links lead too.
-		// A path that leaves the repository or names nothing on disk fails.
-		if (record && !resolved.startsWith('../') && resolved !== '..' && !resolved.startsWith('blueprints/')) {
+		// (`../../src/lib.rs`), and the index links the templates and the
+		// legacy records, which are not rendered. Those files are not pages, so
+		// the link goes to the file on main, on GitHub. A path that leaves the
+		// repository or names nothing on disk fails.
+		if (record && !resolved.startsWith('../') && resolved !== '..') {
 			const path = resolved.replace(/\/$/, '');
 			if (existsSync(resolve(REPO_ROOT, path))) {
 				node.properties.href = `${REPO_URL}/blob/main/${path}${hash}`;

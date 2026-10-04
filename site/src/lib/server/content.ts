@@ -15,6 +15,7 @@ import { flatten, parseSummary } from './summary';
 import { render } from './markdown/render';
 import { exampleMarkdown, examples } from './examples';
 import { blueprintSources, blueprintsPart, records } from './blueprints';
+import { labPart, labSources } from './lab';
 
 const SOURCES = import.meta.glob('/content/**/*.md', {
 	query: '?raw',
@@ -69,32 +70,38 @@ function source(file: string): string {
 }
 
 /**
- * The navigation: SUMMARY.md's parts, then the Blueprints part, which is
- * read from blueprints/ itself (./blueprints.ts) rather than listed in
- * SUMMARY.md, so the product pages' gates and llms.txt sections stay theirs.
+ * The navigation: SUMMARY.md's parts, which are the Docs area, then the
+ * Blueprints and Lab areas, read from blueprints/ and lab/ themselves
+ * (./blueprints.ts, ./lab.ts) rather than listed in SUMMARY.md, so the
+ * product pages' gates and llms.txt sections stay theirs. The layout shows
+ * one area's parts at a time.
  */
-const summaryNav = parseSummary(source('SUMMARY.md'));
-export const nav: NavPart[] = [...summaryNav, blueprintsPart];
+const summaryNav = parseSummary(source('SUMMARY.md')).map((p) => ({ ...p, area: 'docs' as const }));
+export const nav: NavPart[] = [...summaryNav, blueprintsPart, labPart];
 
 /**
- * Two reading orders, each with its own previous and next: the product pages
- * in SUMMARY.md order, and the design records. The last product page does
- * not lead into the records.
+ * A reading order per area, each with its own previous and next: the product
+ * pages in SUMMARY.md order, the design records, and the Lab. The last page
+ * of one area does not lead into the next.
  */
 const order = flatten(summaryNav);
 const recordOrder = flatten([blueprintsPart]).filter((o) => !o.item.group);
+const labOrder = flatten([labPart]);
 
 /** Every page in SUMMARY.md, in reading order. */
 export const pages = order.map((o) => o.item);
 
-/** Every page the site renders: the SUMMARY.md pages and the design records. */
-export const allPages = [...pages, ...recordOrder.map((o) => o.item)];
+/** Every page the site renders: the SUMMARY.md pages, the design records and the Lab. */
+export const allPages = [...pages, ...recordOrder.map((o) => o.item), ...labOrder.map((o) => o.item)];
 
 const isRecord = (file: string) => file.startsWith('blueprints/');
+const isLab = (file: string) => file.startsWith('lab/');
+/** A page read from the repository rather than from site/content/. */
+const outsideContent = (file: string) => isRecord(file) || isLab(file);
 
 /** A page's path from the repository root. */
 function repoFileOf(file: string): string {
-	return isRecord(file) ? file : `site/content/${file}`;
+	return outsideContent(file) ? file : `site/content/${file}`;
 }
 
 /**
@@ -107,9 +114,9 @@ for (const p of allPages) pageSource(p.file);
 if (records.length !== recordOrder.length) throw new Error('a blueprint is missing from the navigation');
 
 function pageSource(file: string): string {
-	if (!isRecord(file)) return source(file);
-	const text = blueprintSources.get(file);
-	if (text === undefined) throw new Error(`no blueprint at ${file}`);
+	if (!outsideContent(file)) return source(file);
+	const text = (isLab(file) ? labSources : blueprintSources).get(file);
+	if (text === undefined) throw new Error(`no page at ${file}`);
 	return text;
 }
 
@@ -128,9 +135,9 @@ export function llmsTxt(): string {
 export function markdownOf(route: string): string {
 	const page = allPages.find((p) => p.route === route);
 	if (!page) error(404, `No page at ${route}`);
-	// A record is served as written: it has no example tags, and its relative
-	// links resolve beside it, to the other records' twins.
-	if (isRecord(page.file)) return pageSource(page.file);
+	// A record or a Lab page is served as written: it has no example tags, and
+	// its relative links resolve beside it, to the other pages' twins.
+	if (outsideContent(page.file)) return pageSource(page.file);
 	// The spellings the renderer's tag pattern accepts (FIGURE_TAG in
 	// markdown/render.ts), so a tag that renders on the page cannot survive
 	// raw in the twin; and if one does anyway, the build fails.
@@ -156,7 +163,7 @@ const REPO_ROOT = resolve('..');
  * goes to ROADMAP.md itself.
  */
 function repoPathOf(file: string): string {
-	if (isRecord(file)) return file;
+	if (outsideContent(file)) return file;
 	const real = realpathSync(resolve(SITE_ROOT, 'content', file));
 	return relative(realpathSync(REPO_ROOT), real).split('\\').join('/');
 }
@@ -181,11 +188,11 @@ function crumbsOf(target: NavItem): Crumb[] {
 }
 
 export async function loadDoc(route: string): Promise<Doc> {
-	const chain = order.some((o) => o.item.route === route) ? order : recordOrder;
+	const chain = [order, recordOrder, labOrder].find((c) => c.some((o) => o.item.route === route)) ?? order;
 	const i = chain.findIndex((o) => o.item.route === route);
 	if (i === -1) error(404, `No page at ${route}`);
 	const { item, part } = chain[i];
-	const record = isRecord(item.file);
+	const record = outsideContent(item.file);
 	const rendered = await render(pageSource(item.file), {
 		file: item.file,
 		repoFile: repoFileOf(item.file),
