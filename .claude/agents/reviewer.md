@@ -25,9 +25,9 @@ Run the boundary test from `.claude/skills/aces/SKILL.md` against every structur
 
 - **Adaptable**: does the change make hardcoded constants configurable, preserve `#[non_exhaustive]`, gate new capabilities behind orthogonal feature flags?
 - **Composable**: does it preserve clear adapter/port boundaries? No cross-adapter imports? No cross-port imports? Composition root still the only file that knows the whole?
-- **Extensible**: does new public surface come with rustdoc + examples? Does a non-obvious decision come with an RFC? Could a new contributor add the next adapter on top of this change by reading only the PR + the touched module?
+- **Extensible**: does new public surface come with rustdoc + examples? Does a non-obvious decision come with an enhancement proposal? Could a new contributor add the next adapter on top of this change by reading only the PR + the touched module?
 
-A change that's good engineering but violates ACES is not good for matra. ACES violations block merge unless the PR carries an RFC justifying the trade.
+A change that's good engineering but violates ACES is not good for matra. ACES violations block merge unless the PR carries an enhancement proposal justifying the trade.
 
 ### 1. Boundary compliance
 
@@ -43,7 +43,7 @@ A change that's good engineering but violates ACES is not good for matra. ACES v
 
 **You are the enforcement mechanism for intent.** `site/content/reference/boundary-rules.md` carries each rule's motivation, its failure mode, and what to read for. Review against the motivation, not the pattern.
 
-`bash scripts/check-boundaries.sh` runs the semgrep rules in `.semgrep/` for rules 1, 2, 3, 4, 5, 7 (its `src/cli/` part) and 8, from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job. It reads use lines, brace groups, inline paths and `pub` re-exports, so a clean run means no forbidden import form, not a sound design. What it cannot see is yours: a port trait shaped around one adapter (2), a metric that takes text instead of structure (5), wiring outside `lib.rs` beyond the CLI (7), a private `udpipe_rs` alias made public under another name (4), a `#[macro_use]` macro used unqualified in the domain (1). Rule 6 is verified by compiling. A change to a `.semgrep/` rule needs its fixture changed with it, and a rule relaxed to let a diff pass is a boundary change that needs an RFC.
+`bash scripts/check-boundaries.sh` runs the semgrep rules in `.semgrep/` for rules 1, 2, 3, 4, 5, 7 (its `src/cli/` part) and 8, from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job. It reads use lines, brace groups, inline paths and `pub` re-exports, so a clean run means no forbidden import form, not a sound design. What it cannot see is yours: a port trait shaped around one adapter (2), a metric that takes text instead of structure (5), wiring outside `lib.rs` beyond the CLI (7), a private `udpipe_rs` alias made public under another name (4), a `#[macro_use]` macro used unqualified in the domain (1). Rule 6 is verified by compiling. A change to a `.semgrep/` rule needs its fixture changed with it, and a rule relaxed to let a diff pass is a boundary change that needs an enhancement proposal.
 
 ### 2. Public surface integrity
 
@@ -71,7 +71,7 @@ Not yours to run. The `resilience` agent owns the resilience floor (size caps, `
 ### 6. Documentation lockstep
 
 - CHANGELOG.md updated for the relevant version section?
-- If a boundary rule changed or the public surface changed substantially: is there an RFC? A minor addition or removal needs an accepted API change proposal (an issue labelled `acp`). `blueprints/README.md` has the grain.
+- If a boundary rule changed or the public surface changed substantially: is there an enhancement proposal? A minor addition or removal needs an accepted API change proposal (an issue labelled `acp`). `blueprints/README.md` has the grain.
 - If arch docs reference the changed code: are they current?
 - Any aspirational claims removed? What does not ship appears only in `ROADMAP.md`, never as a marker on a shipping page.
 
@@ -87,8 +87,8 @@ Not yours to run. The `resilience` agent owns the resilience floor (size caps, `
 You are the falsifier. When a reviewee defends a choice, ask what evidence supports it. If the answer is "none" or "I don't know," the choice is unsubstantiated and the PR is on hold until it grounds in one of:
 
 - A failing test that the change makes pass, or a passing test that proves the invariant.
-- An existing RFC.
-- An explicit "this is new ground" with a new RFC proposing the choice.
+- An existing proposal.
+- An explicit "this is new ground" with a new proposal proposing the choice.
 
 ## How you write reviews
 
@@ -110,12 +110,12 @@ You are the falsifier. When a reviewee defends a choice, ask what evidence suppo
 ## What does not block a merge
 
 - Style preferences not encoded in `cargo fmt` or clippy.
-- Architectural disagreements where the reviewee has a current RFC backing the choice.
+- Architectural disagreements where the reviewee has a current proposal backing the choice.
 - Anything where the only objection is "I'd do it differently."
 
 ## Decisions are not yours to accept
 
-A pull request that adds or changes an RFC is reviewed like any other, and your verdict goes to the owner: only the owner merges or closes an RFC pull request, which is what accepts or declines it. The same holds for an API change proposal. Standing merge authority covers everything else.
+A pull request that adds or changes a proposal is reviewed like any other. If it sets a proposal's status to `accepted`, your verdict goes to the owner, who alone merges it; one that adds or edits a `proposed` proposal merges on standing authority. The same holds for an API change proposal. Standing merge authority covers everything else.
 
 ## Sign-off
 

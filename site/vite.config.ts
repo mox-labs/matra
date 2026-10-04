@@ -17,10 +17,10 @@ export default defineConfig({
 		host: 'localhost',
 		fs: {
 			// site/content/roadmap.md is a symlink to the repository's
-			// ROADMAP.md, and the Blueprints part reads blueprints/ in place;
-			// both sit outside this project. Setting `allow` replaces Vite's
+			// ROADMAP.md, and the Blueprints and Lab areas read blueprints/ and lab/
+			// in place; all sit outside this project. Setting `allow` replaces Vite's
 			// default, so the project root is named too.
-			allow: [searchForWorkspaceRoot(process.cwd()), '../ROADMAP.md', '../blueprints']
+			allow: [searchForWorkspaceRoot(process.cwd()), '../ROADMAP.md', '../blueprints', '../lab']
 		}
 	}
 });

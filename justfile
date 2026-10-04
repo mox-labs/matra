@@ -149,7 +149,7 @@ comments *flags:
     cd site && bun scripts/comments.ts list {{flags}}
 
 # Append a reply as Claude, e.g.
-# just comment-reply /blueprints/rfcs/0019-rfc-and-ep-process 1a2b3c4d "Done in 3f2e1a0."
+# just comment-reply /blueprints/index 1a2b3c4d "Done in 3f2e1a0."
 # Reply to a local comment thread.
 comment-reply page thread body:
     cd site && bun scripts/comments.ts reply {{quote(page)}} {{quote(thread)}} {{quote(body)}}

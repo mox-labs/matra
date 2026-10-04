@@ -47,12 +47,17 @@ when reviewing: [`site/content/reference/boundary-rules.md`](site/content/refere
 Which record a change takes is in [`blueprints/README.md`](blueprints/README.md).
 A substantial change matra's users notice (the public surface in Rust, Python,
 the command line or the JSON schema; semantics or behaviour; removing a
-substantial feature; an architecture boundary) is an RFC, proposed as a pull
-request. A minor addition or removal is an API change proposal, an issue
-labelled `acp`. Tooling, docs, CI, refactors, measured performance work and
+substantial feature; an architecture boundary) is an enhancement proposal
+(`EPR-NNNN`), proposed as a pull request. A minor addition or removal is an
+API change proposal, an issue labelled `acp`. Tooling, docs, CI, refactors, measured performance work and
 bug fixes are plain pull requests.
 
-One milestone per pull request, in the order the RFC's tracking issue states.
+Proposals and enhancement plans (`EPL-NNNN`, only for work several agents
+carry out in parallel) are numbered from 0001, from the 2026-10-04 baseline.
+The RFCs and EPs written before it are in `blueprints/legacy/`, unchanged, as
+the reasons behind the code that exists; `RFC-NNNN` and `EP-NNNN` cite them.
+
+One milestone per pull request, in the order the proposal's tracking issue states.
 Conventional commits (`feat`, `fix`, `docs`, `chore`, `refactor`, `perf`,
 `test`, `ci`, `build`), and a commit body that says why, not what. Update
 `CHANGELOG.md` under `[Unreleased]` in the same PR as the code. A review harness
@@ -60,10 +65,12 @@ runs on the pull request and its findings are applied before merge.
 
 ## Who decides
 
-- **Only the owner accepts a decision.** An agent writes and argues RFCs and
-  API change proposals, and never merges or closes an RFC pull request, and
-  never accepts a proposal. Merging an RFC pull request is what accepts it, and
-  only the owner does that.
+- **Only the owner accepts a decision.** An agent writes and argues
+  enhancement proposals and API change proposals, and never accepts one. A
+  proposal may merge with its status `proposed`, which an agent may merge
+  so it renders on the docsite for review; acceptance is the change of its
+  status line to `accepted`, and only the owner merges a pull request that
+  makes it.
 - **Everything else merges on standing authority.** Claude merges code, docs,
   tooling and dependency updates once CI is green and the review raises no
   blockers, and leaves a comment with its rationale as the audit trail.
@@ -78,7 +85,8 @@ runs on the pull request and its findings are applied before merge.
   non-obvious behaviors that will bite you.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): the working model, how decisions get
   made, how releases work, the full PR mechanics.
-- [`blueprints/`](blueprints/README.md): the RFCs that record each design
-  decision, and the process that says which record a change takes.
+- [`blueprints/`](blueprints/README.md): the enhancement proposals that
+  record each design decision, the legacy records behind the code that
+  exists, and the process that says which record a change takes.
 - [How matra is maintained](site/content/explanation/how-matra-is-maintained.md):
   the agents, the gates, and who decides what.

@@ -8,6 +8,11 @@
 	 * the wordmark's tallest letter touches it). The controls hang from the
 	 * same rule. The footer's rule echoes it, and the maker's mark hangs from
 	 * its end.
+	 *
+	 * The site has three areas: Docs (the SUMMARY.md parts), Blueprints (the
+	 * design records) and Lab (evals and experiments). The header names all
+	 * three and marks the one being read; on a phone they sit in a row of
+	 * their own under the rule. The sidebar holds the current area's parts.
 	 */
 	import '../app.css';
 	import { onMount, type Component } from 'svelte';
@@ -22,7 +27,7 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { inkTop, PLEX_MONO, tallest } from '$lib/fonts';
 	import { DISCUSSIONS_URL, ISSUES_URL, REPO_URL, SITE_NAME } from '$lib/site';
-	import type { Doc } from '$lib/types';
+	import type { Area, Doc } from '$lib/types';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -35,6 +40,17 @@
 		const path = page.url.pathname.slice(base.length).replace(/\.html$/, '');
 		return path === '' || path === '/' ? (data.nav[0]?.items[0]?.route ?? null) : path;
 	});
+
+	/** The area the page being shown is in, read from its route. */
+	const area = $derived<Area>(
+		current?.startsWith('/blueprints/') ? 'blueprints' : current?.startsWith('/lab/') ? 'lab' : 'docs'
+	);
+	const AREAS: { id: Area; label: string; href: string }[] = [
+		{ id: 'docs', label: 'Docs', href: `${base}/` },
+		{ id: 'blueprints', label: 'Blueprints', href: `${base}/blueprints/index` },
+		{ id: 'lab', label: 'Lab', href: `${base}/lab/index` }
+	];
+	const areaNav = $derived(data.nav.filter((p) => (p.area ?? 'docs') === area));
 
 	const toc = $derived(((page.data as { doc?: Doc }).doc?.toc ?? []).filter((t) => t.depth === 2));
 
@@ -95,6 +111,12 @@
 		<span class="wordmark" aria-hidden="true">{SITE_NAME}</span>
 	</a>
 
+	<nav class="areas" aria-label="Site areas">
+		{#each AREAS as a (a.id)}
+			<a href={a.href} aria-current={a.id === area ? 'true' : undefined}>{a.label}</a>
+		{/each}
+	</nav>
+
 	<div class="search-slot"><Search /></div>
 
 	<nav class="header-links" aria-label="Project">
@@ -111,8 +133,8 @@
 
 <div class="shell">
 	<aside class="sidebar" class:open={navOpen} id="site-nav" data-print="hide">
-		<nav aria-label="Documentation">
-			<NavTree nav={data.nav} {current} {toc} />
+		<nav aria-label={AREAS.find((a) => a.id === area)?.label ?? 'Docs'}>
+			<NavTree nav={areaNav} {current} {toc} />
 		</nav>
 		<nav class="sidebar-links" aria-label="Project links">
 			{#each links as link (link.href)}
@@ -226,6 +248,37 @@
 		letter-spacing: 0.02em;
 	}
 
+	/* The three areas, in the apparatus face: the current one in ink with a
+	   Spark rule under it, so the mark is a shape and not only a colour. */
+	.areas {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		height: calc(var(--header-height) - var(--rule));
+		margin-top: var(--rule);
+		margin-inline-start: var(--space-3);
+		font: 400 var(--type-sm) var(--font-mono);
+	}
+
+	.areas a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 24px;
+		color: var(--text-muted);
+		text-decoration: none;
+		border-bottom: 2px solid transparent;
+	}
+
+	.areas a:hover {
+		color: var(--spark);
+	}
+
+	.areas a[aria-current] {
+		color: var(--text);
+		font-weight: 600;
+		border-bottom-color: var(--spark);
+	}
+
 	.search-slot {
 		margin-inline-start: auto;
 		margin-top: var(--rule);
@@ -247,6 +300,14 @@
 
 	.header-links a:hover {
 		color: var(--spark);
+	}
+
+	/* Between the phone layout and a wide window the areas need the room the
+	   project's text links take; those links stay in the footer. */
+	@media (max-width: 62rem) {
+		.header-links a:not(.icon-button) {
+			display: none;
+		}
 	}
 
 	.site-header :global(.theme-toggle) {
@@ -364,6 +425,18 @@
 
 		.header-links {
 			display: none;
+		}
+
+		/* On a phone the areas take a row of their own under the header's
+		   first row, inside the header, which grows to hold it (app.css). */
+		.areas {
+			position: absolute;
+			inset: var(--header-height) 0 auto;
+			height: var(--areas-h);
+			margin: 0;
+			padding: 0 var(--space-2);
+			gap: var(--space-3);
+			border-top: 1px solid var(--border);
 		}
 
 		.shell {

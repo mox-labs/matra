@@ -10,11 +10,12 @@
 #
 # Enforcement waits on Claude's own GitHub identity, a GitHub App
 # (CONTRIBUTING.md, Identity). Once Claude opens pull requests as the App,
-# this file shrinks to the decision path, /blueprints/rfcs/, and main's
-# branch protection turns on "Require review from Code Owners", so an RFC
-# pull request cannot merge without the owner. It shrinks first because that
-# rule makes every path listed here wait for the owner; the list below would
-# hold almost every pull request.
+# acceptance is held by a required check: a pull request that changes a
+# proposal's status line to `accepted` cannot merge without the owner's
+# approval (CONTRIBUTING.md, Identity). A path rule on blueprints/proposals/
+# would hold too much, since a `proposed` proposal merges without the owner.
+# This file then shrinks to what should still reach the owner; the list below
+# would otherwise hold almost every pull request.
 #
 # Pattern syntax follows GitHub's CODEOWNERS spec.
 
@@ -55,9 +56,9 @@
 /scripts/pre-commit-hook.sh            @yzavyas
 /deny.toml                             @yzavyas
 
-# Design records — RFCs and EPs are the durable record. Anything in
+# Design records — proposals and plans are the durable record. Anything in
 # blueprints/ should be reviewed for template compliance, for the index
-# in blueprints/README.md, and for RFC-supersede chain integrity.
+# in blueprints/README.md, and for supersede chain integrity. blueprints/legacy/ is never edited.
 /blueprints/             @yzavyas
 
 # Hex boundary critical files — any change to domain.rs, the port

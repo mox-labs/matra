@@ -49,18 +49,18 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/roadmap.md",
-            "29348:13e93baae2ced404",
+            "29425:3aaafb55ab773058",
             "the 0.5857 and 0.6080 unrelated scores, in the same two files",
         ),
         (
             "site/content/reference/errors.md",
-            "24352:3352dc9fbf10de24",
+            "24373:3afb5d0ccd429f10",
             "the RAKE and YAKE figures in site/content/guides/cli.md: 459 phrases, \
              the one first at 9.000, 1.190, 210 at the floor, and YAKE's 75.556",
         ),
         (
             "site/content/reference/domain-types.md",
-            "34906:374bc6251e3647de",
+            "34920:0923fca09d5acbf0",
             "the 141-word saturation floor and the 54-word window in \
              site/content/guides/semantic-clusters.md and skills/matra/references/semantic.md",
         ),

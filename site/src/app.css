@@ -104,6 +104,18 @@
 	--radius-control: var(--radius-sm);
 }
 
+/* On a phone the header holds a second row, the site's three areas
+   (+layout.svelte), so everything placed under the header moves down by it. */
+:root {
+	--areas-h: 2.25rem; /* 36px, 4U */
+}
+
+@media (max-width: 54rem) {
+	:root {
+		--header-h: calc(var(--header-height) + var(--areas-h));
+	}
+}
+
 :root[data-theme='light'] {
 	color-scheme: light;
 }

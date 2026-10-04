@@ -74,7 +74,7 @@ If a third-party crate ships `matra-stanza`, `matra-spacy`, `matra-trankit`, etc
 
 1. Extract the port to `matra-nlp-api` as a minimal crate (domain types + the trait).
 2. Make `matra` depend on `matra-nlp-api`.
-3. Write an RFC documenting the extraction and superseding `blueprints/rfcs/0004-stay-single-crate.md`.
+3. Write an enhancement proposal documenting the extraction and replacing the decision in `blueprints/legacy/rfcs/0004-stay-single-crate.md`.
 
 Don't anticipate; respond.
 
@@ -107,4 +107,4 @@ A port surface that's:
 - Small (minimum methods that satisfy the constraint).
 - Object-safe (`&dyn Trait` works).
 - Well-documented (pre/post conditions on the trait, forbidden imports stated).
-- Stable (changes go through RFC + reviewer).
+- Stable (changes go through proposal + reviewer).

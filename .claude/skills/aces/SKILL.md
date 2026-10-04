@@ -68,7 +68,7 @@ For any proposed change, ask three questions:
 - More: the change makes a hardcoded constant configurable, makes a public type `#[non_exhaustive]`, gates a new capability behind a feature flag.
 - Less: the change locks in a specific format/backend, removes `#[non_exhaustive]`, couples two previously-independent features.
 
-A "less" answer needs a strong justification (an RFC, a falsifiable prediction, a measured constraint).
+A "less" answer needs a strong justification (an enhancement proposal, a falsifiable prediction, a measured constraint).
 
 ### 2. Does this make the system more composable, or less?
 
@@ -79,10 +79,10 @@ The hex layout is the canonical composable shape. Test every change against it.
 
 ### 3. Does this make the system more extensible, or less?
 
-- More: the change adds rustdoc to a previously-undocumented surface, writes an RFC for a non-obvious decision, simplifies a trait signature so external implementors don't need to reason about lifetimes.
+- More: the change adds rustdoc to a previously-undocumented surface, writes an enhancement proposal for a non-obvious decision, simplifies a trait signature so external implementors don't need to reason about lifetimes.
 - Less: the change removes rustdoc, hides a public type, adds a workaround without explaining why.
 
-The extension test: would a new contributor, reading only this PR + the touched module + the related RFC, be able to add the next adapter on top of this change?
+The extension test: would a new contributor, reading only this PR + the touched module + the related proposal, be able to add the next adapter on top of this change?
 
 ## The cycle map
 
@@ -104,13 +104,13 @@ Where matra is doing well:
 
 - **A**daptable: every public type is `#[non_exhaustive]`; feature flags are additive; the boundary rules are explicit.
 - **C**omposable: hex layout intact; four ports with adapters behind them; clear composition root.
-- **E**xtensible: rustdoc on every public surface; RFCs for substantive decisions.
+- **E**xtensible: rustdoc on every public surface; proposals for substantive decisions.
 
 Where to keep watch:
 
 - **A**daptable: when a new feature wants to imply other features (e.g., `python` implying `udpipe`), the implication is a coupling — push back unless there's a measured reason.
 - **C**omposable: when an adapter wants to import another adapter ("just this once"), the boundary is being crossed — find a different shape.
-- **E**xtensible: when rustdoc or RFCs lag behind code, opacity builds. The `archivist` agent's lockstep contract exists to prevent this.
+- **E**xtensible: when rustdoc or proposals lag behind code, opacity builds. The `archivist` agent's lockstep contract exists to prevent this.
 
 ## Inversion mechanisms — what to reach for when the cycle starts spinning
 
@@ -133,8 +133,8 @@ matra is small enough today that the cycle isn't actively spinning. The discipli
 
 ACES is the philosophy matra is built on. A change that's good engineering but violates ACES is not good for matra. Specifically:
 
-- A change that makes the system harder to evolve (removes `#[non_exhaustive]`, locks in a backend, hardcodes a value that should be configurable) — **reject** unless there's an RFC justifying the trade.
-- A change that blurs boundaries (adapter imports another adapter, port imports another port, domain.rs grows a new dep beyond serde/thiserror/std) — **reject** unless there's an RFC.
-- A change that grows opacity (removes rustdoc, adds a workaround without explaining, deletes an RFC's context) — **reject** in review.
+- A change that makes the system harder to evolve (removes `#[non_exhaustive]`, locks in a backend, hardcodes a value that should be configurable) — **reject** unless there's an enhancement proposal justifying the trade.
+- A change that blurs boundaries (adapter imports another adapter, port imports another port, domain.rs grows a new dep beyond serde/thiserror/std) — **reject** unless there's an enhancement proposal.
+- A change that grows opacity (removes rustdoc, adds a workaround without explaining, deletes an enhancement proposal's context) — **reject** in review.
 
 These rejections are not personal; they are the library's self-defense.

@@ -9,7 +9,7 @@ Most of what used to live here now lives in the docsite, where it is built, gate
 | The eight boundary rules, why each exists, how each is enforced | [`site/content/reference/boundary-rules.md`](../../site/content/reference/boundary-rules.md) |
 | Every metric formula and its applicability condition | [`site/content/reference/methodology.md`](../../site/content/reference/methodology.md) |
 | What matra does not do yet and what would change that | [`site/content/roadmap.md`](../../site/content/roadmap.md) |
-| Why the design is shaped this way, and how a triggered capability gets built | [`blueprints/`](../../blueprints/README.md): RFCs for decisions, EPs for the plans that ship them |
+| Why the design is shaped this way, and how a triggered capability gets built | [`blueprints/`](../../blueprints/README.md): proposals for decisions, plans for the plans that ship them |
 
 ## What is still here
 

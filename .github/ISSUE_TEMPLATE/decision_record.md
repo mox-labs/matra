@@ -41,6 +41,6 @@ labels: ["type:decision", "status:open"]
 ## Outcome
 
 <!-- Filled in when the decision is made, before this issue closes. Links to
-     the RFC pull request that carries the proposal (the owner's merge accepts
-     the RFC under blueprints/rfcs/) and to its tracking issue, or to the API
+     the enhancement proposal in blueprints/proposals/ (accepted when the owner
+     merges the change of its status to `accepted`) and to its tracking issue, or to the API
      change proposal if the change turned out minor. -->

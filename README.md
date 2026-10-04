@@ -116,8 +116,8 @@ for both Claude-managed repositories and human–AI collaborative intelligence.
 The owner collaborates with Claude (Anthropic's AI) to plan, implement,
 and review changes. Claude reviews and merges a pull request once CI is green
 and the review raises no blockers, and leaves a comment with its rationale as
-the audit trail. The owner makes the decisions: only the owner merges an RFC
-pull request, which is what accepts it, and only the owner approves the
+the audit trail. The owner makes the decisions: only the owner merges the
+change that accepts an enhancement proposal, and only the owner approves the
 release workflow's deployment environments, which is the release decision.
 [How matra is maintained](https://mox-labs.github.io/matra/explanation/how-matra-is-maintained.html)
 explains the whole arrangement. The working values
@@ -142,7 +142,7 @@ participate without re-deriving the design.
 | Where to look | What's there |
 |---|---|
 | [`.claude/arch/`](https://github.com/mox-labs/matra/tree/main/.claude/arch) | Rejected-decision history: what was proposed, why it was turned down. The architecture itself is in the docsite's [architecture page](https://mox-labs.github.io/matra/architecture/design.html) |
-| [`blueprints/`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md) | RFCs (substantial changes, accepted by the owner) and EPs (plans several agents carry out in parallel) |
+| [`blueprints/`](https://github.com/mox-labs/matra/blob/main/blueprints/README.md) | Enhancement proposals (substantial changes, accepted by the owner), enhancement plans (work several agents carry out in parallel), and the legacy RFCs and EPs behind the code that exists |
 | [`CHANGELOG.md`](https://github.com/mox-labs/matra/blob/main/CHANGELOG.md) | What changed and why, per release |
 | [`CONTRIBUTING.md`](https://github.com/mox-labs/matra/blob/main/CONTRIBUTING.md) | How to participate, commit conventions, decision flow |
 | [`SECURITY.md`](https://github.com/mox-labs/matra/blob/main/SECURITY.md) | Vulnerability disclosure policy, and how to verify a release with `gh attestation verify` |

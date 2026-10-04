@@ -1,27 +1,28 @@
-# EP-0000: Title in sentence case
+# EPL-0000: Title in sentence case
 
-- EP: EP-0000
-- Implements: (the accepted RFCs this plan delivers, e.g. [RFC-0000](../rfcs/0000-template.md), or `none` for a standalone EP)
+- Plan: EPL-0000
+- Implements: (the accepted proposals this plan delivers, e.g. [EPR-0000](../proposals/0000-template.md), or `none` for a standalone plan)
 - Start Date: (the day the pull request opens, YYYY-MM-DD)
-- EP PR: (the pull request that proposes this EP, e.g. [#0](https://github.com/mox-labs/matra/pull/0))
+- Plan PR: (the pull request that proposes this plan, e.g. [#0](https://github.com/mox-labs/matra/pull/0))
 - Status: planned
 - Shipped in: (the release that carries the finished work, or `not shipped`)
 
 <!--
-An EP exists only for a plan that several agents execute in parallel. Work
-carried out in sequence needs none: an RFC's tracking issue holds its
+A plan exists only for work that several agents execute in parallel. Work
+carried out in sequence needs none: a proposal's tracking issue holds its
 checklist, and tooling is a plain pull request. Copy this file to
-NNNN-short-name.md with the next free number, fill every
-section, and open a pull request. An EP is laid out with the Rust RFC
-template, as an RFC is, so the two read the same way; what makes it a plan is
-in Reference-level explanation (the milestones, the test plan, the ship
+NNNN-short-name.md with the next free number, fill every section, and open
+a pull request. A plan is laid out with the Rust RFC template, as a proposal
+is, so the two read the same way; what makes it a plan is in
+Reference-level explanation (the milestones, the test plan, the ship
 criteria and the risks) and in the Status log after it.
 
-An EP that implements an RFC does not restate it: its Motivation and its
-Guide-level explanation say in a few lines what the RFC decided and link it,
-and the sections that follow are about getting the work done. A standalone
-EP (`Implements: none`) is parallel work that implements no RFC, so it
-carries its own design, in full, in the same sections an RFC would.
+A plan that implements a proposal does not restate it: its Motivation and
+its Guide-level explanation say in a few lines what the proposal decided and
+link it, and the sections that follow are about getting the work done. A
+standalone plan (`Implements: none`) is parallel work that implements no
+proposal, so it carries its own design, in full, in the same sections a
+proposal would.
 
 Status is one of `planned`, `in progress`, `shipped in X.Y.Z`, or `dropped`.
 Every change of status adds a dated line to the Status log. A section with
@@ -31,13 +32,13 @@ reader can tell "considered, nothing to add" from "forgotten".
 
 ## Summary
 
-One paragraph: what this plan delivers. For an EP that implements an RFC,
-in terms of that RFC.
+One paragraph: what this plan delivers. For a plan that implements a proposal,
+in terms of that proposal.
 
 ## Motivation
 
-Why this work, and why now. For an EP that implements an RFC, a few lines
-and a link: the RFC holds the argument. For a standalone EP, the argument
+Why this work, and why now. For a plan that implements a proposal, a few lines
+and a link: the proposal holds the argument. For a standalone plan, the argument
 itself: what is missing or painful today, for whom, and what in the code,
 the gates, or a reported issue shows the need is real rather than
 anticipated.
@@ -47,17 +48,17 @@ anticipated.
 The finished work, explained as if it had already shipped, to the person
 who will use it: a caller of matra, a contributor, a reviewer, or whoever
 runs the tooling. The names they meet, examples of what they do and see,
-and how it changes the way they work. For an EP that implements an RFC,
-point at the RFC's own guide-level explanation and add only what the plan
+and how it changes the way they work. For a plan that implements a proposal,
+point at the proposal's own guide-level explanation and add only what the plan
 makes visible along the way (a flag that exists for one release, a
 migration step between milestones).
 
 ## Reference-level explanation
 
-The technical portion: in a standalone EP, the design in enough detail that
+The technical portion: in a standalone plan, the design in enough detail that
 its interaction with the rest of the repository is clear, its corner cases
 are dissected by example, and each invariant it introduces is named with
-the test, fixture or gate that checks it. Then, in every EP, the plan.
+the test, fixture or gate that checks it. Then, in every plan, the plan itself.
 
 ### Milestones and iterations
 
@@ -97,7 +98,7 @@ maintenance, or the next contributor's attention?
 
 ## Rationale and alternatives
 
-- Why is this plan (and, in a standalone EP, this design) the best in the
+- Why is this plan (and, in a standalone plan, this design) the best in the
   space of possible ones?
 - What other plans or designs were considered, and why were they not
   chosen? This is where what the plan deliberately does not do is said,
@@ -106,14 +107,14 @@ maintenance, or the next contributor's attention?
 
 ## Prior art
 
-How comparable projects handled the same work, and earlier RFCs and EPs in
+How comparable projects handled the same work, and earlier proposals and plans in
 this repository that bear on it. If there is none, say so.
 
 ## Unresolved questions
 
 - What is to be resolved in review before this merges?
 - What is to be resolved during the work, and by which milestone?
-- What related work is out of scope for this EP and could be done later,
+- What related work is out of scope for this plan and could be done later,
   independently of it?
 
 ## Future possibilities

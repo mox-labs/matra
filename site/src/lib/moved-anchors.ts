@@ -26,6 +26,12 @@ export const MOVED_ANCHORS: Readonly<Record<string, readonly { id: string; to?: 
 		{ id: 'semantic-clusters' },
 		{ id: 'bounds-and-failure', to: '/reference/semantic-clusters#bounds-and-failure' }
 	],
+	// The Blueprints index: until 2026-10-04 its two tables were the RFCs and
+	// the EPs, which are now the legacy records.
+	'/blueprints/index': [
+		{ id: 'rfcs', to: '/blueprints/index#legacy' },
+		{ id: 'eps', to: '/blueprints/index#legacy' }
+	],
 	// The installation page became the how-to "Install matra"; every section
 	// heading kept its id.
 	'/tutorials/installation': [{ id: 'installation' }],

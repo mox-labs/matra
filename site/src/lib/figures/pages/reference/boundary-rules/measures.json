@@ -27,21 +27,21 @@
       "words": 11
     },
     {
-      "compression_ratio": 0.5987,
+      "compression_ratio": 0.596,
       "in_blockquote": false,
       "lexical_density": 0.5968,
-      "readability_grade": 8.2335,
+      "readability_grade": 8.8045,
       "sentences": 3,
-      "text": "Rust offers no directional import control between modules inside a single crate, and matra is a single crate by [RFC-0004](https://github.com/mox-labs/matra/blob/main/blueprints/rfcs/0004-stay-single-crate.md), so the compiler enforces none of these rules except rule 6. Seven of the eight are checked by semgrep rules in `.semgrep/`, which read the import and path forms each rule forbids. Review remains the gate for what an import cannot show.",
+      "text": "Rust offers no directional import control between modules inside a single crate, and matra is a single crate by [RFC-0004](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0004-stay-single-crate.md), so the compiler enforces none of these rules except rule 6. Seven of the eight are checked by semgrep rules in `.semgrep/`, which read the import and path forms each rule forbids. Review remains the gate for what an import cannot show.",
       "words": 65
     },
     {
-      "compression_ratio": 0.6424,
+      "compression_ratio": 0.6319,
       "in_blockquote": false,
       "lexical_density": 0.4688,
-      "readability_grade": 6.5489,
+      "readability_grade": 6.9176,
       "sentences": 3,
-      "text": "Each finding names its rule, says why the boundary exists, and links the section of this page to read. The full table, with every form each check covers and misses and the reasons the checks are built the way they are, is [EP-0014](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0014-architecture-guardrails.md). Code inside `#[cfg(test)]` modules is exempt from rules 1, 2, 3, 5 and 7, and read by rules 4 and 8.",
+      "text": "Each finding names its rule, says why the boundary exists, and links the section of this page to read. The full table, with every form each check covers and misses and the reasons the checks are built the way they are, is [EP-0014](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/eps/0014-architecture-guardrails.md). Code inside `#[cfg(test)]` modules is exempt from rules 1, 2, 3, 5 and 7, and read by rules 4 and 8.",
       "words": 69
     },
     {
@@ -396,12 +396,12 @@
       "words": 129
     },
     {
-      "compression_ratio": 0.6189,
+      "compression_ratio": 0.6127,
       "in_blockquote": false,
       "lexical_density": 0.4727,
-      "readability_grade": 7.5086,
+      "readability_grade": 7.9377,
       "sentences": 4,
-      "text": "A violation is a merge blocker. The remedy is a change to the structure, or an RFC that changes the rule deliberately. It is never a change to the check. A check that flags correct code is a bug in the check: fix the rule and add the case to its fixture, as [EP-0014](https://github.com/mox-labs/matra/blob/main/blueprints/eps/0014-architecture-guardrails.md) describes.",
+      "text": "A violation is a merge blocker. The remedy is a change to the structure, or an RFC that changes the rule deliberately. It is never a change to the check. A check that flags correct code is a bug in the check: fix the rule and add the case to its fixture, as [EP-0014](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/eps/0014-architecture-guardrails.md) describes.",
       "words": 57
     }
   ]

@@ -5,4 +5,4 @@ contact_links:
     about: Report a vulnerability privately. Do not file a public issue.
   - name: Discussion
     url: https://github.com/mox-labs/matra/discussions
-    about: Open-ended questions, design ideas, RFCs, or share what you built.
+    about: Open-ended questions, design ideas, proposals, or share what you built.

@@ -11,8 +11,12 @@
 #   --live <url>         docs.yml, after deploy: every path answers 200
 #
 # A new page adds its .html and .md lines here; so does a new design record
-# in blueprints/, which the site renders as its Blueprints part. Removing or renaming a path
-# breaks a published URL; keep a page at the old path instead.
+# in blueprints/proposals/ or blueprints/plans/, which the site renders in its
+# Blueprints area, and a new page in lab/. Removing or renaming a path breaks
+# a published URL; keep a page at the old path instead. The blueprints/rfcs/
+# and blueprints/eps/ paths are such pages: the records they published are in
+# blueprints/legacy/, unrendered, and each old path says so and links the
+# record on GitHub.
 #
 # Paths are relative to the site root. api/ is rustdoc, added at deploy.
 
@@ -214,6 +218,8 @@ home.md
 index.html
 introduction.html
 introduction.md
+lab/index.html
+lab/index.md
 llms.txt
 mark.html
 print.html

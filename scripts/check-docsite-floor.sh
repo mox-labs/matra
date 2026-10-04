@@ -8,16 +8,17 @@
 # ROADMAP.md, and gates 2 and 5 follow it.
 #
 #   1. Link integrity:      lychee verifies every link in site/content/, in
-#                            blueprints/ (which the site renders as its
-#                            Blueprints part), and in the built SvelteKit
-#                            site, fragments included.
+#                            blueprints/ and lab/ (which the site renders as
+#                            its Blueprints and Lab areas; the unrendered
+#                            legacy records in blueprints/legacy/ aside), and
+#                            in the built SvelteKit site, fragments included.
 #   2. Orphan detect:       every page under site/content/ is referenced in SUMMARY.md.
 #   3. Type-name parity:    every backtick-inline PascalCase identifier in site/content/
 #                            and skills/ either exists as an identifier in src/,
 #                            or is on the external-types allowlist below. Catches
 #                            rename drift. blueprints/ is exempt, explicitly
 #                            (gate3_exempt below), although the docsite renders
-#                            it as its Blueprints part: an RFC or an EP names
+#                            it as its Blueprints area: a proposal or a plan names
 #                            types that do not exist yet, or no longer exist,
 #                            which is what makes it a proposal, a plan or a
 #                            record. The pages that describe what ships are held
@@ -29,7 +30,7 @@
 #                            geometry (site/scripts/check-mark.ts), and a
 #                            clean prerendered build.
 #   5. No em dashes:        project prose convention, exempting quoted material.
-#                            Covers site/content/, skills/ and blueprints/.
+#                            Covers site/content/, skills/, blueprints/ and lab/.
 #   6. llms.txt currency:   site/content/llms.txt is what scripts/gen-llms-txt.sh
 #                            writes today. The file is generated from SUMMARY.md
 #                            and from the opening line of each page, so a page
@@ -358,7 +359,7 @@ echo ""
 # as whoever was writing happened to remember. It did not survive contact with
 # files moved in from elsewhere.
 #
-# Lines carrying a double quote are exempt. The RFCs and EPs in blueprints/
+# Lines carrying a double quote are exempt. The records in blueprints/
 # quote reviewers verbatim, and silently editing an attributed quote to satisfy
 # a house style rule would be a worse fault than the em dash.
 echo "=== Gate 5: no em dashes in prose ==="
@@ -367,12 +368,12 @@ echo "=== Gate 5: no em dashes in prose ==="
 # had never matched an em dash in its life.
 # grep exits 1 on no match and 2 on an error such as a missing directory; the
 # old `|| true` read the second as a clean pass.
-em_files=$(find -L site/content skills blueprints -type f \( -name '*.md' -o -name 'llms.txt' \) | wc -l | tr -d ' ') || em_files=0
+em_files=$(find -L site/content skills blueprints lab -type f \( -name '*.md' -o -name 'llms.txt' \) | wc -l | tr -d ' ') || em_files=0
 em_rc=0
-em_raw=$(grep -Rn '—' site/content skills blueprints --include='*.md' --include='llms.txt') || em_rc=$?
+em_raw=$(grep -Rn '—' site/content skills blueprints lab --include='*.md' --include='llms.txt') || em_rc=$?
 offenders=$(printf '%s\n' "$em_raw" | grep -v '"' || true)
 if [ "$em_rc" -gt 1 ] || [ "$em_files" -eq 0 ]; then
-    echo "FAIL (gate 5): could not scan site/content/, skills/ and blueprints/ (grep exit $em_rc, $em_files files)"
+    echo "FAIL (gate 5): could not scan site/content/, skills/, blueprints/ and lab/ (grep exit $em_rc, $em_files files)"
     fail=$((fail + 1))
 elif [ -n "$offenders" ]; then
     echo "FAIL (gate 5): em dashes found in documentation prose:"
@@ -607,8 +608,11 @@ echo ""
 echo "=== Gate 1: link integrity (lychee) ==="
 if command -v lychee >/dev/null 2>&1; then
     gate1_ok=1
-    if ! lychee --no-progress --offline 'site/content/**/*.md' 'blueprints/**/*.md'; then
-        echo "FAIL (gate 1): broken links in site/content/ or blueprints/"
+    # blueprints/legacy/ is left out: the legacy records are kept unchanged,
+    # one directory deeper than they were written, and are not rendered.
+    if ! lychee --no-progress --offline --exclude-path blueprints/legacy \
+            'site/content/**/*.md' 'blueprints/**/*.md' 'lab/**/*.md'; then
+        echo "FAIL (gate 1): broken links in site/content/, blueprints/ or lab/"
         gate1_ok=0
     fi
     if [ ! -d site/build ]; then
@@ -624,7 +628,7 @@ if command -v lychee >/dev/null 2>&1; then
         gate1_ok=0
     fi
     if [ "$gate1_ok" -eq 1 ]; then
-        echo "PASS (gate 1): all links in site/content/, blueprints/ and site/build/ resolve"
+        echo "PASS (gate 1): all links in site/content/, blueprints/ (legacy/ aside), lab/ and site/build/ resolve"
     else
         fail=$((fail + 1))
     fi

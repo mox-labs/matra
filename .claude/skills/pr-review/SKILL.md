@@ -53,13 +53,13 @@ each is the check on the other.
 | I/O, FFI, input handling, graph walks | `.claude/skills/resilience-floor/SKILL.md` |
 | `src/lib.rs` PyO3 layer, `python/`, pins | `.claude/skills/ffi-surface/SKILL.md` |
 | tests | `.claude/skills/testing/SKILL.md` |
-| public surface, RFCs, book pages | `.claude/skills/docs-lockstep/SKILL.md` |
+| public surface, proposals, book pages | `.claude/skills/docs-lockstep/SKILL.md` |
 
 ## Gate 0: ACES and the pit of success
 
 Every structural change: does it leave the system more adaptable,
 composable, extensible, or less? A change that is good engineering but
-violates ACES blocks merge unless the PR carries an RFC justifying the
+violates ACES blocks merge unless the PR carries an enhancement proposal justifying the
 trade.
 
 New public surface must also be a pit of success: the obvious way to
@@ -162,10 +162,11 @@ claims (the mudge posture): "it should be safe" is not evidence.
 
 - Public surface changes move CHANGELOG `[Unreleased]` and the relevant
   docsite page in the same PR. A substantial change matra's users
-  notice needs an RFC, a minor one an accepted API change proposal (an
+  notice needs an enhancement proposal, a minor one an accepted API change proposal (an
   issue labelled `acp`); `blueprints/README.md` has the grain.
-- A PR that adds or changes an RFC is for the owner to merge or close.
-  Say so in the verdict; it never merges on standing authority.
+- A PR that sets a proposal's status to `accepted` is for the owner to merge.
+  Say so in the verdict; it never merges on standing authority. A PR that
+  adds or edits a `proposed` proposal merges like any other.
 - Docs describe what ships; planned capability lives in ROADMAP only.
 - No em dashes in documentation prose. No hand-maintained source trees
   in context documents.

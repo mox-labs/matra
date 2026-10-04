@@ -1,19 +1,21 @@
-# RFC-0000: Title in sentence case
+# EPR-0000: Title in sentence case
 
 - Feature Name: (a unique snake_case identifier, e.g. `semantic_clusters`)
 - Start Date: (the day the pull request opens, YYYY-MM-DD)
-- RFC PR: (the pull request that proposes this RFC, e.g. [#0](https://github.com/mox-labs/matra/pull/0))
-- Tracking issue: (the issue labelled `tracking` that follows the implementation, e.g. [#0](https://github.com/mox-labs/matra/issues/0), opened before the owner merges; an EP, if parallel work needs one, is linked from that issue)
-- Status: accepted (the file reaches `main` only by merging, which is what accepts it)
+- Proposal PR: (the pull request that proposes it, e.g. [#0](https://github.com/mox-labs/matra/pull/0))
+- Tracking issue: (the issue labelled `tracking` that follows the implementation, e.g. [#0](https://github.com/mox-labs/matra/issues/0), opened before the owner accepts; a plan, if parallel work needs one, is linked from that issue)
+- Status: proposed (only the owner changes it to `accepted`)
 
 <!--
 Copy this file to NNNN-short-name.md with the next free number, fill every
-section, and open a pull request. The pull request is the proposal; merging
-it accepts the RFC, and only the project owner merges one. An RFC is for a
-substantial change matra's users notice; a minor change to the public
-surface is an API change proposal (an issue labelled `acp`), and tooling,
-docs, CI, refactors and bug fixes are plain pull requests. See
-blueprints/README.md for the process.
+section, and open a pull request. It may merge with its status `proposed`,
+so the docsite renders it for review; that decides nothing. Acceptance is a
+change of the status line to `accepted`, and only the project owner merges
+a pull request that makes it. An enhancement proposal is for a substantial
+change matra's users notice; a minor change to the public surface is an API
+change proposal (an issue labelled `acp`), and tooling, docs, CI, refactors
+and bug fixes are plain pull requests. See blueprints/README.md for the
+process.
 
 A section with nothing to say says so in one line rather than being deleted,
 so that a reader can tell "considered, nothing to add" from "forgotten".
@@ -47,7 +49,7 @@ to someone who uses matra. That generally means:
 - Where it applies, how it reads differently to someone new to matra and to
   someone who already knows the current surface.
 
-For an RFC about matra's own structure or toolchain rather than its public
+For a proposal about matra's own structure or toolchain rather than its public
 surface, this section explains how a contributor should think about the
 change and gives examples of its concrete effect.
 
@@ -82,7 +84,7 @@ maintenance, or the next contributor's attention?
 
 Discuss prior art, good and bad, in relation to this proposal: how
 comparable libraries and tools handle the same problem, published papers or
-posts that bear on it, and earlier RFCs in this repository. The aim is a
+posts that bear on it, and earlier proposals in this repository. The aim is a
 fuller picture for the reader and the lessons others already paid for. If
 there is none, say so. Precedent elsewhere is context, not on its own a
 reason to adopt something here.
@@ -91,7 +93,7 @@ reason to adopt something here.
 
 - What parts of the design are to be resolved in review before this merges?
 - What parts are to be resolved during implementation, before it ships?
-- What related issues are out of scope for this RFC and could be addressed
+- What related issues are out of scope for this proposal and could be addressed
   later, independently of it?
 
 ## Future possibilities
@@ -99,6 +101,6 @@ reason to adopt something here.
 What would the natural extension of this proposal be, and how would it
 affect matra as a whole? If nothing comes to mind after trying, say so.
 
-Writing something here is not a reason to accept this RFC or a later one;
+Writing something here is not a reason to accept this proposal or a later one;
 an argument for a future change belongs in that change's own Motivation and
 Rationale.

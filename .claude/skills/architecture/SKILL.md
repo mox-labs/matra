@@ -40,7 +40,7 @@ Dependencies point inward. Adapters know about `domain` and the port they implem
 
 These are non-negotiable:
 
-1. `domain.rs` depends only on `serde`, `thiserror`, `std`. Any further dep requires an RFC.
+1. `domain.rs` depends only on `serde`, `thiserror`, `std`. Any further dep requires an enhancement proposal.
 2. Port modules (`source/mod.rs`, `decompose/mod.rs`, `nlp/mod.rs`) import only from `domain`.
 3. No port module imports another port module.
 4. `nlp/udpipe.rs` is the only file that imports `udpipe_rs`.
@@ -51,11 +51,11 @@ These are non-negotiable:
 
 Motivation, failure modes, and review guidance for each rule live in `site/content/reference/boundary-rules.md`. Read it before applying a rule you cannot justify from memory.
 
-Enforcement covers forms, not intent. Rule 6 is verified by compiling. Rules 1, 2, 3, 4, 5, 7 (its `src/cli/` part) and 8 are semgrep checks in `.semgrep/`, tested against fixtures and run by `scripts/check-boundaries.sh` from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job; they read use lines, brace groups and inline paths. Review still reads what an import cannot show: a port trait shaped around one adapter, a metric taking text instead of structure, and wiring outside `lib.rs` beyond the CLI. `blueprints/eps/0014-architecture-guardrails.md` lists what each check covers and misses.
+Enforcement covers forms, not intent. Rule 6 is verified by compiling. Rules 1, 2, 3, 4, 5, 7 (its `src/cli/` part) and 8 are semgrep checks in `.semgrep/`, tested against fixtures and run by `scripts/check-boundaries.sh` from `just check`, the opt-in pre-commit hook and the `Boundary check` CI job; they read use lines, brace groups and inline paths. Review still reads what an import cannot show: a port trait shaped around one adapter, a metric taking text instead of structure, and wiring outside `lib.rs` beyond the CLI. `blueprints/legacy/eps/0014-architecture-guardrails.md` lists what each check covers and misses.
 
 When you break a rule, you're either:
 
-- Fixing a bug in the rules (write an RFC explaining why),
+- Fixing a bug in the rules (write an enhancement proposal explaining why),
 - Or making a structural mistake (fix the structure, not the rule).
 
 ## Adding a new adapter
@@ -98,7 +98,7 @@ Criterion: separate a port trait into its own minimal crate IFF an **external im
 
 Today, matra has no external `NlpProvider` implementor crates. Keep `NlpProvider` in-crate.
 
-If a third-party `matra-stanza`, `matra-spacy`, etc. emerges, extract `matra-nlp-api` as a minimal crate (domain types + the trait, no other deps), and rewrite `matra` to depend on `matra-nlp-api`. Write an RFC superseding `0004-stay-single-crate.md` at that point.
+If a third-party `matra-stanza`, `matra-spacy`, etc. emerges, extract `matra-nlp-api` as a minimal crate (domain types + the trait, no other deps), and rewrite `matra` to depend on `matra-nlp-api`. Write an enhancement proposal superseding `0004-stay-single-crate.md` at that point.
 
 ### Pattern 10 — orthogonal-dispatch axes
 

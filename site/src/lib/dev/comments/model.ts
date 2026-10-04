@@ -57,7 +57,7 @@ interface Base {
 	author: Author;
 	/** ISO 8601, UTC. */
 	created: string;
-	/** The page's route, as the site serves it: `/blueprints/eps/0015-...`. */
+	/** The page's route, as the site serves it: `/blueprints/proposals/0001-...`. */
 	page: string;
 }
 

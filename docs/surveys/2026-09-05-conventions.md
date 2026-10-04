@@ -1,6 +1,6 @@
 # Conventions survey, 2026-09-05
 
-A read-only survey of exemplar open-source packages, CLIs, and developer tooling, run to ground [RFC-0011](../../blueprints/rfcs/0011-out-of-the-box.md) and the I10 and I11 plans. Every exemplar cell carries a URL or `local: <cmd>` (output run on the maintainer's machine); every matra cell is a `file:line` read the same day. Absences were established by `find` and `grep`, not memory. Second-hand claims are flagged as such.
+A read-only survey of exemplar open-source packages, CLIs, and developer tooling, run to ground [RFC-0011](../../blueprints/legacy/rfcs/0011-out-of-the-box.md) and the I10 and I11 plans. Every exemplar cell carries a URL or `local: <cmd>` (output run on the maintainer's machine); every matra cell is a `file:line` read the same day. Absences were established by `find` and `grep`, not memory. Second-hand claims are flagged as such.
 
 ## 1. CLI conventions
 
