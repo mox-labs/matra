@@ -161,11 +161,25 @@ row below. The docsite floor's em-dash gate covers this directory too.
 
 ## Proposals
 
-The enhancement proposals since 2026-10-04. None yet.
+The enhancement proposals since 2026-10-04.
+
+**Baseline.** EPR-0001 to EPR-0005 describe matra's foundation as it
+stands at the commit each one names on its `Pinned at` line, and carry
+forward the reasons from the legacy records that still hold, with what no
+longer does. A later proposal that changes one of them says so and cites
+it. The legacy records about the process (RFC-0001, RFC-0019) and the
+docsite (EP-0012, EP-0013) are not carried into a proposal: under this
+process that work is tooling, and its rules live in this file and in
+`site/README.md`.
 
 | Proposal | Title | Status | Tracking issue |
 |---|---|---|---|
 | [EPR-0000](proposals/0000-template.md) | The template | not a record | none |
+| [EPR-0001](proposals/0001-pipeline-and-ports.md) | The pipeline and its ports | proposed | none |
+| [EPR-0002](proposals/0002-data-model.md) | The data model | proposed | none |
+| [EPR-0003](proposals/0003-distribution-and-provisioning.md) | Distribution and provisioning | proposed | none |
+| [EPR-0004](proposals/0004-command-line-and-configuration.md) | The command line, configuration and the agent skill | proposed | none |
+| [EPR-0005](proposals/0005-embeddings-and-semantic-clusters.md) | Embeddings and semantic clusters | proposed | none |
 
 ## Plans
 
