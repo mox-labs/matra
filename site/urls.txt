@@ -43,6 +43,16 @@ blueprints/eps/0014-architecture-guardrails.html
 blueprints/eps/0014-architecture-guardrails.md
 blueprints/index.html
 blueprints/index.md
+blueprints/proposals/0001-pipeline-and-ports.html
+blueprints/proposals/0001-pipeline-and-ports.md
+blueprints/proposals/0002-data-model.html
+blueprints/proposals/0002-data-model.md
+blueprints/proposals/0003-distribution-and-provisioning.html
+blueprints/proposals/0003-distribution-and-provisioning.md
+blueprints/proposals/0004-command-line-and-configuration.html
+blueprints/proposals/0004-command-line-and-configuration.md
+blueprints/proposals/0005-embeddings-and-semantic-clusters.html
+blueprints/proposals/0005-embeddings-and-semantic-clusters.md
 blueprints/rfcs/0000-template.html
 blueprints/rfcs/0000-template.md
 blueprints/rfcs/0001-record-architectural-decisions.html
