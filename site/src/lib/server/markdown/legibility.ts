@@ -1149,7 +1149,7 @@ function recordIndex(node: Element, parent: Root | Element, index: number, ctx: 
 				]),
 				...(open.length ? [h('ol', { className: ['card-decisions'] }, open.map((d) => h('li', {}, [h('a', { href: `${ctx.base}${r.route}#decision-${d.id}`, dataResolved: '' }, [d.title])])))] : [])
 			]),
-			...(r.readAt ? [h('p', { className: ['card-read'] }, ['code read at ', h('code', {}, [r.readAt.slice(0, 7)])])] : [])
+			...(r.readAt ? [h('p', { className: ['card-read'] }, ['pinned at ', h('code', {}, [r.readAt.slice(0, 7)])])] : [])
 		]);
 	});
 	return h('div', { className: ['record-index'], id, dataFigure: 'record-index', dataKind: kind }, [
