@@ -26,6 +26,44 @@ RFC-0020, EP-0010 and EP-0011. A later proposal that changes any of it says
 so. Unmarked statements about the code are observed at the pinned commit
 through the link beside them; a claim that is inferred or assumed says so.
 
+<pragmatics>
+
+<ask>
+
+Accept EPR-0004 as the record of the command line, configuration and the agent skill as they stand at `4fcfb4a`, and settle the two decisions under [Unresolved questions](#unresolved-questions). Each can be answered on its own.
+
+</ask>
+
+<will>
+
+- Cite this proposal, rather than the legacy records it carries forward, when a change touches the command line, `Config`, the `--json` envelope or the skill; a change to what it describes goes in a new proposal that says so.
+- Carry out each decision as you rule it, through the record the process names for that change.
+- If the cited code moves before you decide, move the `Pinned at` line forward in a revision, so every citation is checked again, and say what changed.
+
+</will>
+
+<needs>
+
+- An answer to the proposal and to each of the two decisions: accept, accept with a reservation, object or redirect.
+
+</needs>
+
+<wont>
+
+- Change the status to `accepted`, or merge a pull request that does.
+- Change the return type of `cli::run` or the shape of a `--json` failure before you rule on it.
+- Edit a legacy record, or edit this proposal to describe a later change.
+
+</wont>
+
+<silence>
+
+The proposal stays `proposed`. The command line it describes ships as it is, since a baseline decides nothing new, and Claude lists the open decisions again at the start of the next session that touches the command line or configuration.
+
+</silence>
+
+</pragmatics>
+
 ## Motivation
 
 **One program, not two that agree by inspection.** 0.1.0 shipped two command
@@ -68,21 +106,16 @@ matra config show                      # every setting and where it came from
 matra --skill                          # the agent skill
 ```
 
-The commands are `analyze` (with `--sections`), `summarize`, `keyphrases`,
-`config show`, `config init [--force]` and `completions <bash|zsh|fish>`.
-The global flags are `--json`, `--model-dir`, `--quiet`, `--color`,
-`--stdin-filename`, `--skill` and `--reference`
-([`Cli`][cli-args]). `-` reads stdin, and `--stdin-filename` both labels it
-and chooses its decomposer by extension.
+<claim basis="observed">The commands are `analyze` (with `--sections`), `summarize`, `keyphrases`, `config show`, `config init [--force]` and `completions <bash|zsh|fish>` [cli/mod.rs:112-242][cli-commands]</claim>.
+<claim basis="observed">The global flags are `--json`, `--model-dir`, `--quiet`, `--color`, `--stdin-filename`, `--skill` and `--reference` [cli/mod.rs:112-242][cli-args]</claim>.
+`-` reads stdin, and `--stdin-filename` both labels it and chooses its
+decomposer by extension.
 
-Exit codes follow ripgrep: 0 when something was found, 1 when the command
-succeeded and found nothing, 2 on an error. A broken pipe is 0
-([module docs][cli-docs]).
+<claim basis="observed">Exit codes follow ripgrep: 0 when something was found, 1 when the command succeeded and found nothing, 2 on an error; a broken pipe is 0 [cli/mod.rs:1-19][cli-docs]</claim>.
 
 ### Reading `--json`
 
-Every `--json` invocation emits one object with four keys
-([`Envelope`][envelope-struct]):
+<claim basis="observed">Every `--json` invocation emits one object with four keys [cli/mod.rs:677-709][envelope-struct]</claim>:
 
 ```json
 { "format_version": 1, "command": "analyze", "input": "notes.md", "result": { } }
@@ -90,10 +123,9 @@ Every `--json` invocation emits one object with four keys
 
 `result` is the serialized domain value unchanged
 ([EPR-0002](0002-data-model.md)). `input` is `null` for a command that
-reads no document. `format_version` increments on any change to the
-envelope's shape or to the meaning of a field in `result`
-([`FORMAT_VERSION`][envelope]). Both launchers
-are held to [`spec/tests/cli/envelope.json`][envelope-fixture].
+reads no document.
+<claim basis="observed">`format_version` increments on any change to the envelope's shape or to the meaning of a field in `result` [cli/mod.rs:34-39][envelope]</claim>.
+<claim basis="observed">Both launchers are held to `spec/tests/cli/envelope.json` [envelope.json:1-19][envelope-fixture]</claim>.
 
 ### Configuration
 
@@ -134,30 +166,23 @@ same envelope, with `command` set to `"skill"` and `input` null.
 
 ### One command line, two launchers
 
-[`cli::run`][cli-run] parses, dispatches and renders, never calls
-`std::process::exit`, and never touches the process's own streams: the
-caller passes both. It returns a `u8` because `ExitCode` cannot be read back
-for the Python launcher. [`src/bin/matra.rs`][bin] locks stdout and stderr,
-calls it, and converts with `ExitCode::from`. [`python/matra/cli.py`][py-cli]
-passes `sys.argv[1:]` to `_core.cli_main` and exits with the result;
-[`cli_main`][cli-main] passes each argument through `os.fsencode` so a
-non-UTF-8 path on Unix reaches the command line as the same bytes the Rust
-binary would see. `pyproject.toml` installs that launcher as the `matra`
+<claim basis="observed">`cli::run` parses, dispatches and renders, never calls `std::process::exit`, and never touches the process's own streams: the caller passes both [cli/mod.rs:50-106][cli-run]</claim>.
+<claim basis="observed">It returns a `u8` because `ExitCode` cannot be read back for the Python launcher [cli/mod.rs:50-106][cli-run-u8]</claim>.
+<claim basis="observed">`src/bin/matra.rs` locks stdout and stderr, calls it, and converts with `ExitCode::from` [bin/matra.rs:1-26][bin]</claim>.
+<claim basis="observed">`python/matra/cli.py` passes `sys.argv[1:]` to `_core.cli_main` and exits with the result; `cli_main` passes each argument through `os.fsencode` so a non-UTF-8 path on Unix reaches the command line as the same bytes the Rust binary would see [cli.py:1-10][py-cli] [lib.rs:776-829][cli-main]</claim>.
+`pyproject.toml` installs that launcher as the `matra`
 script ([scripts][py-scripts]), and the `python` feature enables `cli`,
 which enables `udpipe` ([features][cargo-features]).
 
 `src/cli/` is the application tier. Boundary rule 7 holds it to the public
 surface (`Engine`, `Ingest`, `extraction`, `config`, `domain`) and never a
 port or an adapter; a semgrep rule checks the imports
-([EPR-0001](0001-pipeline-and-ports.md)). It validates an input path before
-building the engine, so a missing file is reported before a 16 MB download
-([`execute`][execute]). The download notice goes to stderr so `--json`
-stdout stays one object, and `--quiet` silences it
-([`build_engine`][build-engine]).
+([EPR-0001](0001-pipeline-and-ports.md)).
+<claim basis="observed">It validates an input path before building the engine, so a missing file is reported before a 16 MB download [cli/mod.rs:372-430][execute-validate]</claim>.
+<claim basis="observed">The download notice goes to stderr so `--json` stdout stays one object, and `--quiet` silences it [cli/mod.rs:486-530][build-engine]</claim>.
 
-`--skill` outranks a subcommand: `matra analyze x --skill` prints the skill
-([`execute`][execute]). Bare `matra` with neither is a usage error, exit 2
-([`parse`][parse]).
+<claim basis="observed">`--skill` outranks a subcommand: `matra analyze x --skill` prints the skill [cli/mod.rs:372-430][execute-skill]</claim>.
+<claim basis="observed">Bare `matra` with neither is a usage error, exit 2 [cli/mod.rs:252-288][parse]</claim>.
 
 ### Config resolution
 
@@ -177,15 +202,10 @@ matra never creates `~/.matra`; the fallback only keeps an existing cache
 working. Environment values are used as paths unchanged, with no `~`
 expansion, and an empty variable counts as unset.
 
-The file is capped at 64 KiB by its metadata before it is read
-(`InputTooLarge`, `what = "config_file"`), and may be a symlink, since
-dotfiles repositories commonly link it ([`read_config_file`][config-read]).
-Unknown keys are rejected (`deny_unknown_fields`), so a setting a user
-believes is in force cannot be silently ignored ([schema][config-schema]).
-An unknown algorithm name fails at resolve time. `models.embedding` must be
-a single ordinary path component, because the embedding provisioner sweeps
-aged temporaries inside the directory it names
-([`check_path_component`][config-component]).
+<claim basis="observed">The file is capped at 64 KiB by its metadata before it is read (`InputTooLarge`, `what = "config_file"`), and may be a symlink, since dotfiles repositories commonly link it [config.rs:49][config-max] [config.rs:703-720][config-read]</claim>.
+<claim basis="observed">Unknown keys are rejected (`deny_unknown_fields`), so a setting a user believes is in force cannot be silently ignored [config.rs:467-503][config-schema]</claim>.
+An unknown algorithm name fails at resolve time.
+<claim basis="observed">`models.embedding` must be a single ordinary path component, because the embedding provisioner sweeps aged temporaries inside the directory it names [config.rs:588-606][config-component]</claim>.
 
 `Config::sources` yields each resolved key with its `ValueSource`
 (`Argument`, `Environment`, `File`, `Default`), which is what `config show`
@@ -201,27 +221,21 @@ clustering call takes its threshold as an argument. They left
 `Config::udpipe_model` and `Config::semantic_threshold` carry
 `#[deprecated]` and return the file's value or the former default;
 `Config::deprecated_keys` lists which ones the file set; and
-`Config::sources` omits them ([accessors][config-accessors]). `config show`
-writes one stderr line per deprecated key, naming the file, unless `--quiet`
-([`write_deprecation_notes`][deprecation-notes]). Removing them is a
-breaking change and takes its own proposal.
+`Config::sources` omits them ([accessors][config-accessors]).
+<claim basis="observed">`config show` writes one stderr line per deprecated key, naming the file, unless `--quiet` [cli/config_cmd.rs:82-111][deprecation-notes]</claim>.
+Removing them is a breaking change and takes its own proposal.
 
-`config init` writes atomically: a temporary file in the same directory,
-then a hard link when not forced (which fails if the target appeared in the
-meantime) or a rename when forced ([`write_defaults`][write-defaults]).
+<claim basis="observed">`config init` writes atomically: a temporary file in the same directory, then a hard link when not forced (which fails if the target appeared in the meantime) or a rename when forced [cli/config_cmd.rs:213-293][write-defaults]</claim>.
 
 ### The skill
 
-`SKILL.md` and six references under `skills/matra/` are embedded with
-`include_str!` ([`skill.rs`][skill-embed]). Each reference's summary is
-read from its own frontmatter rather than kept in a second list, and a test
-holds the table of names equal to the directory. The frontmatter's `version` matches the crate's
-([`SKILL.md`][skill-md]). [`tests/skill.rs`][skill-test] extracts every
-fenced block whose first line is a `matra` command, runs it through
-`cli::run` (or as a subprocess with a clean environment, for `config`), and
-asserts the annotated exit code and, for `--json`, the envelope; the block
-count is checked against a fence-aware scan so an unfenced command cannot
-hide. Alongside the flag: `AGENTS.md` for contributing agents,
+<claim basis="observed">`SKILL.md` and six references under `skills/matra/` are embedded with `include_str!` [cli/skill.rs:1-70][skill-embed]</claim>.
+Each reference's summary is read from its own frontmatter rather than kept
+in a second list, and a test holds the table of names equal to the
+directory.
+<claim basis="observed">The frontmatter's `version` matches the crate's [SKILL.md:1-5][skill-md] [Cargo.toml:1-14][cargo-version]</claim>.
+<claim basis="observed">`tests/skill.rs` extracts every fenced block whose first line is a `matra` command, runs it through `cli::run` (or as a subprocess with a clean environment, for `config`), and asserts the annotated exit code and, for `--json`, the envelope; the block count is checked against a fence-aware scan so an unfenced command cannot hide [tests/skill.rs:1-37][skill-test]</claim>.
+Alongside the flag: `AGENTS.md` for contributing agents,
 `.claude-plugin/plugin.json` so the repository installs as a plugin, and
 `site/content/llms.txt`, generated from the docsite's `SUMMARY.md` and held
 current by a docs gate.
@@ -303,16 +317,85 @@ current by a docs gate.
 
 ## Unresolved questions
 
-- **The exit code type.** `cli::run` returns `u8`; whether that is the
-  permanent shape was left open by RFC-0011 and is still open. Changing it
-  is a breaking change.
-- **No error envelope under `--json`.** A failure writes text to stderr and
-  nothing to stdout, so a JSON consumer reads text for every failure
-  ([`run`][cli-run]). The command line's own refusals are untyped strings,
-  so an error envelope needs a kind vocabulary for the application tier or
-  a move of `src/cli/` onto `domain::Error`.
-  [RFC-0015](../legacy/rfcs/0015-provisioning-failures.md) deferred it as
-  worth doing on its own.
+For the owner to settle in this proposal's review. Each is a decision of its
+own.
+
+**The exit code type.**
+<claim basis="observed">`cli::run` returns `u8` [cli/mod.rs:50-106][cli-run-u8]</claim>;
+whether that is the permanent shape was left open by RFC-0011 and is still
+open. Changing it is a breaking change.
+
+<decision id="exit-code" title="1. Is u8 the permanent return type of cli::run?">
+
+<choice key="a" title="Yes; keep u8">
+
+`run` keeps returning `u8`, and its documentation says the shape is permanent and names the three codes.
+
+</choice>
+
+<choice key="b" title="No; a named exit status">
+
+`run` returns a type that names its three codes and converts to both `u8` and `ExitCode`.
+
+</choice>
+
+<recommendation choice="a">
+
+The reason it is a `u8` still holds: `ExitCode` cannot be read back, and the Python launcher needs the number. The three codes are documented beside `run` already, and a second type would wrap one integer to name three values.
+
+</recommendation>
+
+<against>
+
+A bare `u8` admits codes the command line never returns, and only review keeps a new return path to 0, 1 or 2; a type would hold it. The change is breaking whenever it lands, so it costs less before more callers depend on the integer.
+
+</against>
+
+</decision>
+
+**No error envelope under `--json`.**
+<claim basis="observed">A failure writes text to stderr and nothing to stdout, so a JSON consumer reads text for every failure [cli/mod.rs:50-106][cli-run-err]</claim>.
+The command line's own refusals are untyped strings, so an error envelope
+needs a kind vocabulary for the application tier or a move of `src/cli/`
+onto `domain::Error`.
+[RFC-0015](../legacy/rfcs/0015-provisioning-failures.md) deferred it as
+worth doing on its own.
+
+<decision id="json-errors" title="2. Does a --json failure get an envelope, and whose kinds does it carry?">
+
+<choice key="a" title="An envelope, with kinds of the command line's own">
+
+A failure under `--json` writes the envelope with an error in place of `result`. Its `kind` is `Error::kind` for a failure from the library, and a word from a small vocabulary of the command line's own for its refusals.
+
+</choice>
+
+<choice key="b" title="An envelope, on domain::Error">
+
+`src/cli/` reports its refusals as `domain::Error` variants, so every failure carries a library kind.
+
+</choice>
+
+<choice key="c" title="No envelope">
+
+Failures stay text on stderr, as now.
+
+</choice>
+
+<recommendation choice="a">
+
+Failures from the library already have kinds, pinned for every binding, so only the command line's own refusals need new words. Putting those words in `domain::Error` would grow the library's vocabulary with application-tier failures the library never raises.
+
+</recommendation>
+
+<against>
+
+Two vocabularies behind one envelope means a consumer reads two lists, and the library's is the one a conformance fixture already pins. Option B keeps a single list.
+
+</against>
+
+</decision>
+
+<assumptions />
 
 ## Future possibilities
 
@@ -321,31 +404,37 @@ current by a docs gate.
 - Removing the deprecated keys and accessors in a later breaking release, by
   a new proposal.
 
-[cli-docs]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/mod.rs#L1-L19
-[cli-run]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/mod.rs#L50-L106
-[cli-args]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/mod.rs#L112-L242
-[parse]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/mod.rs#L252-L288
-[execute]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/mod.rs#L372-L430
-[build-engine]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/mod.rs#L486-L530
-[envelope]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/mod.rs#L34-L39
-[envelope-struct]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/mod.rs#L677-L709
-[skill-embed]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/skill.rs#L1-L70
-[deprecation-notes]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/config_cmd.rs#L82-L111
-[write-defaults]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/cli/config_cmd.rs#L213-L293
-[bin]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/bin/matra.rs#L1-L26
-[py-cli]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/python/matra/cli.py#L1-L10
-[cli-main]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/lib.rs#L776-L829
-[py-scripts]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/pyproject.toml#L32-L36
-[cargo-features]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/Cargo.toml#L92-L97
-[default-toml]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/config/default.toml#L1-L12
-[config-type]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/config.rs#L1-L118
-[config-resolve]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/config.rs#L120-L135
-[config-accessors]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/config.rs#L342-L461
-[config-schema]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/config.rs#L467-L503
-[config-component]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/config.rs#L588-L606
-[config-paths]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/config.rs#L613-L656
-[config-model-dir]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/config.rs#L658-L701
-[config-read]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/src/config.rs#L703-L720
-[envelope-fixture]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/spec/tests/cli/envelope.json#L1-L19
-[skill-md]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/skills/matra/SKILL.md#L1-L5
-[skill-test]: https://github.com/mox-labs/matra/blob/4fcfb4adc85524243c5e392becd4f490e3e42252/tests/skill.rs#L1-L37
+[cli-docs]: ../../src/cli/mod.rs#L1-L19 "A broken pipe is exit 0"
+[cli-run]: ../../src/cli/mod.rs#L50-L106 "never exits the process"
+[cli-run-u8]: ../../src/cli/mod.rs#L50-L106 "It is a `u8` rather than a"
+[cli-run-err]: ../../src/cli/mod.rs#L50-L106 'let _ = writeln!(err, "matra: {e}");'
+[cli-args]: ../../src/cli/mod.rs#L112-L242 "#[arg(long, global = true)]"
+[cli-commands]: ../../src/cli/mod.rs#L112-L242 "enum Command {"
+[parse]: ../../src/cli/mod.rs#L252-L288 "the short help on stderr, exit 2"
+[execute-validate]: ../../src/cli/mod.rs#L372-L430 "Validate the input before touching the model."
+[execute-skill]: ../../src/cli/mod.rs#L372-L430 "so it outranks a subcommand"
+[build-engine]: ../../src/cli/mod.rs#L486-L530 "It goes to stderr, which keeps `--json` stdout a single object"
+[envelope]: ../../src/cli/mod.rs#L34-L39 "const FORMAT_VERSION: u32 = 1;"
+[envelope-struct]: ../../src/cli/mod.rs#L677-L709 "The one shape every `--json` invocation emits."
+[skill-embed]: ../../src/cli/skill.rs#L1-L70 'const SKILL: &str = include_str!("../../skills/matra/SKILL.md");'
+[deprecation-notes]: ../../src/cli/config_cmd.rs#L82-L111 "One stderr line per deprecated key the config file set"
+[write-defaults]: ../../src/cli/config_cmd.rs#L213-L293 "std::fs::hard_link(&temp, path)"
+[bin]: ../../src/bin/matra.rs#L1-L26 "ExitCode::from(code)"
+[py-cli]: ../../python/matra/cli.py#L1-L10 "raise SystemExit(cli_main(sys.argv[1:]))"
+[cli-main]: ../../src/lib.rs#L776-L829 'let fsencode = py.import("os")?.getattr("fsencode")?;'
+[py-scripts]: ../../pyproject.toml#L32-L36 'matra = "matra.cli:main"'
+[cargo-features]: ../../Cargo.toml#L92-L97 'cli = ["dep:clap", "dep:clap_complete", "dep:serde_json", "udpipe"]'
+[cargo-version]: ../../Cargo.toml#L1-L14 'version = "0.2.1"'
+[default-toml]: ../../config/default.toml#L1-L12 'embedding = "potion-base-8M"'
+[config-type]: ../../src/config.rs#L1-L118 "never behavior"
+[config-resolve]: ../../src/config.rs#L120-L135 "Resolve from the process environment and the user's config file."
+[config-accessors]: ../../src/config.rs#L342-L461 "pub fn deprecated_keys(&self)"
+[config-schema]: ../../src/config.rs#L467-L503 "#[serde(deny_unknown_fields)]"
+[config-component]: ../../src/config.rs#L588-L606 "fn check_path_component("
+[config-paths]: ../../src/config.rs#L613-L656 'non_empty(env("MATRA_CONFIG_FILE"))'
+[config-model-dir]: ../../src/config.rs#L658-L701 "fn resolve_model_dir("
+[config-max]: ../../src/config.rs#L49 "const MAX_CONFIG_BYTES: u64 = 64 * 1024;"
+[config-read]: ../../src/config.rs#L703-L720 "fn read_config_file(path: &Path) -> domain::Result<Option<String>> {"
+[envelope-fixture]: ../../spec/tests/cli/envelope.json#L1-L19 '"name": "envelope",'
+[skill-md]: ../../skills/matra/SKILL.md#L1-L5 "version: 0.2.1"
+[skill-test]: ../../tests/skill.rs#L1-L37 "The executed-incantation test for the agent skill."

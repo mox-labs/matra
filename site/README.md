@@ -776,10 +776,10 @@ built (a rebased branch's SHA would vanish from GitHub). The SHA is chosen
 per record, not per claim: it is the commit Claude read, set once in the
 header, and moving it forward re-checks every citation at once, which is
 the review a revision needs. A record with no `Pinned at` line keeps its
-line links on `main`. The baseline proposals, EPR-0001 to EPR-0005, carry
-the line and plain links without titles: those links are pinned and their
-lines checked to exist, and their text is checked once a title names it.
-The build therefore needs the repository's
+line links on `main`. Only a relative link is pinned and checked: an
+absolute link to `github.com` is left as written, so a record cites code
+by its path from the record, as every proposal does. The build therefore
+needs the repository's
 history: the `Docsite floor` job and `docs.yml` check out with
 `fetch-depth: 0`. (A source is worth as much as it is cheap to
 check. Bansal et al. 2021 found explanations raise acceptance whether or
