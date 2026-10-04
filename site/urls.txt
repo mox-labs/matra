@@ -53,6 +53,8 @@ blueprints/proposals/0004-command-line-and-configuration.html
 blueprints/proposals/0004-command-line-and-configuration.md
 blueprints/proposals/0005-embeddings-and-semantic-clusters.html
 blueprints/proposals/0005-embeddings-and-semantic-clusters.md
+blueprints/proposals/0006-the-0-3-0-surface.html
+blueprints/proposals/0006-the-0-3-0-surface.md
 blueprints/rfcs/0000-template.html
 blueprints/rfcs/0000-template.md
 blueprints/rfcs/0001-record-architectural-decisions.html

@@ -271,3 +271,12 @@ blueprints/index.html#eps
 blueprints/index.html#proposals
 blueprints/index.html#plans
 blueprints/index.html#legacy
+blueprints/proposals/0006-the-0-3-0-surface.html#summary
+blueprints/proposals/0006-the-0-3-0-surface.html#motivation
+blueprints/proposals/0006-the-0-3-0-surface.html#guide-level-explanation
+blueprints/proposals/0006-the-0-3-0-surface.html#reference-level-explanation
+blueprints/proposals/0006-the-0-3-0-surface.html#drawbacks
+blueprints/proposals/0006-the-0-3-0-surface.html#rationale-and-alternatives
+blueprints/proposals/0006-the-0-3-0-surface.html#prior-art
+blueprints/proposals/0006-the-0-3-0-surface.html#unresolved-questions
+blueprints/proposals/0006-the-0-3-0-surface.html#future-possibilities

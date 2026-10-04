@@ -2,6 +2,7 @@
 
 - Feature Name: (a unique snake_case identifier, e.g. `semantic_clusters`)
 - Start Date: (the day the pull request opens, YYYY-MM-DD)
+- Pinned at: (the full SHA of the commit on `main` whose code this proposal cites; every line citation opens there)
 - Proposal PR: (the pull request that proposes it, e.g. [#0](https://github.com/mox-labs/matra/pull/0))
 - Tracking issue: (the issue labelled `tracking` that follows the implementation, e.g. [#0](https://github.com/mox-labs/matra/issues/0), opened before the owner accepts; a plan, if parallel work needs one, is linked from that issue)
 - Status: proposed (only the owner changes it to `accepted`)
@@ -19,6 +20,9 @@ process.
 
 A section with nothing to say says so in one line rather than being deleted,
 so that a reader can tell "considered, nothing to add" from "forgotten".
+
+Claims, assumptions, decisions, the pragmatics block and sketched diagrams are
+components with their own tags: site/README.md, "The Blueprints components".
 -->
 
 ## Summary

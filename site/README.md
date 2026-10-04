@@ -763,18 +763,23 @@ Everything reads with scripts off. Two behaviours are enhancements
 that arrives on a client-side navigation is covered): a chip's sheet and a
 sketch's toggle.
 
-**Pinned provenance.** A record's header carries `- Read at:` and the full
+**Pinned provenance.** A record's header carries `- Pinned at:` and the full
 SHA of a commit on `main`. Every link from the record to lines of a
 repository file, `[lib.rs:250](../../src/lib.rs#L250 "pub fn compose")`,
 then opens GitHub at `blob/<sha>/src/lib.rs#L250`, not at `main`, so the
 evidence cannot move under the claim. The link's Markdown title is text the
-cited lines must hold: the build reads the lines at the commit with `git
+cited lines must hold, and a chip (a link inside a claim, or the cause of a
+change) must carry one: the build reads the lines at the commit with `git
 show` and fails when they do not hold it, when the file or line does not
 exist there, or when the commit is not an ancestor of the commit being
 built (a rebased branch's SHA would vanish from GitHub). The SHA is chosen
 per record, not per claim: it is the commit Claude read, set once in the
 header, and moving it forward re-checks every citation at once, which is
-the review a revision needs. The build therefore needs the repository's
+the review a revision needs. A record with no `Pinned at` line keeps its
+line links on `main`. The baseline proposals, EPR-0001 to EPR-0005, carry
+the line and plain links without titles: those links are pinned and their
+lines checked to exist, and their text is checked once a title names it.
+The build therefore needs the repository's
 history: the `Docsite floor` job and `docs.yml` check out with
 `fetch-depth: 0`. (A source is worth as much as it is cheap to
 check. Bansal et al. 2021 found explanations raise acceptance whether or
