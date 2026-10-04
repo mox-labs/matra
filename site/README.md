@@ -897,7 +897,7 @@ assumptions list against the assumed claims; and each decision saying in
 words whether it is open. Gate 4 runs `scripts/check-legibility.ts` from
 `bun run check`: the same checks on `scripts/fixtures/legibility.md`, a
 fixture holding every component (the Lab card included, since no record
-uses it yet), the determinism proof above, and fourteen planted mistakes
+uses it yet), the determinism proof above, and sixteen planted mistakes
 that must each fail for their own reason. Gate 12 sets the fixture into the
 Blueprints index's body and measures it at every width, with and without
 the sketch's toggle, closed and with every disclosure open; and on an

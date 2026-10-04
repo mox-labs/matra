@@ -111,6 +111,10 @@ if (import.meta.main) {
 	const HEAD = `# ${FIXTURE_ID}: Refusal\n\n- Pinned at: \`${PIN}\`\n- Status: proposed\n\n`;
 	const DECISION = (inner: string) =>
 		`<decision id="x" title="X">\n\n<choice key="a" title="A">\n\nA.\n\n</choice>\n\n<choice key="b" title="B">\n\nB.\n\n</choice>\n\n${inner}\n\n</decision>\n`;
+	const EXPERIMENT = (values: string) =>
+		`<experiment id="e" title="E">\n\n<hypothesis recorded="2026-10-04" commit="${PIN}">\n\nH.\n\n</hypothesis>\n\n` +
+		`<method>\n\nM.\n\n</method>\n\n<outcomes ${values} unit="F1" label="L" />\n\n<result>\n\nR.\n\n</result>\n\n` +
+		`<provenance>\n\nP.\n\n</provenance>\n\n<limits>\n\nX.\n\n</limits>\n\n</experiment>\n`;
 	const refusals: [string, string, string][] = [
 		['an observed claim with no evidence', 'Text <claim basis="observed">no chip</claim>.', 'points at its evidence'],
 		['a citation whose lines lack its text', '[x](../../src/lib.rs#L250 "not on that line")', 'do not contain'],
@@ -124,7 +128,9 @@ if (import.meta.main) {
 		['a decision with no case against it', DECISION('<recommendation choice="a">\n\nA.\n\n</recommendation>'), 'the strongest case against'],
 		['a recommendation naming no choice', DECISION('<recommendation choice="z">\n\nZ.\n\n</recommendation>\n\n<against>\n\nNo.\n\n</against>'), 'names no <choice'],
 		['pragmatics without its silence', '<pragmatics>\n\n<ask>\n\nA.\n\n</ask>\n\n<will>\n\nW.\n\n</will>\n\n<needs>\n\nN.\n\n</needs>\n\n<wont>\n\nX.\n\n</wont>\n\n</pragmatics>\n', 'missing <silence>'],
-		['a part outside its component', '<will>\n\nW.\n\n</will>\n', 'belongs directly inside <pragmatics>']
+		['a part outside its component', '<will>\n\nW.\n\n</will>\n', 'belongs directly inside <pragmatics>'],
+		['an experiment with no runs', EXPERIMENT('values="   "'), 'lists no run'],
+		['an experiment with a run that is not a number', EXPERIMENT('values="0.8 n/a 0.7"'), '"n/a", which is not a number']
 	];
 	for (const [what, body, expect] of refusals) {
 		try {

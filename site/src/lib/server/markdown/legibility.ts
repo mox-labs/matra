@@ -1066,11 +1066,19 @@ function experiment(node: Element, ctx: LegibilityContext, p: Problems): Element
 		if (problem) p.add(hyp, problem);
 	}
 	const out = parts.get('outcomes')!;
-	const values = (attr(out, 'values') ?? '').trim().split(/\s+/).map(Number);
-	if (values.length === 0 || values.some((v) => !Number.isFinite(v))) {
-		p.add(out, 'values="..." lists every run\'s outcome as numbers, separated by spaces; never a bare mean');
+	// Empty tokens are dropped first: Number('') is 0, which would draw a run
+	// nobody ran.
+	const tokens = (attr(out, 'values') ?? '').split(/\s+/).filter((t) => t !== '');
+	if (tokens.length === 0) {
+		p.add(out, 'values="..." lists no run; an experiment shows every run\'s outcome, never none and never a bare mean');
 		return null;
 	}
+	const bad = tokens.filter((t) => !Number.isFinite(Number(t)));
+	if (bad.length) {
+		p.add(out, `values="..." holds ${bad.map((t) => `"${t}"`).join(', ')}, which is not a number; every run's outcome is a number`);
+		return null;
+	}
+	const values = tokens.map(Number);
 	const lo = attr(out, 'min') !== undefined ? Number(attr(out, 'min')) : Math.min(...values);
 	const hi = attr(out, 'max') !== undefined ? Number(attr(out, 'max')) : Math.max(...values);
 	const id = `exp-${slug(attr(node, 'id') ?? '')}`;

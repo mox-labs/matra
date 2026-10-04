@@ -335,6 +335,7 @@ const withFigures = new Set<string>();
 let notes = 0;
 const withNotes = new Set<string>();
 let components = 0;
+const likelihoodLinks: { page: string; href: string }[] = [];
 const withComponents = new Set<string>();
 
 /** One margin note's shown values against its data. */
@@ -398,6 +399,28 @@ for (const file of pages(dir)) {
 		withNotes.add(page);
 		checkNote(note, (msg) => failures.push(`${page} (margin note): ${msg}`));
 	}
+	// A likelihood word links the band's meaning; the component writes that
+	// href itself, so nothing else resolves it.
+	for (const a of all(tree, (e) => e.tagName === 'a' && prop(e, 'dataLikelihood') !== undefined)) {
+		likelihoodLinks.push({ page, href: prop(a, 'href') ?? '' });
+	}
+}
+
+// Each likelihood link lands on an id the build wrote, base path aside.
+const idsOf = new Map<string, Set<string>>();
+for (const { page, href } of likelihoodLinks) {
+	const m = /\/(blueprints\/[^#]+)#(.+)$/.exec(href);
+	const target = m ? (m[1].endsWith('.html') ? m[1] : `${m[1]}.html`) : '';
+	if (!idsOf.has(target)) {
+		let ids = new Set<string>();
+		try {
+			ids = new Set(all(fromHtml(readFileSync(join(dir, target), 'utf8')), (e) => e.properties.id !== undefined).map((e) => prop(e, 'id')!));
+		} catch {
+			// No such page: every id is missing.
+		}
+		idsOf.set(target, ids);
+	}
+	if (!m || !idsOf.get(target)!.has(m[2])) failures.push(`${page} (likelihood): ${href} lands on no id the build wrote`);
 }
 
 const kinds = [...byKind].map(([k, n]) => `${n} ${k}`).join(', ');
