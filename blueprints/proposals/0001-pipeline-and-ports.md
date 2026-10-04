@@ -340,10 +340,12 @@ current shape removed.
   adapter of the same port acceptable, or should the composition root do
   it, as `Ingest::path` already does for the streaming route?
 - **`Decomposer` has no `Send` bound.** `Source`, `NlpProvider` and
-  `Embedder` require `Send`; [`Decomposer`][decompose-port] does not. Inferred
-  from the types, not tested: `Decomposers` holds `Box<dyn Decomposer>`, so
-  `Engine` is not `Send` either. Nothing in matra needs it today (the Python
-  class is `unsendable`), but the asymmetry is unrecorded. Is it intended?
+  `Embedder` require `Send`; [`Decomposer`][decompose-port] does not.
+  `Decomposers` holds `Box<dyn Decomposer>`, so `Engine` is not `Send`
+  either: observed by compiling a `Send` assertion on `Engine` at the pinned
+  commit, which fails on `dyn Decomposer`. Nothing in matra needs it today
+  (the Python class is `unsendable`), but the asymmetry is unrecorded. Is it
+  intended?
 
 ## Future possibilities
 
