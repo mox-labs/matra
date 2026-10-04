@@ -3,7 +3,7 @@
 - Feature Name: `surface_0_3`
 - Start Date: 2026-10-04
 - Pinned at: `4fcfb4adc85524243c5e392becd4f490e3e42252` (every code citation below opens at this commit)
-- Proposal PR: (this pull request)
+- Proposal PR: [#134](https://github.com/mox-labs/matra/pull/134)
 - Tracking issue: (opened before the owner accepts)
 - Status: proposed
 
