@@ -2,7 +2,7 @@
 
 - Feature Name: `command_line_and_configuration`
 - Start Date: 2026-10-04
-- Proposal PR: (this proposal's pull request)
+- Proposal PR: [#133](https://github.com/mox-labs/matra/pull/133)
 - Tracking issue: none (a baseline proposal describes code that already ships, so there is no milestone to track)
 - Status: proposed (only the owner changes it to `accepted`)
 - Pinned at: `4fcfb4adc85524243c5e392becd4f490e3e42252`
