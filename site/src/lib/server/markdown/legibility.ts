@@ -1147,7 +1147,7 @@ function recordIndex(node: Element, parent: Root | Element, index: number, ctx: 
 					open.length === 0 ? 'No open decisions' : `${open.length} open ${open.length === 1 ? 'decision' : 'decisions'}`,
 					r.assumptions ? `, ${r.assumptions} ${r.assumptions === 1 ? 'assumption' : 'assumptions'} to confirm` : ''
 				]),
-				...(open.length ? [h('ol', { className: ['card-decisions'] }, open.map((d) => h('li', {}, [h('a', { href: `${ctx.base}${r.route}#decision-${d.id}`, dataResolved: '' }, [d.title])])))] : [])
+				...(open.length ? [h('ul', { className: ['card-decisions'] }, open.map((d) => h('li', {}, [h('a', { href: `${ctx.base}${r.route}#decision-${d.id}`, dataResolved: '' }, [d.title])])))] : [])
 			]),
 			...(r.readAt ? [h('p', { className: ['card-read'] }, ['pinned at ', h('code', {}, [r.readAt.slice(0, 7)])])] : [])
 		]);
