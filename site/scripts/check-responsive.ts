@@ -228,11 +228,13 @@ async function layout(browser: Browser, width: number) {
 
 /** A proposal's chip and sketch, on an emulated touch screen. */
 async function touchProposal(browser: Browser) {
-	// The first proposal that has a code chip; a record written without the
-	// components (the baseline proposals) has none to tap.
-	const page_ = paths.find(
+	// A proposal that has a code chip, preferring one whose sketch has a
+	// toggle: a sketch of one state (a baseline drawing what ships) has no
+	// toggle to tap, and the toggle is the half of this check that needs one.
+	const withChip = paths.filter(
 		(p) => p.startsWith('blueprints/proposals/') && readFileSync(join(root, p), 'utf8').includes('data-sheet=')
 	);
+	const page_ = withChip.find((p) => readFileSync(join(root, p), 'utf8').includes('class="sk-toggle"')) ?? withChip[0];
 	if (!page_) {
 		failures.push('touch: no proposal in urls.txt carries a code chip to tap; the chip and sketch go untested');
 		return;
@@ -264,7 +266,7 @@ async function touchProposal(browser: Browser) {
 		}
 	}
 	const figure = page.locator('figure.sketch[data-enhanced]').first();
-	if ((await page.locator('figure.sketch').count()) > 0) {
+	if ((await page.locator('figure.sketch:has(.sk-toggle)').count()) > 0) {
 		if ((await figure.count()) === 0) failures.push(`${where}: the sketch's toggle was not turned on`);
 		else {
 			const buttons = figure.locator('.sk-toggle button');
