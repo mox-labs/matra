@@ -265,12 +265,16 @@ reference/semantic-clusters.html#bounds-and-failure
 # blueprints/legacy/, unrendered; their pages keep their paths in urls.txt but
 # no longer have sections, so their anchors left this list. The index's #rfcs
 # and #eps stay on it and forward to #legacy (src/lib/moved-anchors.ts).
+# #likelihood is a `####` heading, listed because every likelihood word on a
+# record links it (src/lib/server/markdown/legibility.ts), and gate 9 also
+# checks each such link lands on an id the build wrote.
 blueprints/index.html#the-process
 blueprints/index.html#rfcs
 blueprints/index.html#eps
 blueprints/index.html#proposals
 blueprints/index.html#plans
 blueprints/index.html#legacy
+blueprints/index.html#likelihood
 blueprints/proposals/0006-the-0-3-0-surface.html#summary
 blueprints/proposals/0006-the-0-3-0-surface.html#motivation
 blueprints/proposals/0006-the-0-3-0-surface.html#guide-level-explanation
