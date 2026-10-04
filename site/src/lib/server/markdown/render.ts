@@ -64,6 +64,7 @@ import type {
 	TocEntry
 } from '$lib/types';
 import { MARKDOWN_ELEMENTS, REGISTRY } from './registry';
+import { legibility, readPin, selfClosingTags, type RecordCard } from './legibility';
 import { exampleView, type ExampleSource } from '../examples';
 import { REPO_URL } from '$lib/site';
 
@@ -121,6 +122,8 @@ export interface RenderContext {
 	measures?: PageMeasures;
 	/** The SUMMARY.md part the page is in, or null for the home page. */
 	part?: string | null;
+	/** Every design record, for the Blueprints index's cards. */
+	records?: readonly RecordCard[];
 }
 
 export async function render(markdown: string, ctx: RenderContext): Promise<Rendered> {
@@ -132,10 +135,20 @@ export async function render(markdown: string, ctx: RenderContext): Promise<Rend
 		.use(remarkParse)
 		.use(remarkGfm)
 		.use(figureTags)
+		.use(selfClosingTags)
 		.use(remarkRehype, { allowDangerousHtml: true })
 		.use(rehypeRaw)
 		.use(stripComments)
 		.use(checkTags, ctx)
+		.use(legibility, {
+			file: ctx.file,
+			repoFile: ctx.repoFile,
+			pin: readPin(markdown, ctx.file),
+			repoUrl: REPO_URL,
+			repoRoot: REPO_ROOT,
+			base: ctx.base,
+			records: ctx.records
+		})
 		.use(rewriteLinks, ctx)
 		.use(rehypeSlug)
 		.use(collectHeadings, { toc, meta })
@@ -482,6 +495,15 @@ const checkTags: Plugin<[RenderContext], Root> = (ctx) => (tree) => {
 		const entry = REGISTRY[node.tagName];
 		if (entry?.kind === 'passthrough') return SKIP;
 		const line = node.position?.start.line;
+		if (entry?.kind === 'component') {
+			// A Blueprints component: its children are checked too.
+			if (isRecord(ctx.repoFile)) return;
+			unknown.push(
+				`  ${ctx.file}${line ? `:${line}` : ''}: <${node.tagName}> is a Blueprints component; it renders ` +
+					'on a design record or a Lab page only'
+			);
+			return SKIP;
+		}
 		if (entry?.kind === 'figure' || entry?.kind === 'example') {
 			if (node.properties?.dataMatraFigure === 'true') return SKIP;
 			unknown.push(
@@ -507,11 +529,16 @@ const rewriteLinks: Plugin<[RenderContext], Root> = (ctx) => (tree) => {
 		if (node.tagName !== 'a') return;
 		const href = node.properties?.href;
 		if (typeof href !== 'string') return;
+		// A link a Blueprints component drew already names its route.
+		if (node.properties.dataResolved !== undefined) {
+			delete node.properties.dataResolved;
+			return;
+		}
 		// External, same-page, and mail links stay as written.
 		if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('#')) return;
 
 		const [target, hash] = splitHash(href);
-		const record = ctx.repoFile.startsWith('blueprints/') || ctx.repoFile.startsWith('lab/');
+		const record = isRecord(ctx.repoFile);
 		if (href.startsWith('/') || (!record && !target.endsWith('.md'))) {
 			broken.push(`  ${ctx.file}: ${href} (a relative link to a .md page is the only local form)`);
 			return;
@@ -542,6 +569,9 @@ const rewriteLinks: Plugin<[RenderContext], Root> = (ctx) => (tree) => {
 		throw new Error(`links that resolve to no page:\n${broken.join('\n')}`);
 	}
 };
+
+/** A design record or a Lab page, read from the repository rather than site/content/. */
+const isRecord = (repoFile: string) => repoFile.startsWith('blueprints/') || repoFile.startsWith('lab/');
 
 /** The repository root: the site is built from site/. */
 const REPO_ROOT = resolve('..');

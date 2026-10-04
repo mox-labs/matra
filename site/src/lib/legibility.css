@@ -1,0 +1,800 @@
+/*
+ * The Blueprints components (src/lib/server/markdown/legibility.ts; site/README.md,
+ * "The Blueprints components"). Global, because the components are drawn at
+ * build time into the page's HTML runs, not as Svelte components.
+ *
+ * The rules they follow:
+ *   - Never colour alone. A basis is a glyph and a word; a likelihood is a
+ *     word; a sketch's state is a line quality and the word "proposed" or
+ *     "shipped". Only the site's roles appear (Spark for what the reader
+ *     touches); everything else is neutral ink, so the contrast check's
+ *     existing pairs cover every component.
+ *   - Phone first. Every component is one column at 320 to 390px; the wider
+ *     arrangements (the claim's mark in the margin, choices in a row, the
+ *     pragmatics in two columns) are added above a width, never needed.
+ *   - Motion only on request: the sketch's swap, one eased stage, and the
+ *     reduced-motion rule in app.css makes it jump.
+ */
+
+/* ------------------------------------------------------------------------ */
+/* Masthead                                                                  */
+/* ------------------------------------------------------------------------ */
+
+.prose .masthead {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: var(--space-0-5) var(--space-3);
+	max-width: var(--measure);
+	margin: 0 0 var(--space-3);
+	padding: var(--space-1) 0;
+	border-block: 1px solid var(--border);
+	font: var(--type-sm) / 1.5 var(--font-mono);
+}
+
+.prose .masthead .mh-row {
+	display: grid;
+	grid-template-columns: 6.5rem 1fr;
+	gap: var(--space-1);
+	min-width: 0;
+}
+
+.prose .masthead dt {
+	color: var(--text-muted);
+}
+
+.prose .masthead dd {
+	margin: 0;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+@media (min-width: 40rem) {
+	.prose .masthead {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+/* ------------------------------------------------------------------------ */
+/* Claims                                                                    */
+/* ------------------------------------------------------------------------ */
+
+.prose .claim-mark {
+	font: var(--type-xs) / 1.5 var(--font-mono);
+	color: var(--text-muted);
+	white-space: normal;
+}
+
+.prose .basis,
+.prose .likelihood {
+	white-space: nowrap;
+}
+
+.prose .basis-glyph {
+	display: inline-block;
+	width: 1em;
+	text-align: center;
+	color: var(--text);
+}
+
+.prose .likelihood {
+	padding: 0 0.3em;
+	border: 1px dashed var(--border-strong);
+	border-radius: var(--radius-control);
+	color: var(--text);
+}
+
+/* A chip: the grounds, as a short mono label. At least 24px to tap. */
+.prose a.chip {
+	display: inline-block;
+	min-height: 24px;
+	padding: 0.15em 0.4em;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-control);
+	color: var(--text);
+	text-decoration: none;
+	white-space: nowrap;
+	line-height: 1.4;
+}
+
+.prose a.chip:hover,
+.prose a.chip:focus-visible {
+	border-color: var(--spark);
+	color: var(--spark);
+}
+
+.prose a.chip code {
+	color: inherit;
+	font-size: 1em;
+}
+
+/* Pointing at a claim's mark marks the claim, and the other way round. */
+.prose .claim:has(.claim-mark:hover) .claim-text,
+.prose .claim:has(.claim-mark :focus-visible) .claim-text,
+.prose .claim:target .claim-text {
+	background: var(--spark-wash);
+}
+
+/* With a margin, the mark is a sidenote level with its claim, as the
+   measures are on product pages; records are not measured, so the margin
+   is free. Inside a box (a table, a decision, the pragmatics) it stays
+   inline. */
+@media (min-width: 77rem) {
+	.prose .body > :is(p, ul, ol) .claim-mark {
+		float: right;
+		clear: right;
+		width: var(--margin-w);
+		margin: 0.2em calc(-1 * (var(--margin-w) + var(--margin-gap))) var(--space-1) 0;
+		padding-inline-start: var(--space-1);
+		border-inline-start: 1px solid var(--border);
+	}
+
+	.prose .body > :is(ul, ol) .claim-mark {
+		margin-right: calc(-1 * (var(--margin-w) + var(--margin-gap)));
+	}
+}
+
+/* A table of claims reads as one block a row on a phone, each cell named
+   by its column, rather than scrolling sideways past its chips. */
+@media (max-width: 40rem) {
+	.prose table.reflow,
+	.prose table.reflow tbody,
+	.prose table.reflow tr,
+	.prose table.reflow td {
+		display: block;
+	}
+
+	.prose table.reflow thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+	}
+
+	.prose table.reflow tr {
+		padding: var(--space-1) 0;
+		border-bottom: 1px solid var(--border-strong);
+	}
+
+	.prose table.reflow td {
+		padding: 0.2em 0;
+		border: 0;
+	}
+
+	.prose table.reflow td::before {
+		content: attr(data-label);
+		display: block;
+		font: 600 var(--type-xs) / 1.5 var(--font-ui);
+		letter-spacing: var(--tracking-widest);
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+
+	.prose table.reflow td:first-child {
+		font-weight: 600;
+	}
+
+	.prose table.reflow td:first-child::before {
+		display: none;
+	}
+}
+
+/* ------------------------------------------------------------------------ */
+/* A chip's sheet                                                            */
+/* ------------------------------------------------------------------------ */
+
+.sheet {
+	position: fixed;
+	inset: auto 0 0 0;
+	width: min(100%, 46rem);
+	max-height: min(70vh, 34rem);
+	margin: 0 auto;
+	padding: var(--space-2);
+	overflow: auto;
+	background: var(--bg-raised);
+	color: var(--text);
+	border: 1px solid var(--border-strong);
+	border-bottom: 0;
+	font: var(--type-sm) / 1.5 var(--font-mono);
+}
+
+.sheet::backdrop {
+	background: rgb(0 0 0 / 0.35);
+}
+
+/* A browser without popovers shows nothing rather than a loose block; the
+   chip is still the link. */
+@supports not selector(:popover-open) {
+	.sheet {
+		display: none;
+	}
+}
+
+.sheet .sheet-head {
+	display: flex;
+	align-items: start;
+	justify-content: space-between;
+	gap: var(--space-1);
+}
+
+.sheet .sheet-title {
+	margin: 0;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.sheet .sheet-close {
+	flex: none;
+	min-height: 24px;
+	padding: 0.1rem var(--space-1);
+	font: inherit;
+	color: var(--text);
+	background: transparent;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-control);
+	cursor: pointer;
+}
+
+.sheet .sheet-quote {
+	margin: var(--space-1) 0;
+	padding: var(--space-1);
+	overflow-x: auto;
+	background: var(--code-bg);
+	border: 1px solid var(--border);
+	font-size: var(--type-xs);
+	line-height: 1.55;
+}
+
+.sheet .q-line {
+	display: block;
+	white-space: pre;
+}
+
+.sheet .q-n {
+	color: var(--text-muted);
+}
+
+.sheet .sheet-note {
+	margin: 0;
+	color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Assumptions                                                               */
+/* ------------------------------------------------------------------------ */
+
+.prose .assumptions {
+	max-width: var(--measure);
+	margin: var(--space-2) 0 var(--space-3);
+	padding: var(--space-1) var(--space-2);
+	border: 1px dashed var(--border-strong);
+}
+
+.prose .assumptions-lead {
+	margin: 0 0 var(--space-1);
+	font: var(--type-sm) / 1.5 var(--font-mono);
+	color: var(--text-muted);
+}
+
+.prose .assumptions ol {
+	margin: 0;
+}
+
+.prose .assumption-where {
+	font: var(--type-xs) var(--font-mono);
+	white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Decision                                                                  */
+/* ------------------------------------------------------------------------ */
+
+.prose .decision {
+	margin: var(--space-4) 0;
+	padding: var(--space-2);
+	border: 1px solid var(--border);
+	border-top: var(--border-accent) solid var(--border-strong);
+	background: var(--bg-raised);
+	clear: both;
+}
+
+.prose .decision-kicker,
+.prose .decision-role,
+.prose .prag-label,
+.prose .exp-kicker,
+.prose .exp-label {
+	margin: 0 0 var(--space-0-5);
+	font: 600 var(--type-xs) / 1.5 var(--font-ui);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.prose .decision-role strong {
+	color: var(--text);
+}
+
+.prose .decision-state {
+	color: var(--text);
+}
+
+.prose h3.decision-title {
+	margin: 0 0 var(--space-2);
+}
+
+.prose .choices {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: var(--space-1);
+	margin-bottom: var(--space-2);
+}
+
+@media (min-width: 60rem) {
+	.prose .choices:is([data-count='2'], [data-count='3']) {
+		grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+		align-items: start;
+	}
+}
+
+.prose .choice {
+	border: 1px solid var(--border);
+	background: var(--bg);
+}
+
+.prose .choice > summary {
+	min-height: 24px;
+	padding: var(--space-1);
+	cursor: pointer;
+	font: var(--type-sm) / 1.45 var(--font-ui);
+}
+
+.prose .choice-key {
+	display: inline-block;
+	min-width: 1.6em;
+	font: 600 var(--type-sm) var(--font-mono);
+}
+
+.prose .choice-rec {
+	font: var(--type-xs) var(--font-mono);
+	color: var(--text-muted);
+}
+
+.prose .choice-body {
+	padding: 0 var(--space-1) var(--space-1);
+	font-size: var(--type-sm);
+}
+
+.prose .choice-body > :last-child,
+.prose .recommendation > :last-child,
+.prose .against > :last-child,
+.prose .ruling > :last-child {
+	margin-bottom: 0;
+}
+
+/* The recommendation is set apart as a judgment, the case against it
+   beside it; neither is colour-coded, both are named. */
+.prose .recommendation,
+.prose .against,
+.prose .ruling {
+	max-width: var(--measure);
+	margin: 0 0 var(--space-2);
+	padding: 0 0 0 var(--space-2);
+	border-inline-start: var(--border-accent) solid var(--border-strong);
+}
+
+.prose .against {
+	border-inline-start-style: dashed;
+}
+
+.prose .ruling {
+	margin-bottom: 0;
+	padding-top: var(--space-1);
+	border-inline-start: 0;
+	padding-inline-start: 0;
+	border-top: 1px solid var(--border);
+	max-width: none;
+}
+
+.prose .ruling[data-response='open'] .decision-role {
+	text-transform: none;
+	letter-spacing: 0;
+	font: var(--type-sm) / 1.5 var(--font-ui);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Pragmatics                                                                */
+/* ------------------------------------------------------------------------ */
+
+.prose .pragmatics {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: var(--space-2);
+	margin: var(--space-3) 0 var(--space-4);
+	padding: var(--space-2);
+	border: 1px solid var(--border);
+	border-top: var(--border-accent) solid var(--spark);
+	background: var(--bg-raised);
+	clear: both;
+}
+
+.prose .pragmatics .prag > :last-child {
+	margin-bottom: 0;
+}
+
+.prose .pragmatics .prag :is(p, li) {
+	font-size: var(--type-sm);
+	line-height: 1.5;
+}
+
+.prose .prag-ask p {
+	font-size: var(--type-base) !important;
+}
+
+.prose .prag-silence {
+	margin-bottom: var(--space-0-5);
+}
+
+.prose .prag-responses {
+	margin: 0;
+	padding-top: var(--space-1);
+	border-top: 1px solid var(--border);
+	font: var(--type-sm) / 1.5 var(--font-ui);
+}
+
+@media (min-width: 60rem) {
+	.prose .pragmatics {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.prose .pragmatics .prag-ask,
+	.prose .pragmatics .prag-responses {
+		grid-column: 1 / -1;
+	}
+}
+
+/* ------------------------------------------------------------------------ */
+/* What changed in my understanding                                          */
+/* ------------------------------------------------------------------------ */
+
+.prose .changed {
+	max-width: var(--measure);
+	margin: var(--space-3) 0;
+	padding: var(--space-1) 0 var(--space-1) var(--space-2);
+	border-inline-start: var(--border-accent) solid var(--border-strong);
+}
+
+.prose .changed-head {
+	margin: 0 0 var(--space-1);
+	font-size: var(--type-sm);
+}
+
+.prose .changed-pairs {
+	margin: 0;
+	padding-inline-start: 1.3em;
+	font-size: var(--type-sm);
+	line-height: 1.5;
+}
+
+.prose .changed-pairs > li {
+	margin-bottom: var(--space-1);
+}
+
+.prose .changed .was,
+.prose .changed .now {
+	display: grid;
+	grid-template-columns: 2.6em 1fr;
+	gap: var(--space-1);
+	align-items: baseline;
+}
+
+.prose .changed-body > * {
+	margin: 0 0 var(--space-0-5);
+}
+
+.prose .changed-word {
+	display: inline-block;
+	font: 600 var(--type-xs) var(--font-mono);
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.prose .changed del {
+	color: var(--text-muted);
+	text-decoration-thickness: 1px;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Sketch figure                                                             */
+/* ------------------------------------------------------------------------ */
+
+.prose figure.sketch {
+	margin: var(--space-4) 0;
+	padding: var(--space-2);
+	background: var(--bg-raised);
+	border: 1px solid var(--border);
+}
+
+.prose .sk-title {
+	margin: 0 0 var(--space-1);
+	font: 650 var(--type-xs) / 1.5 var(--font-ui);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.prose .sk-toggle {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-0-5);
+	margin: 0 0 var(--space-1);
+}
+
+.prose .sk-toggle[hidden] {
+	display: none;
+}
+
+.prose .sk-toggle button {
+	min-height: 24px;
+	padding: 0.15rem var(--space-1);
+	font: var(--type-xs) var(--font-mono);
+	color: var(--text);
+	background: transparent;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-control);
+	cursor: pointer;
+}
+
+.prose .sk-toggle button[aria-pressed='true'] {
+	border-color: var(--spark);
+	color: var(--spark);
+	box-shadow: inset 0 -2px 0 var(--spark);
+}
+
+.prose .sk-state + .sk-state {
+	margin-top: var(--space-2);
+}
+
+.prose .sk-caption {
+	margin: 0 0 var(--space-0-5);
+	font: var(--type-sm) / 1.5 var(--font-ui);
+}
+
+/* With a script, the states share one frame and the toggle swaps them. */
+.prose figure.sketch[data-enhanced] .sk-states {
+	display: grid;
+}
+
+.prose figure.sketch[data-enhanced] .sk-state {
+	grid-area: 1 / 1;
+	margin: 0;
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 240ms cubic-bezier(0.65, 0, 0.35, 1),
+		visibility 0s linear 240ms;
+}
+
+.prose figure.sketch[data-enhanced] .sk-state[data-current] {
+	opacity: 1;
+	visibility: visible;
+	transition:
+		opacity 240ms cubic-bezier(0.65, 0, 0.35, 1),
+		visibility 0s;
+}
+
+.prose .sk-svg {
+	display: block;
+	width: 100%;
+	max-width: 36rem;
+	height: auto;
+	margin: 0 auto;
+}
+
+.prose .sk-shape,
+.prose .sk-edge {
+	fill: none;
+	stroke: var(--mark);
+	stroke-width: 1.4;
+}
+
+.prose .sk-quiet {
+	stroke: var(--mark-quiet);
+}
+
+.prose .sk-dashed {
+	stroke-dasharray: 5 4;
+}
+
+.prose .sk-head {
+	fill: var(--mark);
+}
+
+.prose .sk-label {
+	fill: var(--text);
+	font: 500 11px var(--font-mono);
+}
+
+.prose .sk-quiet-label {
+	fill: var(--text-muted);
+}
+
+.prose .sk-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-0-5) var(--space-3);
+	margin-top: var(--space-1);
+	font: var(--type-xs) / 1.6 var(--font-mono);
+	color: var(--text-muted);
+}
+
+.prose .sk-legend strong {
+	color: var(--text);
+}
+
+.prose .sk-swatch {
+	width: 2.6em;
+	height: 0.9em;
+	vertical-align: middle;
+}
+
+/* The data, one click away, as on every figure. */
+.prose :is(figure.sketch, .experiment, .record-index) .fig-data {
+	margin: var(--space-1) 0 0;
+}
+
+.prose :is(figure.sketch, .experiment, .record-index) .fig-data > summary,
+.prose .exp-method > summary {
+	display: inline-block;
+	min-height: 24px;
+	cursor: pointer;
+	padding: 0.1rem var(--space-1);
+	font: var(--type-xs) var(--font-mono);
+	color: var(--text-muted);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-control);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Lab experiment card                                                       */
+/* ------------------------------------------------------------------------ */
+
+.prose .experiment {
+	margin: var(--space-4) 0;
+	padding: var(--space-2);
+	border: 1px solid var(--border);
+	background: var(--bg-raised);
+}
+
+.prose h3.exp-title {
+	margin: 0 0 var(--space-2);
+}
+
+.prose .exp-part {
+	max-width: var(--measure);
+	margin-bottom: var(--space-2);
+}
+
+.prose .exp-part > :last-child {
+	margin-bottom: 0;
+}
+
+.prose .exp-outcomes {
+	margin: 0 0 var(--space-1);
+}
+
+.prose .exp-outcomes svg {
+	display: block;
+	width: 100%;
+	max-width: 36rem;
+	height: auto;
+}
+
+.prose .exp-dot {
+	fill: var(--mark);
+}
+
+.prose .exp-axis,
+.prose .exp-tick {
+	stroke: var(--mark-quiet);
+	stroke-width: 1;
+}
+
+.prose .exp-tick-label {
+	fill: var(--text-muted);
+	font: 10px var(--font-mono);
+}
+
+.prose .exp-outcomes figcaption {
+	margin: var(--space-0-5) 0 0;
+	text-align: start;
+}
+
+.prose .exp-method {
+	margin: 0 0 var(--space-2);
+}
+
+.prose .exp-provenance {
+	font: var(--type-xs) / 1.6 var(--font-mono);
+	color: var(--text-muted);
+	overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------------ */
+/* The Blueprints index as cards                                             */
+/* ------------------------------------------------------------------------ */
+
+.prose .record-index {
+	margin: var(--space-2) 0 var(--space-4);
+}
+
+.prose .record-index .cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+	gap: var(--space-2);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.prose .record-index .card {
+	margin: 0;
+	padding: var(--space-2);
+	border: 1px solid var(--border);
+	border-top: var(--border-accent) solid var(--border-strong);
+	background: var(--bg-raised);
+	font-size: var(--type-sm);
+	line-height: 1.5;
+}
+
+.prose .record-index .card > p {
+	margin: 0 0 var(--space-1);
+}
+
+.prose .card-top {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--space-1);
+	font: var(--type-xs) / 1.5 var(--font-mono);
+	color: var(--text-muted);
+}
+
+.prose .card-status {
+	padding: 0 0.4em;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-control);
+	color: var(--text);
+}
+
+.prose .card-title {
+	font: 700 var(--type-base) / 1.3 var(--font-read);
+}
+
+.prose .card-summary {
+	color: var(--text-muted);
+}
+
+.prose .card-open .card-count {
+	margin: 0 0 var(--space-0-5);
+	font: 600 var(--type-xs) / 1.5 var(--font-ui);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.prose .card-decisions {
+	margin: 0 0 var(--space-1);
+}
+
+.prose .card-decisions a {
+	display: inline-block;
+	min-height: 24px;
+}
+
+.prose .card-read {
+	font: var(--type-xs) var(--font-mono);
+	color: var(--text-muted);
+}
+
+.prose .cards-none {
+	color: var(--text-muted);
+}

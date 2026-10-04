@@ -26,6 +26,7 @@
 	import Search from '$lib/components/Search.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { inkTop, PLEX_MONO, tallest } from '$lib/fonts';
+	import { enhanceSketches, installLegibility } from '$lib/legibility.client';
 	import { DISCUSSIONS_URL, ISSUES_URL, REPO_URL, SITE_NAME } from '$lib/site';
 	import type { Area, Doc } from '$lib/types';
 	import type { LayoutProps } from './$types';
@@ -33,7 +34,14 @@
 	let { data, children }: LayoutProps = $props();
 
 	let navOpen = $state(false);
-	afterNavigate(() => (navOpen = false));
+	afterNavigate(() => {
+		navOpen = false;
+		enhanceSketches();
+	});
+
+	// The Blueprints components' two enhancements: a chip's sheet, a
+	// sketch's toggle ($lib/legibility.client.ts). Pages read without them.
+	onMount(installLegibility);
 
 	/** The route of the page being shown, without the base path; `/` is the first page. */
 	const current = $derived.by(() => {

@@ -47,6 +47,7 @@ import { join, relative } from 'node:path';
 import { fromHtml } from 'hast-util-from-html';
 import { toString } from 'hast-util-to-string';
 import type { Element, Root } from 'hast';
+import { COMPARE as LEGIBILITY, checkPage } from './legibility-checks';
 
 const dir = process.argv[2];
 if (!dir) {
@@ -321,7 +322,9 @@ const COMPARE: Record<string, Compare> = {
 	keyphrases,
 	textrank,
 	clusters,
-	pipeline
+	pipeline,
+	// The Blueprints components that draw data or structure (legibility-checks.ts).
+	...LEGIBILITY
 };
 
 const failures: string[] = [];
@@ -331,6 +334,8 @@ let records = 0;
 const withFigures = new Set<string>();
 let notes = 0;
 const withNotes = new Set<string>();
+let components = 0;
+const withComponents = new Set<string>();
 
 /** One margin note's shown values against its data. */
 function checkNote(note: Element, fail: (msg: string) => void): void {
@@ -383,6 +388,11 @@ for (const file of pages(dir)) {
 		}
 		records += compare(fig, table, fail);
 	}
+	const examined = checkPage(tree, (msg) => failures.push(`${page} (Blueprints component): ${msg}`));
+	if (examined) {
+		components += examined;
+		withComponents.add(page);
+	}
 	for (const note of all(tree, (e) => (e.properties.className as string[] | undefined)?.includes('measure') ?? false)) {
 		notes += 1;
 		withNotes.add(page);
@@ -393,7 +403,8 @@ for (const file of pages(dir)) {
 const kinds = [...byKind].map(([k, n]) => `${n} ${k}`).join(', ');
 console.log(
 	`figure twins: ${figures} figures (${kinds || 'none'}) on ${withFigures.size} pages, ${records} records compared; ` +
-		`${notes} margin notes on ${withNotes.size} pages; ${failures.length} mismatches`
+		`${notes} margin notes on ${withNotes.size} pages; ${components} claims, chips, assumptions and decisions on ` +
+		`${withComponents.size} pages; ${failures.length} mismatches`
 );
 if (figures === 0) {
 	console.log('FAIL (figure twins): no figures found in the build; a check that examined nothing has not passed');

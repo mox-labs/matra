@@ -49,7 +49,7 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/components/figures/` | One component per kind of figure, with its layout. |
 | `scripts/check-figure-twins.ts` | The twin test: every figure in the built HTML against its text twin. |
 | `src/lib/components/figures/linked.svelte.ts` | Linked highlighting for the hero and every figure: a mouse points, the keyboard focuses, a finger taps to pin. |
-| `scripts/check-responsive.ts` | Every docsite page in `urls.txt` (rustdoc's `api/` pages excepted) at 320, 390, 768 and 1280px in Chromium, with every `<details>` open too, and a tap on the parse figure on an emulated touch screen. |
+| `scripts/check-responsive.ts` | Every docsite page in `urls.txt` (rustdoc's `api/` pages excepted) at 320, 390, 768 and 1280px in Chromium, with every `<details>` open too, the Blueprints components' fixture laid out the same way, and taps on the parse figure and on a proposal's chip and sketch on an emulated touch screen. |
 | `src/lib/mark.ts`, `src/lib/fonts.ts` | The mark's layout from the specimen sentence's parse, and the font metrics that hang words from its bar. |
 | `scripts/check-mark.ts` | The mark's geometry held to its rules, in every variant. |
 | `examples/` | The worked examples, one directory each: which input, the call in Rust, Python and the CLI, and what the calls print. |
@@ -59,6 +59,8 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `urls.txt`, `anchors.txt` | Every published path and heading anchor: the URL contract the build, the artifact and the live site are checked against. |
 | `src/lib/server/blueprints.ts` | Reads `blueprints/` in place for the Blueprints area: each record, its route and its status, and the legacy records' old addresses. |
 | `src/lib/server/lab.ts` | Reads `lab/` in place for the Lab area. |
+| `src/lib/server/markdown/legibility.ts`, `src/lib/legibility.css`, `src/lib/legibility.client.ts` | The Blueprints components: drawn at build time, styled, and the two enhancements a script adds (a chip's sheet, a sketch's toggle). |
+| `scripts/legibility-checks.ts`, `scripts/check-legibility.ts`, `scripts/fixtures/legibility.md` | What gates 9 and 4 hold the components to, and the fixture that holds every component. |
 | `src/lib/dev/comments/` | Local comments, dev server only: the record format (`model.ts`), the store (`store.ts`), the `/__comments` endpoint (`plugin.ts`), anchoring (`anchor.ts`) and the UI. |
 | `scripts/comments.ts` | `just comments` and `just comment-reply`. |
 | `scripts/check-no-dev-comments.ts` | Fails the build when the static site holds any local comments code. |
@@ -180,7 +182,9 @@ written. `figure-parse`, `figure-primitives`, `figure-metrics`,
 `figure-pipeline` are figures: tags that name generated data and are drawn by
 a component, described next. `example-input`, `example-call` and
 `example-output` are the parts of a worked example, described under
-[Examples](#examples).
+[Examples](#examples). `component` entries are the Blueprints components,
+for design records and Lab pages, described under
+[The Blueprints components](#the-blueprints-components).
 
 A code fence in a language the highlighter has no grammar for also fails the
 build. Add the language to `LANGUAGES` in `render.ts`.
@@ -717,7 +721,9 @@ on GitHub works here: every page is keyed by its path from the repository
 root. A link between rendered records stays on the site; a link from a
 record, or from a Lab page, to any other file in the repository (the
 templates and the legacy records included) goes to that file on GitHub, on
-`main`, fragment kept; a link to nothing fails the build. Product pages keep
+`main`, fragment kept; a link to nothing fails the build. A link to lines
+of a file (`#L12` or `#L12-L18`) is the exception: it opens at the commit
+the record was read at, as the next section says. Product pages keep
 their rule that a local link names a `.md` page.
 
 **Gates.** Records are not measured (the margin is for `content/`), and
@@ -730,12 +736,190 @@ anchors, gate 12 loads them at every width, and gate 6 holds their entries
 in `llms.txt`. A new record adds its `.html` and `.md` lines to `urls.txt`,
 its `##` anchors to `anchors.txt`, and a regenerated `llms.txt`.
 
+### The Blueprints components
+
+A proposal is Claude's understanding of three things (the code, its
+history, the owner's intent) written for the owner to check and answer.
+The page's job is to make that understanding inspectable, so each grounding
+move (a comment, a correction, an acceptance) lands on a specific part of
+it; the local comments below are the channel those moves travel. The
+research behind this section was gathered outside the repository, so each
+component below names the published findings it rests on instead.
+
+The components are registered tags (`kind: 'component'` in
+`registry.ts`), drawn into plain HTML at build time by
+`src/lib/server/markdown/legibility.ts` and styled by
+`src/lib/legibility.css`. They render on a design record or a Lab page
+only; on a product page they fail the build. Each is written in the
+record's Markdown, so the file on GitHub, the `.md` twin and an agent read
+the same words the page shows. A container tag and its parts each sit on a
+line of their own with a blank line before and after, so Markdown inside
+them is still Markdown; a tag that holds nothing is self-closing on its own
+line. A tag, an attribute or a part the registry does not list fails the
+build with the page and line.
+
+Everything reads with scripts off. Two behaviours are enhancements
+(`src/lib/legibility.client.ts`, delegated from the document so content
+that arrives on a client-side navigation is covered): a chip's sheet and a
+sketch's toggle.
+
+**Pinned provenance.** A record's header carries `- Read at:` and the full
+SHA of a commit on `main`. Every link from the record to lines of a
+repository file, `[lib.rs:250](../../src/lib.rs#L250 "pub fn compose")`,
+then opens GitHub at `blob/<sha>/src/lib.rs#L250`, not at `main`, so the
+evidence cannot move under the claim. The link's Markdown title is text the
+cited lines must hold: the build reads the lines at the commit with `git
+show` and fails when they do not hold it, when the file or line does not
+exist there, or when the commit is not an ancestor of the commit being
+built (a rebased branch's SHA would vanish from GitHub). The SHA is chosen
+per record, not per claim: it is the commit Claude read, set once in the
+header, and moving it forward re-checks every citation at once, which is
+the review a revision needs. The build therefore needs the repository's
+history: the `Docsite floor` job and `docs.yml` check out with
+`fetch-depth: 0`. (A source is worth as much as it is cheap to
+check. Bansal et al. 2021 found explanations raise acceptance whether or
+not the AI is right; Vasconcelos et al. 2023 found they reduce overreliance
+when they cut the cost of verifying.)
+
+| Tag | What it is for | Evidence |
+|---|---|---|
+| `<claim basis="..." likelihood="...">` | A load-bearing claim with its grounds beside it: the basis as a glyph and a word, and its links moved into chips | Toulmin's grounds; Mayer's spatial contiguity; ICD-203 marking of fact, assumption and judgment; never one channel for a meaning |
+| `<assumptions />` | Every claim marked assumed on the page, in one list, each linked back | Assumptions are what the owner most likely knows better |
+| `<decision id title>` with `<choice key title>`, `<recommendation choice basis>`, `<against>`, `<ruling response date>` | Options, the recommendation set apart as a signed judgment, the strongest case against it, the owner's decision slot | A recommendation as a separate, attributed object; Toulmin's rebuttal; QOC and ADR as precedent |
+| `<pragmatics>` with `<ask>`, `<will>`, `<needs>`, `<wont>`, `<silence>` | What the record asks, what Claude will do, what it needs, what it will not do, and that silence is not assent; the four answers are listed by the component | Amershi et al. 2019, guidelines G1, G10 and G16; silence recorded as a defect, not assent |
+| `<changed date since>` with `<was>` and `<now>` pairs | What changed in Claude's understanding, each change linked to what changed it | The grounding move made visible (the research's frame); Amershi G16 |
+| `<sketch-figure id title seed>` around a fenced block | Proposed structure drawn sketchy and shipped structure crisp, from a declared structure that is also the text twin | Wood et al. 2012; Boukhelifa et al. 2012 |
+| `<experiment id title>` with `<hypothesis recorded commit>`, `<method>`, `<outcomes values unit label />`, `<result>`, `<provenance>`, `<limits>` | A Lab experiment card | Padilla, Kay and Hullman 2022; PROV's entity, activity and agent kept apart |
+| `<record-index kind="proposals" />` before the index's table | The Blueprints index as cards, each with its status and open decisions; the table becomes the cards' twin | The first glance carries the state of each record (Mayer's signalling) |
+
+**Claim.** `basis` is `observed` (●: Claude read or ran it, and the claim
+must hold a link to the evidence), `inferred` (◐: reasoned, the reasoning
+written out) or `assumed` (○: no grounds yet). The glyph fills as the
+grounds firm up, and the word always goes with it. `likelihood`, on a
+prediction only (never on an observation), is one word from the closed
+vocabulary of US Intelligence Community Directive 203 (almost no chance,
+very unlikely, unlikely, roughly even chance, likely, very likely, almost
+certain), each linked to its range in the Blueprints index; Kent showed a
+committee reading "serious possibility" as anything from 20 to 80 percent,
+which is why the words are bound to ranges. The links inside a claim move
+into its mark as chips: a short mono label at least 24px tall. A code chip
+is a link to the lines at the pinned commit; with a script, a tap opens its
+sheet instead, a popover along the bottom of the window with the quoted
+lines, a sentence saying this is a reading by Claude and not a test (convergence is not corroboration:
+several readings by Claude agents are one source, not several), and the
+link. A tap outside, Escape or its close button dismisses it, and focus
+returns to the chip. A pull request or issue chip is a plain link. Above
+77rem a claim's mark sits in the margin, level with the claim, as the
+measures do on product pages (records are not measured, so the margin is
+free); in a table or a box it stays inline, and a table of claims reflows
+to one block a row below 40rem rather than scrolling past its chips. Mark
+only the claims a decision rests on (a mark on every sentence
+is noise: Mayer's coherence principle, weaker still for an expert reader).
+
+**Decision.** At least two choices, each collapsed to its title in a
+`<details>`; the recommendation and the case against it stay open,
+because they are what the owner weighs. The recommendation names its
+choice and its basis (default inferred) and is labelled a judgment. With
+no `<ruling>` the slot says the decision is open and how to answer; a
+ruling's `response` is `accept`, `accept-with-reservation`, `object` or
+`redirect`. Each decision is an `h3` with the id `decision-<id>`, so the
+contents list it and a card links to it. Three choices or fewer sit in a
+row above 60rem.
+
+**Sketch figure.** The fenced block declares the structure, one statement
+a line: `width 400`; `state <id> shipped|proposed "<label>"`; `box` or
+`hex <id> "<label>" x y width height` (prefix `quiet` for context drawn
+lighter; `\n` breaks a label); `edge <from> <to>` (add `dashed` for a
+dependency a proposal removes). A proposed state is drawn through Rough.js
+4.6.6 (`rough.generator()` and `toPaths()`, arithmetic only, at build time;
+no script ships) and a shipped one crisp. Its caption begins with the word
+"Proposed" or "Shipped", and the legend says sketchy means proposed, not
+decided, with a sample of each line: Boukhelifa et al. found sketchiness
+needs a legend, and Wood et al. that readers do not take it to mean "draft"
+unaided. Labels stay crisp; only strokes are sketched. Never use it for
+numbers or anything read by size (Wood: greater error in size estimates),
+only for diagrams of structure. With two states and a script, the states
+share one frame and a toggle above it swaps them, one eased stage of 240ms
+reversible mid-flight, jumping under reduced motion (Heer and
+Robertson 2007); without a script the states stand one after the other.
+The drawing is 400 units wide, so its 11-unit labels stay legible at 390px
+without scrolling.
+
+**Determinism.** Rough.js draws differently on every call unless given a
+seed, and treats a seed of 0 as none. `seed` is therefore a required
+positive integer per figure, each shape takes `seed * 1000 + n`, and path
+numbers are rounded to a tenth, so the same source writes the same HTML on
+every build and nothing changes at hydration (the figure is HTML, never
+redrawn in the browser). `scripts/check-legibility.ts` proves it: it
+renders the fixture twice with `Math.random` replaced by a function that
+throws, and fails if the renders differ or anything reached for
+randomness.
+
+**Experiment card.** Hypothesis and prediction first, with the day and the
+full commit they were recorded at, before the run; then the result in
+words, with its interval as a sentence (Padilla, Kay and Hullman: the
+deterministic construal error was found with charts of uncertainty, not
+with the same information as text); then every run as a dot on one axis,
+never a bare mean and no error bars, with the runs as its twin; the method
+behind a disclosure; what the result does not show; and the provenance in
+mono at the foot. Nothing animates: hypothetical outcome plots that play
+on their own would break the motion rule. No experiment exists yet, so the
+card is exercised by the fixture alone.
+
+**Pragmatics, assumptions and what changed** are text components: their
+content is words, and their structure (the five parts, the pairs, the
+list) is checked when they render. The pragmatics block sits after the
+Summary, so the masthead and the abstract come first, as the anatomy
+below sets out; the research's separate read-first card is merged into
+it.
+
+**The masthead.** A record's header list becomes its masthead: the start
+date, the commit it was read at (linked), who decides (the owner, always,
+by the process), and the pull request and tracking issue, in that order,
+under the title with its kind and status. Then the Summary as the
+abstract, the pragmatics block, and the template's sections in their
+order; nothing reorders between widths, so a comment's anchor and the
+reading order are the same on a phone and a desktop.
+
+**Gates.** Gate 9 holds every component that carries data or structure to
+text (`scripts/legibility-checks.ts`, run over the build by
+`check-figure-twins.ts`): a sketch's boxes and arrows against its twin
+table, each state's drawing and caption against its kind, the legend's
+word; a card against the index's row; a run's dot against its row; every
+claim's basis and likelihood as words from their closed sets; every code
+chip opening the masthead's commit, with a sheet that quotes it; the
+assumptions list against the assumed claims; and each decision saying in
+words whether it is open. Gate 4 runs `scripts/check-legibility.ts` from
+`bun run check`: the same checks on `scripts/fixtures/legibility.md`, a
+fixture holding every component (the Lab card included, since no record
+uses it yet), the determinism proof above, and fourteen planted mistakes
+that must each fail for their own reason. Gate 12 sets the fixture into the
+Blueprints index's body and measures it at every width, with and without
+the sketch's toggle, closed and with every disclosure open; and on an
+emulated touch screen it taps a proposal's code chip (its sheet must open
+inside the window and its close button close it) and the sketch's toggle
+(the state shown must change and the button say it is pressed). The
+em-dash gate reads `blueprints/` and `lab/`, so the content is covered.
+
+**Left out, and why.** No number on Claude's confidence: Kent argues for
+defined words, not numbers, and nothing gathered shows a model's own
+numbers are calibrated for these claims. No single trust score for a
+proposal: it has no resolution across claims (Lee and See). No
+per-sentence marks. No sketchiness on data figures or as a general trust
+signal. No motion on load or on scroll, no autoplay, and no outcome plots
+that step on their own. No concept explorable component: the research
+allows one only where a recommendation turns on a parameter the owner
+cannot judge from one or two static states, no proposal has one yet, and
+the clusters figure is the pattern when one does. No mandated reasoning
+form: a component missing from a proposal is a judgment, not a defect.
+
 ### The Lab area
 
 Rendered from `lab/` at the repository root (`src/lib/server/lab.ts`, with
 `../lab` in `fs.allow`), as Blueprints is from `blueprints/`. Today it is
 its landing page, `lab/README.md` at `/lab/index`, which Pages serves at
-`/lab/`. It carries no status and is not measured.
+`/lab/`. It carries no status and is not measured. An experiment is set as
+the experiment card above.
 
 ### Local comments
 

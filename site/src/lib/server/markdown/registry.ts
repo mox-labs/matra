@@ -38,6 +38,17 @@
  *                 `part` says which part the tag renders: the input, the
  *                 call in Rust, Python and the CLI, or what the calls print.
  *
+ *   component     a Blueprints component (legibility.ts): a part of a
+ *                 design record that makes Claude's understanding readable
+ *                 and answerable, from a claim with its grounds to the
+ *                 owner's decision slot. Written with a closing tag around
+ *                 Markdown, or self-closing on a line of its own where it
+ *                 holds nothing. `attributes` lists what it may carry, and
+ *                 `within` the component it belongs directly inside. It
+ *                 renders on a design record or a Lab page only; on a
+ *                 product page it fails the build. Syntax, purpose and
+ *                 evidence: site/README.md, "The Blueprints components".
+ *
  * Adding a new kind of figure means a new entry here and its component;
  * adding a new instance means a line in a page and an input in site/inputs/.
  * Adding an example means a directory in site/examples/ and a page.
@@ -53,7 +64,22 @@ export type TagEntry =
 			reason: string;
 			/** Attribute name to whether the tag must carry it. */
 			attributes: Readonly<Record<string, 'required' | 'optional'>>;
+	  }
+	| {
+			kind: 'component';
+			reason: string;
+			/** Attribute name to whether the tag must carry it. */
+			attributes: Readonly<Record<string, 'required' | 'optional'>>;
+			/** The component this one belongs directly inside, if any. */
+			within?: string;
 	  };
+
+const part = (within: string, reason: string, attributes: Record<string, 'required' | 'optional'> = {}): TagEntry => ({
+	kind: 'component',
+	reason,
+	attributes,
+	within
+});
 
 export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 	details: {
@@ -145,6 +171,89 @@ export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 		kind: 'example',
 		part: 'output',
 		reason: 'What the calls print, trimmed where long, with the whole output linked.'
+	},
+
+	// The Blueprints components (legibility.ts; site/README.md, "The Blueprints components").
+	claim: {
+		kind: 'component',
+		reason:
+			'A load-bearing claim, its basis as a glyph and a word (observed, inferred, assumed), a likelihood ' +
+			'from the closed vocabulary on a prediction only, and chips to its grounds: pinned code lines, ' +
+			'pull requests, issues. Grounds beside the claim, cheap to check (Toulmin; Bansal 2021; Vasconcelos 2023).',
+		attributes: { basis: 'required', likelihood: 'optional' }
+	},
+	assumptions: {
+		kind: 'component',
+		reason: 'Every claim on the page marked assumed, collected so the owner can confirm or strike each in one place.',
+		attributes: {}
+	},
+	decision: {
+		kind: 'component',
+		reason:
+			"Options, Claude's recommendation set apart as a judgment, the strongest case against it, and the " +
+			"owner's decision slot (dossier-grammar G2; Toulmin's rebuttal).",
+		attributes: { id: 'required', title: 'required' }
+	},
+	choice: part('decision', 'One option of a decision, collapsed to its title.', { key: 'required', title: 'required' }),
+	recommendation: part('decision', "Claude's recommendation: which choice, and why.", { choice: 'required', basis: 'optional' }),
+	against: part('decision', 'The strongest case against the recommendation.'),
+	ruling: part('decision', "The owner's decision, once made.", { response: 'required', date: 'required' }),
+	pragmatics: {
+		kind: 'component',
+		reason:
+			'What the record asks, what Claude will do if it is accepted, what it needs, what it will not do, and ' +
+			'that silence is not assent (Amershi G1, G10, G16; dossier-grammar C3).',
+		attributes: {}
+	},
+	ask: part('pragmatics', 'The ask, in a sentence.'),
+	will: part('pragmatics', 'What Claude will do if the record is accepted.'),
+	needs: part('pragmatics', 'What Claude needs from the owner, as questions that can be answered.'),
+	wont: part('pragmatics', 'What Claude will not do.'),
+	silence: part('pragmatics', 'What happens if nobody answers.'),
+	changed: {
+		kind: 'component',
+		reason:
+			"What changed in Claude's understanding: was, now, and the evidence that changed it (a grounding " +
+			'move made visible).',
+		attributes: { date: 'required', since: 'required' }
+	},
+	was: part('changed', 'What Claude understood before.'),
+	now: part('changed', 'What it understands now, with a link to what changed it.'),
+	'sketch-figure': {
+		kind: 'component',
+		reason:
+			'Structure drawn sketchy when proposed and crisp when shipped, from a declared structure that is also ' +
+			'its text twin, with Rough.js at a fixed seed at build time (Wood 2012; Boukhelifa 2012).',
+		attributes: { id: 'required', title: 'required', seed: 'required' }
+	},
+	experiment: {
+		kind: 'component',
+		reason:
+			'A Lab experiment: the hypothesis recorded before the run, the method, every run as a dot, the result ' +
+			'in words, provenance, and what it does not show (Padilla, Kay and Hullman 2022).',
+		attributes: { id: 'required', title: 'required' }
+	},
+	hypothesis: part('experiment', 'The hypothesis and prediction, with the day and commit they were recorded at.', {
+		recorded: 'required',
+		commit: 'required'
+	}),
+	method: part('experiment', 'How the experiment was run.'),
+	outcomes: part('experiment', "Every run's outcome, never a bare mean.", {
+		values: 'required',
+		unit: 'required',
+		label: 'required',
+		min: 'optional',
+		max: 'optional'
+	}),
+	result: part('experiment', 'The result in words, with its interval stated as a sentence.'),
+	provenance: part('experiment', 'Inputs and licences, matra version, model digests.'),
+	limits: part('experiment', 'What the result does not show.'),
+	'record-index': {
+		kind: 'component',
+		reason:
+			"The Blueprints index as cards, each record's status and open decisions at a glance; the index's " +
+			"table that follows the tag becomes the cards' text twin.",
+		attributes: { kind: 'required' }
 	}
 };
 
