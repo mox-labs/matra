@@ -31,6 +31,15 @@
 	font: var(--type-sm) / 1.5 var(--font-mono);
 }
 
+/* On screen the record's frame owns the header's facts (RecordFrame.svelte),
+   and gate 9 holds it to this table; the table stays for print, and the
+   .md twin keeps the header as written. */
+@media screen {
+	.prose .masthead {
+		display: none;
+	}
+}
+
 .prose .masthead .mh-row {
 	display: grid;
 	grid-template-columns: 6.5rem 1fr;

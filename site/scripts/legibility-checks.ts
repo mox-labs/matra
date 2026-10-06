@@ -236,6 +236,17 @@ export function checkPage(tree: Root, fail: (msg: string) => void): number {
 		if (assumedClaims.length > 0 && !tallies.get('assumptions')?.includes(`${assumedClaims.length}`)) {
 			fail(`${where} does not say ${assumedClaims.length} to confirm in words`);
 		}
+		// On screen the masthead table is hidden and the frame owns the
+		// header: every fact the table holds is in the frame's words. A row
+		// that links (the commit, the pull request) is its link's text.
+		const frameText = squashText(f);
+		for (const row of all(tree, (e) => hasClass(e, 'mh-row'))) {
+			const [dt, dd] = all(row, (e) => e.tagName === 'dt' || e.tagName === 'dd');
+			if (!dt || !dd) continue;
+			const link = all(dd, (e) => e.tagName === 'a')[0];
+			const fact = squashText(link ?? dd);
+			if (!frameText.includes(fact)) fail(`${where} does not carry the header's ${squashText(dt)}: "${fact}"`);
+		}
 	}
 
 	// Every copy of the navigator: the page's decisions, assumptions and sections.

@@ -369,6 +369,10 @@ export interface RecordFrame {
 	pin: { sha: string; href: string } | null;
 	pr: { text: string; href: string } | null;
 	tracking: { text: string; href: string } | null;
+	/** The tracking issue line's words when it links no issue. */
+	trackingNote: string | null;
+	/** The header's other facts (Started, Feature name, Implements). */
+	header: { label: string; text: string }[];
 	/** Every decision, in document order. */
 	decisions: DecisionView[];
 	assumptions: AssumptionView[];

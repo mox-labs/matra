@@ -217,6 +217,8 @@ function frameOf(meta: Record_, toc: TocEntry[]): Pick<NonNullable<Doc['record']
 			pin: card.readAt ? { sha: card.readAt, href: `${REPO_URL}/tree/${card.readAt}` } : null,
 			pr: card.pr,
 			tracking: card.tracking,
+			trackingNote: card.trackingNote,
+			header: card.header,
 			decisions: card.decisions,
 			assumptions: card.assumptions,
 			sections: toc.filter((t) => t.depth === 2).map((t) => ({ id: t.id, text: t.text, role: ANATOMY[t.text] ?? null }))

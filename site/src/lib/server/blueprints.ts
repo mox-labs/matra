@@ -111,6 +111,19 @@ function headerLink(text: string, ...keys: string[]): HeaderLink | null {
 	return null;
 }
 
+/** A header line's value as plain words: links to their text, code to its letters. */
+function headerText(text: string, key: string): string | null {
+	const line = new RegExp(`^- ${key}:\\s*(.*)$`, 'm').exec(text)?.[1];
+	return line === undefined ? null : line.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/`/g, '').trim();
+}
+
+/** The header's facts the frame shows besides the commit, the pull request and the tracking issue, labelled as the masthead labels them. */
+const HEADER_FIELDS: [string, string][] = [
+	['Start Date', 'Started'],
+	['Feature Name', 'Feature name'],
+	['Implements', 'Implements']
+];
+
 /**
  * What the index's cards, the queue and each record's frame show: its
  * status, the first sentence of its Summary, the commit its citations were
@@ -131,6 +144,11 @@ export const recordCards: RecordCard[] = [...proposals, ...plans].map((r) => {
 		readAt: readPin(text, r.file),
 		pr: headerLink(text, 'Proposal PR', 'Plan PR'),
 		tracking: headerLink(text, 'Tracking issue'),
+		trackingNote: headerLink(text, 'Tracking issue') ? null : headerText(text, 'Tracking issue'),
+		header: HEADER_FIELDS.flatMap(([key, label]) => {
+			const value = headerText(text, key);
+			return value ? [{ label, text: value }] : [];
+		}),
 		decisions: facts.decisions,
 		assumptions: assumptionsOf(facts)
 	};

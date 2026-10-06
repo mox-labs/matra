@@ -59,6 +59,8 @@ export const fixtureContext: LegibilityContext = {
 			readAt: PIN,
 			pr: { text: '#0', href: 'https://github.com/mox-labs/matra/pull/0' },
 			tracking: null,
+			trackingNote: 'none',
+			header: [{ label: 'Started', text: '2026-10-04' }],
 			decisions: FACTS.decisions,
 			assumptions: assumptionsOf(FACTS)
 		}
