@@ -17,7 +17,7 @@
  * label fits inside its arc.
  */
 import { scaleLinear } from 'd3-scale';
-import type { ParseToken } from '$lib/types';
+import type { ParseToken } from '#lib/types.ts';
 
 /** The type scale, in px. */
 export const TYPE = { word: 14, pos: 10, rel: 10.5 } as const;

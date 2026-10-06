@@ -19,7 +19,7 @@
 	 * (./linked.svelte).
 	 */
 	import { scaleLog } from 'd3-scale';
-	import type { KeyphrasesFigureFile } from '$lib/types';
+	import type { KeyphrasesFigureFile } from '#lib/types.ts';
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { roving } from './motion';

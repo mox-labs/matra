@@ -1,7 +1,7 @@
 <script lang="ts">
 	/**
 	 * The navigation, in mono: the apparatus, not the read. Each SUMMARY part
-	 * carries a 3px rule by the role of what it holds ($lib/site PART_ROLES),
+	 * carries a 3px rule by the role of what it holds (#lib/site PART_ROLES),
 	 * named beside it so the colour is never the only signal. The current
 	 * page is marked by shape (a rule and weight), and its sections are listed
 	 * under it, so the page's map sits where the site's map is.
@@ -13,9 +13,9 @@
 	 * plan, its navigator (Read, Decide, Confirm) takes the place of the
 	 * page's section list.
 	 */
-	import { base } from '$app/paths';
-	import { PART_ROLES } from '$lib/site';
-	import type { NavItem, NavPart, RecordFrame, TocEntry } from '$lib/types';
+	import { base } from '#lib/paths.ts';
+	import { PART_ROLES } from '#lib/site.ts';
+	import type { NavItem, NavPart, RecordFrame, TocEntry } from '#lib/types.ts';
 	import RecordNav from './RecordNav.svelte';
 
 	let {

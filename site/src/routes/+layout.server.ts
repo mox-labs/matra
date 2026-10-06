@@ -1,6 +1,6 @@
-import { layoutMark } from '$lib/mark';
-import { nav } from '$lib/server/content';
-import { specimen } from '$lib/server/specimen';
+import { layoutMark } from '#lib/mark.ts';
+import { nav } from '#lib/server/content.ts';
+import { specimen } from '#lib/server/specimen.ts';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = () => ({

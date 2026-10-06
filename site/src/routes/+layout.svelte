@@ -22,20 +22,20 @@
 	import '../app.css';
 	import { onMount, type Component } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
-	import { base } from '$app/paths';
+	import { base } from '#lib/paths.ts';
 	import { page } from '$app/state';
-	import Icon from '$lib/components/Icon.svelte';
-	import MakersMark from '$lib/components/MakersMark.svelte';
-	import Mark from '$lib/components/Mark.svelte';
-	import IndexFrame from '$lib/components/IndexFrame.svelte';
-	import NavTree from '$lib/components/NavTree.svelte';
-	import RecordFrame from '$lib/components/RecordFrame.svelte';
-	import Search from '$lib/components/Search.svelte';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
-	import { inkTop, PLEX_MONO, tallest } from '$lib/fonts';
-	import { enhanceSketches, installLegibility } from '$lib/legibility.client';
-	import { DISCUSSIONS_URL, ISSUES_URL, REPO_URL, SITE_NAME } from '$lib/site';
-	import type { Area, Doc } from '$lib/types';
+	import Icon from '#lib/components/Icon.svelte';
+	import MakersMark from '#lib/components/MakersMark.svelte';
+	import Mark from '#lib/components/Mark.svelte';
+	import IndexFrame from '#lib/components/IndexFrame.svelte';
+	import NavTree from '#lib/components/NavTree.svelte';
+	import RecordFrame from '#lib/components/RecordFrame.svelte';
+	import Search from '#lib/components/Search.svelte';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
+	import { inkTop, PLEX_MONO, tallest } from '#lib/fonts.ts';
+	import { enhanceSketches, installLegibility } from '#lib/legibility.client.ts';
+	import { DISCUSSIONS_URL, ISSUES_URL, REPO_URL, SITE_NAME } from '#lib/site.ts';
+	import type { Area, Doc } from '#lib/types.ts';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -47,7 +47,7 @@
 	});
 
 	// The Blueprints components' two enhancements: a chip's sheet, a
-	// sketch's toggle ($lib/legibility.client.ts). Pages read without them.
+	// sketch's toggle (#lib/legibility.client.ts). Pages read without them.
 	onMount(installLegibility);
 
 	/**
@@ -100,7 +100,7 @@
 	const commentRoute = $derived((page.data as { doc?: Doc }).doc?.route ?? null);
 	if (import.meta.env.DEV) {
 		onMount(async () => {
-			DevComments = (await import('$lib/dev/comments/DevComments.svelte')).default;
+			DevComments = (await import('#lib/dev/comments/DevComments.svelte')).default;
 		});
 	}
 
@@ -280,7 +280,7 @@
 	}
 
 	/* IBM Plex Mono at 18px, line-height 1: the top of the wordmark's tallest
-	   letter is --word-top below the line box's top ($lib/fonts), so the box is
+	   letter is --word-top below the line box's top (#lib/fonts), so the box is
 	   set that much above the rule's lower edge and every letter hangs below. */
 	.wordmark {
 		margin-top: calc(var(--rule) + 0.5px - var(--word-top));

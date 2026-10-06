@@ -12,7 +12,7 @@
 	 * and the theme follows the site's toggle through giscus's setConfig
 	 * message.
 	 */
-	import { theme } from '$lib/theme.svelte';
+	import { theme } from '#lib/theme.svelte.ts';
 
 	let { repo, repoId, categoryId }: { repo: string; repoId: string; categoryId: string } =
 		$props();

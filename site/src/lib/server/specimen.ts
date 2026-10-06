@@ -4,8 +4,8 @@
  * current with matra and the mark follows it.
  */
 import { figures } from './content';
-import { specimenTokens } from '$lib/mark';
-import type { ParseFigureFile, ParseToken } from '$lib/types';
+import { specimenTokens } from '#lib/mark.ts';
+import type { ParseFigureFile, ParseToken } from '#lib/types.ts';
 
 export function specimen(): { tokens: ParseToken[]; file: ParseFigureFile } {
 	const file = figures.get('specimen/parse') as ParseFigureFile | undefined;

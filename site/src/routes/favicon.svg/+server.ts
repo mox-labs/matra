@@ -1,5 +1,5 @@
-import { layoutMark, markSvg, PALETTES } from '$lib/mark';
-import { specimen } from '$lib/server/specimen';
+import { layoutMark, markSvg, PALETTES } from '#lib/mark.ts';
+import { specimen } from '#lib/server/specimen.ts';
 import type { RequestHandler } from './$types';
 
 /**

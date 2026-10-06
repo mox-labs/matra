@@ -4,7 +4,7 @@
 	 * Python calls print, which is also the `result` the CLI prints. Trimmed
 	 * where long, saying how, with the whole output linked.
 	 */
-	import type { ExampleView } from '$lib/types';
+	import type { ExampleView } from '#lib/types.ts';
 
 	let { example }: { example: ExampleView } = $props();
 	const output = $derived(example.output);

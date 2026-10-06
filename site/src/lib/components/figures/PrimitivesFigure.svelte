@@ -18,7 +18,7 @@
 	 * tap pins either (./linked.svelte). The rows are one tab stop, walked
 	 * with the arrow keys. Nothing else moves.
 	 */
-	import type { PrimitiveSentence, PrimitivesFigureFile } from '$lib/types';
+	import type { PrimitiveSentence, PrimitivesFigureFile } from '#lib/types.ts';
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { roving } from './motion';

@@ -13,7 +13,7 @@
 	 */
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import type { PipelineFigureFile, PipelineParagraph, PipelineStage } from '$lib/types';
+	import type { PipelineFigureFile, PipelineParagraph, PipelineStage } from '#lib/types.ts';
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { roving, swap } from './motion';

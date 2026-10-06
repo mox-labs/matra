@@ -1,4 +1,4 @@
-import { llmsTxt } from '$lib/server/content';
+import { llmsTxt } from '#lib/server/content.ts';
 import type { RequestHandler } from './$types';
 
 /**

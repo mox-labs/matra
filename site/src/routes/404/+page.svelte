@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { base } from '$app/paths';
-	import NavTree from '$lib/components/NavTree.svelte';
-	import { SITE_NAME } from '$lib/site';
+	import { base } from '#lib/paths.ts';
+	import NavTree from '#lib/components/NavTree.svelte';
+	import { SITE_NAME } from '#lib/site.ts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

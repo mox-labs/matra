@@ -12,7 +12,7 @@
 	 * three routes; the tabs stay in the same order everywhere.
 	 */
 	import { onMount } from 'svelte';
-	import type { ExampleView } from '$lib/types';
+	import type { ExampleView } from '#lib/types.ts';
 
 	let { example }: { example: ExampleView } = $props();
 

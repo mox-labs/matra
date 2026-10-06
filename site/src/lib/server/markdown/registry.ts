@@ -53,7 +53,7 @@
  * adding a new instance means a line in a page and an input in site/inputs/.
  * Adding an example means a directory in site/examples/ and a page.
  */
-import type { FigureKind } from '$lib/types';
+import type { FigureKind } from '#lib/types.ts';
 
 export type TagEntry =
 	| { kind: 'passthrough'; reason: string }

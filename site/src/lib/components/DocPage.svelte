@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
-	import { base } from '$app/paths';
-	import { MOVED_ANCHORS } from '$lib/moved-anchors';
-	import { SITE_NAME } from '$lib/site';
-	import type { Doc, Segment } from '$lib/types';
+	import { base } from '#lib/paths.ts';
+	import { MOVED_ANCHORS } from '#lib/moved-anchors.ts';
+	import { SITE_NAME } from '#lib/site.ts';
+	import type { Doc, Segment } from '#lib/types.ts';
 	import Body from './Body.svelte';
 	import Giscus from './Giscus.svelte';
 	import RecordNav from './RecordNav.svelte';
@@ -55,7 +55,7 @@
 
 	const m = $derived(doc.measured);
 
-	/** Published anchors whose heading moved or was reworded; see $lib/moved-anchors. */
+	/** Published anchors whose heading moved or was reworded; see #lib/moved-anchors. */
 	const moved = $derived(MOVED_ANCHORS[doc.route] ?? []);
 	onMount(() => {
 		const id = decodeURIComponent(location.hash.slice(1));
@@ -229,7 +229,7 @@
 	}
 
 	/* Each card carries the accent of the part it leads to, the same roles
-	   the sidebar's parts carry ($lib/site PART_ROLES): the tutorial is the
+	   the sidebar's parts carry (#lib/site PART_ROLES): the tutorial is the
 	   reader's own hands (Spark), the how-to guides are matra's output
 	   (Emergence), explanation and reference are neutral. */
 	.home :global(h2#where-to-go-next + ul > li:has(a[href*='/tutorials/'])) {

@@ -1,6 +1,6 @@
-import { giscusConfig } from '$lib/server/config';
-import { legacyForwards } from '$lib/server/blueprints';
-import { allPages, loadDoc } from '$lib/server/content';
+import { giscusConfig } from '#lib/server/config.ts';
+import { legacyForwards } from '#lib/server/blueprints.ts';
+import { allPages, loadDoc } from '#lib/server/content.ts';
 import type { EntryGenerator, PageServerLoad } from './$types';
 
 /**

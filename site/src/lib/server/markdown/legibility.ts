@@ -6,7 +6,7 @@
  * Markdown and turned into plain HTML here, at build time. Nothing in this
  * file reaches the browser; the two behaviours that need a script (a chip's
  * sheet, a sketch's today-and-proposed toggle) are progressive enhancements
- * in $lib/legibility.client.ts, and every component reads in full without
+ * in #lib/legibility.client.ts, and every component reads in full without
  * them. The syntax, the purpose of each and the evidence behind it are in
  * site/README.md, "The Blueprints components"; the research they follow is
  * cited there.

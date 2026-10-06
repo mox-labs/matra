@@ -1,4 +1,4 @@
-import type { NavItem, NavPart } from '$lib/types';
+import type { NavItem, NavPart } from '#lib/types.ts';
 
 /**
  * Parse SUMMARY.md into navigation.

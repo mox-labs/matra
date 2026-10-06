@@ -22,7 +22,7 @@
 	 * a new pick reverses mid-flight. With reduced motion, at once.
 	 */
 	import { fade } from 'svelte/transition';
-	import type { ParseFigureFile } from '$lib/types';
+	import type { ParseFigureFile } from '#lib/types.ts';
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { FAMILY_LABELS, family, layoutParse, TYPE, type Family } from './parse-layout';

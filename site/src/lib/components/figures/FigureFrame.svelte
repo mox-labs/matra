@@ -15,7 +15,7 @@
 	 * in the header, unless the header is directly above it.
 	 */
 	import type { Snippet } from 'svelte';
-	import type { FigureFile } from '$lib/types';
+	import type { FigureFile } from '#lib/types.ts';
 
 	let {
 		id,
