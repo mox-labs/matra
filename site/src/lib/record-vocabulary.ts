@@ -58,7 +58,7 @@ export const ANATOMY: Readonly<Record<string, 'orientation' | 'case' | 'queue' |
 
 /**
  * A record's status as a glyph beside its word, read from the status's
- * first word (`superseded by EPR-0007` is superseded). Neutral ink: the
+ * first word (`superseded by` a later record is superseded). Neutral ink: the
  * status is the record's, and what awaits the owner is marked by the tallies.
  */
 export function statusGlyph(status: string): string {
