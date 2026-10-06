@@ -800,3 +800,211 @@
 .prose .cards-none {
 	color: var(--text-muted);
 }
+
+/* ------------------------------------------------------------------------ */
+/* The collaborate stance: states, grounds, the queue                        */
+/* ------------------------------------------------------------------------ */
+
+/* What awaits the owner's touch is Spark, a decision the owner accepted is
+   Emergence; in both the glyph carries the colour and the word beside it the
+   meaning. Reversibility is neutral ink. */
+.prose .state-mark {
+	white-space: nowrap;
+}
+
+.prose .state-mark[data-role='spark'] .state-glyph,
+.prose .basis-glyph.awaits,
+.prose .tally[data-role='spark'] .state-glyph {
+	color: var(--spark);
+}
+
+.prose .state-mark[data-role='emergence'] .state-glyph,
+.prose .tally[data-role='emergence'] .state-glyph {
+	color: var(--emergence);
+}
+
+.prose .decision-state,
+.prose .reversible {
+	color: var(--text);
+}
+
+.prose .reversible {
+	white-space: nowrap;
+}
+
+/* What a decision rests on and waits for, under its title: apparatus. */
+.prose .decision-links {
+	display: grid;
+	gap: var(--space-0-5);
+	max-width: var(--measure);
+	margin: 0 0 var(--space-2);
+	font: var(--type-xs) / 1.5 var(--font-mono);
+}
+
+.prose .decision-links .dl-row {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 0 var(--space-1);
+}
+
+@media (min-width: 40rem) {
+	.prose .decision-links .dl-row {
+		grid-template-columns: 7.5rem 1fr;
+	}
+}
+
+.prose .decision-links dt {
+	color: var(--text-muted);
+}
+
+.prose .decision-links dd {
+	margin: 0;
+	min-width: 0;
+	color: var(--text-muted);
+}
+
+.prose .decision-links ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* Each ground a whole link, at least 24px to tap. */
+.prose .decision-links a {
+	display: block;
+	min-height: 24px;
+	padding: 0.1em 0;
+	color: var(--text);
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+
+.prose .decision-links a:hover,
+.prose .decision-links a:focus-visible {
+	color: var(--spark);
+}
+
+.prose .decision-links .ground-text {
+	font-family: var(--font-ui);
+}
+
+/* A claim's way back to the decisions that rest on it. */
+.prose a.grounds-for {
+	display: inline-block;
+	min-height: 24px;
+	padding: 0.15em 0;
+	color: var(--text);
+	white-space: nowrap;
+}
+
+.prose a.grounds-for:hover {
+	color: var(--spark);
+}
+
+.prose .bears-on {
+	font: var(--type-xs) var(--font-mono);
+	color: var(--text-muted);
+}
+
+/* A followed link lands below the sticky header, and on a phone below the
+   record's frame too (--frame-h, set in app.css where the frame is). */
+.prose :is(.claim, .decision, .assumptions, .assumptions-none, .awaiting) {
+	scroll-margin-top: calc(var(--header-h) + var(--frame-h, 0px) + var(--space-3));
+}
+
+/* The place a link leads to is marked by shape as well as tint. */
+.prose .decision:target {
+	outline: 2px solid var(--spark);
+	outline-offset: 2px;
+}
+
+/* The index's cards: each record's frame in brief. */
+.prose .card-tally {
+	font: var(--type-xs) / 1.6 var(--font-mono);
+	color: var(--text);
+}
+
+/* The queue: what awaits the owner, in one place. */
+.prose .awaiting {
+	max-width: var(--measure);
+	margin: var(--space-2) 0 var(--space-4);
+	padding: var(--space-2);
+	border: 1px solid var(--border);
+	border-top: var(--border-accent) solid var(--spark);
+	background: var(--bg-raised);
+	clear: both;
+}
+
+.prose .queue-lead {
+	margin: 0 0 var(--space-2);
+	font-size: var(--type-sm);
+	line-height: 1.5;
+}
+
+.prose .queue-group + .queue-group {
+	margin-top: var(--space-3);
+}
+
+.prose .queue-head {
+	margin: 0 0 var(--space-1);
+	font: 600 var(--type-xs) / 1.5 var(--font-ui);
+	letter-spacing: var(--tracking-widest);
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.prose .queue-records + .queue-records {
+	margin-top: var(--space-2);
+}
+
+.prose .queue-record {
+	margin: 0 0 var(--space-0-5);
+	font: var(--type-sm) / 1.5 var(--font-mono);
+}
+
+.prose .queue-record a {
+	display: inline-block;
+	min-height: 24px;
+	color: var(--text);
+	text-decoration: none;
+}
+
+.prose .queue-record a:hover {
+	color: var(--spark);
+}
+
+.prose .queue-items {
+	margin: 0;
+	padding: 0 0 0 var(--space-2);
+	list-style: none;
+	border-inline-start: 1px solid var(--border);
+}
+
+.prose .queue-items > li {
+	margin: 0 0 var(--space-1);
+	font-size: var(--type-sm);
+	line-height: 1.45;
+}
+
+.prose .queue-items a {
+	display: block;
+	min-height: 24px;
+	color: var(--text);
+	text-decoration: none;
+}
+
+.prose .queue-items a:hover,
+.prose .queue-items a:focus-visible {
+	color: var(--spark);
+}
+
+.prose .queue-items .state-mark,
+.prose .queue-items .basis {
+	font: var(--type-xs) var(--font-mono);
+}
+
+.prose .queue-meta {
+	display: block;
+	font: var(--type-xs) / 1.5 var(--font-mono);
+	color: var(--text-muted);
+}

@@ -13,6 +13,11 @@
 	 * design records) and Lab (evals and experiments). The header names all
 	 * three and marks the one being read; on a phone they sit in a row of
 	 * their own under the rule. The sidebar holds the current area's parts.
+	 *
+	 * Docs is the observe stance and Blueprints the collaborate stance: the
+	 * same tokens, faces and grid, with the chrome a record needs. On a
+	 * proposal or a plan the layout draws its frame above the page and its
+	 * navigator in the sidebar.
 	 */
 	import '../app.css';
 	import { onMount, type Component } from 'svelte';
@@ -22,7 +27,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import MakersMark from '$lib/components/MakersMark.svelte';
 	import Mark from '$lib/components/Mark.svelte';
+	import IndexFrame from '$lib/components/IndexFrame.svelte';
 	import NavTree from '$lib/components/NavTree.svelte';
+	import RecordFrame from '$lib/components/RecordFrame.svelte';
 	import Search from '$lib/components/Search.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { inkTop, PLEX_MONO, tallest } from '$lib/fonts';
@@ -74,6 +81,14 @@
 	const areaNav = $derived(data.nav.filter((p) => (p.area ?? 'docs') === area));
 
 	const toc = $derived(((page.data as { doc?: Doc }).doc?.toc ?? []).filter((t) => t.depth === 2));
+
+	/**
+	 * A design record's furniture, drawn here from what the build parsed and
+	 * never from the record's Markdown (site/README.md, "The collaborate
+	 * stance"): a proposal's or a plan's frame, or on the index the tally of
+	 * what awaits the owner. Docs and Lab pages have neither.
+	 */
+	const record = $derived((page.data as { doc?: Doc }).doc?.record ?? null);
 
 	/**
 	 * Local comments, in the dev server only (site/README.md, Local comments).
@@ -155,7 +170,7 @@
 <div class="shell">
 	<aside class="sidebar" class:open={navOpen} id="site-nav" data-print="hide">
 		<nav aria-label={AREAS.find((a) => a.id === area)?.label ?? 'Docs'}>
-			<NavTree nav={areaNav} {current} {toc} />
+			<NavTree nav={areaNav} {current} {toc} frame={record?.frame} />
 		</nav>
 		<nav class="sidebar-links" aria-label="Project links">
 			{#each links as link (link.href)}
@@ -166,6 +181,11 @@
 	</aside>
 
 	<main id="main" tabindex="-1">
+		{#if record?.frame}
+			<RecordFrame frame={record.frame} />
+		{:else if record?.awaiting}
+			<IndexFrame awaiting={record.awaiting} />
+		{/if}
 		{@render children()}
 	</main>
 </div>

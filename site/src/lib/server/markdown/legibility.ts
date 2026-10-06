@@ -24,6 +24,14 @@
  *                   shipped, with Rough.js at a fixed seed
  *   experiment      a Lab experiment card
  *   record-index    the Blueprints index as cards, the table their twin
+ *   awaiting        the queue of what awaits the owner across every
+ *                   proposal: open decisions, then assumptions to confirm
+ *
+ * A decision names what it depends on (`depends`, other decisions' ids),
+ * how readily it can be undone (`reversible`: yes, costly or no) and the
+ * claims it rests on (`grounds`, claims' ids); extractFacts reads them,
+ * refuses a dangling id, a cycle or a missing `reversible`, and links each
+ * decision to its grounds and each claim back to the decisions on it.
  *
  * Provenance is pinned. A record's header names the commit its citations
  * were read at (`- Pinned at:` and a full SHA). Every link from the record to
@@ -52,6 +60,19 @@ import type { RoughGenerator } from 'roughjs/bin/generator';
 import type { Element, ElementContent, Properties, Root, RootContent } from 'hast';
 import type { Root as MdRoot } from 'mdast';
 import { REGISTRY } from './registry';
+import {
+	ASSUMED,
+	DECISION_STATES,
+	REVERSIBLE,
+	dependencyOrder,
+	firstWords,
+	type AssumptionView,
+	type DecisionState,
+	type DecisionView,
+	type Reversible
+} from '../../record-vocabulary';
+
+export { DECISION_STATES, REVERSIBLE };
 
 /* ------------------------------------------------------------------------ */
 /* Vocabularies                                                              */
@@ -97,13 +118,23 @@ export const RESPONSES = {
 const STATE_KINDS = { shipped: 'Shipped', proposed: 'Proposed' } as const;
 
 /** Tags written alone on a line, self-closing, outside any paragraph. */
-export const SELF_CLOSING = new Set(['assumptions', 'record-index', 'outcomes']);
+export const SELF_CLOSING = new Set(['assumptions', 'record-index', 'outcomes', 'awaiting']);
 
 /* ------------------------------------------------------------------------ */
 /* Context                                                                   */
 /* ------------------------------------------------------------------------ */
 
-/** What the Blueprints index shows of each record, read by blueprints.ts. */
+/** A link a record's header names (its pull request, its tracking issue). */
+export interface HeaderLink {
+	text: string;
+	href: string;
+}
+
+/**
+ * What the Blueprints index, the queue and a record's frame show of each
+ * record, read by blueprints.ts from the record's header and from its
+ * components (recordFacts), never from its prose.
+ */
 export interface RecordCard {
 	id: string;
 	title: string;
@@ -111,8 +142,12 @@ export interface RecordCard {
 	route: string;
 	summary: string;
 	readAt: string | null;
-	decisions: { id: string; title: string; open: boolean }[];
-	assumptions: number;
+	pr: HeaderLink | null;
+	tracking: HeaderLink | null;
+	/** Every decision, in document order. */
+	decisions: DecisionView[];
+	/** Every assumed claim, in document order. */
+	assumptions: AssumptionView[];
 }
 
 export interface LegibilityContext {
@@ -254,6 +289,168 @@ function checkComponents(tree: Root, p: Problems) {
 }
 
 /* ------------------------------------------------------------------------ */
+/* Facts: the decisions and claims a record's components carry               */
+/* ------------------------------------------------------------------------ */
+
+/** A claim as the record's components carry it. */
+export interface ClaimFact {
+	/** Its element id: `claim-<id>` when the claim names one, else `claim-<n>` in document order. */
+	id: string;
+	/** The id it names (`<claim id="...">`), or null. */
+	name: string | null;
+	basis: Basis;
+	/** Its words, without the links that become its chips. */
+	text: string;
+	/** The section it is in. */
+	section: string;
+	/** The element ids of the decisions that name it in `grounds`. */
+	decisions: string[];
+}
+
+/** What a record's components say, read before anything is drawn. */
+export interface RecordFacts {
+	/** Every decision, in document order. */
+	decisions: DecisionView[];
+	/** Every claim, in document order. */
+	claims: ClaimFact[];
+}
+
+const CLAIM_NAME = /^[a-z][a-z0-9-]*$/;
+const ids = (v: string | undefined) => (v ?? '').split(/\s+/).filter((t) => t !== '');
+
+/** A claim's words without its links, which move into its mark as chips. */
+function claimBody(claim: Element): ElementContent[] {
+	const body = claim.children.filter((c) => !(isEl(c) && c.tagName === 'a'));
+	while (body.length && body.at(-1)!.type === 'text' && (body.at(-1) as { value: string }).value.trim() === '') body.pop();
+	return body;
+}
+
+/**
+ * The decisions and claims on a page, with every id a decision names
+ * resolved: `depends` to decisions, `grounds` to claims, each claim given the
+ * decisions that rest on it. Refuses, through `p`, a claim id used twice or
+ * malformed, a `depends` or `grounds` id that names nothing on the page, a
+ * `reversible` outside its vocabulary (its absence is the registry's
+ * refusal), and a cycle among the dependencies, found with a visited set.
+ */
+export function extractFacts(tree: Root, p: Problems): RecordFacts {
+	const claims: ClaimFact[] = [];
+	const named = new Set<string>();
+	let section = '';
+	let n = 0;
+	for (const block of tree.children) {
+		if (!isEl(block)) continue;
+		if (/^h[23]$/.test(block.tagName)) section = toString(block).trim();
+		visit(block, 'element', (claim) => {
+			if (claim.tagName !== 'claim') return;
+			n += 1;
+			const name = attr(claim, 'id') ?? null;
+			if (name !== null) {
+				if (!CLAIM_NAME.test(name)) p.add(claim, `<claim id="${name}">: an id is lowercase letters, digits and hyphens, beginning with a letter`);
+				else if (named.has(name)) p.add(claim, `<claim id="${name}"> is used twice on this page`);
+				named.add(name);
+			}
+			claims.push({
+				id: name !== null ? `claim-${name}` : `claim-${n}`,
+				name,
+				basis: attr(claim, 'basis') as Basis,
+				text: squash(toString(h('span', {}, claimBody(claim)))),
+				section,
+				decisions: []
+			});
+			return SKIP;
+		});
+	}
+
+	const elements: Element[] = [];
+	visit(tree, 'element', (e) => {
+		if (e.tagName !== 'decision') return;
+		elements.push(e);
+		return SKIP;
+	});
+	const byKey = new Map<string, string>();
+	for (const e of elements) {
+		const key = slug(attr(e, 'id') ?? '');
+		if (byKey.has(key)) p.add(e, `<decision id="${attr(e, 'id')}"> is used twice on this page`);
+		byKey.set(key, `decision-${key}`);
+	}
+	const decisions: DecisionView[] = elements.map((e, i) => {
+		const id = `decision-${slug(attr(e, 'id') ?? '')}`;
+		const ruling = kids(e).find((c): c is Element => isEl(c) && c.tagName === 'ruling');
+		const response = ruling ? (attr(ruling, 'response') ?? '') : 'open';
+		const state: DecisionState = response in DECISION_STATES && (ruling === undefined || response !== 'open') ? (response as DecisionState) : 'open';
+		const reversible = attr(e, 'reversible');
+		if (reversible !== undefined && !(reversible in REVERSIBLE)) {
+			p.add(e, `reversible="${reversible}" is not one of ${Object.keys(REVERSIBLE).join(', ')}`);
+		}
+		const depends: string[] = [];
+		for (const k of ids(attr(e, 'depends'))) {
+			const target = byKey.get(slug(k));
+			if (!target) p.add(e, `depends="${k}" names no <decision id="${k}"> on this page`);
+			else if (target === id) p.add(e, `<decision id="${attr(e, 'id')}"> depends on itself, a cycle`);
+			else depends.push(target);
+		}
+		const grounds: string[] = [];
+		for (const k of ids(attr(e, 'grounds'))) {
+			if (!named.has(k)) p.add(e, `grounds="${k}" names no <claim id="${k}"> on this page`);
+			else grounds.push(`claim-${k}`);
+		}
+		return {
+			id,
+			n: i + 1,
+			title: attr(e, 'title') ?? '',
+			state,
+			// A missing or unknown value is refused above; this keeps drawing the rest.
+			reversible: reversible !== undefined && reversible in REVERSIBLE ? (reversible as Reversible) : 'costly',
+			depends,
+			grounds
+		};
+	});
+
+	// A cycle among the dependencies would leave no order to show. Each
+	// decision is walked once (a visited set), whatever the page's size.
+	const done = new Set<string>();
+	const onPath: string[] = [];
+	const element = new Map(decisions.map((d, i) => [d.id, elements[i]]));
+	const walk = (d: DecisionView) => {
+		if (done.has(d.id)) return;
+		const at = onPath.indexOf(d.id);
+		if (at !== -1) {
+			const cycle = [...onPath.slice(at), d.id].map((x) => attr(element.get(x)!, 'id'));
+			p.add(element.get(d.id), `decisions depend on each other in a cycle: ${cycle.join(' depends on ')}`);
+			return;
+		}
+		onPath.push(d.id);
+		for (const x of d.depends) walk(decisions.find((o) => o.id === x)!);
+		onPath.pop();
+		done.add(d.id);
+	};
+	for (const d of decisions) walk(d);
+
+	for (const d of decisions) for (const g of d.grounds) claims.find((c) => c.id === g)?.decisions.push(d.id);
+	return { decisions, claims };
+}
+
+/**
+ * A record's facts from its Markdown, parsed as the renderer parses it, for
+ * the index's cards, the queue and the record's frame. Throws with every
+ * refusal on the page.
+ */
+export function recordFacts(markdown: string, file: string): RecordFacts {
+	const processor = unified().use(remarkParse).use(remarkGfm).use(selfClosingTags).use(remarkRehype, { allowDangerousHtml: true }).use(rehypeRaw);
+	const tree = processor.runSync(processor.parse(markdown)) as Root;
+	const p = new Problems(file);
+	const facts = extractFacts(tree, p);
+	p.throwIfAny();
+	return facts;
+}
+
+/** The assumed claims of a record, as the navigator and the queue list them. */
+export function assumptionsOf(facts: RecordFacts): AssumptionView[] {
+	return facts.claims.filter((c) => c.basis === 'assumed').map((c) => ({ id: c.id, text: c.text, decisions: c.decisions }));
+}
+
+/* ------------------------------------------------------------------------ */
 /* Markdown: self-closing tags                                               */
 /* ------------------------------------------------------------------------ */
 
@@ -290,17 +487,18 @@ export const legibility: Plugin<[LegibilityContext], Root> = (ctx) => (tree) => 
 	}
 	if (/^blueprints\/(proposals|plans)\//.test(ctx.repoFile)) masthead(tree, ctx);
 	if (record) pinLines(tree, ctx, p);
-	const claims = transformClaims(tree, ctx, p);
+	const facts = extractFacts(tree, p);
+	transformClaims(tree, ctx, p, facts);
 	reflowClaimTables(tree);
 	visit(tree, 'element', (node, index, parent) => {
 		if (!parent || index === undefined) return;
 		let out: Element | null = null;
 		switch (node.tagName) {
 			case 'assumptions':
-				out = assumptionsList(node, claims, p);
+				out = assumptionsList(facts);
 				break;
 			case 'decision':
-				out = decision(node, p);
+				out = decision(node, p, facts);
 				break;
 			case 'pragmatics':
 				out = pragmatics(node, p);
@@ -316,6 +514,9 @@ export const legibility: Plugin<[LegibilityContext], Root> = (ctx) => (tree) => 
 				break;
 			case 'record-index':
 				out = recordIndex(node, parent as Root | Element, index, ctx, p);
+				break;
+			case 'awaiting':
+				out = awaitingQueue(ctx);
 				break;
 			default:
 				return;
@@ -433,13 +634,6 @@ function pinLines(tree: Root, ctx: LegibilityContext, p: Problems) {
 /* Claims                                                                    */
 /* ------------------------------------------------------------------------ */
 
-interface ClaimInfo {
-	id: string;
-	basis: Basis;
-	text: string;
-	section: string;
-}
-
 /** A chip: a pinned line link, or a link to a pull request or an issue. */
 function chipKind(a: Element): 'lines' | 'pr' | 'issue' | 'record' | 'link' {
 	if (a.properties.dataPinned) return 'lines';
@@ -492,20 +686,27 @@ function chipify(a: Element, sheetId: string, sheets: Element[], p: Problems) {
 	}
 }
 
-function transformClaims(tree: Root, ctx: LegibilityContext, p: Problems): ClaimInfo[] {
-	const claims: ClaimInfo[] = [];
-	let section = '';
+/** A link from a claim, or an assumption, to a decision that rests on it. */
+function groundsFor(ids: string[], facts: RecordFacts, label = 'grounds for decision'): (Element | string)[] {
+	return ids.flatMap((id, i) => {
+		const d = facts.decisions.find((x) => x.id === id)!;
+		return [i === 0 ? '' : ' ', h('a', { href: `#${d.id}`, className: ['grounds-for'], dataDecision: d.id }, [`${label} ${d.n}`])];
+	});
+}
+
+function transformClaims(tree: Root, ctx: LegibilityContext, p: Problems, facts: RecordFacts) {
 	let n = 0;
 	const top = tree.children;
 	for (let t = 0; t < top.length; t++) {
 		const block = top[t];
-		if (isEl(block) && /^h[23]$/.test(block.tagName)) section = toString(block).trim();
 		if (!isEl(block)) continue;
 		const sheets: Element[] = [];
 		visit(block, 'element', (claim, index, parent) => {
 			if (claim.tagName !== 'claim' || !parent || index === undefined) return;
+			// The facts read the claims in this same order.
+			const fact = facts.claims[n];
 			n += 1;
-			const id = `claim-${n}`;
+			const id = fact.id;
 			const basis = attr(claim, 'basis') as Basis;
 			if (basis && !(basis in BASIS)) p.add(claim, `basis="${basis}" is not one of ${Object.keys(BASIS).join(', ')}`);
 			const likelihood = attr(claim, 'likelihood');
@@ -523,20 +724,17 @@ function transformClaims(tree: Root, ctx: LegibilityContext, p: Problems): Claim
 			// Chips: the links in the claim that point at its grounds move
 			// from the prose to the claim's mark.
 			const chips: Element[] = [];
-			const body: ElementContent[] = [];
 			for (const c of claim.children) {
 				if (isEl(c) && c.tagName === 'a') {
 					chipify(c, `${id}-src-${chips.length + 1}`, sheets, p);
 					chips.push(c);
-				} else body.push(c);
+				}
 			}
 			// Trailing whitespace and punctuation left where a chip was.
-			while (body.length && body.at(-1)!.type === 'text' && (body.at(-1) as { value: string }).value.trim() === '') body.pop();
+			const body = claimBody(claim);
 			if (basis === 'observed' && chips.length === 0) {
 				p.add(claim, 'an observed claim points at its evidence: put a link to it inside the <claim>');
 			}
-			const text = squash(toString(h('span', {}, body)));
-			claims.push({ id, basis, text, section });
 			const b = BASIS[basis] ?? BASIS.assumed;
 			const mark = h('span', { className: ['claim-mark'], dataPagefindIgnore: '' }, [
 				h('span', { className: ['basis'], dataBasis: basis }, [
@@ -550,11 +748,14 @@ function transformClaims(tree: Root, ctx: LegibilityContext, p: Problems): Claim
 							h('a', { className: ['likelihood'], dataLikelihood: likelihood, href: `${ctx.base}/blueprints/index#likelihood`, dataResolved: '', ariaLabel: `${likelihood}, ${LIKELIHOOD[likelihood]}` }, [likelihood])
 						]
 					: []),
-				...chips.flatMap((c) => [' ', c])
+				...chips.flatMap((c) => [' ', c]),
+				// Each decision that rests on the claim, linked back, so a
+				// reader can go from the grounds to what they bear on.
+				...(fact.decisions.length ? [' ', ...groundsFor(fact.decisions, facts)] : [])
 			]);
 			parent.children[index] = h(
 				'span',
-				{ className: ['claim'], id, dataBasis: basis, ...(likelihood ? { dataLikelihood: likelihood } : {}) },
+				{ className: ['claim'], id, dataBasis: basis, ...(likelihood ? { dataLikelihood: likelihood } : {}), ...(fact.decisions.length ? { dataGroundsFor: fact.decisions.join(' ') } : {}) },
 				[h('span', { className: ['claim-text'] }, body), ' ', mark]
 			);
 			return SKIP;
@@ -564,7 +765,6 @@ function transformClaims(tree: Root, ctx: LegibilityContext, p: Problems): Claim
 			t += sheets.length;
 		}
 	}
-	return claims;
 }
 
 /**
@@ -602,21 +802,27 @@ function sheet(id: string, a: Element, label: string): Element {
 /* Assumptions                                                               */
 /* ------------------------------------------------------------------------ */
 
-function assumptionsList(node: Element, claims: ClaimInfo[], p: Problems): Element {
-	const assumed = claims.filter((c) => c.basis === 'assumed');
+function assumptionsList(facts: RecordFacts): Element {
+	const assumed = facts.claims.filter((c) => c.basis === 'assumed');
 	if (assumed.length === 0) {
-		return h('p', { className: ['assumptions-none'], dataAssumptions: '0' }, ['No claim here is assumed: each has grounds, marked beside it.']);
+		return h('p', { className: ['assumptions-none'], id: 'assumptions-to-confirm', dataAssumptions: '0' }, ['No claim here is assumed: each has grounds, marked beside it.']);
 	}
-	return h('div', { className: ['assumptions'], dataAssumptions: String(assumed.length) }, [
+	return h('div', { className: ['assumptions'], id: 'assumptions-to-confirm', dataAssumptions: String(assumed.length) }, [
 		h('p', { className: ['assumptions-lead'] }, [
-			h('span', { className: ['basis-glyph'], ariaHidden: 'true' }, [BASIS.assumed.glyph]),
+			h('span', { className: ['basis-glyph', 'awaits'], ariaHidden: 'true' }, [ASSUMED.glyph]),
 			` ${assumed.length} ${assumed.length === 1 ? 'claim stands' : 'claims stand'} on no grounds yet. Confirm or strike each with a comment on it.`
 		]),
 		h(
 			'ol',
 			{},
 			assumed.map((c) =>
-				h('li', { dataClaim: c.id }, [h('span', { className: ['assumption-text'] }, [c.text]), ' ', h('a', { href: `#${c.id}`, className: ['assumption-where'] }, [`where: ${c.section || 'above'}`])])
+				h('li', { dataClaim: c.id }, [
+					h('span', { className: ['assumption-text'] }, [c.text]),
+					' ',
+					h('a', { href: `#${c.id}`, className: ['assumption-where'] }, [`where: ${c.section || 'above'}`]),
+					' ',
+					h('span', { className: ['bears-on'] }, c.decisions.length ? ['bears on ', ...groundsFor(c.decisions, facts, 'decision')] : ['bears on no decision'])
+				])
 			)
 		)
 	]);
@@ -626,8 +832,63 @@ function assumptionsList(node: Element, claims: ClaimInfo[], p: Problems): Eleme
 /* Decision                                                                  */
 /* ------------------------------------------------------------------------ */
 
-function decision(node: Element, p: Problems): Element {
+/** A decision's state as a glyph and a word; the glyph carries the role's colour, the word the meaning. */
+function stateMark(state: DecisionState): Element {
+	const s = DECISION_STATES[state];
+	return h('span', { className: ['state-mark'], dataState: state, dataRole: s.role }, [
+		h('span', { className: ['state-glyph'], ariaHidden: 'true' }, [s.glyph]),
+		' ',
+		h('span', { className: ['decision-state'] }, [s.word])
+	]);
+}
+
+/** How readily a decision can be undone, as a glyph and a word. */
+function reversibleMark(r: Reversible): Element {
+	return h('span', { className: ['reversible'], dataReversible: r }, [h('span', { className: ['rev-glyph'], ariaHidden: 'true' }, [REVERSIBLE[r].glyph]), ` ${REVERSIBLE[r].word}`]);
+}
+
+/**
+ * What a decision rests on and what it waits for: each claim named in
+ * `grounds`, with its basis, linked; each decision named in `depends`,
+ * linked. Absent, each says so in words.
+ */
+function decisionLinks(d: DecisionView, facts: RecordFacts): Element {
+	const grounds = d.grounds.map((g) => facts.claims.find((c) => c.id === g)!);
+	const depends = d.depends.map((x) => facts.decisions.find((o) => o.id === x)!);
+	const row = (label: string, value: (ElementContent | string)[]) => h('div', { className: ['dl-row'] }, [h('dt', {}, [label]), h('dd', {}, value)]);
+	return h('dl', { className: ['decision-links'], dataPagefindIgnore: '' }, [
+		row(
+			'Rests on',
+			grounds.length
+				? [
+						h(
+							'ul',
+							{ className: ['grounds'] },
+							grounds.map((c) =>
+								h('li', {}, [
+									h('a', { href: `#${c.id}`, className: ['ground'], dataGround: c.id, dataBasis: c.basis }, [
+										h('span', { className: ['basis'], dataBasis: c.basis }, [h('span', { className: ['basis-glyph', ...(c.basis === 'assumed' ? ['awaits'] : [])], ariaHidden: 'true' }, [BASIS[c.basis]?.glyph ?? '']), ` ${c.basis}`]),
+										' ',
+										h('span', { className: ['ground-text'] }, [firstWords(c.text, 96)])
+									])
+								])
+							)
+						)
+					]
+				: ['no marked claim']
+		),
+		row(
+			'Depends on',
+			depends.length
+				? [h('ul', { className: ['depends'] }, depends.map((o) => h('li', {}, [h('a', { href: `#${o.id}`, className: ['depends-on'], dataDepends: o.id }, [o.title])])))]
+				: ['no other decision']
+		)
+	]);
+}
+
+function decision(node: Element, p: Problems, facts: RecordFacts): Element {
 	const id = `decision-${slug(attr(node, 'id') ?? '')}`;
+	const fact = facts.decisions.find((d) => d.id === id)!;
 	const title = attr(node, 'title') ?? '';
 	const choices: Element[] = [];
 	let recommendation: Element | undefined;
@@ -691,19 +952,31 @@ function decision(node: Element, p: Problems): Element {
 			h('p', { className: ['decision-role'] }, [
 				"The owner's decision: ",
 				h('strong', {}, ['open']),
-				'. Answer with accept, accept with a reservation, object or redirect, in a comment on this block or on the pull request. Silence is not assent.'
+				'. Answer with accept, accept with a reservation, object or redirect, in a comment on this block or on the pull request; Claude then records your ruling here, as a named step in a pull request. A comment is never read as a ruling. Silence is not assent.'
 			])
 		]);
 	}
-	const open = !ruling;
-	return h('section', { className: ['decision'], id, dataDecision: open ? 'open' : 'decided', ariaLabelledby: `${id}-title` }, [
-		h('p', { className: ['decision-kicker'] }, [`Decision`, ' · ', h('span', { className: ['decision-state'] }, [open ? 'open' : 'decided'])]),
+	return h(
+		'section',
+		{
+			className: ['decision'],
+			id,
+			dataDecision: fact.state,
+			dataReversible: fact.reversible,
+			dataDepends: fact.depends.join(' '),
+			dataGrounds: fact.grounds.join(' '),
+			ariaLabelledby: `${id}-title`
+		},
+		[
+		h('p', { className: ['decision-kicker'] }, [`Decision`, ' · ', stateMark(fact.state), ' · ', reversibleMark(fact.reversible)]),
 		h('h3', { id: `${id}-title`, className: ['decision-title'] }, [title]),
+		decisionLinks(fact, facts),
 		h('div', { className: ['choices'], dataCount: String(choiceEls.length) }, choiceEls),
 		...(recEl ? [recEl] : []),
 		...(againstEl ? [againstEl] : []),
 		rulingEl
-	]);
+		]
+	);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -1145,24 +1418,135 @@ function recordIndex(node: Element, parent: Root | Element, index: number, ctx: 
 	const id = `index-${kind}`;
 	table.properties.dataTwinFor = id;
 	const cards = records.map((r) => {
-		const open = r.decisions.filter((d) => d.open);
-		return h('li', { className: ['card'], dataRecord: r.id, dataStatus: r.status }, [
+		const t = tally(r);
+		return h('li', { className: ['card'], dataRecord: r.id, dataStatus: r.status, dataSettled: String(t.settled), dataTotal: String(r.decisions.length), dataConfirm: String(r.assumptions.length) }, [
 			h('p', { className: ['card-top'] }, [h('span', { className: ['card-id'] }, [r.id]), ' ', h('span', { className: ['card-status'] }, [r.status])]),
 			h('p', { className: ['card-title'] }, [h('a', { href: `${ctx.base}${r.route}`, dataResolved: '' }, [r.title])]),
 			...(r.summary ? [h('p', { className: ['card-summary'] }, [r.summary])] : []),
-			h('div', { className: ['card-open'] }, [
-				h('p', { className: ['card-count'], dataOpen: String(open.length) }, [
-					open.length === 0 ? 'No open decisions' : `${open.length} open ${open.length === 1 ? 'decision' : 'decisions'}`,
-					r.assumptions ? `, ${r.assumptions} ${r.assumptions === 1 ? 'assumption' : 'assumptions'} to confirm` : ''
-				]),
-				...(open.length ? [h('ul', { className: ['card-decisions'] }, open.map((d) => h('li', {}, [h('a', { href: `${ctx.base}${r.route}#decision-${d.id}`, dataResolved: '' }, [d.title])])))] : [])
-			]),
-			...(r.readAt ? [h('p', { className: ['card-read'] }, ['pinned at ', h('code', {}, [r.readAt.slice(0, 7)])])] : [])
+			h('p', { className: ['card-tally'] }, [decisionTally(r), h('br'), assumptionTally(r)]),
+			h('p', { className: ['card-read'] }, [
+				...(r.readAt ? ['pinned at ', h('code', {}, [r.readAt.slice(0, 7)])] : ['pinned at no commit']),
+				' · ',
+				...(r.pr ? [h('a', { href: r.pr.href }, [`pull request ${r.pr.text}`])] : ['no pull request']),
+				' · ',
+				...(r.tracking ? [h('a', { href: r.tracking.href }, [`tracking issue ${r.tracking.text}`])] : ['no tracking issue'])
+			])
 		]);
 	});
 	return h('div', { className: ['record-index'], id, dataFigure: 'record-index', dataKind: kind }, [
 		records.length ? h('ol', { className: ['cards'] }, cards) : h('p', { className: ['cards-none'] }, [`No ${kind} yet.`]),
 		h('details', { className: ['fig-data'] }, [h('summary', {}, ['the index as a table']), table])
+	]);
+}
+
+/** How many of a record's decisions are settled (accepted, with or without a reservation), and how many are open. */
+export function tally(r: { decisions: DecisionView[] }): { settled: number; open: number } {
+	return {
+		settled: r.decisions.filter((d) => DECISION_STATES[d.state].settled).length,
+		open: r.decisions.filter((d) => d.state === 'open').length
+	};
+}
+
+/** "2 of 5 decisions settled", Spark while any awaits the owner, Emergence once none does. */
+function decisionTally(r: RecordCard): Element {
+	const t = tally(r);
+	const total = r.decisions.length;
+	if (total === 0) return h('span', { className: ['tally'], dataTally: 'decisions' }, ['no decisions']);
+	const done = t.settled === total;
+	return h('span', { className: ['tally'], dataTally: 'decisions', dataRole: done ? 'emergence' : 'spark' }, [
+		h('span', { className: ['state-glyph'], ariaHidden: 'true' }, [done ? DECISION_STATES.accept.glyph : DECISION_STATES.open.glyph]),
+		` ${t.settled} of ${total} ${total === 1 ? 'decision' : 'decisions'} settled`
+	]);
+}
+
+/** "3 assumptions to confirm", Spark while any is open. */
+function assumptionTally(r: RecordCard): Element {
+	const k = r.assumptions.length;
+	if (k === 0) return h('span', { className: ['tally'], dataTally: 'assumptions' }, ['no assumptions to confirm']);
+	return h('span', { className: ['tally'], dataTally: 'assumptions', dataRole: 'spark' }, [
+		h('span', { className: ['state-glyph'], ariaHidden: 'true' }, [ASSUMED.glyph]),
+		` ${k} ${k === 1 ? 'assumption' : 'assumptions'} to confirm`
+	]);
+}
+
+/* ------------------------------------------------------------------------ */
+/* The queue: what awaits the owner, across every proposal                   */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * Every open decision in every proposal, each record's in dependency order,
+ * then every assumption to confirm, each linked to where it stands. Drawn
+ * from the records' components (the cards' data), never from prose; the
+ * order of the records is their number, never how much is open in them.
+ */
+function awaitingQueue(ctx: LegibilityContext): Element {
+	const records = (ctx.records ?? []).filter((r) => r.id.startsWith('EPR-'));
+	const decide = records.map((r) => ({ r, items: dependencyOrder(r.decisions).filter((d) => d.state === 'open') })).filter((g) => g.items.length);
+	const confirm = records.filter((r) => r.assumptions.length);
+	const open = decide.reduce((a, g) => a + g.items.length, 0);
+	const assumed = confirm.reduce((a, r) => a + r.assumptions.length, 0);
+	const href = (r: RecordCard, id: string) => `${ctx.base}${r.route}#${id}`;
+	const groupHead = (r: RecordCard) => h('p', { className: ['queue-record'] }, [h('a', { href: `${ctx.base}${r.route}`, dataResolved: '' }, [h('span', { className: ['card-id'] }, [r.id]), ` ${r.title}`])]);
+	const numberOf = (r: RecordCard, id: string) => r.decisions.find((d) => d.id === id)!.n;
+	const lead =
+		open + assumed === 0
+			? 'Nothing awaits you: every decision is settled and no assumption is open.'
+			: `${open} open ${open === 1 ? 'decision' : 'decisions'} across ${decide.length} ${decide.length === 1 ? 'proposal' : 'proposals'}, then ${assumed} ${assumed === 1 ? 'assumption' : 'assumptions'} to confirm. A decision waits for your ruling; an assumption for you to confirm or strike it.`;
+	return h('section', { className: ['awaiting'], id: 'awaiting-queue', dataQueue: '', dataOpen: String(open), dataConfirm: String(assumed), ariaLabel: 'Awaiting you', dataPagefindIgnore: '' }, [
+		h('p', { className: ['queue-lead'] }, [lead]),
+		...(decide.length
+			? [
+					h('div', { className: ['queue-group'], dataGroup: 'decide' }, [
+						h('p', { className: ['queue-head'] }, ['Decide']),
+						...decide.map(({ r, items }) =>
+							h('div', { className: ['queue-records'], dataRecord: r.id }, [
+								groupHead(r),
+								h(
+									'ol',
+									{ className: ['queue-items'] },
+									items.map((d) =>
+										h('li', { dataQueueItem: 'decision', dataTarget: d.id }, [
+											h('a', { href: href(r, d.id), dataResolved: '' }, [stateMark(d.state), ' ', h('span', { className: ['queue-title'] }, [d.title])]),
+											h('span', { className: ['queue-meta'] }, [
+												reversibleMark(d.reversible),
+												...(d.depends.length ? [' · after ', d.depends.map((x) => String(numberOf(r, x))).join(', ')] : [])
+											])
+										])
+									)
+								)
+							])
+						)
+					])
+				]
+			: []),
+		...(confirm.length
+			? [
+					h('div', { className: ['queue-group'], dataGroup: 'confirm' }, [
+						h('p', { className: ['queue-head'] }, ['Confirm']),
+						...confirm.map((r) =>
+							h('div', { className: ['queue-records'], dataRecord: r.id }, [
+								groupHead(r),
+								h(
+									'ol',
+									{ className: ['queue-items'] },
+									r.assumptions.map((a) =>
+										h('li', { dataQueueItem: 'assumption', dataTarget: a.id }, [
+											h('a', { href: href(r, a.id), dataResolved: '' }, [
+												h('span', { className: ['basis'], dataBasis: 'assumed' }, [h('span', { className: ['basis-glyph', 'awaits'], ariaHidden: 'true' }, [ASSUMED.glyph]), ` ${ASSUMED.word}`]),
+												' ',
+												h('span', { className: ['queue-title'] }, [firstWords(a.text, 96)])
+											]),
+											h('span', { className: ['queue-meta'] }, [
+												a.decisions.length ? `bears on decision ${a.decisions.map((x) => numberOf(r, x)).join(', ')}` : 'bears on no decision'
+											])
+										])
+									)
+								)
+							])
+						)
+					])
+				]
+			: [])
 	]);
 }
 

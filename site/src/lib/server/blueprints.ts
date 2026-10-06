@@ -18,7 +18,7 @@
  */
 import { REPO_URL } from '$lib/site';
 import type { NavItem, NavPart } from '$lib/types';
-import { readPin, type RecordCard } from './markdown/legibility';
+import { assumptionsOf, readPin, recordFacts, type HeaderLink, type RecordCard } from './markdown/legibility';
 
 /** The area's title in the navigation. */
 export const BLUEPRINTS_PART = 'Blueprints';
@@ -98,18 +98,30 @@ function summaryOf(text: string): string {
 }
 
 /**
- * What the index's cards show of each record (the record-index component):
- * its status, the first sentence of its Summary, the commit its citations
- * were read at, and its open decisions and assumptions, read from the
- * components in its source.
+ * A link a record's header names on a line of its own (`- Proposal PR:
+ * [#134](https://...)`), or null when the line names none: a tracking issue
+ * not opened yet, or none for a baseline.
+ */
+function headerLink(text: string, ...keys: string[]): HeaderLink | null {
+	for (const key of keys) {
+		const line = new RegExp(`^- ${key}:\\s*(.*)$`, 'm').exec(text)?.[1];
+		const link = line ? /\[([^\]]+)\]\((https?:[^)\s]+)\)/.exec(line) : null;
+		if (link) return { text: link[1].replace(/`/g, ''), href: link[2] };
+	}
+	return null;
+}
+
+/**
+ * What the index's cards, the queue and each record's frame show: its
+ * status, the first sentence of its Summary, the commit its citations were
+ * read at, its pull request and tracking issue, and its decisions and
+ * assumptions, read from the components in its source by the same parse the
+ * page is rendered from (recordFacts), so a dangling id, a dependency cycle
+ * or a decision without `reversible` fails the build here too.
  */
 export const recordCards: RecordCard[] = [...proposals, ...plans].map((r) => {
 	const text = blueprintSources.get(r.file)!;
-	const decisions = [...text.matchAll(/<decision\b([^>]*)>([\s\S]*?)<\/decision>/g)].map((m) => {
-		const id = /\bid="([^"]*)"/.exec(m[1])?.[1] ?? '';
-		const title = /\btitle="([^"]*)"/.exec(m[1])?.[1] ?? '';
-		return { id: id.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), title, open: !/<ruling\b/.test(m[2]) };
-	});
+	const facts = recordFacts(text, r.file);
 	return {
 		id: r.id!,
 		title: r.title,
@@ -117,8 +129,10 @@ export const recordCards: RecordCard[] = [...proposals, ...plans].map((r) => {
 		route: r.route,
 		summary: summaryOf(text),
 		readAt: readPin(text, r.file),
-		decisions,
-		assumptions: [...text.matchAll(/<claim\b[^>]*\bbasis="assumed"/g)].length
+		pr: headerLink(text, 'Proposal PR', 'Plan PR'),
+		tracking: headerLink(text, 'Tracking issue'),
+		decisions: facts.decisions,
+		assumptions: assumptionsOf(facts)
 	};
 });
 

@@ -46,6 +46,7 @@ Accept EPR-0001 as the record of matra's pipeline and ports as they stand at `4f
 <needs>
 
 - An answer to the proposal and to each of the two decisions: accept, accept with a reservation, object or redirect.
+- For the assumption listed under Unresolved questions: confirm it or strike it.
 
 </needs>
 
@@ -377,12 +378,12 @@ For the owner to settle in this proposal's review. Each is a decision of its
 own.
 
 **An adapter imports a sibling adapter.**
-<claim basis="observed">`src/source/directory.rs` imports `FileSource` from `src/source/file.rs` and reads each listed file through it [source/directory.rs:1-62][directory-source]</claim>.
+<claim id="directory-reads-file" basis="observed">`src/source/directory.rs` imports `FileSource` from `src/source/file.rs` and reads each listed file through it [source/directory.rs:1-62][directory-source]</claim>.
 The boundary rules do not name adapter-to-adapter imports, and
 [EP-0014](../legacy/eps/0014-architecture-guardrails.md) leaves "one
 adapter importing another" to review.
 
-<decision id="sibling-adapter" title="1. May an adapter compose another adapter of its own port?">
+<decision id="sibling-adapter" title="1. May an adapter compose another adapter of its own port?" reversible="costly" grounds="directory-reads-file sibling-adapter-reversal">
 
 <choice key="a" title="Yes, within one port">
 
@@ -398,7 +399,7 @@ adapter importing another" to review.
 
 <recommendation choice="a">
 
-Both adapters implement one port, and the symlink refusal and the size cap live once, in `FileSource`; reading through it is what keeps them in one place. An import inside one port does not cross a layer, which is what the boundary rules exist to hold. Recording the case turns an unrecorded exception into a reviewed one.
+Both adapters implement one port, and the symlink refusal and the size cap live once, in `FileSource`; reading through it is what keeps them in one place. An import inside one port does not cross a layer, which is what the boundary rules exist to hold. Recording the case turns an unrecorded exception into a reviewed one. <claim id="sibling-adapter-reversal" basis="assumed">Undoing it later, by choice B, would change the public `DirectorySource`, so this is costly to reverse.</claim>
 
 </recommendation>
 
@@ -411,12 +412,12 @@ Rule 7 makes the composition root the only place adapters are wired together, an
 </decision>
 
 **`Decomposer` has no `Send` bound.**
-<claim basis="observed">`Source`, `NlpProvider` and `Embedder` require `Send`; `Decomposer` does not [decompose/mod.rs:11-18][decompose-port] [source/mod.rs:13-28][source-port] [nlp/mod.rs:11-51][nlp-port] [embed/mod.rs:18-43][embed-port]</claim>.
-<claim basis="observed">`Decomposers` holds `Box<dyn Decomposer>`, so `Engine` is not `Send` either: observed by compiling a `Send` assertion on `Engine` at the pinned commit, which fails on `dyn Decomposer` [decompose/mod.rs:20-63][decomposers]</claim>.
-<claim basis="observed">Nothing in matra needs it today (the Python class is `unsendable`) [lib.rs:457-496][py-matra]</claim>,
+<claim id="decomposer-no-send" basis="observed">`Source`, `NlpProvider` and `Embedder` require `Send`; `Decomposer` does not [decompose/mod.rs:11-18][decompose-port] [source/mod.rs:13-28][source-port] [nlp/mod.rs:11-51][nlp-port] [embed/mod.rs:18-43][embed-port]</claim>.
+<claim id="engine-not-send" basis="observed">`Decomposers` holds `Box<dyn Decomposer>`, so `Engine` is not `Send` either: observed by compiling a `Send` assertion on `Engine` at the pinned commit, which fails on `dyn Decomposer` [decompose/mod.rs:20-63][decomposers]</claim>.
+<claim id="nothing-needs-send" basis="observed">Nothing in matra needs it today (the Python class is `unsendable`) [lib.rs:457-496][py-matra]</claim>,
 but the asymmetry is unrecorded.
 
-<decision id="decomposer-send" title="2. Is Engine meant to be single-threaded?">
+<decision id="decomposer-send" title="2. Is Engine meant to be single-threaded?" reversible="costly" grounds="decomposer-no-send engine-not-send nothing-needs-send">
 
 <choice key="a" title="No: Decomposer requires Send">
 

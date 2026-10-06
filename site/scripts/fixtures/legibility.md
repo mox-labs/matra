@@ -12,7 +12,7 @@ syntax, not findings.
 
 ## Summary
 
-<claim basis="observed">The stage that measures is a method called compose [lib.rs:250](../../src/lib.rs#L250 "pub fn compose(&self, doc: &mut Document)")</claim>, <claim basis="inferred" likelihood="likely">a fixture predicts a likely outcome</claim>, and <claim basis="assumed">a fixture assumes something</claim>.
+<claim id="compose-method" basis="observed">The stage that measures is a method called compose [lib.rs:250](../../src/lib.rs#L250 "pub fn compose(&self, doc: &mut Document)")</claim>, <claim basis="inferred" likelihood="likely">a fixture predicts a likely outcome</claim>, and <claim id="fixture-assumes" basis="assumed">a fixture assumes something</claim>.
 
 <pragmatics>
 
@@ -86,7 +86,7 @@ edge c b dashed
 
 </sketch-figure>
 
-<decision id="fixture" title="Does the fixture render?">
+<decision id="fixture" title="1. Does the fixture render?" reversible="yes" grounds="compose-method fixture-assumes">
 
 <choice key="a" title="Yes">
 
@@ -114,7 +114,7 @@ Fixtures rot.
 
 </decision>
 
-<decision id="fixture-decided" title="Is a decided decision shown as decided?">
+<decision id="fixture-decided" title="2. Is a decided decision shown as decided?" reversible="costly" depends="fixture">
 
 <choice key="a" title="Yes">
 
@@ -185,6 +185,8 @@ Nothing: it is a fixture.
 </limits>
 
 </experiment>
+
+<awaiting />
 
 <record-index kind="proposals" />
 

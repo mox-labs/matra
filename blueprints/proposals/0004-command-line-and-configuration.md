@@ -45,6 +45,7 @@ Accept EPR-0004 as the record of the command line, configuration and the agent s
 <needs>
 
 - An answer to the proposal and to each of the two decisions: accept, accept with a reservation, object or redirect.
+- For the assumption listed under Unresolved questions: confirm it or strike it.
 
 </needs>
 
@@ -321,11 +322,11 @@ For the owner to settle in this proposal's review. Each is a decision of its
 own.
 
 **The exit code type.**
-<claim basis="observed">`cli::run` returns `u8` [cli/mod.rs:50-106][cli-run-u8]</claim>;
+<claim id="run-returns-u8" basis="observed">`cli::run` returns `u8` [cli/mod.rs:50-106][cli-run-u8]</claim>;
 whether that is the permanent shape was left open by RFC-0011 and is still
 open. Changing it is a breaking change.
 
-<decision id="exit-code" title="1. Is u8 the permanent return type of cli::run?">
+<decision id="exit-code" title="1. Is u8 the permanent return type of cli::run?" reversible="costly" grounds="run-returns-u8">
 
 <choice key="a" title="Yes; keep u8">
 
@@ -354,14 +355,14 @@ A bare `u8` admits codes the command line never returns, and only review keeps a
 </decision>
 
 **No error envelope under `--json`.**
-<claim basis="observed">A failure writes text to stderr and nothing to stdout, so a JSON consumer reads text for every failure [cli/mod.rs:50-106][cli-run-err]</claim>.
+<claim id="json-failure-text" basis="observed">A failure writes text to stderr and nothing to stdout, so a JSON consumer reads text for every failure [cli/mod.rs:50-106][cli-run-err]</claim>.
 The command line's own refusals are untyped strings, so an error envelope
 needs a kind vocabulary for the application tier or a move of `src/cli/`
 onto `domain::Error`.
 [RFC-0015](../legacy/rfcs/0015-provisioning-failures.md) deferred it as
 worth doing on its own.
 
-<decision id="json-errors" title="2. Does a --json failure get an envelope, and whose kinds does it carry?">
+<decision id="json-errors" title="2. Does a --json failure get an envelope, and whose kinds does it carry?" reversible="costly" grounds="json-failure-text json-errors-reversal">
 
 <choice key="a" title="An envelope, with kinds of the command line's own">
 
@@ -383,7 +384,7 @@ Failures stay text on stderr, as now.
 
 <recommendation choice="a">
 
-Failures from the library already have kinds, pinned for every binding, so only the command line's own refusals need new words. Putting those words in `domain::Error` would grow the library's vocabulary with application-tier failures the library never raises.
+Failures from the library already have kinds, pinned for every binding, so only the command line's own refusals need new words. Putting those words in `domain::Error` would grow the library's vocabulary with application-tier failures the library never raises. <claim id="json-errors-reversal" basis="assumed">Once a consumer branches on the envelope's kinds, removing or renaming one breaks it, so this is costly to reverse.</claim>
 
 </recommendation>
 

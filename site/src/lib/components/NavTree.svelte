@@ -9,13 +9,21 @@
 	 * The Blueprints part is the design records. It says so under its title,
 	 * each record names its status beside it, and its two groups (the RFCs,
 	 * the EPs) fold, opened on the group that holds the current page. Nothing
-	 * else in the navigation carries a status.
+	 * else in the navigation carries a status. Under the current proposal or
+	 * plan, its navigator (Read, Decide, Confirm) takes the place of the
+	 * page's section list.
 	 */
 	import { base } from '$app/paths';
 	import { PART_ROLES } from '$lib/site';
-	import type { NavItem, NavPart, TocEntry } from '$lib/types';
+	import type { NavItem, NavPart, RecordFrame, TocEntry } from '$lib/types';
+	import RecordNav from './RecordNav.svelte';
 
-	let { nav, current, toc = [] }: { nav: NavPart[]; current: string | null; toc?: TocEntry[] } = $props();
+	let {
+		nav,
+		current,
+		toc = [],
+		frame
+	}: { nav: NavPart[]; current: string | null; toc?: TocEntry[]; frame?: RecordFrame } = $props();
 
 	const holds = (item: NavItem): boolean => item.children.some((c) => c.route === current || holds(c));
 </script>
@@ -36,7 +44,12 @@
 					>{item.title}{#if item.status}<span class="status"><span class="visually-hidden">, status: </span>{item.status}</span>{/if}</a
 				>
 				{/if}
-				{#if item.route === current && toc.length > 0}
+				{#if item.route === current && frame}
+					<!-- On a proposal or a plan, its navigator: Read, Decide, Confirm. -->
+					<div class="record-nav-slot">
+						<RecordNav {frame} variant="sidebar" />
+					</div>
+				{:else if item.route === current && toc.length > 0}
 					<ul class="sections" aria-label="On this page">
 						{#each toc as entry (entry.id)}
 							<li><a href="#{entry.id}">{entry.text}</a></li>
@@ -176,6 +189,17 @@
 	a[aria-current='page'] {
 		border-inline-start-color: var(--text);
 		font-weight: 600;
+	}
+
+	.record-nav-slot {
+		margin: var(--space-1) 0 var(--space-2) var(--space-1);
+	}
+
+	/* The navigator's links keep their own size and padding. */
+	.record-nav-slot :global(a) {
+		margin-inline-start: 0;
+		border-inline-start: 0;
+		padding-inline-start: 0;
 	}
 
 	.sections a {

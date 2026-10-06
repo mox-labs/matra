@@ -179,8 +179,9 @@ export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 		reason:
 			'A load-bearing claim, its basis as a glyph and a word (observed, inferred, assumed), a likelihood ' +
 			'from the closed vocabulary on a prediction only, and chips to its grounds: pinned code lines, ' +
-			'pull requests, issues. Grounds beside the claim, cheap to check (Toulmin; Bansal 2021; Vasconcelos 2023).',
-		attributes: { basis: 'required', likelihood: 'optional' }
+			'pull requests, issues. Grounds beside the claim, cheap to check (Toulmin; Bansal 2021; Vasconcelos 2023). ' +
+			'An `id` lets a decision name it among its grounds, and the claim links back to that decision.',
+		attributes: { basis: 'required', likelihood: 'optional', id: 'optional' }
 	},
 	assumptions: {
 		kind: 'component',
@@ -191,8 +192,10 @@ export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 		kind: 'component',
 		reason:
 			"Options, Claude's recommendation set apart as a judgment, the strongest case against it, and the " +
-			"owner's decision slot (dossier-grammar G2; Toulmin's rebuttal).",
-		attributes: { id: 'required', title: 'required' }
+			"owner's decision slot (dossier-grammar G2; Toulmin's rebuttal). `reversible` (yes, costly or no) says " +
+			'how readily the recommended choice can be undone; `depends` names the decisions it waits for, so the ' +
+			'order is shown (dossier-grammar G1); `grounds` names the claims it rests on, linked both ways (G2).',
+		attributes: { id: 'required', title: 'required', reversible: 'required', depends: 'optional', grounds: 'optional' }
 	},
 	choice: part('decision', 'One option of a decision, collapsed to its title.', { key: 'required', title: 'required' }),
 	recommendation: part('decision', "Claude's recommendation: which choice, and why.", { choice: 'required', basis: 'optional' }),
@@ -254,6 +257,13 @@ export const REGISTRY: Readonly<Record<string, TagEntry>> = {
 			"The Blueprints index as cards, each record's status and open decisions at a glance; the index's " +
 			"table that follows the tag becomes the cards' text twin.",
 		attributes: { kind: 'required' }
+	},
+	awaiting: {
+		kind: 'component',
+		reason:
+			'What awaits the owner across every proposal, in one place: each open decision, in dependency order, ' +
+			'then each assumption to confirm, drawn from the records\' components (triage precedes reading).',
+		attributes: {}
 	}
 };
 

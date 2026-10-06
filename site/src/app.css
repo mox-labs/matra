@@ -115,6 +115,19 @@
 	:root {
 		--header-h: calc(var(--header-height) + var(--areas-h));
 	}
+
+	/* A proposal's or a plan's frame is sticky under the header on a phone
+	   (RecordFrame.svelte): one 36px row, two where it wraps at the narrowest
+	   widths, so what a link leads to is placed below it. */
+	:root:has(.frame-compact) {
+		--frame-h: 2.25rem;
+	}
+}
+
+@media (max-width: 24rem) {
+	:root:has(.frame-compact) {
+		--frame-h: 3.75rem;
+	}
 }
 
 :root[data-theme='light'] {
@@ -220,8 +233,9 @@ samp {
 	line-height: var(--leading-tight);
 	font-weight: var(--weight-bold);
 	letter-spacing: var(--tracking-tight);
-	/* Clear the sticky header when a heading is the target of a link. */
-	scroll-margin-top: calc(var(--header-h) + var(--space-3));
+	/* Clear the sticky header when a heading is the target of a link, and on
+	   a phone a record's sticky frame (--frame-h). */
+	scroll-margin-top: calc(var(--header-h) + var(--frame-h, 0px) + var(--space-3));
 	clear: both;
 }
 

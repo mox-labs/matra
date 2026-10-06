@@ -40,6 +40,12 @@
  * must say the same numbers, to the precision shown, and "none" exactly where
  * matra declined.
  *
+ * So are the Blueprints components and the collaborate stance's furniture
+ * (legibility-checks.ts, per page): every proposal and plan carries its frame
+ * in both forms and its navigator in the sidebar, the sheet and inline, and
+ * each item of the index's "awaiting you" queue is followed to the record it
+ * names, where the decision must be open and the claim assumed.
+ *
  * Usage: bun scripts/check-figure-twins.ts <build-dir>
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -336,6 +342,8 @@ let notes = 0;
 const withNotes = new Set<string>();
 let components = 0;
 const likelihoodLinks: { page: string; href: string }[] = [];
+const queueLinks: { page: string; kind: string; href: string }[] = [];
+let framed = 0;
 const withComponents = new Set<string>();
 
 /** One margin note's shown values against its data. */
@@ -404,6 +412,45 @@ for (const file of pages(dir)) {
 	for (const a of all(tree, (e) => e.tagName === 'a' && prop(e, 'dataLikelihood') !== undefined)) {
 		likelihoodLinks.push({ page, href: prop(a, 'href') ?? '' });
 	}
+	// Every proposal and plan carries its frame, in both forms, and its
+	// navigator; checkPage has held each to the page's own components.
+	if (/^blueprints\/(proposals|plans)\//.test(page)) {
+		framed += 1;
+		for (const form of ['full', 'compact']) {
+			if (!all(tree, (e) => prop(e, 'dataFrame') === form).length) failures.push(`${page} (frame): no ${form} frame`);
+		}
+		for (const where of ['sidebar', 'sheet', 'inline']) {
+			if (!all(tree, (e) => prop(e, 'dataRecordNav') === where).length) failures.push(`${page} (navigator): none in the ${where}`);
+		}
+	}
+	// Each item of the queue, followed to the record it names.
+	for (const li of all(tree, (e) => prop(e, 'dataQueueItem') !== undefined)) {
+		const a = all(li, (e) => e.tagName === 'a')[0];
+		queueLinks.push({ page, kind: prop(li, 'dataQueueItem')!, href: a ? (prop(a, 'href') ?? '') : '' });
+	}
+}
+
+// The queue's items: an open decision lands on a decision its record shows
+// open, an assumption on a claim its record marks assumed.
+const elementsOf = new Map<string, Map<string, Element>>();
+let queued = 0;
+for (const { page, kind, href } of queueLinks) {
+	queued += 1;
+	const m = /\/(blueprints\/[^#]+)#(.+)$/.exec(href);
+	const target = m ? (m[1].endsWith('.html') ? m[1] : `${m[1]}.html`) : '';
+	if (!elementsOf.has(target)) {
+		let byId = new Map<string, Element>();
+		try {
+			byId = new Map(all(fromHtml(readFileSync(join(dir, target), 'utf8')), (e) => e.properties.id !== undefined).map((e) => [prop(e, 'id')!, e]));
+		} catch {
+			// No such page: every item on it is missing.
+		}
+		elementsOf.set(target, byId);
+	}
+	const el = m ? elementsOf.get(target)!.get(m[2]) : undefined;
+	if (!el) failures.push(`${page} (queue): ${href} lands on no id the build wrote`);
+	else if (kind === 'decision' && prop(el, 'dataDecision') !== 'open') failures.push(`${page} (queue): ${href} is listed as open, its record shows ${prop(el, 'dataDecision')}`);
+	else if (kind === 'assumption' && prop(el, 'dataBasis') !== 'assumed') failures.push(`${page} (queue): ${href} is listed to confirm, its record marks it ${prop(el, 'dataBasis')}`);
 }
 
 // Each likelihood link lands on an id the build wrote, base path aside.
@@ -427,7 +474,7 @@ const kinds = [...byKind].map(([k, n]) => `${n} ${k}`).join(', ');
 console.log(
 	`figure twins: ${figures} figures (${kinds || 'none'}) on ${withFigures.size} pages, ${records} records compared; ` +
 		`${notes} margin notes on ${withNotes.size} pages; ${components} claims, chips, assumptions and decisions on ` +
-		`${withComponents.size} pages; ${failures.length} mismatches`
+		`${withComponents.size} pages; ${framed} records framed, ${queued} queue items followed; ${failures.length} mismatches`
 );
 if (figures === 0) {
 	console.log('FAIL (figure twins): no figures found in the build; a check that examined nothing has not passed');

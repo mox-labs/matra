@@ -110,7 +110,7 @@ with no stored registry token and waits for a person
   <claim basis="observed">The wheel carries the library, the Python bindings and the command line, and has no runtime dependencies [pyproject.toml:5-42][pyproject]</claim>.
 - `cargo add matra` gets the library with UDPipe; `cargo install matra
   --features cli` gets the binary.
-- <claim basis="observed">Building from source, by either route, needs Rust 1.88 or later and a C++ compiler, because UDPipe is C++ [Cargo.toml:1-14][cargo-rust-version]</claim>.
+- <claim id="source-build-needs-cxx" basis="observed">Building from source, by either route, needs Rust 1.88 or later and a C++ compiler, because UDPipe is C++ [Cargo.toml:1-14][cargo-rust-version]</claim>.
 - Windows has no wheel.
 
 ### The first run
@@ -132,7 +132,7 @@ let engine = matra::Engine::from_config_with_notice(&cfg, |n| {
 
 Both models are separate works with their own licences.
 <claim basis="observed">The parsing model is CC BY-NC-SA 4.0, which does not permit commercial use; the notice carries that licence and its URL [nlp/udpipe.rs:18-108][udpipe-pin]</claim>.
-<claim basis="assumed">The embedding model is MIT per its model card</claim>,
+<claim id="m2v-mit" basis="assumed">The embedding model is MIT per its model card</claim>,
 which the documentation states and
 <claim basis="observed">the code does not carry [embed/model2vec.rs:40-113][m2v-pin]</claim>.
 
@@ -338,11 +338,11 @@ own.
 
 **Prebuilt command-line binaries.** RFC-0005 deferred binary releases "if
 matra ever ships a `matra` Rust CLI binary".
-<claim basis="observed">It now does, behind the `cli` feature [Cargo.toml:47-50][cargo-bin]</claim>;
+<claim id="cli-binary-ships" basis="observed">It now does, behind the `cli` feature [Cargo.toml:47-50][cargo-bin]</claim>;
 a Rust user gets it with `cargo install`, and a Python user through the
 wheel's launcher, but no release publishes a standalone binary.
 
-<decision id="standalone-binary" title="1. Does a release publish a standalone command-line binary?">
+<decision id="standalone-binary" title="1. Does a release publish a standalone command-line binary?" reversible="yes" grounds="cli-binary-ships source-build-needs-cxx">
 
 <choice key="a" title="Not yet; the two routes stay">
 
@@ -371,10 +371,10 @@ The trigger RFC-0005 wrote has fired. Building from source needs a C++ compiler,
 </decision>
 
 **The embedding model's licence and notice.**
-<claim basis="observed">The parsing model's licence is pinned beside its URL and travels in the notice [nlp/udpipe.rs:18-108][udpipe-pin]</claim>;
-<claim basis="observed">the embedding model's is stated only in the documentation, and its provisioning has no notice form [embed/model2vec.rs:40-113][m2v-pin] [domain.rs:34-72][notice-m2v]</claim>.
+<claim id="udpipe-licence-pinned" basis="observed">The parsing model's licence is pinned beside its URL and travels in the notice [nlp/udpipe.rs:18-108][udpipe-pin]</claim>;
+<claim id="m2v-licence-docs-only" basis="observed">the embedding model's is stated only in the documentation, and its provisioning has no notice form [embed/model2vec.rs:40-113][m2v-pin] [domain.rs:34-72][notice-m2v]</claim>.
 
-<decision id="embedding-licence" title="2. Does the embedding pin carry its licence and a notice, as the parsing pin does?">
+<decision id="embedding-licence" title="2. Does the embedding pin carry its licence and a notice, as the parsing pin does?" reversible="costly" grounds="udpipe-licence-pinned m2v-licence-docs-only m2v-mit">
 
 <choice key="a" title="Yes, as the parsing pin does">
 
