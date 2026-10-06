@@ -61,6 +61,8 @@ HTML, so search answers only in a build. To browse a build locally, serve
 | `src/lib/server/lab.ts` | Reads `lab/` in place for the Lab area. |
 | `src/lib/server/markdown/legibility.ts`, `src/lib/legibility.css`, `src/lib/legibility.client.ts` | The Blueprints components: drawn at build time, styled, and the two enhancements a script adds (a chip's sheet, a sketch's toggle). |
 | `scripts/legibility-checks.ts`, `scripts/check-legibility.ts`, `scripts/fixtures/legibility.md` | What gates 9 and 4 hold the components to, and the fixture that holds every component. |
+| `src/lib/record-vocabulary.ts` | The collaborate stance's words and glyphs: a decision's states, reversibility, the dossier anatomy's roles, a record's kind; read by the build, the layout and gate 9. |
+| `src/lib/components/RecordFrame.svelte`, `RecordNav.svelte`, `IndexFrame.svelte` | A record's frame, its navigator (Read, Decide, Confirm), and the index's tally of what awaits the owner, drawn by the layout. |
 | `src/lib/dev/comments/` | Local comments, dev server only: the record format (`model.ts`), the store (`store.ts`), the `/__comments` endpoint (`plugin.ts`), anchoring (`anchor.ts`) and the UI. |
 | `scripts/comments.ts` | `just comments` and `just comment-reply`. |
 | `scripts/check-no-dev-comments.ts` | Fails the build when the static site holds any local comments code. |
@@ -465,8 +467,8 @@ Colour is by role and never the only signal:
 
 | Role | Carries |
 |---|---|
-| Spark | links, focus, and whatever the reader is pointing at |
-| Emergence | inline code and code literals, a converged result (a cluster, a summary, compose's measures), the mark's root |
+| Spark | links, focus, and whatever the reader is pointing at; in Blueprints, what awaits the owner's touch (an open decision, an objection or a redirect, an assumption to confirm) |
+| Emergence | inline code and code literals, a converged result (a cluster, a summary, compose's measures), the mark's root; in Blueprints, a decision the owner accepted |
 | Temperance | warnings and errors only |
 
 Everything else is neutral ink. Every figure's hues came down to this: the
@@ -710,8 +712,8 @@ those sections any more.
 
 **Statuses appear here and nowhere else.** Each record's is read from its
 header's `- Status:` line (links reduced to their text, any parenthetical
-dropped) and shown beside it in the navigation, under its title
-("enhancement proposal: proposed") and in `llms.txt`; a record without one
+dropped) and shown beside it in the navigation, in its frame, and in
+`llms.txt` (on paper, where the frame is not printed, under its title); a record without one
 fails the build, as does a title whose `EPR-` or `EPL-` number does not
 match its path. The product pages keep the rule that they describe what
 ships, with no status anywhere.
@@ -735,6 +737,96 @@ kept as written) and the built pages, gate 7 holds their paths and section
 anchors, gate 12 loads them at every width, and gate 6 holds their entries
 in `llms.txt`. A new record adds its `.html` and `.md` lines to `urls.txt`,
 its `##` anchors to `anchors.txt`, and a regenerated `llms.txt`.
+
+### The collaborate stance
+
+Docs and Blueprints are two stances on one identity, the ratified canon's
+"two registers, one identity" (seed, Law 6), called stances here so the
+split cannot read as a reskin. Docs is the observe stance: a reader learns
+matra and changes nothing. Blueprints is the collaborate stance: it holds
+the proposals and plans the owner and Claude converge on, and the owner
+works a record there until the owner rules. Only the chrome changes. The
+three colour roles, the 9-grid, the tokens, the faces and Alegreya for
+prose are the same in both: a proposal's case, its claims and its decision
+prose are set at the reading measure, and only the frame, the marks, the
+tallies and the labels are mono. The words and glyphs below are one list,
+`src/lib/record-vocabulary.ts`, which the build, the layout and gate 9 all
+read.
+
+**The frame owns the furniture.** Every proposal and plan has a frame
+(`RecordFrame.svelte`), which the layout draws above the page from what the
+build parsed (the header list, and the components through `recordFacts` in
+`legibility.ts`), never from the Markdown body: a record cannot set,
+restate or style its own state. In order: the kind as a monochrome badge
+(`Enhancement proposal`), the id and title, the status as a glyph and a
+word, the decisions settled out of all of them (Spark ● while any is open,
+Emergence ✓ once all are settled), the assumptions to confirm (Spark ○
+while any is), the pinned commit, and the pull request and tracking issue.
+A field that is absent says so in words ("no tracking issue yet"). When
+every decision is settled and the status is still `proposed`, the frame
+says "all decisions settled; awaiting acceptance", with no new status word.
+On a desktop the frame heads the column and the sidebar keeps the
+navigator in view. Below 54rem it is one 36px row (two below 24rem), sticky
+under the header: the id and the two tallies, as words. The row is the
+summary of a `<details>` whose sheet holds the rest of the frame and the
+navigator; following a link in the sheet closes it (a script's only part
+here), and without a script it is an ordinary disclosure. `--frame-h` in
+`app.css` is the row's height, so a heading, a decision or a claim that a
+link leads to lands below it. The index has a frame too (`IndexFrame.svelte`):
+how many decisions and assumptions await the owner, linking to the queue.
+
+**The navigator** (`RecordNav.svelte`) has three groups. Read: the
+template's sections, labelled by their role in the dossier anatomy, and the
+margin, where comments land. Decide: each decision in dependency order, with
+its state and its reversibility as glyphs and words and the decisions it
+waits for ("after 1, 2, 3"). Confirm: each assumption, with the decisions
+that rest on it. It replaces the record's section list in the sidebar,
+and on a phone it is both in the frame's sheet and inline under the title,
+where a page's "on this page" would be. The three are the same list.
+
+**The dossier anatomy** maps onto the Rust template's sections without
+reordering them: orientation (the masthead, the Summary, the pragmatics
+block and what changed), the case (Motivation, the guide-level and
+reference-level explanations, Drawbacks, Rationale and alternatives), the
+queue (the decisions under Unresolved questions, and the assumptions), the
+references (Prior art, and every chip), and the margin (comments). Future
+possibilities has no role. `ANATOMY` in `record-vocabulary.ts` holds the
+mapping.
+
+**Decisions say what they rest on.** A `<decision>` carries `reversible`
+(required: `yes`, `costly` or `no`, drawn □ reversible, ◧ costly to reverse,
+■ irreversible: how readily the recommended choice can be undone once
+carried out), `depends` (the ids of decisions on the page it waits for, so
+the order is shown) and `grounds` (the ids of claims on the page it rests
+on; a claim takes an `id` to be named). A decision lists its grounds, each
+with its basis, and its dependencies under its title; each claim it names
+links back to it ("grounds for decision 5"), and each assumption in the
+list says which decisions it bears on. The build fails on a `depends` or
+`grounds` id that names nothing on the page, on a dependency cycle (found
+with a visited set), on a claim id used twice, and on a decision without
+`reversible`. Where a decision's own text does not settle a value, the
+value rests on an assumed claim among its grounds, so it is in Confirm for
+the owner.
+
+**The queue.** `<awaiting />` on the index draws every open decision in
+every proposal, each proposal's in dependency order, then every assumption
+to confirm, each linked to where it stands and marked as the navigator
+marks it. Records stay in number order: nothing is sorted by how much is
+open. A decision with an objection or a redirect is not in the queue,
+since it waits for Claude's revision, not for the owner; it stays Spark in
+its record, because the move was the owner's.
+
+**Comments are not rulings.** The comments (local in the dev server, giscus
+on the published site) are the margin: a comment is an event and changes
+nothing a frame, a navigator or the queue shows. A ruling is recorded in
+the proposal as a named step by Claude, a `<ruling>` written in a pull
+request that names the comment it transcribes (`blueprints/README.md`, The
+process). Nothing on the site reads comments to decide whether a decision
+is open.
+
+**No new motion.** The frame, the navigator and the queue are static; a
+decision changing state is a new build, not a transition. The sheet appears
+and disappears.
 
 ### The Blueprints components
 
@@ -788,14 +880,15 @@ when they cut the cost of verifying.)
 
 | Tag | What it is for | Evidence |
 |---|---|---|
-| `<claim basis="..." likelihood="...">` | A load-bearing claim with its grounds beside it: the basis as a glyph and a word, and its links moved into chips | Toulmin's grounds; Mayer's spatial contiguity; ICD-203 marking of fact, assumption and judgment; never one channel for a meaning |
+| `<claim basis="..." likelihood="..." id="...">` | A load-bearing claim with its grounds beside it: the basis as a glyph and a word, and its links moved into chips | Toulmin's grounds; Mayer's spatial contiguity; ICD-203 marking of fact, assumption and judgment; never one channel for a meaning |
 | `<assumptions />` | Every claim marked assumed on the page, in one list, each linked back | Assumptions are what the owner most likely knows better |
-| `<decision id title>` with `<choice key title>`, `<recommendation choice basis>`, `<against>`, `<ruling response date>` | Options, the recommendation set apart as a signed judgment, the strongest case against it, the owner's decision slot | A recommendation as a separate, attributed object; Toulmin's rebuttal; QOC and ADR as precedent |
+| `<decision id title reversible depends grounds>` with `<choice key title>`, `<recommendation choice basis>`, `<against>`, `<ruling response date>` | Options, the recommendation set apart as a signed judgment, the strongest case against it, the owner's decision slot; how readily it is undone, what it waits for, what it rests on (The collaborate stance) | A recommendation as a separate, attributed object; Toulmin's rebuttal; QOC and ADR as precedent; dossier-grammar G1 and G2 (gate order, a reversibility mark, assumptions on the decision) |
 | `<pragmatics>` with `<ask>`, `<will>`, `<needs>`, `<wont>`, `<silence>` | What the record asks, what Claude will do, what it needs, what it will not do, and that silence is not assent; the four answers are listed by the component | Amershi et al. 2019, guidelines G1, G10 and G16; silence recorded as a defect, not assent |
 | `<changed date since>` with `<was>` and `<now>` pairs | What changed in Claude's understanding, each change linked to what changed it | The grounding move made visible (the research's frame); Amershi G16 |
 | `<sketch-figure id title seed>` around a fenced block | Proposed structure drawn sketchy and shipped structure crisp, from a declared structure that is also the text twin | Wood et al. 2012; Boukhelifa et al. 2012 |
 | `<experiment id title>` with `<hypothesis recorded commit>`, `<method>`, `<outcomes values unit label />`, `<result>`, `<provenance>`, `<limits>` | A Lab experiment card | Padilla, Kay and Hullman 2022; PROV's entity, activity and agent kept apart |
-| `<record-index kind="proposals" />` before the index's table | The Blueprints index as cards, each with its status and open decisions; the table becomes the cards' twin | The first glance carries the state of each record (Mayer's signalling) |
+| `<record-index kind="proposals" />` before the index's table | The Blueprints index as cards, each record's frame in brief: status, decisions settled, assumptions to confirm, pinned commit, pull request and tracking issue; the table becomes the cards' twin | The first glance carries the state of each record (Mayer's signalling) |
+| `<awaiting />` | The queue of what awaits the owner across every proposal | Triage precedes reading (the dossier form design) |
 
 **Claim.** `basis` is `observed` (●: Claude read or ran it, and the claim
 must hold a link to the evidence), `inferred` (◐: reasoned, the reasoning
@@ -881,7 +974,7 @@ it.
 **The masthead.** A record's header list becomes its masthead: the start
 date, the commit it was read at (linked), who decides (the owner, always,
 by the process), and the pull request and tracking issue, in that order,
-under the title with its kind and status. Then the Summary as the
+under the title; the frame above carries its kind and status. Then the Summary as the
 abstract, the pragmatics block, and the template's sections in their
 order; nothing reorders between widths, so a comment's anchor and the
 reading order are the same on a phone and a desktop.
@@ -894,16 +987,33 @@ word; a card against the index's row; a run's dot against its row; every
 claim's basis and likelihood as words from their closed sets; every code
 chip opening the masthead's commit, with a sheet that quotes it; the
 assumptions list against the assumed claims; and each decision saying in
-words whether it is open. Gate 4 runs `scripts/check-legibility.ts` from
+words its state and its reversibility, with its grounds and dependencies
+linked to claims and decisions on the page and every ground linking back.
+It holds the collaborate stance's furniture to the page too: each frame's
+counts of decisions, settled decisions and assumptions are the page's, in
+words; each copy of the navigator lists every decision once, with the
+page's state word and after everything it depends on, every assumption
+once with the decisions on it, and only sections the page has; the queue
+lists as many items as it and the index's frame say, and
+`check-figure-twins.ts` follows each item to its record, where the decision
+must be open and the claim assumed. Every proposal and plan must carry
+both forms of the frame and the navigator in the sidebar, the sheet and
+inline. Gate 4 runs `scripts/check-legibility.ts` from
 `bun run check`: the same checks on `scripts/fixtures/legibility.md`, a
 fixture holding every component (the Lab card included, since no record
-uses it yet), the determinism proof above, and sixteen planted mistakes
-that must each fail for their own reason. Gate 12 sets the fixture into the
+uses it yet), the determinism proof above, and twenty-two planted mistakes
+that must each fail for their own reason, among them a decision without
+`reversible`, one outside its vocabulary, a `depends` and a `grounds` id
+that name nothing, a dependency cycle and a claim id used twice. Gate 12 sets the fixture into the
 Blueprints index's body and measures it at every width, with and without
 the sketch's toggle, closed and with every disclosure open; and on an
 emulated touch screen it taps a proposal's code chip (its sheet must open
 inside the window and its close button close it) and the sketch's toggle
-(the state shown must change and the button say it is pressed). The
+(the state shown must change and the button say it is pressed). On
+EPR-0006 it opens the frame's sheet (inside the window), taps a decision in
+its Decide group (the sheet closes, and the decision lands in view, not
+under the sticky header or frame), taps one of that decision's grounds (its
+claim lands in view, uncovered) and the claim's way back. The
 em-dash gate reads `blueprints/` and `lab/`, so the content is covered.
 
 **Left out, and why.** No number on Claude's confidence: Kent argues for
