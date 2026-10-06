@@ -30,6 +30,13 @@
  * its sheet inside the window, and the sheet's close button, which must
  * close it; and the sketch's toggle, which must swap the state shown.
  *
+ * Then, at 390 pixels, it checks the menu (#site-nav) for each area's
+ * directory-index address (`/blueprints/`, `/lab/`) and its `/index` route
+ * (`/blueprints/index`, `/lab/index`): GitHub Pages serves both forms from
+ * the same `index.html`, so the header must mark the same area current and
+ * the menu must offer the same tree for both, with a Blueprints menu always
+ * reaching EPR-0006.
+ *
  * The windows are desktop windows of that width (no mobile viewport
  * emulation for the layout pass): a mobile browser zooms out to fit a page
  * that overflows, which would hide exactly what this looks for.
@@ -321,6 +328,37 @@ async function touch(browser: Browser) {
 	await context.close();
 }
 
+/**
+ * The menu at 390px, for each area's directory-index address and its
+ * `/index` route: GitHub Pages serves `/blueprints/` and `/lab/` from the
+ * directory's `index.html`, same file as `/blueprints/index` and
+ * `/lab/index`, so a reader who only ever types or follows the trailing-slash
+ * address must see the right area's tree too. Regression for the bug where
+ * `+layout.svelte` read the area from `page.url.pathname` before normalizing
+ * its trailing slash, so `/blueprints/` showed the Docs tree with no route to
+ * any proposal.
+ */
+async function areaNav(browser: Browser) {
+	const cases: { path: string; area: string; needsEpr0006: boolean }[] = [
+		{ path: 'blueprints/', area: 'Blueprints', needsEpr0006: true },
+		{ path: 'blueprints/index', area: 'Blueprints', needsEpr0006: true },
+		{ path: 'lab/', area: 'Lab', needsEpr0006: false },
+		{ path: 'lab/index', area: 'Lab', needsEpr0006: false }
+	];
+	const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+	const page = await context.newPage();
+	for (const { path, area, needsEpr0006 } of cases) {
+		await page.goto(`${origin}/${path}`, { waitUntil: 'networkidle' });
+		await settle(page);
+		const where = `areaNav @390px, /${path}`;
+		const current = await page.locator('.areas a[aria-current]').textContent();
+		if (current?.trim() !== area) failures.push(`${where}: the header marks "${current?.trim()}" current, not "${area}"`);
+		if (needsEpr0006 && (await page.locator('#site-nav a', { hasText: 'EPR-0006' }).count()) === 0)
+			failures.push(`${where}: #site-nav offers no link to EPR-0006`);
+	}
+	await context.close();
+}
+
 let browser: Browser;
 try {
 	browser = await chromium.launch();
@@ -333,7 +371,12 @@ try {
 }
 let checked = 0;
 try {
-	const counts = await Promise.all([...WIDTHS.map((w) => layout(browser, w)), touch(browser).then(() => 0), touchProposal(browser).then(() => 0)]);
+	const counts = await Promise.all([
+		...WIDTHS.map((w) => layout(browser, w)),
+		touch(browser).then(() => 0),
+		touchProposal(browser).then(() => 0),
+		areaNav(browser).then(() => 0)
+	]);
 	checked = counts.reduce((a, b) => a + b, 0);
 } finally {
 	await browser.close();
@@ -352,5 +395,5 @@ if (failures.length > 0) {
 }
 console.log(
 	'PASS (responsive): no page or component scrolls sideways at any width, a tap pins a parse word, ' +
-		"and a proposal's chip and sketch answer a finger"
+		"a proposal's chip and sketch answer a finger, and an area's trailing-slash address shows its own menu"
 );

@@ -43,10 +43,23 @@
 	// sketch's toggle ($lib/legibility.client.ts). Pages read without them.
 	onMount(installLegibility);
 
-	/** The route of the page being shown, without the base path; `/` is the first page. */
+	/**
+	 * The route of the page being shown, without the base path; `/` is the
+	 * first page. `/blueprints/` and `/lab/` are the public addresses for
+	 * those areas' index pages (GitHub Pages serves each from its directory's
+	 * `index.html`), so a request for one of those directly or with its
+	 * trailing slash resolves here to the `/index` route the rest of the app
+	 * links to. SvelteKit's own `trailingSlash: 'never'` strips the slash
+	 * from `page.url` before this reads it, so `/blueprints/` and
+	 * `/blueprints` both arrive here as `/blueprints` and must both resolve
+	 * the same way.
+	 */
 	const current = $derived.by(() => {
 		const path = page.url.pathname.slice(base.length).replace(/\.html$/, '');
-		return path === '' || path === '/' ? (data.nav[0]?.items[0]?.route ?? null) : path;
+		if (path === '' || path === '/') return data.nav[0]?.items[0]?.route ?? null;
+		if (path === '/blueprints') return '/blueprints/index';
+		if (path === '/lab') return '/lab/index';
+		return path;
 	});
 
 	/** The area the page being shown is in, read from its route. */
