@@ -15,8 +15,8 @@
 	 * its prose. It sits in the sidebar, in the frame's sheet and inline in
 	 * the page on a phone; the three are the same list.
 	 */
-	import { ASSUMED, DECISION_STATES, REVERSIBLE, dependencyOrder, firstWords } from '$lib/record-vocabulary';
-	import type { RecordFrame } from '$lib/types';
+	import { ASSUMED, DECISION_STATES, REVERSIBLE, dependencyOrder, firstWords } from '#lib/record-vocabulary.ts';
+	import type { RecordFrame } from '#lib/types.ts';
 
 	let { frame, variant }: { frame: RecordFrame; variant: 'sidebar' | 'sheet' | 'inline' } = $props();
 

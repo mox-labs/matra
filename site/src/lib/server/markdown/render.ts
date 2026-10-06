@@ -62,11 +62,11 @@ import type {
 	PrimitivesFigureFile,
 	Segment,
 	TocEntry
-} from '$lib/types';
+} from '#lib/types.ts';
 import { MARKDOWN_ELEMENTS, REGISTRY } from './registry';
 import { legibility, readPin, selfClosingTags, type RecordCard } from './legibility';
 import { exampleView, type ExampleSource } from '../examples';
-import { REPO_URL } from '$lib/site';
+import { REPO_URL } from '#lib/site.ts';
 
 /**
  * The grammars the pages use. A fence in a language not listed here fails the

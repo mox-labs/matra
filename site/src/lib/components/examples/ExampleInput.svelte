@@ -5,8 +5,8 @@
 	 * input is shown whole; a long one sits in a disclosure, open without
 	 * scripts as with them, since `<details>` needs none.
 	 */
-	import { SITE_URL } from '$lib/site';
-	import type { ExampleView } from '$lib/types';
+	import { SITE_URL } from '#lib/site.ts';
+	import type { ExampleView } from '#lib/types.ts';
 
 	let { example }: { example: ExampleView } = $props();
 

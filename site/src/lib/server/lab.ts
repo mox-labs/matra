@@ -4,7 +4,7 @@
  *
  *   lab/README.md   /lab/index   (served as /lab/)
  */
-import type { NavPart } from '$lib/types';
+import type { NavPart } from '#lib/types.ts';
 
 const RAW = import.meta.glob('../../../../lab/README.md', {
 	query: '?raw',

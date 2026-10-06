@@ -22,7 +22,7 @@
 	 * Linked); a click or tap also opens its thread.
 	 */
 	import { onMount, tick } from 'svelte';
-	import { Linked } from '$lib/components/figures/linked.svelte';
+	import { Linked } from '#lib/components/figures/linked.svelte.ts';
 	import { anchor, describe, textIndex } from './anchor';
 	import { CHANGED, ENDPOINT } from './constants';
 	import type { Problem, Selector, Thread } from './model';

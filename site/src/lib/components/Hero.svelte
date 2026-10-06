@@ -14,7 +14,7 @@
 	 * equal grid columns, so its centre is a grid line; an arc spans from its
 	 * head's line to its dependent's (from the root's right edge, where its
 	 * stroke hangs, when the head is the root), drawn as a hanging half
-	 * ellipse. The bar's height is the font's own arithmetic ($lib/fonts), so
+	 * ellipse. The bar's height is the font's own arithmetic (#lib/fonts), so
 	 * it needs no measuring either. So the prerendered page is exact, at every
 	 * width.
 	 *
@@ -25,9 +25,9 @@
 	 * reveals each word's part of speech and each arc's relation, and works
 	 * without a script; its table twin is the parse as text.
 	 */
-	import { ALEGREYA_BLACK, inkTop, tallest } from '$lib/fonts';
-	import { drawn } from '$lib/mark';
-	import type { ParseToken } from '$lib/types';
+	import { ALEGREYA_BLACK, inkTop, tallest } from '#lib/fonts.ts';
+	import { drawn } from '#lib/mark.ts';
+	import type { ParseToken } from '#lib/types.ts';
 	import { Linked } from './figures/linked.svelte';
 
 	let { tokens, titleId = 'matra' }: { tokens: ParseToken[]; titleId?: string } = $props();
@@ -172,7 +172,7 @@
 	/*
 	 * The sentence. Alegreya at line-height 1: the tops of its tallest letters
 	 * (l, f, d) sit --ink-top below the line box's top, set from the font's
-	 * metrics in $lib/fonts. The headline bar's lower edge is drawn there, so
+	 * metrics in #lib/fonts. The headline bar's lower edge is drawn there, so
 	 * the letters touch it from below and it never crosses them.
 	 */
 	.specimen {

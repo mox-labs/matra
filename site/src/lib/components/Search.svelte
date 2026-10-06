@@ -6,7 +6,7 @@
 	 * not with the page.
 	 */
 	import { afterNavigate } from '$app/navigation';
-	import { base } from '$app/paths';
+	import { base } from '#lib/paths.ts';
 	import Icon from './Icon.svelte';
 
 	let dialog: HTMLDialogElement | undefined = $state();

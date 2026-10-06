@@ -1,5 +1,5 @@
-import { layoutMark, U } from '$lib/mark';
-import { specimen } from '$lib/server/specimen';
+import { layoutMark, U } from '#lib/mark.ts';
+import { specimen } from '#lib/server/specimen.ts';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {

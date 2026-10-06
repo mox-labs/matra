@@ -16,7 +16,7 @@
 	 * (./linked.svelte). At once; nothing else moves.
 	 */
 	import { scaleLinear } from 'd3-scale';
-	import type { MetricsFigureFile, MetricsParagraph } from '$lib/types';
+	import type { MetricsFigureFile, MetricsParagraph } from '#lib/types.ts';
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { roving } from './motion';

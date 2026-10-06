@@ -32,8 +32,8 @@
  *   mono      the glyph in one ink; hierarchy carried by opacity
  *   paper     the glyph in ink on paper
  */
-import { PLEX_MONO, tallest } from '$lib/fonts';
-import type { ParseFigureFile, ParseToken } from '$lib/types';
+import { PLEX_MONO, tallest } from '#lib/fonts.ts';
+import type { ParseFigureFile, ParseToken } from '#lib/types.ts';
 
 export const U = 9;
 

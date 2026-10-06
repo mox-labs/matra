@@ -20,8 +20,8 @@
 	 * sheet is a plain `<details>`; with one, following a link in it closes
 	 * it. Nothing moves: the sheet appears and disappears.
 	 */
-	import { ASSUMED, DECISION_STATES, KIND_LABEL, dependencyOrder, statusGlyph } from '$lib/record-vocabulary';
-	import type { RecordFrame } from '$lib/types';
+	import { ASSUMED, DECISION_STATES, KIND_LABEL, dependencyOrder, statusGlyph } from '#lib/record-vocabulary.ts';
+	import type { RecordFrame } from '#lib/types.ts';
 	import RecordNav from './RecordNav.svelte';
 
 	let { frame }: { frame: RecordFrame } = $props();

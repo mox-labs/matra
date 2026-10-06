@@ -1,5 +1,5 @@
-import { legacyForwards } from '$lib/server/blueprints';
-import { allPages, markdownOf } from '$lib/server/content';
+import { legacyForwards } from '#lib/server/blueprints.ts';
+import { allPages, markdownOf } from '#lib/server/content.ts';
 import type { EntryGenerator, RequestHandler } from './$types';
 
 /**

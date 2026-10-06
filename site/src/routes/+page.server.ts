@@ -1,4 +1,4 @@
-import { loadDoc, pages } from '$lib/server/content';
+import { loadDoc, pages } from '#lib/server/content.ts';
 import type { PageServerLoad } from './$types';
 
 /**

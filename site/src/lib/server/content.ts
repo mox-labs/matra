@@ -8,10 +8,10 @@
 import { realpathSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { error } from '@sveltejs/kit';
-import { base } from '$app/paths';
-import { ANATOMY } from '$lib/record-vocabulary';
-import { editUrl, REPO_URL } from '$lib/site';
-import type { Crumb, Doc, FigureFile, NavItem, NavPart, PageMeasures, TocEntry } from '$lib/types';
+import { base } from '#lib/paths.ts';
+import { ANATOMY } from '#lib/record-vocabulary.ts';
+import { editUrl, REPO_URL } from '#lib/site.ts';
+import type { Crumb, Doc, FigureFile, NavItem, NavPart, PageMeasures, TocEntry } from '#lib/types.ts';
 import { flatten, parseSummary } from './summary';
 import { render } from './markdown/render';
 import { exampleMarkdown, examples } from './examples';

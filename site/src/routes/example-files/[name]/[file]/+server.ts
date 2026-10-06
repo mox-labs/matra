@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { examples, publishedFiles } from '$lib/server/examples';
+import { examples, publishedFiles } from '#lib/server/examples.ts';
 import type { EntryGenerator, RequestHandler } from './$types';
 
 /**

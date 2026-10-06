@@ -13,7 +13,7 @@
 	 * row, at once; a tap pins either (./linked.svelte). Nothing else moves.
 	 */
 	import { scaleLinear } from 'd3-scale';
-	import type { TextrankFigureFile } from '$lib/types';
+	import type { TextrankFigureFile } from '#lib/types.ts';
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { roving } from './motion';

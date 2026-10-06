@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { chooseTheme, initTheme, theme } from '$lib/theme.svelte';
+	import { chooseTheme, initTheme, theme } from '#lib/theme.svelte.ts';
 	import Icon from './Icon.svelte';
 
 	onMount(initTheme);

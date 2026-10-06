@@ -5,8 +5,8 @@
 	 * the queue that lists each item (the `awaiting` component). Drawn by the
 	 * layout, never from the index's Markdown.
 	 */
-	import { ASSUMED, DECISION_STATES } from '$lib/record-vocabulary';
-	import type { Awaiting } from '$lib/types';
+	import { ASSUMED, DECISION_STATES } from '#lib/record-vocabulary.ts';
+	import type { Awaiting } from '#lib/types.ts';
 
 	let { awaiting }: { awaiting: Awaiting } = $props();
 	const nothing = $derived(awaiting.open + awaiting.assumptions === 0);

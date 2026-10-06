@@ -26,7 +26,7 @@
 	 * hollow marker is in none; what the reader points at is Spark.
 	 */
 	import { onMount } from 'svelte';
-	import type { ClusterGridPoint, ClustersFigureFile } from '$lib/types';
+	import type { ClusterGridPoint, ClustersFigureFile } from '#lib/types.ts';
 	import FigureFrame from './FigureFrame.svelte';
 	import { Linked } from './linked.svelte';
 	import { scopedRegion } from './region';

@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { layoutMark, markSvg, PALETTES, type Palette, type Variant } from '$lib/mark';
-import { specimen } from '$lib/server/specimen';
+import { layoutMark, markSvg, PALETTES, type Palette, type Variant } from '#lib/mark.ts';
+import { specimen } from '#lib/server/specimen.ts';
 import type { EntryGenerator, RequestHandler } from './$types';
 
 /**

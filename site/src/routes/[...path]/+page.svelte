@@ -1,7 +1,7 @@
 <script lang="ts">
-	import DocPage from '$lib/components/DocPage.svelte';
-	import Hero from '$lib/components/Hero.svelte';
-	import LegacyRecord from '$lib/components/LegacyRecord.svelte';
+	import DocPage from '#lib/components/DocPage.svelte';
+	import Hero from '#lib/components/Hero.svelte';
+	import LegacyRecord from '#lib/components/LegacyRecord.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

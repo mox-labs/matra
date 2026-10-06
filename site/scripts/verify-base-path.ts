@@ -8,7 +8,7 @@
  * build failure instead.
  *
  * Usage: bun scripts/verify-base-path.ts <build-dir>
- * BASE_PATH is read from the environment, as svelte.config.js reads it.
+ * BASE_PATH is read from the environment, as vite.config.ts reads it.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -36,7 +36,7 @@ if (docs.length === 0) {
 	process.exit(1);
 }
 
-// svelte.config.js sets paths.relative = false, so every asset URL is
+// vite.config.ts sets paths.relative = false, so every asset URL is
 // absolute. Finding none at all means the output shape changed, and a check
 // that passes on an output it does not recognise is worse than no check.
 const ASSET = /["']((?:\.{1,2})?\/[^"']*?_app\/[^"']*)["']/g;

@@ -25,12 +25,12 @@
 /Cargo.lock          @yzavyas
 /pyproject.toml      @yzavyas
 
-# Docsite structure: SUMMARY.md is the navigation tree; svelte.config.js owns
+# Docsite structure: SUMMARY.md is the navigation tree; vite.config.ts owns
 # the build and the base path; the tag registry decides what raw HTML a page
 # may carry; urls.txt and anchors.txt are the published URL contract. Drift
 # here is silent and high-impact.
 /site/content/SUMMARY.md                     @yzavyas
-/site/svelte.config.js                       @yzavyas
+/site/vite.config.ts                         @yzavyas
 /site/src/lib/server/markdown/registry.ts    @yzavyas
 /site/urls.txt                               @yzavyas
 /site/anchors.txt                            @yzavyas

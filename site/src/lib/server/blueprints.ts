@@ -16,8 +16,8 @@
  * status is read from the `- Status:` line of its header, so the navigation
  * says what the record says, and nothing is written twice.
  */
-import { REPO_URL } from '$lib/site';
-import type { NavItem, NavPart } from '$lib/types';
+import { REPO_URL } from '#lib/site.ts';
+import type { NavItem, NavPart } from '#lib/types.ts';
 import { assumptionsOf, readPin, recordFacts, type HeaderLink, type RecordCard } from './markdown/legibility';
 
 /** The area's title in the navigation. */

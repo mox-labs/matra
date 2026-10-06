@@ -3,7 +3,7 @@
 	 * A page body: runs of build-time HTML, and between them the figures and
 	 * worked-example parts the page names, each drawn by its component.
 	 */
-	import type { Segment } from '$lib/types';
+	import type { Segment } from '#lib/types.ts';
 	import ClustersFigure from './figures/ClustersFigure.svelte';
 	import KeyphrasesFigure from './figures/KeyphrasesFigure.svelte';
 	import MetricsFigure from './figures/MetricsFigure.svelte';

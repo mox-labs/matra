@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Body from '$lib/components/Body.svelte';
-	import { SITE_NAME } from '$lib/site';
+	import Body from '#lib/components/Body.svelte';
+	import { SITE_NAME } from '#lib/site.ts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

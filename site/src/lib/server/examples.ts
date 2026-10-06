@@ -17,8 +17,8 @@
  * page cannot show a call that does not work or an output matra no longer
  * gives.
  */
-import { SITE_URL } from '$lib/site';
-import type { ExampleView, FigureFile } from '$lib/types';
+import { SITE_URL } from '#lib/site.ts';
+import type { ExampleView, FigureFile } from '#lib/types.ts';
 
 const FILES = import.meta.glob('/examples/*/*', {
 	query: '?raw',

@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { measures } from '$lib/server/content';
+import { measures } from '#lib/server/content.ts';
 import type { EntryGenerator, RequestHandler } from './$types';
 
 /**

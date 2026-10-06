@@ -4,9 +4,9 @@
 	 * 2026-10-04. The record is no longer rendered on the site; this says so
 	 * and links it on GitHub, where it is kept unchanged.
 	 */
-	import { base } from '$app/paths';
-	import { SITE_NAME } from '$lib/site';
-	import type { LegacyForward } from '$lib/server/blueprints';
+	import { base } from '#lib/paths.ts';
+	import { SITE_NAME } from '#lib/site.ts';
+	import type { LegacyForward } from '#lib/server/blueprints.ts';
 
 	let { legacy }: { legacy: LegacyForward } = $props();
 </script>

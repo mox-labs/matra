@@ -4,8 +4,8 @@
 	 * A page outside SUMMARY.md, reached from the footer; the site README says
 	 * why the mark is this and how it is made.
 	 */
-	import { base } from '$app/paths';
-	import Mark from '$lib/components/Mark.svelte';
+	import { base } from '#lib/paths.ts';
+	import Mark from '#lib/components/Mark.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
