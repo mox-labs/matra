@@ -282,6 +282,15 @@ jobs:
           EXAMPLES_PYTHON: ${{ runner.temp }}/venv/bin/python
           EXAMPLES_REQUIRED: "1"
         run: bash scripts/check-docsite-floor.sh
+      # The gates build at the root (BASE_PATH empty). The deploy builds under
+      # /matra, so build that too and let verify-base-path (part of `bun run
+      # build`) hold every asset URL and internal link to it. After the gates,
+      # because it rebuilds site/build in place.
+      - name: Site build under the Pages base path
+        working-directory: site
+        env:
+          BASE_PATH: /matra
+        run: bun run build
       # Every RFC and EP cited anywhere resolves to a record in blueprints/,
       # and every record is in the index. A step here rather than a job of its
       # own, so the set of required check names does not change.
