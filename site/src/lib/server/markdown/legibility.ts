@@ -144,6 +144,10 @@ export interface RecordCard {
 	readAt: string | null;
 	pr: HeaderLink | null;
 	tracking: HeaderLink | null;
+	/** The tracking issue line's words when it links no issue (`none (a baseline ...)`). */
+	trackingNote: string | null;
+	/** The header's other facts, as the masthead labels them (Started, Feature name, Implements). */
+	header: { label: string; text: string }[];
 	/** Every decision, in document order. */
 	decisions: DecisionView[];
 	/** Every assumed claim, in document order. */
@@ -1491,7 +1495,7 @@ function awaitingQueue(ctx: LegibilityContext): Element {
 	const lead =
 		open + assumed === 0
 			? 'Nothing awaits you: every decision is settled and no assumption is open.'
-			: `${open} open ${open === 1 ? 'decision' : 'decisions'} across ${decide.length} ${decide.length === 1 ? 'proposal' : 'proposals'}, then ${assumed} ${assumed === 1 ? 'assumption' : 'assumptions'} to confirm. A decision waits for your ruling; an assumption for you to confirm or strike it.`;
+			: `${open} open ${open === 1 ? 'decision' : 'decisions'} across ${decide.length} ${decide.length === 1 ? 'proposal' : 'proposals'}, then ${assumed} ${assumed === 1 ? 'assumption' : 'assumptions'} to confirm.`;
 	return h('section', { className: ['awaiting'], id: 'awaiting-queue', dataQueue: '', dataOpen: String(open), dataConfirm: String(assumed), ariaLabel: 'Awaiting you', dataPagefindIgnore: '' }, [
 		h('p', { className: ['queue-lead'] }, [lead]),
 		...(decide.length

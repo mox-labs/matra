@@ -757,11 +757,15 @@ read.
 (`RecordFrame.svelte`), which the layout draws above the page from what the
 build parsed (the header list, and the components through `recordFacts` in
 `legibility.ts`), never from the Markdown body: a record cannot set,
-restate or style its own state. In order: the kind as a monochrome badge
+restate or style its own state. The frame owns the header's facts on
+screen: the masthead table (below) is hidden there and kept for print, the
+`.md` twin keeps the header as written, and gate 9 fails if any fact the
+table holds is missing from either form of the frame. In order: the kind as a monochrome badge
 (`Enhancement proposal`), the id and title, the status as a glyph and a
 word, the decisions settled out of all of them (Spark ● while any is open,
 Emergence ✓ once all are settled), the assumptions to confirm (Spark ○
-while any is), the pinned commit, and the pull request and tracking issue.
+while any is), the pinned commit, the pull request and tracking issue, and the rest of
+the header (started, feature name, who decides).
 A field that is absent says so in words ("no tracking issue yet"). When
 every decision is settled and the status is still `proposed`, the frame
 says "all decisions settled; awaiting acceptance", with no new status word.
@@ -971,7 +975,8 @@ Summary, so the masthead and the abstract come first, as the anatomy
 below sets out; the research's separate read-first card is merged into
 it.
 
-**The masthead.** A record's header list becomes its masthead: the start
+**The masthead.** A record's header list becomes its masthead, shown in
+print only (on screen the frame carries every fact in it): the start
 date, the commit it was read at (linked), who decides (the owner, always,
 by the process), and the pull request and tracking issue, in that order,
 under the title; the frame above carries its kind and status. Then the Summary as the

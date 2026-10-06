@@ -21,11 +21,8 @@ record decided says so and cites it; the legacy record is not edited.
 
 ## Awaiting you
 
-Every open decision in every proposal, each proposal's in the order its
-decisions depend on one another, then every assumption to confirm. The
-build draws the list from the proposals' components, never from their
-prose: a decision leaves it when its proposal records a ruling, and an
-assumption when its claim is confirmed or struck.
+Decisions waiting for your ruling, in dependency order, then assumptions to
+confirm or strike.
 
 <awaiting />
 
@@ -75,6 +72,9 @@ and it is all the docsite reads: the frame, the navigator and the queue
 never read comments to decide whether a decision is open, so a quiet thread
 never reads as assent. An assumption is confirmed or struck the same way:
 Claude changes the claim's basis, or removes the claim, citing the comment.
+The queue under Awaiting you is drawn from the proposals' components, never
+from their prose, so a decision leaves it when its proposal records a
+ruling, and an assumption when its claim is confirmed or struck.
 
 **Only the owner accepts a proposal.** Acceptance is a change of the status
 line to `accepted`, and only the owner merges a pull request that makes that
@@ -186,9 +186,10 @@ questions, and the assumptions), the references (Prior art, and every chip),
 and the margin, where comments land. Future possibilities has no role; it
 equips no decision.
 
-**The masthead** under the title gives the start date, the commit the
+**The header** at the top of the file gives the start date, the commit the
 proposal was read at, who decides (the owner), and the pull request and
-tracking issue.
+tracking issue. On screen the frame shows each of these; in print they are
+a masthead under the title.
 
 **The pragmatics block** follows the Summary: the ask, what Claude will do
 if the proposal is accepted, what it needs from the owner, what it will not

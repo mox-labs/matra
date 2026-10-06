@@ -86,8 +86,17 @@
 		>{#if frame.pr}<a href={frame.pr.href}>pull request {frame.pr.text}</a>{:else}no pull request{/if}</span
 	>
 	<span class="field"
-		>{#if frame.tracking}<a href={frame.tracking.href}>tracking issue {frame.tracking.text}</a>{:else}no tracking issue yet{/if}</span
+		>{#if frame.tracking}<a href={frame.tracking.href}>tracking issue {frame.tracking.text}</a>{:else}tracking issue: {frame.trackingNote ?? 'none yet'}{/if}</span
 	>
+{/snippet}
+
+<!-- The rest of the record's header, which the masthead table carries in
+     print and in the .md twin: the frame owns it on screen. -->
+{#snippet header()}
+	{#each frame.header as f (f.label)}
+		<span class="field" data-header={f.label}>{f.label.toLowerCase()}: {f.text}</span>
+	{/each}
+	<span class="field" data-header="Decides">decides: the owner, who alone sets the status to accepted</span>
 {/snippet}
 
 <!-- data-* carry the tallies for gate 9, which holds them to the page's own
@@ -107,6 +116,7 @@
 		{@render assumptionsTally(false)}
 		{#if awaitingAcceptance}<span class="field">all decisions settled; awaiting acceptance</span>{/if}
 		{@render provenance()}
+		{@render header()}
 	</p>
 </div>
 
@@ -131,6 +141,7 @@
 		<p class="row state">
 			{#if awaitingAcceptance}<span class="field">all decisions settled; awaiting acceptance</span>{/if}
 			{@render provenance()}
+			{@render header()}
 		</p>
 		<RecordNav {frame} variant="sheet" />
 	</div>
@@ -218,6 +229,12 @@
 		min-height: 24px;
 		white-space: nowrap;
 		color: var(--text-muted);
+	}
+
+	/* A header fact may be a sentence (a tracking issue's note): it wraps. */
+	.field[data-header],
+	.field:has(+ .field[data-header]) {
+		white-space: normal;
 	}
 
 	a.tally {
