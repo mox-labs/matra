@@ -135,3 +135,4 @@ jobs:
       - name: Every published URL answers 200
         env:
           PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: bash scripts/check-url-manifest.sh --live "${PAGE_URL:-https://mox-labs.github.io/matra/}"
