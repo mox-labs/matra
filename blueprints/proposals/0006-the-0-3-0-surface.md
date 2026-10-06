@@ -134,11 +134,11 @@ The same task gives different answers depending on which language asks.
 
 ### Names answer the wrong question
 
-- **Algorithms are in the API.** `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`, the `--method` flag and the `summarize.algorithm` key make the algorithm part of the contract. <claim basis="inferred" likelihood="almost certain">Replacing TextRank would break every caller who asked for a summary by its name.</claim>
-- **The stage that measures is called `compose`.** <claim basis="observed">The method is `Engine::compose`, and it runs the metric suite [lib.rs:250](../../src/lib.rs#L250 "pub fn compose(&self, doc: &mut Document)")</claim>. <claim basis="observed">RFC-0002 had ruled it `measure`, "honest about what the stage produces" [RFC-0002:107-108](../legacy/rfcs/0002-pipeline-vocabulary.md#L107-L108 "honest about what the stage produces")</claim>; <claim basis="observed">RFC-0007 reverted that with "None recorded" under its rationale [RFC-0007:133](../legacy/rfcs/0007-one-pipeline.md#L133 "None recorded when this was decided.")</claim>. <claim basis="observed">Until #127 the domain's own prose still called it the measure stage; the documentation was corrected to match the name, not the other way round [#127](https://github.com/mox-labs/matra/pull/127)</claim>.
-- **Two record-tier facts are named for readings they do not make.** <claim basis="observed">`Reporting` fires on any verb with a clausal complement, including "think" and "ensure": the detector's only tests are the `ccomp` relation and a verb head [domain.rs:568-574](../../src/domain.rs#L568-L574 "filter(|c| c.dep == \"ccomp\")")</claim>. <claim basis="observed">`bare_assertion` names a speech act, which RFC-0006 reserves for the abstract tier [RFC-0006:43](../legacy/rfcs/0006-abstract-tier-vocabulary-lock.md#L43 "SpeechAct")</claim>.
+- **Algorithms are in the API.** `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`, the `--method` flag and the `summarize.algorithm` key make the algorithm part of the contract. <claim id="algorithm-names-break" basis="inferred" likelihood="almost certain">Replacing TextRank would break every caller who asked for a summary by its name.</claim>
+- **The stage that measures is called `compose`.** <claim id="compose-runs-metrics" basis="observed">The method is `Engine::compose`, and it runs the metric suite [lib.rs:250](../../src/lib.rs#L250 "pub fn compose(&self, doc: &mut Document)")</claim>. <claim id="rfc0002-measure" basis="observed">RFC-0002 had ruled it `measure`, "honest about what the stage produces" [RFC-0002:107-108](../legacy/rfcs/0002-pipeline-vocabulary.md#L107-L108 "honest about what the stage produces")</claim>; <claim id="rfc0007-revert" basis="observed">RFC-0007 reverted that with "None recorded" under its rationale [RFC-0007:133](../legacy/rfcs/0007-one-pipeline.md#L133 "None recorded when this was decided.")</claim>. <claim basis="observed">Until #127 the domain's own prose still called it the measure stage; the documentation was corrected to match the name, not the other way round [#127](https://github.com/mox-labs/matra/pull/127)</claim>.
+- **Two record-tier facts are named for readings they do not make.** <claim id="reporting-any-ccomp" basis="observed">`Reporting` fires on any verb with a clausal complement, including "think" and "ensure": the detector's only tests are the `ccomp` relation and a verb head [domain.rs:568-574](../../src/domain.rs#L568-L574 "filter(|c| c.dep == \"ccomp\")")</claim>. <claim id="bare-assertion-speech-act" basis="observed">`bare_assertion` names a speech act, which RFC-0006 reserves for the abstract tier [RFC-0006:43](../legacy/rfcs/0006-abstract-tier-vocabulary-lock.md#L43 "SpeechAct")</claim>.
 - **One identity has two names.** <claim basis="observed">The embedding adapter's `identity()` returns its `model_hash()` [model2vec.rs:603-605](../../src/embed/model2vec.rs#L603-L605 "self.model_hash()")</claim>, and `SemanticClusters` carries it as `model_hash`.
-- **The port is named after a technology.** <claim basis="observed">`NlpProvider` names the field and a generic supplier; its only act is `parse` [nlp/mod.rs:47-51](../../src/nlp/mod.rs#L47-L51 "fn parse(&self, text: &str)")</claim>.
+- **The port is named after a technology.** <claim id="nlpprovider-named" basis="observed">`NlpProvider` names the field and a generic supplier; its only act is `parse` [nlp/mod.rs:47-51](../../src/nlp/mod.rs#L47-L51 "fn parse(&self, text: &str)")</claim>.
 
 ### The parser's file format reaches the schema
 
@@ -146,7 +146,7 @@ UDPipe speaks CoNLL-U, and its encodings arrive in matra's domain unconverted. <
 
 ### Why now, and why at once
 
-<claim basis="observed">0.2.1 is published, on crates.io and PyPI [Cargo.toml:3](../../Cargo.toml#L3 "version = \"0.2.1\"") [crates.io](https://crates.io/crates/matra/0.2.1)</claim>, so every rename breaks someone. Under 0.x that is allowed, and the cheapest moment is the one before a TypeScript surface copies the current names into a fourth language. <claim basis="inferred" likelihood="likely">Without a named driving port, a fourth surface would assemble its own application as the other three did, and drift the same way.</claim> Doing it in one release means callers migrate once and the schema version moves once. <claim basis="assumed">Callers would rather migrate once, in a larger release, than several times in smaller ones.</claim>
+<claim basis="observed">0.2.1 is published, on crates.io and PyPI [Cargo.toml:3](../../Cargo.toml#L3 "version = \"0.2.1\"") [crates.io](https://crates.io/crates/matra/0.2.1)</claim>, so every rename breaks someone. Under 0.x that is allowed, and the cheapest moment is the one before a TypeScript surface copies the current names into a fourth language. <claim basis="inferred" likelihood="likely">Without a named driving port, a fourth surface would assemble its own application as the other three did, and drift the same way.</claim> Doing it in one release means callers migrate once and the schema version moves once. <claim id="migrate-once" basis="assumed">Callers would rather migrate once, in a larger release, than several times in smaller ones.</claim>
 
 ## Guide-level explanation
 
@@ -380,7 +380,7 @@ Tracked in this proposal's tracking issue:
 
 For the owner to settle in this proposal's review. Each is a decision of its own.
 
-<decision id="algorithm-choice" title="1. Does algorithm choice leave the public surface?">
+<decision id="algorithm-choice" title="1. Does algorithm choice leave the public surface?" reversible="yes" grounds="use-cases-no-algorithm algorithm-names-break cli-method-flag">
 
 <choice key="a" title="Outcomes only; the method is recorded in provenance">
 
@@ -396,19 +396,19 @@ For the owner to settle in this proposal's review. Each is a decision of its own
 
 <recommendation choice="a">
 
-<claim basis="assumed">None of the 26 use cases in the API audit behind this proposal asks for an algorithm; they ask for a summary or for keyphrases.</claim> Citation is met by recording the method in provenance. Adding a selector later is additive; removing one later breaks everyone who used it.
+<claim id="use-cases-no-algorithm" basis="assumed">None of the 26 use cases in the API audit behind this proposal asks for an algorithm; they ask for a summary or for keyphrases.</claim> Citation is met by recording the method in provenance. Adding a selector later is additive; removing one later breaks everyone who used it.
 
 </recommendation>
 
 <against>
 
-TextRank, RAKE and YAKE are cited methods, and a caller replicating a published result needs a specific one. <claim basis="observed">The command line already offers `--method`, so someone may depend on it today [cli/mod.rs:178-180](../../src/cli/mod.rs#L178-L180 "method: Option<SummaryMethod>")</claim>. Both earlier reviews of this design argued for keeping the choice; they were reviews by Claude agents, so they count as one voice, but it is the only dissent on record.
+TextRank, RAKE and YAKE are cited methods, and a caller replicating a published result needs a specific one. <claim id="cli-method-flag" basis="observed">The command line already offers `--method`, so someone may depend on it today [cli/mod.rs:178-180](../../src/cli/mod.rs#L178-L180 "method: Option<SummaryMethod>")</claim>. Both earlier reviews of this design argued for keeping the choice; they were reviews by Claude agents, so they count as one voice, but it is the only dissent on record.
 
 </against>
 
 </decision>
 
-<decision id="port-names" title="2. Does compose become measure, and NlpProvider become Parser?">
+<decision id="port-names" title="2. Does compose become measure, and NlpProvider become Parser?" reversible="costly" grounds="compose-runs-metrics rfc0002-measure rfc0007-revert nlpprovider-named">
 
 <choice key="a" title="Rename both">
 
@@ -442,7 +442,7 @@ Each name should say what the thing does: the stage measures, and the port parse
 
 </decision>
 
-<decision id="record-facts" title="3. Do Reporting and bare_assertion take names for what they detect?">
+<decision id="record-facts" title="3. Do Reporting and bare_assertion take names for what they detect?" reversible="costly" grounds="reporting-any-ccomp bare-assertion-speech-act reporting-doc-disclaims">
 
 <choice key="a" title="Rename to ClausalComplement and root_mood">
 
@@ -464,13 +464,13 @@ Today's names assert readings the detectors do not make, and a name is read far 
 
 <against>
 
-<claim basis="observed">The field's documentation already disclaims the reading: it "reports the surface form only" [domain.rs:750-753](../../src/domain.rs#L750-L753 "only; what the assertion commits its speaker to is the")</claim>. A renamed field breaks every JSON reader with no alias, since an alias in serde helps reading, not writing.
+<claim id="reporting-doc-disclaims" basis="observed">The field's documentation already disclaims the reading: it "reports the surface form only" [domain.rs:750-753](../../src/domain.rs#L750-L753 "only; what the assertion commits its speaker to is the")</claim>. A renamed field breaks every JSON reader with no alias, since an alias in serde helps reading, not writing.
 
 </against>
 
 </decision>
 
-<decision id="caller-extensions" title="4. Do caller extensions get their own proposal?">
+<decision id="caller-extensions" title="4. Do caller extensions get their own proposal?" reversible="yes" grounds="extension-moves-schema caller-extensions-reversal">
 
 <choice key="a" title="A separate proposal, for 0.4.0">
 
@@ -486,19 +486,19 @@ This proposal reserves the extension point in the 0.3.0 schema now, without the 
 
 <recommendation choice="a">
 
-The extension point depends on the schema and the port this proposal settles; designing it on top of them is cheaper than designing all three at once.
+The extension point depends on the schema and the port this proposal settles; designing it on top of them is cheaper than designing all three at once. <claim id="caller-extensions-reversal" basis="assumed">Until 0.3.0 ships this is easy to undo: a later proposal can still add the slot to that release.</claim>
 
 </recommendation>
 
 <against>
 
-<claim basis="inferred" likelihood="roughly even chance">If the extension point needs a field in the schema, 0.4.0 moves `schema_version` again, which is the repeated migration this proposal exists to avoid.</claim>
+<claim id="extension-moves-schema" basis="inferred" likelihood="roughly even chance">If the extension point needs a field in the schema, 0.4.0 moves `schema_version` again, which is the repeated migration this proposal exists to avoid.</claim>
 
 </against>
 
 </decision>
 
-<decision id="release-split" title="5. Is the release split right?">
+<decision id="release-split" title="5. Is the release split right?" reversible="costly" depends="algorithm-choice port-names record-facts" grounds="migrate-once owner-answers release-split-reversal">
 
 <choice key="a" title="Breaking shape in 0.3.0, the rest in 0.4.0">
 
@@ -514,13 +514,13 @@ One release carries the shape, the spans, the predicates and streaming.
 
 <recommendation choice="a">
 
-The breaking changes land together and callers migrate once; what follows is additive and can ship when it is ready.
+The breaking changes land together and callers migrate once; what follows is additive and can ship when it is ready. <claim id="release-split-reversal" basis="assumed">Once 0.3.0 is published its contents cannot change, so the split is costly to reverse after that release, though free to change before it.</claim>
 
 </recommendation>
 
 <against>
 
-A caller waiting for streaming waits a release longer, though its contract changes now. <claim basis="assumed">The owner's answers of 2026-09-27 were: English only for now; streaming happens, with its contract change in this release; and matra's own extensions come in a later proposal.</claim> If that timing has moved, this split should move with it.
+A caller waiting for streaming waits a release longer, though its contract changes now. <claim id="owner-answers" basis="assumed">The owner's answers of 2026-09-27 were: English only for now; streaming happens, with its contract change in this release; and matra's own extensions come in a later proposal.</claim> If that timing has moved, this split should move with it.
 
 </against>
 

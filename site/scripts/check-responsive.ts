@@ -28,7 +28,11 @@
  * pins the word's arcs, that a second tap clears them, and that a tap
  * elsewhere clears a pin. On a proposal it taps a code chip, which must open
  * its sheet inside the window, and the sheet's close button, which must
- * close it; and the sketch's toggle, which must swap the state shown.
+ * close it; and the sketch's toggle, which must swap the state shown. On
+ * EPR-0006 it opens the record frame's sheet (inside the window), taps a
+ * decision in its Decide group (the sheet closes, the decision lands in view
+ * below the sticky header and frame), taps one of that decision's grounds
+ * (its claim lands in view, uncovered) and the claim's way back.
  *
  * Then, at 390 pixels, it checks the menu (#site-nav) for each area's
  * directory-index address (`/blueprints/`, `/lab/`) and its `/index` route
@@ -290,6 +294,67 @@ async function touchProposal(browser: Browser) {
 	await context.close();
 }
 
+/**
+ * A proposal's frame, navigator and grounds on an emulated phone: the
+ * frame's sheet opens inside the window; a decision tapped in its Decide
+ * group closes the sheet and lands in view, below the sticky header and
+ * frame; a ground tapped in that decision lands on its claim, uncovered; and
+ * the claim's way back lands on the decision again.
+ */
+async function touchRecord(browser: Browser) {
+	const page_ = 'blueprints/proposals/0006-the-0-3-0-surface.html';
+	const decision = 'decision-release-split';
+	const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+	const page = await context.newPage();
+	await page.goto(`${origin}/${page_}`, { waitUntil: 'networkidle' });
+	await settle(page);
+	const where = `touch @390px, ${page_}`;
+	/** Whether the element's first box starts in the window and is the topmost thing at its top edge, not under the sticky header or frame. */
+	const uncovered = (id: string) =>
+		page.evaluate((id) => {
+			const el = document.getElementById(id);
+			const r = el?.getClientRects()[0];
+			if (!el || !r) return 'missing';
+			if (r.top < 0 || r.top >= window.innerHeight) return `outside the window (top ${Math.round(r.top)})`;
+			const hit = document.elementFromPoint(Math.min(r.left + 4, window.innerWidth - 1), r.top + 4);
+			return hit && (el === hit || el.contains(hit)) ? 'ok' : `covered by ${hit?.closest('[class]')?.className ?? hit?.tagName}`;
+		}, id);
+	const frame = page.locator('details.frame-compact');
+	if ((await frame.count()) === 0) {
+		failures.push(`${where}: no frame to open`);
+		await context.close();
+		return;
+	}
+	await frame.locator('summary').tap();
+	await page.waitForTimeout(200);
+	if (!(await frame.evaluate((d) => (d as HTMLDetailsElement).open))) failures.push(`${where}: tapping the frame does not open its sheet`);
+	const box = await frame.locator('.sheet-body').boundingBox();
+	if (!box || box.x < -SLACK || box.x + box.width > 390 + SLACK || box.y + box.height > 844 + SLACK) failures.push(`${where}: the frame's sheet is not inside the window`);
+	await frame.locator(`[data-nav-decision="${decision}"] > a`).tap();
+	await page.waitForTimeout(400);
+	if (await frame.evaluate((d) => (d as HTMLDetailsElement).open)) failures.push(`${where}: following a decision from the sheet leaves the sheet open`);
+	if ((await page.evaluate(() => location.hash)) !== `#${decision}`) failures.push(`${where}: the sheet's Decide link does not lead to ${decision}`);
+	const atDecision = await uncovered(decision);
+	if (atDecision !== 'ok') failures.push(`${where}: ${decision}, followed from the sheet, is ${atDecision}`);
+	const ground = page.locator(`#${decision} a.ground`).first();
+	const claim = (await ground.getAttribute('data-ground')) ?? '';
+	await ground.scrollIntoViewIfNeeded();
+	await ground.tap();
+	await page.waitForTimeout(400);
+	if ((await page.evaluate(() => location.hash)) !== `#${claim}`) failures.push(`${where}: tapping a ground in ${decision} does not lead to ${claim}`);
+	const atClaim = await uncovered(claim);
+	if (atClaim !== 'ok') failures.push(`${where}: ${claim}, tapped from ${decision}, is ${atClaim}`);
+	const back = page.locator(`#${claim} a.grounds-for[data-decision="${decision}"]`);
+	if ((await back.count()) === 0) failures.push(`${where}: ${claim} has no way back to ${decision}`);
+	else {
+		await back.scrollIntoViewIfNeeded();
+		await back.tap();
+		await page.waitForTimeout(400);
+		if ((await page.evaluate(() => location.hash)) !== `#${decision}`) failures.push(`${where}: ${claim}'s way back does not lead to ${decision}`);
+	}
+	await context.close();
+}
+
 /** Taps a word in the parse figure on an emulated touch screen. */
 async function touch(browser: Browser) {
 	const page_ = 'explanation/concepts.html';
@@ -375,6 +440,7 @@ try {
 		...WIDTHS.map((w) => layout(browser, w)),
 		touch(browser).then(() => 0),
 		touchProposal(browser).then(() => 0),
+		touchRecord(browser).then(() => 0),
 		areaNav(browser).then(() => 0)
 	]);
 	checked = counts.reduce((a, b) => a + b, 0);
@@ -395,5 +461,6 @@ if (failures.length > 0) {
 }
 console.log(
 	'PASS (responsive): no page or component scrolls sideways at any width, a tap pins a parse word, ' +
-		"a proposal's chip and sketch answer a finger, and an area's trailing-slash address shows its own menu"
+		"a proposal's chip and sketch answer a finger, a decision leads to its grounds and back on a phone, " +
+		"and an area's trailing-slash address shows its own menu"
 );

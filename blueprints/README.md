@@ -1,7 +1,8 @@
 # Blueprints
 
 matra's design records, and the process that says which record a change
-takes. The process follows the Rust RFC process. Two kinds of record live
+takes. Blueprints holds the proposals and plans the owner and Claude
+converge on. The process follows the Rust RFC process. Two kinds of record live
 here.
 
 | Kind | Where | Cited as | What it records |
@@ -17,6 +18,16 @@ reasons behind the code that exists, and a comment or a page that cites
 `RFC-NNNN` or `EP-NNNN` means one of them. They are not rendered on the
 docsite and not counted here. A new proposal that changes what a legacy
 record decided says so and cites it; the legacy record is not edited.
+
+## Awaiting you
+
+Every open decision in every proposal, each proposal's in the order its
+decisions depend on one another, then every assumption to confirm. The
+build draws the list from the proposals' components, never from their
+prose: a decision leaves it when its proposal records a ruling, and an
+assumption when its claim is confirmed or struck.
+
+<awaiting />
 
 ## The process
 
@@ -53,6 +64,17 @@ or beside the code it binds, labelled `epr`. Discussion happens there.
 and comment on it before deciding. Claude may merge a pull request that adds
 or edits a `proposed` proposal, on the same standing authority as any other
 pull request. A `proposed` proposal decides nothing: no code may rely on it.
+
+**A ruling is recorded, never inferred.** The owner answers a decision
+in a comment, on the page or on the pull request. A comment is the event:
+by itself it changes nothing on the record. Claude then records the ruling
+in the proposal as a named step, a `<ruling>` in the decision with the
+owner's response and its date, in a pull request whose description names
+the comment it transcribes. The ruling in the record is the standing state,
+and it is all the docsite reads: the frame, the navigator and the queue
+never read comments to decide whether a decision is open, so a quiet thread
+never reads as assent. An assumption is confirmed or struck the same way:
+Claude changes the claim's basis, or removes the claim, citing the comment.
 
 **Only the owner accepts a proposal.** Acceptance is a change of the status
 line to `accepted`, and only the owner merges a pull request that makes that
@@ -127,8 +149,24 @@ this file at `/blueprints/` and each proposal and plan at
 `/blueprints/proposals/<name>` and `/blueprints/plans/<name>`, read from these
 files at build time; and Lab, for evals and experiments. Blueprints is the
 one area that shows a status: each record's, read from its header, beside it
-in the navigation and under its title. The pages in Docs describe what ships
-and carry none. A link from a record to a file outside the rendered records
+in the navigation and in its frame. The pages in Docs describe what ships
+and carry none.
+
+Docs and Blueprints are two stances on one identity. Docs is the observe
+stance: a reader learns matra there and changes nothing. Blueprints is the
+collaborate stance: the owner and Claude work a record there until the
+owner rules. Only the chrome changes; the colours and their roles, the
+type, the grid and the reading face are the same. Each proposal and plan
+has a frame above it, drawn from its header and its components and never
+from its prose: its kind, id and title, its status, how many of its
+decisions are settled, how many assumptions wait to be confirmed, the
+commit it was read at, and its pull request and tracking issue. Beside it,
+or on a phone in a sheet from the frame and inline under the title, a
+navigator in three groups: Read (the sections), Decide (each decision, its
+state, and the order the decisions depend on one another) and Confirm (each
+assumption, and the decisions that rest on it). What awaits the owner's
+touch, an open decision or an assumption, is marked in Spark; a decision the
+owner accepted, in Emergence; each mark is a glyph and a word. A link from a record to a file outside the rendered records
 leads to that file on GitHub, on `main`, except a citation of lines, which
 opens at the commit the record was read at (below).
 
@@ -140,9 +178,17 @@ are components the docsite draws, each a tag in the Markdown, so they read
 the same in the file and on the site. `site/README.md` ("The Blueprints
 components") gives their syntax and the research behind each.
 
-**The masthead** under the title gives the status, the start date, the
-commit the proposal was read at, who decides (the owner), and the pull
-request and tracking issue.
+**The anatomy.** A proposal follows the template's order, and each section
+has a role the navigator names: the orientation (the masthead, the Summary,
+the pragmatics block and what changed), the case (Motivation through
+Rationale and alternatives), the queue (the decisions under Unresolved
+questions, and the assumptions), the references (Prior art, and every chip),
+and the margin, where comments land. Future possibilities has no role; it
+equips no decision.
+
+**The masthead** under the title gives the start date, the commit the
+proposal was read at, who decides (the owner), and the pull request and
+tracking issue.
 
 **The pragmatics block** follows the Summary: the ask, what Claude will do
 if the proposal is accepted, what it needs from the owner, what it will not
@@ -185,7 +231,17 @@ its own confidence.
 
 **A decision block** sets out the options, Claude's recommendation apart from
 them as a judgment, the strongest case against it, and the owner's decision
-once made. **What changed in my understanding** lists, on a revision, what
+once made. Each decision also says three things the build checks. How
+readily the recommended choice can be undone once carried out
+(`reversible`): □ reversible, ◧ costly to reverse, or ■ irreversible. The
+decisions it depends on (`depends`), so the navigator and the queue show
+them in order. And the claims and assumptions it rests on (`grounds`), each
+linked from the decision and linking back to it, so a reader goes from a
+decision to its grounds and from an assumption to every decision on it. The
+build fails on an id that names nothing on the page, on a dependency cycle,
+and on a decision without `reversible`. Where the decision's own text does
+not settle its reversibility, the value rests on an assumed claim among its
+grounds, for the owner to confirm. **What changed in my understanding** lists, on a revision, what
 Claude understood before, what it understands now, and what changed it.
 
 **A sketchy diagram means proposed.** Structure drawn with a hand-drawn line

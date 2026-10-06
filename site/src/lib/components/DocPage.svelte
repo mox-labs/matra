@@ -6,6 +6,7 @@
 	import type { Doc, Segment } from '$lib/types';
 	import Body from './Body.svelte';
 	import Giscus from './Giscus.svelte';
+	import RecordNav from './RecordNav.svelte';
 	import Toc from './Toc.svelte';
 
 	type GiscusProps = { repo: string; repoId: string; categoryId: string };
@@ -96,8 +97,10 @@
 				<h1 id={doc.titleId || undefined}>{@html doc.titleHtml}</h1>
 				{#if doc.record}
 					<!-- Only a design record says where it stands; a product page
-					     describes what ships and carries no status. -->
-					<p class="record-line" data-pagefind-ignore>
+					     describes what ships and carries no status. On a proposal
+					     or a plan the frame says it on screen, so this line is
+					     for print, where the frame is not. -->
+					<p class="record-line" class:framed={doc.record.frame} data-pagefind-ignore>
 						{#if doc.record.kind === 'index'}
 							design records: the process, every proposal and every plan
 						{:else}
@@ -109,7 +112,14 @@
 			</header>
 		{/if}
 
-		{#if doc.toc.length > 1}
+		{#if doc.record?.frame}
+			<!-- On a phone, a record's navigator inline, where a page's contents
+			     would be; the sidebar holds it on a desktop. -->
+			<details class="toc-inline record-nav-inline" data-print="hide" data-pagefind-ignore>
+				<summary>on this record: read, decide, confirm</summary>
+				<RecordNav frame={doc.record.frame} variant="inline" />
+			</details>
+		{:else if doc.toc.length > 1}
 			<details class="toc-inline" data-print="hide" data-pagefind-ignore>
 				<summary>on this page</summary>
 				<Toc toc={doc.toc} />
@@ -303,6 +313,12 @@
 		margin: var(--space-1) 0 0;
 		font: var(--type-sm) / 1.6 var(--font-mono);
 		color: var(--text-muted);
+	}
+
+	@media screen {
+		.record-line.framed {
+			display: none;
+		}
 	}
 
 	.record-status {

@@ -9,12 +9,13 @@ import { realpathSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { error } from '@sveltejs/kit';
 import { base } from '$app/paths';
-import { editUrl } from '$lib/site';
-import type { Crumb, Doc, FigureFile, NavItem, NavPart, PageMeasures } from '$lib/types';
+import { ANATOMY } from '$lib/record-vocabulary';
+import { editUrl, REPO_URL } from '$lib/site';
+import type { Crumb, Doc, FigureFile, NavItem, NavPart, PageMeasures, TocEntry } from '$lib/types';
 import { flatten, parseSummary } from './summary';
 import { render } from './markdown/render';
 import { exampleMarkdown, examples } from './examples';
-import { blueprintSources, blueprintsPart, recordCards, records } from './blueprints';
+import { blueprintSources, blueprintsPart, recordCards, records, type Record_ } from './blueprints';
 import { labPart, labSources } from './lab';
 
 const SOURCES = import.meta.glob('/content/**/*.md', {
@@ -187,6 +188,42 @@ function crumbsOf(target: NavItem): Crumb[] {
 	return [];
 }
 
+/**
+ * A record's frame, or on the index the tally of what awaits the owner: both
+ * from what the build parsed (the header and the components, through
+ * recordCards), never from the Markdown body.
+ */
+function frameOf(meta: Record_, toc: TocEntry[]): Pick<NonNullable<Doc['record']>, 'frame' | 'awaiting'> {
+	if (meta.kind === 'index') {
+		const proposals = recordCards.filter((c) => c.id.startsWith('EPR-'));
+		const open = proposals.map((c) => c.decisions.filter((d) => d.state === 'open').length);
+		return {
+			awaiting: {
+				open: open.reduce((a, b) => a + b, 0),
+				proposals: open.filter((n) => n > 0).length,
+				assumptions: proposals.reduce((a, c) => a + c.assumptions.length, 0),
+				href: '#awaiting-you'
+			}
+		};
+	}
+	const card = recordCards.find((c) => c.id === meta.id);
+	if (!card) throw new Error(`${meta.file}: no card for ${meta.id}`);
+	return {
+		frame: {
+			kind: meta.kind,
+			id: card.id,
+			title: card.title,
+			status: card.status,
+			pin: card.readAt ? { sha: card.readAt, href: `${REPO_URL}/tree/${card.readAt}` } : null,
+			pr: card.pr,
+			tracking: card.tracking,
+			decisions: card.decisions,
+			assumptions: card.assumptions,
+			sections: toc.filter((t) => t.depth === 2).map((t) => ({ id: t.id, text: t.text, role: ANATOMY[t.text] ?? null }))
+		}
+	};
+}
+
 export async function loadDoc(route: string): Promise<Doc> {
 	const chain = [order, recordOrder, labOrder].find((c) => c.some((o) => o.item.route === route)) ?? order;
 	const i = chain.findIndex((o) => o.item.route === route);
@@ -211,7 +248,7 @@ export async function loadDoc(route: string): Promise<Doc> {
 		j >= 0 && j < chain.length ? { title: chain[j].item.title, route: chain[j].item.route } : null;
 	const meta = record ? records.find((r) => r.file === item.file) : undefined;
 	return {
-		record: meta ? { kind: meta.kind, status: meta.status } : null,
+		record: meta ? { kind: meta.kind, status: meta.status, ...frameOf(meta, rendered.toc) } : null,
 		...rendered,
 		part,
 		crumbs: crumbsOf(item),

@@ -16,8 +16,11 @@
  *                claim with no evidence, a citation whose lines lack the text
  *                it names, a likelihood on an observation, a word outside the
  *                closed vocabulary, a sketch with no seed, a decision with no
- *                case against it, a part outside its component, and a
- *                commit not in this clone
+ *                case against it, a part outside its component, a decision
+ *                without `reversible` or with one outside its vocabulary, a
+ *                `depends` or `grounds` id that names nothing on the page, a
+ *                dependency cycle, a claim id used twice, and a commit not
+ *                in this clone
  *
  * Usage: bun scripts/check-legibility.ts
  */
@@ -25,7 +28,7 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fromHtml } from 'hast-util-from-html';
 import type { Element } from 'hast';
-import { renderFragment, type LegibilityContext } from '../src/lib/server/markdown/legibility';
+import { assumptionsOf, recordFacts, renderFragment, type LegibilityContext } from '../src/lib/server/markdown/legibility';
 import { all, checkPage, COMPARE, prop } from './legibility-checks';
 
 const FIXTURE = readFileSync(join(import.meta.dir, 'fixtures', 'legibility.md'), 'utf8');
@@ -33,6 +36,10 @@ const FIXTURE = readFileSync(join(import.meta.dir, 'fixtures', 'legibility.md'),
 // (scripts/check-blueprint-refs.sh) does not read it as a citation.
 const FIXTURE_ID = ['EPR', '9999'].join('-');
 const PIN = '4fcfb4adc85524243c5e392becd4f490e3e42252';
+
+// The fixture's own decisions and assumptions, read as blueprints.ts reads a
+// record's, so its card and its queue show what its components say.
+const FACTS = recordFacts(FIXTURE, 'scripts/fixtures/legibility.md');
 
 export const fixtureContext: LegibilityContext = {
 	file: 'scripts/fixtures/legibility.md',
@@ -50,8 +57,10 @@ export const fixtureContext: LegibilityContext = {
 			route: '/blueprints/proposals/9999-fixture',
 			summary: 'A fixture.',
 			readAt: PIN,
-			decisions: [{ id: 'fixture', title: 'Does the fixture render?', open: true }],
-			assumptions: 1
+			pr: { text: '#0', href: 'https://github.com/mox-labs/matra/pull/0' },
+			tracking: null,
+			decisions: FACTS.decisions,
+			assumptions: assumptionsOf(FACTS)
 		}
 	]
 };
@@ -109,8 +118,9 @@ if (import.meta.main) {
 
 	// Refusals: each planted mistake must fail, with its reason.
 	const HEAD = `# ${FIXTURE_ID}: Refusal\n\n- Pinned at: \`${PIN}\`\n- Status: proposed\n\n`;
-	const DECISION = (inner: string) =>
-		`<decision id="x" title="X">\n\n<choice key="a" title="A">\n\nA.\n\n</choice>\n\n<choice key="b" title="B">\n\nB.\n\n</choice>\n\n${inner}\n\n</decision>\n`;
+	const DECISION = (inner: string, attrs = 'id="x" title="X" reversible="yes"') =>
+		`<decision ${attrs}>\n\n<choice key="a" title="A">\n\nA.\n\n</choice>\n\n<choice key="b" title="B">\n\nB.\n\n</choice>\n\n${inner}\n\n</decision>\n`;
+	const CASE = '<recommendation choice="a">\n\nA.\n\n</recommendation>\n\n<against>\n\nNo.\n\n</against>';
 	const EXPERIMENT = (values: string) =>
 		`<experiment id="e" title="E">\n\n<hypothesis recorded="2026-10-04" commit="${PIN}">\n\nH.\n\n</hypothesis>\n\n` +
 		`<method>\n\nM.\n\n</method>\n\n<outcomes ${values} unit="F1" label="L" />\n\n<result>\n\nR.\n\n</result>\n\n` +
@@ -130,7 +140,17 @@ if (import.meta.main) {
 		['pragmatics without its silence', '<pragmatics>\n\n<ask>\n\nA.\n\n</ask>\n\n<will>\n\nW.\n\n</will>\n\n<needs>\n\nN.\n\n</needs>\n\n<wont>\n\nX.\n\n</wont>\n\n</pragmatics>\n', 'missing <silence>'],
 		['a part outside its component', '<will>\n\nW.\n\n</will>\n', 'belongs directly inside <pragmatics>'],
 		['an experiment with no runs', EXPERIMENT('values="   "'), 'lists no run'],
-		['an experiment with a run that is not a number', EXPERIMENT('values="0.8 n/a 0.7"'), '"n/a", which is not a number']
+		['an experiment with a run that is not a number', EXPERIMENT('values="0.8 n/a 0.7"'), '"n/a", which is not a number'],
+		['a decision without reversible', DECISION(CASE, 'id="x" title="X"'), 'needs reversible="..."'],
+		['a reversible outside its vocabulary', DECISION(CASE, 'id="x" title="X" reversible="maybe"'), 'reversible="maybe" is not one of'],
+		['a decision depending on no decision on the page', DECISION(CASE, 'id="x" title="X" reversible="yes" depends="nowhere"'), 'depends="nowhere" names no <decision'],
+		['a decision resting on no claim on the page', DECISION(CASE, 'id="x" title="X" reversible="yes" grounds="nowhere"'), 'grounds="nowhere" names no <claim'],
+		[
+			'decisions that depend on each other in a cycle',
+			DECISION(CASE, 'id="x" title="X" reversible="yes" depends="y"') + '\n' + DECISION(CASE, 'id="y" title="Y" reversible="yes" depends="x"'),
+			'in a cycle: x depends on y depends on x'
+		],
+		['a claim id used twice', 'A <claim id="c" basis="inferred">x</claim> and <claim id="c" basis="inferred">y</claim>.', 'is used twice on this page']
 	];
 	for (const [what, body, expect] of refusals) {
 		try {

@@ -291,12 +291,12 @@ For the owner to settle in this proposal's review. Each is a decision of its
 own.
 
 **`CorpusEntry.analysis` still carries the rejected name.**
-<claim basis="observed">The field is `analysis`, holding a `Document` [domain.rs:1338-1346][corpus-entry]</claim>.
+<claim id="corpus-entry-analysis" basis="observed">The field is `analysis`, holding a `Document` [domain.rs:1338-1346][corpus-entry]</claim>.
 RFC-0006's deferred list, extended by RFC-0010, records that the field
 should be renamed, and that the rename became a breaking change once 0.1.0
 shipped. When, and folded into what, is open.
 
-<decision id="corpus-entry-name" title="1. When is CorpusEntry.analysis renamed?">
+<decision id="corpus-entry-name" title="1. When is CorpusEntry.analysis renamed?" reversible="costly" grounds="corpus-entry-analysis">
 
 <choice key="a" title="With the next release that breaks the schema">
 
@@ -331,13 +331,13 @@ Until then every new caller learns a name the records already rejected, and each
 </decision>
 
 **`Error::Io` routes to `OSError` whatever its kind.**
-<claim basis="observed">Every `Io` variant becomes `OSError` [lib.rs:417-450][pyerr-io]</claim>.
+<claim id="io-to-oserror" basis="observed">Every `Io` variant becomes `OSError` [lib.rs:417-450][pyerr-io]</claim>.
 A missing directory arrives in Python as `OSError`, not
 `FileNotFoundError`, although the wrapped `io::ErrorKind` is `NotFound`
 ([RFC-0011](../legacy/rfcs/0011-out-of-the-box.md), unresolved questions).
 Routing on the wrapped kind would change a shipped mapping.
 
-<decision id="io-routing" title="2. Does Error::Io route on the kind it wraps?">
+<decision id="io-routing" title="2. Does Error::Io route on the kind it wraps?" reversible="costly" grounds="io-to-oserror">
 
 <choice key="a" title="Route on the wrapped kind">
 

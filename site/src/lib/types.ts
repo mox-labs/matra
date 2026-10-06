@@ -1,3 +1,5 @@
+import type { AssumptionView, DecisionView } from './record-vocabulary';
+
 /** One entry in SUMMARY.md: a page, and any pages nested under it. */
 export interface NavItem {
 	title: string;
@@ -344,5 +346,40 @@ export interface Doc {
 	prev: PageLink | null;
 	next: PageLink | null;
 	/** On a design record in blueprints/: its kind and its status, from its header. */
-	record?: { kind: 'EPR' | 'EPL' | 'index'; status: string } | null;
+	record?: {
+		kind: 'EPR' | 'EPL' | 'index';
+		status: string;
+		/** On a proposal or a plan: what its frame and navigator show. */
+		frame?: RecordFrame;
+		/** On the index: what awaits the owner across every proposal. */
+		awaiting?: Awaiting;
+	} | null;
+}
+
+/**
+ * What a record's frame shows, drawn by the layout from what the build parsed
+ * (its header and its components), never from its Markdown body.
+ */
+export interface RecordFrame {
+	kind: 'EPR' | 'EPL';
+	id: string;
+	title: string;
+	status: string;
+	/** The commit its citations were read at, and where it opens. */
+	pin: { sha: string; href: string } | null;
+	pr: { text: string; href: string } | null;
+	tracking: { text: string; href: string } | null;
+	/** Every decision, in document order. */
+	decisions: DecisionView[];
+	assumptions: AssumptionView[];
+	/** The record's sections, each with its role in the dossier anatomy. */
+	sections: { id: string; text: string; role: string | null }[];
+}
+
+/** The index's tally of what awaits the owner, and where the queue is. */
+export interface Awaiting {
+	open: number;
+	proposals: number;
+	assumptions: number;
+	href: string;
 }
