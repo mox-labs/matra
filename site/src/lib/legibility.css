@@ -583,6 +583,13 @@
 		visibility 0s linear 240ms;
 }
 
+/* The frame fits the state shown: a state that is not current takes no
+   height, so a short drawing leaves no empty band under it. */
+.prose figure.sketch[data-enhanced] .sk-state:not([data-current]) {
+	height: 0;
+	overflow: hidden;
+}
+
 .prose figure.sketch[data-enhanced] .sk-state[data-current] {
 	opacity: 1;
 	visibility: visible;
