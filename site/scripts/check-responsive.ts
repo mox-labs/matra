@@ -303,7 +303,7 @@ async function touchProposal(browser: Browser) {
  */
 async function touchRecord(browser: Browser) {
 	const page_ = 'blueprints/proposals/0006-the-0-3-0-surface.html';
-	const decision = 'decision-release-split';
+	const decision = 'decision-metric-suite';
 	const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
 	const page = await context.newPage();
 	await page.goto(`${origin}/${page_}`, { waitUntil: 'networkidle' });
