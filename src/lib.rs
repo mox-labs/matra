@@ -417,10 +417,12 @@ mod python {
     /// Routes domain::Error variants to the appropriate Python exception
     /// class, preserving variant identity across the FFI boundary.
     ///
-    /// The mapping follows pyo3 conventions: file-not-found maps to
-    /// PyFileNotFoundError so Python `try ... except FileNotFoundError`
-    /// works as expected; oversized or unsupported inputs are PyValueError;
-    /// I/O errors are PyOSError; everything else is PyRuntimeError.
+    /// The mapping follows pyo3 conventions: a missing model file
+    /// (`ModelNotFound`) maps to PyFileNotFoundError so Python
+    /// `try ... except FileNotFoundError` works as expected; oversized or
+    /// unsupported inputs are PyValueError; every `Io` error is
+    /// PyOSError whatever its kind, so a missing input path is OSError,
+    /// not FileNotFoundError; everything else is PyRuntimeError.
     struct MatraError(domain::Error);
 
     impl From<domain::Error> for MatraError {

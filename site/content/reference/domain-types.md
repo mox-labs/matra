@@ -220,7 +220,7 @@ Most methods below are walks over the `head` and `dep` columns; the two `_in` fi
 
 | Field | Type | Contents |
 |---|---|---|
-| `text` | `String` | Paragraph text as the decomposer cut it: trimmed, and for a blockquote with the `>` markers removed |
+| `text` | `String` | Paragraph text as the decomposer cut it: trimmed, for markdown with its lines rejoined by `\n` (so `\r\n` arrives as `\n`), and for a blockquote with the `>` markers removed |
 | `in_blockquote` | `bool` | Whether the paragraph came from a blockquote |
 | `sentences` | `Vec<Sentence>` | Sentences from parsing this paragraph |
 | `readability_grade` | `Option<f64>` | Flesch-Kincaid grade level |
@@ -258,7 +258,7 @@ The output of the pipeline.
 | Field | Type | Contents |
 |---|---|---|
 | `sections` | `Vec<Section>` | The section tree, which owns every paragraph, sentence, and token |
-| `vocabulary_ttr` | `Option<f64>` | Type-token ratio over lemmas |
+| `vocabulary_ttr` | `Option<f64>` | Type-token ratio over lemmas. Falls as text grows, so documents of different lengths are not comparable on it |
 | `nominalization_ratio` | `Option<f64>` | Share of nominalizing nouns |
 | `passive_ratio` | `Option<f64>` | Passive sentences over total sentences, stored by `Engine::compose` so it crosses the language boundary |
 
