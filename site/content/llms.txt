@@ -61,7 +61,7 @@
 - [EPR-0003: Distribution and provisioning](https://mox-labs.github.io/matra/blueprints/proposals/0003-distribution-and-provisioning.html): Status: proposed. matra ships as one crate on crates.io and one package on PyPI, under one name, one version and one attribution.
 - [EPR-0004: The command line, configuration and the agent skill](https://mox-labs.github.io/matra/blueprints/proposals/0004-command-line-and-configuration.html): Status: proposed. There is one `matra` command line, written in Rust as the library module `matra::cli`, whose whole surface is `cli::run(args, out, err) -> u8`.
 - [EPR-0005: Embeddings and semantic clusters](https://mox-labs.github.io/matra/blueprints/proposals/0005-embeddings-and-semantic-clusters.html): Status: proposed. matra can group a document's sentences that say the same thing in different words.
-- [EPR-0006: The 0.3.0 surface](https://mox-labs.github.io/matra/blueprints/proposals/0006-the-0-3-0-surface.html): Status: proposed. 0.3.0 settles matra's public surface once, as one design, before it grows a fourth language.
+- [EPR-0006: The 0.3.0 surface](https://mox-labs.github.io/matra/blueprints/proposals/0006-the-0-3-0-surface.html): Status: proposed. 0.3.0 settles matra's public surface once, as one design, before a TypeScript surface copies it.
 
 ## Lab
 
