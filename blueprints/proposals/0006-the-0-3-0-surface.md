@@ -433,7 +433,7 @@ A rename removes the old name and adds a new one [api-design-systems:c24], which
 | CLI envelope | `format_version`, moving with the schema major |
 | Skill text (`matra --skill`) | versioned with the binary; a changed incantation is listed in the CHANGELOG, and the skill changes in the same pull request as the surface it describes |
 
-<claim id="semver-pr-only" basis="observed">`cargo-semver-checks` runs on pull requests only [ci.yml:318](../../.github/workflows/ci.yml#L318 "if: github.event_name == 'pull_request'")</claim>. It is pinned and also runs on pushes to `main`, so the Rust promise above has a mechanical check.
+<claim id="semver-pr-only" basis="observed">`cargo-semver-checks` runs on pull requests only [ci.yml:318](../../.github/workflows/ci.yml#L318 "if: github.event_name == 'pull_request'")</claim>. Under this proposal it will be pinned and will also run on pushes to `main`, so the Rust promise above will have a mechanical check.
 
 ### Agents
 
