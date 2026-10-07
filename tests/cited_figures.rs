@@ -54,7 +54,7 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/reference/errors.md",
-            "24373:3afb5d0ccd429f10",
+            "24446:8c34691601eec3e6",
             "the RAKE and YAKE figures in site/content/guides/cli.md: 459 phrases, \
              the one first at 9.000, 1.190, 210 at the floor, and YAKE's 75.556",
         ),

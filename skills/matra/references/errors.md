@@ -14,7 +14,7 @@ Seven kinds exist. The kind string is the stable key a consumer branches on; the
 | `model_not_found` | `model not found: {path}` | `FileNotFoundError` | A model file does not exist at the path given |
 | `model_invalid` | `invalid model: {s}` | `RuntimeError` | Bytes that arrived could not be verified against the pin, or could not be loaded |
 | `parse_failed` | `parse failed: {s}` | `RuntimeError` | The parser failed on the input, panicked, or produced an unusable token id |
-| `input_too_large` | `{what} input too large: {actual} > limit {limit}` | `ValueError` | A size gate rejected the input. `what` names the gate |
+| `input_too_large` | `{what} input too large: {actual} > limit {limit}`, or `input too large: ...` for the main gate, whose `what` is `"input"` | `ValueError` | A size gate rejected the input. `what` names the gate |
 | `unsupported_format` | `unsupported format: {format}` | `ValueError` | The document's format has no decomposer in this build |
 | `invalid_input` | `invalid input: {s}` | `ValueError` | A caller violated a documented contract |
 | `io` | `io error: {e}` | `OSError` | A filesystem or network operation failed |
