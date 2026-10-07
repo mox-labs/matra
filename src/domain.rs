@@ -1032,7 +1032,9 @@ impl Sentence {
 #[non_exhaustive]
 pub struct Paragraph {
     /// Paragraph text as the decomposer cut it from the input: trimmed at
-    /// both ends, and for a blockquote with the `>` markers removed.
+    /// both ends, for markdown with its lines rejoined by `\n` (so `\r\n`
+    /// line endings arrive as `\n`), and for a blockquote with the `>`
+    /// markers removed. Not a slice of the input.
     pub text: String,
     /// Whether the paragraph is inside a blockquote (never parsed, never
     /// measured).
@@ -1123,6 +1125,10 @@ pub struct Document {
     pub sections: Vec<Section>,
     /// Document-level vocabulary type-token ratio, if `Engine::compose`
     /// ran and the document holds a non-punctuation token.
+    ///
+    /// A raw ratio with no length correction: it falls as a document
+    /// grows, because repetition accumulates, so two documents of
+    /// different lengths are not comparable on it.
     pub vocabulary_ttr: Option<f64>,
     /// Document-level nominalization ratio, if `Engine::compose` ran and
     /// the document holds a non-punctuation token.
@@ -1199,7 +1205,9 @@ impl Document {
     /// This is the computation behind the [`Document::passive_ratio`]
     /// field, which the metric suite fills so the value crosses FFI
     /// (RFC-0008). The method stays for Rust callers who want the
-    /// ratio on an unmeasured document.
+    /// ratio on an unmeasured document. The two disagree on a document
+    /// with no sentences: this returns `0.0` and the field stays
+    /// `None`, which means not computed rather than a computed zero.
     pub fn passive_ratio(&self) -> f64 {
         let total = self.total_sentences();
         if total == 0 {

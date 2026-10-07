@@ -47,7 +47,7 @@ $ matra analyze draft.txt --json
 | Field | Type | Holds |
 |---|---|---|
 | `sections` | array | The section tree, the only place paragraphs live |
-| `vocabulary_ttr` | float or null | Distinct lemmas over total lemmas |
+| `vocabulary_ttr` | float or null | Distinct lemmas over total lemmas. Falls as text grows, so documents of different lengths are not comparable on it |
 | `nominalization_ratio` | float or null | Suffix-matched nouns over total lemmas |
 | `passive_ratio` | float or null | Sentences with a passive relation over all sentences |
 
@@ -65,7 +65,7 @@ The three floats are null until the metrics run, which `analyze` always does, an
 
 | Field | Type | Holds |
 |---|---|---|
-| `text` | string | The paragraph's text as cut from the source: trimmed, with a blockquote's `>` markers removed |
+| `text` | string | The paragraph's text as cut from the source: trimmed, for markdown with its lines rejoined by `\n` (so `\r\n` arrives as `\n`), and with a blockquote's `>` markers removed |
 | `in_blockquote` | bool | True when the paragraph sits in a blockquote. Those are never parsed and never measured, so `sentences` is empty and all three slots stay null |
 | `sentences` | array | Sentences parsed from this paragraph alone |
 | `readability_grade` | float or null | Null unless the paragraph has more than 10 non-punctuation tokens |

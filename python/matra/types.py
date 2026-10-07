@@ -193,6 +193,10 @@ class Document(TypedDict):
     methods on the Rust `Document` (`mean_sentence_length`,
     `total_words`, etc.) do not cross; consumers compute them from
     `sections` if needed.
+
+    `vocabulary_ttr` is a raw type-token ratio with no length
+    correction. It falls as a document grows, so documents of different
+    lengths are not comparable on it.
     """
 
     sections: list[Section]

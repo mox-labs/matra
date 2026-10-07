@@ -155,7 +155,7 @@ Every metric slot is an `Option`, and each metric has its own threshold. A `None
 
 "Words" here means `Paragraph::word_count()`, the non-punctuation token count summed over the paragraph's attached sentences. A paragraph whose `sentences` vector is empty has a word count of zero and therefore no per-paragraph metrics at all.
 
-Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`. They remain in the section tree with `in_blockquote = true` and their `text` intact.
+Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`. They remain in the section tree with `in_blockquote = true` and their `text` kept, less its `>` markers.
 
 ## What markdown decomposition drops
 
