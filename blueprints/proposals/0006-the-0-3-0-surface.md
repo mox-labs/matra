@@ -203,40 +203,40 @@ How the method is chosen, if at all, is decision 1. Every result records the met
 
 ```text
 width 400
-state today shipped "today: three adapters reach three surfaces, and two of them decide"
-box rust "Rust caller" 4 8 110 30
-box py "Python in lib.rs\nmarkdown as plain" 4 54 110 34
-box cli "Command line\nown pipeline rule" 4 104 110 34
-box engine "Engine methods" 130 8 120 30
-box extract "extraction::*\nalgorithm names" 130 54 120 34
-box clusters "embed_and_cluster" 130 104 120 30
-quiet box source "Source" 290 4 106 26
-quiet box decomposer "Decomposer" 290 38 106 26
-quiet box nlp "NlpProvider\nCoNLL-U strings" 290 72 106 34
-quiet box embedder "Embedder" 290 114 106 26
+state today shipped "three adapters reach three surfaces, and two of them decide"
+box rust "Rust caller" 2 10 118 30
+box py "Python (lib.rs):\nmarkdown as plain" 2 56 118 34
+box cli "Command line:\nown pipeline rule" 2 106 118 34
+box clusters "embed_and_cluster" 140 10 120 30
+box engine "Engine methods" 140 58 120 30
+box extract "extraction::*\nalgorithm names" 140 104 120 34
+quiet box embedder "Embedder" 286 4 112 26
+quiet box source "Source" 286 40 112 26
+quiet box decomposer "Decomposer" 286 76 112 26
+quiet box nlp "NlpProvider\nCoNLL-U strings" 286 112 112 34
+edge rust clusters
 edge rust engine
 edge rust extract
-edge rust clusters
+edge py clusters
 edge py engine
 edge py extract
-edge py clusters
 edge cli engine
 edge cli extract
+edge clusters embedder
 edge engine source
 edge engine decomposer
 edge engine nlp
-edge clusters embedder
-state proposed proposed "proposed: one application port; adapters translate; TypeScript reads the schema"
-box rust "Rust API" 4 8 110 30
-box py "Python module\nrule 7, own file" 4 50 110 34
-box cli "Command line" 4 96 110 30
-quiet box ts "TypeScript 0.4\ntypes, viewer" 4 150 110 34
-hex port "Application port\nanalyze annotate\nmeasure summarize\nkeyphrases clusters\nfeed" 124 4 156 120
-box schema "Schema 2.x\nJSON Schema" 140 146 124 34
-quiet box source "Source" 290 4 106 26
-box decomposer "Decomposer\nblocks, spans" 290 38 106 34
-box parser "Parser\nidentity, spans" 290 80 106 34
-quiet box embedder "Embedder" 290 122 106 26
+state proposed proposed "one application port; adapters translate; TypeScript reads the schema"
+box rust "Rust API" 2 8 114 28
+box py "Python module\nrule 7, own file" 2 46 114 34
+box cli "Command line" 2 90 114 28
+quiet box ts "TypeScript 0.4\ntypes, viewer" 2 140 114 34
+hex port "Application port\nanalyze annotate\nmeasure summarize\nkeyphrases\nclusters feed" 128 4 146 120
+box schema "Schema 2.x\nJSON Schema" 146 140 110 34
+quiet box source "Source" 290 4 108 26
+box decomposer "Decomposer\nblocks, spans" 290 38 108 34
+box parser "Parser\nidentity, spans" 290 80 108 34
+quiet box embedder "Embedder" 290 122 108 26
 edge rust port
 edge py port
 edge cli port
@@ -350,18 +350,18 @@ CorpusEntry      { path, document }
 
 ```text
 width 400
-state today shipped "today: one integer on the CLI envelope; the Python dict and the result carry none"
+state today shipped "one integer on the CLI envelope; the Python dict and the result carry none"
 box env "CLI envelope\nformat_version 1" 4 10 120 34
 box result "result: Document\nno version" 150 10 120 34
 box py "Python dict\nno version" 150 64 120 34
 edge env result
-state proposed proposed "proposed: one version in provenance; the envelope moves with its major"
+state proposed proposed "one version in provenance; the envelope moves with its major"
 box env "CLI envelope\nformat_version 2" 4 10 112 34
 box py "Python dict" 4 112 112 30
 box doc "Document\nprovenance.schema\n2.0" 140 54 120 44
-box js "JSON Schema\nper major" 286 6 110 34
-box minor "minor: optional\nfields added" 286 58 110 34
-box major "major: removed,\nrenamed, retyped,\nmeaning changed" 286 106 110 44
+box js "JSON Schema\nper major" 280 6 118 34
+box minor "minor: optional\nfields added" 280 58 118 34
+box major "major: removed,\nrenamed, retyped,\nmeaning changed" 280 106 118 44
 box consumer "Consumer: ignore\nunknown fields, open\nsets, reject new major" 120 162 160 44
 edge env doc
 edge py doc
@@ -550,7 +550,7 @@ No streaming consumer is named yet, and the canon would freeze an interface only
 
 ```text
 width 400
-state feed proposed "proposed (decision 2a): chunks in, settled paragraphs out, the whole document at finish"
+state feed proposed "chunks in, settled paragraphs out, the whole document at finish (decision 2a)"
 box c1 "chunk 1" 4 4 90 26
 box c2 "chunk 2" 110 4 90 26
 box c3 "chunk 3" 216 4 90 26

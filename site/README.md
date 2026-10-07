@@ -941,9 +941,9 @@ needs a legend, and Wood et al. that readers do not take it to mean "draft"
 unaided. Labels stay crisp; only strokes are sketched. Never use it for
 numbers or anything read by size (Wood: greater error in size estimates),
 only for diagrams of structure. With two states and a script, the states
-share one frame and a toggle above it swaps them, one eased stage of 240ms
-reversible mid-flight, jumping under reduced motion (Heer and
-Robertson 2007); without a script the states stand one after the other.
+share one frame, sized to the state shown, and a toggle above it swaps
+them, one eased stage of 240ms reversible mid-flight, jumping under
+reduced motion (Heer and Robertson 2007); without a script the states stand one after the other.
 The drawing is 400 units wide, so its 11-unit labels stay legible at 390px
 without scrolling.
 
