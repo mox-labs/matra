@@ -169,7 +169,7 @@ These are the strings `Display` produces, which are also the strings Python's `s
 | `ModelNotFound(path)` | `model not found: {path}` | `model_not_found` |
 | `ModelInvalid(s)` | `invalid model: {s}` | `model_invalid` |
 | `ParseFailed(s)` | `parse failed: {s}` | `parse_failed` |
-| `InputTooLarge { limit, actual, what }` | `{what} input too large: {actual} > limit {limit}` | `input_too_large` |
+| `InputTooLarge { limit, actual, what }` | `{what} input too large: {actual} > limit {limit}`, or `input too large: {actual} > limit {limit}` when `what` is `"input"` | `input_too_large` |
 | `UnsupportedFormat(format)` | `unsupported format: {format:?}` | `unsupported_format` |
 | `InvalidInput(s)` | `invalid input: {s}` | `invalid_input` |
 | `Io(e)` | `io error: {e}` | `io` |

@@ -148,6 +148,20 @@ pub struct SemanticEdge {
 // Errors
 // ---------------------------------------------------------------------------
 
+/// What an [`Error::InputTooLarge`] message says was too large: the bare
+/// word `input` for the main gate, whose label is `"input"`, and the
+/// label as a qualifier (`tfidf input`) for every other gate.
+struct GateSubject<'a>(&'a str);
+
+impl std::fmt::Display for GateSubject<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            "input" => f.write_str("input"),
+            label => write!(f, "{label} input"),
+        }
+    }
+}
+
 /// All errors matra can produce. Matchable, not opaque.
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
@@ -163,7 +177,11 @@ pub enum Error {
     ParseFailed(String),
     /// Input exceeded a bounded limit (e.g. too many sentences for
     /// an O(n^2) algorithm like TextRank).
-    #[error("{what} input too large: {actual} > limit {limit}")]
+    ///
+    /// The message reads `{what} input too large: {actual} > limit
+    /// {limit}`, except for the main gate: its label is `"input"`
+    /// already, so it reads `input too large: {actual} > limit {limit}`.
+    #[error("{} too large: {actual} > limit {limit}", GateSubject(.what))]
     InputTooLarge {
         /// The size cap that was exceeded.
         limit: usize,
@@ -2767,6 +2785,30 @@ mod tests {
             ],
         );
         assert_eq!(sent.tree_depth(), usize::MAX);
+    }
+
+    /// The main gate's label is `"input"`, and the message once read
+    /// "input input too large" because the format put the label in
+    /// front of the word it already is. Every other gate keeps its label
+    /// as a qualifier.
+    #[test]
+    fn input_too_large_names_the_main_gate_once() {
+        let main_gate = Error::InputTooLarge {
+            limit: 8,
+            actual: 9,
+            what: "input",
+        };
+        assert_eq!(main_gate.to_string(), "input too large: 9 > limit 8");
+
+        let extractor_gate = Error::InputTooLarge {
+            limit: 2000,
+            actual: 2001,
+            what: "tfidf",
+        };
+        assert_eq!(
+            extractor_gate.to_string(),
+            "tfidf input too large: 2001 > limit 2000"
+        );
     }
 
     /// The kind vocabulary is a contract every crust reads, so it is
