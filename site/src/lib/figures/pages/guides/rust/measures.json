@@ -281,11 +281,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.6,
-      "readability_grade": 8.49,
+      "lexical_density": 0.5909,
+      "readability_grade": 8.0982,
       "sentences": 3,
-      "text": "Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`. They remain in the section tree with `in_blockquote = true` and their `text` intact.",
-      "words": 39
+      "text": "Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`. They remain in the section tree with `in_blockquote = true` and their `text` kept, less its `>` markers.",
+      "words": 43
     },
     {
       "compression_ratio": null,

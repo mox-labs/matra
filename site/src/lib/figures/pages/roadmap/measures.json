@@ -414,13 +414,13 @@
       "words": 91
     },
     {
-      "compression_ratio": 0.5859,
+      "compression_ratio": 0.5781,
       "in_blockquote": false,
-      "lexical_density": 0.5258,
-      "readability_grade": 8.6855,
-      "sentences": 5,
-      "text": "**One of them is a defect, not an addition.** `vocabulary_ttr` is a raw type-token ratio and TTR falls mechanically as text grows. Measured on this repository: README scores 0.690 against `architecture/design.md` at 0.227, but README has 35 sentences and the other has 266, so most of that gap is length rather than voice. As a cross-document feature it is currently unsound, which matters most for `analyze_directory`, whose whole purpose invites the comparison. Either a length-normalized measure lands beside it (MTLD, MATTR, or standardized TTR) or the limitation is documented on the type. Doing neither leaves a trap.",
-      "words": 100
+      "lexical_density": 0.4851,
+      "readability_grade": 10.013,
+      "sentences": 4,
+      "text": "**One of them is a defect, not an addition.** `vocabulary_ttr` is a raw type-token ratio and TTR falls mechanically as text grows. Measured on this repository: README scores 0.690 against `architecture/design.md` at 0.227, but README has 35 sentences and the other has 266, so most of that gap is length rather than voice. As a cross-document feature it is unsound, which matters most when a directory is analyzed (`Engine::analyze` over `Ingest::path`, or `analyze_path` in Python), because the result invites the comparison. The limitation is documented on the field; what remains is a length-normalized measure beside it (MTLD, MATTR, or standardized TTR).",
+      "words": 105
     },
     {
       "compression_ratio": 0.559,
@@ -639,13 +639,13 @@
       "words": 35
     },
     {
-      "compression_ratio": 0.592,
+      "compression_ratio": 0.5469,
       "in_blockquote": false,
-      "lexical_density": 0.5246,
-      "readability_grade": 8.6865,
-      "sentences": 5,
-      "text": "**Why it is worth doing.** The information is already present and already reconstructable; it is the assembly that is missing. Callers building a grounding chain need it as one thing, and `Sentence.text` and `Paragraph.text` being verbatim by design means the chain from token to source is unambiguous once the anchor is reachable. That guarantee is currently undocumented, which is tracked separately.",
-      "words": 61
+      "lexical_density": 0.5727,
+      "readability_grade": 8.0567,
+      "sentences": 8,
+      "text": "**Why it is worth doing.** The information is already present and already reconstructable; it is the assembly that is missing. Callers building a grounding chain need it as one thing. Neither `Sentence.text` nor `Paragraph.text` is verbatim. The UDPipe adapter rebuilds sentence text from the token forms, joined by a space unless a token carries `SpaceAfter=No`. Both decomposers trim each paragraph, and the markdown one also rejoins a paragraph's lines with `\\n`, so `\\r\\n` arrives as `\\n`, and strips a blockquote's `>` markers. A chain from token to source therefore needs offsets into the input, which matra does not report today; finding these strings in the source is not a substitute.",
+      "words": 114
     },
     {
       "compression_ratio": null,
