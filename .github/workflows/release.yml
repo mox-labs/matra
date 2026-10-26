@@ -107,7 +107,7 @@ jobs:
         with:
           toolchain: stable
 
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2
 
       # The typed version is a confirmation, not a parameter. Everything
       # downstream reads Cargo.toml; this asserts the human meant the
@@ -291,7 +291,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067  # master
         with:
           toolchain: stable
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2
       - name: cargo package
         run: cargo package --locked
       - name: The packaged crate is the version being released
@@ -303,7 +303,7 @@ jobs:
           [ "$name" = "matra-$RELEASE_VERSION.crate" ] || {
             echo "::error::packaged $name, expected matra-$RELEASE_VERSION.crate"; exit 1; }
           sha256sum "target/package/$name"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: crate
           path: target/package/*.crate
@@ -354,7 +354,7 @@ jobs:
         with:
           ref: ${{ env.RELEASE_REF }}
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: "3.12"
       # RUSTUP_TOOLCHAIN is not optional. rust-toolchain.toml asks for
@@ -426,7 +426,7 @@ jobs:
       # wheel was built against, so this proves the abi3 wheel installs
       # without a source build on a later CPython. --only-binary :all:
       # makes pip fail rather than quietly fall back to building.
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         if: matrix.platform.target == ''
         with:
           python-version: "3.13"
@@ -439,7 +439,7 @@ jobs:
           # plus --no-index is enough on its own.
           /tmp/smoke/bin/pip install --no-index --only-binary :all: --find-links dist matra
           /tmp/smoke/bin/python -c "import sys, matra; assert sys.version_info[:2] == (3, 13), sys.version_info; print(matra.Matra)"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: wheels-${{ matrix.platform.name }}
           path: dist
@@ -459,7 +459,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067  # master
         with:
           toolchain: stable
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: "3.12"
       - name: Build sdist
@@ -467,7 +467,7 @@ jobs:
           set -euo pipefail
           python -m pip install maturin==1.14.1
           maturin sdist --out dist
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: wheels-sdist
           path: dist
@@ -496,11 +496,11 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: crate
           path: crate
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           pattern: wheels-*
           merge-multiple: true
@@ -536,8 +536,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067  # master
         with:
           toolchain: stable
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: crate
           # Outside the checkout. Inside it, the downloaded file is an
@@ -568,7 +568,7 @@ jobs:
             echo "::error::the crate packaged in this job differs from the attested artifact"; exit 1; }
       - name: Mint a crates.io scoped token via Trusted Publishing (OIDC)
         id: auth
-        uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18  # v1
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9  # v1
       - name: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
@@ -584,7 +584,7 @@ jobs:
       contents: read
       id-token: write   # Trusted Publishing OIDC, and PEP 740 attestations
     steps:
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           pattern: wheels-*
           merge-multiple: true
@@ -615,7 +615,7 @@ jobs:
       # now, and the action emits PEP 740 attestations under Trusted
       # Publishing, which twine did not. That was what the hand-rolled
       # exchange cost.
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # v1.14.3
         with:
           packages-dir: dist
           # A skip_tag retry rebuilds and re-reaches this step after PyPI
@@ -639,11 +639,11 @@ jobs:
         with:
           ref: ${{ env.RELEASE_REF }}
           persist-credentials: false
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: crate
           path: artifacts
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           pattern: wheels-*
           merge-multiple: true
@@ -694,7 +694,7 @@ jobs:
       # was version-locked rather than abi3 fails here rather than on a
       # user's machine. --only-binary :all: makes pip fail instead of
       # quietly building from the sdist, which would hide exactly that.
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: "3.13"
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067  # master
