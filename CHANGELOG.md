@@ -97,6 +97,7 @@ those by hand.
 
 ### Security
 
+- The TLS stack the model downloads use moves past published advisories: `rustls` 0.23.45 to 0.23.46, `rustls-webpki` 0.103.15 to 0.103.16, and `webpki-roots` 1.0.6 to 1.0.11, which drops the distrusted emSign root (RUSTSEC-2026-0381). `cargo deny check` failed on every pull request until they moved. Only `Cargo.lock` changes; the published crate's ranges already admit the fixed versions.
 - `docs.yml` granted `pages: write` and `id-token: write` to every job. The workflow level is now `contents: read`, and only the deploy job holds the two write scopes.
 
 ## [0.2.1] - 2026-09-21
