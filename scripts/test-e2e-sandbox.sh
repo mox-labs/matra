@@ -204,7 +204,7 @@ case_cdpath() {
         fail "$name" "exited $status"
     elif [ "$homes" -ne 1 ]; then
         fail "$name" "expected exactly one exported HOME, found $homes"
-    elif ! printf '%s\n' "$out" | grep -q "^export HOME=.*$WORK/cdpath/cwd/sbx/home\$"; then
+    elif ! grep -q "^export HOME=.*$WORK/cdpath/cwd/sbx/home\$" <<<"$out"; then
         fail "$name" "HOME does not name the directory that was asked for:" \
             "$(printf '%s\n' "$out" | grep '^export HOME=')"
     elif [ ! -f "$WORK/cdpath/cwd/sbx/home/.e2e-sandbox" ]; then
@@ -259,7 +259,7 @@ case_home_unset() {
     status=$?
     if [ "$status" -eq 0 ]; then
         fail "$name" "exited 0"
-    elif ! printf '%s\n' "$err" | grep -q 'HOME is unset'; then
+    elif ! grep -q 'HOME is unset' <<<"$err"; then
         fail "$name" "stderr did not name HOME: $err"
     else
         pass "$name"
@@ -276,9 +276,9 @@ case_new_happy_path() {
         fail "$name" "exited $status"
     elif [ ! -f "$d/home/.e2e-sandbox" ]; then
         fail "$name" "no marker at $d/home/.e2e-sandbox"
-    elif ! printf '%s\n' "$out" | grep -q '^export XDG_CACHE_HOME='; then
+    elif ! grep -q '^export XDG_CACHE_HOME=' <<<"$out"; then
         fail "$name" "XDG_CACHE_HOME is not exported"
-    elif ! printf '%s\n' "$out" | grep -q '^export E2E_SANDBOX_ROOT='; then
+    elif ! grep -q '^export E2E_SANDBOX_ROOT=' <<<"$out"; then
         fail "$name" "E2E_SANDBOX_ROOT is not exported"
     else
         pass "$name"
@@ -534,9 +534,9 @@ case_warns_on_symlinked_target_root() {
     ln -s "$r/dot/matra" "$r/home/.config/matra"
     local out err status
     snapshot_streams "$r" out err status
-    if ! printf '%s\n' "$err" | grep -qF "WARNING: $r/home/.config/matra is a symlink"; then
+    if ! grep -qF "WARNING: $r/home/.config/matra is a symlink" <<<"$err"; then
         fail "$name" "no warning naming the symlinked root on stderr: $err"
-    elif printf '%s\n' "$out" | grep -q 'WARNING'; then
+    elif grep -q 'WARNING' <<<"$out"; then
         fail "$name" "the warning reached the stdout that gets diffed"
     elif [ "$status" -ne 0 ]; then
         fail "$name" "the warning changed the exit status to $status"
@@ -554,9 +554,9 @@ case_warns_on_symlink_inside_target() {
     ln -s "$r/vol/models" "$r/data/models"
     local out err status
     snapshot_streams "$r" out err status
-    if ! printf '%s\n' "$err" | grep -qF "WARNING: $r/data contains a symlink"; then
+    if ! grep -qF "WARNING: $r/data contains a symlink" <<<"$err"; then
         fail "$name" "no warning naming the target on stderr: $err"
-    elif printf '%s\n' "$out" | grep -q 'WARNING'; then
+    elif grep -q 'WARNING' <<<"$out"; then
         fail "$name" "the warning reached the stdout that gets diffed"
     elif [ "$status" -ne 0 ]; then
         fail "$name" "the warning changed the exit status to $status"
@@ -571,7 +571,7 @@ case_no_warning_without_symlinks() {
     make_fixture "$r"
     local out err status
     snapshot_streams "$r" out err status
-    if printf '%s\n%s\n' "$out" "$err" | grep -q 'WARNING'; then
+    if grep -q 'WARNING' <<<"$out"$'\n'"$err"; then
         fail "$name" "a warning with no symlink anywhere teaches operators to ignore it: $err"
     elif [ "$status" -ne 0 ]; then
         fail "$name" "exited $status"
@@ -588,7 +588,7 @@ case_dangling_symlink_target() {
     ln -s "$r/nowhere" "$r/home/.matra"
     local out
     out="$(fixture_snapshot "$r" 2>/dev/null)"
-    if printf '%s\n' "$out" | grep -q "^$r/home/.matra ABSENT\$"; then
+    if grep -q "^$r/home/.matra ABSENT\$" <<<"$out"; then
         fail "$name" "a link that exists was called ABSENT"
     else
         pass "$name"
@@ -620,7 +620,7 @@ case_unreadable_target() {
     if [ "$before" = "$after" ]; then
         fail "$name" "the pair is identical: the targets after the unreadable" \
             "one were never examined"
-    elif ! printf '%s\n' "$after" | grep -q 'UNREADABLE$'; then
+    elif ! grep -q 'UNREADABLE$' <<<"$after"; then
         fail "$name" "the failure is not in the artifact that gets diffed"
     elif [ "$status" -eq 0 ]; then
         fail "$name" "exited 0 with an unreadable target"

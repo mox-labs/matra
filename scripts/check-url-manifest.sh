@@ -111,8 +111,12 @@ case "$mode" in
     done
     unlisted=()
     if [ "$mode" = "--build" ]; then
+        # A here-string, not a pipe: under pipefail, grep -q closing the
+        # pipe on its first match can SIGPIPE printf and fail the pipeline,
+        # reporting a listed file as unlisted.
+        listed=$(printf '%s\n' "${paths[@]}")
         while IFS= read -r f; do
-            printf '%s\n' "${paths[@]}" | grep -Fxq -- "$f" || unlisted+=("$f")
+            grep -Fxq -- "$f" <<<"$listed" || unlisted+=("$f")
         done < <(cd "$target" && find . \( -name '*.html' -o -name '*.md' -o -name '*.txt' -o -name '*.json' \) \
             -not -path './_app/*' -not -path './pagefind/*' -not -name '__data.json' | sed 's#^\./##' | LC_ALL=C sort)
     fi
