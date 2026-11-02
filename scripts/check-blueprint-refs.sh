@@ -107,7 +107,7 @@ while IFS= read -r id; do
     if compgen -G "$(dir_of "$kind")/$num-*.md" >/dev/null; then
         continue
     fi
-    if printf '%s\n' "$unwritten" | grep -Fxq -- "$id"; then
+    if grep -Fxq -- "$id" <<<"$unwritten"; then
         continue
     fi
     where=$(rg -lw --fixed-strings -e "$id" -- "${tracked[@]}" | head -5 | tr '\n' ' ') || true

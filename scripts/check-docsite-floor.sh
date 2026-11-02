@@ -317,13 +317,13 @@ while IFS= read -r name; do
     [ -z "$name" ] && continue
     checked=$((checked + 1))
     # On any allowlist? skip.
-    if printf '%s\n' "$external_allowlist" | grep -Fxq -- "$name"; then
+    if grep -Fxq -- "$name" <<<"$external_allowlist"; then
         continue
     fi
-    if printf '%s\n' "$ud_pos_allowlist" | grep -Fxq -- "$name"; then
+    if grep -Fxq -- "$name" <<<"$ud_pos_allowlist"; then
         continue
     fi
-    if printf '%s\n' "$planned_allowlist" | grep -Fxq -- "$name"; then
+    if grep -Fxq -- "$name" <<<"$planned_allowlist"; then
         continue
     fi
     # Word-boundary grep across src/. If the name appears anywhere as a word,
