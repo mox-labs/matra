@@ -84,7 +84,7 @@ Seven caps guard the pipeline and the functions over its output. Each one return
 
 | `what` | Limit | Fires in |
 |---|---|---|
-| `"input"` | 8 MiB (`domain::MAX_INPUT_BYTES`) | the engine's reading stage, which is the only route from text to the parser, on the bytes handed in and on the analysed text, so every `Input` constructor and every pipeline call inherits it |
+| `"input"` | 8 MiB (`domain::limits::MAX_INPUT_BYTES`) | the engine's reading stage, which is the only route from text to the parser, on the bytes handed in and on the analysed text, so every `Input` constructor and every pipeline call inherits it |
 | `"file_source"` | 8 MiB on disk | `Input::file`, checked against file metadata before any read |
 | `"tfidf"` | 2000 sentences | `summarize`, and `summarize_with` with `SummaryMethod::TfIdf` |
 | `"textrank"` | 2000 sentences | `summarize_with` with `SummaryMethod::TextRank` |

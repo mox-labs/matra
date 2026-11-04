@@ -27,14 +27,16 @@ ACES (`.claude/skills/aces/SKILL.md`) is the **structural** discipline (adaptabi
 
 ### 1. Size caps at the entry point, not deep in the call stack
 
-`MAX_INPUT_BYTES = 8 * 1024 * 1024` is checked once, in `Engine::annotate`, the only route from text to the parser:
+Every cap and every metric minimum is a published constant in one module, `domain::limits` (`src/domain.rs`), defined once and read where it applies: `MAX_INPUT_BYTES`, `MAX_CONFIG_FILE_BYTES`, `MAX_DOWNLOAD_BYTES`, `MAX_TFIDF_SENTENCES`, `MAX_TEXTRANK_SENTENCES`, `MAX_CLUSTER_SENTENCES` (defined as TextRank's), `MAX_RAKE_TOKENS`, `MAX_YAKE_TOKENS`, `MAX_COMPRESSION_PARAGRAPH_BYTES`, `MIN_READABILITY_WORDS` and `MIN_COMPRESSION_WORDS`. It sits inside the domain so boundary rules 1 and 5 hold: `metrics/` and `extraction/` may import it. Each constant's doc carries the cost model behind its value. A new gate adds its constant there, never a local literal, and the value test in the domain tests pins it.
+
+`MAX_INPUT_BYTES` (8 MiB) is checked once, in `Engine::annotate`, the only route from text to the parser:
 
 ```rust
-fn check_input_size(text: &str) -> domain::Result<()> {
-    if text.len() > MAX_INPUT_BYTES {
+fn check_input_size(len: usize) -> domain::Result<()> {
+    if len > MAX_INPUT_BYTES {
         return Err(domain::Error::InputTooLarge {
             limit: MAX_INPUT_BYTES,
-            actual: text.len(),
+            actual: len,
             what: "input",
         });
     }
@@ -42,7 +44,7 @@ fn check_input_size(text: &str) -> domain::Result<()> {
 }
 ```
 
-Called from `Engine::annotate` before decomposition. Because annotate is the unique path to `NlpProvider::parse`, the bound is a property of the pipeline rather than a per-entry-point restatement, and equivalence law L7 pins it in tests. Source adapters (`source/file.rs::read`) check file metadata size *before* reading into memory. Extractors with quadratic-class characteristics (TextRank) check their own `MAX_SENTENCES` cap.
+Called from `Engine::annotate` before decomposition. Because annotate is the unique path to `NlpProvider::parse`, the bound is a property of the pipeline rather than a per-entry-point restatement, and equivalence law L7 pins it in tests. Source adapters (`source/file.rs::read`) check file metadata size *before* reading into memory. Extractors with quadratic-class characteristics (TextRank) check their own cap from `domain::limits` (`MAX_TEXTRANK_SENTENCES`).
 
 **Rule**: the gate lives at the unique choke point, checked before real work. Deep callers may trust the bound is already checked.
 
@@ -53,9 +55,11 @@ Called from `Engine::annotate` before decomposition. Because annotate is the uni
 | `"input"` | `Engine::annotate` in `lib.rs` |
 | `"file_source"` | `source/file.rs` before reading the file |
 | `"tfidf"`, `"textrank"`, `"rake"`, `"yake"` | Per-method caps in `extraction/` |
+| `"config_file"` | `config.rs` before reading the config file |
+| `"udpipe_download"`, `"embedding_download"` | The two provisioners, on the bytes a download returns |
 | `"clusters"` | `matra::clusters` in `lib.rs` before embedding, and the clustering in `extraction/semantic.rs` |
 
-When adding a new gate, pick a distinct `what` discriminator.
+When adding a new gate, pick a distinct `what` discriminator and put its cap in `domain::limits`; the `limit` detail of its error is that constant.
 
 ### 2. Symlink rejection
 

@@ -66,8 +66,8 @@ A static model is a lookup table: inference is a row gather, a mean, and a norma
 
 | Condition | Rust | Python |
 |---|---|---|
-| More than 2,000 sentences, checked before the embedding pass runs | `InputTooLarge`, `what` is `"clusters"` | `matra.InputTooLarge`, a `ValueError` |
-| Vectors that disagree on dimension, a non-finite value, a non-finite threshold | `InvalidInput` | `matra.InvalidInput`, a `ValueError` |
-| An embedder returning the wrong number of vectors | `InvalidInput` | `matra.InvalidInput`, a `ValueError` |
+| More than 2,000 sentences, checked before the embedding pass runs | `InputTooLarge`, `what` is `"clusters"` | `matra.InputTooLargeError`, a `ValueError` |
+| Vectors that disagree on dimension, a non-finite value, a non-finite threshold | `InvalidInput` | `matra.InvalidInputError`, a `ValueError` |
+| An embedder returning the wrong number of vectors | `InvalidInput` | `matra.InvalidInputError`, a `ValueError` |
 
 The 2,000 cap counts whatever the vectors stand for, so clustering one vector per document caps the corpus at 2,000 documents. The contract violations mean the call site or the embedder is wrong, never the text. A zero-magnitude vector has no defined cosine with anything, so it gets no edge at any threshold and no cluster. [Errors](errors.md) has the full table, the provisioning failures included.

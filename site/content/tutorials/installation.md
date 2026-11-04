@@ -115,7 +115,7 @@ vocabulary_ttr: 0.8571428571428571
 
 That first run fetches the model from a university server in Prague and prints nothing while it does. Cold starts measured on a fast connection ranged from 3 to 35 seconds; on a slow network it takes longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
 
-If `Matra.english()` raises `OSError` (a `matra.Io`), either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path, as `details["url"]` or `details["path"]` do. Check your network connection first; then run `matra config show` to see which directory matra resolved and check the permissions on it. If it raises `RuntimeError` (a `matra.ModelInvalid`), bytes did arrive and then failed the pinned hash check; run the snippet again.
+If `Matra.english()` raises `OSError` (a `matra.IoError`), either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path, as `details["url"]` or `details["path"]` do. Check your network connection first; then run `matra config show` to see which directory matra resolved and check the permissions on it. If it raises `RuntimeError` (a `matra.ModelInvalidError`), bytes did arrive and then failed the pinned hash check; run the snippet again.
 
 ---
 

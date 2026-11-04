@@ -239,6 +239,8 @@ The `catch_unwind` is the one that matters. A panic crossing an FFI boundary doe
 
 The boundary that converts such a panic into an `Error` lives in `nlp/udpipe.rs`, and that file is the only one permitted to import the UDPipe crate. A second import path would be a second process-abort surface with no boundary in front of it. That boundary covers parsing only; model loading translates the loader's own error and is not wrapped.
 
+Every cap a gate checks, and every minimum a metric needs, is a constant in `domain::limits`, defined once and read where it applies. It sits inside the domain, the one module every row may import, so the gates in the adapters, the outcome functions and the metrics all read the same number without boundary rule 5 bending for it.
+
 Two guards live in the domain types rather than at an edge, because a parse arrives from outside and its shape is not guaranteed. `Sentence::tree_depth` is computed by walking head references with a visited set, and is `None` when they form a cycle. `Sentence::subtree` carries the same visited set so it terminates. The `None` is deliberate: an earlier version capped depth at a magic 20, which silently truncated malformed parses and legitimate deep ones alike, and a sentinel number would read as a very deep tree to anyone who did not check for it.
 
 Directory reads fail differently. `analyze_all` yields successes and per-document failures side by side, so one unreadable file does not cost you the other ninety-nine; `Inputs::dir` is `Err` only when the listing itself fails. Full detail on every gate, every variant, and the Python exception each maps to is in [Errors](../reference/errors.md).

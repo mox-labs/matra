@@ -404,12 +404,32 @@ matra collects nothing across documents: a stream is the collection, and how to 
 
 | Item | Definition | Role |
 |---|---|---|
-| `MAX_INPUT_BYTES` | `usize`, `8 * 1024 * 1024` (8,388,608) | Byte cap the pipeline applies to text input |
+| `limits` | module of `usize` constants | Every cap and metric minimum, below |
 | `SCHEMA_VERSION` | `&str`, `"2.0"` | The document schema version this build emits, as `"major.minor"`, written into `Provenance::schema`. The JSON Schema for each major is in `spec/schema/` |
 | `Result<T>` | `std::result::Result<T, Error>` | Return type of every fallible library function |
 | `Error` | enum, `#[non_exhaustive]` | Every failure the library returns. See [Errors](errors.md) |
 | `ErrorDetails` | ordered names and values; `get(key)`, `iter()`, `len()`, `is_empty()` | What `Error::details` returns: every dynamic value in the message, by name. Serializes as an object. See [kinds and details](errors.md#kinds-and-details) |
 | `DetailValue` | enum, `#[non_exhaustive]`: `Text(String)`, `Integer(u64)`, `Bool(bool)` | One value in an `ErrorDetails`. Serializes as the bare value |
+
+## Limits
+
+`domain::limits` holds every bound matra holds its work to, each defined once and read where it applies. They are constants, not settings: no configuration changes them, and changing one is a breaking change. A cap that is exceeded returns `InputTooLarge`, whose `limit` detail is the constant and whose `what` detail names the gate; a paragraph outside a metric's bounds keeps that metric `None`. Each constant's rustdoc carries the cost model behind its value.
+
+| Constant | Value | Bounds |
+|---|---|---|
+| `MAX_INPUT_BYTES` | 8,388,608 (8 MiB) | Text one input may hold; the `"input"` and `"file_source"` gates |
+| `MAX_CONFIG_FILE_BYTES` | 65,536 (64 KiB) | The configuration file; the `"config_file"` gate |
+| `MAX_DOWNLOAD_BYTES` | 67,108,864 (64 MiB) | Any one model download; the `"udpipe_download"` and `"embedding_download"` gates |
+| `MAX_TFIDF_SENTENCES` | 2,000 | Sentences a TF-IDF summary ranks; `"tfidf"` |
+| `MAX_TEXTRANK_SENTENCES` | 2,000 | Sentences a TextRank summary ranks; `"textrank"` |
+| `MAX_CLUSTER_SENTENCES` | `MAX_TEXTRANK_SENTENCES` | Sentences or vectors clustered; `"clusters"`. Defined as TextRank's, since both build the same quadratic graph |
+| `MAX_RAKE_TOKENS` | 200,000 | Tokens RAKE reads, punctuation included; `"rake"` |
+| `MAX_YAKE_TOKENS` | 200,000 | Tokens YAKE reads, punctuation included; `"yake"` |
+| `MAX_COMPRESSION_PARAGRAPH_BYTES` | 262,144 (256 KiB) | The largest paragraph given a `compression_ratio` |
+| `MIN_READABILITY_WORDS` | 11 | The fewest words for a `readability_grade` (more than 10) |
+| `MIN_COMPRESSION_WORDS` | 51 | The fewest words for a `compression_ratio` (more than 50) |
+
+Two caps with the same value stay two constants where their costs differ, so tuning one does not move the other: TF-IDF's 2,000 is not TextRank's, and YAKE's 200,000 is not RAKE's.
 
 ## What crosses the language boundary
 

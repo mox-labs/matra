@@ -101,7 +101,7 @@ class Constant:
 clusters = Matra.english().semantic_clusters(text, 0.9, Constant())
 ```
 
-The contract is checked in the library, so a Python embedder returning the wrong number of vectors raises `matra.InvalidInput`, a `ValueError`, with the same message a Rust implementor would read, and an exception raised inside `embed` arrives as `matra.InvalidInput` carrying its own text. `identity` is read once, before the text is parsed, so a broken embedder costs one method call rather than a document's parse.
+The contract is checked in the library, so a Python embedder returning the wrong number of vectors raises `matra.InvalidInputError`, a `ValueError`, with the same message a Rust implementor would read, and an exception raised inside `embed` arrives as `matra.InvalidInputError` carrying its own text. `identity` is read once, before the text is parsed, so a broken embedder costs one method call rather than a document's parse.
 
 Two embedders that can disagree must not return the same identity string.
 
@@ -113,23 +113,23 @@ from matra import semantic_clusters
 clusters = semantic_clusters(vectors, 0.85, "my-model-v1")
 ```
 
-For a caller who already holds embeddings. It reads no document, so the result is `parameters` (`threshold`, and the hash given as `embedder`), `clusters` and `edges`, with no provenance. Indices in the result are positions in the list passed in. Raises `matra.InvalidInput` when vectors disagree on dimension, contain a non-finite value, or the threshold is not finite, and `matra.InputTooLarge` past the 2,000-vector cap; both are `ValueError`s.
+For a caller who already holds embeddings. It reads no document, so the result is `parameters` (`threshold`, and the hash given as `embedder`), `clusters` and `edges`, with no provenance. Indices in the result are positions in the list passed in. Raises `matra.InvalidInputError` when vectors disagree on dimension, contain a non-finite value, or the threshold is not finite, and `matra.InputTooLargeError` past the 2,000-vector cap; both are `ValueError`s.
 
 ## Exceptions
 
-Every library failure is raised as a class of its own in `matra`, named as the failure is, through a match with no catch-all arm, so a new failure variant cannot silently inherit another one's class. Each class derives from `matra.MatraError` and from the builtin class matra raised before 0.3.0, so `except ValueError` still catches an `InputTooLarge`.
+Every library failure is raised as a class of its own in `matra`, named for the failure with an `Error` suffix, through a match with no catch-all arm, so a new failure variant cannot silently inherit another one's class. Each class derives from `matra.MatraError` and from the builtin class matra raised before 0.3.0, so `except ValueError` still catches an `InputTooLarge`.
 
 | Failure | Python class | Also a |
 |---|---|---|
-| model not found | `ModelNotFound` | `FileNotFoundError` |
-| input too large | `InputTooLarge` | `ValueError` |
-| unsupported format | `UnsupportedFormat` | `ValueError` |
-| invalid input | `InvalidInput` | `ValueError` |
-| io | `Io` | `OSError` |
-| io, a path that does not exist | `IoNotFound` | `FileNotFoundError` |
-| io, permission denied | `IoPermissionDenied` | `PermissionError` |
-| model invalid | `ModelInvalid` | `RuntimeError` |
-| parse failed | `ParseFailed` | `RuntimeError` |
+| model not found | `ModelNotFoundError` | `FileNotFoundError` |
+| input too large | `InputTooLargeError` | `ValueError` |
+| unsupported format | `UnsupportedFormatError` | `ValueError` |
+| invalid input | `InvalidInputError` | `ValueError` |
+| io | `IoError` | `OSError` |
+| io, a path that does not exist | `IoNotFoundError` | `FileNotFoundError` |
+| io, permission denied | `IoPermissionError` | `PermissionError` |
+| model invalid | `ModelInvalidError` | `RuntimeError` |
+| parse failed | `ParseFailedError` | `RuntimeError` |
 
 Every exception carries `kind`, the stable string, and `details`, a dict of every value in the message. The message, `str(exc)`, is the library's own display string, for a person. Branch on the class or on `kind`, and read values from `details` rather than parsing the message.
 
@@ -144,7 +144,7 @@ except FileNotFoundError as exc:
 
 try:
     engine.analyze(text)
-except matra.InputTooLarge as exc:
+except matra.InputTooLargeError as exc:
     print(exc.details["what"], exc.details["limit"], exc.details["actual"])
 ```
 

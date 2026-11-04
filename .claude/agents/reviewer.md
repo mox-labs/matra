@@ -66,7 +66,7 @@ Not yours to run. The `resilience` agent owns the resilience floor (size caps, `
 
 - No silent O(n²) growth. New algorithms on collections of unknown size carry a documented bound.
 - `MAX_INPUT_BYTES` is checked at the entry point, not deep in the call stack.
-- TextRank-class algorithms use the documented `MAX_SENTENCES` cap.
+- TextRank-class algorithms use their documented cap, and every cap or minimum is a constant in `domain::limits`, never a local literal.
 
 ### 6. Documentation lockstep
 

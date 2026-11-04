@@ -230,8 +230,8 @@
       "lexical_density": 0.5333,
       "readability_grade": 5.315,
       "sentences": 5,
-      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.095 and scores the bare error at 1.429, while YAKE's first is move copy at 1628.490. What is low there is the score, not the position: 1.429 sits not far above 1.000, the floor any single word scores, and 219 of the 530 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 270th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
-      "words": 125
+      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.109 and scores the bare error at 1.442, while YAKE's first is move copy at 1700.000. What is low there is the score, not the position: 1.442 sits not far above 1.000, the floor any single word scores, and 225 of the 544 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 273rd. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
+      "words": 126
     },
     {
       "compression_ratio": null,

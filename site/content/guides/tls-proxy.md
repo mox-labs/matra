@@ -14,7 +14,7 @@ installing its CA. Fetch english-ewt-ud-2.5-191206.udpipe by hand and put it in 
 directory instead. Underlying failure: io: invalid peer certificate: ...
 ```
 
-In Python the same failure is a `matra.Io`, an `OSError`, from `Matra.english()`, with the URL in `details["url"]` and `details["retryable"]` false, since retrying meets the same proxy. [Errors](../reference/errors.md#provisioning-failures) lists every way a download can fail.
+In Python the same failure is a `matra.IoError`, an `OSError`, from `Matra.english()`, with the URL in `details["url"]` and `details["retryable"]` false, since retrying meets the same proxy. [Errors](../reference/errors.md#provisioning-failures) lists every way a download can fail.
 
 ## Place the model by hand
 
