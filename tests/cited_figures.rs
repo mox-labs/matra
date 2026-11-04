@@ -44,7 +44,7 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/guides/rust.md",
-            "21267:25596ddfe0bab0c6",
+            "21343:49563f5fe7167c85",
             "the 0.8215 pair score and the 0.6138 unrelated score, in the same two files",
         ),
         (

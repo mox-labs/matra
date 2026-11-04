@@ -64,7 +64,7 @@ impl ReadBlock {
 /// Reads one format. Postcondition: every span the reader returns lies
 /// within the analysed text, and spans of distinct blocks and skipped
 /// constructs do not overlap.
-pub(crate) trait Decomposer {
+pub(crate) trait Decomposer: Send {
     /// Read `input` into blocks and skipped constructs. A reader of a
     /// text syntax is total: malformed markup is read as best it can be.
     /// A reader of a structured format (block input as JSON) fails with

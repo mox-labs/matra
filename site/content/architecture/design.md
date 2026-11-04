@@ -71,7 +71,7 @@ The verify step returns the bytes it hashed, and those exact bytes go to the loa
 
 **Load once, reuse.** After construction, the model is a live handle to a C++ object. Parsing does not reload it. The `Engine` owns the provider, so a service builds one engine and keeps it for its lifetime.
 
-**One engine per thread.** The underlying `Model` is `Send` and deliberately not `Sync`: its parse path mutates internal workspace caches. The `Engine` that owns it is neither `Send` nor `Sync`, since its readers are not `Send` either, so in Rust sharing or moving an engine across threads is a compile error rather than a race. To parallelize you build an engine on each thread, paying another 16 MB load for each.
+**One engine per thread.** The underlying `Model` is `Send` and deliberately not `Sync`: its parse path mutates internal workspace caches. The `Engine` that owns it is `Send` and not `Sync` for the same reason: an engine moves to another thread, but sharing one between two is a compile error rather than a race. To parallelize you build an engine on each thread, paying another 16 MB load for each, or serialize calls behind a mutex.
 
 Python gets the same constraint through a different mechanism. `Matra` is declared `unsendable`, so PyO3 records the creating thread and refuses access from any other at runtime. A `ProcessPoolExecutor` is unaffected, because each process loads its own model.
 
