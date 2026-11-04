@@ -297,8 +297,10 @@ discussions into categories (configured in the GitHub UI):
 5. Open the PR. The PR template asks for Summary, Why, Test plan.
    Fill it in.
 6. CI runs the Rust gates the hook ran, plus cargo-deny,
-   cargo-semver-checks, the wheel build and mypy. If anything fails, fix
-   and push.
+   cargo-semver-checks, the wheel build and mypy. cargo-semver-checks
+   runs on a pull request into `main` and on every push to `main`, never
+   on `next`, where a breaking release gathers before the version moves.
+   If anything fails, fix and push.
 7. The PR is reviewed against the gates in
    [`.claude/skills/pr-review/SKILL.md`](.claude/skills/pr-review/SKILL.md).
    When CI is green and the review raises no blockers, Claude merges it and

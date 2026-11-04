@@ -9,13 +9,13 @@
   "page": "guides/migrate-to-0-3.md",
   "paragraphs": [
     {
-      "compression_ratio": 0.5377,
+      "compression_ratio": 0.5263,
       "kind": "paragraph",
-      "lexical_density": 0.5227,
-      "readability_grade": 4.067,
+      "lexical_density": 0.5049,
+      "readability_grade": 5.2559,
       "sentences": 5,
-      "text": "0.3.0 changes Rust, Python, the command line, the JSON and the config file at once. Nothing keeps its old name. There are no deprecated aliases, no hidden flags, no fields written under both names and no setting that brings back the 0.2 output. A 0.2 call fails at once in 0.3: a compile error in Rust, an AttributeError or TypeError in Python, an unknown flag or key at the command line, and a new format_version and schema major in the JSON. Nothing keeps working with a different meaning.",
-      "words": 89
+      "text": "0.3.0 changes Rust, Python, the command line, the JSON and the config file at once. Nothing keeps its old name. There are no deprecated aliases, no hidden flags, no fields written under both names and no setting that brings back the 0.2 output. A renamed or removed call fails at once in 0.3 rather than running with a different meaning: a compile error in Rust, an AttributeError or TypeError in Python, an unknown key in the config file, and a new format_version and schema major in the JSON. A few results do change for the same call, and the last section lists them.",
+      "words": 104
     },
     {
       "compression_ratio": null,
@@ -101,11 +101,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6471,
-      "readability_grade": 16.1838,
-      "sentences": 1,
-      "text": "DocumentMetrics also carries total_sentences, paragraph_count, mean_sentence_length and sentence_length_std, which 0.2 computed for the command line's table only.",
-      "words": 18
+      "lexical_density": 0.5714,
+      "readability_grade": 11.8638,
+      "sentences": 2,
+      "text": "DocumentMetrics also carries total_sentences, paragraph_count, mean_sentence_length and sentence_length_std. In 0.2 these were methods, so they never reached Python or the JSON.",
+      "words": 21
     },
     {
       "compression_ratio": null,
@@ -261,13 +261,13 @@
       "words": 47
     },
     {
-      "compression_ratio": 0.6,
+      "compression_ratio": 0.5521,
       "kind": "paragraph",
-      "lexical_density": 0.5846,
-      "readability_grade": 8.36,
-      "sentences": 4,
-      "text": "The four algorithm-named methods and semantic_clusters are module functions over a Document. A text is parsed once however many outcomes you ask of it, and a markdown file is read as markdown first: 0.2's methods read every text as plain text, so a README's headings could land in its summary. max_phrases is n. Each returns a dict whose provenance names the method and its parameters.",
-      "words": 67
+      "lexical_density": 0.5556,
+      "readability_grade": 8.759,
+      "sentences": 5,
+      "text": "The four algorithm-named methods and semantic_clusters are module functions over a Document. A text is parsed once however many outcomes you ask of it, and in the format you analysed it in: 0.2's methods read every text as plain text, so a README's headings could land in its summary. Analyse a markdown file with file=, or a markdown string with format=\"markdown\", and its headings stay headings. max_phrases is n. Each returns a dict whose provenance names the method and its parameters.",
+      "words": 84
     },
     {
       "compression_ratio": null,
