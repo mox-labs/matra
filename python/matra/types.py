@@ -336,8 +336,10 @@ class Provenance(TypedDict):
     parameters: NotRequired[Parameters]
 
 
-class Document(TypedDict):
-    """Top-level analysis output. Mirrors `matra::domain::Document`.
+class DocumentDict(TypedDict):
+    """A document as the schema's JSON shape: what ``Document.to_dict()``
+    returns, and what ``doc[key]`` reads one key of. Mirrors
+    `matra::domain::Document`.
 
     The document's aggregates arrive in ``metrics``, materialized by the
     metric suite, because methods do not cross the FFI boundary.
@@ -434,16 +436,6 @@ class Clusters(TypedDict):
     edges: list[SimilarityEdge]
 
 
-class VectorClusters(TypedDict):
-    """What the vectors-in ``semantic_clusters`` returns: a ``Clusters``
-    without its provenance, since no document was read, and with the two
-    parameters that provenance would record in its place."""
-
-    parameters: Parameters
-    clusters: list[Cluster]
-    edges: list[SimilarityEdge]
-
-
 type ErrorDetails = dict[str, str | int | bool]
 """Every dynamic value in a failure's message, by name. Mirrors
 ``matra::domain::ErrorDetails``.
@@ -480,24 +472,51 @@ class DocumentError(ErrorInfo):
     """One document that failed. Mirrors the serde form of
     ``matra::domain::DocumentError``: the error's own keys plus ``path``.
 
-    A failure reading or parsing one file does not abort a directory
-    walk: it arrives as one of these, in the position the document would
-    have held. ``path`` is ``None`` only for input that never came from
-    disk.
+    A failure reading or parsing one input does not end
+    ``Engine.analyze_all``: it arrives as one of these, in the position
+    the document would have held. Tell the two apart with
+    ``isinstance(item, matra.Document)``. ``path`` is ``None`` only for
+    input that never came from disk.
     """
 
     path: str | None
 
 
-type CorpusItem = Document | DocumentError
-"""One item from ``Matra.analyze_path``: a document that analyzed, or one
-that failed.
+class HeadingBlock(TypedDict):
+    """A heading a caller supplies, opening a section at ``level`` (1 or
+    more). The ``blocks`` input format; see ``BlockDict``."""
 
-The two are told apart by their keys, and a type checker narrows the
-union on that test: ``"kind" in item`` selects the failure,
-``"provenance" in item`` the success, whose path is
-``item["provenance"]["source"]["path"]``.
+    kind: Literal["heading"]
+    level: int
+    text: str
+
+
+class ParagraphBlock(TypedDict):
+    """A paragraph of prose a caller supplies. The ``blocks`` input
+    format; see ``BlockDict``."""
+
+    kind: Literal["paragraph"]
+    text: str
+
+
+type BlockDict = HeadingBlock | ParagraphBlock
+"""One block of ``Engine.analyze(blocks=...)``: the JSON form
+``spec/schema/v2/blocks.schema.json`` publishes, as Python data. A
+``kind`` or a key matra does not know is refused by name with
+``InvalidInputError``. The analysed text is the blocks' texts joined by a
+blank line, in order, and every span in the result points into it.
 """
+
+type FormatName = Literal["markdown", "plain_text", "blocks"]
+"""A format matra reads, in the vocabulary every surface shares."""
+
+type SummaryMethodName = Literal["tfidf", "textrank"]
+"""A summary method, as ``summarize(method=...)`` names it and
+``provenance["method"]`` records it."""
+
+type KeyphraseMethodName = Literal["rake", "yake"]
+"""A keyphrase method, as ``keyphrases(method=...)`` names it and
+``provenance["method"]`` records it."""
 
 
 class Embedder(Protocol):
@@ -506,8 +525,8 @@ class Embedder(Protocol):
     Mirrors the Rust ``matra::embed::Embedder`` port, and carries the
     same contract: ``embed`` returns exactly one vector per input text,
     in input order, every vector the same length. Violating it raises
-    ``ValueError`` from the call that used the embedder, with the same
-    message a Rust implementor would get.
+    ``InvalidInputError`` (a ``ValueError``) from ``clusters``, with the
+    same message a Rust implementor would get.
 
     ``identity`` names the geometry the vectors live in, and travels
     into every result derived from them so scores stay attributable. It
@@ -528,22 +547,26 @@ class Embedder(Protocol):
 
 __all__ = [
     "ERROR_KINDS",
+    "BlockDict",
     "ClausalComplement",
     "Cluster",
     "Clusters",
-    "CorpusItem",
-    "Document",
+    "DocumentDict",
     "DocumentError",
     "DocumentMetrics",
     "Embedder",
     "ErrorDetails",
     "ErrorInfo",
+    "FormatName",
+    "HeadingBlock",
     "Identity",
     "Keyphrase",
+    "KeyphraseMethodName",
     "Keyphrases",
     "Modal",
     "Negation",
     "Paragraph",
+    "ParagraphBlock",
     "ParagraphMetrics",
     "Parameters",
     "Provenance",
@@ -556,7 +579,7 @@ __all__ = [
     "Skipped",
     "Span",
     "Summary",
+    "SummaryMethodName",
     "SummarySentence",
     "Token",
-    "VectorClusters",
 ]

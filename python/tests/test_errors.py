@@ -2,9 +2,10 @@
 milestone 4): ``kind`` to branch on, ``details`` to read values from, and
 the builtin class matra raised before 0.3.0 still in its bases.
 
-No model is needed. Each failure here is one the binding can produce
-without a parser: the vectors-in clustering, a missing model path, and an
-embedding directory matra may not read.
+No model is needed, apart from the one test marked ``model``. Each
+failure is one the binding can produce without a parser: a configuration
+file too large, malformed or missing, and an embedding directory that is
+empty or that matra may not read.
 """
 
 from __future__ import annotations
@@ -12,13 +13,14 @@ from __future__ import annotations
 import os
 import pickle
 from pathlib import Path
+from typing import Any
 
 import matra
 import pytest
 from document_schema import assert_valid
 
 # The class each kind raises as, and the builtin it also derives from.
-# `src/lib.rs` (`Class::spec`) is the source; `tests/error_tables.rs` holds
+# `src/python/errors.rs` (`Class::spec`) is the source; `tests/error_tables.rs` holds
 # the documentation to it, and this holds the built module to it.
 CLASSES: dict[str, tuple[str, type[BaseException]]] = {
     "ModelNotFoundError": ("model_not_found", FileNotFoundError),
@@ -60,35 +62,68 @@ def test_the_io_refinements_are_io() -> None:
     assert issubclass(matra.IoPermissionError, matra.IoError)
 
 
-def test_an_oversized_input_is_input_too_large_with_its_gate() -> None:
+CONFIG_CAP = 64 * 1024
+
+
+def _oversized_config(tmp_path: Path) -> Path:
+    path = tmp_path / "config.toml"
+    path.write_bytes(b"#" * (CONFIG_CAP + 1))
+    return path
+
+
+def test_an_oversized_input_is_input_too_large_with_its_gate(tmp_path: Path) -> None:
+    """The configuration file's gate, which ``Engine.from_config`` reaches
+    before any model is loaded."""
     with pytest.raises(ValueError) as caught:
-        matra.semantic_clusters([[1.0, 0.0]] * 2001, 0.5, "fixed")
+        matra.Engine.from_config(_oversized_config(tmp_path))
 
     error = caught.value
     assert isinstance(error, matra.InputTooLargeError)
     assert error.kind == "input_too_large"
-    assert error.details == {"what": "clusters", "limit": 2000, "actual": 2001}
+    assert error.details == {
+        "what": "config_file",
+        "limit": CONFIG_CAP,
+        "actual": CONFIG_CAP + 1,
+    }
     assert_valid("error", _as_data(error), "input_too_large")
 
 
-def test_a_broken_contract_is_invalid_input_with_its_reason() -> None:
+def test_a_broken_contract_is_invalid_input_with_its_reason(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text('[summarize]\nalgorithm = "lsa"\n')
     with pytest.raises(ValueError) as caught:
-        matra.semantic_clusters([[1.0, 0.0], [1.0]], 0.5, "fixed")
+        matra.Engine.from_config(path)
 
     error = caught.value
     assert isinstance(error, matra.InvalidInputError)
     assert error.details["reason"] in str(error)
+    assert "lsa" in str(error)
     assert_valid("error", _as_data(error), "invalid_input")
 
 
-def test_a_missing_model_is_model_not_found_with_its_path(tmp_path: Path) -> None:
-    missing = tmp_path / "english.udpipe"
+def test_a_named_config_file_that_is_missing_is_io_not_found(tmp_path: Path) -> None:
+    """A file the caller names must exist, unlike the one the environment
+    names, whose absence leaves the defaults standing."""
+    missing = tmp_path / "absent.toml"
     with pytest.raises(FileNotFoundError) as caught:
-        matra.Matra.from_path(missing)
+        matra.Engine.from_config(missing)
+
+    error = caught.value
+    assert isinstance(error, matra.IoNotFoundError)
+    assert error.details["path"] == str(missing)
+    assert_valid("error", _as_data(error), "io")
+
+
+def test_a_missing_model_is_model_not_found_with_its_path(tmp_path: Path) -> None:
+    """An embedding directory without its artifacts: the first one looked
+    for is named."""
+    with pytest.raises(FileNotFoundError) as caught:
+        matra.Model2Vec.from_dir(tmp_path)
 
     error = caught.value
     assert isinstance(error, matra.ModelNotFoundError)
-    assert error.details == {"path": str(missing)}
+    assert set(error.details) == {"path"}
+    assert Path(error.details["path"]).parent == tmp_path
     assert_valid("error", _as_data(error), "model_not_found")
 
 
@@ -118,11 +153,11 @@ def test_an_unreadable_file_is_io_permission_denied(tmp_path: Path) -> None:
     assert_valid("error", _as_data(error), "io")
 
 
-def test_an_exception_survives_pickling() -> None:
+def test_an_exception_survives_pickling(tmp_path: Path) -> None:
     """The classes name ``matra`` as their module and the package exports
     them, so an exception crosses a process boundary whole."""
     with pytest.raises(matra.InputTooLargeError) as caught:
-        matra.semantic_clusters([[1.0, 0.0]] * 2001, 0.5, "fixed")
+        matra.Engine.from_config(_oversized_config(tmp_path))
 
     copy = pickle.loads(pickle.dumps(caught.value))
     assert type(copy) is matra.InputTooLargeError
@@ -131,22 +166,14 @@ def test_an_exception_survives_pickling() -> None:
     assert copy.details == caught.value.details
 
 
-def _model_dir() -> str:
-    return os.environ.get("MATRA_MODEL_DIR") or str(Path.home() / ".matra" / "models")
-
-
 @pytest.mark.model
-def test_a_missing_file_is_io_not_found_with_its_path(tmp_path: Path) -> None:
+def test_a_missing_file_is_io_not_found_with_its_path(engine: Any, tmp_path: Path) -> None:
     """Regression (EPR-0006 milestone 4): a missing input's message named
     no path. It names it, and the path is a detail beside the I/O kind."""
-    try:
-        engine = matra.Matra.english(_model_dir())
-    except Exception as exc:
-        pytest.skip(f"UDPipe model unavailable: {exc}")
     missing = tmp_path / "absent.md"
 
     with pytest.raises(FileNotFoundError) as caught:
-        engine.analyze_path(missing)
+        engine.analyze(file=missing)
 
     error = caught.value
     assert isinstance(error, matra.IoNotFoundError)

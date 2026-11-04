@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -23,18 +22,11 @@ from document_schema import assert_valid
 
 # The extension module is built by maturin. Without a built wheel there is
 # nothing to conform, so skip rather than fail collection.
-Matra = pytest.importorskip("matra", reason="matra wheel not built").Matra
+matra = pytest.importorskip("matra", reason="matra wheel not built")
 
 TOLERANCE = 1e-6
 
 SPEC_DIR = Path(__file__).resolve().parents[2] / "spec" / "tests"
-
-
-def model_dir() -> str:
-    override = os.environ.get("MATRA_MODEL_DIR")
-    if override:
-        return override
-    return str(Path.home() / ".matra" / "models")
 
 
 def load_fixtures() -> list[dict[str, Any]]:
@@ -91,37 +83,26 @@ def sentences_of(doc: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
-@pytest.fixture(scope="module")
-def matra() -> Matra:
-    return Matra.english(model_dir())
-
-
 @pytest.mark.model
 @pytest.mark.parametrize("fixture", load_fixtures(), ids=lambda f: f["name"])
-def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) -> None:
+def test_python_crust_conforms_to_spec(engine: Any, fixture: dict[str, Any]) -> None:
     text = fixture["input"]
-    if fixture["format"] == "markdown":
-        doc = matra.analyze_markdown(text)
-    elif fixture["format"] == "plain_text":
-        doc = matra.analyze(text)
-    else:
-        pytest.fail(f"unknown format {fixture['format']}")
+    assert fixture["format"] in ("markdown", "plain_text"), fixture["format"]
+    analysed = engine.analyze(text, format=fixture["format"])
+    doc = analysed.to_dict()
 
     assert_valid("document", doc, fixture["name"])
-    # Every outcome method's result matches its schema, with the method
-    # and the count it ran with recorded.
-    for method, name in (
-        (matra.tfidf_summarize, "tfidf"),
-        (matra.textrank_summarize, "textrank"),
-    ):
-        summary = method(text, 3)
-        assert_valid("summary", summary, f"{fixture['name']} {name}")
-        assert summary["provenance"]["method"] == name
+    # Every outcome's result matches its schema, with the method and the
+    # count it ran with recorded.
+    for summary_method in ("tfidf", "textrank"):
+        summary = matra.summarize(analysed, 3, method=summary_method)
+        assert_valid("summary", summary, f"{fixture['name']} {summary_method}")
+        assert summary["provenance"]["method"] == summary_method
         assert summary["provenance"]["parameters"] == {"n": 3}
-    for method, name in ((matra.rake_keyphrases, "rake"), (matra.yake_keyphrases, "yake")):
-        found = method(text, 10)
-        assert_valid("keyphrases", found, f"{fixture['name']} {name}")
-        assert found["provenance"]["method"] == name
+    for keyphrase_method in ("rake", "yake"):
+        found = matra.keyphrases(analysed, 10, method=keyphrase_method)
+        assert_valid("keyphrases", found, f"{fixture['name']} {keyphrase_method}")
+        assert found["provenance"]["method"] == keyphrase_method
 
     # Provenance: this build's schema, the parser's own identity, and the
     # input as it was handed in.

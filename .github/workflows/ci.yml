@@ -405,7 +405,7 @@ jobs:
         shell: bash
         run: |
           uv pip install --system dist/matra-*.whl
-          python -c "from matra import Matra; print('ok')"
+          python -c "from matra import Engine, Document; print('ok')"
 
   pytype:
     name: Python type-check (mypy)

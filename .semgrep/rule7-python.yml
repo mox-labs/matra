@@ -1,0 +1,64 @@
+# Boundary rule 7, the part a check can read, for the Python binding: src/python/
+# uses the public surface (Engine, Input, Inputs, Block, the outcome functions
+# summarize, summarize_with, keyphrases, keyphrases_with and clusters, and their
+# method selectors SummaryMethod and KeyphraseMethod), config, domain, embed
+# (the one port open to outside implementers, with the Model2Vec adapter it
+# publishes) and the command line's cli::run, and never another port module,
+# a reader or parser adapter, or a crate-private module (extraction, metrics,
+# hearst). It is rule7-cli.yml with embed and cli added to the allowlist.
+#
+# This is an allowlist, not a list of forbidden modules, so a crate-root
+# re-export of an adapter (`crate::Udpipe`) is caught as well as
+# `crate::nlp::udpipe::Udpipe`. `crate::python::` is the binding's own tree.
+# In src/python/mod.rs `super::` is the crate root, so it is read there the
+# way `crate::` is. How the regexes are built is explained at the top of
+# rule1-domain.yml.
+rules:
+  - id: boundary-rule7-python-imports
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include: ["/src/python/**/*.rs"]
+    message: >-
+      Boundary rule 7 (the composition root knows the whole): src/python/
+      reaches a crate item outside the surface it may use, which is
+      crate::Engine, crate::Input, crate::Inputs, crate::Block, the outcome
+      functions (crate::summarize, summarize_with, keyphrases, keyphrases_with,
+      clusters) and their selectors (crate::SummaryMethod, KeyphraseMethod),
+      crate::config, crate::domain, crate::embed, crate::cli and its own
+      crate::python. Another port module (crate::nlp, crate::source,
+      crate::decompose), a reader or parser adapter, a crate-private module
+      (crate::extraction, crate::metrics, crate::hearst), or anything else at
+      the crate root is out of bounds, by use line, brace group,
+      `use crate as`, super::super::, or an inline path in a function body.
+      Why: the binding translates and decides nothing; a binding that picked
+      its own adapter or reached past the outcome functions would be a second
+      place that knows the wiring, and Python would drift from Rust as it did
+      before 0.3.0. Fix: go through Engine, the Input constructors and the
+      outcome functions; if Python needs something new, expose it from
+      src/lib.rs as part of the public surface first. Read:
+      site/content/reference/boundary-rules.md#rule-7-the-composition-root-knows-the-whole
+    patterns:
+      - pattern-either:
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?(DEFINE)(?<nest>\{(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*+\}))\bcrate\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:Engine|Input|Inputs|Block|summarize|summarize_with|keyphrases|keyphrases_with|clusters|SummaryMethod|KeyphraseMethod|config|domain|embed|cli|python)\b)(?:[A-Za-z_]\w*|\*)'
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bcrate\s+as\b'
+          - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K\bsuper\s*::\s*super\b'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'
+
+  - id: boundary-rule7-python-root-super
+    languages: [regex]
+    severity: ERROR
+    paths:
+      include: ["/src/python/mod.rs"]
+    message: >-
+      Boundary rule 7 (the composition root knows the whole): in
+      src/python/mod.rs `super::` is the crate root, and it reaches an item
+      outside Engine, Input, Inputs, Block, the outcome functions and their
+      selectors, config, domain, embed and cli. Why: the binding translates
+      and decides nothing, and one that picked its own adapter would be a
+      second place that knows the wiring. Fix: go through Engine, the Input
+      constructors and the outcome functions. Read:
+      site/content/reference/boundary-rules.md#rule-7-the-composition-root-knows-the-whole
+    patterns:
+      - pattern-regex: '(?m)^(?![ \t]*//)[^\n]*?\K(?(DEFINE)(?<nest>\{(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*+\}))\bsuper\s*::\s*(?:\{(?:(?://[^\n]*\n|[^{};/]|/(?!/)|(?&nest))*?,)?(?:\s|//[^\n]*\n)*)?(?!(?:Engine|Input|Inputs|Block|summarize|summarize_with|keyphrases|keyphrases_with|clusters|SummaryMethod|KeyphraseMethod|config|domain|embed|cli)\b)(?:[A-Za-z_]\w*|\*)'
+      - pattern-not-regex: '#\[cfg\(test\)\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\s*\([^)]*\))?\s+)?mod\s+\w+\s*(\{(?:[^{}"''/r]++|r(#*)"[\s\S]*?"\2|r|"(?:[^"\\]|\\[\s\S])*+"|''(?:[^''\\]|\\[\s\S])''|''|//[^\n]*+|/|(?1))*+\})'

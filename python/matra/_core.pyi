@@ -1,6 +1,6 @@
 """Type stubs for the PyO3 extension module.
 
-These stubs describe the surface exposed by `_core` (built from `src/lib.rs`).
+These stubs describe the surface exposed by `_core` (built from `src/python/`).
 The TypedDict return types are imported from `matra.types`, where they are
 defined as runtime modules so they're available at runtime (not just at
 type-check time).
@@ -14,28 +14,37 @@ documented exceptions are read by review.
 
 from __future__ import annotations
 
+import builtins
 import os
-from collections.abc import Sequence
-from typing import final
+from collections.abc import Iterable, Iterator, Sequence
+from typing import Literal, final, overload
 
 from matra.types import (
+    BlockDict,
     Clusters,
-    CorpusItem,
-    Document,
+    DocumentDict,
+    DocumentError,
+    DocumentMetrics,
     Embedder,
     ErrorDetails,
+    FormatName,
+    KeyphraseMethodName,
     Keyphrases,
+    Provenance,
+    Section,
+    Skipped,
     Summary,
-    VectorClusters,
+    SummaryMethodName,
 )
 
 __all__ = [
+    "Document",
+    "Engine",
     "InputTooLargeError",
     "InvalidInputError",
     "IoError",
     "IoNotFoundError",
     "IoPermissionError",
-    "Matra",
     "MatraError",
     "Model2Vec",
     "ModelInvalidError",
@@ -43,7 +52,9 @@ __all__ = [
     "ParseFailedError",
     "UnsupportedFormatError",
     "cli_main",
-    "semantic_clusters",
+    "clusters",
+    "keyphrases",
+    "summarize",
 ]
 
 class MatraError(Exception):
@@ -62,7 +73,8 @@ class MatraError(Exception):
     details: ErrorDetails
 
 class ModelNotFoundError(MatraError, FileNotFoundError):
-    """A model file does not exist at the path given. `kind` is
+    """A model file does not exist where it was looked for (an artifact
+    missing from `Model2Vec.from_dir`'s directory). `kind` is
     `model_not_found`; `details["path"]` is the path."""
 
 class ModelInvalidError(MatraError, RuntimeError):
@@ -99,174 +111,158 @@ class IoPermissionError(IoError, PermissionError):
     """An `IoError` failure whose I/O kind is `permission_denied`."""
 
 @final
-class Matra:
-    """Loaded NLP engine. Create once, reuse across calls.
+class Engine:
+    """The analysis pipeline: the pinned English parser and the readers
+    this build ships. Build one and reuse it; loading the model is the
+    slow part, and the first one downloads it.
 
     Final: the extension class cannot be subclassed at runtime.
 
-    The underlying UDPipe model holds C-side state that is not thread-safe;
-    the Rust binding is `#[pyclass(unsendable)]`, so cross-thread access
-    raises `pyo3_runtime.PanicException`, which derives from
-    `BaseException`. Multi-process Python (e.g. `ProcessPoolExecutor`)
-    is fine; multi-thread is not.
+    The parser holds C-side state that is not thread-safe, so the class
+    is `#[pyclass(unsendable)]`: touching an engine from a thread other
+    than the one that built it raises `pyo3_runtime.PanicException`,
+    which derives from `BaseException`. Multi-process Python (e.g.
+    `ProcessPoolExecutor`) is fine; multi-thread is not.
     """
 
-    @staticmethod
-    def from_path(model_path: str | os.PathLike[str]) -> Matra:
-        """Load a UDPipe model from a local file.
-
-        Raises:
-            FileNotFoundError: the model path does not exist.
-            RuntimeError: the model file is corrupt or wrong format.
-        """
-        ...
-
-    @staticmethod
-    def english(model_dir: str | os.PathLike[str] | None = None) -> Matra:
-        """Download (if absent) and load the English UDPipe model.
-
-        With no argument the directory is resolved the way every matra
-        surface resolves it: `MATRA_MODEL_DIR`, else the `models`
-        subdirectory of the data root (`MATRA_DATA_DIR`, else
-        `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`), except that
-        a pre-existing `~/.matra/models` wins when the new location does
-        not exist yet.
+    def __new__(cls) -> Engine:
+        """The model located from the environment alone:
+        `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root
+        (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else
+        `~/.local/share/matra`), except that a pre-existing
+        `~/.matra/models` wins when the new location does not exist yet.
+        No configuration file is read.
 
         The download is atomic and SHA-256-verified against a pinned
-        hash. Concurrent processes calling this with the same `model_dir`
-        cannot corrupt each other's downloads.
+        hash. Concurrent processes cannot corrupt each other's downloads.
 
         Raises:
-            ValueError: with no argument, the config file is malformed,
-                exceeds 64 KiB, or the environment names no home
-                directory at all; and whatever the argument, the
-                download exceeded its 64 MiB cap.
-            OSError: the config file could not be read, the model
-                directory could not be created or written, or the
-                download did not arrive (DNS, TLS, a timeout, or a
-                non-2xx status). Before 0.2.0 the download half of this
-                raised RuntimeError.
-            RuntimeError: bytes arrived and then failed the pinned hash,
-                or the verified bytes did not load.
+            InvalidInputError: the environment names no home directory
+                at all.
+            InputTooLargeError: the download exceeded its 64 MiB cap.
+            IoError: the model directory could not be created or written,
+                or the download did not arrive (DNS, TLS, a timeout, or a
+                non-2xx status).
+            ModelInvalidError: bytes arrived and then failed the pinned
+                hash, or the verified bytes did not load.
         """
         ...
 
-    def analyze(self, text: str) -> Document:
-        """Analyze plain text.
-
-        The document's aggregates are in `doc["metrics"]`, each
-        paragraph's in `paragraph["metrics"]`, and the parser, format and
-        input digest in `doc["provenance"]`, whose `schema` is the schema
-        version (`"2.0"`).
+    @staticmethod
+    def from_config(config_file: str | os.PathLike[str] | None = None) -> Engine:
+        """`Engine()`, with a configuration file read and checked: the one
+        at `config_file`, which must exist, or with no argument the one
+        the environment names (`MATRA_CONFIG_FILE`, else
+        `$XDG_CONFIG_HOME/matra/config.toml`, else
+        `~/.config/matra/config.toml`), where a missing file is no error.
 
         Raises:
-            ValueError: input exceeds the size cap (8 MiB).
-            RuntimeError: NLP parsing failed.
+            InvalidInputError: the config file is malformed or not UTF-8.
+            InputTooLargeError: the config file exceeds 64 KiB.
+            IoError: `config_file` does not exist or cannot be read; and
+                whatever `Engine()` raises.
         """
         ...
 
-    def analyze_markdown(self, text: str) -> Document:
-        """Analyze markdown text with section awareness.
+    def analyze(
+        self,
+        text: str | None = None,
+        *,
+        file: str | os.PathLike[str] | None = None,
+        bytes: builtins.bytes | None = None,  # noqa: A002 - the published keyword name
+        blocks: Sequence[BlockDict] | None = None,
+        format: FormatName | None = None,  # noqa: A002 - the published keyword name
+    ) -> Document:
+        """Analyze one document: read it, parse each paragraph, measure it.
+
+        Exactly one of `text`, `file`, `bytes` and `blocks`. A `str` is
+        always text, never a path: name a file with `file=`.
+
+        - `text` is read as `format`, plain text when none is given.
+        - `file` is read at the call, its format detected from its name
+          and bytes (`.md` as markdown, PDF and DOCX recognised and
+          refused, anything else that is UTF-8 as plain text).
+        - `bytes` is read as `format`, or detected when none is given.
+        - `blocks` is headings and paragraphs you supply (`BlockDict`).
+
+        `format` applies to `text` and `bytes` only.
 
         Raises:
-            ValueError: input exceeds the size cap (8 MiB).
-            RuntimeError: NLP parsing failed.
+            TypeError: not exactly one input, or `format` with `file` or
+                `blocks`.
+            InputTooLargeError: the input exceeds the size cap (8 MiB).
+            UnsupportedFormatError: a format no reader ships for, or
+                bytes that are not UTF-8.
+            InvalidInputError: an unknown `format`, a directory named as
+                a file, or block input that is not a block array.
+            IoError: the file cannot be read (`IoNotFoundError` when it
+                does not exist).
+            ParseFailedError: the parser failed.
         """
         ...
 
-    def tfidf_summarize(self, text: str, n: int) -> Summary:
-        """TF-IDF extractive summary of the top `n` sentences, in document
-        order, with the method and `n` recorded in its provenance. The
-        text is read as plain text.
+    def analyze_all(
+        self,
+        *,
+        dir: str | os.PathLike[str] | None = None,  # noqa: A002 - the published keyword name
+        texts: Iterable[str] | None = None,
+        format: FormatName | None = None,  # noqa: A002 - the published keyword name
+    ) -> Iterator[Document | DocumentError]:
+        """Analyze many documents, lazily and in input order.
+
+        Exactly one of `dir` (every regular file in it, in path order;
+        symlinks and subdirectories are skipped, not followed) and
+        `texts` (each read as `format`, plain text when none is given).
+        Nothing is read or parsed until the iterator is pulled.
+
+        Each item is the `Document` for an input that analyzed, or a
+        `DocumentError` dict for one that did not, so one unreadable file
+        costs one item rather than the stream. Tell them apart with
+        `isinstance(item, Document)`. On Unix a returned path is decoded
+        with `os.fsdecode`, so `os.fsencode` on it names the same file
+        even when the name is not valid UTF-8.
 
         Raises:
-            ValueError: input exceeds the size cap (8 MiB) or the
-                per-algorithm sentence cap.
-            RuntimeError: NLP parsing failed.
+            TypeError: not exactly one of `dir` and `texts`, `texts` is a
+                `str`, or `format` with `dir`.
+            IoError: `dir` does not exist or cannot be listed.
+            InvalidInputError: `dir` is not a directory, or an unknown
+                `format`.
         """
         ...
 
-    def textrank_summarize(self, text: str, n: int) -> Summary:
-        """TextRank extractive summary of the top `n` sentences, in
-        document order, with the method and `n` recorded in its
-        provenance. The text is read as plain text.
+@final
+class Document:
+    """One analysed document: read-only, holding the Rust value.
 
-        Raises:
-            ValueError: input exceeds the size cap (8 MiB) or the
-                per-algorithm sentence cap.
-            RuntimeError: NLP parsing failed.
-        """
+    Read it as the JSON reads: `doc["metrics"]["total_words"]`, one key
+    per top-level field, and `to_dict()` for the whole. Each read builds
+    a new value, so changing what a read returned changes nothing here.
+    There is nothing to assign to.
+
+    The outcome functions (`summarize`, `keyphrases`, `clusters`) take a
+    `Document` and no dict, so a result cannot carry provenance no matra
+    run produced. Final: the extension class cannot be subclassed.
+    """
+
+    @overload
+    def __getitem__(self, key: Literal["provenance"], /) -> Provenance: ...
+    @overload
+    def __getitem__(self, key: Literal["sections"], /) -> list[Section]: ...
+    @overload
+    def __getitem__(self, key: Literal["metrics"], /) -> DocumentMetrics: ...
+    @overload
+    def __getitem__(self, key: Literal["skipped"], /) -> list[Skipped]: ...
+    def __contains__(self, key: object, /) -> bool: ...
+    def __iter__(self) -> Iterator[str]: ...
+    def __len__(self) -> int: ...
+    def keys(self) -> list[str]:
+        """The top-level keys, in the order the JSON writes them."""
         ...
 
-    def rake_keyphrases(self, text: str, max_phrases: int) -> Keyphrases:
-        """RAKE keyphrase extraction: up to `max_phrases` ranked phrases,
-        each with every place it occurs, and the method and `n` recorded
-        in the provenance. The text is read as plain text.
-
-        Raises:
-            ValueError: input exceeds the size cap (8 MiB) or the
-                per-algorithm token cap.
-            RuntimeError: NLP parsing failed.
-        """
-        ...
-
-    def yake_keyphrases(self, text: str, max_phrases: int) -> Keyphrases:
-        """YAKE keyphrase extraction: up to `max_phrases` ranked phrases,
-        each with every place it occurs, and the method and `n` recorded
-        in the provenance. The text is read as plain text.
-
-        Raises:
-            ValueError: input exceeds the size cap (8 MiB) or the
-                per-algorithm token cap.
-            RuntimeError: NLP parsing failed.
-        """
-        ...
-
-    def semantic_clusters(self, text: str, threshold: float, model: Embedder) -> Clusters:
-        """Parse plain text, embed its sentences, cluster at `threshold`.
-
-        `model` is any object satisfying the `Embedder` protocol: two
-        methods, `embed` and `identity`. `Model2Vec` is one of them, and
-        it takes a fast path that calls no Python. Your own object is
-        held across the call and asked for its identity once, when it is
-        handed over, so a broken embedder is refused before the text is
-        parsed.
-
-        Tier 2 output: the clusters reflect `model`'s geometry, and the
-        result's provenance records its identity and the threshold. See
-        `matra.types.Clusters` for what co-membership does and does not
-        mean.
-
-        Raises:
-            ValueError: input exceeds the size cap (8 MiB), the sentence
-                cap (2,000), the threshold is not finite, or the
-                embedder broke its contract (raised, returned something
-                other than a sequence of vectors, or returned the wrong
-                number of them).
-            RuntimeError: NLP parsing or embedding failed.
-        """
-        ...
-
-    def analyze_path(self, path: str | os.PathLike[str]) -> list[CorpusItem]:
-        """Analyze every document a path names.
-
-        One item for a file; one per regular file for a directory, in
-        path order. Each file is read as its bytes and extension say:
-        `.md` as markdown, PDF and DOCX refused, anything else that is
-        UTF-8 as plain text. On Unix a returned path is decoded with
-        `os.fsdecode`, so `os.fsencode` on it names the same file even
-        when the name is not valid UTF-8; elsewhere an undecodable name
-        is decoded lossily. Symlinks and subdirectories are skipped, not
-        followed. Each item is the `Document` for a document that
-        analyzed, its path in `provenance.source.path`, or a
-        `DocumentError` (`path`, `error`) for one that did not, so one
-        unreadable file costs one item rather than the whole walk. Test
-        `"error" in item` to tell them apart.
-
-        Raises:
-            OSError: the path does not exist, or the directory could not
-                be listed. Both are `Error::Io`, which routes here.
-        """
+    def to_dict(self) -> DocumentDict:
+        """The whole document as the schema's JSON shape: a new dict,
+        yours to change."""
         ...
 
 @final
@@ -374,20 +370,51 @@ def cli_main(argv: Sequence[str | bytes | os.PathLike[str] | os.PathLike[bytes]]
     """
     ...
 
-def semantic_clusters(
-    embeddings: list[list[float]], threshold: float, model_hash: str
-) -> VectorClusters:
-    """Cluster caller-supplied embedding vectors at `threshold`.
+def summarize(doc: Document, n: int = 3, *, method: SummaryMethodName | None = None) -> Summary:
+    """The `n` sentences that best represent `doc`, in document order.
 
-    The vectors-in twin of `Matra.semantic_clusters` for consumers who
-    already hold embeddings; indices in the result are positions in
-    `embeddings`. No document is read, so the result has no provenance:
-    it carries the threshold and `model_hash`, as `embedder`, in
-    `parameters`.
+    `method` names the ranking; with none, matra's default runs (TF-IDF
+    today). Either way the result records the method and `n` in its
+    provenance. Each method scores on its own scale.
 
     Raises:
-        ValueError: vectors disagree on dimension, contain a non-finite
-            value, exceed the 2,000-vector cap, or the threshold is not
-            finite.
+        InvalidInputError: an unknown `method`.
+        InputTooLargeError: the document exceeds the method's sentence
+            cap.
+    """
+    ...
+
+def keyphrases(
+    doc: Document, n: int = 10, *, method: KeyphraseMethodName | None = None
+) -> Keyphrases:
+    """At most `n` phrases that best name what `doc` is about, highest
+    score first, each with every place it occurs.
+
+    `method` names the ranking; with none, matra's default runs (RAKE
+    today). The result records the method and `n` in its provenance.
+
+    Raises:
+        InvalidInputError: an unknown `method`.
+        InputTooLargeError: the document exceeds the method's token cap.
+    """
+    ...
+
+def clusters(doc: Document, embedder: Embedder, threshold: float = 0.85) -> Clusters:
+    """`doc`'s sentences grouped by the similarity of their embeddings.
+
+    `embedder` is any object satisfying the `Embedder` protocol: two
+    methods, `embed` and `identity`. `Model2Vec` is one of them, and it
+    takes a fast path that calls no Python. Your own object is asked for
+    its identity once, before anything is embedded.
+
+    Tier 2 output: the clusters reflect the embedder's geometry, and the
+    result's provenance records its identity and the threshold. See
+    `matra.types.Clusters` for what co-membership does and does not mean.
+
+    Raises:
+        InputTooLargeError: more than 2,000 sentences.
+        InvalidInputError: the threshold is not finite, or the embedder
+            broke its contract (raised, returned something other than a
+            sequence of vectors, or returned the wrong number of them).
     """
     ...
