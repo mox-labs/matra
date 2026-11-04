@@ -119,11 +119,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.7857,
-      "readability_grade": 22.7414,
+      "lexical_density": 0.6522,
+      "readability_grade": 12.8757,
       "sentences": 1,
-      "text": "`--json` emits the full `Document` (`sections`, `vocabulary_ttr`, `nominalization_ratio`, `passive_ratio`) inside the envelope described below:",
-      "words": 18
+      "text": "`--json` emits the full `Document` (`provenance`, `sections`, and `metrics`, which carries the counts and ratios the table prints) inside the envelope described below:",
+      "words": 24
     },
     {
       "compression_ratio": null,
@@ -405,13 +405,22 @@
       "words": 105
     },
     {
-      "compression_ratio": 0.5633,
+      "compression_ratio": 0.5701,
       "in_blockquote": false,
-      "lexical_density": 0.5283,
-      "readability_grade": 10.8925,
+      "lexical_density": 0.6,
+      "readability_grade": 12.386,
       "sentences": 3,
-      "text": "Stability: `format_version` increments on any change to the envelope or to a field's meaning; the `result` value is the serde form of the documented domain types. That is the same promise cargo makes for `cargo metadata --format-version`, and it is the whole promise. Pin your consumer to a `format_version` you have tested against.",
-      "words": 55
+      "text": "Stability: `format_version` increments on any change to the envelope, and whenever the document schema's major version moves; the `result` value is the serde form of the documented domain types. That is the same promise cargo makes for `cargo metadata --format-version`. Pin your consumer to a `format_version` you have tested against.",
+      "words": 52
+    },
+    {
+      "compression_ratio": 0.5602,
+      "in_blockquote": false,
+      "lexical_density": 0.5467,
+      "readability_grade": 7.484,
+      "sentences": 4,
+      "text": "A `Document` also names its own schema version, in `result.provenance.schema` (`\"2.0\"`), and that is the only place it appears. A minor version adds optional fields only; anything else is a major. So ignore fields you do not recognize, treat every string set you receive as open (`format`, `pos`, `dep`, `mood`, `pattern`, the feature names), and reject a major you do not know. The JSON Schema for each major is published in the repository at `spec/schema/v2/document.schema.json`.",
+      "words": 76
     },
     {
       "compression_ratio": 0.5441,

@@ -153,13 +153,13 @@
       "words": 53
     },
     {
-      "compression_ratio": 0.5831,
+      "compression_ratio": 0.5748,
       "in_blockquote": false,
-      "lexical_density": 0.5333,
-      "readability_grade": 9.3367,
+      "lexical_density": 0.5323,
+      "readability_grade": 9.8679,
       "sentences": 4,
-      "text": "Two things this route does not change. Attribution still travels: the vectors do not carry the model identity, you hand `model.model_hash` to `semantic_clusters` and it comes back on the result, so a cross-document score is as attributable as a sentence one. And a zero-magnitude vector, which is what an empty document embeds to, still gets no edge at any threshold.",
-      "words": 62
+      "text": "Two things this route does not change. Attribution still travels: the vectors do not carry the model identity, you hand `model.model_hash` to `semantic_clusters` and it comes back on the result as `identity`, so a cross-document score is as attributable as a sentence one. And a zero-magnitude vector, which is what an empty document embeds to, still gets no edge at any threshold.",
+      "words": 65
     },
     {
       "compression_ratio": null,

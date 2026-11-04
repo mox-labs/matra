@@ -100,7 +100,7 @@ for item in v.analyze_path("docs/"):
     if "error" in item:
         print(f"{item['path']}: {item['error']['kind']}: {item['error']['message']}")
     else:
-        print(item["path"], item["analysis"]["vocabulary_ttr"])
+        print(item["path"], item["analysis"]["metrics"]["vocabulary_ttr"])
 ```
 
 One unreadable file costs one item, not the walk. A document that analyzed arrives as a `CorpusEntry` (`path`, `analysis`, where `analysis` is the same shape `analyze` returns); one that did not arrives as a `DocumentError` (`path`, `error`), holding the position the document would have had. The `error` object carries a `kind` you can branch on and a `message` for a human to read. `matra.ERROR_KINDS` is the whole vocabulary, in the order the Rust enum declares it: `model_not_found`, `model_invalid`, `parse_failed`, `input_too_large`, `unsupported_format`, `invalid_input`, `io`. Testing `"error" in item` is also what narrows the union for a type checker.
@@ -123,7 +123,7 @@ class MyEmbedder:
 
 
 clusters = v.semantic_clusters(text, 0.85, MyEmbedder())
-assert clusters["model_hash"] == "my-service/v3"
+assert clusters["identity"] == "my-service/v3"
 ```
 
 `Embedder` in `matra.types` is the protocol those two methods satisfy, and it is what `semantic_clusters` is annotated with. Importing it is optional and buys you a type checker's opinion, not a runtime check.
@@ -132,7 +132,7 @@ The object is asked for its identity before the text is parsed, so an embedder t
 
 The contract is the one the Rust port carries: exactly one vector per input text, in input order, every vector the same length. Break it and the call raises `ValueError` with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your `embed` arrives as `ValueError` too, with your exception's own text inside the message.
 
-`identity` is read once, when the object is handed over, and travels into the result as `model_hash`. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.
+`identity` is read once, when the object is handed over, and travels into the result as `identity`. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.
 
 ## Size limits
 
@@ -153,26 +153,27 @@ from matra import Document, Keyphrase, Paragraph, ScoredSentence, Section, Sente
 ```python
 for section in result["sections"]:            # heading, level, paragraphs
     for para in section["paragraphs"]:        # text, in_blockquote, sentences,
-                                              # readability_grade, lexical_density,
-                                              # compression_ratio
-        for sentence in para["sentences"]:    # text, tokens, negations,
-                                              # modals, bare_assertion,
-                                              # reportings, root_adverbials,
-                                              # hearst_pairs
+                                              # metrics
+        print(para["metrics"]["readability_grade"])  # float or None
+        for sentence in para["sentences"]:    # text, tokens, word_count,
+                                              # tree_depth, passive, negations,
+                                              # modals, clausal_complements,
+                                              # root_adverbials, hearst_pairs,
+                                              # root_mood
             for token in sentence["tokens"]:
                 print(token["lemma"], token["pos"], token["dep"])
 
-print(result["vocabulary_ttr"])        # float or None
-print(result["nominalization_ratio"])  # float or None
+print(result["metrics"]["vocabulary_ttr"])        # float or None
+print(result["metrics"]["nominalization_ratio"])  # float or None
 ```
 
-A `Token` carries the ten CoNLL-U columns under these keys: `id`, `text`, `lemma`, `pos`, `xpos`, `feats`, `head`, `dep`, `deps`, `misc`, plus the derived `is_punct`. `head` is the `id` of the governing token in the same sentence, and `0` marks the root.
+A `Token` carries the ten CoNLL-U columns under these keys: `id`, `text`, `lemma`, `pos`, `xpos`, `features`, `head`, `dep`, `deps`, `misc`, plus the derived `is_punct`. `features` is a dict from feature name to value, `{"Number": "Plur"}`. `head` is the `id` of the governing token in the same sentence, and `0` marks the root.
 
 `ScoredSentence` (`text`, `score`, `position`) is the shape for `tfidf_summarize` and `textrank_summarize`. `Keyphrase` (`phrase`, `score`) is the shape for `rake_keyphrases` and `yake_keyphrases`.
 
 ## Why a metric field is `None`
 
-Each metric declines to run below its own threshold, and a `None` records that decision rather than a failed computation.
+Each metric declines to run below its own threshold, and a `None` records that decision rather than a failed computation. The first three are in each paragraph's `metrics`, the rest in the document's.
 
 | Field | Filled when |
 |---|---|
@@ -181,52 +182,43 @@ Each metric declines to run below its own threshold, and a `None` records that d
 | `compression_ratio` | the paragraph has more than 50 words, `in_blockquote` is false, and the paragraph text is at most 256 KiB |
 | `vocabulary_ttr` | the document has at least one non-punctuation token |
 | `nominalization_ratio` | the same condition as `vocabulary_ttr` |
-| `passive_ratio` | the document has at least one sentence |
+| `passive_ratio`, `mean_sentence_length` | the document has at least one sentence |
+| `sentence_length_std` | the document has at least two sentences |
 
-"Words" means the count of tokens with `is_punct` false across the paragraph's sentences. Blockquote paragraphs are never parsed at all: their `sentences` list is empty, their three metric fields are `None`, and they contribute nothing to any document total.
+"Words" means the count of tokens with `is_punct` false across the paragraph's sentences. Blockquote paragraphs are never parsed at all: their `sentences` list is empty, their three paragraph metrics are `None`, and they contribute nothing to any document total.
 
 `analyze_markdown` also drops content before parsing. YAML frontmatter, fenced code blocks, and table rows beginning with `|` are removed, and a line reading `## References` or `*References*` ends decomposition for the rest of the document. Use `analyze` if your markdown uses that heading for something other than a trailing bibliography.
 
 ## The document-level aggregates
 
-Three document-level aggregates arrive in the dict as fields: `vocabulary_ttr`, `nominalization_ratio`, and `passive_ratio`. Read them rather than recomputing them:
+Every document-level aggregate arrives in the dict as a field of `metrics`. Read them rather than recomputing them:
 
 ```python
 result = v.analyze("The report was filed. The committee met.")
 print(sorted(result.keys()))
-# ['nominalization_ratio', 'passive_ratio', 'sections', 'vocabulary_ttr']
-print(result["passive_ratio"])   # a float, or None when there were no sentences to measure
+# ['metrics', 'provenance', 'sections']
+print(result["metrics"])
+# {'total_words': 7, 'total_sentences': 2, 'paragraph_count': 1,
+#  'mean_sentence_length': 3.5, 'sentence_length_std': 0.7071067811865476,
+#  'vocabulary_ttr': 0.8571428571428571, 'nominalization_ratio': 0.0,
+#  'passive_ratio': 0.5}
 ```
 
-Rust's `Document` carries `passive_ratio` twice: as the method that computes the ratio, and as the field the metric suite fills with what that method returned. The field exists exactly so the aggregate crosses the boundary as data instead of being re-derived once per language binding (RFC-0008), which is why it is in the dict above.
+The counts are always integers. Each ratio is `None` when its condition was not met: `mean_sentence_length` and `passive_ratio` need a sentence, `sentence_length_std` (the sample standard deviation, as `statistics.stdev` computes it) needs two.
 
-Methods do not cross the FFI boundary, only fields do, so the five aggregates that exist only as methods are absent: `paragraph_count()`, `total_sentences()`, `total_words()`, `mean_sentence_length()`, and `sentence_length_std()`. Those five you compute from the fields you already have:
-
-```python
-from statistics import stdev
-
-paragraphs = [para for sec in result["sections"] for para in sec["paragraphs"]]
-sentences = [s for para in paragraphs for s in para["sentences"]]
-lengths = [sum(1 for t in s["tokens"] if not t["is_punct"]) for s in sentences]
-
-paragraph_count = len(paragraphs)
-total_sentences = len(sentences)
-total_words = sum(lengths)
-mean_sentence_length = total_words / total_sentences if total_sentences else 0.0
-sentence_length_std = stdev(lengths) if len(lengths) > 1 else 0.0
-```
-
-`statistics.stdev` is the sample standard deviation, which is the one `Document::sentence_length_std` computes; both return `0.0` below two sentences, the Rust method by definition and the line above by the guard.
-
-There is no per-sentence passive flag either, because `Sentence::is_passive()` is a method too. Its definition is one test over the tokens you already have: a sentence is passive when any of them carries `nsubj:pass`, `nsubjpass`, or `aux:pass`.
+Methods do not cross the FFI boundary, only fields do, which is why these are fields: the metric suite materializes them so the aggregates cross as data instead of being re-derived once per language binding (RFC-0008). The same holds per sentence: `word_count`, `tree_depth` and `passive` are keys on each sentence dict.
 
 ```python
 passive = [
-    s
-    for s in sentences
-    if any(t["dep"] in ("nsubj:pass", "nsubjpass", "aux:pass") for t in s["tokens"])
+    s["text"]
+    for section in result["sections"]
+    for para in section["paragraphs"]
+    for s in para["sentences"]
+    if s["passive"]
 ]
 ```
+
+`result["provenance"]` says where the document came from: `matra` (the version), `schema` (`"2.0"`, the schema version), `parser` (`name`, `model`, `sha256`, `license`), `format` (`markdown` or `plain_text`), and `source` (`path`, `bytes`, `sha256` of the input). Read `schema` before anything else when a result was stored by another process: ignore keys you do not recognize, and reject a major version you do not know.
 
 ## Exceptions
 

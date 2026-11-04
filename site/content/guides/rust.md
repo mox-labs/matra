@@ -69,7 +69,7 @@ let engine = Engine::with_defaults()?;
 // A string is a stream of one.
 for item in engine.analyze(Ingest::text("Plain text in memory.", Format::PlainText)) {
     let entry = item.map_err(|e| e.error)?;
-    println!("{} sentences", entry.analysis.total_sentences());
+    println!("{} sentences", entry.analysis.metrics.total_sentences);
 }
 
 // A directory is a stream of many. Same call.
@@ -142,20 +142,21 @@ The two keyphrase extractors return score order, highest first. Phrases with equ
 
 ## Why a metric slot is `None`
 
-Every metric slot is an `Option`, and each metric has its own threshold. A `None` means the metric declined to run, not that it computed nothing.
+Every ratio in `ParagraphMetrics` and `DocumentMetrics` is an `Option`, and each metric has its own threshold. A `None` means the metric declined to run, not that it computed nothing. The counts in `DocumentMetrics` (`total_words`, `total_sentences`, `paragraph_count`) are plain integers.
 
 | Slot | Filled when |
 |---|---|
-| `Paragraph::readability_grade` | the paragraph has more than 10 words and is not in a blockquote |
-| `Paragraph::lexical_density` | the paragraph has at least 1 word and is not in a blockquote |
-| `Paragraph::compression_ratio` | the paragraph has more than 50 words, is not in a blockquote, and its text is at most 256 KiB |
-| `Document::vocabulary_ttr` | the document's attached sentences hold at least one non-punctuation token |
-| `Document::nominalization_ratio` | the same condition as `vocabulary_ttr` |
-| `Document::passive_ratio` | the document holds at least one sentence |
+| `ParagraphMetrics::readability_grade` | the paragraph has more than 10 words and is not in a blockquote |
+| `ParagraphMetrics::lexical_density` | the paragraph has at least 1 word and is not in a blockquote |
+| `ParagraphMetrics::compression_ratio` | the paragraph has more than 50 words, is not in a blockquote, and its text is at most 256 KiB |
+| `DocumentMetrics::vocabulary_ttr` | the document's attached sentences hold at least one non-punctuation token |
+| `DocumentMetrics::nominalization_ratio` | the same condition as `vocabulary_ttr` |
+| `DocumentMetrics::passive_ratio`, `DocumentMetrics::mean_sentence_length` | the document holds at least one sentence |
+| `DocumentMetrics::sentence_length_std` | the document holds at least two sentences |
 
 "Words" here means `Paragraph::word_count()`, the non-punctuation token count summed over the paragraph's attached sentences. A paragraph whose `sentences` vector is empty has a word count of zero and therefore no per-paragraph metrics at all.
 
-Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`. They remain in the section tree with `in_blockquote = true` and their `text` kept, less its `>` markers.
+Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`, though they count in `paragraph_count`. They remain in the section tree with `in_blockquote = true` and their `text` kept, less its `>` markers.
 
 ## What markdown decomposition drops
 
@@ -204,7 +205,7 @@ Token::builder(id: usize, text: String, lemma: String, pos: String, head: usize,
 Sentence::new(text: String, tokens: Vec<Token>) -> Sentence
 ```
 
-Every string argument is an owned `String`, not a `&str`, so a literal needs `.to_string()` on the way in. `TokenBuilder` takes the remaining CoNLL-U columns through `xpos`, `feats`, `deps` and `misc`, each also a `String`, plus `is_punct` for the derived flag, and `build()` hands back the `Token`:
+Every string argument is an owned `String`, not a `&str`, so a literal needs `.to_string()` on the way in. `TokenBuilder` takes the remaining CoNLL-U columns through `xpos`, `feats`, `deps` and `misc`, each also a `String`, plus `is_punct` for the derived flag, and `build()` hands back the `Token`. `feats` takes column 6 as CoNLL-U writes it and converts it into the token's `features` map:
 
 ```rust
 use matra::domain::Token;
@@ -221,6 +222,7 @@ let token = Token::builder(
 .build();
 
 assert_eq!(token.feat("Tense"), Some("Past"));
+assert_eq!(token.features.get("Mood").map(String::as_str), Some("Ind"));
 ```
 
 ## Analyze a directory
@@ -294,6 +296,6 @@ for sentence in doc.sentences() {
 
 matra reports the dependency label UDPipe assigned (`"obj"` here). It does not interpret what the phrase means. That interpretation is your application's job.
 
-The remaining navigation methods: `head_of(id)` returns the head token, or `None` for the root and for an id that is not in the sentence; `content_tokens()` and `word_count()` give you the non-punctuation view; `is_passive()` reports whether any token carries `nsubj:pass`, `nsubjpass`, or `aux:pass`.
+The remaining navigation methods: `head_of(id)` returns the head token, or `None` for the root and for an id that is not in the sentence; `content_tokens()` gives you the non-punctuation view. Three counts are fields, computed when the sentence is built: `word_count`, the non-punctuation token count; `passive`, whether any token carries `nsubj:pass`, `nsubjpass`, or `aux:pass`; and `tree_depth`.
 
-`tree_depth()` returns the longest root-to-leaf path in the sentence. On a malformed parse where tokens form a cycle it returns `usize::MAX` rather than truncating at some arbitrary ceiling, so a broken parse is loud rather than quietly shallow. Compare against `usize::MAX` before you use the value in arithmetic. `subtree` and `children_of` stay safe on the same malformed input; both use a visited set.
+`tree_depth` is the longest root-to-leaf path in the sentence, an `Option<usize>`. On a malformed parse where tokens form a cycle it is `None` rather than a depth truncated at some arbitrary ceiling, so a broken parse is a value the compiler makes you handle rather than a number that reads as a deep tree. `subtree` and `children_of` stay safe on the same malformed input; both use a visited set.

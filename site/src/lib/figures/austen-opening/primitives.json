@@ -2,7 +2,15 @@
   "data": {
     "sentences": [
       {
-        "bare_assertion": true,
+        "clausal_complements": [
+          {
+            "ccomp_id": 21,
+            "subject_id": null,
+            "subject_lemma": null,
+            "verb_id": 6,
+            "verb_lemma": "acknowledge"
+          }
+        ],
         "hearst_pairs": [],
         "modals": [
           {
@@ -13,17 +21,12 @@
         ],
         "negations": [],
         "paragraph": 1,
-        "reportings": [
-          {
-            "ccomp_id": 21,
-            "subject_id": null,
-            "subject_lemma": null,
-            "verb_id": 6,
-            "verb_lemma": "acknowledge"
-          }
-        ],
         "root_adverbials": [],
         "root_id": 4,
+        "root_mood": {
+          "mood": "Ind",
+          "root_id": 4
+        },
         "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
         "tokens": [
           {
@@ -129,7 +132,7 @@
         ]
       },
       {
-        "bare_assertion": false,
+        "clausal_complements": [],
         "hearst_pairs": [],
         "modals": [
           {
@@ -140,7 +143,6 @@
         ],
         "negations": [],
         "paragraph": 2,
-        "reportings": [],
         "root_adverbials": [
           {
             "adv_id": 1,
@@ -152,6 +154,7 @@
           }
         ],
         "root_id": 3,
+        "root_mood": null,
         "text": "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.",
         "tokens": [
           {
@@ -361,12 +364,7 @@
         ]
       },
       {
-        "bare_assertion": true,
-        "hearst_pairs": [],
-        "modals": [],
-        "negations": [],
-        "paragraph": 3,
-        "reportings": [
+        "clausal_complements": [
           {
             "ccomp_id": 24,
             "subject_id": 18,
@@ -375,8 +373,16 @@
             "verb_lemma": "hear"
           }
         ],
+        "hearst_pairs": [],
+        "modals": [],
+        "negations": [],
+        "paragraph": 3,
         "root_adverbials": [],
         "root_id": 8,
+        "root_mood": {
+          "mood": "Ind",
+          "root_id": 8
+        },
         "text": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
         "tokens": [
           {
@@ -494,7 +500,15 @@
         ]
       },
       {
-        "bare_assertion": true,
+        "clausal_complements": [
+          {
+            "ccomp_id": 6,
+            "subject_id": 1,
+            "subject_lemma": "Mr.",
+            "verb_id": 3,
+            "verb_lemma": "reply"
+          }
+        ],
         "hearst_pairs": [],
         "modals": [],
         "negations": [
@@ -505,17 +519,12 @@
           }
         ],
         "paragraph": 4,
-        "reportings": [
-          {
-            "ccomp_id": 6,
-            "subject_id": 1,
-            "subject_lemma": "Mr.",
-            "verb_id": 3,
-            "verb_lemma": "reply"
-          }
-        ],
         "root_adverbials": [],
         "root_id": 3,
+        "root_mood": {
+          "mood": "Ind",
+          "root_id": 3
+        },
         "text": "Mr. Bennet replied that he had not.",
         "tokens": [
           {

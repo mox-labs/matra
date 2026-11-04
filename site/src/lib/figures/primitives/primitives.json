@@ -2,7 +2,7 @@
   "data": {
     "sentences": [
       {
-        "bare_assertion": true,
+        "clausal_complements": [],
         "hearst_pairs": [],
         "modals": [],
         "negations": [
@@ -13,7 +13,6 @@
           }
         ],
         "paragraph": 1,
-        "reportings": [],
         "root_adverbials": [
           {
             "adv_id": 4,
@@ -21,6 +20,10 @@
           }
         ],
         "root_id": 5,
+        "root_mood": {
+          "mood": "Ind",
+          "root_id": 5
+        },
         "text": "The committee did not approve the budget.",
         "tokens": [
           {
@@ -58,7 +61,7 @@
         ]
       },
       {
-        "bare_assertion": false,
+        "clausal_complements": [],
         "hearst_pairs": [],
         "modals": [
           {
@@ -69,9 +72,9 @@
         ],
         "negations": [],
         "paragraph": 1,
-        "reportings": [],
         "root_adverbials": [],
         "root_id": 3,
+        "root_mood": null,
         "text": "Members must submit revised estimates by Friday.",
         "tokens": [
           {
@@ -109,12 +112,7 @@
         ]
       },
       {
-        "bare_assertion": true,
-        "hearst_pairs": [],
-        "modals": [],
-        "negations": [],
-        "paragraph": 1,
-        "reportings": [
+        "clausal_complements": [
           {
             "ccomp_id": 8,
             "subject_id": 2,
@@ -123,8 +121,16 @@
             "verb_lemma": "report"
           }
         ],
+        "hearst_pairs": [],
+        "modals": [],
+        "negations": [],
+        "paragraph": 1,
         "root_adverbials": [],
         "root_id": 3,
+        "root_mood": {
+          "mood": "Ind",
+          "root_id": 3
+        },
         "text": "The chair reported that the vote was postponed.",
         "tokens": [
           {
@@ -166,7 +172,7 @@
         ]
       },
       {
-        "bare_assertion": false,
+        "clausal_complements": [],
         "hearst_pairs": [],
         "modals": [
           {
@@ -177,7 +183,6 @@
         ],
         "negations": [],
         "paragraph": 1,
-        "reportings": [],
         "root_adverbials": [
           {
             "adv_id": 1,
@@ -185,6 +190,7 @@
           }
         ],
         "root_id": 7,
+        "root_mood": null,
         "text": "Reportedly, the new figures could arrive next week.",
         "tokens": [
           {
@@ -230,7 +236,7 @@
         ]
       },
       {
-        "bare_assertion": true,
+        "clausal_complements": [],
         "hearst_pairs": [
           {
             "hypernym": {
@@ -266,9 +272,12 @@
         "modals": [],
         "negations": [],
         "paragraph": 1,
-        "reportings": [],
         "root_adverbials": [],
         "root_id": 10,
+        "root_mood": {
+          "mood": "Ind",
+          "root_id": 10
+        },
         "text": "Agencies such as the treasury and the audit office publish quarterly reports.",
         "tokens": [
           {

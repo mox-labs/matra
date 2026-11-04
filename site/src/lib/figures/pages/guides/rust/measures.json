@@ -263,11 +263,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5,
-      "readability_grade": 6.7262,
-      "sentences": 2,
-      "text": "Every metric slot is an `Option`, and each metric has its own threshold. A `None` means the metric declined to run, not that it computed nothing.",
-      "words": 26
+      "lexical_density": 0.5385,
+      "readability_grade": 11.8697,
+      "sentences": 3,
+      "text": "Every ratio in `ParagraphMetrics` and `DocumentMetrics` is an `Option`, and each metric has its own threshold. A `None` means the metric declined to run, not that it computed nothing. The counts in `DocumentMetrics` (`total_words`, `total_sentences`, `paragraph_count`) are plain integers.",
+      "words": 39
     },
     {
       "compression_ratio": null,
@@ -281,11 +281,11 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5909,
-      "readability_grade": 8.0982,
+      "lexical_density": 0.5918,
+      "readability_grade": 8.8412,
       "sentences": 3,
-      "text": "Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`. They remain in the section tree with `in_blockquote = true` and their `text` kept, less its `>` markers.",
-      "words": 43
+      "text": "Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`, though they count in `paragraph_count`. They remain in the section tree with `in_blockquote = true` and their `text` kept, less its `>` markers.",
+      "words": 48
     },
     {
       "compression_ratio": null,
@@ -351,13 +351,13 @@
       "words": 37
     },
     {
-      "compression_ratio": 0.6756,
+      "compression_ratio": 0.6046,
       "in_blockquote": false,
-      "lexical_density": 0.617,
-      "readability_grade": 10.6473,
-      "sentences": 2,
-      "text": "Every string argument is an owned `String`, not a `&str`, so a literal needs `.to_string()` on the way in. `TokenBuilder` takes the remaining CoNLL-U columns through `xpos`, `feats`, `deps` and `misc`, each also a `String`, plus `is_punct` for the derived flag, and `build()` hands back the `Token`:",
-      "words": 53
+      "lexical_density": 0.6032,
+      "readability_grade": 9.8317,
+      "sentences": 3,
+      "text": "Every string argument is an owned `String`, not a `&str`, so a literal needs `.to_string()` on the way in. `TokenBuilder` takes the remaining CoNLL-U columns through `xpos`, `feats`, `deps` and `misc`, each also a `String`, plus `is_punct` for the derived flag, and `build()` hands back the `Token`. `feats` takes column 6 as CoNLL-U writes it and converts it into the token's `features` map:",
+      "words": 71
     },
     {
       "compression_ratio": null,
@@ -450,22 +450,22 @@
       "words": 24
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5779,
       "in_blockquote": false,
-      "lexical_density": 0.5952,
-      "readability_grade": 20.1757,
-      "sentences": 1,
-      "text": "The remaining navigation methods: `head_of(id)` returns the head token, or `None` for the root and for an id that is not in the sentence; `content_tokens()` and `word_count()` give you the non-punctuation view; `is_passive()` reports whether any token carries `nsubj:pass`, `nsubjpass`, or `aux:pass`.",
-      "words": 45
+      "lexical_density": 0.6071,
+      "readability_grade": 14.2943,
+      "sentences": 2,
+      "text": "The remaining navigation methods: `head_of(id)` returns the head token, or `None` for the root and for an id that is not in the sentence; `content_tokens()` gives you the non-punctuation view. Three counts are fields, computed when the sentence is built: `word_count`, the non-punctuation token count; `passive`, whether any token carries `nsubj:pass`, `nsubjpass`, or `aux:pass`; and `tree_depth`.",
+      "words": 60
     },
     {
-      "compression_ratio": 0.5704,
+      "compression_ratio": 0.5869,
       "in_blockquote": false,
-      "lexical_density": 0.6032,
-      "readability_grade": 9.8446,
-      "sentences": 4,
-      "text": "`tree_depth()` returns the longest root-to-leaf path in the sentence. On a malformed parse where tokens form a cycle it returns `usize::MAX` rather than truncating at some arbitrary ceiling, so a broken parse is loud rather than quietly shallow. Compare against `usize::MAX` before you use the value in arithmetic. `subtree` and `children_of` stay safe on the same malformed input; both use a visited set.",
-      "words": 67
+      "lexical_density": 0.5362,
+      "readability_grade": 10.4814,
+      "sentences": 3,
+      "text": "`tree_depth` is the longest root-to-leaf path in the sentence, an `Option<usize>`. On a malformed parse where tokens form a cycle it is `None` rather than a depth truncated at some arbitrary ceiling, so a broken parse is a value the compiler makes you handle rather than a number that reads as a deep tree. `subtree` and `children_of` stay safe on the same malformed input; both use a visited set.",
+      "words": 73
     }
   ]
 }

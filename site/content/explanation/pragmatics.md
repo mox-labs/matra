@@ -26,12 +26,12 @@ Their caps differ from the summarizers': both are bounded on total tokens rather
 
 | Question | Read |
 |---|---|
-| Is it passive-heavy? | `Document.passive_ratio`, the share of sentences carrying a passive construction |
-| Is it dense? | `Paragraph.lexical_density` for the content-word share, alongside `readability_grade` |
-| Is it repetitive in wording? | `Paragraph.compression_ratio`, where a lower value means the text compressed further and so repeats more on the surface |
-| How varied is the vocabulary? | `Document.vocabulary_ttr`, but see the length caveat below |
+| Is it passive-heavy? | `DocumentMetrics.passive_ratio`, the share of sentences carrying a passive construction |
+| Is it dense? | `ParagraphMetrics.lexical_density` for the content-word share, alongside `readability_grade` |
+| Is it repetitive in wording? | `ParagraphMetrics.compression_ratio`, where a lower value means the text compressed further and so repeats more on the surface |
+| How varied is the vocabulary? | `DocumentMetrics.vocabulary_ttr`, but see the length caveat below |
 | Is it repetitive in paraphrase? | none of the above: lexical measures cannot see restatement in different words. That is what `SemanticClusters` is for |
-| How nominal is the style? | `Document.nominalization_ratio` |
+| How nominal is the style? | `DocumentMetrics.nominalization_ratio` |
 
 Two cautions. `vocabulary_ttr` is a raw type-token ratio and falls as text grows, so two documents of different lengths are not comparable on it without normalizing first. And any of these slots can be `None`, which means the metric was not computed (too short, in a blockquote, or over a per-metric byte ceiling) and is distinct from a computed zero.
 

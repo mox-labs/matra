@@ -15,7 +15,7 @@ That split runs through every tier:
 | matra reports | Your code decides |
 |---|---|
 | a sentence carries `nsubj:pass` | whether the missing agent matters here |
-| `reportings` names a verb governing a `ccomp` | whether that verb is evidential and whether the source is credible |
+| `clausal_complements` names a verb governing a `ccomp` | whether that verb is evidential and whether the source is credible |
 | `hearst_pairs` names a construction that conventionally signals hypernymy | whether the hypernymy relation actually holds |
 | `modals` names `must` on an `aux` arc | whether that `must` is obligation or inference |
 | a `SemanticCluster` groups sentences whose vectors cleared your threshold | whether those sentences say the same thing |

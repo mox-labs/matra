@@ -99,15 +99,15 @@ Every gate returns a typed variant of `Error`. There is no `Result<T, String>` a
 
 The `what` discriminator names which gate fired, so a caller can route a document-too-big differently from a corpus-too-big.
 
-Cycle safety is a sentinel, not a ceiling: `Sentence::tree_depth` returns `usize::MAX` on a malformed parse containing a cycle rather than silently truncating.
+Cycle safety is a value, not a ceiling: `Sentence::tree_depth` is `None` on a malformed parse containing a cycle rather than silently truncated.
 
 ## Fields cross languages, methods do not
 
 Values reach Python through serde and pythonize. A field has a serde representation and crosses with its name unchanged. A method has none, so there is nothing for it to cross with.
 
-Rust-only, therefore: `Document::total_words`, `total_sentences`, `paragraph_count`, `mean_sentence_length`, `sentence_length_std`; every `Corpus` aggregate (`total_words`, `passive_ratio`, `mean_readability`); the `Sentence` tree walks (`root_token`, `head_of`, `children_of`, `subtree`, `tree_depth`, `is_passive`, `content_tokens`, `word_count`, `reportings_in`, `root_adverbials_in`); `Paragraph::word_count` and `sentence_count`; and `Token::feat`.
+Rust-only, therefore: the `Document` iterators (`paragraphs`, `sentences`, `tokens`); every `Corpus` aggregate (`total_words`, `passive_ratio`, `mean_readability`); the `Sentence` tree walks and filters (`root_token`, `head_of`, `children_of`, `subtree`, `content_tokens`, `clausal_complements_in`, `root_adverbials_in`); `Paragraph::word_count` and `sentence_count`; and `Token::feat`.
 
-When an aggregate needs to be visible cross-language it is materialized as a field. `Document::passive_ratio` is the worked case: the method still exists for Rust callers, and the metric suite writes its value into the `passive_ratio` field, which is what crosses.
+When an aggregate needs to be visible cross-language it is materialized as a field. The document's counts, sentence-length statistics and ratios are the fields of `DocumentMetrics`, which the metric suite fills, and a sentence's `word_count`, `tree_depth` and `passive` are fields set when it is built.
 
 ## What Python exposes
 

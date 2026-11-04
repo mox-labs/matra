@@ -1,8 +1,24 @@
 {
-  "format_version": 1,
+  "format_version": 2,
   "command": "analyze",
   "input": "note.txt",
   "result": {
+    "provenance": {
+      "matra": "0.2.1",
+      "schema": "2.0",
+      "parser": {
+        "name": "udpipe",
+        "model": "english-ewt-ud-2.5-191206",
+        "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957",
+        "license": "CC BY-NC-SA 4.0 (non-commercial)"
+      },
+      "format": "plain_text",
+      "source": {
+        "path": "note.txt",
+        "bytes": 46,
+        "sha256": "791a9f16a1bd3ba83bc1f02973076cf224e0cd4667d4ec3bab2f2ba75ab7db7d"
+      }
+    },
     "sections": [
       {
         "heading": null,
@@ -21,7 +37,10 @@
                     "lemma": "the",
                     "pos": "DET",
                     "xpos": "DT",
-                    "feats": "Definite=Def|PronType=Art",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
                     "head": 2,
                     "dep": "det",
                     "deps": "_",
@@ -34,7 +53,9 @@
                     "lemma": "committee",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 3,
                     "dep": "nsubj",
                     "deps": "_",
@@ -47,7 +68,11 @@
                     "lemma": "approve",
                     "pos": "VERB",
                     "xpos": "VBD",
-                    "feats": "Mood=Ind|Tense=Past|VerbForm=Fin",
+                    "features": {
+                      "Mood": "Ind",
+                      "Tense": "Past",
+                      "VerbForm": "Fin"
+                    },
                     "head": 0,
                     "dep": "root",
                     "deps": "_",
@@ -60,7 +85,10 @@
                     "lemma": "the",
                     "pos": "DET",
                     "xpos": "DT",
-                    "feats": "Definite=Def|PronType=Art",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
                     "head": 5,
                     "dep": "det",
                     "deps": "_",
@@ -73,7 +101,9 @@
                     "lemma": "budget",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 3,
                     "dep": "obj",
                     "deps": "_",
@@ -86,7 +116,7 @@
                     "lemma": "on",
                     "pos": "ADP",
                     "xpos": "IN",
-                    "feats": "",
+                    "features": {},
                     "head": 7,
                     "dep": "case",
                     "deps": "_",
@@ -99,7 +129,9 @@
                     "lemma": "Tuesday",
                     "pos": "PROPN",
                     "xpos": "NNP",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 5,
                     "dep": "nmod",
                     "deps": "_",
@@ -112,7 +144,7 @@
                     "lemma": ".",
                     "pos": "PUNCT",
                     "xpos": ".",
-                    "feats": "",
+                    "features": {},
                     "head": 3,
                     "dep": "punct",
                     "deps": "_",
@@ -120,23 +152,38 @@
                     "is_punct": true
                   }
                 ],
+                "word_count": 7,
+                "tree_depth": 3,
+                "passive": false,
                 "negations": [],
                 "modals": [],
-                "bare_assertion": true,
-                "reportings": [],
+                "clausal_complements": [],
                 "root_adverbials": [],
-                "hearst_pairs": []
+                "hearst_pairs": [],
+                "root_mood": {
+                  "root_id": 3,
+                  "mood": "Ind"
+                }
               }
             ],
-            "readability_grade": null,
-            "lexical_density": 0.5714285714285714,
-            "compression_ratio": null
+            "metrics": {
+              "readability_grade": null,
+              "lexical_density": 0.5714285714285714,
+              "compression_ratio": null
+            }
           }
         ]
       }
     ],
-    "vocabulary_ttr": 0.8571428571428571,
-    "nominalization_ratio": 0.0,
-    "passive_ratio": 0.0
+    "metrics": {
+      "total_words": 7,
+      "total_sentences": 1,
+      "paragraph_count": 1,
+      "mean_sentence_length": 7.0,
+      "sentence_length_std": null,
+      "vocabulary_ttr": 0.8571428571428571,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.0
+    }
   }
 }

@@ -88,8 +88,7 @@ export interface PrimitiveSentence {
 	root_id: number | null;
 	negations: { cue_id: number; cue_lemma: string; head_id: number }[];
 	modals: { aux_id: number; aux_lemma: string; head_id: number }[];
-	bare_assertion: boolean;
-	reportings: {
+	clausal_complements: {
 		verb_id: number;
 		verb_lemma: string;
 		ccomp_id: number;
@@ -102,6 +101,7 @@ export interface PrimitiveSentence {
 		hypernym: HearstSpan;
 		hyponym: HearstSpan;
 	}[];
+	root_mood: { root_id: number; mood: string } | null;
 }
 
 export interface HearstSpan {

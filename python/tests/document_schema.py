@@ -39,6 +39,4 @@ def assert_valid_document(document: Any, context: str) -> None:
         f"{error.message} at /{'/'.join(str(p) for p in error.absolute_path)}"
         for error in validator.iter_errors(document)
     ]
-    assert not errors, f"{context}: the document does not match schema 2:\n  " + "\n  ".join(
-        errors
-    )
+    assert not errors, f"{context}: the document does not match schema 2:\n  " + "\n  ".join(errors)

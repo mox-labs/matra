@@ -1,4 +1,20 @@
 {
+  "provenance": {
+    "matra": "0.2.1",
+    "schema": "2.0",
+    "parser": {
+      "name": "udpipe",
+      "model": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957",
+      "license": "CC BY-NC-SA 4.0 (non-commercial)"
+    },
+    "format": "plain_text",
+    "source": {
+      "path": "constitution-article-one.txt",
+      "bytes": 983,
+      "sha256": "f9d7815f65c16e834dc844760e0709e2f6960164b1ebe63f80c875ffa3403643"
+    }
+  },
   "sections": [
     {
       "heading": null,
@@ -17,7 +33,12 @@
                   "lemma": "we",
                   "pos": "PRON",
                   "xpos": "PRP",
-                  "feats": "Case=Nom|Number=Plur|Person=1|PronType=Prs",
+                  "features": {
+                    "Case": "Nom",
+                    "Number": "Plur",
+                    "Person": "1",
+                    "PronType": "Prs"
+                  },
                   "head": 31,
                   "dep": "nsubj",
                   "deps": "_",
@@ -30,7 +51,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 3,
                   "dep": "det",
                   "deps": "_",
@@ -43,7 +67,9 @@
                   "lemma": "People",
                   "pos": "NOUN",
                   "xpos": "NNS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 1,
                   "dep": "appos",
                   "deps": "_",
@@ -56,7 +82,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 7,
                   "dep": "case",
                   "deps": "_",
@@ -69,7 +95,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 7,
                   "dep": "det",
                   "deps": "_",
@@ -82,7 +111,9 @@
                   "lemma": "United",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 7,
                   "dep": "compound",
                   "deps": "_",
@@ -95,7 +126,9 @@
                   "lemma": "States",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 3,
                   "dep": "nmod",
                   "deps": "_",
@@ -108,7 +141,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 3,
                   "dep": "punct",
                   "deps": "_",
@@ -121,7 +154,7 @@
                   "lemma": "in",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 10,
                   "dep": "case",
                   "deps": "_",
@@ -134,7 +167,9 @@
                   "lemma": "order",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 3,
                   "dep": "nmod",
                   "deps": "_",
@@ -147,7 +182,7 @@
                   "lemma": "to",
                   "pos": "PART",
                   "xpos": "TO",
-                  "feats": "",
+                  "features": {},
                   "head": 12,
                   "dep": "mark",
                   "deps": "_",
@@ -160,7 +195,9 @@
                   "lemma": "form",
                   "pos": "VERB",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 3,
                   "dep": "acl",
                   "deps": "_",
@@ -173,7 +210,10 @@
                   "lemma": "a",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Ind|PronType=Art",
+                  "features": {
+                    "Definite": "Ind",
+                    "PronType": "Art"
+                  },
                   "head": 16,
                   "dep": "det",
                   "deps": "_",
@@ -186,7 +226,7 @@
                   "lemma": "more",
                   "pos": "ADV",
                   "xpos": "RBR",
-                  "feats": "",
+                  "features": {},
                   "head": 15,
                   "dep": "advmod",
                   "deps": "_",
@@ -199,7 +239,9 @@
                   "lemma": "perfect",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos",
+                  "features": {
+                    "Degree": "Pos"
+                  },
                   "head": 16,
                   "dep": "amod",
                   "deps": "_",
@@ -212,7 +254,9 @@
                   "lemma": "Union",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 12,
                   "dep": "obj",
                   "deps": "_",
@@ -225,7 +269,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 18,
                   "dep": "punct",
                   "deps": "_",
@@ -238,7 +282,9 @@
                   "lemma": "establish",
                   "pos": "VERB",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 12,
                   "dep": "conj",
                   "deps": "_",
@@ -251,7 +297,9 @@
                   "lemma": "justice",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 18,
                   "dep": "obj",
                   "deps": "_",
@@ -264,7 +312,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 19,
                   "dep": "punct",
                   "deps": "_",
@@ -277,7 +325,9 @@
                   "lemma": "insure",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos",
+                  "features": {
+                    "Degree": "Pos"
+                  },
                   "head": 23,
                   "dep": "amod",
                   "deps": "_",
@@ -290,7 +340,9 @@
                   "lemma": "domestic",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos",
+                  "features": {
+                    "Degree": "Pos"
+                  },
                   "head": 23,
                   "dep": "amod",
                   "deps": "_",
@@ -303,7 +355,9 @@
                   "lemma": "Tranquility",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 19,
                   "dep": "appos",
                   "deps": "_",
@@ -316,7 +370,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 25,
                   "dep": "punct",
                   "deps": "_",
@@ -329,7 +383,9 @@
                   "lemma": "provide",
                   "pos": "VERB",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 12,
                   "dep": "conj",
                   "deps": "_",
@@ -342,7 +398,7 @@
                   "lemma": "for",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 29,
                   "dep": "case",
                   "deps": "_",
@@ -355,7 +411,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 29,
                   "dep": "det",
                   "deps": "_",
@@ -368,7 +427,9 @@
                   "lemma": "common",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos",
+                  "features": {
+                    "Degree": "Pos"
+                  },
                   "head": 29,
                   "dep": "amod",
                   "deps": "_",
@@ -381,7 +442,9 @@
                   "lemma": "defence",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 25,
                   "dep": "obl",
                   "deps": "_",
@@ -394,7 +457,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 31,
                   "dep": "punct",
                   "deps": "_",
@@ -407,7 +470,9 @@
                   "lemma": "promote",
                   "pos": "VERB",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 0,
                   "dep": "root",
                   "deps": "_",
@@ -420,7 +485,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 34,
                   "dep": "det",
                   "deps": "_",
@@ -433,7 +501,9 @@
                   "lemma": "general",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos",
+                  "features": {
+                    "Degree": "Pos"
+                  },
                   "head": 34,
                   "dep": "amod",
                   "deps": "_",
@@ -446,7 +516,9 @@
                   "lemma": "welfare",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 31,
                   "dep": "obj",
                   "deps": "_",
@@ -459,7 +531,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 37,
                   "dep": "punct",
                   "deps": "_",
@@ -472,7 +544,7 @@
                   "lemma": "and",
                   "pos": "CCONJ",
                   "xpos": "CC",
-                  "feats": "",
+                  "features": {},
                   "head": 37,
                   "dep": "cc",
                   "deps": "_",
@@ -485,7 +557,9 @@
                   "lemma": "secure",
                   "pos": "VERB",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 31,
                   "dep": "conj",
                   "deps": "_",
@@ -498,7 +572,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 39,
                   "dep": "det",
                   "deps": "_",
@@ -511,7 +588,9 @@
                   "lemma": "blessing",
                   "pos": "NOUN",
                   "xpos": "NNS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 37,
                   "dep": "obj",
                   "deps": "_",
@@ -524,7 +603,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 41,
                   "dep": "case",
                   "deps": "_",
@@ -537,7 +616,9 @@
                   "lemma": "Liberty",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 39,
                   "dep": "nmod",
                   "deps": "_",
@@ -550,7 +631,7 @@
                   "lemma": "to",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 43,
                   "dep": "case",
                   "deps": "_",
@@ -563,7 +644,13 @@
                   "lemma": "ourselves",
                   "pos": "PRON",
                   "xpos": "PRP",
-                  "feats": "Case=Acc|Number=Plur|Person=1|PronType=Prs|Reflex=Yes",
+                  "features": {
+                    "Case": "Acc",
+                    "Number": "Plur",
+                    "Person": "1",
+                    "PronType": "Prs",
+                    "Reflex": "Yes"
+                  },
                   "head": 39,
                   "dep": "nmod",
                   "deps": "_",
@@ -576,7 +663,7 @@
                   "lemma": "and",
                   "pos": "CCONJ",
                   "xpos": "CC",
-                  "feats": "",
+                  "features": {},
                   "head": 46,
                   "dep": "cc",
                   "deps": "_",
@@ -589,7 +676,12 @@
                   "lemma": "we",
                   "pos": "PRON",
                   "xpos": "PRP$",
-                  "feats": "Number=Plur|Person=1|Poss=Yes|PronType=Prs",
+                  "features": {
+                    "Number": "Plur",
+                    "Person": "1",
+                    "Poss": "Yes",
+                    "PronType": "Prs"
+                  },
                   "head": 46,
                   "dep": "nmod:poss",
                   "deps": "_",
@@ -602,7 +694,9 @@
                   "lemma": "posterity",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 43,
                   "dep": "conj",
                   "deps": "_",
@@ -615,7 +709,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 31,
                   "dep": "punct",
                   "deps": "_",
@@ -628,7 +722,10 @@
                   "lemma": "do",
                   "pos": "AUX",
                   "xpos": "VB",
-                  "feats": "Mood=Imp|VerbForm=Fin",
+                  "features": {
+                    "Mood": "Imp",
+                    "VerbForm": "Fin"
+                  },
                   "head": 49,
                   "dep": "aux",
                   "deps": "_",
@@ -641,7 +738,9 @@
                   "lemma": "ordain",
                   "pos": "VERB",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 31,
                   "dep": "appos",
                   "deps": "_",
@@ -654,7 +753,7 @@
                   "lemma": "and",
                   "pos": "CCONJ",
                   "xpos": "CC",
-                  "feats": "",
+                  "features": {},
                   "head": 51,
                   "dep": "cc",
                   "deps": "_",
@@ -667,7 +766,9 @@
                   "lemma": "establish",
                   "pos": "VERB",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 49,
                   "dep": "conj",
                   "deps": "_",
@@ -680,7 +781,10 @@
                   "lemma": "this",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Number=Sing|PronType=Dem",
+                  "features": {
+                    "Number": "Sing",
+                    "PronType": "Dem"
+                  },
                   "head": 53,
                   "dep": "det",
                   "deps": "_",
@@ -693,7 +797,9 @@
                   "lemma": "constitution",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 49,
                   "dep": "obj",
                   "deps": "_",
@@ -706,7 +812,7 @@
                   "lemma": "for",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 57,
                   "dep": "case",
                   "deps": "_",
@@ -719,7 +825,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 57,
                   "dep": "det",
                   "deps": "_",
@@ -732,7 +841,9 @@
                   "lemma": "United",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 57,
                   "dep": "compound",
                   "deps": "_",
@@ -745,7 +856,9 @@
                   "lemma": "States",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 49,
                   "dep": "obl",
                   "deps": "_",
@@ -758,7 +871,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 59,
                   "dep": "case",
                   "deps": "_",
@@ -771,7 +884,9 @@
                   "lemma": "America",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 57,
                   "dep": "nmod",
                   "deps": "_",
@@ -784,7 +899,7 @@
                   "lemma": ".",
                   "pos": "PUNCT",
                   "xpos": ".",
-                  "feats": "",
+                  "features": {},
                   "head": 31,
                   "dep": "punct",
                   "deps": "_",
@@ -792,17 +907,22 @@
                   "is_punct": true
                 }
               ],
+              "word_count": 52,
+              "tree_depth": 7,
+              "passive": false,
               "negations": [],
               "modals": [],
-              "bare_assertion": false,
-              "reportings": [],
+              "clausal_complements": [],
               "root_adverbials": [],
-              "hearst_pairs": []
+              "hearst_pairs": [],
+              "root_mood": null
             }
           ],
-          "readability_grade": 26.247692307692308,
-          "lexical_density": 0.5576923076923077,
-          "compression_ratio": 0.599388379204893
+          "metrics": {
+            "readability_grade": 26.247692307692308,
+            "lexical_density": 0.5576923076923077,
+            "compression_ratio": 0.599388379204893
+          }
         },
         {
           "text": "All legislative Powers herein granted shall be vested in a Congress of the United States, which shall consist of a Senate and House of Representatives.",
@@ -817,7 +937,7 @@
                   "lemma": "all",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "",
+                  "features": {},
                   "head": 3,
                   "dep": "det",
                   "deps": "_",
@@ -830,7 +950,9 @@
                   "lemma": "legislative",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos",
+                  "features": {
+                    "Degree": "Pos"
+                  },
                   "head": 3,
                   "dep": "amod",
                   "deps": "_",
@@ -843,7 +965,9 @@
                   "lemma": "power",
                   "pos": "NOUN",
                   "xpos": "NNS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 8,
                   "dep": "nsubj:pass",
                   "deps": "_",
@@ -856,7 +980,9 @@
                   "lemma": "herein",
                   "pos": "ADV",
                   "xpos": "WRB",
-                  "feats": "PronType=Rel",
+                  "features": {
+                    "PronType": "Rel"
+                  },
                   "head": 5,
                   "dep": "advmod",
                   "deps": "_",
@@ -869,7 +995,10 @@
                   "lemma": "grant",
                   "pos": "VERB",
                   "xpos": "VBN",
-                  "feats": "Tense=Past|VerbForm=Part",
+                  "features": {
+                    "Tense": "Past",
+                    "VerbForm": "Part"
+                  },
                   "head": 3,
                   "dep": "acl",
                   "deps": "_",
@@ -882,7 +1011,9 @@
                   "lemma": "shall",
                   "pos": "AUX",
                   "xpos": "MD",
-                  "feats": "VerbForm=Fin",
+                  "features": {
+                    "VerbForm": "Fin"
+                  },
                   "head": 8,
                   "dep": "aux",
                   "deps": "_",
@@ -895,7 +1026,9 @@
                   "lemma": "be",
                   "pos": "AUX",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 8,
                   "dep": "aux:pass",
                   "deps": "_",
@@ -908,7 +1041,11 @@
                   "lemma": "vest",
                   "pos": "VERB",
                   "xpos": "VBN",
-                  "feats": "Tense=Past|VerbForm=Part|Voice=Pass",
+                  "features": {
+                    "Tense": "Past",
+                    "VerbForm": "Part",
+                    "Voice": "Pass"
+                  },
                   "head": 0,
                   "dep": "root",
                   "deps": "_",
@@ -921,7 +1058,7 @@
                   "lemma": "in",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 11,
                   "dep": "case",
                   "deps": "_",
@@ -934,7 +1071,10 @@
                   "lemma": "a",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Ind|PronType=Art",
+                  "features": {
+                    "Definite": "Ind",
+                    "PronType": "Art"
+                  },
                   "head": 11,
                   "dep": "det",
                   "deps": "_",
@@ -947,7 +1087,9 @@
                   "lemma": "Congress",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 8,
                   "dep": "obl",
                   "deps": "_",
@@ -960,7 +1102,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 15,
                   "dep": "case",
                   "deps": "_",
@@ -973,7 +1115,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 15,
                   "dep": "det",
                   "deps": "_",
@@ -986,7 +1131,9 @@
                   "lemma": "United",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 15,
                   "dep": "compound",
                   "deps": "_",
@@ -999,7 +1146,9 @@
                   "lemma": "States",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 11,
                   "dep": "nmod",
                   "deps": "_",
@@ -1012,7 +1161,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 11,
                   "dep": "punct",
                   "deps": "_",
@@ -1025,7 +1174,9 @@
                   "lemma": "which",
                   "pos": "PRON",
                   "xpos": "WDT",
-                  "feats": "PronType=Rel",
+                  "features": {
+                    "PronType": "Rel"
+                  },
                   "head": 19,
                   "dep": "nsubj",
                   "deps": "_",
@@ -1038,7 +1189,9 @@
                   "lemma": "shall",
                   "pos": "AUX",
                   "xpos": "MD",
-                  "feats": "VerbForm=Fin",
+                  "features": {
+                    "VerbForm": "Fin"
+                  },
                   "head": 19,
                   "dep": "aux",
                   "deps": "_",
@@ -1051,7 +1204,9 @@
                   "lemma": "consist",
                   "pos": "VERB",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 11,
                   "dep": "acl:relcl",
                   "deps": "_",
@@ -1064,7 +1219,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 22,
                   "dep": "case",
                   "deps": "_",
@@ -1077,7 +1232,10 @@
                   "lemma": "a",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Ind|PronType=Art",
+                  "features": {
+                    "Definite": "Ind",
+                    "PronType": "Art"
+                  },
                   "head": 22,
                   "dep": "det",
                   "deps": "_",
@@ -1090,7 +1248,9 @@
                   "lemma": "Senate",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 19,
                   "dep": "obl",
                   "deps": "_",
@@ -1103,7 +1263,7 @@
                   "lemma": "and",
                   "pos": "CCONJ",
                   "xpos": "CC",
-                  "feats": "",
+                  "features": {},
                   "head": 24,
                   "dep": "cc",
                   "deps": "_",
@@ -1116,7 +1276,9 @@
                   "lemma": "House",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 22,
                   "dep": "conj",
                   "deps": "_",
@@ -1129,7 +1291,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 26,
                   "dep": "case",
                   "deps": "_",
@@ -1142,7 +1304,9 @@
                   "lemma": "Representatives",
                   "pos": "PROPN",
                   "xpos": "NNPS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 22,
                   "dep": "nmod",
                   "deps": "_",
@@ -1155,7 +1319,7 @@
                   "lemma": ".",
                   "pos": "PUNCT",
                   "xpos": ".",
-                  "feats": "",
+                  "features": {},
                   "head": 8,
                   "dep": "punct",
                   "deps": "_",
@@ -1163,6 +1327,9 @@
                   "is_punct": true
                 }
               ],
+              "word_count": 25,
+              "tree_depth": 5,
+              "passive": true,
               "negations": [],
               "modals": [
                 {
@@ -1176,15 +1343,17 @@
                   "head_id": 19
                 }
               ],
-              "bare_assertion": false,
-              "reportings": [],
+              "clausal_complements": [],
               "root_adverbials": [],
-              "hearst_pairs": []
+              "hearst_pairs": [],
+              "root_mood": null
             }
           ],
-          "readability_grade": 14.456,
-          "lexical_density": 0.48,
-          "compression_ratio": null
+          "metrics": {
+            "readability_grade": 14.456,
+            "lexical_density": 0.48,
+            "compression_ratio": null
+          }
         },
         {
           "text": "The House of Representatives shall be composed of Members chosen every second Year by the People of the several States, and the Electors in each State shall have the Qualifications requisite for Electors of the most numerous Branch of the State Legislature. No Person shall be a Representative who shall not have attained to the Age of twenty five Years, and been seven Years a Citizen of the United States, and who shall not, when elected, be an Inhabitant of that State in which he shall be chosen.",
@@ -1199,7 +1368,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 2,
                   "dep": "det",
                   "deps": "_",
@@ -1212,7 +1384,9 @@
                   "lemma": "House",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 7,
                   "dep": "nsubj:pass",
                   "deps": "_",
@@ -1225,7 +1399,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 4,
                   "dep": "case",
                   "deps": "_",
@@ -1238,7 +1412,9 @@
                   "lemma": "Representatives",
                   "pos": "NOUN",
                   "xpos": "NNS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 2,
                   "dep": "nmod",
                   "deps": "_",
@@ -1251,7 +1427,9 @@
                   "lemma": "shall",
                   "pos": "AUX",
                   "xpos": "MD",
-                  "feats": "VerbForm=Fin",
+                  "features": {
+                    "VerbForm": "Fin"
+                  },
                   "head": 7,
                   "dep": "aux",
                   "deps": "_",
@@ -1264,7 +1442,9 @@
                   "lemma": "be",
                   "pos": "AUX",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 7,
                   "dep": "aux:pass",
                   "deps": "_",
@@ -1277,7 +1457,11 @@
                   "lemma": "compose",
                   "pos": "VERB",
                   "xpos": "VBN",
-                  "feats": "Tense=Past|VerbForm=Part|Voice=Pass",
+                  "features": {
+                    "Tense": "Past",
+                    "VerbForm": "Part",
+                    "Voice": "Pass"
+                  },
                   "head": 0,
                   "dep": "root",
                   "deps": "_",
@@ -1290,7 +1474,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 9,
                   "dep": "case",
                   "deps": "_",
@@ -1303,7 +1487,9 @@
                   "lemma": "member",
                   "pos": "PROPN",
                   "xpos": "NNPS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 10,
                   "dep": "nmod",
                   "deps": "_",
@@ -1316,7 +1502,11 @@
                   "lemma": "choose",
                   "pos": "VERB",
                   "xpos": "VBN",
-                  "feats": "Tense=Past|VerbForm=Part|Voice=Pass",
+                  "features": {
+                    "Tense": "Past",
+                    "VerbForm": "Part",
+                    "Voice": "Pass"
+                  },
                   "head": 7,
                   "dep": "acl:relcl",
                   "deps": "_",
@@ -1329,7 +1519,7 @@
                   "lemma": "every",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "",
+                  "features": {},
                   "head": 13,
                   "dep": "det",
                   "deps": "_",
@@ -1342,7 +1532,10 @@
                   "lemma": "second",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos|NumType=Ord",
+                  "features": {
+                    "Degree": "Pos",
+                    "NumType": "Ord"
+                  },
                   "head": 13,
                   "dep": "amod",
                   "deps": "_",
@@ -1355,7 +1548,9 @@
                   "lemma": "year",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 10,
                   "dep": "obl:tmod",
                   "deps": "_",
@@ -1368,7 +1563,7 @@
                   "lemma": "by",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 16,
                   "dep": "case",
                   "deps": "_",
@@ -1381,7 +1576,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 16,
                   "dep": "det",
                   "deps": "_",
@@ -1394,7 +1592,9 @@
                   "lemma": "People",
                   "pos": "NOUN",
                   "xpos": "NNS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 10,
                   "dep": "obl",
                   "deps": "_",
@@ -1407,7 +1607,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 20,
                   "dep": "case",
                   "deps": "_",
@@ -1420,7 +1620,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 20,
                   "dep": "det",
                   "deps": "_",
@@ -1433,7 +1636,9 @@
                   "lemma": "several",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos",
+                  "features": {
+                    "Degree": "Pos"
+                  },
                   "head": 20,
                   "dep": "amod",
                   "deps": "_",
@@ -1446,7 +1651,9 @@
                   "lemma": "States",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 16,
                   "dep": "nmod",
                   "deps": "_",
@@ -1459,7 +1666,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 24,
                   "dep": "punct",
                   "deps": "_",
@@ -1472,7 +1679,7 @@
                   "lemma": "and",
                   "pos": "CCONJ",
                   "xpos": "CC",
-                  "feats": "",
+                  "features": {},
                   "head": 24,
                   "dep": "cc",
                   "deps": "_",
@@ -1485,7 +1692,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 24,
                   "dep": "det",
                   "deps": "_",
@@ -1498,7 +1708,9 @@
                   "lemma": "Elector",
                   "pos": "NOUN",
                   "xpos": "NNS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 29,
                   "dep": "nsubj",
                   "deps": "_",
@@ -1511,7 +1723,7 @@
                   "lemma": "in",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 27,
                   "dep": "case",
                   "deps": "_",
@@ -1524,7 +1736,7 @@
                   "lemma": "each",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "",
+                  "features": {},
                   "head": 27,
                   "dep": "det",
                   "deps": "_",
@@ -1537,7 +1749,9 @@
                   "lemma": "State",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 24,
                   "dep": "nmod",
                   "deps": "_",
@@ -1550,7 +1764,9 @@
                   "lemma": "shall",
                   "pos": "AUX",
                   "xpos": "MD",
-                  "feats": "VerbForm=Fin",
+                  "features": {
+                    "VerbForm": "Fin"
+                  },
                   "head": 29,
                   "dep": "aux",
                   "deps": "_",
@@ -1563,7 +1779,9 @@
                   "lemma": "have",
                   "pos": "VERB",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 10,
                   "dep": "conj",
                   "deps": "_",
@@ -1576,7 +1794,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 32,
                   "dep": "det",
                   "deps": "_",
@@ -1589,7 +1810,9 @@
                   "lemma": "qualifications",
                   "pos": "NOUN",
                   "xpos": "NNS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 32,
                   "dep": "compound",
                   "deps": "_",
@@ -1602,7 +1825,9 @@
                   "lemma": "requisite",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 29,
                   "dep": "obj",
                   "deps": "_",
@@ -1615,7 +1840,7 @@
                   "lemma": "for",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 34,
                   "dep": "case",
                   "deps": "_",
@@ -1628,7 +1853,9 @@
                   "lemma": "Elector",
                   "pos": "NOUN",
                   "xpos": "NNS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 29,
                   "dep": "obl",
                   "deps": "_",
@@ -1641,7 +1868,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 39,
                   "dep": "case",
                   "deps": "_",
@@ -1654,7 +1881,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 39,
                   "dep": "det",
                   "deps": "_",
@@ -1667,7 +1897,7 @@
                   "lemma": "most",
                   "pos": "ADV",
                   "xpos": "RBS",
-                  "feats": "",
+                  "features": {},
                   "head": 38,
                   "dep": "advmod",
                   "deps": "_",
@@ -1680,7 +1910,9 @@
                   "lemma": "numerous",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos",
+                  "features": {
+                    "Degree": "Pos"
+                  },
                   "head": 39,
                   "dep": "amod",
                   "deps": "_",
@@ -1693,7 +1925,9 @@
                   "lemma": "branch",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 34,
                   "dep": "nmod",
                   "deps": "_",
@@ -1706,7 +1940,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 43,
                   "dep": "case",
                   "deps": "_",
@@ -1719,7 +1953,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 43,
                   "dep": "det",
                   "deps": "_",
@@ -1732,7 +1969,9 @@
                   "lemma": "state",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 43,
                   "dep": "compound",
                   "deps": "_",
@@ -1745,7 +1984,9 @@
                   "lemma": "legislature",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 39,
                   "dep": "nmod",
                   "deps": "_",
@@ -1758,7 +1999,7 @@
                   "lemma": ".",
                   "pos": "PUNCT",
                   "xpos": ".",
-                  "feats": "",
+                  "features": {},
                   "head": 7,
                   "dep": "punct",
                   "deps": "_",
@@ -1766,6 +2007,9 @@
                   "is_punct": true
                 }
               ],
+              "word_count": 42,
+              "tree_depth": 6,
+              "passive": true,
               "negations": [],
               "modals": [
                 {
@@ -1779,10 +2023,10 @@
                   "head_id": 29
                 }
               ],
-              "bare_assertion": false,
-              "reportings": [],
+              "clausal_complements": [],
               "root_adverbials": [],
-              "hearst_pairs": []
+              "hearst_pairs": [],
+              "root_mood": null
             },
             {
               "text": "No Person shall be a Representative who shall not have attained to the Age of twenty five Years, and been seven Years a Citizen of the United States, and who shall not, when elected, be an Inhabitant of that State in which he shall be chosen.",
@@ -1793,7 +2037,7 @@
                   "lemma": "no",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "",
+                  "features": {},
                   "head": 2,
                   "dep": "det",
                   "deps": "_",
@@ -1806,7 +2050,9 @@
                   "lemma": "person",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 6,
                   "dep": "nsubj",
                   "deps": "_",
@@ -1819,7 +2065,9 @@
                   "lemma": "shall",
                   "pos": "AUX",
                   "xpos": "MD",
-                  "feats": "VerbForm=Fin",
+                  "features": {
+                    "VerbForm": "Fin"
+                  },
                   "head": 6,
                   "dep": "aux",
                   "deps": "_",
@@ -1832,7 +2080,9 @@
                   "lemma": "be",
                   "pos": "AUX",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 6,
                   "dep": "cop",
                   "deps": "_",
@@ -1845,7 +2095,10 @@
                   "lemma": "a",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Ind|PronType=Art",
+                  "features": {
+                    "Definite": "Ind",
+                    "PronType": "Art"
+                  },
                   "head": 6,
                   "dep": "det",
                   "deps": "_",
@@ -1858,7 +2111,9 @@
                   "lemma": "Representative",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 0,
                   "dep": "root",
                   "deps": "_",
@@ -1871,7 +2126,9 @@
                   "lemma": "who",
                   "pos": "PRON",
                   "xpos": "WP",
-                  "feats": "PronType=Rel",
+                  "features": {
+                    "PronType": "Rel"
+                  },
                   "head": 11,
                   "dep": "nsubj",
                   "deps": "_",
@@ -1884,7 +2141,9 @@
                   "lemma": "shall",
                   "pos": "AUX",
                   "xpos": "MD",
-                  "feats": "VerbForm=Fin",
+                  "features": {
+                    "VerbForm": "Fin"
+                  },
                   "head": 11,
                   "dep": "aux",
                   "deps": "_",
@@ -1897,7 +2156,7 @@
                   "lemma": "not",
                   "pos": "PART",
                   "xpos": "RB",
-                  "feats": "",
+                  "features": {},
                   "head": 11,
                   "dep": "advmod",
                   "deps": "_",
@@ -1910,7 +2169,9 @@
                   "lemma": "have",
                   "pos": "AUX",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 11,
                   "dep": "aux",
                   "deps": "_",
@@ -1923,7 +2184,10 @@
                   "lemma": "attain",
                   "pos": "VERB",
                   "xpos": "VBN",
-                  "feats": "Tense=Past|VerbForm=Part",
+                  "features": {
+                    "Tense": "Past",
+                    "VerbForm": "Part"
+                  },
                   "head": 6,
                   "dep": "acl:relcl",
                   "deps": "_",
@@ -1936,7 +2200,7 @@
                   "lemma": "to",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 14,
                   "dep": "case",
                   "deps": "_",
@@ -1949,7 +2213,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 14,
                   "dep": "det",
                   "deps": "_",
@@ -1962,7 +2229,9 @@
                   "lemma": "age",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 11,
                   "dep": "obl",
                   "deps": "_",
@@ -1975,7 +2244,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 18,
                   "dep": "case",
                   "deps": "_",
@@ -1988,7 +2257,9 @@
                   "lemma": "twenty",
                   "pos": "NUM",
                   "xpos": "CD",
-                  "feats": "NumType=Card",
+                  "features": {
+                    "NumType": "Card"
+                  },
                   "head": 17,
                   "dep": "compound",
                   "deps": "_",
@@ -2001,7 +2272,9 @@
                   "lemma": "five",
                   "pos": "NUM",
                   "xpos": "CD",
-                  "feats": "NumType=Card",
+                  "features": {
+                    "NumType": "Card"
+                  },
                   "head": 18,
                   "dep": "nummod",
                   "deps": "_",
@@ -2014,7 +2287,9 @@
                   "lemma": "year",
                   "pos": "NOUN",
                   "xpos": "NNS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 14,
                   "dep": "nmod",
                   "deps": "_",
@@ -2027,7 +2302,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 23,
                   "dep": "punct",
                   "deps": "_",
@@ -2040,7 +2315,7 @@
                   "lemma": "and",
                   "pos": "CCONJ",
                   "xpos": "CC",
-                  "feats": "",
+                  "features": {},
                   "head": 23,
                   "dep": "cc",
                   "deps": "_",
@@ -2053,7 +2328,10 @@
                   "lemma": "be",
                   "pos": "AUX",
                   "xpos": "VBN",
-                  "feats": "Tense=Past|VerbForm=Part",
+                  "features": {
+                    "Tense": "Past",
+                    "VerbForm": "Part"
+                  },
                   "head": 23,
                   "dep": "cop",
                   "deps": "_",
@@ -2066,7 +2344,9 @@
                   "lemma": "seven",
                   "pos": "NUM",
                   "xpos": "CD",
-                  "feats": "NumType=Card",
+                  "features": {
+                    "NumType": "Card"
+                  },
                   "head": 23,
                   "dep": "nummod",
                   "deps": "_",
@@ -2079,7 +2359,9 @@
                   "lemma": "year",
                   "pos": "NOUN",
                   "xpos": "NNS",
-                  "feats": "Number=Plur",
+                  "features": {
+                    "Number": "Plur"
+                  },
                   "head": 6,
                   "dep": "conj",
                   "deps": "_",
@@ -2092,7 +2374,10 @@
                   "lemma": "a",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Ind|PronType=Art",
+                  "features": {
+                    "Definite": "Ind",
+                    "PronType": "Art"
+                  },
                   "head": 25,
                   "dep": "det",
                   "deps": "_",
@@ -2105,7 +2390,9 @@
                   "lemma": "citizen",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 23,
                   "dep": "appos",
                   "deps": "_",
@@ -2118,7 +2405,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 29,
                   "dep": "case",
                   "deps": "_",
@@ -2131,7 +2418,10 @@
                   "lemma": "the",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Def|PronType=Art",
+                  "features": {
+                    "Definite": "Def",
+                    "PronType": "Art"
+                  },
                   "head": 29,
                   "dep": "det",
                   "deps": "_",
@@ -2144,7 +2434,9 @@
                   "lemma": "United",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 29,
                   "dep": "compound",
                   "deps": "_",
@@ -2157,7 +2449,9 @@
                   "lemma": "States",
                   "pos": "PROPN",
                   "xpos": "NNP",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 25,
                   "dep": "nmod",
                   "deps": "_",
@@ -2170,7 +2464,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 33,
                   "dep": "punct",
                   "deps": "_",
@@ -2183,7 +2477,7 @@
                   "lemma": "and",
                   "pos": "CCONJ",
                   "xpos": "CC",
-                  "feats": "",
+                  "features": {},
                   "head": 33,
                   "dep": "cc",
                   "deps": "_",
@@ -2196,7 +2490,9 @@
                   "lemma": "who",
                   "pos": "PRON",
                   "xpos": "WP",
-                  "feats": "PronType=Int",
+                  "features": {
+                    "PronType": "Int"
+                  },
                   "head": 33,
                   "dep": "nsubj",
                   "deps": "_",
@@ -2209,7 +2505,9 @@
                   "lemma": "shall",
                   "pos": "AUX",
                   "xpos": "MD",
-                  "feats": "VerbForm=Fin",
+                  "features": {
+                    "VerbForm": "Fin"
+                  },
                   "head": 41,
                   "dep": "aux",
                   "deps": "_",
@@ -2222,7 +2520,7 @@
                   "lemma": "not",
                   "pos": "PART",
                   "xpos": "RB",
-                  "feats": "",
+                  "features": {},
                   "head": 33,
                   "dep": "advmod",
                   "deps": "_",
@@ -2235,7 +2533,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 41,
                   "dep": "punct",
                   "deps": "_",
@@ -2248,7 +2546,9 @@
                   "lemma": "when",
                   "pos": "ADV",
                   "xpos": "WRB",
-                  "feats": "PronType=Int",
+                  "features": {
+                    "PronType": "Int"
+                  },
                   "head": 37,
                   "dep": "mark",
                   "deps": "_",
@@ -2261,7 +2561,10 @@
                   "lemma": "elect",
                   "pos": "VERB",
                   "xpos": "VBN",
-                  "feats": "Tense=Past|VerbForm=Part",
+                  "features": {
+                    "Tense": "Past",
+                    "VerbForm": "Part"
+                  },
                   "head": 41,
                   "dep": "advcl",
                   "deps": "_",
@@ -2274,7 +2577,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 41,
                   "dep": "punct",
                   "deps": "_",
@@ -2287,7 +2590,9 @@
                   "lemma": "be",
                   "pos": "AUX",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 41,
                   "dep": "cop",
                   "deps": "_",
@@ -2300,7 +2605,10 @@
                   "lemma": "a",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Ind|PronType=Art",
+                  "features": {
+                    "Definite": "Ind",
+                    "PronType": "Art"
+                  },
                   "head": 41,
                   "dep": "det",
                   "deps": "_",
@@ -2313,7 +2621,9 @@
                   "lemma": "Inhabitant",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 25,
                   "dep": "appos",
                   "deps": "_",
@@ -2326,7 +2636,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 44,
                   "dep": "case",
                   "deps": "_",
@@ -2339,7 +2649,10 @@
                   "lemma": "that",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Number=Sing|PronType=Dem",
+                  "features": {
+                    "Number": "Sing",
+                    "PronType": "Dem"
+                  },
                   "head": 44,
                   "dep": "det",
                   "deps": "_",
@@ -2352,7 +2665,9 @@
                   "lemma": "state",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 41,
                   "dep": "nmod",
                   "deps": "_",
@@ -2365,7 +2680,7 @@
                   "lemma": "in",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 46,
                   "dep": "case",
                   "deps": "_",
@@ -2378,7 +2693,9 @@
                   "lemma": "which",
                   "pos": "PRON",
                   "xpos": "WDT",
-                  "feats": "PronType=Rel",
+                  "features": {
+                    "PronType": "Rel"
+                  },
                   "head": 50,
                   "dep": "obl",
                   "deps": "_",
@@ -2391,7 +2708,13 @@
                   "lemma": "he",
                   "pos": "PRON",
                   "xpos": "PRP",
-                  "feats": "Case=Nom|Gender=Masc|Number=Sing|Person=3|PronType=Prs",
+                  "features": {
+                    "Case": "Nom",
+                    "Gender": "Masc",
+                    "Number": "Sing",
+                    "Person": "3",
+                    "PronType": "Prs"
+                  },
                   "head": 50,
                   "dep": "nsubj:pass",
                   "deps": "_",
@@ -2404,7 +2727,9 @@
                   "lemma": "shall",
                   "pos": "AUX",
                   "xpos": "MD",
-                  "feats": "VerbForm=Fin",
+                  "features": {
+                    "VerbForm": "Fin"
+                  },
                   "head": 50,
                   "dep": "aux",
                   "deps": "_",
@@ -2417,7 +2742,9 @@
                   "lemma": "be",
                   "pos": "AUX",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 50,
                   "dep": "aux:pass",
                   "deps": "_",
@@ -2430,7 +2757,11 @@
                   "lemma": "chosen",
                   "pos": "VERB",
                   "xpos": "VBN",
-                  "feats": "Tense=Past|VerbForm=Part|Voice=Pass",
+                  "features": {
+                    "Tense": "Past",
+                    "VerbForm": "Part",
+                    "Voice": "Pass"
+                  },
                   "head": 44,
                   "dep": "acl:relcl",
                   "deps": "_",
@@ -2443,7 +2774,7 @@
                   "lemma": ".",
                   "pos": "PUNCT",
                   "xpos": ".",
-                  "feats": "",
+                  "features": {},
                   "head": 41,
                   "dep": "punct",
                   "deps": "_",
@@ -2451,6 +2782,9 @@
                   "is_punct": true
                 }
               ],
+              "word_count": 46,
+              "tree_depth": 7,
+              "passive": true,
               "negations": [
                 {
                   "cue_id": 1,
@@ -2490,20 +2824,29 @@
                   "head_id": 50
                 }
               ],
-              "bare_assertion": false,
-              "reportings": [],
+              "clausal_complements": [],
               "root_adverbials": [],
-              "hearst_pairs": []
+              "hearst_pairs": [],
+              "root_mood": null
             }
           ],
-          "readability_grade": 20.074545454545454,
-          "lexical_density": 0.4090909090909091,
-          "compression_ratio": 0.502
+          "metrics": {
+            "readability_grade": 20.074545454545454,
+            "lexical_density": 0.4090909090909091,
+            "compression_ratio": 0.502
+          }
         }
       ]
     }
   ],
-  "vocabulary_ttr": 0.5272727272727272,
-  "nominalization_ratio": 0.024242424242424242,
-  "passive_ratio": 0.75
+  "metrics": {
+    "total_words": 165,
+    "total_sentences": 4,
+    "paragraph_count": 3,
+    "mean_sentence_length": 41.25,
+    "sentence_length_std": 11.586630226256467,
+    "vocabulary_ttr": 0.5272727272727272,
+    "nominalization_ratio": 0.024242424242424242,
+    "passive_ratio": 0.75
+  }
 }

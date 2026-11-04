@@ -62,9 +62,10 @@ let engine = Engine::with_defaults()?;
 for item in engine.analyze(Ingest::path("essay.md")?) {
     let analysis = item.map_err(|e| e.error)?.analysis;
 
-    println!("Sentences: {}", analysis.total_sentences());
-    println!("Mean length: {:.1}", analysis.mean_sentence_length());
-    println!("Passive: {:.1}%", analysis.passive_ratio() * 100.0);
+    let metrics = &analysis.metrics;
+    println!("Sentences: {}", metrics.total_sentences);
+    println!("Mean length: {:?}", metrics.mean_sentence_length);
+    println!("Passive: {:?}", metrics.passive_ratio);
 }
 ```
 
@@ -99,7 +100,7 @@ matra config show              # every resolved value, with its origin
 
 **Per paragraph:** sentence count, readability grade, lexical density, compression ratio.
 
-**Per document:** passive ratio, mean sentence length, vocabulary TTR, nominalization ratio.
+**Per document:** word, sentence and paragraph counts, passive ratio, mean and spread of sentence length, vocabulary TTR, nominalization ratio. Each document also records its provenance: the parser and its model, the format, and the SHA-256 of the input, with the schema version (`2.0`) its JSON follows.
 
 ## Architecture
 

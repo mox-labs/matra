@@ -22,6 +22,7 @@ spec/
                      conformance (potion-base-8M by artifact digest)
   tests/corpus/      the corpus item shapes and the error kind vocabulary
   tests/cli/         the command line's JSON envelope
+  schema/v2/         the JSON Schema for schema 2.x documents
 ```
 
 Each crust has a runner that loads every fixture in `spec/tests/` and asserts
@@ -47,27 +48,34 @@ model at all.
 {
   "name": "passive-voice",
   "input": "The committee approved the proposal.",
-  "format": "plain",
+  "format": "plain_text",
   "expect": {
-    "total_sentences": 1,
-    "total_words": 5,
-    "paragraph_count": 1,
+    "metrics": {
+      "total_sentences": 1,
+      "total_words": 5,
+      "paragraph_count": 1,
+      "vocabulary_ttr": 1.0,
+      "nominalization_ratio": 0.0
+    },
     "sentences": [
       {
         "text": "The committee approved the proposal.",
         "token_count": 6,
+        "root_mood": { "root_id": 3, "mood": "Ind" },
         "tokens": [
           { "id": 1, "text": "The", "lemma": "the", "pos": "DET", "head": 2, "dep": "det" }
         ]
       }
-    ],
-    "vocabulary_ttr": 1.0,
-    "nominalization_ratio": 0.0
+    ]
   }
 }
 ```
 
-`format` is `plain` or `markdown`, selecting which decomposer runs.
+`format` is `plain_text` or `markdown`, the format vocabulary every surface shares, selecting which decomposer runs. `expect.metrics` mirrors the document's `metrics`, and a sentence pins only the detections it names: an absent key is not checked, and a `root_mood` of `null` pins "no mood".
+
+## The schema
+
+`schema/v2/document.schema.json` is the published JSON Schema for a document whose `provenance.schema` is `2.x`. A minor version adds optional fields only, so the schema leaves objects open: a reader of `2.0` accepts a `2.1` document. Every runner that produces a document validates it against the schema with every object closed, so a field matra emits but the schema does not list fails the run that emitted it: `tests/document_schema/mod.rs` for the Rust lanes and `python/tests/document_schema.py` for the Python ones. `tests/schema.rs` does the same with no model, so the check runs in every `cargo test`.
 
 ## The CLI lane
 
