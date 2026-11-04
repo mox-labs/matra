@@ -4,7 +4,7 @@
 //! Each sentence is treated as a "document" for IDF computation.
 //! Returns top-N sentences in document order.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::domain::{Error, Result, Sentence};
 use crate::stopwords::is_stop_word;
@@ -63,8 +63,10 @@ pub(super) fn rank(sentences: &[&Sentence], n: usize) -> Result<Vec<(usize, f64)
                 return (idx, 0.0);
             }
 
-            // Term frequency within this sentence.
-            let mut tf: HashMap<&str, usize> = HashMap::new();
+            // Term frequency within this sentence. Ordered, because the
+            // score is a float sum over it: summed in a hash map's order,
+            // it moved in its last bit from one call to the next.
+            let mut tf: BTreeMap<&str, usize> = BTreeMap::new();
             for &term in terms {
                 *tf.entry(term).or_insert(0) += 1;
             }
@@ -123,6 +125,31 @@ mod tests {
 
     fn summarize(sentences: &[Sentence], n: usize) -> Result<Vec<(usize, f64)>> {
         rank(&sentences.iter().collect::<Vec<_>>(), n)
+    }
+
+    /// Regression: the score summed in a hash map's iteration order, which
+    /// differs between maps, so the same document scored differently in
+    /// its last bit from one call to the next (the parity lane found it).
+    #[test]
+    fn the_same_sentences_score_the_same_every_time() {
+        // Many terms per sentence, some repeated, so the sum has enough
+        // terms of different sizes for its order to reach the last bit.
+        let sentences: Vec<Sentence> = (0..30)
+            .map(|i| {
+                let tokens = (0..25)
+                    .map(|j| tok(j + 1, &format!("term{}", (i * 7 + j * j * 3) % 41), "NOUN"))
+                    .collect();
+                sent(&format!("sentence {i}"), tokens)
+            })
+            .collect();
+        let first = summarize(&sentences, 30).unwrap();
+        for _ in 0..64 {
+            let again = summarize(&sentences, 30).unwrap();
+            for (a, b) in first.iter().zip(&again) {
+                assert_eq!(a.0, b.0);
+                assert_eq!(a.1.to_bits(), b.1.to_bits(), "sentence {}", a.0);
+            }
+        }
     }
 
     #[test]

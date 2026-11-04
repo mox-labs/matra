@@ -4,7 +4,7 @@
 //! `site/content/reference/errors.md`, `site/content/guides/python.md`, the
 //! agent skill's `skills/matra/references/errors.md`, and the typed stub
 //! `python/matra/_core.pyi`. Nothing tied any of them to the routing in
-//! `src/lib.rs`, and the docsite floor cannot help: gate 3 resolves
+//! `src/python/errors.rs`, and the docsite floor cannot help: gate 3 resolves
 //! backticked names against `src/`, and `OSError` and `RuntimeError` are
 //! Python names that resolve nowhere, so they pass unexamined. The
 //! reclassification of transport failures from `ModelInvalid` to `Io` in
@@ -77,14 +77,14 @@ struct Raised {
 }
 
 /// Class name to how it is raised, read out of `Class::of` and
-/// `Class::spec` in the Python module of `src/lib.rs`.
+/// `Class::spec` in `src/python/errors.rs`.
 ///
 /// `Class::of` has no wildcard over the variants by design, so what this
 /// returns is the whole routing rather than a sample of it. Its one
 /// wildcard is inside the `Io` arm, over the I/O kinds, and selects the
 /// unrefined `Io` class.
 fn routing() -> BTreeMap<String, Raised> {
-    let lib = read("src/lib.rs");
+    let lib = read("src/python/errors.rs");
 
     let mut variant_of_class: BTreeMap<String, (String, Option<String>)> = BTreeMap::new();
     let mut outer: Option<String> = None;
@@ -267,7 +267,7 @@ fn the_reference_page_agrees_with_the_pyerr_routing() {
     assert_eq!(
         documented,
         routing(),
-        "site/content/reference/errors.md disagrees with Class::of and Class::spec in src/lib.rs"
+        "site/content/reference/errors.md disagrees with Class::of and Class::spec in src/python/errors.rs"
     );
 }
 
@@ -352,6 +352,6 @@ fn the_skill_reference_agrees_with_the_pyerr_routing() {
 
     assert_eq!(
         documented, expected,
-        "skills/matra/references/errors.md disagrees with the routing in src/lib.rs"
+        "skills/matra/references/errors.md disagrees with the routing in src/python/errors.rs"
     );
 }

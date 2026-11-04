@@ -1,8 +1,8 @@
 """The two Python extension points (EP-0010 M5).
 
 A Python object with ``embed`` and ``identity`` is accepted wherever an
-embedding model is, and ``analyze_path`` puts directory ingestion on the
-Python surface with the corpus types crossing as dicts.
+embedding model is, and ``Engine.analyze_all(dir=...)`` puts directory
+ingestion on the Python surface, each failure crossing as a dict.
 
 The embedder tests use a deterministic fake rather than a real model, so
 what they pin is the adapter: the conversion, the contract check, and the
@@ -16,27 +16,11 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any
 
 import pytest
 
-if TYPE_CHECKING:
-    from matra import CorpusItem
-
 matra = pytest.importorskip("matra", reason="matra wheel not built")
-Matra = matra.Matra
-
-
-def _model_dir() -> str:
-    return os.environ.get("MATRA_MODEL_DIR") or str(Path.home() / ".matra" / "models")
-
-
-@pytest.fixture(scope="module")
-def engine() -> Matra:
-    try:
-        return Matra.english(_model_dir())
-    except Exception as exc:
-        pytest.skip(f"UDPipe model unavailable: {exc}")
 
 
 # ---------------------------------------------------------------------------
@@ -73,9 +57,9 @@ class FakeEmbedder:
 
 
 @pytest.mark.model
-def test_a_python_object_is_an_embedder(engine: Matra) -> None:
-    text = f"{PARAPHRASE_A} {PARAPHRASE_B} {UNRELATED}"
-    result = engine.semantic_clusters(text, 0.9, FakeEmbedder())
+def test_a_python_object_is_an_embedder(engine: Any) -> None:
+    doc = engine.analyze(f"{PARAPHRASE_A} {PARAPHRASE_B} {UNRELATED}")
+    result = matra.clusters(doc, FakeEmbedder(), 0.9)
 
     # The embedder's own identity travels into the result, so the scores
     # cannot be attributed to a model that did not produce them.
@@ -91,7 +75,7 @@ def test_a_python_object_is_an_embedder(engine: Matra) -> None:
 
 @pytest.mark.model
 def test_wrong_vector_count_raises_the_same_message_a_rust_caller_gets(
-    engine: Matra,
+    engine: Any,
 ) -> None:
     """The contract check lives in `matra::clusters`, once, for every
     implementor. A Python embedder is held to it identically, and reads
@@ -107,7 +91,7 @@ def test_wrong_vector_count_raises_the_same_message_a_rust_caller_gets(
             return [[1.0, 0.0, 0.0]] * (len(texts) - 1)
 
     with pytest.raises(ValueError) as excinfo:
-        engine.semantic_clusters(f"{PARAPHRASE_A} {UNRELATED}", 0.9, ShortEmbedder())
+        matra.clusters(engine.analyze(f"{PARAPHRASE_A} {UNRELATED}"), ShortEmbedder(), 0.9)
 
     count = seen[0]
     assert str(excinfo.value) == (
@@ -117,7 +101,7 @@ def test_wrong_vector_count_raises_the_same_message_a_rust_caller_gets(
 
 
 @pytest.mark.model
-def test_an_exception_inside_embed_surfaces_with_its_own_text(engine: Matra) -> None:
+def test_an_exception_inside_embed_surfaces_with_its_own_text(engine: Any) -> None:
     class BoomEmbedder:
         def identity(self) -> str:
             return "boom-embedder"
@@ -126,7 +110,7 @@ def test_an_exception_inside_embed_surfaces_with_its_own_text(engine: Matra) -> 
             raise KeyError("no vectors cached for this batch")
 
     with pytest.raises(ValueError) as excinfo:
-        engine.semantic_clusters(PARAPHRASE_A, 0.9, BoomEmbedder())
+        matra.clusters(engine.analyze(PARAPHRASE_A), BoomEmbedder(), 0.9)
 
     message = str(excinfo.value)
     assert "no vectors cached for this batch" in message
@@ -134,7 +118,7 @@ def test_an_exception_inside_embed_surfaces_with_its_own_text(engine: Matra) -> 
 
 
 @pytest.mark.model
-def test_a_shape_violation_names_the_level_that_was_wrong(engine: Matra) -> None:
+def test_a_shape_violation_names_the_level_that_was_wrong(engine: Any) -> None:
     class ScalarEmbedder:
         def identity(self) -> str:
             return "scalar-embedder"
@@ -143,43 +127,45 @@ def test_a_shape_violation_names_the_level_that_was_wrong(engine: Matra) -> None
             return 42  # type: ignore[return-value]
 
     with pytest.raises(ValueError) as excinfo:
-        engine.semantic_clusters(PARAPHRASE_A, 0.9, ScalarEmbedder())
+        matra.clusters(engine.analyze(PARAPHRASE_A), ScalarEmbedder(), 0.9)
 
     assert "must return a sequence of vectors" in str(excinfo.value)
 
 
 @pytest.mark.model
 def test_an_embedder_without_identity_is_refused_before_any_work(
-    engine: Matra,
+    engine: Any,
 ) -> None:
-    """Before any work means before the parse too: the embedder is
+    """Before any work means before anything is embedded: the embedder is
     settled first, so an object that cannot name its geometry costs one
-    method call rather than a document's parse."""
+    method call."""
 
     class Nameless:
         def embed(self, texts: list[str]) -> list[list[float]]:
             raise AssertionError("embed must not be called")
 
     with pytest.raises(ValueError) as excinfo:
-        engine.semantic_clusters(PARAPHRASE_A, 0.9, Nameless())
+        matra.clusters(engine.analyze(PARAPHRASE_A), Nameless(), 0.9)
 
     assert "identity()" in str(excinfo.value)
 
 
 # ---------------------------------------------------------------------------
-# analyze_path
+# analyze_all(dir=...) and analyze(file=...)
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.model
-def item_path(item: CorpusItem) -> str | None:
+def item_path(item: Any) -> str | None:
     """The path an item names: a document's own provenance, or an error's."""
-    if "kind" in item:
-        return item["path"]
-    return item["provenance"]["source"]["path"]
+    if isinstance(item, matra.Document):
+        path: str | None = item["provenance"]["source"]["path"]
+        return path
+    path = item["path"]
+    return path
 
 
-def test_analyze_path_returns_one_item_per_file_in_order(engine: Matra, tmp_path: Path) -> None:
+@pytest.mark.model
+def test_a_directory_yields_one_item_per_file_in_order(engine: Any, tmp_path: Path) -> None:
     """One unreadable file costs one item, not the walk. The bad file is
     invalid UTF-8, which is an unsupported format: a symlink or a
     subdirectory would not appear at all, because the directory listing
@@ -188,53 +174,51 @@ def test_analyze_path_returns_one_item_per_file_in_order(engine: Matra, tmp_path
     (tmp_path / "b.txt").write_bytes(b"\xff\xfe not valid utf-8")
     (tmp_path / "c.txt").write_text("The report was filed without comment.")
 
-    items = engine.analyze_path(str(tmp_path))
+    items = list(engine.analyze_all(dir=str(tmp_path)))
 
     assert len(items) == 3
     assert [Path(item_path(item) or "").name for item in items] == ["a.txt", "b.txt", "c.txt"]
 
-    assert "provenance" in items[0]
+    assert isinstance(items[0], matra.Document)
     assert items[0]["sections"][0]["paragraphs"][0]["sentences"]
 
-    assert "kind" in items[1]
+    assert not isinstance(items[1], matra.Document)
     assert items[1]["kind"] == "unsupported_format"
     assert items[1]["message"]
     assert items[1]["details"] == {}
 
-    assert "provenance" in items[2]
+    assert isinstance(items[2], matra.Document)
     assert items[2]["metrics"]["passive_ratio"] is not None
 
 
 @pytest.mark.model
-def test_analyze_path_reads_a_markdown_file_as_markdown(engine: Matra, tmp_path: Path) -> None:
+def test_a_markdown_file_is_read_as_markdown(engine: Any, tmp_path: Path) -> None:
     """A `.md` file is read as markdown: its heading opens a section and
     is not parsed as prose."""
     path = tmp_path / "notes.md"
     path.write_text("# Field notes\n\nThe river rose overnight.\n")
 
-    (doc,) = engine.analyze_path(path)
+    doc = engine.analyze(file=path)
 
-    assert "provenance" in doc
     assert doc["provenance"]["format"] == "markdown"
     assert doc["sections"][0]["heading"] == "Field notes"
     assert doc["metrics"]["total_sentences"] == 1
 
 
 @pytest.mark.model
-def test_analyze_path_on_one_file_is_a_stream_of_one(engine: Matra, tmp_path: Path) -> None:
+def test_a_file_names_itself_in_its_provenance(engine: Any, tmp_path: Path) -> None:
     path = tmp_path / "only.txt"
     path.write_text("The committee approved the proposal.")
 
-    items = engine.analyze_path(str(path))
+    doc = engine.analyze(file=str(path))
 
-    assert len(items) == 1
-    assert Path(item_path(items[0]) or "") == path
+    assert Path(item_path(doc) or "") == path
 
 
 @pytest.mark.model
 @pytest.mark.skipif(os.name != "posix", reason="only posix filenames carry raw bytes")
 def test_a_file_whose_name_is_not_utf_8_is_analyzed_and_round_trips(
-    engine: Matra, tmp_path: Path
+    engine: Any, tmp_path: Path
 ) -> None:
     """The document's path is replaced rather than left as serde wrote
     it, because serde writes a non-UTF-8 path lossily. The name crosses
@@ -252,10 +236,10 @@ def test_a_file_whose_name_is_not_utf_8_is_analyzed_and_round_trips(
     except OSError as exc:
         pytest.skip(f"this filesystem refuses a non-UTF-8 filename: {exc}")
 
-    items = engine.analyze_path(tmp_path)
+    items = list(engine.analyze_all(dir=tmp_path))
 
     assert len(items) == 1
-    assert "provenance" in items[0]
+    assert isinstance(items[0], matra.Document)
     # The document's own provenance names the same bytes, not the lossy
     # string serde writes for a path JSON cannot carry.
     assert os.fsencode(item_path(items[0]) or "").endswith(name)
@@ -263,14 +247,14 @@ def test_a_file_whose_name_is_not_utf_8_is_analyzed_and_round_trips(
 
 
 @pytest.mark.model
-def test_a_non_ascii_filename_round_trips(engine: Matra, tmp_path: Path) -> None:
+def test_a_non_ascii_filename_round_trips(engine: Any, tmp_path: Path) -> None:
     """The same decoding on a name every filesystem accepts, so the route
     through `os.fsdecode` is exercised where APFS will not hold the
     undecodable case above."""
     name = "rapport-financiér-ü.txt"
     (tmp_path / name).write_text("The committee approved the proposal.")
 
-    items = engine.analyze_path(tmp_path)
+    items = list(engine.analyze_all(dir=tmp_path))
 
     assert len(items) == 1
     path = item_path(items[0]) or ""
@@ -279,16 +263,15 @@ def test_a_non_ascii_filename_round_trips(engine: Matra, tmp_path: Path) -> None
 
 
 @pytest.mark.model
-def test_analyze_path_takes_a_pathlib_path(engine: Matra, tmp_path: Path) -> None:
+def test_a_file_takes_a_pathlib_path(engine: Any, tmp_path: Path) -> None:
     """Every path argument on the surface extracts as a `PathBuf`, which
     pyo3 fills from a `str` or from anything implementing `os.PathLike`.
     A caller holding a `pathlib.Path` does not have to stringify it."""
     (tmp_path / "only.txt").write_text("The committee approved the proposal.")
 
-    items = engine.analyze_path(tmp_path / "only.txt")
+    doc = engine.analyze(file=tmp_path / "only.txt")
 
-    assert len(items) == 1
-    assert Path(item_path(items[0]) or "").name == "only.txt"
+    assert Path(item_path(doc) or "").name == "only.txt"
 
 
 def test_model2vec_takes_a_pathlib_path(tmp_path: Path) -> None:
@@ -301,13 +284,13 @@ def test_model2vec_takes_a_pathlib_path(tmp_path: Path) -> None:
 
 
 @pytest.mark.model
-def test_analyze_path_on_a_missing_directory_raises(engine: Matra, tmp_path: Path) -> None:
+def test_a_missing_directory_raises(engine: Any, tmp_path: Path) -> None:
     """A listing failure has no per-document result to travel in, so it
-    is raised rather than returned. `Error::Io` routes on the I/O kind it
+    is raised at the call rather than yielded. `Error::Io` routes on the I/O kind it
     wraps (defect 8 of EPR-0006): a missing path is `matra.IoNotFoundError`, a
     `FileNotFoundError`, where it used to be a bare `OSError`."""
     with pytest.raises(FileNotFoundError) as excinfo:
-        engine.analyze_path(str(tmp_path / "no-such-directory"))
+        engine.analyze_all(dir=str(tmp_path / "no-such-directory"))
 
     assert isinstance(excinfo.value, matra.IoNotFoundError)
     assert excinfo.value.kind == "io"
@@ -323,20 +306,20 @@ def test_analyze_path_on_a_missing_directory_raises(engine: Matra, tmp_path: Pat
 def test_the_new_shapes_are_importable_from_the_package_root() -> None:
     """No model needed: the crust either exports these names or it does
     not, and a consumer's `from matra import ...` is the check."""
-    from matra import CorpusItem, Document, DocumentError, Embedder, ErrorInfo, Skipped, Span
+    from matra import BlockDict, DocumentDict, DocumentError, Embedder, ErrorInfo, Skipped, Span
 
     assert set(DocumentError.__annotations__) == {"path", "kind", "message", "details"}
-    assert set(Document.__annotations__) == {"provenance", "sections", "metrics", "skipped"}
+    assert set(DocumentDict.__annotations__) == {"provenance", "sections", "metrics", "skipped"}
     assert set(Span.__annotations__) == {"start", "end"}
     assert set(Skipped.__annotations__) == {"kind", "span"}
     assert set(ErrorInfo.__annotations__) == {"kind", "message", "details"}
     assert callable(Embedder.embed) and callable(Embedder.identity)
-    assert CorpusItem is not None
+    assert BlockDict is not None
 
 
 def test_the_builtin_adapter_satisfies_the_embedder_protocol() -> None:
     """The docs say `Model2Vec` is an `Embedder`, and the annotation on
-    `semantic_clusters` is the protocol alone. Both are only true while
+    `clusters` is the protocol alone. Both are only true while
     the class carries both methods; no model is needed to check that."""
     assert callable(matra.Model2Vec.embed)
     assert callable(matra.Model2Vec.identity)

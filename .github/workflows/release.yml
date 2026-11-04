@@ -438,7 +438,7 @@ jobs:
           # The package has no runtime dependencies, so --find-links
           # plus --no-index is enough on its own.
           /tmp/smoke/bin/pip install --no-index --only-binary :all: --find-links dist matra
-          /tmp/smoke/bin/python -c "import sys, matra; assert sys.version_info[:2] == (3, 13), sys.version_info; print(matra.Matra)"
+          /tmp/smoke/bin/python -c "import sys, matra; assert sys.version_info[:2] == (3, 13), sys.version_info; print(matra.Engine)"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: wheels-${{ matrix.platform.name }}

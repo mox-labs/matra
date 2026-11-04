@@ -180,11 +180,15 @@ install-hooks:
 # the first run and cached after it: UDPipe into the resolved model
 # directory, potion-base-8M into that directory or MATRA_MODEL2VEC_DIR.
 # Each is pinned by a digest in the source, so a first run needs a network.
+# The parity lane runs the same files through Rust, the command line and
+# Python against one fixture, so a drift on any surface fails its runner.
 conformance:
     cargo test --test conformance -- --ignored
     cargo test --features model2vec --test semantic_conformance -- --include-ignored
     cargo test --test corpus_conformance
-    uv run --extra test pytest python/tests/test_conformance.py python/tests/test_semantic_conformance.py python/tests/test_corpus_conformance.py -q
+    cargo test --test outcome_conformance -- --include-ignored
+    cargo test --features cli --test parity -- --ignored
+    uv run --extra test pytest python/tests/test_conformance.py python/tests/test_semantic_conformance.py python/tests/test_corpus_conformance.py python/tests/test_outcome_conformance.py python/tests/test_parity.py -q
 
 
 # ---------------------------------------------------------------------------

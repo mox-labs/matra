@@ -126,23 +126,6 @@ impl std::fmt::Debug for Udpipe {
 }
 
 impl Udpipe {
-    /// Load from a file path. Fails fast if the model is invalid.
-    ///
-    /// The file is read once and loaded from those bytes, so the digest
-    /// in [`NlpProvider::identity`] is of exactly what was loaded.
-    ///
-    /// The Python binding's `Matra.from_path` is its one caller: the Rust
-    /// surface loads only the pinned model.
-    #[cfg(any(feature = "python", test))]
-    pub(crate) fn from_path(path: impl AsRef<Path>) -> crate::domain::Result<Self> {
-        let path = path.as_ref();
-        if !path.exists() {
-            return Err(Error::ModelNotFound(path.to_path_buf()));
-        }
-        let bytes = std::fs::read(path).map_err(|e| io_at("read", path, &e))?;
-        Self::from_bytes(&bytes)
-    }
-
     /// Load from bytes (e.g. embedded via include_bytes!).
     ///
     /// The identity is derived from the bytes: their SHA-256 always, and
@@ -857,15 +840,6 @@ fn locate(text: &str, cursor: usize, form: &str) -> Option<(usize, usize)> {
 mod tests {
     use super::*;
     use crate::domain::DetailValue;
-
-    #[test]
-    fn a_missing_model_file_is_model_not_found() {
-        let missing = Path::new("/nonexistent/model.udpipe");
-        match Udpipe::from_path(missing) {
-            Err(Error::ModelNotFound(path)) => assert_eq!(path, missing),
-            other => panic!("expected ModelNotFound, got {:?}", other.map(|_| ())),
-        }
-    }
 
     #[test]
     fn locate_skips_leading_whitespace_and_matches_exactly() {

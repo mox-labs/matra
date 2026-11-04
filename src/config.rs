@@ -138,6 +138,48 @@ impl Config {
         Config::from_sources(env, contents.as_deref())
     }
 
+    /// Resolve from the process environment and the config file at
+    /// `path`, in place of the one the environment names.
+    ///
+    /// [`Config::resolve`] with the file chosen by the caller: the same
+    /// size cap, the same checks, and `MATRA_CONFIG_FILE` standing for
+    /// `path` while it resolves, so [`Config::config_file`] and every
+    /// message about the file's contents name it. Unlike `resolve`, a
+    /// missing file is an error, because the caller named it.
+    ///
+    /// ```no_run
+    /// let cfg = matra::config::Config::from_file("matra.toml")?;
+    /// println!("summaries default to {} sentences", cfg.summarize_n());
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// [`Error::Io`] naming `path` when it does not exist or cannot be
+    /// read, and the same set as [`Config::resolve`] otherwise.
+    pub fn from_file(path: impl AsRef<Path>) -> domain::Result<Config> {
+        let path = path.as_ref();
+        let contents = read_config_file(path)?.ok_or_else(|| {
+            Error::Io(domain::IoContext::cannot(
+                "read",
+                path,
+                &std::io::Error::from(std::io::ErrorKind::NotFound),
+            ))
+        })?;
+        let named = path.as_os_str().to_string_lossy().into_owned();
+        let env = |key: &str| {
+            if key == "MATRA_CONFIG_FILE" {
+                Some(named.clone())
+            } else {
+                std::env::var(key).ok()
+            }
+        };
+        let mut cfg = Config::from_sources(env, Some(&contents))?;
+        // The environment carries text; the path itself is kept exactly.
+        cfg.config_file = Some(path.to_path_buf());
+        Ok(cfg)
+    }
+
     /// Resolve from an injected environment and an injected config file.
     ///
     /// `env` answers environment lookups by name; `file` is the config
@@ -369,8 +411,8 @@ impl Config {
     /// Deprecated by RFC-0020: nothing in the library or the command line
     /// reads it. The UDPipe adapter's model file is pinned in the source
     /// beside its digest, so the key selects no model, and it no longer
-    /// ships in `config/default.toml`. The Rust surface loads the pinned
-    /// model only; Python's `Matra.from_path` loads another model file.
+    /// ships in `config/default.toml`. No surface loads another model
+    /// file.
     #[deprecated(note = "selects nothing: the UDPipe model is pinned in the adapter (RFC-0020)")]
     pub fn udpipe_model(&self) -> &str {
         &self.udpipe_model
@@ -389,7 +431,7 @@ impl Config {
     ///
     /// Deprecated by RFC-0020: nothing in the library or the command line
     /// reads it, and it no longer ships in `config/default.toml`. Every
-    /// clustering call (`matra::clusters` and its Python forms) takes its
+    /// clustering call (`matra::clusters` and Python's `matra.clusters`) takes its
     /// threshold as an argument, and there is no clustering command.
     #[deprecated(note = "selects nothing: pass the threshold to the clustering call (RFC-0020)")]
     pub fn semantic_threshold(&self) -> f32 {
@@ -704,7 +746,7 @@ fn read_config_file(path: &Path) -> domain::Result<Option<String>> {
     let metadata = match std::fs::metadata(path) {
         Ok(m) => m,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-        Err(e) => return Err(Error::Io(e)),
+        Err(e) => return Err(Error::Io(domain::IoContext::cannot("read", path, &e))),
     };
     if metadata.len() > MAX_CONFIG_BYTES {
         return Err(Error::InputTooLarge {
@@ -720,7 +762,7 @@ fn read_config_file(path: &Path) -> domain::Result<Option<String>> {
             path.display()
         ))),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(Error::Io(e)),
+        Err(e) => Err(Error::Io(domain::IoContext::cannot("read", path, &e))),
     }
 }
 
@@ -1283,6 +1325,37 @@ algorithm = "rake"
                 }
             ),
             "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn a_named_config_file_is_the_one_read_and_named() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("matra.toml");
+        std::fs::write(&path, "[summarize]\nn = 7\n").unwrap();
+        let cfg = Config::from_file(&path).unwrap();
+        assert_eq!(cfg.summarize_n(), 7);
+        assert_eq!(cfg.config_file(), Some(path.as_path()));
+        assert!(
+            cfg.sources()
+                .any(|(key, source)| key == "summarize.n"
+                    && source == ValueSource::File(path.clone())),
+            "summarize.n is attributed to the named file"
+        );
+    }
+
+    #[test]
+    fn a_named_config_file_that_is_missing_is_an_error_naming_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let missing = dir.path().join("absent.toml");
+        let err = Config::from_file(&missing).unwrap_err();
+        match &err {
+            Error::Io(e) => assert_eq!(e.kind(), std::io::ErrorKind::NotFound),
+            other => panic!("expected an I/O failure, got {other}"),
+        }
+        assert!(
+            err.to_string().contains(&missing.display().to_string()),
+            "{err}"
         );
     }
 }

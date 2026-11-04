@@ -1,0 +1,2493 @@
+{
+  "name": "parity",
+  "description": "The cross-surface parity lane (EPR-0006): the same files through Rust (`Engine::analyze(Input::file)` and the outcome functions), Python (`Engine.analyze(file=)` and `matra.summarize`, `matra.keyphrases`) and the command line (`matra analyze|summarize|keyphrases FILE --json`) must give the same `Document`, the same summary, the same keyphrases and the same error. Each runner writes a document's `input` to a file named `file`, and compares what its surface returns to `expect` whole, after setting `provenance.matra` to the fixture's and `provenance.source.path` to null (the path is asserted to be the one passed). A case with no `n` or `method` runs each surface's default, which is the configuration's default on the command line (run with no configuration file): so the defaults are held together too. An error case writes `bytes`, or `fill` repeated `count` times, and pins the error's `kind`, `message` and `details`; the command line reports the message on stderr as `matra: FILE: MESSAGE` and exits 2, and its `kind` crosses there with the `--json` error envelope (milestone 6). `expect` is written by the Rust runner with MATRA_REGENERATE_PARITY=1; read what changed before committing it.",
+  "documents": [
+    {
+      "file": "field-notes.md",
+      "input": "# Field notes\n\nThe river rose overnight, and the bridge was closed at dawn. Engineers inspected the piers before noon.\n\n- The council met in the afternoon.\n\n> Nothing in a quote is parsed.\n\n| Gauge | Level |\n|---|---|\n| North | 4.2 |\n\n## Repairs\n\nThe piers were repaired by the city. The bridge reopened on Friday, and traffic returned to the river road.\n",
+      "summaries": [
+        {},
+        {
+          "n": 2,
+          "method": "textrank"
+        }
+      ],
+      "keyphrases": [
+        {},
+        {
+          "n": 5,
+          "method": "yake"
+        }
+      ],
+      "expect": {
+        "document": {
+          "metrics": {
+            "mean_sentence_length": 8.4,
+            "nominalization_ratio": 0.023809523809523808,
+            "paragraph_count": 4,
+            "passive_ratio": 0.4,
+            "sentence_length_std": 2.8809720581775866,
+            "total_sentences": 5,
+            "total_words": 42,
+            "vocabulary_ttr": 0.6904761904761905
+          },
+          "provenance": {
+            "format": "markdown",
+            "matra": "fixture",
+            "parser": {
+              "license": "CC BY-NC-SA 4.0 (non-commercial)",
+              "model": "english-ewt-ud-2.5-191206",
+              "name": "udpipe",
+              "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+            },
+            "schema": "2.0",
+            "source": {
+              "bytes": 355,
+              "path": null,
+              "sha256": "50eafa88edb261f0b4dff29e866701729f79393f8cc93e185186a0f5684014fa"
+            }
+          },
+          "sections": [
+            {
+              "heading": "Field notes",
+              "level": 1,
+              "paragraphs": [
+                {
+                  "kind": "paragraph",
+                  "metrics": {
+                    "compression_ratio": null,
+                    "lexical_density": 0.5882352941176471,
+                    "readability_grade": 5.772058823529413
+                  },
+                  "sentences": [
+                    {
+                      "clausal_complements": [],
+                      "hearst_pairs": [],
+                      "modals": [],
+                      "negations": [],
+                      "passive": true,
+                      "root_adverbials": [
+                        {
+                          "adv_id": 4,
+                          "adv_lemma": "overnight"
+                        }
+                      ],
+                      "root_mood": {
+                        "mood": "Ind",
+                        "root_id": 3
+                      },
+                      "span": {
+                        "end": 75,
+                        "start": 15
+                      },
+                      "text": "The river rose overnight, and the bridge was closed at dawn.",
+                      "tokens": [
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 2,
+                          "id": 1,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 18,
+                            "start": 15
+                          },
+                          "text": "The",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "nsubj",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 3,
+                          "id": 2,
+                          "is_punct": false,
+                          "lemma": "river",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 24,
+                            "start": 19
+                          },
+                          "text": "river",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "root",
+                          "deps": "_",
+                          "features": {
+                            "Mood": "Ind",
+                            "Tense": "Past",
+                            "VerbForm": "Fin"
+                          },
+                          "head": 0,
+                          "id": 3,
+                          "is_punct": false,
+                          "lemma": "rise",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 29,
+                            "start": 25
+                          },
+                          "text": "rose",
+                          "xpos": "VBD"
+                        },
+                        {
+                          "dep": "advmod",
+                          "deps": "_",
+                          "features": {},
+                          "head": 3,
+                          "id": 4,
+                          "is_punct": false,
+                          "lemma": "overnight",
+                          "misc": "SpaceAfter=No",
+                          "pos": "ADV",
+                          "span": {
+                            "end": 39,
+                            "start": 30
+                          },
+                          "text": "overnight",
+                          "xpos": "RB"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 10,
+                          "id": 5,
+                          "is_punct": true,
+                          "lemma": ",",
+                          "misc": "",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 40,
+                            "start": 39
+                          },
+                          "text": ",",
+                          "xpos": ","
+                        },
+                        {
+                          "dep": "cc",
+                          "deps": "_",
+                          "features": {},
+                          "head": 10,
+                          "id": 6,
+                          "is_punct": false,
+                          "lemma": "and",
+                          "misc": "",
+                          "pos": "CCONJ",
+                          "span": {
+                            "end": 44,
+                            "start": 41
+                          },
+                          "text": "and",
+                          "xpos": "CC"
+                        },
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 8,
+                          "id": 7,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 48,
+                            "start": 45
+                          },
+                          "text": "the",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "nsubj:pass",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 10,
+                          "id": 8,
+                          "is_punct": false,
+                          "lemma": "bridge",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 55,
+                            "start": 49
+                          },
+                          "text": "bridge",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "aux:pass",
+                          "deps": "_",
+                          "features": {
+                            "Mood": "Ind",
+                            "Number": "Sing",
+                            "Person": "3",
+                            "Tense": "Past",
+                            "VerbForm": "Fin"
+                          },
+                          "head": 10,
+                          "id": 9,
+                          "is_punct": false,
+                          "lemma": "be",
+                          "misc": "",
+                          "pos": "AUX",
+                          "span": {
+                            "end": 59,
+                            "start": 56
+                          },
+                          "text": "was",
+                          "xpos": "VBD"
+                        },
+                        {
+                          "dep": "conj",
+                          "deps": "_",
+                          "features": {
+                            "Tense": "Past",
+                            "VerbForm": "Part",
+                            "Voice": "Pass"
+                          },
+                          "head": 3,
+                          "id": 10,
+                          "is_punct": false,
+                          "lemma": "close",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 66,
+                            "start": 60
+                          },
+                          "text": "closed",
+                          "xpos": "VBN"
+                        },
+                        {
+                          "dep": "case",
+                          "deps": "_",
+                          "features": {},
+                          "head": 12,
+                          "id": 11,
+                          "is_punct": false,
+                          "lemma": "at",
+                          "misc": "",
+                          "pos": "ADP",
+                          "span": {
+                            "end": 69,
+                            "start": 67
+                          },
+                          "text": "at",
+                          "xpos": "IN"
+                        },
+                        {
+                          "dep": "obl",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 10,
+                          "id": 12,
+                          "is_punct": false,
+                          "lemma": "dawn",
+                          "misc": "SpaceAfter=No",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 74,
+                            "start": 70
+                          },
+                          "text": "dawn",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 3,
+                          "id": 13,
+                          "is_punct": true,
+                          "lemma": ".",
+                          "misc": "",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 75,
+                            "start": 74
+                          },
+                          "text": ".",
+                          "xpos": "."
+                        }
+                      ],
+                      "tree_depth": 3,
+                      "word_count": 11
+                    },
+                    {
+                      "clausal_complements": [],
+                      "hearst_pairs": [],
+                      "modals": [],
+                      "negations": [],
+                      "passive": false,
+                      "root_adverbials": [],
+                      "root_mood": null,
+                      "span": {
+                        "end": 118,
+                        "start": 76
+                      },
+                      "text": "Engineers inspected the piers before noon.",
+                      "tokens": [
+                        {
+                          "dep": "root",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Plur"
+                          },
+                          "head": 0,
+                          "id": 1,
+                          "is_punct": false,
+                          "lemma": "Engineers",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 85,
+                            "start": 76
+                          },
+                          "text": "Engineers",
+                          "xpos": "NNS"
+                        },
+                        {
+                          "dep": "acl",
+                          "deps": "_",
+                          "features": {
+                            "Tense": "Past",
+                            "VerbForm": "Part"
+                          },
+                          "head": 1,
+                          "id": 2,
+                          "is_punct": false,
+                          "lemma": "inspect",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 95,
+                            "start": 86
+                          },
+                          "text": "inspected",
+                          "xpos": "VBN"
+                        },
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 4,
+                          "id": 3,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 99,
+                            "start": 96
+                          },
+                          "text": "the",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "obj",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Plur"
+                          },
+                          "head": 2,
+                          "id": 4,
+                          "is_punct": false,
+                          "lemma": "pier",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 105,
+                            "start": 100
+                          },
+                          "text": "piers",
+                          "xpos": "NNS"
+                        },
+                        {
+                          "dep": "case",
+                          "deps": "_",
+                          "features": {},
+                          "head": 6,
+                          "id": 5,
+                          "is_punct": false,
+                          "lemma": "before",
+                          "misc": "",
+                          "pos": "ADP",
+                          "span": {
+                            "end": 112,
+                            "start": 106
+                          },
+                          "text": "before",
+                          "xpos": "IN"
+                        },
+                        {
+                          "dep": "obl",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 2,
+                          "id": 6,
+                          "is_punct": false,
+                          "lemma": "noon",
+                          "misc": "SpaceAfter=No",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 117,
+                            "start": 113
+                          },
+                          "text": "noon",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 1,
+                          "id": 7,
+                          "is_punct": true,
+                          "lemma": ".",
+                          "misc": "SpaceAfter=No",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 118,
+                            "start": 117
+                          },
+                          "text": ".",
+                          "xpos": "."
+                        }
+                      ],
+                      "tree_depth": 3,
+                      "word_count": 6
+                    }
+                  ],
+                  "span": {
+                    "end": 118,
+                    "start": 15
+                  },
+                  "text": "The river rose overnight, and the bridge was closed at dawn. Engineers inspected the piers before noon."
+                },
+                {
+                  "kind": "list_item",
+                  "metrics": {
+                    "compression_ratio": null,
+                    "lexical_density": 0.5,
+                    "readability_grade": null
+                  },
+                  "sentences": [
+                    {
+                      "clausal_complements": [],
+                      "hearst_pairs": [],
+                      "modals": [],
+                      "negations": [],
+                      "passive": false,
+                      "root_adverbials": [],
+                      "root_mood": null,
+                      "span": {
+                        "end": 155,
+                        "start": 122
+                      },
+                      "text": "The council met in the afternoon.",
+                      "tokens": [
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 2,
+                          "id": 1,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 125,
+                            "start": 122
+                          },
+                          "text": "The",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "root",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 0,
+                          "id": 2,
+                          "is_punct": false,
+                          "lemma": "council",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 133,
+                            "start": 126
+                          },
+                          "text": "council",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "acl",
+                          "deps": "_",
+                          "features": {
+                            "Tense": "Past",
+                            "VerbForm": "Part"
+                          },
+                          "head": 2,
+                          "id": 3,
+                          "is_punct": false,
+                          "lemma": "meet",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 137,
+                            "start": 134
+                          },
+                          "text": "met",
+                          "xpos": "VBN"
+                        },
+                        {
+                          "dep": "case",
+                          "deps": "_",
+                          "features": {},
+                          "head": 6,
+                          "id": 4,
+                          "is_punct": false,
+                          "lemma": "in",
+                          "misc": "",
+                          "pos": "ADP",
+                          "span": {
+                            "end": 140,
+                            "start": 138
+                          },
+                          "text": "in",
+                          "xpos": "IN"
+                        },
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 6,
+                          "id": 5,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 144,
+                            "start": 141
+                          },
+                          "text": "the",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "obl",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 3,
+                          "id": 6,
+                          "is_punct": false,
+                          "lemma": "afternoon",
+                          "misc": "SpaceAfter=No",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 154,
+                            "start": 145
+                          },
+                          "text": "afternoon",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 2,
+                          "id": 7,
+                          "is_punct": true,
+                          "lemma": ".",
+                          "misc": "SpaceAfter=No",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 155,
+                            "start": 154
+                          },
+                          "text": ".",
+                          "xpos": "."
+                        }
+                      ],
+                      "tree_depth": 3,
+                      "word_count": 6
+                    }
+                  ],
+                  "span": {
+                    "end": 155,
+                    "start": 120
+                  },
+                  "text": "The council met in the afternoon."
+                },
+                {
+                  "kind": "quote",
+                  "metrics": {
+                    "compression_ratio": null,
+                    "lexical_density": null,
+                    "readability_grade": null
+                  },
+                  "sentences": [],
+                  "span": {
+                    "end": 188,
+                    "start": 157
+                  },
+                  "text": "Nothing in a quote is parsed."
+                }
+              ],
+              "span": {
+                "end": 13,
+                "start": 0
+              }
+            },
+            {
+              "heading": "Repairs",
+              "level": 2,
+              "paragraphs": [
+                {
+                  "kind": "paragraph",
+                  "metrics": {
+                    "compression_ratio": null,
+                    "lexical_density": 0.5263157894736842,
+                    "readability_grade": 6.125526315789475
+                  },
+                  "sentences": [
+                    {
+                      "clausal_complements": [],
+                      "hearst_pairs": [],
+                      "modals": [],
+                      "negations": [],
+                      "passive": true,
+                      "root_adverbials": [],
+                      "root_mood": {
+                        "mood": "Ind",
+                        "root_id": 4
+                      },
+                      "span": {
+                        "end": 283,
+                        "start": 247
+                      },
+                      "text": "The piers were repaired by the city.",
+                      "tokens": [
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 2,
+                          "id": 1,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 250,
+                            "start": 247
+                          },
+                          "text": "The",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "nsubj:pass",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Plur"
+                          },
+                          "head": 4,
+                          "id": 2,
+                          "is_punct": false,
+                          "lemma": "pier",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 256,
+                            "start": 251
+                          },
+                          "text": "piers",
+                          "xpos": "NNS"
+                        },
+                        {
+                          "dep": "aux:pass",
+                          "deps": "_",
+                          "features": {
+                            "Mood": "Ind",
+                            "Tense": "Past",
+                            "VerbForm": "Fin"
+                          },
+                          "head": 4,
+                          "id": 3,
+                          "is_punct": false,
+                          "lemma": "be",
+                          "misc": "",
+                          "pos": "AUX",
+                          "span": {
+                            "end": 261,
+                            "start": 257
+                          },
+                          "text": "were",
+                          "xpos": "VBD"
+                        },
+                        {
+                          "dep": "root",
+                          "deps": "_",
+                          "features": {
+                            "Tense": "Past",
+                            "VerbForm": "Part",
+                            "Voice": "Pass"
+                          },
+                          "head": 0,
+                          "id": 4,
+                          "is_punct": false,
+                          "lemma": "repair",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 270,
+                            "start": 262
+                          },
+                          "text": "repaired",
+                          "xpos": "VBN"
+                        },
+                        {
+                          "dep": "case",
+                          "deps": "_",
+                          "features": {},
+                          "head": 7,
+                          "id": 5,
+                          "is_punct": false,
+                          "lemma": "by",
+                          "misc": "",
+                          "pos": "ADP",
+                          "span": {
+                            "end": 273,
+                            "start": 271
+                          },
+                          "text": "by",
+                          "xpos": "IN"
+                        },
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 7,
+                          "id": 6,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 277,
+                            "start": 274
+                          },
+                          "text": "the",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "obl",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 4,
+                          "id": 7,
+                          "is_punct": false,
+                          "lemma": "city",
+                          "misc": "SpaceAfter=No",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 282,
+                            "start": 278
+                          },
+                          "text": "city",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 4,
+                          "id": 8,
+                          "is_punct": true,
+                          "lemma": ".",
+                          "misc": "",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 283,
+                            "start": 282
+                          },
+                          "text": ".",
+                          "xpos": "."
+                        }
+                      ],
+                      "tree_depth": 2,
+                      "word_count": 7
+                    },
+                    {
+                      "clausal_complements": [],
+                      "hearst_pairs": [],
+                      "modals": [],
+                      "negations": [],
+                      "passive": false,
+                      "root_adverbials": [],
+                      "root_mood": null,
+                      "span": {
+                        "end": 354,
+                        "start": 284
+                      },
+                      "text": "The bridge reopened on Friday, and traffic returned to the river road.",
+                      "tokens": [
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 2,
+                          "id": 1,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 287,
+                            "start": 284
+                          },
+                          "text": "The",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "nsubj",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 9,
+                          "id": 2,
+                          "is_punct": false,
+                          "lemma": "bridge",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 294,
+                            "start": 288
+                          },
+                          "text": "bridge",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "acl",
+                          "deps": "_",
+                          "features": {
+                            "Tense": "Past",
+                            "VerbForm": "Part"
+                          },
+                          "head": 2,
+                          "id": 3,
+                          "is_punct": false,
+                          "lemma": "reopen",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 303,
+                            "start": 295
+                          },
+                          "text": "reopened",
+                          "xpos": "VBN"
+                        },
+                        {
+                          "dep": "case",
+                          "deps": "_",
+                          "features": {},
+                          "head": 5,
+                          "id": 4,
+                          "is_punct": false,
+                          "lemma": "on",
+                          "misc": "",
+                          "pos": "ADP",
+                          "span": {
+                            "end": 306,
+                            "start": 304
+                          },
+                          "text": "on",
+                          "xpos": "IN"
+                        },
+                        {
+                          "dep": "obl",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 3,
+                          "id": 5,
+                          "is_punct": false,
+                          "lemma": "Friday",
+                          "misc": "SpaceAfter=No",
+                          "pos": "PROPN",
+                          "span": {
+                            "end": 313,
+                            "start": 307
+                          },
+                          "text": "Friday",
+                          "xpos": "NNP"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 8,
+                          "id": 6,
+                          "is_punct": true,
+                          "lemma": ",",
+                          "misc": "",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 314,
+                            "start": 313
+                          },
+                          "text": ",",
+                          "xpos": ","
+                        },
+                        {
+                          "dep": "cc",
+                          "deps": "_",
+                          "features": {},
+                          "head": 8,
+                          "id": 7,
+                          "is_punct": false,
+                          "lemma": "and",
+                          "misc": "",
+                          "pos": "CCONJ",
+                          "span": {
+                            "end": 318,
+                            "start": 315
+                          },
+                          "text": "and",
+                          "xpos": "CC"
+                        },
+                        {
+                          "dep": "conj",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 2,
+                          "id": 8,
+                          "is_punct": false,
+                          "lemma": "traffic",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 326,
+                            "start": 319
+                          },
+                          "text": "traffic",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "root",
+                          "deps": "_",
+                          "features": {
+                            "Tense": "Past",
+                            "VerbForm": "Part"
+                          },
+                          "head": 0,
+                          "id": 9,
+                          "is_punct": false,
+                          "lemma": "return",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 335,
+                            "start": 327
+                          },
+                          "text": "returned",
+                          "xpos": "VBN"
+                        },
+                        {
+                          "dep": "case",
+                          "deps": "_",
+                          "features": {},
+                          "head": 13,
+                          "id": 10,
+                          "is_punct": false,
+                          "lemma": "to",
+                          "misc": "",
+                          "pos": "ADP",
+                          "span": {
+                            "end": 338,
+                            "start": 336
+                          },
+                          "text": "to",
+                          "xpos": "IN"
+                        },
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 13,
+                          "id": 11,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 342,
+                            "start": 339
+                          },
+                          "text": "the",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "compound",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 13,
+                          "id": 12,
+                          "is_punct": false,
+                          "lemma": "river",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 348,
+                            "start": 343
+                          },
+                          "text": "river",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "obl",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 9,
+                          "id": 13,
+                          "is_punct": false,
+                          "lemma": "road",
+                          "misc": "SpaceAfter=No",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 353,
+                            "start": 349
+                          },
+                          "text": "road",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 9,
+                          "id": 14,
+                          "is_punct": true,
+                          "lemma": ".",
+                          "misc": "SpaceAfter=No",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 354,
+                            "start": 353
+                          },
+                          "text": ".",
+                          "xpos": "."
+                        }
+                      ],
+                      "tree_depth": 4,
+                      "word_count": 12
+                    }
+                  ],
+                  "span": {
+                    "end": 354,
+                    "start": 247
+                  },
+                  "text": "The piers were repaired by the city. The bridge reopened on Friday, and traffic returned to the river road."
+                }
+              ],
+              "span": {
+                "end": 245,
+                "start": 235
+              }
+            }
+          ],
+          "skipped": [
+            {
+              "kind": "table",
+              "span": {
+                "end": 233,
+                "start": 190
+              }
+            }
+          ]
+        },
+        "summaries": [
+          {
+            "provenance": {
+              "format": "markdown",
+              "matra": "fixture",
+              "method": "tfidf",
+              "parameters": {
+                "n": 3
+              },
+              "parser": {
+                "license": "CC BY-NC-SA 4.0 (non-commercial)",
+                "model": "english-ewt-ud-2.5-191206",
+                "name": "udpipe",
+                "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+              },
+              "schema": "2.0",
+              "source": {
+                "bytes": 355,
+                "path": null,
+                "sha256": "50eafa88edb261f0b4dff29e866701729f79393f8cc93e185186a0f5684014fa"
+              }
+            },
+            "sentences": [
+              {
+                "index": 1,
+                "score": 0.3590377793235285,
+                "span": {
+                  "end": 118,
+                  "start": 76
+                },
+                "text": "Engineers inspected the piers before noon."
+              },
+              {
+                "index": 2,
+                "score": 0.5364793041447,
+                "span": {
+                  "end": 155,
+                  "start": 122
+                },
+                "text": "The council met in the afternoon."
+              },
+              {
+                "index": 3,
+                "score": 0.45946295074915056,
+                "span": {
+                  "end": 283,
+                  "start": 247
+                },
+                "text": "The piers were repaired by the city."
+              }
+            ]
+          },
+          {
+            "provenance": {
+              "format": "markdown",
+              "matra": "fixture",
+              "method": "textrank",
+              "parameters": {
+                "n": 2
+              },
+              "parser": {
+                "license": "CC BY-NC-SA 4.0 (non-commercial)",
+                "model": "english-ewt-ud-2.5-191206",
+                "name": "udpipe",
+                "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+              },
+              "schema": "2.0",
+              "source": {
+                "bytes": 355,
+                "path": null,
+                "sha256": "50eafa88edb261f0b4dff29e866701729f79393f8cc93e185186a0f5684014fa"
+              }
+            },
+            "sentences": [
+              {
+                "index": 0,
+                "score": 0.2,
+                "span": {
+                  "end": 75,
+                  "start": 15
+                },
+                "text": "The river rose overnight, and the bridge was closed at dawn."
+              },
+              {
+                "index": 1,
+                "score": 0.2,
+                "span": {
+                  "end": 118,
+                  "start": 76
+                },
+                "text": "Engineers inspected the piers before noon."
+              }
+            ]
+          }
+        ],
+        "keyphrases": [
+          {
+            "phrases": [
+              {
+                "occurrences": [
+                  {
+                    "end": 353,
+                    "start": 343
+                  }
+                ],
+                "phrase": "river road",
+                "score": 3.5
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 24,
+                    "start": 19
+                  }
+                ],
+                "phrase": "river",
+                "score": 1.5
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 55,
+                    "start": 49
+                  },
+                  {
+                    "end": 294,
+                    "start": 288
+                  }
+                ],
+                "phrase": "bridge",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 74,
+                    "start": 70
+                  }
+                ],
+                "phrase": "dawn",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 85,
+                    "start": 76
+                  }
+                ],
+                "phrase": "engineers",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 105,
+                    "start": 100
+                  },
+                  {
+                    "end": 256,
+                    "start": 251
+                  }
+                ],
+                "phrase": "pier",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 117,
+                    "start": 113
+                  }
+                ],
+                "phrase": "noon",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 133,
+                    "start": 126
+                  }
+                ],
+                "phrase": "council",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 154,
+                    "start": 145
+                  }
+                ],
+                "phrase": "afternoon",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 282,
+                    "start": 278
+                  }
+                ],
+                "phrase": "city",
+                "score": 1.0
+              }
+            ],
+            "provenance": {
+              "format": "markdown",
+              "matra": "fixture",
+              "method": "rake",
+              "parameters": {
+                "n": 10
+              },
+              "parser": {
+                "license": "CC BY-NC-SA 4.0 (non-commercial)",
+                "model": "english-ewt-ud-2.5-191206",
+                "name": "udpipe",
+                "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+              },
+              "schema": "2.0",
+              "source": {
+                "bytes": 355,
+                "path": null,
+                "sha256": "50eafa88edb261f0b4dff29e866701729f79393f8cc93e185186a0f5684014fa"
+              }
+            }
+          },
+          {
+            "phrases": [
+              {
+                "occurrences": [
+                  {
+                    "end": 74,
+                    "start": 60
+                  }
+                ],
+                "phrase": "close dawn",
+                "score": 28.14876569309629
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 74,
+                    "start": 49
+                  }
+                ],
+                "phrase": "bridge close dawn",
+                "score": 21.604212665036894
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 282,
+                    "start": 251
+                  }
+                ],
+                "phrase": "pier repair city",
+                "score": 11.631245567362418
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 117,
+                    "start": 100
+                  }
+                ],
+                "phrase": "pier noon",
+                "score": 8.903858481661585
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 117,
+                    "start": 86
+                  }
+                ],
+                "phrase": "inspect pier noon",
+                "score": 7.285023576928603
+              }
+            ],
+            "provenance": {
+              "format": "markdown",
+              "matra": "fixture",
+              "method": "yake",
+              "parameters": {
+                "n": 5
+              },
+              "parser": {
+                "license": "CC BY-NC-SA 4.0 (non-commercial)",
+                "model": "english-ewt-ud-2.5-191206",
+                "name": "udpipe",
+                "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+              },
+              "schema": "2.0",
+              "source": {
+                "bytes": 355,
+                "path": null,
+                "sha256": "50eafa88edb261f0b4dff29e866701729f79393f8cc93e185186a0f5684014fa"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "file": "minutes.txt",
+      "input": "The committee approved the budget on Tuesday. Three amendments were submitted by the working group.\n\nThe chair adjourned the meeting. The minutes were not circulated.\n",
+      "summaries": [
+        {},
+        {
+          "n": 1,
+          "method": "tfidf"
+        }
+      ],
+      "keyphrases": [
+        {},
+        {
+          "n": 3,
+          "method": "rake"
+        }
+      ],
+      "expect": {
+        "document": {
+          "metrics": {
+            "mean_sentence_length": 6.25,
+            "nominalization_ratio": 0.0,
+            "paragraph_count": 2,
+            "passive_ratio": 0.5,
+            "sentence_length_std": 1.5,
+            "total_sentences": 4,
+            "total_words": 25,
+            "vocabulary_ttr": 0.76
+          },
+          "provenance": {
+            "format": "plain_text",
+            "matra": "fixture",
+            "parser": {
+              "license": "CC BY-NC-SA 4.0 (non-commercial)",
+              "model": "english-ewt-ud-2.5-191206",
+              "name": "udpipe",
+              "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+            },
+            "schema": "2.0",
+            "source": {
+              "bytes": 167,
+              "path": null,
+              "sha256": "d3a4f9c960bd0b48e355fe90fe148718dce80bed19b60b2432f56ad477e4366f"
+            }
+          },
+          "sections": [
+            {
+              "heading": null,
+              "level": 0,
+              "paragraphs": [
+                {
+                  "kind": "paragraph",
+                  "metrics": {
+                    "compression_ratio": null,
+                    "lexical_density": 0.6,
+                    "readability_grade": 7.001666666666669
+                  },
+                  "sentences": [
+                    {
+                      "clausal_complements": [],
+                      "hearst_pairs": [],
+                      "modals": [],
+                      "negations": [],
+                      "passive": false,
+                      "root_adverbials": [],
+                      "root_mood": {
+                        "mood": "Ind",
+                        "root_id": 3
+                      },
+                      "span": {
+                        "end": 45,
+                        "start": 0
+                      },
+                      "text": "The committee approved the budget on Tuesday.",
+                      "tokens": [
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 2,
+                          "id": 1,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 3,
+                            "start": 0
+                          },
+                          "text": "The",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "nsubj",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 3,
+                          "id": 2,
+                          "is_punct": false,
+                          "lemma": "committee",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 13,
+                            "start": 4
+                          },
+                          "text": "committee",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "root",
+                          "deps": "_",
+                          "features": {
+                            "Mood": "Ind",
+                            "Tense": "Past",
+                            "VerbForm": "Fin"
+                          },
+                          "head": 0,
+                          "id": 3,
+                          "is_punct": false,
+                          "lemma": "approve",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 22,
+                            "start": 14
+                          },
+                          "text": "approved",
+                          "xpos": "VBD"
+                        },
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 5,
+                          "id": 4,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 26,
+                            "start": 23
+                          },
+                          "text": "the",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "obj",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 3,
+                          "id": 5,
+                          "is_punct": false,
+                          "lemma": "budget",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 33,
+                            "start": 27
+                          },
+                          "text": "budget",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "case",
+                          "deps": "_",
+                          "features": {},
+                          "head": 7,
+                          "id": 6,
+                          "is_punct": false,
+                          "lemma": "on",
+                          "misc": "",
+                          "pos": "ADP",
+                          "span": {
+                            "end": 36,
+                            "start": 34
+                          },
+                          "text": "on",
+                          "xpos": "IN"
+                        },
+                        {
+                          "dep": "nmod",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 5,
+                          "id": 7,
+                          "is_punct": false,
+                          "lemma": "Tuesday",
+                          "misc": "SpaceAfter=No",
+                          "pos": "PROPN",
+                          "span": {
+                            "end": 44,
+                            "start": 37
+                          },
+                          "text": "Tuesday",
+                          "xpos": "NNP"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 3,
+                          "id": 8,
+                          "is_punct": true,
+                          "lemma": ".",
+                          "misc": "",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 45,
+                            "start": 44
+                          },
+                          "text": ".",
+                          "xpos": "."
+                        }
+                      ],
+                      "tree_depth": 3,
+                      "word_count": 7
+                    },
+                    {
+                      "clausal_complements": [],
+                      "hearst_pairs": [],
+                      "modals": [],
+                      "negations": [],
+                      "passive": true,
+                      "root_adverbials": [],
+                      "root_mood": {
+                        "mood": "Ind",
+                        "root_id": 4
+                      },
+                      "span": {
+                        "end": 99,
+                        "start": 46
+                      },
+                      "text": "Three amendments were submitted by the working group.",
+                      "tokens": [
+                        {
+                          "dep": "nummod",
+                          "deps": "_",
+                          "features": {
+                            "NumType": "Card"
+                          },
+                          "head": 2,
+                          "id": 1,
+                          "is_punct": false,
+                          "lemma": "three",
+                          "misc": "",
+                          "pos": "NUM",
+                          "span": {
+                            "end": 51,
+                            "start": 46
+                          },
+                          "text": "Three",
+                          "xpos": "CD"
+                        },
+                        {
+                          "dep": "nsubj:pass",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Plur"
+                          },
+                          "head": 4,
+                          "id": 2,
+                          "is_punct": false,
+                          "lemma": "amendment",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 62,
+                            "start": 52
+                          },
+                          "text": "amendments",
+                          "xpos": "NNS"
+                        },
+                        {
+                          "dep": "aux:pass",
+                          "deps": "_",
+                          "features": {
+                            "Mood": "Ind",
+                            "Tense": "Past",
+                            "VerbForm": "Fin"
+                          },
+                          "head": 4,
+                          "id": 3,
+                          "is_punct": false,
+                          "lemma": "be",
+                          "misc": "",
+                          "pos": "AUX",
+                          "span": {
+                            "end": 67,
+                            "start": 63
+                          },
+                          "text": "were",
+                          "xpos": "VBD"
+                        },
+                        {
+                          "dep": "root",
+                          "deps": "_",
+                          "features": {
+                            "Tense": "Past",
+                            "VerbForm": "Part",
+                            "Voice": "Pass"
+                          },
+                          "head": 0,
+                          "id": 4,
+                          "is_punct": false,
+                          "lemma": "submit",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 77,
+                            "start": 68
+                          },
+                          "text": "submitted",
+                          "xpos": "VBN"
+                        },
+                        {
+                          "dep": "case",
+                          "deps": "_",
+                          "features": {},
+                          "head": 8,
+                          "id": 5,
+                          "is_punct": false,
+                          "lemma": "by",
+                          "misc": "",
+                          "pos": "ADP",
+                          "span": {
+                            "end": 80,
+                            "start": 78
+                          },
+                          "text": "by",
+                          "xpos": "IN"
+                        },
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 8,
+                          "id": 6,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 84,
+                            "start": 81
+                          },
+                          "text": "the",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "amod",
+                          "deps": "_",
+                          "features": {
+                            "VerbForm": "Ger"
+                          },
+                          "head": 8,
+                          "id": 7,
+                          "is_punct": false,
+                          "lemma": "work",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 92,
+                            "start": 85
+                          },
+                          "text": "working",
+                          "xpos": "VBG"
+                        },
+                        {
+                          "dep": "obl",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 4,
+                          "id": 8,
+                          "is_punct": false,
+                          "lemma": "group",
+                          "misc": "SpaceAfter=No",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 98,
+                            "start": 93
+                          },
+                          "text": "group",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 4,
+                          "id": 9,
+                          "is_punct": true,
+                          "lemma": ".",
+                          "misc": "SpaceAfter=No",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 99,
+                            "start": 98
+                          },
+                          "text": ".",
+                          "xpos": "."
+                        }
+                      ],
+                      "tree_depth": 2,
+                      "word_count": 8
+                    }
+                  ],
+                  "span": {
+                    "end": 99,
+                    "start": 0
+                  },
+                  "text": "The committee approved the budget on Tuesday. Three amendments were submitted by the working group."
+                },
+                {
+                  "kind": "paragraph",
+                  "metrics": {
+                    "compression_ratio": null,
+                    "lexical_density": 0.5,
+                    "readability_grade": null
+                  },
+                  "sentences": [
+                    {
+                      "clausal_complements": [],
+                      "hearst_pairs": [],
+                      "modals": [],
+                      "negations": [],
+                      "passive": false,
+                      "root_adverbials": [],
+                      "root_mood": {
+                        "mood": "Ind",
+                        "root_id": 3
+                      },
+                      "span": {
+                        "end": 133,
+                        "start": 101
+                      },
+                      "text": "The chair adjourned the meeting.",
+                      "tokens": [
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 2,
+                          "id": 1,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 104,
+                            "start": 101
+                          },
+                          "text": "The",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "nsubj",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 3,
+                          "id": 2,
+                          "is_punct": false,
+                          "lemma": "chair",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 110,
+                            "start": 105
+                          },
+                          "text": "chair",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "root",
+                          "deps": "_",
+                          "features": {
+                            "Mood": "Ind",
+                            "Tense": "Past",
+                            "VerbForm": "Fin"
+                          },
+                          "head": 0,
+                          "id": 3,
+                          "is_punct": false,
+                          "lemma": "adjourn",
+                          "misc": "",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 120,
+                            "start": 111
+                          },
+                          "text": "adjourned",
+                          "xpos": "VBD"
+                        },
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 5,
+                          "id": 4,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 124,
+                            "start": 121
+                          },
+                          "text": "the",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "obj",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Sing"
+                          },
+                          "head": 3,
+                          "id": 5,
+                          "is_punct": false,
+                          "lemma": "meeting",
+                          "misc": "SpaceAfter=No",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 132,
+                            "start": 125
+                          },
+                          "text": "meeting",
+                          "xpos": "NN"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 3,
+                          "id": 6,
+                          "is_punct": true,
+                          "lemma": ".",
+                          "misc": "",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 133,
+                            "start": 132
+                          },
+                          "text": ".",
+                          "xpos": "."
+                        }
+                      ],
+                      "tree_depth": 2,
+                      "word_count": 5
+                    },
+                    {
+                      "clausal_complements": [],
+                      "hearst_pairs": [],
+                      "modals": [],
+                      "negations": [
+                        {
+                          "cue_id": 4,
+                          "cue_lemma": "not",
+                          "head_id": 5
+                        }
+                      ],
+                      "passive": true,
+                      "root_adverbials": [
+                        {
+                          "adv_id": 4,
+                          "adv_lemma": "not"
+                        }
+                      ],
+                      "root_mood": {
+                        "mood": "Ind",
+                        "root_id": 5
+                      },
+                      "span": {
+                        "end": 166,
+                        "start": 134
+                      },
+                      "text": "The minutes were not circulated.",
+                      "tokens": [
+                        {
+                          "dep": "det",
+                          "deps": "_",
+                          "features": {
+                            "Definite": "Def",
+                            "PronType": "Art"
+                          },
+                          "head": 2,
+                          "id": 1,
+                          "is_punct": false,
+                          "lemma": "the",
+                          "misc": "",
+                          "pos": "DET",
+                          "span": {
+                            "end": 137,
+                            "start": 134
+                          },
+                          "text": "The",
+                          "xpos": "DT"
+                        },
+                        {
+                          "dep": "nsubj:pass",
+                          "deps": "_",
+                          "features": {
+                            "Number": "Plur"
+                          },
+                          "head": 5,
+                          "id": 2,
+                          "is_punct": false,
+                          "lemma": "minute",
+                          "misc": "",
+                          "pos": "NOUN",
+                          "span": {
+                            "end": 145,
+                            "start": 138
+                          },
+                          "text": "minutes",
+                          "xpos": "NNS"
+                        },
+                        {
+                          "dep": "aux:pass",
+                          "deps": "_",
+                          "features": {
+                            "Mood": "Ind",
+                            "Tense": "Past",
+                            "VerbForm": "Fin"
+                          },
+                          "head": 5,
+                          "id": 3,
+                          "is_punct": false,
+                          "lemma": "be",
+                          "misc": "",
+                          "pos": "AUX",
+                          "span": {
+                            "end": 150,
+                            "start": 146
+                          },
+                          "text": "were",
+                          "xpos": "VBD"
+                        },
+                        {
+                          "dep": "advmod",
+                          "deps": "_",
+                          "features": {},
+                          "head": 5,
+                          "id": 4,
+                          "is_punct": false,
+                          "lemma": "not",
+                          "misc": "",
+                          "pos": "PART",
+                          "span": {
+                            "end": 154,
+                            "start": 151
+                          },
+                          "text": "not",
+                          "xpos": "RB"
+                        },
+                        {
+                          "dep": "root",
+                          "deps": "_",
+                          "features": {
+                            "Tense": "Past",
+                            "VerbForm": "Part",
+                            "Voice": "Pass"
+                          },
+                          "head": 0,
+                          "id": 5,
+                          "is_punct": false,
+                          "lemma": "circulate",
+                          "misc": "SpaceAfter=No",
+                          "pos": "VERB",
+                          "span": {
+                            "end": 165,
+                            "start": 155
+                          },
+                          "text": "circulated",
+                          "xpos": "VBN"
+                        },
+                        {
+                          "dep": "punct",
+                          "deps": "_",
+                          "features": {},
+                          "head": 5,
+                          "id": 6,
+                          "is_punct": true,
+                          "lemma": ".",
+                          "misc": "SpaceAfter=No",
+                          "pos": "PUNCT",
+                          "span": {
+                            "end": 166,
+                            "start": 165
+                          },
+                          "text": ".",
+                          "xpos": "."
+                        }
+                      ],
+                      "tree_depth": 2,
+                      "word_count": 5
+                    }
+                  ],
+                  "span": {
+                    "end": 166,
+                    "start": 101
+                  },
+                  "text": "The chair adjourned the meeting. The minutes were not circulated."
+                }
+              ],
+              "span": null
+            }
+          ],
+          "skipped": []
+        },
+        "summaries": [
+          {
+            "provenance": {
+              "format": "plain_text",
+              "matra": "fixture",
+              "method": "tfidf",
+              "parameters": {
+                "n": 3
+              },
+              "parser": {
+                "license": "CC BY-NC-SA 4.0 (non-commercial)",
+                "model": "english-ewt-ud-2.5-191206",
+                "name": "udpipe",
+                "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+              },
+              "schema": "2.0",
+              "source": {
+                "bytes": 167,
+                "path": null,
+                "sha256": "d3a4f9c960bd0b48e355fe90fe148718dce80bed19b60b2432f56ad477e4366f"
+              }
+            },
+            "sentences": [
+              {
+                "index": 0,
+                "score": 0.34657359027997264,
+                "span": {
+                  "end": 45,
+                  "start": 0
+                },
+                "text": "The committee approved the budget on Tuesday."
+              },
+              {
+                "index": 2,
+                "score": 0.46209812037329684,
+                "span": {
+                  "end": 133,
+                  "start": 101
+                },
+                "text": "The chair adjourned the meeting."
+              },
+              {
+                "index": 3,
+                "score": 0.6931471805599453,
+                "span": {
+                  "end": 166,
+                  "start": 134
+                },
+                "text": "The minutes were not circulated."
+              }
+            ]
+          },
+          {
+            "provenance": {
+              "format": "plain_text",
+              "matra": "fixture",
+              "method": "tfidf",
+              "parameters": {
+                "n": 1
+              },
+              "parser": {
+                "license": "CC BY-NC-SA 4.0 (non-commercial)",
+                "model": "english-ewt-ud-2.5-191206",
+                "name": "udpipe",
+                "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+              },
+              "schema": "2.0",
+              "source": {
+                "bytes": 167,
+                "path": null,
+                "sha256": "d3a4f9c960bd0b48e355fe90fe148718dce80bed19b60b2432f56ad477e4366f"
+              }
+            },
+            "sentences": [
+              {
+                "index": 3,
+                "score": 0.6931471805599453,
+                "span": {
+                  "end": 166,
+                  "start": 134
+                },
+                "text": "The minutes were not circulated."
+              }
+            ]
+          }
+        ],
+        "keyphrases": [
+          {
+            "phrases": [
+              {
+                "occurrences": [
+                  {
+                    "end": 13,
+                    "start": 4
+                  }
+                ],
+                "phrase": "committee",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 33,
+                    "start": 27
+                  }
+                ],
+                "phrase": "budget",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 44,
+                    "start": 37
+                  }
+                ],
+                "phrase": "tuesday",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 62,
+                    "start": 52
+                  }
+                ],
+                "phrase": "amendment",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 98,
+                    "start": 93
+                  }
+                ],
+                "phrase": "group",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 110,
+                    "start": 105
+                  }
+                ],
+                "phrase": "chair",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 132,
+                    "start": 125
+                  }
+                ],
+                "phrase": "meeting",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 145,
+                    "start": 138
+                  }
+                ],
+                "phrase": "minute",
+                "score": 1.0
+              }
+            ],
+            "provenance": {
+              "format": "plain_text",
+              "matra": "fixture",
+              "method": "rake",
+              "parameters": {
+                "n": 10
+              },
+              "parser": {
+                "license": "CC BY-NC-SA 4.0 (non-commercial)",
+                "model": "english-ewt-ud-2.5-191206",
+                "name": "udpipe",
+                "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+              },
+              "schema": "2.0",
+              "source": {
+                "bytes": 167,
+                "path": null,
+                "sha256": "d3a4f9c960bd0b48e355fe90fe148718dce80bed19b60b2432f56ad477e4366f"
+              }
+            }
+          },
+          {
+            "phrases": [
+              {
+                "occurrences": [
+                  {
+                    "end": 13,
+                    "start": 4
+                  }
+                ],
+                "phrase": "committee",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 33,
+                    "start": 27
+                  }
+                ],
+                "phrase": "budget",
+                "score": 1.0
+              },
+              {
+                "occurrences": [
+                  {
+                    "end": 44,
+                    "start": 37
+                  }
+                ],
+                "phrase": "tuesday",
+                "score": 1.0
+              }
+            ],
+            "provenance": {
+              "format": "plain_text",
+              "matra": "fixture",
+              "method": "rake",
+              "parameters": {
+                "n": 3
+              },
+              "parser": {
+                "license": "CC BY-NC-SA 4.0 (non-commercial)",
+                "model": "english-ewt-ud-2.5-191206",
+                "name": "udpipe",
+                "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+              },
+              "schema": "2.0",
+              "source": {
+                "bytes": 167,
+                "path": null,
+                "sha256": "d3a4f9c960bd0b48e355fe90fe148718dce80bed19b60b2432f56ad477e4366f"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "file": "scan.pdf",
+      "bytes": [
+        37,
+        80,
+        68,
+        70,
+        45,
+        49,
+        46,
+        55,
+        10
+      ],
+      "expect": {
+        "details": {
+          "format": "pdf"
+        },
+        "kind": "unsupported_format",
+        "message": "unsupported format: pdf; no feature of this matra version reads it"
+      }
+    },
+    {
+      "file": "large.txt",
+      "fill": "a",
+      "count": 8388609,
+      "expect": {
+        "details": {
+          "actual": 8388609,
+          "limit": 8388608,
+          "what": "file_source"
+        },
+        "kind": "input_too_large",
+        "message": "file_source input too large: 8388609 > limit 8388608"
+      }
+    }
+  ]
+}
