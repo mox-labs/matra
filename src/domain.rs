@@ -9,25 +9,120 @@ use serde::{Deserialize, Serialize};
 // Resource bounds
 // ---------------------------------------------------------------------------
 
-/// The upper bound on text entering the pipeline, in bytes. A constant,
-/// not a setting: no configuration, argument or environment variable
-/// changes it.
+/// Every bound matra holds its work to, in one place: the caps on what it
+/// reads, the caps each outcome method checks before it runs, and the
+/// minimum a paragraph needs before a metric is measured on it.
 ///
-/// 8 MiB accommodates book-length English (a typical novel is ~1.5 MiB / 200k
-/// words) with headroom for multilingual prose and structured documents. Beyond
-/// this bound, the underlying NLP provider's intermediate memory grows past
-/// safe limits on a typical workstation (UDPipe's per-token allocations cross
-/// ~1 GiB resident at this input size).
+/// Constants, not settings: no configuration, argument or environment
+/// variable changes any of them, and changing one is a breaking change.
+/// A cap that is exceeded returns [`Error::InputTooLarge`],
+/// whose `limit` detail is the constant here and whose `what` detail
+/// names the gate. A paragraph under a minimum, or a paragraph over
+/// [`limits::MAX_COMPRESSION_PARAGRAPH_BYTES`], is not an error: its metric slot
+/// stays `None`.
 ///
-/// `Engine::annotate`, the only route from text to the parser, enforces it
-/// on every `Input` (text, bytes, a file, blocks) and returns
-/// [`Error::InputTooLarge`] with `what = "input"` when it is exceeded, so
-/// every `Engine` method inherits it. It is checked on the bytes handed in
-/// and again on the analysed text a reader produces from them. Reading a
-/// file applies the same limit to the file's size before reading it
-/// (`what = "file_source"`). A provider's own `NlpProvider::parse` has no
-/// limit: calling it directly bypasses this bound.
-pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;
+/// Each cap is defined once and read where it applies. Two caps with the
+/// same value stay two constants where their costs differ, so tuning one
+/// does not move the other.
+pub mod limits {
+    /// The most text one input may hold, in bytes: 8 MiB.
+    ///
+    /// The gate whose `what` is `"input"`. `Engine::analyze` and
+    /// `Engine::analyze_all` check it on every `Input` (text, bytes, a
+    /// file, blocks), on the bytes handed in and again on the analysed
+    /// text a reader produces from them; reading a file checks it on the
+    /// file's size before reading (`"file_source"`), and the command line
+    /// on stdin as the bytes arrive.
+    ///
+    /// 8 MiB holds book-length English (a typical novel is ~1.5 MiB,
+    /// 200k words) with headroom. Beyond it the parser's intermediate
+    /// memory grows past safe limits on a typical workstation (UDPipe's
+    /// per-token allocations cross ~1 GiB resident at this size).
+    pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;
+
+    /// The largest configuration file read, in bytes: 64 KiB.
+    ///
+    /// The gate whose `what` is `"config_file"`, checked on the file's
+    /// size before any read. A config file is small by construction;
+    /// anything larger is a mistake or an attack, and either way it is
+    /// not read into memory first and rejected second.
+    pub const MAX_CONFIG_FILE_BYTES: usize = 64 * 1024;
+
+    /// The most bytes read from any one model download: 64 MiB.
+    ///
+    /// The gates whose `what` is `"udpipe_download"` (the parsing model)
+    /// and `"embedding_download"` (each embedding artifact). One number,
+    /// because it answers one question: how much a redirected or
+    /// misbehaving server can make the process hold. The pinned artifacts
+    /// are 16.3 MB and at most 30.2 MB, so this is headroom for a later
+    /// version that still costs a bounded read. The read stops one byte
+    /// past it.
+    pub const MAX_DOWNLOAD_BYTES: usize = 64 * 1024 * 1024;
+
+    /// The most sentences a TF-IDF summary ranks: 2,000.
+    ///
+    /// The gate whose `what` is `"tfidf"`. TF-IDF scores each sentence in
+    /// linear time; the working set is the per-sentence term counts, about
+    /// 60k entries (~2 MiB) at this size. It shares the value with
+    /// [`MAX_TEXTRANK_SENTENCES`] but not the cost model, so it is a
+    /// separate constant: tuning TextRank does not move it.
+    pub const MAX_TFIDF_SENTENCES: usize = 2000;
+
+    /// The most sentences a TextRank summary ranks: 2,000.
+    ///
+    /// The gate whose `what` is `"textrank"`. TextRank builds a dense
+    /// sentence similarity matrix, quadratic in sentences: about 32 MB of
+    /// `f64` at this size, the ceiling for unattended use.
+    pub const MAX_TEXTRANK_SENTENCES: usize = 2000;
+
+    /// The most sentences, or vectors, clustered: TextRank's bound.
+    ///
+    /// The gate whose `what` is `"clusters"`, checked on a document's
+    /// sentences before anything is embedded and on the vectors
+    /// themselves. Clustering builds the same quadratic graph TextRank
+    /// does, so it is defined as [`MAX_TEXTRANK_SENTENCES`] rather than as
+    /// a second copy of its value, and the two cannot drift apart.
+    pub const MAX_CLUSTER_SENTENCES: usize = MAX_TEXTRANK_SENTENCES;
+
+    /// The most tokens RAKE extracts keyphrases from: 200,000, counted
+    /// across every sentence, punctuation included.
+    ///
+    /// The gate whose `what` is `"rake"`. RAKE's co-occurrence map grows
+    /// with tokens, not sentences (a chat log can hold 50k one-token
+    /// sentences), so the cap is on tokens: at this size the candidate map
+    /// holds at most ~50k entries, about 3 MiB.
+    pub const MAX_RAKE_TOKENS: usize = 200_000;
+
+    /// The most tokens YAKE extracts keyphrases from: 200,000, counted as
+    /// RAKE's are.
+    ///
+    /// The gate whose `what` is `"yake"`. YAKE's one- to three-word
+    /// candidate map is bounded by token count: at this size at most ~600k
+    /// entries, about 40 MiB. Its own constant, because its cost model is
+    /// not RAKE's.
+    pub const MAX_YAKE_TOKENS: usize = 200_000;
+
+    /// The largest paragraph whose compression ratio is measured, in
+    /// bytes: 256 KiB.
+    ///
+    /// Above it `compression_ratio` stays `None` rather than failing, to
+    /// bound worst-case CPU on adversarial input. It matches the
+    /// compressor's 256 KiB window, so one paragraph never costs more
+    /// than one window's work.
+    pub const MAX_COMPRESSION_PARAGRAPH_BYTES: usize = 256 * 1024;
+
+    /// The fewest words a paragraph needs for a readability grade: 11
+    /// (more than 10), counted by whitespace.
+    ///
+    /// Below it `readability_grade` stays `None`.
+    pub const MIN_READABILITY_WORDS: usize = 11;
+
+    /// The fewest words a paragraph needs for a compression ratio: 51
+    /// (more than 50), counted by whitespace.
+    ///
+    /// Below it `compression_ratio` stays `None`.
+    pub const MIN_COMPRESSION_WORDS: usize = 51;
+}
 
 // ---------------------------------------------------------------------------
 // Provisioning
@@ -427,6 +522,21 @@ impl IoContext {
                 url: None,
                 retryable: false,
             },
+        )
+    }
+
+    /// A filesystem `operation` on `path` that failed with `error`,
+    /// keeping its kind: `cannot {operation} {path}: {error}`.
+    ///
+    /// `io error: No such file or directory (os error 2)` was the whole
+    /// message for a missing input, with the path one line away in a
+    /// variable; this is the one place the sentence that names both is
+    /// written.
+    pub(crate) fn cannot(operation: &str, path: &Path, error: &std::io::Error) -> std::io::Error {
+        IoContext::at_path(
+            error.kind(),
+            path,
+            format!("cannot {operation} {}: {error}", path.display()),
         )
     }
 
@@ -3663,6 +3773,25 @@ mod tests {
             assert!(!seen.contains(expected), "duplicate kind {expected}");
             seen.push(expected);
         }
+    }
+
+    /// Each limit is published, and changing one is a breaking change, so
+    /// every value is pinned here: a change fails this test and has to be
+    /// made on purpose, with the docs that state the number.
+    #[test]
+    fn the_limits_hold_their_published_values() {
+        use super::limits::*;
+        assert_eq!(MAX_INPUT_BYTES, 8_388_608);
+        assert_eq!(MAX_CONFIG_FILE_BYTES, 65_536);
+        assert_eq!(MAX_DOWNLOAD_BYTES, 67_108_864);
+        assert_eq!(MAX_TFIDF_SENTENCES, 2000);
+        assert_eq!(MAX_TEXTRANK_SENTENCES, 2000);
+        assert_eq!(MAX_CLUSTER_SENTENCES, MAX_TEXTRANK_SENTENCES);
+        assert_eq!(MAX_RAKE_TOKENS, 200_000);
+        assert_eq!(MAX_YAKE_TOKENS, 200_000);
+        assert_eq!(MAX_COMPRESSION_PARAGRAPH_BYTES, 262_144);
+        assert_eq!(MIN_READABILITY_WORDS, 11);
+        assert_eq!(MIN_COMPRESSION_WORDS, 51);
     }
 
     /// The details of `error` as a JSON object, for comparing whole.

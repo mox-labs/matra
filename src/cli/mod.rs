@@ -29,7 +29,8 @@ use std::path::{Path, PathBuf};
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
 
 use crate::config::Config;
-use crate::domain::{self, Document, Format, MAX_INPUT_BYTES};
+use crate::domain::limits::MAX_INPUT_BYTES;
+use crate::domain::{self, Document, Format};
 
 /// The envelope's version integer. It increments on any change to the
 /// envelope's own shape or to the meaning of a field inside `result`.

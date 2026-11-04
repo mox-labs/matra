@@ -30,7 +30,8 @@ use std::path::{Path, PathBuf};
 
 use decompose::Decomposer;
 pub use domain::Block;
-use domain::{Document, Format, MAX_INPUT_BYTES, ParagraphKind};
+use domain::limits::MAX_INPUT_BYTES;
+use domain::{Document, Format, ParagraphKind};
 pub use extraction::{
     KeyphraseMethod, SummaryMethod, keyphrases, keyphrases_with, summarize, summarize_with,
 };
@@ -183,7 +184,9 @@ impl Inputs {
     /// not a directory.
     pub fn dir(path: impl AsRef<Path>) -> domain::Result<Inputs> {
         let path = path.as_ref();
-        let file_type = std::fs::symlink_metadata(path)?.file_type();
+        let file_type = std::fs::symlink_metadata(path)
+            .map_err(|e| domain::Error::Io(domain::IoContext::cannot("read", path, &e)))?
+            .file_type();
         if file_type.is_symlink() {
             return Err(domain::Error::Io(domain::IoContext::at_path(
                 std::io::ErrorKind::Unsupported,
@@ -607,9 +610,9 @@ pub fn clusters(
     // over-cap document must not run a full embedding pass just to be
     // rejected by the clustering gate. The same check inside
     // `extraction::cluster` still guards the vectors themselves.
-    if texts.len() > extraction::MAX_CLUSTER_SENTENCES {
+    if texts.len() > domain::limits::MAX_CLUSTER_SENTENCES {
         return Err(domain::Error::InputTooLarge {
-            limit: extraction::MAX_CLUSTER_SENTENCES,
+            limit: domain::limits::MAX_CLUSTER_SENTENCES,
             actual: texts.len(),
             what: "clusters",
         });
@@ -690,16 +693,19 @@ mod python {
         }
     }
 
-    /// The exception classes the module raises: one per kind, named as
-    /// the `domain::Error` variant is, each deriving from `MatraError`
-    /// and from the builtin class Python callers caught before 0.3.0, so
-    /// `except ValueError` still catches an `InputTooLarge`.
+    /// The exception classes the module raises: one per kind, named
+    /// for the `domain::Error` variant with PEP 8's `Error` suffix, each
+    /// deriving from `MatraError` and from the builtin class Python
+    /// callers caught before 0.3.0, so `except ValueError` still catches
+    /// an `InputTooLargeError`. The identity shared across languages is
+    /// the `kind` string, not the class name.
     ///
-    /// `Io` is refined by the I/O failure's kind, since a missing file
-    /// and a refused permission each have a builtin of their own:
-    /// `IoNotFound` and `IoPermissionDenied` derive from `Io` and from
-    /// `FileNotFoundError` and `PermissionError`, so `except matra.Io`
-    /// catches all three.
+    /// `IoError` is refined by the I/O failure's kind, since a missing
+    /// file and a refused permission each have a builtin of their own:
+    /// `IoNotFoundError` and `IoPermissionError` derive from `IoError`
+    /// and from `FileNotFoundError` and `PermissionError`, so `except
+    /// matra.IoError` catches all three. The Rust names below drop the
+    /// suffix, which would otherwise repeat on every variant.
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     enum Class {
         ModelNotFound,
@@ -756,22 +762,22 @@ mod python {
         /// class inside matra it derives from (`MatraError` when `None`).
         fn spec(self) -> (&'static str, &'static str, Option<Class>) {
             match self {
-                Class::ModelNotFound => ("ModelNotFound", "FileNotFoundError", None),
-                Class::ModelInvalid => ("ModelInvalid", "RuntimeError", None),
-                Class::ParseFailed => ("ParseFailed", "RuntimeError", None),
-                Class::InputTooLarge => ("InputTooLarge", "ValueError", None),
-                Class::UnsupportedFormat => ("UnsupportedFormat", "ValueError", None),
-                Class::InvalidInput => ("InvalidInput", "ValueError", None),
-                Class::Io => ("Io", "OSError", None),
-                Class::IoNotFound => ("IoNotFound", "FileNotFoundError", Some(Class::Io)),
+                Class::ModelNotFound => ("ModelNotFoundError", "FileNotFoundError", None),
+                Class::ModelInvalid => ("ModelInvalidError", "RuntimeError", None),
+                Class::ParseFailed => ("ParseFailedError", "RuntimeError", None),
+                Class::InputTooLarge => ("InputTooLargeError", "ValueError", None),
+                Class::UnsupportedFormat => ("UnsupportedFormatError", "ValueError", None),
+                Class::InvalidInput => ("InvalidInputError", "ValueError", None),
+                Class::Io => ("IoError", "OSError", None),
+                Class::IoNotFound => ("IoNotFoundError", "FileNotFoundError", Some(Class::Io)),
                 Class::IoPermissionDenied => {
-                    ("IoPermissionDenied", "PermissionError", Some(Class::Io))
+                    ("IoPermissionError", "PermissionError", Some(Class::Io))
                 }
             }
         }
 
         /// The `kind` every instance carries: the class's variant's
-        /// [`domain::Error::kind`], which the refinements of `Io` share.
+        /// [`domain::Error::kind`], which the refinements of `IoError` share.
         fn kind(self) -> &'static str {
             match self {
                 Class::ModelNotFound => "model_not_found",
@@ -813,7 +819,7 @@ mod python {
     /// Build the classes once per interpreter, through `type` so a class
     /// can derive from two bases, which a `#[pyclass]` cannot. Each
     /// names `matra` as its module, where the package exports it, so a
-    /// traceback reads `matra.InputTooLarge` and an exception pickles.
+    /// traceback reads `matra.InputTooLargeError` and an exception pickles.
     fn error_classes(py: Python<'_>) -> PyResult<&ErrorClasses> {
         ERROR_CLASSES.get_or_try_init(py, || {
             let builtins = py.import("builtins")?;
@@ -1067,7 +1073,11 @@ mod python {
         /// undecodable name lossily.
         fn analyze_path<'py>(&self, py: Python<'py>, path: PathBuf) -> PyResult<Bound<'py, PyAny>> {
             let is_dir = std::fs::symlink_metadata(&path)
-                .map_err(|e| MatraError(domain::Error::Io(e)))?
+                .map_err(|e| {
+                    MatraError(domain::Error::Io(domain::IoContext::cannot(
+                        "read", &path, &e,
+                    )))
+                })?
                 .is_dir();
             let inputs: Vec<crate::Input> = if is_dir {
                 crate::Inputs::dir(&path).map_err(MatraError)?.collect()
@@ -2558,7 +2568,7 @@ mod tests {
 
     #[test]
     fn clusters_caps_before_embedding() {
-        let many = "Word. ".repeat(extraction::MAX_CLUSTER_SENTENCES + 1);
+        let many = "Word. ".repeat(domain::limits::MAX_CLUSTER_SENTENCES + 1);
         let engine = Engine::with_parser(Box::new(DotSplitNlp));
         let doc = engine
             .annotate(Input::text(many, Format::PlainText))

@@ -58,13 +58,6 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "RUF"]
 
-[tool.ruff.lint.per-file-ignores]
-# The exception classes are named as the `domain::Error` variants are
-# (`InputTooLarge`, `Io`), so a failure has one name in every language
-# (EPR-0006), rather than PEP 8's `Error` suffix. The stub is the one file
-# that declares them.
-"python/matra/_core.pyi" = ["N818"]
-
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["python/tests"]

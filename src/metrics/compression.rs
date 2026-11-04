@@ -6,6 +6,7 @@
 use std::io::Write;
 
 use crate::domain::Document;
+use crate::domain::limits::{MAX_COMPRESSION_PARAGRAPH_BYTES, MIN_COMPRESSION_WORDS};
 
 /// Brotli sliding-window size (log2 bytes). 18 = 256 KiB window.
 ///
@@ -23,20 +24,15 @@ const BROTLI_LGWIN: u32 = 18;
 /// on prose at significant CPU cost.
 const BROTLI_QUALITY: u32 = 6;
 
-/// Per-paragraph byte ceiling. Above this, the compression metric is
-/// skipped (`compression_ratio = None`) to bound worst-case CPU on
-/// adversarial input. 256 KiB matches the brotli window so a single
-/// paragraph never triggers more than one window's worth of work.
-const MAX_PARAGRAPH_BYTES: usize = 256 * 1024;
-
 /// Populate `ParagraphMetrics::compression_ratio` for every paragraph with
-/// more than 50 words that is not in a blockquote and is at or under
-/// the per-paragraph byte cap.
+/// at least [`MIN_COMPRESSION_WORDS`] words that is not in a blockquote
+/// and is at or under [`MAX_COMPRESSION_PARAGRAPH_BYTES`], whose 256 KiB
+/// matches [`BROTLI_LGWIN`]'s window.
 pub(crate) fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
-        if para.word_count() > 50
+        if para.word_count() >= MIN_COMPRESSION_WORDS
             && para.kind != crate::domain::ParagraphKind::Quote
-            && para.text.len() <= MAX_PARAGRAPH_BYTES
+            && para.text.len() <= MAX_COMPRESSION_PARAGRAPH_BYTES
         {
             para.metrics.compression_ratio = compression_ratio(&para.text);
         }
@@ -92,9 +88,9 @@ mod tests {
         // skipped (compression_ratio = None) and the whole compute call
         // should return well under 100ms — we are measuring the gate,
         // not brotli.
-        let big_text = "a ".repeat(MAX_PARAGRAPH_BYTES); // ~512 KiB after duplication, but we want > cap
-        let big_text = big_text.repeat(2); // ~1 MiB, well over MAX_PARAGRAPH_BYTES
-        assert!(big_text.len() > MAX_PARAGRAPH_BYTES);
+        let big_text = "a ".repeat(MAX_COMPRESSION_PARAGRAPH_BYTES); // ~512 KiB after duplication, but we want > cap
+        let big_text = big_text.repeat(2); // ~1 MiB, well over MAX_COMPRESSION_PARAGRAPH_BYTES
+        assert!(big_text.len() > MAX_COMPRESSION_PARAGRAPH_BYTES);
 
         let sections = vec![Section {
             heading: None,

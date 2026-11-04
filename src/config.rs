@@ -36,17 +36,15 @@
 
 use std::path::{Component, Path, PathBuf};
 
-use crate::domain::{self, Error};
+use crate::domain::{self, Error, limits};
 
 /// The defaults compiled into the crate. This is the last rung of the
 /// resolution order, and the file a user config overrides key by key.
 const DEFAULT_TOML: &str = include_str!("../config/default.toml");
 
 /// Cap on the config file, checked against the file metadata before any
-/// read. A config file is small by construction; anything larger is a
-/// mistake or an attack, and either way it should not be read into
-/// memory first and rejected second.
-const MAX_CONFIG_BYTES: u64 = 64 * 1024;
+/// read: [`limits::MAX_CONFIG_FILE_BYTES`], as a file size.
+const MAX_CONFIG_BYTES: u64 = limits::MAX_CONFIG_FILE_BYTES as u64;
 
 /// Summarization algorithms this build knows. An unknown name in the
 /// config file is rejected at resolve time, not at call time.
@@ -710,7 +708,7 @@ fn read_config_file(path: &Path) -> domain::Result<Option<String>> {
     };
     if metadata.len() > MAX_CONFIG_BYTES {
         return Err(Error::InputTooLarge {
-            limit: MAX_CONFIG_BYTES as usize,
+            limit: limits::MAX_CONFIG_FILE_BYTES,
             actual: metadata.len() as usize,
             what: "config_file",
         });

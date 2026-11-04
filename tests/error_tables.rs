@@ -135,10 +135,17 @@ fn routing() -> BTreeMap<String, Raised> {
         };
         let strings: Vec<&str> = rest.split('"').collect();
         let (name, builtin) = (strings[1], strings[3]);
-        assert_eq!(class.trim(), name, "a class is named as its arm is");
+        // The Python name is the Rust arm's with PEP 8's suffix, except
+        // that `IoPermissionDenied` shortens to `IoPermissionError`, as the
+        // builtin it derives from is named.
+        let arm = class.trim();
+        assert!(
+            name.ends_with("Error") && name.starts_with(arm.trim_end_matches("Denied")),
+            "{arm} raises as {name}, which is not its name with the Error suffix"
+        );
         let (variant, io_kind) = variant_of_class
-            .get(name)
-            .unwrap_or_else(|| panic!("{name} has a spec but nothing raises it"))
+            .get(arm)
+            .unwrap_or_else(|| panic!("{arm} has a spec but nothing raises it"))
             .clone();
         out.insert(
             name.to_string(),
@@ -158,15 +165,19 @@ fn routing() -> BTreeMap<String, Raised> {
     out
 }
 
-/// The class a variant raises when nothing refines it: the one named as
-/// the variant is.
-fn base_class(routing: &BTreeMap<String, Raised>, variant: &str) -> Raised {
-    let raised = routing
-        .get(variant)
-        .unwrap_or_else(|| panic!("{variant} raises no class of its own name"))
-        .clone();
-    assert_eq!(raised.variant, variant);
-    raised
+/// The class a variant raises when no I/O kind refines it, by name.
+fn base_class(routing: &BTreeMap<String, Raised>, variant: &str) -> (String, Raised) {
+    let mut unrefined = routing
+        .iter()
+        .filter(|(_, raised)| raised.variant == variant && raised.io_kind.is_none());
+    let (name, raised) = unrefined
+        .next()
+        .unwrap_or_else(|| panic!("{variant} raises no unrefined class"));
+    assert!(
+        unrefined.next().is_none(),
+        "{variant} raises two unrefined classes"
+    );
+    (name.clone(), raised.clone())
 }
 
 /// Variant name to kind string, read out of `Error::kind` in
@@ -320,8 +331,8 @@ fn the_skill_reference_agrees_with_the_pyerr_routing() {
     let expected: BTreeMap<String, (String, String)> = kinds
         .iter()
         .map(|(variant, kind)| {
-            let raised = base_class(&routing, variant);
-            (kind.clone(), (variant.clone(), raised.builtin))
+            let (class, raised) = base_class(&routing, variant);
+            (kind.clone(), (class, raised.builtin))
         })
         .collect();
 

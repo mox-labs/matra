@@ -13,10 +13,9 @@ use std::collections::HashMap;
 use crate::domain::{Error, Result, Sentence};
 use crate::stopwords::is_stop_word;
 
-/// Maximum input size for [`rank`]. At 2000 sentences the similarity
-/// matrix is ~32 MB of f64; the ceiling for unattended use. Clustering
-/// builds the same quadratic graph and shares the bound.
-pub(crate) const MAX_SENTENCES: usize = 2000;
+/// Maximum input size for [`rank`]: the quadratic similarity matrix's
+/// bound, [`limits::MAX_TEXTRANK_SENTENCES`](crate::domain::limits::MAX_TEXTRANK_SENTENCES).
+use crate::domain::limits::MAX_TEXTRANK_SENTENCES as MAX_SENTENCES;
 
 /// The top `n` sentences by TextRank score, as `(index, score)` pairs in
 /// document order.

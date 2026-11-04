@@ -294,9 +294,9 @@ def test_analyze_path_takes_a_pathlib_path(engine: Matra, tmp_path: Path) -> Non
 def test_model2vec_takes_a_pathlib_path(tmp_path: Path) -> None:
     """The same extraction on the embedding adapter. No model needed: a
     missing directory is `Error::ModelNotFound`, raised as
-    `matra.ModelNotFound`, a `FileNotFoundError`, and reaching that error
+    `matra.ModelNotFoundError`, a `FileNotFoundError`, and reaching that error
     at all proves the argument was accepted."""
-    with pytest.raises(matra.ModelNotFound):
+    with pytest.raises(matra.ModelNotFoundError):
         matra.Model2Vec.from_dir(tmp_path / "no-such-model")
 
 
@@ -304,12 +304,12 @@ def test_model2vec_takes_a_pathlib_path(tmp_path: Path) -> None:
 def test_analyze_path_on_a_missing_directory_raises(engine: Matra, tmp_path: Path) -> None:
     """A listing failure has no per-document result to travel in, so it
     is raised rather than returned. `Error::Io` routes on the I/O kind it
-    wraps (defect 8 of EPR-0006): a missing path is `matra.IoNotFound`, a
+    wraps (defect 8 of EPR-0006): a missing path is `matra.IoNotFoundError`, a
     `FileNotFoundError`, where it used to be a bare `OSError`."""
     with pytest.raises(FileNotFoundError) as excinfo:
         engine.analyze_path(str(tmp_path / "no-such-directory"))
 
-    assert isinstance(excinfo.value, matra.IoNotFound)
+    assert isinstance(excinfo.value, matra.IoNotFoundError)
     assert excinfo.value.kind == "io"
     assert excinfo.value.details["io_kind"] == "not_found"
     assert "No such file or directory" in str(excinfo.value)

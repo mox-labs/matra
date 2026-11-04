@@ -7,9 +7,8 @@
 
 use crate::domain::{Cluster, Embedding, Error, Result, SimilarityEdge};
 
-// The O(n^2) cap: literally TextRank's bound, not a copy of it, so the
-// two cannot drift apart.
-use super::textrank::MAX_SENTENCES;
+// The O(n^2) cap, defined as TextRank's bound in the limits module.
+use crate::domain::limits::MAX_CLUSTER_SENTENCES as MAX_SENTENCES;
 
 /// Cluster texts whose embedding cosine similarity is at least
 /// `threshold`, returning the clusters and every edge that cleared it.

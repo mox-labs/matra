@@ -70,14 +70,11 @@ struct Pin<'a> {
     license_url: &'a str,
 }
 
-/// Ceiling on the downloaded model. The pinned artifact is 16.3 MB, so
-/// this is four times the real thing: headroom for a later model version
-/// and small enough that a redirect to something enormous costs a
-/// bounded read rather than the machine's memory. Past it,
-/// [`Error::InputTooLarge`] with `what` set to `"udpipe_download"`. The
-/// same number the embedding adapter uses, because it is the same
-/// question.
-const MAX_MODEL_BYTES: usize = 64 * 1024 * 1024;
+/// Ceiling on the downloaded model, past which [`Error::InputTooLarge`]
+/// has `what` set to `"udpipe_download"`:
+/// [`limits::MAX_DOWNLOAD_BYTES`](crate::domain::limits::MAX_DOWNLOAD_BYTES),
+/// the number the embedding adapter uses, because it is the same question.
+use crate::domain::limits::MAX_DOWNLOAD_BYTES as MAX_MODEL_BYTES;
 
 /// Ceiling on the fetch, DNS lookup through the last byte of the body.
 /// The pinned model is 16.3 MB, which needs this whole budget only on a
@@ -548,13 +545,10 @@ fn host_of(url: &str) -> &str {
 ///
 /// `io error: Permission denied (os error 13)` was the whole message a
 /// user got when the model directory could not be created, with the
-/// directory sitting in a variable one line away.
+/// directory sitting in a variable one line away. The sentence is written
+/// once, in `IoContext::cannot`, which also carries the path as a detail.
 fn io_at(operation: &str, path: &Path, error: &std::io::Error) -> Error {
-    Error::Io(crate::domain::IoContext::at_path(
-        error.kind(),
-        path,
-        format!("cannot {operation} {}: {error}", path.display()),
-    ))
+    Error::Io(crate::domain::IoContext::cannot(operation, path, error))
 }
 
 fn create_model_dir(dir: &Path) -> crate::domain::Result<()> {

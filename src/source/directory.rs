@@ -30,7 +30,10 @@ impl DirectorySource {
     /// the composition root can enumerate eagerly and read lazily.
     pub(crate) fn candidate_paths(&self, input: &Path) -> domain::Result<Vec<PathBuf>> {
         let file_source = FileSource;
-        let mut paths: Vec<_> = std::fs::read_dir(input)?
+        let mut paths: Vec<_> = std::fs::read_dir(input)
+            .map_err(|e| {
+                crate::domain::Error::Io(crate::domain::IoContext::cannot("list", input, &e))
+            })?
             .filter_map(|e| e.ok())
             .filter(|e| {
                 // Skip symlinks; `symlink_metadata` does not traverse.

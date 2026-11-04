@@ -9,15 +9,9 @@ use std::collections::HashMap;
 use crate::domain::{Error, Keyphrase, Result, Sentence, Span};
 use crate::stopwords::is_stop_word;
 
-/// RAKE builds a co-occurrence map keyed on phrase strings. Worst-case
-/// unique-phrase cardinality is bounded by total token count times mean
-/// candidate-phrase length k (typically ~2–3 for NOUN/ADJ/PROPN runs).
-/// At 200k tokens the candidate map holds <= ~50k entries at ~64 bytes
-/// each = ~3 MiB resident; degree/frequency walks are O(unique tokens).
-/// Cap is on tokens (not sentences) per Knuth's correction (chat-log
-/// corpora can have 50k one-token sentences and still fit comfortably;
-/// a sentence-cap defeats the actual cost model).
-const MAX_TOKENS: usize = 200_000;
+/// RAKE's cap, on tokens rather than sentences, and its cost model:
+/// [`limits::MAX_RAKE_TOKENS`](crate::domain::limits::MAX_RAKE_TOKENS).
+use crate::domain::limits::MAX_RAKE_TOKENS as MAX_TOKENS;
 
 /// One candidate phrase where it occurs: its words (lowercased lemmas)
 /// and the span from its first token's start to its last token's end.

@@ -298,10 +298,11 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
 /// `nlp/udpipe.rs` and `embed/model2vec.rs`, and it exists for the same
 /// reason: `io error: Permission denied (os error 13)` was the whole
 /// message a failed `config init` produced, with the directory sitting
-/// in a variable one line away. RFC-0015 settled that the discipline
-/// travels and the helper does not, and here the helper could not
-/// travel anyway: both existing copies are private to an adapter, and
-/// boundary rule 7 keeps `src/cli/` off the adapters.
+/// in a variable one line away. The library writes this sentence once,
+/// in the crate-private `IoContext::cannot`, which also makes the path a
+/// detail; boundary rule 7 keeps `src/cli/` to the public surface, so
+/// this copy writes the sentence again and its error carries no `path`
+/// detail.
 fn io_at(operation: &str, path: &Path, error: &std::io::Error) -> crate::domain::Error {
     crate::domain::Error::Io(std::io::Error::new(
         error.kind(),
