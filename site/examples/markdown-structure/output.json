@@ -19,16 +19,32 @@
     {
       "heading": "Field notes",
       "level": 1,
+      "span": {
+        "start": 0,
+        "end": 13
+      },
       "paragraphs": [
         {
+          "span": {
+            "start": 15,
+            "end": 156
+          },
           "text": "The survey team reached the northern ridge on the third day. Snow had closed the lower pass, so the route ran along the eastern face instead.",
-          "in_blockquote": false,
+          "kind": "paragraph",
           "sentences": [
             {
+              "span": {
+                "start": 15,
+                "end": 75
+              },
               "text": "The survey team reached the northern ridge on the third day.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 15,
+                    "end": 18
+                  },
                   "text": "The",
                   "lemma": "the",
                   "pos": "DET",
@@ -45,6 +61,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 19,
+                    "end": 25
+                  },
                   "text": "survey",
                   "lemma": "survey",
                   "pos": "NOUN",
@@ -60,6 +80,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 26,
+                    "end": 30
+                  },
                   "text": "team",
                   "lemma": "team",
                   "pos": "NOUN",
@@ -75,6 +99,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 31,
+                    "end": 38
+                  },
                   "text": "reached",
                   "lemma": "reach",
                   "pos": "VERB",
@@ -92,6 +120,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 39,
+                    "end": 42
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -108,6 +140,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 43,
+                    "end": 51
+                  },
                   "text": "northern",
                   "lemma": "northern",
                   "pos": "ADJ",
@@ -123,6 +159,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 52,
+                    "end": 57
+                  },
                   "text": "ridge",
                   "lemma": "ridge",
                   "pos": "NOUN",
@@ -138,6 +178,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 58,
+                    "end": 60
+                  },
                   "text": "on",
                   "lemma": "on",
                   "pos": "ADP",
@@ -151,6 +195,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 61,
+                    "end": 64
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -167,6 +215,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 65,
+                    "end": 70
+                  },
                   "text": "third",
                   "lemma": "third",
                   "pos": "ADJ",
@@ -183,6 +235,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 71,
+                    "end": 74
+                  },
                   "text": "day",
                   "lemma": "day",
                   "pos": "NOUN",
@@ -198,6 +254,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 74,
+                    "end": 75
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -224,10 +284,18 @@
               }
             },
             {
+              "span": {
+                "start": 76,
+                "end": 156
+              },
               "text": "Snow had closed the lower pass, so the route ran along the eastern face instead.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 76,
+                    "end": 80
+                  },
                   "text": "Snow",
                   "lemma": "snow",
                   "pos": "ADV",
@@ -241,6 +309,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 81,
+                    "end": 84
+                  },
                   "text": "had",
                   "lemma": "have",
                   "pos": "AUX",
@@ -258,6 +330,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 85,
+                    "end": 91
+                  },
                   "text": "closed",
                   "lemma": "close",
                   "pos": "VERB",
@@ -274,6 +350,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 92,
+                    "end": 95
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -290,6 +370,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 96,
+                    "end": 101
+                  },
                   "text": "lower",
                   "lemma": "lower",
                   "pos": "ADJ",
@@ -305,6 +389,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 102,
+                    "end": 106
+                  },
                   "text": "pass",
                   "lemma": "pass",
                   "pos": "NOUN",
@@ -320,6 +408,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 106,
+                    "end": 107
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -333,6 +425,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 108,
+                    "end": 110
+                  },
                   "text": "so",
                   "lemma": "so",
                   "pos": "ADV",
@@ -346,6 +442,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 111,
+                    "end": 114
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -362,6 +462,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 115,
+                    "end": 120
+                  },
                   "text": "route",
                   "lemma": "route",
                   "pos": "NOUN",
@@ -377,6 +481,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 121,
+                    "end": 124
+                  },
                   "text": "ran",
                   "lemma": "run",
                   "pos": "VERB",
@@ -394,6 +502,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 125,
+                    "end": 130
+                  },
                   "text": "along",
                   "lemma": "along",
                   "pos": "ADP",
@@ -407,6 +519,10 @@
                 },
                 {
                   "id": 13,
+                  "span": {
+                    "start": 131,
+                    "end": 134
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -423,6 +539,10 @@
                 },
                 {
                   "id": 14,
+                  "span": {
+                    "start": 135,
+                    "end": 142
+                  },
                   "text": "eastern",
                   "lemma": "eastern",
                   "pos": "ADJ",
@@ -438,6 +558,10 @@
                 },
                 {
                   "id": 15,
+                  "span": {
+                    "start": 143,
+                    "end": 147
+                  },
                   "text": "face",
                   "lemma": "face",
                   "pos": "NOUN",
@@ -453,6 +577,10 @@
                 },
                 {
                   "id": 16,
+                  "span": {
+                    "start": 148,
+                    "end": 155
+                  },
                   "text": "instead",
                   "lemma": "instead",
                   "pos": "ADV",
@@ -466,6 +594,10 @@
                 },
                 {
                   "id": 17,
+                  "span": {
+                    "start": 155,
+                    "end": 156
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -508,8 +640,12 @@
           }
         },
         {
+          "span": {
+            "start": 158,
+            "end": 197
+          },
           "text": "Radio contact was lost for six hours.",
-          "in_blockquote": true,
+          "kind": "quote",
           "sentences": [],
           "metrics": {
             "readability_grade": null,
@@ -522,16 +658,32 @@
     {
       "heading": "Findings",
       "level": 2,
+      "span": {
+        "start": 199,
+        "end": 210
+      },
       "paragraphs": [
         {
+          "span": {
+            "start": 212,
+            "end": 563
+          },
           "text": "Three of the five markers were intact and matched their recorded positions. The fourth had been moved about ten metres downhill by a rockfall, and its base plate was cracked. The fifth could not be found, although the team searched the slope below it for most of an afternoon. A replacement marker will be set on the next visit, once the pass is open.",
-          "in_blockquote": false,
+          "kind": "paragraph",
           "sentences": [
             {
+              "span": {
+                "start": 212,
+                "end": 287
+              },
               "text": "Three of the five markers were intact and matched their recorded positions.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 212,
+                    "end": 217
+                  },
                   "text": "Three",
                   "lemma": "three",
                   "pos": "NUM",
@@ -547,6 +699,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 218,
+                    "end": 220
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -560,6 +716,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 221,
+                    "end": 224
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -576,6 +736,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 225,
+                    "end": 229
+                  },
                   "text": "five",
                   "lemma": "five",
                   "pos": "NUM",
@@ -591,6 +755,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 230,
+                    "end": 237
+                  },
                   "text": "markers",
                   "lemma": "marker",
                   "pos": "NOUN",
@@ -606,6 +774,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 238,
+                    "end": 242
+                  },
                   "text": "were",
                   "lemma": "be",
                   "pos": "AUX",
@@ -623,6 +795,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 243,
+                    "end": 249
+                  },
                   "text": "intact",
                   "lemma": "intact",
                   "pos": "ADJ",
@@ -638,6 +814,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 250,
+                    "end": 253
+                  },
                   "text": "and",
                   "lemma": "and",
                   "pos": "CCONJ",
@@ -651,6 +831,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 254,
+                    "end": 261
+                  },
                   "text": "matched",
                   "lemma": "matched",
                   "pos": "VERB",
@@ -668,6 +852,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 262,
+                    "end": 267
+                  },
                   "text": "their",
                   "lemma": "they",
                   "pos": "PRON",
@@ -686,6 +874,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 268,
+                    "end": 276
+                  },
                   "text": "recorded",
                   "lemma": "record",
                   "pos": "ADJ",
@@ -701,6 +893,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 277,
+                    "end": 286
+                  },
                   "text": "positions",
                   "lemma": "position",
                   "pos": "NOUN",
@@ -716,6 +912,10 @@
                 },
                 {
                   "id": 13,
+                  "span": {
+                    "start": 286,
+                    "end": 287
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -742,10 +942,18 @@
               }
             },
             {
+              "span": {
+                "start": 288,
+                "end": 386
+              },
               "text": "The fourth had been moved about ten metres downhill by a rockfall, and its base plate was cracked.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 288,
+                    "end": 291
+                  },
                   "text": "The",
                   "lemma": "the",
                   "pos": "DET",
@@ -762,6 +970,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 292,
+                    "end": 298
+                  },
                   "text": "fourth",
                   "lemma": "fourth",
                   "pos": "NOUN",
@@ -777,6 +989,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 299,
+                    "end": 302
+                  },
                   "text": "had",
                   "lemma": "have",
                   "pos": "AUX",
@@ -794,6 +1010,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 303,
+                    "end": 307
+                  },
                   "text": "been",
                   "lemma": "be",
                   "pos": "AUX",
@@ -810,6 +1030,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 308,
+                    "end": 313
+                  },
                   "text": "moved",
                   "lemma": "move",
                   "pos": "VERB",
@@ -827,6 +1051,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 314,
+                    "end": 319
+                  },
                   "text": "about",
                   "lemma": "about",
                   "pos": "ADV",
@@ -840,6 +1068,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 320,
+                    "end": 323
+                  },
                   "text": "ten",
                   "lemma": "ten",
                   "pos": "NUM",
@@ -855,6 +1087,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 324,
+                    "end": 330
+                  },
                   "text": "metres",
                   "lemma": "metre",
                   "pos": "NOUN",
@@ -870,6 +1106,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 331,
+                    "end": 339
+                  },
                   "text": "downhill",
                   "lemma": "downhill",
                   "pos": "ADV",
@@ -883,6 +1123,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 340,
+                    "end": 342
+                  },
                   "text": "by",
                   "lemma": "by",
                   "pos": "ADP",
@@ -896,6 +1140,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 343,
+                    "end": 344
+                  },
                   "text": "a",
                   "lemma": "a",
                   "pos": "DET",
@@ -912,6 +1160,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 345,
+                    "end": 353
+                  },
                   "text": "rockfall",
                   "lemma": "rockfall",
                   "pos": "NOUN",
@@ -927,6 +1179,10 @@
                 },
                 {
                   "id": 13,
+                  "span": {
+                    "start": 353,
+                    "end": 354
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -940,6 +1196,10 @@
                 },
                 {
                   "id": 14,
+                  "span": {
+                    "start": 355,
+                    "end": 358
+                  },
                   "text": "and",
                   "lemma": "and",
                   "pos": "CCONJ",
@@ -953,6 +1213,10 @@
                 },
                 {
                   "id": 15,
+                  "span": {
+                    "start": 359,
+                    "end": 361
+                  },
                   "text": "it",
                   "lemma": "it",
                   "pos": "PRON",
@@ -972,6 +1236,10 @@
                 },
                 {
                   "id": 16,
+                  "span": {
+                    "start": 361,
+                    "end": 362
+                  },
                   "text": "s",
                   "lemma": "be",
                   "pos": "AUX",
@@ -991,6 +1259,10 @@
                 },
                 {
                   "id": 17,
+                  "span": {
+                    "start": 363,
+                    "end": 367
+                  },
                   "text": "base",
                   "lemma": "base",
                   "pos": "NOUN",
@@ -1006,6 +1278,10 @@
                 },
                 {
                   "id": 18,
+                  "span": {
+                    "start": 368,
+                    "end": 373
+                  },
                   "text": "plate",
                   "lemma": "plate",
                   "pos": "NOUN",
@@ -1021,6 +1297,10 @@
                 },
                 {
                   "id": 19,
+                  "span": {
+                    "start": 374,
+                    "end": 377
+                  },
                   "text": "was",
                   "lemma": "be",
                   "pos": "AUX",
@@ -1040,6 +1320,10 @@
                 },
                 {
                   "id": 20,
+                  "span": {
+                    "start": 378,
+                    "end": 385
+                  },
                   "text": "cracked",
                   "lemma": "crack",
                   "pos": "VERB",
@@ -1057,6 +1341,10 @@
                 },
                 {
                   "id": 21,
+                  "span": {
+                    "start": 385,
+                    "end": 386
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -1083,10 +1371,18 @@
               }
             },
             {
+              "span": {
+                "start": 387,
+                "end": 488
+              },
               "text": "The fifth could not be found, although the team searched the slope below it for most of an afternoon.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 387,
+                    "end": 390
+                  },
                   "text": "The",
                   "lemma": "the",
                   "pos": "DET",
@@ -1103,6 +1399,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 391,
+                    "end": 396
+                  },
                   "text": "fifth",
                   "lemma": "fifth",
                   "pos": "NOUN",
@@ -1118,6 +1418,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 397,
+                    "end": 402
+                  },
                   "text": "could",
                   "lemma": "could",
                   "pos": "AUX",
@@ -1133,6 +1437,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 403,
+                    "end": 406
+                  },
                   "text": "not",
                   "lemma": "not",
                   "pos": "PART",
@@ -1146,6 +1454,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 407,
+                    "end": 409
+                  },
                   "text": "be",
                   "lemma": "be",
                   "pos": "AUX",
@@ -1161,6 +1473,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 410,
+                    "end": 415
+                  },
                   "text": "found",
                   "lemma": "find",
                   "pos": "VERB",
@@ -1178,6 +1494,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 415,
+                    "end": 416
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -1191,6 +1511,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 417,
+                    "end": 425
+                  },
                   "text": "although",
                   "lemma": "although",
                   "pos": "SCONJ",
@@ -1204,6 +1528,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 426,
+                    "end": 429
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1220,6 +1548,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 430,
+                    "end": 434
+                  },
                   "text": "team",
                   "lemma": "team",
                   "pos": "NOUN",
@@ -1235,6 +1567,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 435,
+                    "end": 443
+                  },
                   "text": "searched",
                   "lemma": "search",
                   "pos": "VERB",
@@ -1252,6 +1588,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 444,
+                    "end": 447
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1268,6 +1608,10 @@
                 },
                 {
                   "id": 13,
+                  "span": {
+                    "start": 448,
+                    "end": 453
+                  },
                   "text": "slope",
                   "lemma": "slope",
                   "pos": "NOUN",
@@ -1283,6 +1627,10 @@
                 },
                 {
                   "id": 14,
+                  "span": {
+                    "start": 454,
+                    "end": 459
+                  },
                   "text": "below",
                   "lemma": "below",
                   "pos": "ADP",
@@ -1296,6 +1644,10 @@
                 },
                 {
                   "id": 15,
+                  "span": {
+                    "start": 460,
+                    "end": 462
+                  },
                   "text": "it",
                   "lemma": "it",
                   "pos": "PRON",
@@ -1315,6 +1667,10 @@
                 },
                 {
                   "id": 16,
+                  "span": {
+                    "start": 463,
+                    "end": 466
+                  },
                   "text": "for",
                   "lemma": "for",
                   "pos": "ADP",
@@ -1328,6 +1684,10 @@
                 },
                 {
                   "id": 17,
+                  "span": {
+                    "start": 467,
+                    "end": 471
+                  },
                   "text": "most",
                   "lemma": "most",
                   "pos": "ADJ",
@@ -1343,6 +1703,10 @@
                 },
                 {
                   "id": 18,
+                  "span": {
+                    "start": 472,
+                    "end": 474
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -1356,6 +1720,10 @@
                 },
                 {
                   "id": 19,
+                  "span": {
+                    "start": 475,
+                    "end": 477
+                  },
                   "text": "an",
                   "lemma": "a",
                   "pos": "DET",
@@ -1372,6 +1740,10 @@
                 },
                 {
                   "id": 20,
+                  "span": {
+                    "start": 478,
+                    "end": 487
+                  },
                   "text": "afternoon",
                   "lemma": "afternoon",
                   "pos": "NOUN",
@@ -1387,6 +1759,10 @@
                 },
                 {
                   "id": 21,
+                  "span": {
+                    "start": 487,
+                    "end": 488
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -1435,10 +1811,18 @@
               "root_mood": null
             },
             {
+              "span": {
+                "start": 489,
+                "end": 563
+              },
               "text": "A replacement marker will be set on the next visit, once the pass is open.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 489,
+                    "end": 490
+                  },
                   "text": "A",
                   "lemma": "a",
                   "pos": "DET",
@@ -1455,6 +1839,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 491,
+                    "end": 502
+                  },
                   "text": "replacement",
                   "lemma": "replacement",
                   "pos": "NOUN",
@@ -1470,6 +1858,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 503,
+                    "end": 509
+                  },
                   "text": "marker",
                   "lemma": "marker",
                   "pos": "NOUN",
@@ -1485,6 +1877,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 510,
+                    "end": 514
+                  },
                   "text": "will",
                   "lemma": "will",
                   "pos": "AUX",
@@ -1500,6 +1896,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 515,
+                    "end": 517
+                  },
                   "text": "be",
                   "lemma": "be",
                   "pos": "AUX",
@@ -1515,6 +1915,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 518,
+                    "end": 521
+                  },
                   "text": "set",
                   "lemma": "set",
                   "pos": "VERB",
@@ -1532,6 +1936,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 522,
+                    "end": 524
+                  },
                   "text": "on",
                   "lemma": "on",
                   "pos": "ADP",
@@ -1545,6 +1953,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 525,
+                    "end": 528
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1561,6 +1973,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 529,
+                    "end": 533
+                  },
                   "text": "next",
                   "lemma": "next",
                   "pos": "ADJ",
@@ -1576,6 +1992,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 534,
+                    "end": 539
+                  },
                   "text": "visit",
                   "lemma": "visit",
                   "pos": "NOUN",
@@ -1591,6 +2011,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 539,
+                    "end": 540
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -1604,6 +2028,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 541,
+                    "end": 545
+                  },
                   "text": "once",
                   "lemma": "once",
                   "pos": "SCONJ",
@@ -1617,6 +2045,10 @@
                 },
                 {
                   "id": 13,
+                  "span": {
+                    "start": 546,
+                    "end": 549
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1633,6 +2065,10 @@
                 },
                 {
                   "id": 14,
+                  "span": {
+                    "start": 550,
+                    "end": 554
+                  },
                   "text": "pass",
                   "lemma": "pass",
                   "pos": "NOUN",
@@ -1648,6 +2084,10 @@
                 },
                 {
                   "id": 15,
+                  "span": {
+                    "start": 555,
+                    "end": 557
+                  },
                   "text": "is",
                   "lemma": "be",
                   "pos": "AUX",
@@ -1667,6 +2107,10 @@
                 },
                 {
                   "id": 16,
+                  "span": {
+                    "start": 558,
+                    "end": 562
+                  },
                   "text": "open",
                   "lemma": "open",
                   "pos": "ADJ",
@@ -1682,6 +2126,10 @@
                 },
                 {
                   "id": 17,
+                  "span": {
+                    "start": 562,
+                    "end": 563
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -1729,5 +2177,6 @@
     "vocabulary_ttr": 0.6923076923076923,
     "nominalization_ratio": 0.01098901098901099,
     "passive_ratio": 0.5
-  }
+  },
+  "skipped": []
 }

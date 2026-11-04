@@ -9,8 +9,8 @@
     "paragraphs": [
       {
         "compression_ratio": null,
-        "in_blockquote": false,
         "index": 1,
+        "kind": "paragraph",
         "lexical_density": 0.619,
         "opening": "The committee did not approve the budget. Members",
         "readability_grade": 8.1955,

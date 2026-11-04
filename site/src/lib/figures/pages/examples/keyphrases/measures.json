@@ -10,43 +10,16 @@
   "paragraphs": [
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6,
-      "readability_grade": 7.7883,
+      "readability_grade": 6.78,
       "sentences": 1,
-      "text": "The ten phrases RAKE ranks highest in the same Darwin text as the [summary example](summarize.md).",
-      "words": 16
+      "text": "The ten phrases RAKE ranks highest in the same Darwin text as the summary example.",
+      "words": 15
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<example-input name=\"keyphrases\" />",
-      "words": 5
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<example-call name=\"keyphrases\" />",
-      "words": 5
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<example-output name=\"keyphrases\" />",
-      "words": 4
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5556,
       "readability_grade": null,
       "sentences": 1,
@@ -55,21 +28,39 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<figure-keyphrases input=\"origin-struggle\" />",
-      "words": 6
+      "kind": "list_item",
+      "lexical_density": 0.6538,
+      "readability_grade": 6.2723,
+      "sentences": 2,
+      "text": "Each item has phrase and score, highest score first, and a higher score means more relevant. RAKE's score sums each word's co-occurrence degree over its frequency.",
+      "words": 28
     },
     {
-      "compression_ratio": 0.5168,
-      "in_blockquote": false,
-      "lexical_density": 0.6036,
-      "readability_grade": 5.2123,
-      "sentences": 9,
-      "text": "- Each item has `phrase` and `score`, highest score first, and a higher score means more relevant. RAKE's score sums each word's co-occurrence degree over its frequency.\n- Phrases are built from lemmas, so the parser's lemma errors show through. `great destruction fal` is \"great destruction falling\", with `falling` read as `fal`, and `slow -breeding man` is \"slow-breeding man\" split at the hyphen. RAKE takes the words between stopwords and punctuation, which is why `larger domestic animal tend` runs \"animals tends\" together.\n- Two phrases tie at 9.0, and equal scores can come back in either order from one run to the next. A cut that falls inside a tie can also change which phrases make the list. This example asks for ten, where the tenth scores 5.972 and no phrase outside the list ties it, so the list itself does not change.\n- The figure shows how little RAKE and YAKE agree on a text like this one. Neither method is right; they rank by different evidence ([Methodology](../reference/methodology.md)).",
-      "words": 171
+      "compression_ratio": 0.569,
+      "kind": "list_item",
+      "lexical_density": 0.6667,
+      "readability_grade": 9.567,
+      "sentences": 3,
+      "text": "Phrases are built from lemmas, so the parser's lemma errors show through. great destruction fal is \"great destruction falling\", with falling read as fal, and slow -breeding man is \"slow-breeding man\" split at the hyphen. RAKE takes the words between stopwords and punctuation, which is why larger domestic animal tend runs \"animals tends\" together.",
+      "words": 56
+    },
+    {
+      "compression_ratio": 0.5776,
+      "kind": "list_item",
+      "lexical_density": 0.55,
+      "readability_grade": 2.8567,
+      "sentences": 3,
+      "text": "Two phrases tie at 9.0, and equal scores can come back in either order from one run to the next. A cut that falls inside a tie can also change which phrases make the list. This example asks for ten, where the tenth scores 5.972 and no phrase outside the list ties it, so the list itself does not change.",
+      "words": 60
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.64,
+      "readability_grade": 6.277,
+      "sentences": 2,
+      "text": "The figure shows how little RAKE and YAKE agree on a text like this one. Neither method is right; they rank by different evidence (Methodology).",
+      "words": 25
     }
   ]
 }

@@ -1,25 +1,28 @@
 # Programming model
 
-## Two values: `Ingest` into `Engine`
+## Two values: `Input` into `Engine`
 
-`Ingest` is where documents come from. `Engine` is what happens to each one.
+`Input` is one document. `Engine` is what happens to it.
 
 | Value | Constructors | Meaning |
 |---|---|---|
-| `Ingest` | `text(string, format)`, `path(file or directory)` | a string is a stream of one, a file is a stream of one, a directory is a stream of many |
-| `Engine` | `with_defaults()`, `from_config(cfg)`, `new(provider, decomposer table)` | the assembled pipeline |
+| `Input` | `text(string, format)`, `bytes(data, format)`, `file(path)`, `blocks(blocks)` | one document: text in a named format, bytes from anywhere, a file, or headings and paragraphs you supply |
+| `Inputs` | `dir(path)` | the files in a directory, an iterator of `Input::file` |
+| `Engine` | `with_defaults()`, `from_config(cfg)`, `new(provider)` | the assembled pipeline |
 
-Source variation lives in the data, not in the function namespace, which is why `Engine::analyze` is one function rather than six.
+Source variation lives in the data, not in the function namespace, which is why `Engine::analyze` is one function rather than one per source and format.
 
 Three ways to run it:
 
 | Call | Does |
 |---|---|
-| `analyze(ingest)` | a lazy iterator, one result per document; collect into `CorpusResult` to partition successes from failures |
-| `analyze_one(raw)` | one document, annotate then compose, returning a `CorpusEntry` |
-| `annotate(raw)` then `compose(&mut doc)` | the two stages separately |
+| `analyze(input)` | one document, end to end, returning a `Document` |
+| `analyze_all(inputs)` | a lazy iterator, one result per input, in order; collect into `CorpusResult` to partition successes from failures |
+| `annotate(input)` then `compose(&mut doc)` | the two stages separately |
 
-Reads are lazy. `Ingest::path` on a directory lists entries up front, and a listing failure is the constructor's `Err`, but no file is read until the iterator is pulled. A per-file failure (unreadable, oversized, a symlink) arrives as an `Err` item carrying the path, so one bad file cannot abort a directory walk.
+Reads are lazy. An `Input` reads nothing until the engine reaches it, and `Inputs::dir` lists entries up front, a listing failure being its `Err`, but reads no file until the iterator is pulled. A per-file failure (unreadable, oversized, a symlink, bytes that are not text) arrives as an `Err` item carrying the path, so one bad file cannot abort a directory walk.
+
+Behind `annotate`, the input side is cut by decision, one crate-private module each: fetching the bytes (with the symlink and size guards), detecting the format (a PDF or DOCX signature, then the format you named, then the extension), reading one format into blocks with their spans, building the section tree from blocks, and parsing. A new format is a reader and a registration line; no published signature moves.
 
 `compose` is total. It reads what is attached and skips what is not, so it has no failure path.
 
@@ -29,7 +32,7 @@ One short Markdown document at each of the three stages, as matra produces them:
 
 ## Configuration
 
-`Engine::new` takes a provider and a decomposer table, which means the caller decides where the UDPipe model lives. `Config` answers that question once so no caller has to invent a path.
+`Engine::new` takes a provider, which means the caller decides where the UDPipe model lives. `Config` answers that question once so no caller has to invent a path.
 
 ```rust
 let engine = Engine::with_defaults()?;
@@ -63,7 +66,7 @@ A missing config file is not an error; the built-in defaults stand. A malformed 
 
 ## `annotate` is the only route to the parser
 
-`Engine::annotate` runs the size check, then hands each non-blockquote paragraph to `NlpProvider::parse`. Nothing else in the library calls the parser. That is what makes the 8 MiB cap a property of the pipeline rather than of each entry point: no text over `MAX_INPUT_BYTES` can reach a provider, whichever call you started from.
+`Engine::annotate` runs the size check on every `Input`, then hands each paragraph that is not a quote to `NlpProvider::parse`, and maps the token and sentence spans the provider reports against the paragraph's text into the analysed text. Nothing else in the library calls the parser. That is what makes the 8 MiB cap a property of the pipeline rather than of each entry point: no text over `MAX_INPUT_BYTES` can reach a provider, whichever call or constructor you started from.
 
 It is also the cheap route when you want the extractors. Annotate once, read the sentences off the tree, and hand the same slice to every extractor. Nothing is parsed twice.
 
@@ -73,14 +76,14 @@ The pipeline depends on port traits, and adapters implement them. The domain dep
 
 | Port | Trait | Adapters this build ships | Feature |
 |---|---|---|---|
-| `source/` | `Source` | `FileSource`, `DirectorySource` | none |
-| `decompose/` | `Decomposer` | `MarkdownDecomposer`, `PlainTextDecomposer` | none |
+| `source/` | `Source` (crate-private) | `FileSource`, `DirectorySource` | none |
+| `decompose/` | `Decomposer` (crate-private) | the markdown, plain-text and block-input readers | none |
 | `nlp/` | `NlpProvider` | `Udpipe` | `udpipe` (default) |
 | `embed/` | `Embedder` | `Model2Vec` | `model2vec` |
 
 Features are additive. Enabling `udpipe` adds UDPipe; disabling it removes UDPipe and nothing else. `cargo check --no-default-features` compiles. The other two features are `cli` (the command line, which implies `udpipe`) and `python` (the PyO3 bindings, which implies `cli` so that a wheel carries the command).
 
-Your own adapter is a trait implementation plus a change at the call site. `Engine::new` takes any `Box<dyn NlpProvider>`; `Decomposers::with` builds a table other than `standard_decomposers()`; `embed_and_cluster` takes any `&dyn Embedder`, and with your own implementation it needs no feature flag at all.
+Your own adapter is a trait implementation plus a change at the call site. `Engine::new` takes any `Box<dyn NlpProvider>`; `embed_and_cluster` takes any `&dyn Embedder`, and with your own implementation it needs no feature flag at all. The fetch and read ports are private to the crate: bytes you fetch yourself go in through `Input::bytes`, and a format matra has no reader for goes in as headings and paragraphs through `Input::blocks`.
 
 ## Determinism and bounds
 
@@ -88,7 +91,7 @@ Every gate returns a typed variant of `Error`. There is no `Result<T, String>` a
 
 | Gate | Cap | Variant |
 |---|---|---|
-| `annotate` input text | 8 MiB (`MAX_INPUT_BYTES`) | `InputTooLarge`, `what` is `"input"` |
+| `annotate`, every `Input` | 8 MiB (`MAX_INPUT_BYTES`) | `InputTooLarge`, `what` is `"input"` |
 | file read | 8 MiB | `InputTooLarge`, `what` is `"file_source"` |
 | `tfidf_summarize`, `textrank_summarize` | 2,000 sentences | `InputTooLarge`, `what` is `"tfidf"` or `"textrank"` |
 | `embed_and_cluster`, `semantic_clusters` | 2,000 sentences | `InputTooLarge`, `what` is `"semantic_clusters"` |
@@ -116,17 +119,17 @@ When an aggregate needs to be visible cross-language it is materialized as a fie
 | Python | Rust equivalent |
 |---|---|
 | `Matra.from_path`, `Matra.english` | `Udpipe::from_path`, `Udpipe::english` wired into an `Engine`; `Matra.english()` with no argument is `Udpipe::from_config` |
-| `Matra.analyze`, `Matra.analyze_markdown` | `analyze_one` on a `RawDocument` of that format |
+| `Matra.analyze`, `Matra.analyze_markdown` | `analyze` on an `Input::text` of that format |
 | `Matra.tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases` | `annotate`, then the matching extraction function |
 | `Matra.semantic_clusters` | `annotate`, then `embed_and_cluster` |
-| `Matra.analyze_path` | `Ingest::path` into `Engine::analyze`, collected in order |
+| `Matra.analyze_path` | `Inputs::dir` for a directory, else `Input::file`, into `Engine::analyze_all`, collected in order |
 | `semantic_clusters(vectors, threshold, model_hash)` | `extraction::semantic_clusters` |
 | `Model2Vec.from_dir`, `.model_hash`, `.dimensions`, `.embed`, `.identity` | `Model2Vec` behind the `Embedder` port |
 | `Model2Vec.potion_base_8m` | `Model2Vec::potion_base_8m`; with no argument it is `Model2Vec::from_config` |
 | any object with `embed` and `identity` | an `Embedder` implementor, wrapped by an adapter in the binding |
 | `_core.cli_main(argv)` | `cli::run`, which is what the `matra` console script launches |
 
-Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `CorpusEntry` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. In the extension module that arm needs no embedding adapter compiled in. The `matra` package itself still requires an extension built with `model2vec`: its `__init__` imports `Model2Vec` and raises `ImportError` naming the feature when it is absent, and every published wheel includes it.
+Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `Document` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. In the extension module that arm needs no embedding adapter compiled in. The `matra` package itself still requires an extension built with `model2vec`: its `__init__` imports `Model2Vec` and raises `ImportError` naming the feature when it is absent, and every published wheel includes it.
 
 Still not on the Python surface: the separate `annotate` and `compose` stages, the remaining corpus types (`Corpus`, `CorpusResult`), a custom `NlpProvider`, and a replaceable metric suite. Parsing is the one thing the caller cannot substitute, because the size cap and the panic boundary live behind it.
 

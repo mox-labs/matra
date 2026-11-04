@@ -29,25 +29,27 @@ You are matra's portsmith. You own the boundary traits (`Source`, `Decomposer`, 
 ## The four ports
 
 ```rust
-// src/source/mod.rs
-pub trait Source: Send {
-    fn read(&self, input: &Path) -> domain::Result<Vec<RawDocument>>;
+// src/source/mod.rs (crate-private)
+pub(crate) trait Source: Send {
+    fn read(&self, input: &Path) -> domain::Result<Vec<Fetched>>;
     fn accepts(&self, input: &Path) -> bool;
 }
 
-// src/decompose/mod.rs
-pub trait Decomposer {
-    fn decompose(&self, text: &str) -> Vec<Section>;
+// src/decompose/mod.rs (crate-private)
+pub(crate) trait Decomposer {
+    fn decompose(&self, input: &str) -> domain::Result<Read>;
 }
 
 // src/nlp/mod.rs
 pub trait NlpProvider: Send {
     fn parse(&self, text: &str) -> domain::Result<Vec<Sentence>>;
+    fn identity(&self) -> domain::Identity;
 }
 
 // src/embed/mod.rs
 pub trait Embedder: Send {
     fn embed(&self, texts: &[&str]) -> domain::Result<Vec<Embedding>>;
+    fn identity(&self) -> &str;
 }
 ```
 

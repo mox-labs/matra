@@ -23,16 +23,29 @@
       {
         "heading": null,
         "level": 0,
+        "span": null,
         "paragraphs": [
           {
+            "span": {
+              "start": 0,
+              "end": 45
+            },
             "text": "The committee approved the budget on Tuesday.",
-            "in_blockquote": false,
+            "kind": "paragraph",
             "sentences": [
               {
+                "span": {
+                  "start": 0,
+                  "end": 45
+                },
                 "text": "The committee approved the budget on Tuesday.",
                 "tokens": [
                   {
                     "id": 1,
+                    "span": {
+                      "start": 0,
+                      "end": 3
+                    },
                     "text": "The",
                     "lemma": "the",
                     "pos": "DET",
@@ -49,6 +62,10 @@
                   },
                   {
                     "id": 2,
+                    "span": {
+                      "start": 4,
+                      "end": 13
+                    },
                     "text": "committee",
                     "lemma": "committee",
                     "pos": "NOUN",
@@ -64,6 +81,10 @@
                   },
                   {
                     "id": 3,
+                    "span": {
+                      "start": 14,
+                      "end": 22
+                    },
                     "text": "approved",
                     "lemma": "approve",
                     "pos": "VERB",
@@ -81,6 +102,10 @@
                   },
                   {
                     "id": 4,
+                    "span": {
+                      "start": 23,
+                      "end": 26
+                    },
                     "text": "the",
                     "lemma": "the",
                     "pos": "DET",
@@ -97,6 +122,10 @@
                   },
                   {
                     "id": 5,
+                    "span": {
+                      "start": 27,
+                      "end": 33
+                    },
                     "text": "budget",
                     "lemma": "budget",
                     "pos": "NOUN",
@@ -112,6 +141,10 @@
                   },
                   {
                     "id": 6,
+                    "span": {
+                      "start": 34,
+                      "end": 36
+                    },
                     "text": "on",
                     "lemma": "on",
                     "pos": "ADP",
@@ -125,6 +158,10 @@
                   },
                   {
                     "id": 7,
+                    "span": {
+                      "start": 37,
+                      "end": 44
+                    },
                     "text": "Tuesday",
                     "lemma": "Tuesday",
                     "pos": "PROPN",
@@ -140,6 +177,10 @@
                   },
                   {
                     "id": 8,
+                    "span": {
+                      "start": 44,
+                      "end": 45
+                    },
                     "text": ".",
                     "lemma": ".",
                     "pos": "PUNCT",
@@ -184,6 +225,7 @@
       "vocabulary_ttr": 0.8571428571428571,
       "nominalization_ratio": 0.0,
       "passive_ratio": 0.0
-    }
+    },
+    "skipped": []
   }
 }

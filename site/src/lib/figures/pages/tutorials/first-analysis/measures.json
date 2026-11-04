@@ -9,26 +9,17 @@
   "page": "tutorials/first-analysis.md",
   "paragraphs": [
     {
-      "compression_ratio": 0.5486,
-      "in_blockquote": false,
+      "compression_ratio": null,
+      "kind": "paragraph",
       "lexical_density": 0.5714,
-      "readability_grade": 10.5269,
+      "readability_grade": 12.7487,
       "sentences": 3,
-      "text": "You will run matra on two short paragraphs of meeting minutes, then find four things in what it returns: the document's structure, the grammar it read off each sentence, the measures of each paragraph, and the measures of the whole document. You need matra installed; [Installation](installation.md) covers every route.",
-      "words": 51
+      "text": "You will run matra on two short paragraphs of meeting minutes, then find four things in what it returns: the document's structure, the grammar it read off each sentence, the measures of each paragraph, and the measures of the whole document. You need matra installed; Installation covers every route.",
+      "words": 50
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<example-input name=\"first-analysis\" />",
-      "words": 6
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5333,
       "readability_grade": 3.855,
       "sentences": 2,
@@ -37,16 +28,7 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<example-call name=\"first-analysis\" />",
-      "words": 6
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5455,
       "readability_grade": 2.6455,
       "sentences": 2,
@@ -55,34 +37,25 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<example-output name=\"first-analysis\" />",
-      "words": 5
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5306,
       "readability_grade": 5.563,
       "sentences": 4,
-      "text": "The output is a tree. The document holds `sections`; this one has a single section, because the text has no headings. The section holds `paragraphs`, two of them, one for each block of text separated by a blank line. Each paragraph holds its `sentences`, and each sentence its `tokens`.",
-      "words": 50
+      "text": "The output is a tree. The document holds sections; this one has a single section, because the text has no headings. The section holds paragraphs, two of them, one for each block of text separated by a blank line. Each paragraph holds its sentences, and each sentence its tokens.",
+      "words": 49
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5111,
-      "readability_grade": 3.3306,
+      "readability_grade": 5.2067,
       "sentences": 3,
-      "text": "The tokens are shown above only as a count. Each one carries its `text`, its `lemma`, its part of speech (`pos`), the `id` of the word it depends on (`head`) and the relation between them (`dep`). The [quick start](../home.md#quick-start) shows one sentence's tokens in full.",
-      "words": 50
+      "text": "The tokens are shown above only as a count. Each one carries its text, its lemma, its part of speech (pos), the id of the word it depends on (head) and the relation between them (dep). The quick start shows one sentence's tokens in full.",
+      "words": 48
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4667,
       "readability_grade": 5.9933,
       "sentences": 1,
@@ -90,40 +63,76 @@
       "words": 16
     },
     {
-      "compression_ratio": 0.5261,
-      "in_blockquote": false,
-      "lexical_density": 0.5376,
-      "readability_grade": 5.1884,
-      "sentences": 8,
-      "text": "1. In the first sentence, `negations` holds one entry. Its `cue_lemma` is `not`, and its `head_id` is 5: `not` negates the fifth word, `approve`.\n2. In the second sentence, `modals` holds `may`, over word 9, `follow`. `clausal_complements` holds `say`: the chair (`subject_lemma`) said something, and what was said is the clause headed by word 9.\n3. The third sentence is passive: the amendments were submitted, and its `passive` is `true`. Every sentence also carries its `word_count`, its `tree_depth`, and its `root_mood`: the grammatical mood of its main clause, `Ind` for a plain statement.",
-      "words": 97
-    },
-    {
-      "compression_ratio": 0.5866,
-      "in_blockquote": false,
-      "lexical_density": 0.4828,
-      "readability_grade": 8.9857,
-      "sentences": 4,
-      "text": "Each paragraph carries three measures in its `metrics`. `readability_grade` is a grade level, and `lexical_density` is the share of content words. `compression_ratio` is `null` for both paragraphs: matra computes it only for a paragraph of more than 50 words, and these are shorter. A `null` means the measure declined to run, never that it came out as zero.",
-      "words": 58
-    },
-    {
-      "compression_ratio": 0.5544,
-      "in_blockquote": false,
-      "lexical_density": 0.5057,
-      "readability_grade": 8.2536,
-      "sentences": 5,
-      "text": "The document's own `metrics` describe the whole of it: the counts (`total_words`, `total_sentences`, `paragraph_count`), the mean and spread of sentence length, and three ratios. `passive_ratio` is 0.25: one sentence of the four is passive. `vocabulary_ttr` is the share of distinct lemmas among all of them. `nominalization_ratio` is the share of words that are nouns ending in a suffix such as `-tion` or `-ment`. It is 0 here: the one candidate, `amendments`, ends in an `s`, and the test reads the word as written ([Methodology](../reference/methodology.md#nominalization-ratio) has the rule).",
-      "words": 90
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5217,
+      "readability_grade": 5.3124,
+      "sentences": 2,
+      "text": "In the first sentence, negations holds one entry. Its cue_lemma is not, and its head_id is 5: not negates the fifth word, approve.",
+      "words": 23
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.5,
-      "readability_grade": 6.1397,
-      "sentences": 6,
-      "text": "- [How-to guides](../examples/README.md): the same calls on longer, real texts, one task each.\n- [Concepts](../explanation/concepts.md): why the output is a tree, and what each part of it records.\n- [Domain model](../reference/domain-types.md): every field named above, with its type.",
-      "words": 39
+      "kind": "list_item",
+      "lexical_density": 0.5667,
+      "readability_grade": 7.1733,
+      "sentences": 2,
+      "text": "In the second sentence, modals holds may, over word 9, follow. clausal_complements holds say: the chair (subject_lemma) said something, and what was said is the clause headed by word 9.",
+      "words": 30
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5676,
+      "readability_grade": 9.8034,
+      "sentences": 2,
+      "text": "The third sentence is passive: the amendments were submitted, and its passive is true. Every sentence also carries its word_count, its tree_depth, and its root_mood: the grammatical mood of its main clause, Ind for a plain statement.",
+      "words": 37
+    },
+    {
+      "compression_ratio": 0.5694,
+      "kind": "paragraph",
+      "lexical_density": 0.4828,
+      "readability_grade": 8.9857,
+      "sentences": 4,
+      "text": "Each paragraph carries three measures in its metrics. readability_grade is a grade level, and lexical_density is the share of content words. compression_ratio is null for both paragraphs: matra computes it only for a paragraph of more than 50 words, and these are shorter. A null means the measure declined to run, never that it came out as zero.",
+      "words": 58
+    },
+    {
+      "compression_ratio": 0.5564,
+      "kind": "paragraph",
+      "lexical_density": 0.5057,
+      "readability_grade": 7.8328,
+      "sentences": 5,
+      "text": "The document's own metrics describe the whole of it: the counts (total_words, total_sentences, paragraph_count), the mean and spread of sentence length, and three ratios. passive_ratio is 0.25: one sentence of the four is passive. vocabulary_ttr is the share of distinct lemmas among all of them. nominalization_ratio is the share of words that are nouns ending in a suffix such as -tion or -ment. It is 0 here: the one candidate, amendments, ends in an s, and the test reads the word as written (Methodology has the rule).",
+      "words": 88
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6667,
+      "readability_grade": 3.84,
+      "sentences": 1,
+      "text": "How-to guides: the same calls on longer, real texts, one task each.",
+      "words": 13
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.3571,
+      "readability_grade": 4.1986,
+      "sentences": 1,
+      "text": "Concepts: why the output is a tree, and what each part of it records.",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Domain model: every field named above, with its type.",
+      "words": 9
     }
   ]
 }

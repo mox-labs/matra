@@ -100,12 +100,12 @@ for item in v.analyze_path("docs/"):
     if "error" in item:
         print(f"{item['path']}: {item['error']['kind']}: {item['error']['message']}")
     else:
-        print(item["path"], item["analysis"]["metrics"]["vocabulary_ttr"])
+        print(item["provenance"]["source"]["path"], item["metrics"]["vocabulary_ttr"])
 ```
 
-One unreadable file costs one item, not the walk. A document that analyzed arrives as a `CorpusEntry` (`path`, `analysis`, where `analysis` is the same shape `analyze` returns); one that did not arrives as a `DocumentError` (`path`, `error`), holding the position the document would have had. The `error` object carries a `kind` you can branch on and a `message` for a human to read. `matra.ERROR_KINDS` is the whole vocabulary, in the order the Rust enum declares it: `model_not_found`, `model_invalid`, `parse_failed`, `input_too_large`, `unsupported_format`, `invalid_input`, `io`. Testing `"error" in item` is also what narrows the union for a type checker.
+One unreadable file costs one item, not the walk. A document that analyzed arrives as the same `Document` shape `analyze` returns, naming its file in `provenance.source.path`; one that did not arrives as a `DocumentError` (`path`, `error`), holding the position the document would have had. Each file is read as its bytes and extension say: `.md` as markdown, anything else that is UTF-8 as plain text, and a PDF, a DOCX or bytes that are not text as an `unsupported_format` error. The `error` object carries a `kind` you can branch on and a `message` for a human to read. `matra.ERROR_KINDS` is the whole vocabulary, in the order the Rust enum declares it: `model_not_found`, `model_invalid`, `parse_failed`, `input_too_large`, `unsupported_format`, `invalid_input`, `io`. Testing `"error" in item` is also what narrows the union for a type checker.
 
-`path` is a `str` decoded the way Python decodes any filesystem path; on Unix, `os.fsencode` on it hands back the bytes the name came from and opens the file even when the name is not valid UTF-8 (elsewhere an undecodable name is decoded lossily). Every path argument on the surface goes the other way through the same encoding: `analyze_path`, `Matra.english`, `Matra.from_path`, `Model2Vec.from_dir` and `Model2Vec.potion_base_8m` take a `str` or a `pathlib.Path` alike.
+A path in an item is a `str` decoded the way Python decodes any filesystem path; on Unix, `os.fsencode` on it hands back the bytes the name came from and opens the file even when the name is not valid UTF-8 (elsewhere an undecodable name is decoded lossily). Every path argument on the surface goes the other way through the same encoding: `analyze_path`, `Matra.english`, `Matra.from_path`, `Model2Vec.from_dir` and `Model2Vec.potion_base_8m` take a `str` or a `pathlib.Path` alike.
 
 The walk is not recursive, and symlinks and subdirectories are skipped rather than followed. Only a failure listing the path itself raises: a missing directory is `OSError`, because there is no per-document result for it to travel in.
 
@@ -151,11 +151,11 @@ from matra import Document, Keyphrase, Paragraph, ScoredSentence, Section, Sente
 `Document` nests down to the token level:
 
 ```python
-for section in result["sections"]:            # heading, level, paragraphs
-    for para in section["paragraphs"]:        # text, in_blockquote, sentences,
+for section in result["sections"]:            # heading, level, span, paragraphs
+    for para in section["paragraphs"]:        # span, text, kind, sentences,
                                               # metrics
         print(para["metrics"]["readability_grade"])  # float or None
-        for sentence in para["sentences"]:    # text, tokens, word_count,
+        for sentence in para["sentences"]:    # span, text, tokens, word_count,
                                               # tree_depth, passive, negations,
                                               # modals, clausal_complements,
                                               # root_adverbials, hearst_pairs,
@@ -165,9 +165,12 @@ for section in result["sections"]:            # heading, level, paragraphs
 
 print(result["metrics"]["vocabulary_ttr"])        # float or None
 print(result["metrics"]["nominalization_ratio"])  # float or None
+print(result["skipped"])                          # [{"kind": "table", "span": {...}}, ...]
 ```
 
-A `Token` carries the ten CoNLL-U columns under these keys: `id`, `text`, `lemma`, `pos`, `xpos`, `features`, `head`, `dep`, `deps`, `misc`, plus the derived `is_punct`. `features` is a dict from feature name to value, `{"Number": "Plur"}`. `head` is the `id` of the governing token in the same sentence, and `0` marks the root.
+Every heading, paragraph, skipped construct, sentence and token has a `span`, `{"start": int, "end": int}`, into the analysed text. It counts UTF-8 bytes, not characters, so slice the encoded text: `text.encode()[span["start"]:span["end"]].decode()`. The text fields are normalized (a sentence's `text` is rebuilt from its tokens, a markdown paragraph's has its markup removed); the span is where the value came from.
+
+A `Token` carries the ten CoNLL-U columns under these keys: `id`, `text`, `lemma`, `pos`, `xpos`, `features`, `head`, `dep`, `deps`, `misc`, plus its `span` and the derived `is_punct`. `features` is a dict from feature name to value, `{"Number": "Plur"}`. `head` is the `id` of the governing token in the same sentence, and `0` marks the root.
 
 `ScoredSentence` (`text`, `score`, `position`) is the shape for `tfidf_summarize` and `textrank_summarize`. `Keyphrase` (`phrase`, `score`) is the shape for `rake_keyphrases` and `yake_keyphrases`.
 
@@ -177,17 +180,17 @@ Each metric declines to run below its own threshold, and a `None` records that d
 
 | Field | Filled when |
 |---|---|
-| `readability_grade` | the paragraph has more than 10 words and `in_blockquote` is false |
-| `lexical_density` | the paragraph has at least 1 word and `in_blockquote` is false |
-| `compression_ratio` | the paragraph has more than 50 words, `in_blockquote` is false, and the paragraph text is at most 256 KiB |
+| `readability_grade` | the paragraph has more than 10 words and its `kind` is not `quote` |
+| `lexical_density` | the paragraph has at least 1 word and its `kind` is not `quote` |
+| `compression_ratio` | the paragraph has more than 50 words, its `kind` is not `quote`, and the paragraph text is at most 256 KiB |
 | `vocabulary_ttr` | the document has at least one non-punctuation token |
 | `nominalization_ratio` | the same condition as `vocabulary_ttr` |
 | `passive_ratio`, `mean_sentence_length` | the document has at least one sentence |
 | `sentence_length_std` | the document has at least two sentences |
 
-"Words" means the count of tokens with `is_punct` false across the paragraph's sentences. Blockquote paragraphs are never parsed at all: their `sentences` list is empty, their three paragraph metrics are `None`, and they contribute nothing to any document total.
+"Words" means the count of tokens with `is_punct` false across the paragraph's sentences. Quotes (a `kind` of `quote`) are never parsed at all: their `sentences` list is empty, their three paragraph metrics are `None`, and they contribute nothing to any document total.
 
-`analyze_markdown` also drops content before parsing. YAML frontmatter, fenced code blocks, and table rows beginning with `|` are removed, and a line reading `## References` or `*References*` ends decomposition for the rest of the document. Use `analyze` if your markdown uses that heading for something other than a trailing bibliography.
+`analyze_markdown` reads CommonMark, and what it does not analyse it lists in `skipped` rather than dropping it: front matter, fenced and indented code, tables, HTML blocks, thematic breaks and link reference definitions, each with its `kind` and `span`. List items are paragraphs of `kind` `list_item`. `## References` is a heading like any other, and a `#hashtag` is text.
 
 ## The document-level aggregates
 
@@ -228,7 +231,7 @@ Every `domain::Error` variant crosses the FFI boundary as a specific Python exce
 |---|---|---|
 | Model path does not exist | `ModelNotFound` | `FileNotFoundError` |
 | Input exceeds the 8 MiB cap, or a per-extractor cap | `InputTooLarge` | `ValueError` |
-| Input format has no decomposer | `UnsupportedFormat` | `ValueError` |
+| Input format has no reader, or the bytes are not UTF-8 text | `UnsupportedFormat` | `ValueError` |
 | A caller broke a documented contract, such as an embedder returning the wrong number of vectors | `InvalidInput` | `ValueError` |
 | File I/O error, or a download that did not arrive | `Io` | `OSError` |
 | Model file corrupt or wrong format, or bytes that arrived and failed the pinned hash | `ModelInvalid` | `RuntimeError` |

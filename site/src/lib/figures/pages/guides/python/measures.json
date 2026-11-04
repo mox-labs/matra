@@ -9,17 +9,17 @@
   "page": "guides/python.md",
   "paragraphs": [
     {
-      "compression_ratio": 0.5874,
-      "in_blockquote": false,
+      "compression_ratio": 0.5629,
+      "kind": "paragraph",
       "lexical_density": 0.5246,
-      "readability_grade": 5.7848,
+      "readability_grade": 6.191,
       "sentences": 3,
-      "text": "You installed matra with `uv add 'matra>=0.2'` or `pip install 'matra>=0.2'`. That gave you two things: the library described on this page, and the `matra` command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the [CLI guide](cli.md); the Python package adds no behavior to it.",
-      "words": 65
+      "text": "You installed matra with uv add 'matra>=0.2' or pip install 'matra>=0.2'. That gave you two things: the library described on this page, and the matra command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the CLI guide; the Python package adds no behavior to it.",
+      "words": 63
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5714,
       "readability_grade": null,
       "sentences": 1,
@@ -27,53 +27,53 @@
       "words": 7
     },
     {
-      "compression_ratio": 0.5863,
-      "in_blockquote": false,
+      "compression_ratio": 0.5772,
+      "kind": "paragraph",
       "lexical_density": 0.5362,
-      "readability_grade": 10.701,
+      "readability_grade": 9.4601,
       "sentences": 3,
-      "text": "With no argument the model directory is resolved the way every matra surface resolves it: `MATRA_MODEL_DIR` if you set it, otherwise the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`. A pre-existing `~/.matra/models` is used instead when the new location does not exist yet and that one is not empty, so a cache from 0.1.0 keeps working and keeps being written to. [Programming model](../explanation/programming-model.md#configuration) has the full resolution order.",
-      "words": 74
+      "text": "With no argument the model directory is resolved the way every matra surface resolves it: MATRA_MODEL_DIR if you set it, otherwise the models subdirectory of $XDG_DATA_HOME/matra, which defaults to ~/.local/share/matra. A pre-existing ~/.matra/models is used instead when the new location does not exist yet and that one is not empty, so a cache from 0.1.0 keeps working and keeps being written to. Programming model has the full resolution order.",
+      "words": 73
     },
     {
-      "compression_ratio": 0.5759,
-      "in_blockquote": false,
+      "compression_ratio": 0.575,
+      "kind": "paragraph",
       "lexical_density": 0.4945,
       "readability_grade": 6.5682,
       "sentences": 7,
-      "text": "The argument is a `str` or any `os.PathLike`, such as the `pathlib.Path` above. Pass a real path, not a shell shorthand: `~` is taken literally. The path goes straight to Rust's `create_dir_all`, which does not expand it, so `Matra.english(\"~/models\")` creates a directory literally named `~` under your current working directory and caches a 16 MB model inside it. `Path.home()`, or `os.path.expanduser`, does the expansion in Python. Name a directory you own: provisioning trusts what it finds there, and a shared one such as `/tmp` is writable by anybody on the machine.",
-      "words": 96
+      "text": "The argument is a str or any os.PathLike, such as the pathlib.Path above. Pass a real path, not a shell shorthand: ~ is taken literally. The path goes straight to Rust's create_dir_all, which does not expand it, so Matra.english(\"~/models\") creates a directory literally named ~ under your current working directory and caches a 16 MB model inside it. Path.home(), or os.path.expanduser, does the expansion in Python. Name a directory you own: provisioning trusts what it finds there, and a shared one such as /tmp is writable by anybody on the machine.",
+      "words": 93
     },
     {
-      "compression_ratio": 0.5036,
-      "in_blockquote": false,
+      "compression_ratio": 0.5,
+      "kind": "paragraph",
       "lexical_density": 0.5935,
-      "readability_grade": 10.2168,
+      "readability_grade": 11.0255,
       "sentences": 5,
-      "text": "`Matra.english` downloads the English UDPipe model into that directory on first use, verifies it against a pinned SHA-256 hash, and loads from the cache on every call after that. The two ways that can fail raise different exceptions, and the split is the one the [errors reference](../reference/errors.md#provisioning-failures) describes: a download that never arrived, or a directory that could not be written, raises `OSError`; bytes that arrived and then failed the hash raise `RuntimeError`. A bootstrap that wants to survive both catches both. Before 0.2.0 a failed download also raised `RuntimeError`, so an `except RuntimeError` written against an older version stops catching network failures. If you already have a model file, load it directly; a missing path raises `FileNotFoundError`, a corrupt file raises `RuntimeError`:",
-      "words": 129
+      "text": "Matra.english downloads the English UDPipe model into that directory on first use, verifies it against a pinned SHA-256 hash, and loads from the cache on every call after that. The two ways that can fail raise different exceptions, and the split is the one the errors reference describes: a download that never arrived, or a directory that could not be written, raises OSError; bytes that arrived and then failed the hash raise RuntimeError. A bootstrap that wants to survive both catches both. Before 0.2.0 a failed download also raised RuntimeError, so an except RuntimeError written against an older version stops catching network failures. If you already have a model file, load it directly; a missing path raises FileNotFoundError, a corrupt file raises RuntimeError:",
+      "words": 124
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6923,
       "readability_grade": 4.1912,
       "sentences": 2,
-      "text": "Construction is the expensive step. Build one `Matra` and reuse it across calls.",
-      "words": 14
+      "text": "Construction is the expensive step. Build one Matra and reuse it across calls.",
+      "words": 13
     },
     {
-      "compression_ratio": 0.5682,
-      "in_blockquote": false,
+      "compression_ratio": 0.5748,
+      "kind": "paragraph",
       "lexical_density": 0.5507,
       "readability_grade": 7.9195,
       "sentences": 5,
-      "text": "The underlying model holds C-side state that is not thread-safe, so the Rust binding marks the class `unsendable`. Touching one `Matra` instance from any thread other than the one that created it raises `pyo3_runtime.PanicException`. That exception derives from `BaseException`, not `Exception`, so a bare `except Exception` will not catch it and a thread pool will not report it the way you expect. Do not share an instance across threads.",
-      "words": 74
+      "text": "The underlying model holds C-side state that is not thread-safe, so the Rust binding marks the class unsendable. Touching one Matra instance from any thread other than the one that created it raises pyo3_runtime.PanicException. That exception derives from BaseException, not Exception, so a bare except Exception will not catch it and a thread pool will not report it the way you expect. Do not share an instance across threads.",
+      "words": 72
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5106,
       "readability_grade": 19.8123,
       "sentences": 2,
@@ -82,115 +82,115 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5714,
       "readability_grade": 9.1214,
       "sentences": 2,
-      "text": "Concurrent `Matra.english` calls against the same model directory are safe. Each process downloads into its own temporary subdirectory and moves the file into place with a single rename.",
+      "text": "Concurrent Matra.english calls against the same model directory are safe. Each process downloads into its own temporary subdirectory and moves the file into place with a single rename.",
       "words": 28
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5833,
       "readability_grade": 9.74,
       "sentences": 2,
-      "text": "Two more methods take something other than a string: `analyze_path` takes a path, and `semantic_clusters` takes text plus an embedding model. Both are below.",
+      "text": "Two more methods take something other than a string: analyze_path takes a path, and semantic_clusters takes text plus an embedding model. Both are below.",
       "words": 24
     },
     {
-      "compression_ratio": 0.5404,
-      "in_blockquote": false,
+      "compression_ratio": 0.5362,
+      "kind": "paragraph",
       "lexical_density": 0.4605,
       "readability_grade": 8.5884,
       "sentences": 4,
-      "text": "There is no standalone parse method on the Python surface. Each of the four extraction methods runs the text it is given through the pipeline on its own, treating it as plain text. Calling `analyze` and then `tfidf_summarize` on the same string parses that string twice, and there is no parse-once-use-many path from Python today. If the second parse matters for your workload, do that work in Rust and expose the result through your own binding.",
-      "words": 80
+      "text": "There is no standalone parse method on the Python surface. Each of the four extraction methods runs the text it is given through the pipeline on its own, treating it as plain text. Calling analyze and then tfidf_summarize on the same string parses that string twice, and there is no parse-once-use-many path from Python today. If the second parse matters for your workload, do that work in Rust and expose the result through your own binding.",
+      "words": 79
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.625,
       "readability_grade": 8.35,
       "sentences": 3,
-      "text": "The two summarizers return their selection in document order, not score order. Read `position` to see where a sentence sits in the source and `score` to see how it ranked. The two keyphrase methods return score order, highest first, because `Keyphrase` has no position to sort back into.",
+      "text": "The two summarizers return their selection in document order, not score order. Read position to see where a sentence sits in the source and score to see how it ranked. The two keyphrase methods return score order, highest first, because Keyphrase has no position to sort back into.",
       "words": 48
     },
     {
-      "compression_ratio": 0.5874,
-      "in_blockquote": false,
+      "compression_ratio": 0.5769,
+      "kind": "paragraph",
       "lexical_density": 0.6429,
       "readability_grade": 11.1264,
       "sentences": 4,
-      "text": "Keyphrases come back as lowercased lemmas joined with spaces, not as the surface text. A document about \"Dependency Parses\" yields the phrase `dependency parse`. Phrases with identical scores can also change relative order between runs, and a tie straddling the `max_phrases` cutoff can change which phrase is included, because the internal candidate map has no stable iteration order. Sort or filter on your side if you need a reproducible list.",
+      "text": "Keyphrases come back as lowercased lemmas joined with spaces, not as the surface text. A document about \"Dependency Parses\" yields the phrase dependency parse. Phrases with identical scores can also change relative order between runs, and a tie straddling the max_phrases cutoff can change which phrase is included, because the internal candidate map has no stable iteration order. Sort or filter on your side if you need a reproducible list.",
       "words": 71
     },
     {
-      "compression_ratio": 0.5066,
-      "in_blockquote": false,
+      "compression_ratio": 0.4885,
+      "kind": "paragraph",
       "lexical_density": 0.4766,
-      "readability_grade": 8.1176,
+      "readability_grade": 11.0799,
       "sentences": 5,
-      "text": "The `score` on a `Keyphrase` is an ordering key and nothing more. RAKE's is a sum of per-word ratios that are each at least 1, so a phrase of k words scores at least k, which is a floor per length and not an order across lengths; YAKE's is the reciprocal of a product of per-word scores, so it is unbounded above, carries no unit, and does not track phrase length in either direction. The two scales are unrelated to each other, and neither is comparable across documents or with another tool's. Do not surface either number to a reader as a strength without saying which method produced it. The [CLI guide](cli.md#reading-the-scores) works through what the ranking does and does not tell you, and [Methodology](../reference/methodology.md) carries the formulas.",
-      "words": 136
+      "text": "The score on a Keyphrase is an ordering key and nothing more. RAKE's is a sum of per-word ratios that are each at least 1, so a phrase of k words scores at least k, which is a floor per length and not an order across lengths; YAKE's is the reciprocal of a product of per-word scores, so it is unbounded above, carries no unit, and does not track phrase length in either direction. The two scales are unrelated to each other, and neither is comparable across documents or with another tool's. Do not surface either number to a reader as a strength without saying which method produced it. The CLI guide works through what the ranking does and does not tell you, and Methodology carries the formulas.",
+      "words": 131
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6875,
       "readability_grade": 12.0375,
       "sentences": 1,
-      "text": "`analyze_path` takes a file or a directory and returns one item per document, in path order:",
+      "text": "analyze_path takes a file or a directory and returns one item per document, in path order:",
       "words": 16
     },
     {
-      "compression_ratio": 0.5477,
-      "in_blockquote": false,
-      "lexical_density": 0.567,
-      "readability_grade": 12.1253,
-      "sentences": 5,
-      "text": "One unreadable file costs one item, not the walk. A document that analyzed arrives as a `CorpusEntry` (`path`, `analysis`, where `analysis` is the same shape `analyze` returns); one that did not arrives as a `DocumentError` (`path`, `error`), holding the position the document would have had. The `error` object carries a `kind` you can branch on and a `message` for a human to read. `matra.ERROR_KINDS` is the whole vocabulary, in the order the Rust enum declares it: `model_not_found`, `model_invalid`, `parse_failed`, `input_too_large`, `unsupported_format`, `invalid_input`, `io`. Testing `\"error\" in item` is also what narrows the union for a type checker.",
-      "words": 101
+      "compression_ratio": 0.5395,
+      "kind": "paragraph",
+      "lexical_density": 0.553,
+      "readability_grade": 9.5822,
+      "sentences": 6,
+      "text": "One unreadable file costs one item, not the walk. A document that analyzed arrives as the same Document shape analyze returns, naming its file in provenance.source.path; one that did not arrives as a DocumentError (path, error), holding the position the document would have had. Each file is read as its bytes and extension say: .md as markdown, anything else that is UTF-8 as plain text, and a PDF, a DOCX or bytes that are not text as an unsupported_format error. The error object carries a kind you can branch on and a message for a human to read. matra.ERROR_KINDS is the whole vocabulary, in the order the Rust enum declares it: model_not_found, model_invalid, parse_failed, input_too_large, unsupported_format, invalid_input, io. Testing \"error\" in item is also what narrows the union for a type checker.",
+      "words": 135
     },
     {
-      "compression_ratio": 0.5742,
-      "in_blockquote": false,
-      "lexical_density": 0.6056,
-      "readability_grade": 8.6459,
-      "sentences": 3,
-      "text": "`path` is a `str` decoded the way Python decodes any filesystem path; on Unix, `os.fsencode` on it hands back the bytes the name came from and opens the file even when the name is not valid UTF-8 (elsewhere an undecodable name is decoded lossily). Every path argument on the surface goes the other way through the same encoding: `analyze_path`, `Matra.english`, `Matra.from_path`, `Model2Vec.from_dir` and `Model2Vec.potion_base_8m` take a `str` or a `pathlib.Path` alike.",
-      "words": 75
+      "compression_ratio": 0.5785,
+      "kind": "paragraph",
+      "lexical_density": 0.5867,
+      "readability_grade": 8.5196,
+      "sentences": 5,
+      "text": "A path in an item is a str decoded the way Python decodes any filesystem path; on Unix, os.fsencode on it hands back the bytes the name came from and opens the file even when the name is not valid UTF-8 (elsewhere an undecodable name is decoded lossily). Every path argument on the surface goes the other way through the same encoding: analyze_path, Matra.english, Matra.from_path, Model2Vec.from_dir and Model2Vec.potion_base_8m take a str or a pathlib.Path alike.",
+      "words": 81
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5,
       "readability_grade": 12.3147,
       "sentences": 2,
-      "text": "The walk is not recursive, and symlinks and subdirectories are skipped rather than followed. Only a failure listing the path itself raises: a missing directory is `OSError`, because there is no per-document result for it to travel in.",
+      "text": "The walk is not recursive, and symlinks and subdirectories are skipped rather than followed. Only a failure listing the path itself raises: a missing directory is OSError, because there is no per-document result for it to travel in.",
       "words": 38
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5556,
       "readability_grade": 10.4411,
       "sentences": 2,
-      "text": "`semantic_clusters` takes any object with two methods. `Model2Vec` is one of them, and so is anything you write:",
+      "text": "semantic_clusters takes any object with two methods. Model2Vec is one of them, and so is anything you write:",
       "words": 18
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4848,
       "readability_grade": 9.4394,
-      "sentences": 2,
-      "text": "`Embedder` in `matra.types` is the protocol those two methods satisfy, and it is what `semantic_clusters` is annotated with. Importing it is optional and buys you a type checker's opinion, not a runtime check.",
+      "sentences": 3,
+      "text": "Embedder in matra.types is the protocol those two methods satisfy, and it is what semantic_clusters is annotated with. Importing it is optional and buys you a type checker's opinion, not a runtime check.",
       "words": 34
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4828,
       "readability_grade": 13.6234,
       "sentences": 1,
@@ -198,152 +198,161 @@
       "words": 30
     },
     {
-      "compression_ratio": 0.5404,
-      "in_blockquote": false,
+      "compression_ratio": 0.5333,
+      "kind": "paragraph",
       "lexical_density": 0.5588,
       "readability_grade": 11.1235,
       "sentences": 5,
-      "text": "The contract is the one the Rust port carries: exactly one vector per input text, in input order, every vector the same length. Break it and the call raises `ValueError` with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your `embed` arrives as `ValueError` too, with your exception's own text inside the message.",
+      "text": "The contract is the one the Rust port carries: exactly one vector per input text, in input order, every vector the same length. Break it and the call raises ValueError with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your embed arrives as ValueError too, with your exception's own text inside the message.",
       "words": 69
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4634,
       "readability_grade": 10.8245,
       "sentences": 2,
-      "text": "`identity` is read once, when the object is handed over, and travels into the result as `identity`. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.",
-      "words": 42
+      "text": "identity is read once, when the object is handed over, and travels into the result as identity. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.",
+      "words": 41
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5143,
       "readability_grade": 8.4293,
       "sentences": 2,
-      "text": "Every method that takes text rejects text over 8 MiB with `ValueError`. The gate lives in the pipeline stage every method routes through, not in each method, so there is no method that skips it.",
+      "text": "Every method that takes text rejects text over 8 MiB with ValueError. The gate lives in the pipeline stage every method routes through, not in each method, so there is no method that skips it.",
       "words": 35
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5625,
       "readability_grade": 21.965,
       "sentences": 2,
-      "text": "The per-algorithm caps apply on top: 2000 sentences for `tfidf_summarize`, `textrank_summarize` and `semantic_clusters` (the method and the module-level function alike), and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `ValueError` when exceeded.",
+      "text": "The per-algorithm caps apply on top: 2000 sentences for tfidf_summarize, textrank_summarize and semantic_clusters (the method and the module-level function alike), and 200000 tokens for rake_keyphrases and yake_keyphrases, each raising ValueError when exceeded.",
       "words": 33
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6154,
       "readability_grade": 12.8919,
       "sentences": 2,
-      "text": "Every method returns a plain Python dict (or a list of them), not a custom object. `Document`, `Section`, `Paragraph`, `Sentence`, `Token`, `ScoredSentence`, and `Keyphrase` are `TypedDict` definitions in `matra.types` that describe the shape at both runtime and type-check time:",
+      "text": "Every method returns a plain Python dict (or a list of them), not a custom object. Document, Section, Paragraph, Sentence, Token, ScoredSentence, and Keyphrase are TypedDict definitions in matra.types that describe the shape at both runtime and type-check time:",
       "words": 40
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.7143,
       "readability_grade": null,
       "sentences": 1,
-      "text": "`Document` nests down to the token level:",
+      "text": "Document nests down to the token level:",
       "words": 7
     },
     {
-      "compression_ratio": 0.6037,
-      "in_blockquote": false,
-      "lexical_density": 0.6346,
-      "readability_grade": 7.0546,
+      "compression_ratio": 0.5795,
+      "kind": "paragraph",
+      "lexical_density": 0.6102,
+      "readability_grade": 8.812,
+      "sentences": 3,
+      "text": "Every heading, paragraph, skipped construct, sentence and token has a span, {\"start\": int, \"end\": int}, into the analysed text. It counts UTF-8 bytes, not characters, so slice the encoded text: text.encode()[span[\"start\"]:span[\"end\"]].decode(). The text fields are normalized (a sentence's text is rebuilt from its tokens, a markdown paragraph's has its markup removed); the span is where the value came from.",
+      "words": 67
+    },
+    {
+      "compression_ratio": 0.6352,
+      "kind": "paragraph",
+      "lexical_density": 0.6182,
+      "readability_grade": 7.2218,
       "sentences": 2,
-      "text": "A `Token` carries the ten CoNLL-U columns under these keys: `id`, `text`, `lemma`, `pos`, `xpos`, `features`, `head`, `dep`, `deps`, `misc`, plus the derived `is_punct`. `features` is a dict from feature name to value, `{\"Number\": \"Plur\"}`. `head` is the `id` of the governing token in the same sentence, and `0` marks the root.",
-      "words": 55
+      "text": "A Token carries the ten CoNLL-U columns under these keys: id, text, lemma, pos, xpos, features, head, dep, deps, misc, plus its span and the derived is_punct. features is a dict from feature name to value, {\"Number\": \"Plur\"}. head is the id of the governing token in the same sentence, and 0 marks the root.",
+      "words": 57
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.619,
       "readability_grade": 12.105,
       "sentences": 2,
-      "text": "`ScoredSentence` (`text`, `score`, `position`) is the shape for `tfidf_summarize` and `textrank_summarize`. `Keyphrase` (`phrase`, `score`) is the shape for `rake_keyphrases` and `yake_keyphrases`.",
+      "text": "ScoredSentence (text, score, position) is the shape for tfidf_summarize and textrank_summarize. Keyphrase (phrase, score) is the shape for rake_keyphrases and yake_keyphrases.",
       "words": 21
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4848,
       "readability_grade": 9.0814,
       "sentences": 2,
-      "text": "Each metric declines to run below its own threshold, and a `None` records that decision rather than a failed computation. The first three are in each paragraph's `metrics`, the rest in the document's.",
+      "text": "Each metric declines to run below its own threshold, and a None records that decision rather than a failed computation. The first three are in each paragraph's metrics, the rest in the document's.",
       "words": 35
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.641,
-      "readability_grade": 11.0765,
+      "kind": "paragraph",
+      "lexical_density": 0.619,
+      "readability_grade": 10.581,
       "sentences": 2,
-      "text": "\"Words\" means the count of tokens with `is_punct` false across the paragraph's sentences. Blockquote paragraphs are never parsed at all: their `sentences` list is empty, their three paragraph metrics are `None`, and they contribute nothing to any document total.",
-      "words": 40
+      "text": "\"Words\" means the count of tokens with is_punct false across the paragraph's sentences. Quotes (a kind of quote) are never parsed at all: their sentences list is empty, their three paragraph metrics are None, and they contribute nothing to any document total.",
+      "words": 43
     },
     {
-      "compression_ratio": 0.6047,
-      "in_blockquote": false,
-      "lexical_density": 0.6,
-      "readability_grade": 11.914,
+      "compression_ratio": 0.5922,
+      "kind": "paragraph",
+      "lexical_density": 0.5862,
+      "readability_grade": 10.6672,
       "sentences": 3,
-      "text": "`analyze_markdown` also drops content before parsing. YAML frontmatter, fenced code blocks, and table rows beginning with `|` are removed, and a line reading `## References` or `*References*` ends decomposition for the rest of the document. Use `analyze` if your markdown uses that heading for something other than a trailing bibliography.",
-      "words": 51
+      "text": "analyze_markdown reads CommonMark, and what it does not analyse it lists in skipped rather than dropping it: front matter, fenced and indented code, tables, HTML blocks, thematic breaks and link reference definitions, each with its kind and span. List items are paragraphs of kind list_item. ## References is a heading like any other, and a #hashtag is text.",
+      "words": 57
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5556,
       "readability_grade": 13.0633,
       "sentences": 2,
-      "text": "Every document-level aggregate arrives in the dict as a field of `metrics`. Read them rather than recomputing them:",
-      "words": 20
+      "text": "Every document-level aggregate arrives in the dict as a field of metrics. Read them rather than recomputing them:",
+      "words": 19
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5938,
       "readability_grade": 9.9575,
       "sentences": 2,
-      "text": "The counts are always integers. Each ratio is `None` when its condition was not met: `mean_sentence_length` and `passive_ratio` need a sentence, `sentence_length_std` (the sample standard deviation, as `statistics.stdev` computes it) needs two.",
-      "words": 33
+      "text": "The counts are always integers. Each ratio is None when its condition was not met: mean_sentence_length and passive_ratio need a sentence, sentence_length_std (the sample standard deviation, as statistics.stdev computes it) needs two.",
+      "words": 32
     },
     {
-      "compression_ratio": 0.6094,
-      "in_blockquote": false,
+      "compression_ratio": 0.6051,
+      "kind": "paragraph",
       "lexical_density": 0.5294,
       "readability_grade": 11.7079,
       "sentences": 2,
-      "text": "Methods do not cross the FFI boundary, only fields do, which is why these are fields: the metric suite materializes them so the aggregates cross as data instead of being re-derived once per language binding (RFC-0008). The same holds per sentence: `word_count`, `tree_depth` and `passive` are keys on each sentence dict.",
+      "text": "Methods do not cross the FFI boundary, only fields do, which is why these are fields: the metric suite materializes them so the aggregates cross as data instead of being re-derived once per language binding (RFC-0008). The same holds per sentence: word_count, tree_depth and passive are keys on each sentence dict.",
       "words": 52
     },
     {
-      "compression_ratio": 0.5487,
-      "in_blockquote": false,
+      "compression_ratio": 0.5581,
+      "kind": "paragraph",
       "lexical_density": 0.6167,
       "readability_grade": 10.5,
       "sentences": 3,
-      "text": "`result[\"provenance\"]` says where the document came from: `matra` (the version), `schema` (`\"2.0\"`, the schema version), `parser` (`name`, `model`, `sha256`, `license`), `format` (`markdown` or `plain_text`), and `source` (`path`, `bytes`, `sha256` of the input). Read `schema` before anything else when a result was stored by another process: ignore keys you do not recognize, and reject a major version you do not know.",
+      "text": "result[\"provenance\"] says where the document came from: matra (the version), schema (\"2.0\", the schema version), parser (name, model, sha256, license), format (markdown or plain_text), and source (path, bytes, sha256 of the input). Read schema before anything else when a result was stored by another process: ignore keys you do not recognize, and reject a major version you do not know.",
       "words": 61
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.7059,
       "readability_grade": 14.64,
       "sentences": 1,
-      "text": "Every `domain::Error` variant crosses the FFI boundary as a specific Python exception class, not a generic error:",
+      "text": "Every domain::Error variant crosses the FFI boundary as a specific Python exception class, not a generic error:",
       "words": 18
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6429,
       "readability_grade": 10.9414,
       "sentences": 1,
@@ -351,30 +360,30 @@
       "words": 14
     },
     {
-      "compression_ratio": 0.5681,
-      "in_blockquote": false,
+      "compression_ratio": 0.5772,
+      "kind": "paragraph",
       "lexical_density": 0.5909,
       "readability_grade": 13.5506,
       "sentences": 3,
-      "text": "The message on each exception is the Rust error's own `Display` output, so an `InputTooLarge` message names the gate that fired. The text methods raise `input`, `tfidf`, `textrank`, `rake`, `yake` and `semantic_clusters`; the constructors that resolve or download a model raise `config_file`, `udpipe_download` and `embedding_download`. `analyze_path` raises none of them: an oversized file there is an item whose `kind` is `input_too_large`, with `file_source` in its message.",
-      "words": 71
+      "text": "The message on each exception is the Rust error's own Display output, so an InputTooLarge message names the gate that fired. The text methods raise input, tfidf, textrank, rake, yake and semantic_clusters; the constructors that resolve or download a model raise config_file, udpipe_download and embedding_download. analyze_path raises none of them: an oversized file there is an item whose kind is input_too_large, with file_source in its message.",
+      "words": 68
     },
     {
-      "compression_ratio": 0.6201,
-      "in_blockquote": false,
+      "compression_ratio": 0.6217,
+      "kind": "paragraph",
       "lexical_density": 0.5962,
       "readability_grade": 9.3238,
       "sentences": 3,
-      "text": "The mapping is exhaustive and enforced at compile time on the Rust side. The match that builds the Python exception has no wildcard arm, so adding a new `domain::Error` variant without also wiring it to a Python exception class fails to build. A new variant cannot fall through to `RuntimeError` by accident.",
+      "text": "The mapping is exhaustive and enforced at compile time on the Rust side. The match that builds the Python exception has no wildcard arm, so adding a new domain::Error variant without also wiring it to a Python exception class fails to build. A new variant cannot fall through to RuntimeError by accident.",
       "words": 54
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5417,
       "readability_grade": 13.1817,
       "sentences": 2,
-      "text": "The one failure that does not follow this table is the cross-thread access described above, which arrives as `pyo3_runtime.PanicException` and bypasses `except Exception` entirely.",
+      "text": "The one failure that does not follow this table is the cross-thread access described above, which arrives as pyo3_runtime.PanicException and bypasses except Exception entirely.",
       "words": 25
     }
   ]

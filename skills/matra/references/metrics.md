@@ -25,7 +25,7 @@ grade = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
 
 `words` is whitespace-separated pieces of the paragraph text. `sentences` is the count of `.`, `!` and `?` characters, floored at 1. `syllables` sums a per-word estimate: keep alphabetic characters, lowercase, return 1 if three bytes or shorter, else count runs of a, e, i, o, u, y with adjacent vowels counting once, subtract 1 if the word ends in `e` and the count is above 1, return at least 1.
 
-**Computed for** non-blockquote paragraphs with more than 10 words. Unbounded, and negative on short simple text.
+**Computed for** paragraphs that are not quotes with more than 10 words. Unbounded, and negative on short simple text.
 
 **Cite** Kincaid, Fishburne, Rogers and Chisholm (1975), Naval Technical Training Command Research Branch Report 8-75.
 
@@ -39,7 +39,7 @@ lexical_density = content_words / total_words
 
 `total_words` is whitespace-separated pieces. `content_words` are those pieces whose lowercased alphabetic characters form a non-empty string that is not a stop word. A piece made only of punctuation counts in the denominator and never in the numerator.
 
-**Computed for** non-blockquote paragraphs with at least one word and at least one whitespace piece. Range 0.0 to 1.0.
+**Computed for** paragraphs that are not quotes with at least one word and at least one whitespace piece. Range 0.0 to 1.0.
 
 **Cite** Ure (1971), in Perren and Trim, *Applications of Linguistics*.
 
@@ -53,7 +53,7 @@ compression_ratio = compressed_bytes / original_bytes
 
 Brotli at quality 6 with a window parameter of 18, a 256 KiB window, over the UTF-8 bytes of the paragraph text. A lower ratio means the text compressed further, which means more surface repetition.
 
-**Computed for** non-blockquote paragraphs with more than 50 words and at most 262,144 bytes. Larger paragraphs keep null, which bounds worst-case compression time, and the slot also stays null if the encoder fails.
+**Computed for** paragraphs that are not quotes with more than 50 words and at most 262,144 bytes. Larger paragraphs keep null, which bounds worst-case compression time, and the slot also stays null if the encoder fails.
 
 **Cite** Alakuijala and Szabadka (2016), RFC 7932.
 
@@ -61,7 +61,7 @@ Brotli at quality 6 with a window parameter of 18, a 256 KiB window, over the UT
 
 ## Document metrics
 
-All three are computed over the sentences attached to non-blockquote paragraphs. There is exactly one sentence set and one way to derive it, so the numbers cannot disagree with the structure they describe.
+All three are computed over the sentences attached to paragraphs that are not quotes. There is exactly one sentence set and one way to derive it, so the numbers cannot disagree with the structure they describe.
 
 ### `vocabulary_ttr`
 

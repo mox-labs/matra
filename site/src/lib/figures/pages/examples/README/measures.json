@@ -10,7 +10,7 @@
   "paragraphs": [
     {
       "compression_ratio": 0.5831,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5246,
       "readability_grade": 6.4613,
       "sentences": 3,
@@ -19,16 +19,16 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6154,
-      "readability_grade": 5.4014,
+      "readability_grade": 5.8185,
       "sentences": 2,
-      "text": "Install matra the way you mean to use it: the library, the CLI, or the Python package ([Install matra](../tutorials/installation.md)). The Rust calls also need `serde_json` to print, which is the first line of each one: `cargo add matra@0.2 serde_json`.",
-      "words": 41
+      "text": "Install matra the way you mean to use it: the library, the CLI, or the Python package (Install matra). The Rust calls also need serde_json to print, which is the first line of each one: cargo add matra@0.2 serde_json.",
+      "words": 39
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5319,
       "readability_grade": 6.086,
       "sentences": 3,
@@ -37,12 +37,12 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5667,
-      "readability_grade": 14.1925,
+      "readability_grade": 9.5333,
       "sentences": 2,
-      "text": "Analyzing a directory as a corpus has no guide here, because the CLI refuses a directory and these guides show all three calls. The [Rust](../guides/rust.md#analyze-a-directory) and [Python](../guides/python.md#analyze-a-directory) references cover it.",
-      "words": 34
+      "text": "Analyzing a directory as a corpus has no guide here, because the CLI refuses a directory and these guides show all three calls. The Rust and Python references cover it.",
+      "words": 30
     }
   ]
 }

@@ -14,7 +14,7 @@ use matra::Engine;
 let engine = Engine::with_defaults()?;
 ```
 
-`Engine::with_defaults` resolves a `Config` (the environment, then your config file, then the defaults compiled into the crate), downloads the English UDPipe model into the resolved directory if it is not already there, and wires the standard decomposer table. The directory is `MATRA_MODEL_DIR` if you set it, otherwise the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`. [Programming model](../explanation/programming-model.md#configuration) has the full resolution order.
+`Engine::with_defaults` resolves a `Config` (the environment, then your config file, then the defaults compiled into the crate), downloads the English UDPipe model into the resolved directory if it is not already there, and wires the readers this build ships. The directory is `MATRA_MODEL_DIR` if you set it, otherwise the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`. [Programming model](../explanation/programming-model.md#configuration) has the full resolution order.
 
 When you want the resolved values but not all of them, hold the `Config` yourself:
 
@@ -58,47 +58,45 @@ Construction is the expensive step: it loads and validates the model once. Build
 
 ## The pipeline
 
-matra's public Rust surface is one pipeline assembled from two values. `Ingest` says where documents come from; `Engine` says what happens to each one.
+matra's public Rust surface is one pipeline assembled from two values. `Input` says what one document is; `Engine` says what happens to it.
 
 ```rust
 use matra::domain::{CorpusResult, Format};
-use matra::{Engine, Ingest};
+use matra::{Engine, Input, Inputs};
 
 let engine = Engine::with_defaults()?;
 
-// A string is a stream of one.
-for item in engine.analyze(Ingest::text("Plain text in memory.", Format::PlainText)) {
-    let entry = item.map_err(|e| e.error)?;
-    println!("{} sentences", entry.analysis.metrics.total_sentences);
-}
+// One document.
+let doc = engine.analyze(Input::text("Plain text in memory.", Format::PlainText))?;
+println!("{} sentences", doc.metrics.total_sentences);
 
-// A directory is a stream of many. Same call.
-let many: CorpusResult = engine.analyze(Ingest::path("./corpus")?).collect();
+// Many documents, lazily and in order.
+let many: CorpusResult = engine.analyze_all(Inputs::dir("./corpus")?).collect();
 ```
 
-`Ingest` has two constructors and they cover every source shape:
+`Input` has four constructors. None of them reads anything or fails: the read, the format and the size cap are settled when the engine reaches the input.
 
-| Constructor | Yields | Notes |
+| Constructor | The document is | Format from |
 |---|---|---|
-| `Ingest::text(string, format)` | one document | never fails; the format says which decomposer runs |
-| `Ingest::path(path)` | one document for a file, zero or more for a directory | `Err` only when the path does not exist or the directory cannot be listed |
+| `Input::text(string, format)` | the text itself | the argument |
+| `Input::bytes(data, format)` | bytes from anywhere | a PDF or DOCX signature, else the argument, else plain text |
+| `Input::file(path)` | the file, read when analysed | a PDF or DOCX signature, else the extension |
+| `Input::blocks(blocks)` | headings and paragraphs you supply (`Block::heading`, `Block::paragraph`) | `blocks` |
 
-Format comes from the extension for `Ingest::path` (`.md` and `.markdown` route to the markdown decomposer, everything else to plain text) and from the argument for `Ingest::text`. Reads are lazy: `Ingest::path` on a directory lists entries up front but touches no file until the stream is pulled, and a per-file failure (unreadable, oversized, a symlink) becomes an `Err` item carrying its path rather than an abort.
+`.md` and `.markdown` read as markdown; any other extension, or none, reads as plain text when the bytes are UTF-8. `Format::Blocks` names the same headings and paragraphs as a JSON array, for `Input::text`, `Input::bytes` or a file, with the schema in `spec/schema/v2/blocks.schema.json`. `Inputs::dir(path)` lists one level of a directory, up front, and is an iterator of `Input::file`; its `Err` is the listing failing. `Input::file` on a directory fails with `Error::InvalidInput` naming `Inputs::dir`.
 
 `Engine` exposes the pipeline at three levels:
 
 | Method | Takes | Returns | Use it when |
 |---|---|---|---|
-| `analyze` | anything yielding `Ingested` items | a lazy stream of `Result<CorpusEntry, DocumentError>` | the default: any number of documents, end to end |
-| `analyze_one` | one `RawDocument` | `Result<CorpusEntry, DocumentError>` | you have exactly one document and no stream |
-| `annotate` | `&RawDocument` | `Result<Document>` | you want structure and sentences without the metric suite |
+| `analyze` | one `Input` | `Result<Document>` | the default: one document, end to end |
+| `analyze_all` | anything yielding `Input` | a lazy stream of `Result<Document, DocumentError>` | any number of documents; a failure is one item carrying the path, and the stream goes on |
+| `annotate` | one `Input` | `Result<Document>` | you want structure and sentences without the metric suite |
 | `compose` | `&mut Document` | nothing | run the metric suite over an annotated document; total, no failure path |
 
-The three levels always agree: `analyze` is `analyze_one` mapped over the stream, and `analyze_one` is `annotate` followed by `compose`. The library's test suite pins that agreement as equivalence laws, so the levels cannot drift apart silently.
+The levels always agree: `analyze_all` is `analyze` mapped over the inputs, and `analyze` is `annotate` followed by `compose`, for every `Input` constructor. The library's test suite pins that agreement as equivalence laws, so the levels cannot drift apart silently.
 
-`standard_decomposers()` is the format table this build ships: markdown and plain text. `Error::UnsupportedFormat` means exactly "no entry in the table", and `Pdf`/`Docx` are reserved variants with no entry today. A caller can build a different table with `Decomposers::new().with(format, decomposer)` and hand it to `Engine::new`, which is also how you plug in your own `Decomposer`.
-
-One ordering detail that shapes which error you actually see: `Ingest::path` reads the file with `read_to_string` before the engine looks at the extension. A genuine binary PDF fails the UTF-8 decode first, so you get `Error::Io` with kind `InvalidData`, not `Error::UnsupportedFormat`. You reach `UnsupportedFormat` only when the file is valid UTF-8 and carries a `.pdf` or `.docx` extension.
+The readers this build ships are markdown, plain text and block input. `Format::Pdf` and `Format::Docx` are recognised, by extension and by signature, and have no reader: analysing one returns `Error::UnsupportedFormat` with that format, and so do bytes that are not UTF-8 and carry no signature matra recognises (with `format: None`). The signature outranks the extension and the format you name, so a PDF renamed `notes.txt` is still refused as a PDF rather than read as text.
 
 ## What the size gates reject
 
@@ -106,8 +104,8 @@ Seven caps guard the pipeline and the functions over its output. Each one return
 
 | `what` | Limit | Fires in |
 |---|---|---|
-| `"input"` | 8 MiB of text (`domain::MAX_INPUT_BYTES`) | `Engine::annotate`, which is the only route from text to the parser, so every pipeline call inherits it |
-| `"file_source"` | 8 MiB on disk | `Ingest::path`, checked against file metadata before any read |
+| `"input"` | 8 MiB (`domain::MAX_INPUT_BYTES`) | `Engine::annotate`, which is the only route from text to the parser, on the bytes handed in and on the analysed text, so every `Input` constructor and every pipeline call inherits it |
+| `"file_source"` | 8 MiB on disk | `Input::file`, checked against file metadata before any read |
 | `"tfidf"` | 2000 sentences | `tfidf_summarize` |
 | `"textrank"` | 2000 sentences | `textrank_summarize` |
 | `"rake"` | 200000 tokens summed across all sentences | `rake_keyphrases` |
@@ -116,7 +114,7 @@ Seven caps guard the pipeline and the functions over its output. Each one return
 
 Three more labels guard what matra reads that is not your text: `"udpipe_download"` and `"embedding_download"` cap a model download at 64 MiB, and `"config_file"` caps the config file at 64 KiB. [Errors](../reference/errors.md#inputtoolarge) lists all ten.
 
-A document from disk passes two of these in sequence: the metadata check when `Ingest` reads it, then the text check inside `annotate`. A file at exactly the cap is accepted; one byte over is rejected.
+A document from disk passes the gates in sequence: the metadata check when the file is read, then the byte and text checks inside `annotate`. Block input is checked on its analysed text, the blocks joined, so blocks each under the cap that join to more than it are refused. A file at exactly the cap is accepted; one byte over is rejected.
 
 The extraction caps are counted after parsing, so a document under 8 MiB can still exceed the TF-IDF sentence cap. Check `sentences.len()` before calling if you need to decide between summarizing and chunking.
 
@@ -125,18 +123,17 @@ The extraction caps are counted after parsing, so a document under 8 MiB can sti
 The parse inside `annotate` is the expensive step: it runs the NLP provider once per paragraph. The extraction functions (`tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`) are pure functions over `&[Sentence]` and never call the NLP provider themselves. Run the pipeline once, read the sentences back off the tree, and hand the same slice to as many extractors as you need:
 
 ```rust
-use matra::domain::{Format, RawDocument, Sentence};
+use matra::Input;
+use matra::domain::{Format, Sentence};
 
-let raw = RawDocument::new(text.to_string(), None, Format::Markdown);
-let mut doc = engine.annotate(&raw)?;
-engine.compose(&mut doc);
+let doc = engine.analyze(Input::text(text, Format::Markdown))?;
 
 let sentences: Vec<Sentence> = doc.sentences().cloned().collect();
 let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
 let phrases = matra::extraction::rake_keyphrases(&sentences, 10)?;
 ```
 
-Each extractor reads the same slice; nothing re-parses. Skip the `compose` call if you only want the extractions and not the metrics. The sentences you read off the tree are the ones the decomposer kept, so markdown headings, fenced code, and blockquotes never reach the extractors as if they were prose.
+Each extractor reads the same slice; nothing re-parses. Call `annotate` instead of `analyze` if you only want the extractions and not the metrics. The sentences you read off the tree are the ones the reader kept, so markdown headings, code, tables and quotes never reach the extractors as if they were prose.
 
 The two keyphrase extractors return score order, highest first. Phrases with equal scores can swap order between runs, and a tie at the requested count can change which phrase makes the list, so sort the result before diffing it across runs.
 
@@ -146,9 +143,9 @@ Every ratio in `ParagraphMetrics` and `DocumentMetrics` is an `Option`, and each
 
 | Slot | Filled when |
 |---|---|
-| `ParagraphMetrics::readability_grade` | the paragraph has more than 10 words and is not in a blockquote |
-| `ParagraphMetrics::lexical_density` | the paragraph has at least 1 word and is not in a blockquote |
-| `ParagraphMetrics::compression_ratio` | the paragraph has more than 50 words, is not in a blockquote, and its text is at most 256 KiB |
+| `ParagraphMetrics::readability_grade` | the paragraph has more than 10 words and is not a quote |
+| `ParagraphMetrics::lexical_density` | the paragraph has at least 1 word and is not a quote |
+| `ParagraphMetrics::compression_ratio` | the paragraph has more than 50 words, is not a quote, and its text is at most 256 KiB |
 | `DocumentMetrics::vocabulary_ttr` | the document's attached sentences hold at least one non-punctuation token |
 | `DocumentMetrics::nominalization_ratio` | the same condition as `vocabulary_ttr` |
 | `DocumentMetrics::passive_ratio`, `DocumentMetrics::mean_sentence_length` | the document holds at least one sentence |
@@ -156,35 +153,43 @@ Every ratio in `ParagraphMetrics` and `DocumentMetrics` is an `Option`, and each
 
 "Words" here means `Paragraph::word_count()`, the non-punctuation token count summed over the paragraph's attached sentences. A paragraph whose `sentences` vector is empty has a word count of zero and therefore no per-paragraph metrics at all.
 
-Blockquote paragraphs are never parsed. `annotate` skips them, so their `sentences` stays empty, their metric slots stay `None`, and they contribute nothing to `total_words` or `passive_ratio`, though they count in `paragraph_count`. They remain in the section tree with `in_blockquote = true` and their `text` kept, less its `>` markers.
+Quotes are never parsed. A paragraph inside a block quote, at any depth, has `kind` `ParagraphKind::Quote`; `annotate` skips it, so its `sentences` stays empty, its metric slots stay `None`, and it contributes nothing to `total_words` or `passive_ratio`, though it counts in `paragraph_count`. It stays in the section tree with its text, and its `span` covers the `>` markers.
 
-## What markdown decomposition drops
+## What the markdown reader skips
 
-A markdown document (by format argument or by `.md` extension) runs `MarkdownDecomposer`, which discards several kinds of content before any parsing happens:
+A markdown document (by format argument or by `.md` extension) is read as CommonMark, with tables, strikethrough, task lists and front matter. Headings, paragraphs, list items and quotes become the section tree; a `#` with no space after it, as in `#hashtag`, is text, and `## References` is a heading like any other. Each paragraph's `text` is what the parser reads, with the inline markup removed (emphasis, link and image syntax, the backticks of a code span) and escapes and entities decoded.
 
-- YAML frontmatter, when the very first line is `---`, through to the closing `---`
-- fenced code blocks, along with the fence lines
-- lines beginning with `|`, which is how table rows are excluded
-- everything from a line reading `## References` or `*References*` onward, to the end of the document
+What it does not analyse it records in `Document::skipped`, each entry a `SkippedKind` and a `span`, never dropping it silently:
 
-That last rule ends decomposition rather than skipping a block. A document with a `## References` heading in the middle loses every section after it, silently. If your documents use that heading for something other than a trailing bibliography, decompose with `PlainTextDecomposer` instead, or write your own `Decomposer`.
+- `FrontMatter`: YAML between `---` lines, or TOML between `+++` lines, at the very start
+- `Code`: fenced and indented code blocks
+- `Table`: a table, header and rows
+- `Html`: an HTML block
+- `ThematicBreak`: `---`, `***` or `___` on a line of its own
+- `LinkDefinition`: a link reference definition, `[label]: https://example.com`
+
+Every byte of the input that is not whitespace lies in exactly one heading span, paragraph span or skipped span. The test suite checks that over every conformance fixture and thousands of generated documents.
+
+## Spans
+
+Every heading (`Section::span`), paragraph, skipped construct, sentence and token carries a `Span { start, end }` into the analysed text, in UTF-8 bytes, so `&text[span.start..span.end]` is what it came from. For markdown and plain text the analysed text is the input; for block input it is the blocks' texts joined by a blank line. The text fields are normalized (a sentence's `text` is rebuilt from its tokens, a paragraph's has its markup removed); the span is the authority on where a value came from. `provenance.source` records the analysed text's length and SHA-256.
 
 ## Handle `domain::Error`
 
-`annotate` returns `domain::Result<T>`, an alias for `Result<T, domain::Error>`. The stream methods wrap the same error with its path: `analyze` and `analyze_one` return `DocumentError`, whose `path` field is `Some` for documents that came from disk and whose `error` field is the `domain::Error` to match on:
+`analyze` and `annotate` return `domain::Result<T>`, an alias for `Result<T, domain::Error>`. The stream wraps the same error with its path: `analyze_all` yields `DocumentError`, whose `path` field is `Some` for a file input and whose `error` field is the `domain::Error` to match on:
 
 ```rust
 use matra::domain::Error;
 
-for outcome in engine.analyze(matra::Ingest::path("notes.txt")?) {
+for outcome in engine.analyze_all(matra::Inputs::dir("notes/")?) {
     match outcome {
-        Ok(entry) => { /* entry.analysis */ }
+        Ok(doc) => { /* doc.metrics */ }
         Err(doc_err) => match doc_err.error {
             Error::InputTooLarge { limit, actual, what } => {
                 eprintln!("{what} gate: {actual} bytes over the {limit} cap");
             }
-            Error::UnsupportedFormat(format) => {
-                eprintln!("no decomposer registered for {format:?}");
+            Error::UnsupportedFormat { format, .. } => {
+                eprintln!("no reader for {format:?}");
             }
             Error::Io(e) => eprintln!("could not read the file: {e}"),
             Error::ParseFailed(msg) => eprintln!("the provider failed: {msg}"),
@@ -194,7 +199,7 @@ for outcome in engine.analyze(matra::Ingest::path("notes.txt")?) {
 }
 ```
 
-`Error::ParseFailed` also carries panics that crossed the UDPipe FFI boundary. The adapter wraps the C-side call in `catch_unwind` and converts a panic into `ParseFailed` with the payload message, so a bug inside UDPipe surfaces as a matchable error instead of aborting your process.
+`Error::ParseFailed` also carries panics that crossed the UDPipe FFI boundary. The adapter wraps the C-side call in `catch_unwind` and converts a panic into `ParseFailed` with the payload message, so a bug inside UDPipe surfaces as a matchable error instead of aborting your process. It is also what a provider returns when it cannot place a token in the text it was given, rather than reporting a span it guessed.
 
 `domain::Error` is `#[non_exhaustive]`, so a trailing `_ =>` (or a named catch-all binding, as above) is required even once you have named every variant that exists today. A future variant becomes a compile requirement for code that matches without a wildcard, and a routed catch-all for code that has one.
 
@@ -205,7 +210,7 @@ Token::builder(id: usize, text: String, lemma: String, pos: String, head: usize,
 Sentence::new(text: String, tokens: Vec<Token>) -> Sentence
 ```
 
-Every string argument is an owned `String`, not a `&str`, so a literal needs `.to_string()` on the way in. `TokenBuilder` takes the remaining CoNLL-U columns through `xpos`, `feats`, `deps` and `misc`, each also a `String`, plus `is_punct` for the derived flag, and `build()` hands back the `Token`. `feats` takes column 6 as CoNLL-U writes it and converts it into the token's `features` map:
+Every string argument is an owned `String`, not a `&str`, so a literal needs `.to_string()` on the way in. `TokenBuilder` takes the remaining CoNLL-U columns through `xpos`, `feats`, `deps` and `misc`, each also a `String`, plus `is_punct` for the derived flag and `span` for where the token lies in its text, and `build()` hands back the `Token`. `Sentence::new` derives the sentence's span from its first and last token. `feats` takes column 6 as CoNLL-U writes it and converts it into the token's `features` map:
 
 ```rust
 use matra::domain::Token;
@@ -227,16 +232,16 @@ assert_eq!(token.features.get("Mood").map(String::as_str), Some("Ind"));
 
 ## Analyze a directory
 
-`Ingest::path` on a directory streams one level of it, and collecting into `CorpusResult` partitions the outcomes:
+`Inputs::dir` lists one level of a directory, `analyze_all` streams it, and collecting into `CorpusResult` partitions the outcomes:
 
 ```rust
 use matra::domain::CorpusResult;
 
-let result: CorpusResult = engine.analyze(matra::Ingest::path("./corpus")?).collect();
+let result: CorpusResult = engine.analyze_all(matra::Inputs::dir("./corpus")?).collect();
 
 println!(
     "{} documents, {} words",
-    result.corpus.entries.len(),
+    result.corpus.documents.len(),
     result.corpus.total_words()
 );
 for err in &result.errors {
@@ -244,11 +249,11 @@ for err in &result.errors {
 }
 ```
 
-`Ingest::path` is `Err` only when the listing itself fails, such as the directory not existing. Everything else lands in `errors`: an unreadable file as `Io`, a file over the cap as `InputTooLarge` with `what = "file_source"`, a non-UTF-8 file as `Io` with kind `InvalidData`, a `.pdf` or `.docx` name that happens to hold UTF-8 as `UnsupportedFormat`, and a provider failure as `ParseFailed`. The partition always holds: entries plus errors equals documents consumed.
+`Inputs::dir` is `Err` only when the listing itself fails, such as the directory not existing. Everything else lands in `errors`, each carrying its path: an unreadable file as `Io`, a file over the cap as `InputTooLarge` with `what = "file_source"`, a non-UTF-8 file, a PDF or a DOCX (by signature or by name) as `UnsupportedFormat`, and a provider failure as `ParseFailed`. The partition always holds: documents plus errors equals inputs consumed, and each document names its file in `provenance.source.path`.
 
 Two kinds of entry are skipped without an error entry, so they will not appear in either list: subdirectories, because the walk is one level deep, and symlinks, which are filtered out with `symlink_metadata` so a link cannot redirect the read elsewhere. Files are attempted in sorted path order, and `Corpus` gives you `total_words()`, `passive_ratio()`, and `mean_readability()` across the whole set.
 
-You do not have to collect. The stream from `analyze` is lazy, so a loop that renders each document as it completes holds one document in memory at a time, not the corpus.
+You do not have to collect. The stream from `analyze_all` is lazy, so a loop that renders each document as it completes holds one document in memory at a time, not the corpus.
 
 ## Walk a `Document`
 

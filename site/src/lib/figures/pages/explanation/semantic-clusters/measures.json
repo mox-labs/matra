@@ -9,35 +9,53 @@
   "page": "explanation/semantic-clusters.md",
   "paragraphs": [
     {
-      "compression_ratio": 0.5845,
-      "in_blockquote": false,
+      "compression_ratio": 0.581,
+      "kind": "paragraph",
       "lexical_density": 0.5714,
-      "readability_grade": 6.2836,
+      "readability_grade": 7.1486,
       "sentences": 4,
-      "text": "matra can group the sentences of a document that say the same thing in different words. It embeds each sentence as a vector, scores every pair by cosine similarity, and links each pair whose score clears a threshold you choose. The clusters are the connected groups those links make. [Cluster sentences by meaning](../guides/semantic-clusters.md) has the calls.",
-      "words": 57
+      "text": "matra can group the sentences of a document that say the same thing in different words. It embeds each sentence as a vector, scores every pair by cosine similarity, and links each pair whose score clears a threshold you choose. The clusters are the connected groups those links make. Cluster sentences by meaning has the calls.",
+      "words": 56
     },
     {
-      "compression_ratio": 0.5786,
-      "in_blockquote": false,
+      "compression_ratio": 0.5672,
+      "kind": "paragraph",
       "lexical_density": 0.4828,
       "readability_grade": 10.0569,
       "sentences": 3,
-      "text": "Everything else matra returns is structure read off the text, checkable against its bytes. Clusters are not: they depend on a model's representation of meaning. So they arrive as their own value from a separate call, never as a field on `Document`, and they carry the identity of the model that produced them and the threshold you chose.",
+      "text": "Everything else matra returns is structure read off the text, checkable against its bytes. Clusters are not: they depend on a model's representation of meaning. So they arrive as their own value from a separate call, never as a field on Document, and they carry the identity of the model that produced them and the threshold you chose.",
       "words": 59
     },
     {
-      "compression_ratio": 0.5285,
-      "in_blockquote": false,
-      "lexical_density": 0.5,
-      "readability_grade": 6.6607,
-      "sentences": 9,
-      "text": "- **Co-membership is transitive, not pairwise.** Clusters are connected components, so sentence A and sentence C can share a cluster because both resemble B, without resembling each other. The edges travel in the result so you can see which pairs actually cleared the bar. A missing edge is no claim, not a low score.\n- **Singletons are always excluded.** A sentence with no pair above the threshold appears in no cluster, so \"not in any cluster\" is a meaningful count.\n- **The threshold is yours, and it does not travel.** Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus; the working value depends on the model, the domain and the text length. A cutoff calibrated on sentences is not the cutoff for whole documents, because a document vector is the mean over far more tokens.",
-      "words": 135
+      "compression_ratio": 0.6077,
+      "kind": "list_item",
+      "lexical_density": 0.5472,
+      "readability_grade": 7.3888,
+      "sentences": 4,
+      "text": "Co-membership is transitive, not pairwise. Clusters are connected components, so sentence A and sentence C can share a cluster because both resemble B, without resembling each other. The edges travel in the result so you can see which pairs actually cleared the bar. A missing edge is no claim, not a low score.",
+      "words": 53
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.48,
+      "readability_grade": 7.221,
+      "sentences": 2,
+      "text": "Singletons are always excluded. A sentence with no pair above the threshold appears in no cluster, so \"not in any cluster\" is a meaningful count.",
+      "words": 25
+    },
+    {
+      "compression_ratio": 0.6061,
+      "kind": "list_item",
+      "lexical_density": 0.4912,
+      "readability_grade": 6.4525,
+      "sentences": 3,
+      "text": "The threshold is yours, and it does not travel. Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus; the working value depends on the model, the domain and the text length. A cutoff calibrated on sentences is not the cutoff for whole documents, because a document vector is the mean over far more tokens.",
+      "words": 57
     },
     {
       "compression_ratio": 0.5884,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.3929,
       "readability_grade": 3.7387,
       "sentences": 4,
@@ -45,26 +63,8 @@
       "words": 56
     },
     {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<figure-clusters input=\"paraphrases\" />",
-      "words": 5
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.8,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<details>\n<summary>What sentence 8 did</summary>",
-      "words": 7
-    },
-    {
       "compression_ratio": 0.5606,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4746,
       "readability_grade": 3.212,
       "sentences": 2,
@@ -72,17 +72,8 @@
       "words": 59
     },
     {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 1.0,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "</details>",
-      "words": 2
-    },
-    {
       "compression_ratio": 0.5605,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.623,
       "readability_grade": 16.423,
       "sentences": 2,

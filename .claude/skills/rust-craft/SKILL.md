@@ -36,8 +36,8 @@ pub enum Error {
     ParseFailed(String),
     #[error("{what} input too large: {actual} > limit {limit}")]
     InputTooLarge { limit: usize, actual: usize, what: &'static str },
-    #[error("unsupported format: {0:?}")]
-    UnsupportedFormat(Format),
+    #[error("{}", FormatSubject(.format.as_ref(), *.feature))]
+    UnsupportedFormat { format: Option<Format>, feature: Option<&'static str> },
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 }

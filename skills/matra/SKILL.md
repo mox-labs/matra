@@ -42,7 +42,7 @@ Files land in XDG locations: the config at `$XDG_CONFIG_HOME/matra/config.toml` 
 
 `analyze`, `summarize` and `keyphrases` each read one file, or `-` for stdin with `--stdin-filename` naming it. A directory is refused, because a command that reports on one document cannot report on a directory of them. Under `--json` each emits the same envelope, and so do `config show` and `--skill`; `completions` prints a script and ignores `--json`. Four keys at the top level: `format_version` (the integer `2` today), `command`, `input` (the path or the stdin name; for `config show` the config file's path when it exists and null when not; null for `--skill`, which reads none), and `result`. Pin a consumer to a `format_version` you tested against. See `json` for the field by field shape.
 
-`analyze` parses the document and measures it. `result` is a `Document`: `provenance` (the matra version, the schema version, the parser and its model, the format, and the input's digest), `sections`, each with `heading`, `level` and `paragraphs`, each paragraph with `text`, `in_blockquote`, `sentences` and its `metrics`, and the document's own `metrics`, the counts and ratios the table prints among them. The document's schema version is `provenance.schema`, `"2.0"` today: ignore fields you do not recognize, treat every string set as open, and reject a major you do not know. Add `--sections` for a per-section table of counts.
+`analyze` parses the document and measures it. `result` is a `Document`: `provenance` (the matra version, the schema version, the parser and its model, the format, and the input's digest), `sections`, each with `heading`, `level`, `span` and `paragraphs`, each paragraph with `span`, `text`, `kind` (`paragraph`, `quote`, `list_item`), `sentences` and its `metrics`, the document's own `metrics`, the counts and ratios the table prints among them, and `skipped`, what the reader saw and did not analyse. Every `span` counts UTF-8 bytes of the input: slice the file's bytes with it to find where a value came from, since the text fields are normalized. The document's schema version is `provenance.schema`, `"2.0"` today: ignore fields you do not recognize, treat every string set as open, and reject a major you do not know. Add `--sections` for a per-section table of counts.
 
 <!-- needs: model -->
 
@@ -110,7 +110,7 @@ Input is capped at 8 MiB, checked before decoding. Summarizers cap at 2,000 sent
 
 Seven failure kinds exist, and `invalid_input` is the one that means the call site is wrong rather than the text: mismatched vector dimensions, a non-finite threshold, an unknown config key. Fix the call, not the document. Every kind, its Python exception, and what to do about it is in `errors`.
 
-Blockquote paragraphs are never parsed and never measured. Markdown decomposition drops frontmatter, fenced code and table rows, and stops at a `## References` heading.
+Quotes are never parsed and never measured. Markdown is read as CommonMark: front matter, code, tables, HTML blocks, thematic breaks and link reference definitions are not analysed, and each is listed in `skipped` with its `kind` and `span` rather than dropped. A file that is a PDF, a DOCX, or not UTF-8 text fails as `unsupported_format`; any other UTF-8 file with an extension matra does not know reads as plain text.
 
 ## Where matra applies
 

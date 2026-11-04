@@ -58,7 +58,7 @@ All eleven cross to Python. The methods below are Rust only.
 
 | Type | Fields (cross to Python) | Methods (Rust only) |
 |---|---|---|
-| `Paragraph` | `text`, `in_blockquote`, `sentences`, `metrics` | `word_count()`, `sentence_count()` |
+| `Paragraph` | `span`, `text`, `kind`, `sentences`, `metrics` | `word_count()`, `sentence_count()` |
 | `Section` | `heading`, `level`, `paragraphs` | none |
 | `Document` | `provenance`, `sections`, `metrics` | `paragraphs()`, `sentences()`, `tokens()` |
 
@@ -130,17 +130,18 @@ Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `
 
 | Value | Constructors | Carries |
 |---|---|---|
-| `Ingest` | `text(string, format)`, `path(file or directory)` | the source: a string is a stream of one, a directory a stream of many |
-| `Engine` | `with_defaults()`, `from_config(cfg)`, `new(provider, decomposer table)` | `analyze` over a stream, `analyze_one`, or the stages `annotate` and `compose` |
+| `Input` | `text(string, format)`, `bytes(data, format)`, `file(path)`, `blocks(blocks)` | one document: text, bytes, a file, or headings and paragraphs you supply |
+| `Inputs` | `dir(path)` | the files in a directory, as an iterator of `Input` |
+| `Engine` | `with_defaults()`, `from_config(cfg)`, `new(provider)` | `analyze` one input, `analyze_all` of many, or the stages `annotate` and `compose` |
 | `Config` | `resolve()`, `from_sources(...)`, `with_model_dir(dir)` | where models live and what the defaults are, plus the `ValueSource` each value came from |
 
-`Engine::with_defaults()` is the no-setup constructor: resolve a `Config`, then build the standard pipeline from it, fetching the pinned English model if it is not on disk. `Engine::new` is the explicit one, and it is what you reach for with your own provider or decomposer table.
+`Engine::with_defaults()` is the no-setup constructor: resolve a `Config`, then build the standard pipeline from it, fetching the pinned English model if it is not on disk. `Engine::new` is the explicit one, and it is what you reach for with your own provider.
 
-`engine.analyze(ingest)` returns a lazy iterator of per-document results. Collecting it into `CorpusResult` partitions successes from failures, and one bad file does not abort the stream. On the Python surface the same walk is `Matra.analyze_path(path)`, which returns the items in order for the caller to partition.
+`engine.analyze_all(inputs)` returns a lazy iterator of per-document results. Collecting it into `CorpusResult` partitions successes from failures, and one bad file does not abort the stream. On the Python surface the same walk is `Matra.analyze_path(path)`, which returns the items in order for the caller to partition.
 
 ## Traceability
 
-`Paragraph.text` is the paragraph as the decomposer cut it from the input, trimmed at both ends, with a blockquote's `>` markers removed. `Sentence.text` is rebuilt by the provider: the UDPipe adapter joins the token forms with a space unless a token carries `SpaceAfter=No`, so its whitespace can differ from the source. Neither is matched back to the input to place it. Each paragraph is parsed on its own and its sentences are attached to it, so the chain from a token up through its sentence, paragraph, and section holds by construction rather than by text matching.
+Every heading, paragraph, sentence and token carries a `span` into the analysed text, in UTF-8 bytes, and `skipped` lists what the reader saw and did not analyse (a table, a code block, front matter), each with its span. Every byte of a markdown or plain-text input that is not whitespace lies in exactly one heading, paragraph or skipped span, so nothing is dropped without a trace. The text fields are normalized: `Paragraph.text` is what the parser reads, a markdown paragraph's inline markup removed, and `Sentence.text` is rebuilt by the provider, the UDPipe adapter joining the token forms with a space unless a token carries `SpaceAfter=No`. The span, not the text, says where a value came from. Each paragraph is parsed on its own and its sentences are attached to it, so the chain from a token up through its sentence, paragraph, and section holds by construction rather than by text matching.
 
 ## Where to go next
 

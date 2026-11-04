@@ -1,18 +1,18 @@
 # How matra runs
 
-`engine.analyze(Ingest::path("essay.md")?)` yields a `Document` or a `DocumentError`.
+`engine.analyze(Input::file("essay.md"))` yields a `Document` or an `Error`.
 
 ## One call, end to end
 
-Take a 40 KB markdown file. Pulling it through the pipeline runs four things in order, and only the last one is expensive.
+Take a 40 KB markdown file. Analysing it runs five things in order, each a crate-private module hiding one decision, and only the last two are expensive.
 
-**Ingest.** When the stream is pulled, `FileSource` calls `symlink_metadata`, which does not traverse. A symlink is refused. Anything that is not a regular file is refused. A file whose metadata size exceeds `MAX_INPUT_BYTES`, 8 MiB, is refused before a byte is read, so a 1 GB file costs one `stat` call rather than a GB of resident memory. Then `read_to_string` pulls all 40 KB in, and the `.md` extension sets `Format::Markdown` on the `RawDocument`.
+**Fetch.** `Engine::annotate` reads the file through `FileSource`, which calls `symlink_metadata`, which does not traverse. A symlink is refused, and a directory is refused naming `Inputs::dir`. Anything else that is not a regular file is refused. A file whose metadata size exceeds `MAX_INPUT_BYTES`, 8 MiB, is refused before a byte is read, so a 1 GB file costs one `stat` call rather than a GB of resident memory. Then all 40 KB are read in as bytes.
 
-**Dispatch.** `Engine::annotate` re-checks the same 8 MiB bound on the string it now holds (two gates, same limit, different `what` labels, because text from `Ingest::text` never passed the first one), then looks the format up in the engine's decomposer table. No entry means `Error::UnsupportedFormat`; for `Markdown` the entry is `MarkdownDecomposer`.
+**Detect.** The bytes are checked against the cap again (the same limit under the `"input"` label, because bytes and text handed in directly never passed the first gate), then given a format: a PDF or DOCX signature first, then a format the caller named, then the extension, so `.md` is `Format::Markdown`. A format with no reader in the engine's table is `Error::UnsupportedFormat`; bytes that are not UTF-8 are too. Otherwise the bytes become the analysed text, with no copy.
 
-**Decompose.** `MarkdownDecomposer` walks the file line by line, once. Frontmatter, fenced code, and table rows are dropped. A `#` line closes the current section and opens a new one. A `>` line marks its paragraph as a blockquote. A blank line flushes the accumulated paragraph. Output is a `Vec<Section>` holding fresh `String`s: a second copy of the prose.
+**Read.** The markdown reader runs a CommonMark parser over the text once, and turns its events into headings and paragraphs, each with its span in the text and its own text with the inline markup removed: a second copy of the prose. Front matter, code, tables and HTML are recorded in `skipped` with their spans rather than dropped. The structure step then makes the blocks a section tree, a heading opening each section.
 
-**Parse and measure.** `annotate` walks every paragraph in document order, skips the blockquotes, and calls `nlp.parse` on each remaining paragraph's text. Sixty body paragraphs means sixty calls into UDPipe, and each call's sentences are stored on their paragraph. Then `compose` runs four metric functions over the attached tree; the document-level pair aggregates over the same attachment, so there is no second sentence set to keep in agreement.
+**Parse and measure.** `annotate` walks every paragraph in document order, skips the quotes, and calls `nlp.parse` on each remaining paragraph's text. Sixty body paragraphs means sixty calls into UDPipe, and each call's sentences are stored on their paragraph, with the token spans the parser reports against the paragraph's text mapped back into the file's bytes. Then `compose` runs four metric functions over the attached tree; the document-level pair aggregates over the same attachment, so there is no second sentence set to keep in agreement.
 
 <svg class="mx-res" role="img" aria-label="Residency chart: three allocations of the same prose, showing which are alive at each stage of one pipeline call" viewBox="0 0 720 180" width="720" height="180" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
 <title>What is alive at each stage of one pipeline call</title>
@@ -28,9 +28,9 @@ Take a 40 KB markdown file. Pulling it through the pipeline runs four things in 
 .mx-res .band{fill:currentColor;fill-opacity:.05}
 </style>
 <rect class="band" x="430" y="34" width="180" height="118"/>
-<text class="hd" x="205" y="26">ingest</text>
-<text class="hd" x="295" y="26">dispatch</text>
-<text class="hd" x="385" y="26">decompose</text>
+<text class="hd" x="205" y="26">fetch</text>
+<text class="hd" x="295" y="26">detect</text>
+<text class="hd" x="385" y="26">read</text>
 <text class="hd" x="475" y="26">parse</text>
 <text class="hd" x="565" y="26">measure</text>
 <text class="hd" x="655" y="26">returned</text>
@@ -44,16 +44,16 @@ Take a 40 KB markdown file. Pulling it through the pipeline runs four things in 
 <rect class="bar" x="340" y="92" width="360" height="16" rx="3"/>
 <rect class="bar" x="430" y="122" width="270" height="16" rx="3"/>
 <text class="lb" x="150" y="74">String, the file text</text>
-<text class="lb" x="150" y="104">Vec&lt;Section&gt;, a second copy</text>
+<text class="lb" x="150" y="104">the blocks, a second copy</text>
 <text class="lb" x="150" y="134">Vec&lt;Sentence&gt; per paragraph</text>
 <text class="nt" x="160" y="168">bar length is how long an allocation is alive, not how large it is</text>
 </svg>
 
-At peak, three representations of the same document are resident at once: the original `String`, the section copies, and the parsed tokens hanging off the paragraphs.
+At peak, three representations of the same document are resident at once: the original `String`, the paragraph copies, and the parsed tokens hanging off the paragraphs.
 
 For a 40 KB input none of that matters. For a caller sizing a batch job against a memory ceiling it does, because every `Token` carries nine owned `String`s.
 
-A directory changes the shape by streaming. `Ingest::path` lists the entries up front but reads nothing until pulled, and each pull runs one document through the whole pipeline before the next file is read. One document's representations are resident at a time; only what you retain accumulates, and collecting into `CorpusResult` retains everything.
+A directory changes the shape by streaming. `Inputs::dir` lists the entries up front but reads nothing until pulled, and each pull of `analyze_all` runs one document through the whole pipeline before the next file is read. One document's representations are resident at a time; only what you retain accumulates, and collecting into `CorpusResult` retains everything.
 
 ## The model is the expensive thing
 
@@ -162,9 +162,9 @@ Each carries its own applicability condition, and this is where unexplained `Non
 
 | Slot | Written when |
 |---|---|
-| `readability_grade` | more than 10 words, not a blockquote |
-| `lexical_density` | at least one word, not a blockquote |
-| `compression_ratio` | more than 50 words, not a blockquote, paragraph text at most 256 KiB |
+| `readability_grade` | more than 10 words, not a quote |
+| `lexical_density` | at least one word, not a quote |
+| `compression_ratio` | more than 50 words, not a quote, paragraph text at most 256 KiB |
 | `vocabulary_ttr`, `nominalization_ratio` | at least one word in the document |
 | `passive_ratio` | at least one sentence in the document |
 
@@ -207,7 +207,7 @@ Every guard sits at the earliest point where the check is still cheap.
 <line class="tick" x1="330" y1="40" x2="330" y2="52"/>
 <text class="gd" x="330" y="64">size constant, then SHA-256</text>
 <text class="er" x="330" y="75">Error::ModelInvalid</text>
-<text class="en" x="162" y="133">analyze(Ingest::path(p)?)</text>
+<text class="en" x="162" y="133">analyze(Input::file(p))</text>
 <line class="lane" x1="170" y1="130" x2="630" y2="130"/>
 <line class="cap" x1="170" y1="124" x2="170" y2="136"/>
 <line class="cap" x1="630" y1="124" x2="630" y2="136"/>
@@ -242,7 +242,7 @@ The boundary that converts such a panic into an `Error` lives in `nlp/udpipe.rs`
 
 Two guards live in the domain types rather than at an edge, because a parse arrives from outside and its shape is not guaranteed. `Sentence::tree_depth` is computed by walking head references with a visited set, and is `None` when they form a cycle. `Sentence::subtree` carries the same visited set so it terminates. The `None` is deliberate: an earlier version capped depth at a magic 20, which silently truncated malformed parses and legitimate deep ones alike, and a sentinel number would read as a very deep tree to anyone who did not check for it.
 
-Directory reads fail differently. The stream yields successes and per-document failures side by side, so one unreadable file does not cost you the other ninety-nine; `Ingest::path` is `Err` only when the listing itself fails. Full detail on every gate, every variant, and the Python exception each maps to is in [Errors](../reference/errors.md).
+Directory reads fail differently. `analyze_all` yields successes and per-document failures side by side, so one unreadable file does not cost you the other ninety-nine; `Inputs::dir` is `Err` only when the listing itself fails. Full detail on every gate, every variant, and the Python exception each maps to is in [Errors](../reference/errors.md).
 
 ## What you can replace
 
@@ -346,9 +346,9 @@ Every arrow points down, and that is the rule: a module imports from the row bel
 
 `Config` is not one of the extension points below, and the distinction is worth keeping. An extension point substitutes an implementation; `Config` only supplies values a caller could have passed as arguments. That is why it carries locations and defaults and never behavior: the moment a file selects which metrics run, configuration stops being adaptability and becomes dispatch that nothing type-checks.
 
-Three extension points are dispatched at runtime. `NlpProvider` has a single method, and the engine holds it as `Box<dyn NlpProvider>`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. `Embedder` is the same shape one tier over: `embed_and_cluster` takes it as `&dyn Embedder`, and its `identity` travels into every result so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library. And `Decomposer` dispatch is a value: the engine's `Decomposers` table maps each `Format` to a boxed decomposer, `standard_decomposers()` is merely the table this build ships, and `Decomposers::new().with(format, decomposer)` builds a different one. Registering a format is data flow, not a code change.
+Two extension points are dispatched at runtime. `NlpProvider` has two methods, `parse` and `identity`, and the engine holds it as `Box<dyn NlpProvider>`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. `Embedder` is the same shape one tier over: `embed_and_cluster` takes it as `&dyn Embedder`, and its `identity` travels into every result so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library.
 
-`Source` stays static: `Ingest`'s constructors name the file and directory adapters. To ingest from somewhere else, construct `RawDocument` values yourself and feed them to `Engine::analyze` as `Ok` items; the pipeline does not care where they came from.
+The input side is private to the crate. `Decomposer` dispatch is a value inside it, a table mapping each `Format` to a boxed reader, so a new format is a reader file and a registration line in `lib.rs` and changes no published signature. `Source` stays static: `Input::file` and `Inputs::dir` name the file and directory adapters. To read from somewhere else, fetch the bytes yourself and hand them in with `Input::bytes`; to analyse a format matra has no reader for, hand in its headings and paragraphs with `Input::blocks`. The pipeline does not care where they came from.
 
 The metric suite is data as well. `Metric`, `run_suite`, and `Document::new` are all public, so a caller can assemble a different suite and run it over a document. `compose` always runs the default four.
 

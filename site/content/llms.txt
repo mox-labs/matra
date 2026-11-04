@@ -29,11 +29,11 @@
 - [Introduction](https://mox-labs.github.io/matra/introduction.html): matra reports the structure of text and measurements over it.
 - [Concepts](https://mox-labs.github.io/matra/explanation/concepts.html): Analysis returns one nested value. Each level owns the level below it and carries its own data.
 - [Situation model](https://mox-labs.github.io/matra/explanation/situation-model.html): matra reports the structure of text and measurements over it.
-- [Programming model](https://mox-labs.github.io/matra/explanation/programming-model.html): `Ingest` is where documents come from. `Engine` is what happens to each one.
+- [Programming model](https://mox-labs.github.io/matra/explanation/programming-model.html): `Input` is one document. `Engine` is what happens to it.
 - [One core, three install routes](https://mox-labs.github.io/matra/explanation/install-routes.html): matra is one Rust core published three ways: a library on crates.io, a command-line binary built from the same crate, and a Python package on PyPI. The routes differ in what they compile and what they print about themselves, and not in what an analysis returns.
 - [What the clustering threshold does](https://mox-labs.github.io/matra/explanation/semantic-clusters.html): matra can group the sentences of a document that say the same thing in different words.
 - [Pragmatics](https://mox-labs.github.io/matra/explanation/pragmatics.html): Which call to reach for, and how to read what it returns: the choices behind the summarizers, the keyphrase extractors, the document measures, the clustering threshold and the models, and why each answer is what it is.
-- [How matra runs](https://mox-labs.github.io/matra/architecture/design.html): `engine.analyze(Ingest::path("essay.md")?)` yields a `Document` or a `DocumentError`.
+- [How matra runs](https://mox-labs.github.io/matra/architecture/design.html): `engine.analyze(Input::file("essay.md"))` yields a `Document` or an `Error`.
 - [How matra is maintained](https://mox-labs.github.io/matra/explanation/how-matra-is-maintained.html): matra is maintained by its owner and by Claude, Anthropic's AI, working through a set of agents, skills and checks that live in the repository beside the code.
 
 ## Reference

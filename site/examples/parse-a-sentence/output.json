@@ -19,16 +19,29 @@
     {
       "heading": null,
       "level": 0,
+      "span": null,
       "paragraphs": [
         {
+          "span": {
+            "start": 0,
+            "end": 116
+          },
           "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
-          "in_blockquote": false,
+          "kind": "paragraph",
           "sentences": [
             {
+              "span": {
+                "start": 0,
+                "end": 116
+              },
               "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 0,
+                    "end": 2
+                  },
                   "text": "It",
                   "lemma": "it",
                   "pos": "PRON",
@@ -48,6 +61,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 3,
+                    "end": 5
+                  },
                   "text": "is",
                   "lemma": "be",
                   "pos": "AUX",
@@ -67,6 +84,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 6,
+                    "end": 7
+                  },
                   "text": "a",
                   "lemma": "a",
                   "pos": "DET",
@@ -83,6 +104,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 8,
+                    "end": 13
+                  },
                   "text": "truth",
                   "lemma": "truth",
                   "pos": "NOUN",
@@ -98,6 +123,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 14,
+                    "end": 25
+                  },
                   "text": "universally",
                   "lemma": "universally",
                   "pos": "ADV",
@@ -111,6 +140,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 26,
+                    "end": 38
+                  },
                   "text": "acknowledged",
                   "lemma": "acknowledge",
                   "pos": "VERB",
@@ -128,6 +161,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 38,
+                    "end": 39
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -141,6 +178,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 40,
+                    "end": 44
+                  },
                   "text": "that",
                   "lemma": "that",
                   "pos": "PRON",
@@ -157,6 +198,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 45,
+                    "end": 46
+                  },
                   "text": "a",
                   "lemma": "a",
                   "pos": "DET",
@@ -173,6 +218,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 47,
+                    "end": 53
+                  },
                   "text": "single",
                   "lemma": "single",
                   "pos": "ADJ",
@@ -188,6 +237,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 54,
+                    "end": 57
+                  },
                   "text": "man",
                   "lemma": "man",
                   "pos": "NOUN",
@@ -203,6 +256,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 58,
+                    "end": 60
+                  },
                   "text": "in",
                   "lemma": "in",
                   "pos": "ADP",
@@ -216,6 +273,10 @@
                 },
                 {
                   "id": 13,
+                  "span": {
+                    "start": 61,
+                    "end": 71
+                  },
                   "text": "possession",
                   "lemma": "possession",
                   "pos": "NOUN",
@@ -231,6 +292,10 @@
                 },
                 {
                   "id": 14,
+                  "span": {
+                    "start": 72,
+                    "end": 74
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -244,6 +309,10 @@
                 },
                 {
                   "id": 15,
+                  "span": {
+                    "start": 75,
+                    "end": 76
+                  },
                   "text": "a",
                   "lemma": "a",
                   "pos": "DET",
@@ -260,6 +329,10 @@
                 },
                 {
                   "id": 16,
+                  "span": {
+                    "start": 77,
+                    "end": 81
+                  },
                   "text": "good",
                   "lemma": "good",
                   "pos": "ADJ",
@@ -275,6 +348,10 @@
                 },
                 {
                   "id": 17,
+                  "span": {
+                    "start": 82,
+                    "end": 89
+                  },
                   "text": "fortune",
                   "lemma": "fortune",
                   "pos": "NOUN",
@@ -290,6 +367,10 @@
                 },
                 {
                   "id": 18,
+                  "span": {
+                    "start": 90,
+                    "end": 94
+                  },
                   "text": "must",
                   "lemma": "must",
                   "pos": "AUX",
@@ -305,6 +386,10 @@
                 },
                 {
                   "id": 19,
+                  "span": {
+                    "start": 95,
+                    "end": 97
+                  },
                   "text": "be",
                   "lemma": "be",
                   "pos": "AUX",
@@ -320,6 +405,10 @@
                 },
                 {
                   "id": 20,
+                  "span": {
+                    "start": 98,
+                    "end": 100
+                  },
                   "text": "in",
                   "lemma": "in",
                   "pos": "ADP",
@@ -333,6 +422,10 @@
                 },
                 {
                   "id": 21,
+                  "span": {
+                    "start": 101,
+                    "end": 105
+                  },
                   "text": "want",
                   "lemma": "want",
                   "pos": "NOUN",
@@ -348,6 +441,10 @@
                 },
                 {
                   "id": 22,
+                  "span": {
+                    "start": 106,
+                    "end": 108
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -361,6 +458,10 @@
                 },
                 {
                   "id": 23,
+                  "span": {
+                    "start": 109,
+                    "end": 110
+                  },
                   "text": "a",
                   "lemma": "a",
                   "pos": "DET",
@@ -377,6 +478,10 @@
                 },
                 {
                   "id": 24,
+                  "span": {
+                    "start": 111,
+                    "end": 115
+                  },
                   "text": "wife",
                   "lemma": "wife",
                   "pos": "NOUN",
@@ -392,6 +497,10 @@
                 },
                 {
                   "id": 25,
+                  "span": {
+                    "start": 115,
+                    "end": 116
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -450,5 +559,6 @@
     "vocabulary_ttr": 0.7391304347826086,
     "nominalization_ratio": 0.0,
     "passive_ratio": 0.0
-  }
+  },
+  "skipped": []
 }

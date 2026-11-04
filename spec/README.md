@@ -22,7 +22,8 @@ spec/
                      conformance (potion-base-8M by artifact digest)
   tests/corpus/      the corpus item shapes and the error kind vocabulary
   tests/cli/         the command line's JSON envelope
-  schema/v2/         the JSON Schema for schema 2.x documents
+  schema/v2/         the JSON Schema for schema 2.x documents, and the
+                     schema of the `blocks` input format
 ```
 
 Each crust has a runner that loads every fixture in `spec/tests/` and asserts
@@ -71,11 +72,15 @@ model at all.
 }
 ```
 
-`format` is `plain_text` or `markdown`, the format vocabulary every surface shares, selecting which decomposer runs. `expect.metrics` mirrors the document's `metrics`, and a sentence pins only the detections it names: an absent key is not checked, and a `root_mood` of `null` pins "no mood".
+`format` is `plain_text` or `markdown`, the format vocabulary every surface shares, selecting which reader runs. `expect.metrics` mirrors the document's `metrics`, and a sentence pins only the detections it names: an absent key is not checked, and a `root_mood` of `null` pins "no mood".
+
+The optional `expect.sections` (each heading's `heading`, `level` and `span`), `expect.paragraphs` (each paragraph's `kind` and `span`) and `expect.skipped` pin the reader's output, and a `span` on a sentence or a token pins where it lies. Every span counts UTF-8 bytes of `input`. Whatever a fixture pins, every runner also checks two things over every fixture: each token's span slices `input` to the token's text, and the accounting law L9, that every byte of `input` that is not whitespace lies in exactly one heading, paragraph or skipped span. `markdown-structure.json` is the markdown fixture: front matter, a `## References` heading, inline markup, a quote, a list item and a table.
 
 ## The schema
 
 `schema/v2/document.schema.json` is the published JSON Schema for a document whose `provenance.schema` is `2.x`. A minor version adds optional fields only, so the schema leaves objects open: a reader of `2.0` accepts a `2.1` document. Every runner that produces a document validates it against the schema with every object closed, so a field matra emits but the schema does not list fails the run that emitted it: `tests/document_schema/mod.rs` for the Rust lanes and `python/tests/document_schema.py` for the Python ones. `tests/schema.rs` does the same with no model, so the check runs in every `cargo test`.
+
+`schema/v2/blocks.schema.json` is the schema of an input, not an output: the JSON array of headings and paragraphs the `blocks` format reads. It is closed, since matra refuses a `kind` or a field it does not know; `tests/schema.rs` holds the reader and the schema to the same refusals.
 
 ## The CLI lane
 
@@ -103,15 +108,17 @@ Floating-point expectations compare within `1e-6`.
 ## The corpus lane
 
 `tests/corpus/items.json` pins what one document's result looks like when it
-crosses a binding: the two item shapes a walk yields, and the kind vocabulary a
-consumer branches on instead of reading a message. `DocumentError` has no serde
+crosses a binding: the two item shapes a walk yields (the document itself, or
+an error with its path), and the kind vocabulary a consumer branches on instead
+of reading a message. `DocumentError` has no serde
 form, because it wraps `std::io::Error`, so every binding materializes those
 fields by hand, and hand-written projections are exactly where a key gets
 renamed on one side only.
 
 Each runner asserts the vocabulary against its own surface, `Error::kind` in
 Rust and `matra.ERROR_KINDS` in Python, and then walks a directory holding one
-readable file and one whose bytes are not UTF-8. The Rust runner stubs the
+readable file and one whose bytes are not UTF-8, which is an
+`unsupported_format` item. The Rust runner stubs the
 parser with a provider that returns no sentences, so it needs no model; what it
 pins is the shape and the order, not the parse, which the parse fixtures
 already cover. The Python runner reaches the walk through `analyze_path`, a

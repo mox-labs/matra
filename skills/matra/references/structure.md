@@ -11,13 +11,13 @@ One nested value. Each level owns the level below it and carries its own data.
 
 | Level | Carries |
 |---|---|
-| document | Its `provenance`, the section list, and its `metrics`: counts, sentence length, `vocabulary_ttr`, `nominalization_ratio`, `passive_ratio` |
-| section | `heading`, `level`, and its paragraphs in document order |
-| paragraph | Its `text`, `in_blockquote`, its sentences, plus its three `metrics` |
-| sentence | `text`, id-sorted `tokens`, `word_count`, `tree_depth`, `passive`, and the six structural fields |
-| token | The ten CoNLL-U columns, `features` as a map, plus the derived `is_punct` |
+| document | Its `provenance`, the section list, its `metrics` (counts, sentence length, `vocabulary_ttr`, `nominalization_ratio`, `passive_ratio`), and `skipped`, what the reader did not analyse |
+| section | `heading`, `level`, the heading's `span`, and its paragraphs in document order |
+| paragraph | Its `span`, `text` and `kind`, its sentences, plus its three `metrics` |
+| sentence | `span`, `text`, id-sorted `tokens`, `word_count`, `tree_depth`, `passive`, and the six structural fields |
+| token | The ten CoNLL-U columns, `features` as a map, its `span`, plus the derived `is_punct` |
 
-`Paragraph.text` is the paragraph as the decomposer cut it from the input: trimmed, with a blockquote's `>` markers removed. `Sentence.text` is rebuilt from the tokens, so its spacing can differ from the source. Each non-blockquote paragraph is parsed on its own, so a sentence always belongs to exactly one paragraph and is never matched back to it by comparing text. That is why the chain from a token up to its section always holds.
+`Paragraph.text` is the text the parser read, a markdown paragraph's inline markup removed. `Sentence.text` is rebuilt from the tokens, so its spacing can differ from the source. Both are normalized; each `span` counts UTF-8 bytes of the input, and slicing the input's bytes with it gives the source of a value exactly. Each paragraph that is not a quote is parsed on its own, so a sentence always belongs to exactly one paragraph and is never matched back to it by comparing text. That is why the chain from a token up to its section always holds.
 
 <!-- needs: model -->
 
@@ -90,10 +90,10 @@ Reporting verbs and root adverbials are open word classes, so no lexicon ships: 
 
 The parser is UDPipe with the English Web Treebank model, Universal Dependencies 2.5. It performs no named entity recognition, no coreference resolution, and no semantic role labeling. Tags and relations are statistical predictions, not ground truth, and the error rate on text unlike the training corpus is higher than on text like it. Everything downstream inherits those errors.
 
-Two shipped-adapter details that matter when reporting results: `deps` (CoNLL-U column 9) is always `_`, because the binding does not surface enhanced dependencies, and `Sentence.text` is rebuilt from token surface forms rather than sliced out of your input.
+Two shipped-adapter details that matter when reporting results: `deps` (CoNLL-U column 9) is always `_`, because the binding does not surface enhanced dependencies, and `Sentence.text` is rebuilt from token surface forms rather than sliced out of your input; its `span` is the slice.
 
 ## Which text gets parsed
 
-The format decides the segmentation. `notes.md` is decomposed as markdown and the same bytes as `notes.txt` are decomposed as plain text, which gives different paragraphs and therefore different sentences. On markdown, decomposition drops frontmatter, fenced code blocks and table rows, and stops entirely at a heading reading `## References`. Blockquote paragraphs are kept in the tree with `in_blockquote` true and are never parsed.
+The format decides the segmentation. `notes.md` is read as markdown and the same bytes as `notes.txt` are read as plain text, which gives different paragraphs and therefore different sentences. Markdown is read as CommonMark: list items are paragraphs of `kind` `list_item`, inline markup is removed from the text the parser reads, and front matter, code, tables, HTML blocks, thematic breaks and link reference definitions are listed in `skipped` with their spans rather than parsed. `## References` is a heading like any other, and a `#hashtag` is text. Quotes are kept in the tree with `kind` `quote` and are never parsed. A PDF, a DOCX or bytes that are not UTF-8 fail as `unsupported_format`; any other UTF-8 file reads as plain text.
 
 Report which format the numbers were produced under. It is part of the result.

@@ -10,7 +10,7 @@
   "paragraphs": [
     {
       "compression_ratio": 0.5305,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4923,
       "readability_grade": 9.2644,
       "sentences": 4,
@@ -18,17 +18,44 @@
       "words": 66
     },
     {
-      "compression_ratio": 0.5568,
-      "in_blockquote": false,
-      "lexical_density": 0.7196,
-      "readability_grade": 11.3233,
-      "sentences": 8,
-      "text": "- **Structure.** Sections, paragraphs, sentences, and full CoNLL-U tokens, plus the structural primitives read off each dependency tree: negations, modals, clausal complements, root adverbials, Hearst pairs, and the root clause's mood.\n- **Measures.** Readability, lexical density, and compression ratio per paragraph; counts, sentence length, vocabulary TTR, nominalization ratio, and passive ratio per document. Every document also records where it came from: the parser and its model, and a digest of the input.\n- **Extraction.** Two extractive summarizers (TF-IDF, TextRank) and two keyphrase extractors (RAKE, YAKE).\n- **Semantic clusters.** Sentence embeddings grouped by cosine similarity, behind the `model2vec` feature, carrying the identity of the model that produced them.",
-      "words": 106
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.8,
+      "readability_grade": 11.8933,
+      "sentences": 2,
+      "text": "Structure. Sections, paragraphs, sentences, and full CoNLL-U tokens, plus the structural primitives read off each dependency tree: negations, modals, clausal complements, root adverbials, Hearst pairs, and the root clause's mood.",
+      "words": 32
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "list_item",
+      "lexical_density": 0.7,
+      "readability_grade": 13.21,
+      "sentences": 3,
+      "text": "Measures. Readability, lexical density, and compression ratio per paragraph; counts, sentence length, vocabulary TTR, nominalization ratio, and passive ratio per document. Every document also records where it came from: the parser and its model, and a digest of the input.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.9167,
+      "readability_grade": 9.3667,
+      "sentences": 2,
+      "text": "Extraction. Two extractive summarizers (TF-IDF, TextRank) and two keyphrase extractors (RAKE, YAKE).",
+      "words": 13
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6667,
+      "readability_grade": 13.2288,
+      "sentences": 2,
+      "text": "Semantic clusters. Sentence embeddings grouped by cosine similarity, behind the model2vec feature, carrying the identity of the model that produced them.",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
       "lexical_density": 0.4,
       "readability_grade": null,
       "sentences": 1,
@@ -37,48 +64,48 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5238,
       "readability_grade": 5.8843,
       "sentences": 3,
-      "text": "All three return the same shape: a struct in Rust, a dict in Python, a table or `--json` at the command line. The second sentence in the example is passive, and `amendments` carries the relation `nsubj:pass`. matra records that and stops there.",
-      "words": 44
+      "text": "All three return the same shape: a struct in Rust, a dict in Python, a table or --json at the command line. The second sentence in the example is passive, and amendments carries the relation nsubj:pass. matra records that and stops there.",
+      "words": 43
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5333,
-      "readability_grade": 12.4348,
+      "readability_grade": 8.7633,
       "sentences": 3,
-      "text": "**Understand the model.** [Concepts](./explanation/concepts.md) covers the document tree, the four tiers, and what a structural primitive is. [Situation model](./explanation/situation-model.md) covers what the output is for and what it deliberately withholds.",
-      "words": 32
+      "text": "Understand the model. Concepts covers the document tree, the four tiers, and what a structural primitive is. Situation model covers what the output is for and what it deliberately withholds.",
+      "words": 30
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.625,
-      "readability_grade": 12.2971,
+      "readability_grade": 6.2133,
       "sentences": 3,
-      "text": "**Write against it.** [Programming model](./explanation/programming-model.md) is the surface: `Ingest`, `Engine`, ports, bounds, and what Python exposes. [Pragmatics](./explanation/pragmatics.md) answers the choices you have to make.",
-      "words": 26
+      "text": "Write against it. Programming model is the surface: Input, Engine, ports, bounds, and what Python exposes. Pragmatics answers the choices you have to make.",
+      "words": 24
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6667,
-      "readability_grade": 25.4054,
+      "readability_grade": null,
       "sentences": 2,
-      "text": "**Get it running.** [Installation](./tutorials/installation.md), then [Rust](./guides/rust.md), [Python](./guides/python.md), or [CLI](./guides/cli.md).",
-      "words": 15
+      "text": "Get it running. Installation, then Rust, Python, or CLI.",
+      "words": 9
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.8,
-      "readability_grade": 9.4725,
+      "kind": "paragraph",
+      "lexical_density": 0.7333,
+      "readability_grade": 7.0017,
       "sentences": 2,
-      "text": "**Look something up.** [What matra gives you](./capabilities.md) lists every field and function the pipeline returns.",
-      "words": 16
+      "text": "Look something up. What matra gives you lists every field and function the pipeline returns.",
+      "words": 15
     }
   ]
 }

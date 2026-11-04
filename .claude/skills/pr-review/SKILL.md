@@ -98,14 +98,14 @@ not a fix.
 
 - `Engine::annotate` must remain the only route from text to
   `NlpProvider::parse`. Grep the diff for new `.parse(` call sites.
-- The seven equivalence laws (L1-L7 tests in `src/lib.rs`) must not be
+- The seven equivalence laws (L1-L7 tests in `src/lib.rs`) and the accounting law (L9) must not be
   weakened, deleted, or made vacuous. A test edit that keeps the name
   but shrinks the claim is a finding.
 - Per-paragraph parse is load-bearing (FM1): reject anything that
   reintroduces join-then-match-sentences-back-by-text.
 - No new entry point that encodes a format or source kind in a function
-  name; variation belongs in `Ingest` constructors and the
-  `Decomposers` table.
+  name; variation belongs in `Input` constructors and the
+  reader table.
 
 ## Gate 3: FFI exposure (RFC-0008 criterion)
 

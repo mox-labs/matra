@@ -12,7 +12,7 @@ Every fallible function in matra returns `domain::Result<T>`, which is `std::res
 | `ModelInvalid` | `String` | Bytes that arrived could not be verified against the pin, or could not be loaded |
 | `ParseFailed` | `String` | The NLP provider failed on the input, or panicked, or produced an unusable token id |
 | `InputTooLarge` | `{ limit: usize, actual: usize, what: &'static str }` | A size gate rejected the input. `what` names the gate |
-| `UnsupportedFormat` | `Format` | The document's format has no registered decomposer |
+| `UnsupportedFormat` | `{ format: Option<Format>, feature: Option<&'static str> }` | The input is in a format no reader in this build reads, or is not UTF-8 text |
 | `InvalidInput` | `String` | A caller violated a documented API contract |
 | `Io` | `std::io::Error` | A filesystem operation failed, or a download did not arrive |
 
@@ -43,6 +43,7 @@ Returned by the UDPipe adapter's `parse` in three situations:
 - The underlying parser returns an error. The payload is that error's message.
 - The underlying parser panics. The payload is `udpipe panicked: <message>`. The `catch_unwind` boundary that produces this lives in `nlp/udpipe.rs`, and it exists because an unhandled panic crossing the C++ boundary aborts the host process instead of unwinding.
 - A token id or head value cannot be represented as `usize`. The payload names the token and its sentence.
+- A token's form cannot be found in the paragraph text the parser was given, at or after the previous token, so the token has no span. The payload names the token, its sentence and the byte the search began at. The adapter reports this rather than a guessed span.
 
 ### InputTooLarge
 
@@ -50,8 +51,8 @@ Ten gate labels produce this variant. The `what` field carries the label so a ca
 
 | `what` | Gate | Limit | Measured over |
 |---|---|---|---|
-| `"input"` | `Engine::annotate`, the only route from text to the parser, and the CLI's stdin read, which applies the same cap first | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | UTF-8 byte length of the text; the CLI counts the bytes as they arrive, before decoding them |
-| `"file_source"` | `FileSource::read`, which `Ingest::path` reads through | 8,388,608 bytes | File size reported by the filesystem, checked before any read |
+| `"input"` | `Engine::annotate`, the only route from text to the parser, for every `Input` constructor, and the CLI's stdin read, which applies the same cap first | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | Byte length of the input handed in, and of the analysed text the reader produces (for block input, the blocks joined); the CLI counts the bytes as they arrive, before decoding them |
+| `"file_source"` | Reading the file an `Input::file` names | 8,388,608 bytes | File size reported by the filesystem, checked before any read |
 | `"tfidf"` | `tfidf_summarize` | 2,000 | Number of sentences in the slice |
 | `"textrank"` | `textrank_summarize` | 2,000 | Number of sentences in the slice |
 | `"rake"` | `rake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
@@ -65,7 +66,7 @@ Ten gate labels produce this variant. The `what` field carries the label so a ca
 
 The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens. The two download caps are the gates whose input is not the caller's: they bound what a redirected or misbehaving server can make the process hold, and the read stops at the bound rather than continuing, so `actual` reports the bound that was breached rather than the response's full length. Both are 64 MiB against pinned artifacts of 16.3 MB and 30.2 MB, which is headroom for a later version and still finite.
 
-A document from disk crosses both text gates in sequence: `"file_source"` when `Ingest` reads it, `"input"` inside `annotate`. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
+A document from disk crosses both gates in sequence: `"file_source"` when the file is read, `"input"` inside `annotate`. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
 Calling a provider's `parse` directly bypasses the `"input"` gate. The gate belongs to `Engine::annotate`, not to the `NlpProvider` trait.
 
@@ -83,21 +84,26 @@ Returned by `semantic_clusters` when a caller breaks its documented contract (em
 
 ### UnsupportedFormat
 
-Returned by `Engine::annotate` when the document's `Format` has no entry in the engine's decomposer table. With `standard_decomposers()` that means `Pdf` or `Docx`; `Markdown` and `PlainText` always have an entry. The payload is the `Format` value.
+Returned by `Engine::annotate` in two cases:
+
+- The input's format has no reader in this build: `Pdf` or `Docx`, whether named by the caller, read off the extension, or recognised from the bytes (`%PDF`, or a zip archive holding `[Content_Types].xml`, which outranks the extension). `format` is that format, and `feature` names the Cargo feature that would read it; no feature of this version reads either, so `feature` is `None`. `Markdown`, `PlainText` and `Blocks` always have a reader.
+- The bytes are not UTF-8 text and carry no signature matra recognises. `format` and `feature` are both `None`. This used to be `Io` with kind `InvalidData`; nothing went wrong reading the bytes, so it is now a kind with a remedy.
+
+A UTF-8 file with an extension matra does not know is not this error: it reads as plain text.
 
 ### Io
 
 Wraps `std::io::Error`, produced by:
 
-- `FileSource` rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`.
-- `FileSource` rejecting a path that is not a regular file, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`.
+- Reading a file rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`; `Inputs::dir` refuses a symlinked directory the same way.
+- Reading a file rejecting a path that is neither a regular file nor a directory, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`. A directory is `InvalidInput` instead, naming `Inputs::dir`.
 - Any read, directory listing, directory creation, write, or rename that fails.
 - `Udpipe::english` when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise.
 - `Udpipe::english` when the model directory cannot be created, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads `cannot write the model to <path>: No space left on device (os error 28)` rather than `Permission denied (os error 13)` with nothing to act on.
 - `Model2Vec::potion_base_8m` when a download fails at the transport or answers with a non-2xx status. The message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise. Bytes that arrived and then failed the digest are `ModelInvalid` instead; this variant is for the ones that never arrived.
 - `Model2Vec::potion_base_8m` when the model directory cannot be created, when an artifact cannot be read, or when a verified artifact cannot be written or renamed into place. The message names the operation and the path, exactly as the UDPipe path's does. `Model2Vec::from_dir` reports an unreadable artifact the same way.
 - `Model2Vec::potion_base_8m` when the temporary file an artifact lands through cannot be created, with the kind the open reported (`AlreadyExists` when something is already sitting at that path). The temporary is opened exclusively, so a path already there, symlink or not, fails the open rather than being written through.
-- `Ingest` when a source yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
+- `Engine::annotate` when reading a file yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
 
 ## Provisioning failures
 
@@ -152,13 +158,13 @@ The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.
 
 ## Per-document failures: `DocumentError` and `CorpusResult`
 
-The stream surface never lets one bad document abort the rest. `Engine::analyze` yields `Result<CorpusEntry, DocumentError>` per document, where `DocumentError` pairs the `Error` with the path it occurred at (`None` for in-memory text, so a path-less document is distinguishable from one at an empty path). Its `Display` prints `path: error` when a path exists and the bare error otherwise, and its `source()` is the wrapped `Error`.
+The stream surface never lets one bad document abort the rest. `Engine::analyze_all` yields `Result<Document, DocumentError>` per input, where `DocumentError` pairs the `Error` with the path it occurred at (`None` for an input that is not a file, so a path-less document is distinguishable from one at an empty path). Its `Display` prints `path: error` when a path exists and the bare error otherwise, and its `source()` is the wrapped `Error`.
 
-Collecting the stream into `CorpusResult` partitions it: every success into `corpus`, every failure into `errors`, in order, with entries plus errors equal to documents consumed. `Ingest::path` is `Err` only when the listing itself fails; both read failures and analysis failures travel as stream items.
+Collecting the stream into `CorpusResult` partitions it: every success into `corpus`, every failure into `errors`, in order, with documents plus errors equal to inputs consumed. `Inputs::dir` is `Err` only when the listing itself fails; both read failures and analysis failures travel as stream items.
 
 Two kinds of entry never appear on either side. The directory listing skips symlinks, so a symlink produces no document and no error. It also skips anything that is not a regular file, and the walk is one level deep, so a subdirectory is skipped the same way.
 
-Neither `DocumentError` nor `CorpusResult` is `Serialize`, because `Error` wraps `std::io::Error`. Crossing a language boundary therefore needs a projection rather than serde. `Matra.analyze_path` has one: each failed document arrives as `{"path": str | None, "error": {"kind": str, "message": str}}`, where `kind` is the stable string `Error::kind` names for the variant, and the table below carries all seven. `Error::kind` is a match with no wildcard arm, so a new `Error` variant fails to compile until someone names it, and `spec/tests/corpus/items.json` pins the vocabulary with a runner per crust, so every crust spells a failure the same way. Both item shapes are assembled field by field rather than serialized, and a `path` is decoded with `os.fsdecode`, so `os.fsencode` on it names the file the walk read even when that name is not valid UTF-8. `CorpusResult` itself does not cross: the Python call returns the items in order and the caller partitions them, testing `"error" in item`.
+Neither `DocumentError` nor `CorpusResult` is `Serialize`, because `Error` wraps `std::io::Error`. Crossing a language boundary therefore needs a projection rather than serde. `Matra.analyze_path` has one: each failed document arrives as `{"path": str | None, "error": {"kind": str, "message": str}}`, where `kind` is the stable string `Error::kind` names for the variant, and the table below carries all seven. `Error::kind` is a match with no wildcard arm, so a new `Error` variant fails to compile until someone names it, and `spec/tests/corpus/items.json` pins the vocabulary with a runner per crust, so every crust spells a failure the same way. A success item is the document itself; an error item is assembled field by field. Either's path (`provenance.source.path` on a document, `path` on an error) is decoded with `os.fsdecode`, so `os.fsencode` on it names the file the walk read even when that name is not valid UTF-8. `CorpusResult` itself does not cross: the Python call returns the items in order and the caller partitions them, testing `"error" in item`.
 
 ## Display strings and kinds
 
@@ -170,33 +176,28 @@ These are the strings `Display` produces, which are also the strings Python's `s
 | `ModelInvalid(s)` | `invalid model: {s}` | `model_invalid` |
 | `ParseFailed(s)` | `parse failed: {s}` | `parse_failed` |
 | `InputTooLarge { limit, actual, what }` | `{what} input too large: {actual} > limit {limit}`, or `input too large: {actual} > limit {limit}` when `what` is `"input"` | `input_too_large` |
-| `UnsupportedFormat(format)` | `unsupported format: {format:?}` | `unsupported_format` |
+| `UnsupportedFormat { format, feature }` | `unsupported format: {format}; no feature of this matra version reads it`, `` unsupported format: {format}; enable the `{feature}` feature to read it ``, or `unsupported format: the input is not UTF-8 text and carries no signature matra recognises` when `format` is `None` | `unsupported_format` |
 | `InvalidInput(s)` | `invalid input: {s}` | `invalid_input` |
 | `Io(e)` | `io error: {e}` | `io` |
 
-`UnsupportedFormat` renders the variant name, so the string reads `unsupported format: Pdf`.
+`UnsupportedFormat` renders the format's wire name, so the string reads `unsupported format: pdf; no feature of this matra version reads it`.
 
 ## Matching in Rust
 
 ```rust
-use matra::Engine;
-use matra::domain::{Error, Format, RawDocument};
+use matra::domain::{Error, Format};
+use matra::{Engine, Input};
 
 fn report(text: &str, engine: &Engine) {
-    let raw = RawDocument::new(text.to_string(), None, Format::PlainText);
-    match engine.analyze_one(raw) {
-        Ok(entry) => println!("{} sentences", entry.analysis.metrics.total_sentences),
-        Err(doc_err) => match doc_err.error {
-            Error::InputTooLarge {
-                what,
-                actual,
-                limit,
-            } => eprintln!("{what} gate: {actual} over limit {limit}"),
-            Error::ModelNotFound(path) => {
-                eprintln!("model missing at {}", path.display())
-            }
-            other => eprintln!("{other}"),
-        },
+    match engine.analyze(Input::text(text, Format::PlainText)) {
+        Ok(doc) => println!("{} sentences", doc.metrics.total_sentences),
+        Err(Error::InputTooLarge {
+            what,
+            actual,
+            limit,
+        }) => eprintln!("{what} gate: {actual} over limit {limit}"),
+        Err(Error::UnsupportedFormat { format, .. }) => eprintln!("no reader for {format:?}"),
+        Err(other) => eprintln!("{other}"),
     }
 }
 ```
