@@ -260,7 +260,7 @@ Every top-level result carries `provenance`; every heading, paragraph, sentence,
 }
 ```
 
-A summary adds what shaped it: `"method": "textrank", "parameters": { "n": 3 }`. A span counts UTF-8 bytes of the analysed text: for markdown and plain text that is the input itself, and for block input it is the blocks' texts joined by a blank line, in order. The text fields keep their 0.2 meaning, now documented as normalized; the span, not the text, is the authority on where a value came from.
+A summary adds what shaped it: `"method": "textrank", "parameters": { "n": 3 }`. A span counts UTF-8 bytes of the analysed text: for markdown and plain text that is the input itself, and for block input it is the blocks' texts joined by a blank line, in order. The text fields are normalized: a markdown paragraph's text is its inline text with the markup stripped and escapes decoded, which is what the parser reads. The span, not the text, is the authority on where a value came from.
 
 ### Errors carry a kind everywhere
 
@@ -396,7 +396,7 @@ Each module hides one decision likely to change, and Parnas's procedure is exact
 | embed (`embed/`) | the embedding model | `Embedder` public; `Model2Vec` public behind its feature |
 | domain | none: it is the published data | public |
 
-- **Detection.** A binary signature wins over the extension (`%PDF`, a zip with `[Content_Types].xml`). Among text formats, the caller's `Format` or the extension decides. A recognised format this build cannot read fails with `UnsupportedFormat`, whose `details` name the feature to enable; bytes that are not UTF-8 and carry no known signature fail with `UnsupportedFormat` and no feature. A text file with an unknown extension reads as plain text (decision 7).
+- **Detection.** A binary signature wins over the extension (`%PDF`, a zip with `[Content_Types].xml`). Among text formats, the caller's `Format` or the extension decides. A recognised format this build cannot read fails with `UnsupportedFormat`, whose `details` name the feature that would read it when one exists (none does in 0.3.0, for PDF or DOCX); bytes that are not UTF-8 and carry no known signature fail with `UnsupportedFormat` and no feature. A text file with an unknown extension reads as plain text (decision 7).
 - **The markdown reader** is rewritten on a CommonMark parser that reports source offsets, so it recognises lists, tables, code, block quotes and front matter, strips inline markup from the text the parser reads, and gives every block its span. A `## References` heading is a heading like any other. A construct it does not analyse (a table, a code block, front matter) is recorded in `skipped`, never dropped. Which parser is an implementation choice the canon does not address; pulldown-cmark is the candidate, chosen in the milestone's pull request.
 - **`Paragraph.kind`** (`paragraph`, `quote`, `list_item`) arrives, since the reader can now fill it, and an enum can grow where a boolean cannot [api-design-practice:c40]. `in_blockquote` is removed in the same release (decision 8).
 - **The parser** reports its own identity and, for each token, its span within the text it was given; the engine shifts those spans to absolute offsets at the one place each paragraph is parsed. The UDPipe adapter takes token positions from UDPipe's own `ranges` tokenizer option, or aligns token forms against the paragraph text, and returns `ParseFailed` naming the token when alignment fails, never a guessed span: a handler that returns normally deceives the caller [neighbours-contracts-simplicity:c14]. <claim id="parser-unvalidated" basis="observed">The parser's contract is trusted unchecked today [nlp/mod.rs:30](../../src/nlp/mod.rs#L30 "nothing validates it on the")</claim>; keeping the trait private keeps that trust inside the crate.
@@ -406,7 +406,7 @@ Each module hides one decision likely to change, and Parnas's procedure is exact
 
 The seven equivalence laws in `src/lib.rs` restate over `Input` and are run for every constructor (text, bytes, file, blocks): a stream of one is one analysis, order is preserved, and a failed read never reaches the parser. The law that analysis is annotation then measurement stays as an internal test, since both stages leave the surface but the property still holds. One law is new:
 
-- **L9, the accounting law.** For text formats, every non-whitespace byte of the analysed text lies in exactly one of: a heading span, a paragraph span, a `skipped` span. A conformance test over every fixture checks it, which turns "never silently" into something a test can falsify.
+- **L8, the accounting law.** For text formats, every non-whitespace byte of the analysed text lies in exactly one of: a heading span, a paragraph span, a `skipped` span. A block's container markers (a quote's `>`, a list item's marker) fall inside its span. A conformance test over every fixture checks it, which turns "never silently" into something a test can falsify.
 
 ### The schema
 
@@ -414,7 +414,7 @@ The seven equivalence laws in `src/lib.rs` restate over `Input` and are run for 
 Document         { provenance, sections, metrics: DocumentMetrics, skipped: [Skipped] }
 DocumentMetrics  { total_words, total_sentences, paragraph_count, mean_sentence_length,
                    sentence_length_std, vocabulary_ttr, nominalization_ratio, passive_ratio }
-Section          { heading, level, span, paragraphs }
+Section          { heading, level, span: Option (the heading's), paragraphs }
 Paragraph        { span, text, kind, sentences, metrics: ParagraphMetrics }
 ParagraphMetrics { readability_grade, lexical_density, compression_ratio }
 Sentence         { span, text, tokens, word_count, tree_depth: Option, passive,
@@ -432,7 +432,7 @@ DocumentError    { path?, kind, message, details }
 
 - **Aggregates are fields.** What the command line prints and Python rebuilds becomes data: if data exists only in string form, the string becomes a de facto API [api-design-practice:c11]. `ParagraphMetrics` and `DocumentMetrics` are names RFC-0006 reserved, and no outer `Option` wraps either record, because each slot gates on its own.
 - **One home for the path.** <claim id="corpus-entry-path" basis="observed">`CorpusEntry` pairs a path with a document [domain.rs:1351](../../src/domain.rs#L1351 "Self { path, analysis }")</claim>, and the path also belongs in `provenance.source.path`. `CorpusEntry` goes; there must be one, and only one, place for every fact [parnas-process:c14]. `Corpus`'s aggregate methods leave the surface too: methods do not cross into Python, and averaging across documents is the caller's decision (defect 12 below).
-- **Skipped kinds** name the construct (`table`, `code`, `front_matter`, later `page_image`), never a judgment, following matra's rule that a derived field names a construction (EPR-0002). `skipped` is not an error and carries no error code: skipping a construct is specified behaviour reported beside a correct result, so AIP-193's rule against partial errors [api-design-systems:c30] does not bind it.
+- **Skipped kinds** name the construct (`table`, `code`, `front_matter`, `html`, `thematic_break`, `link_definition`, later `page_image`), never a judgment, following matra's rule that a derived field names a construction (EPR-0002). `skipped` is not an error and carries no error code: skipping a construct is specified behaviour reported beside a correct result, so AIP-193's rule against partial errors [api-design-systems:c30] does not bind it.
 - **CoNLL-U is converted.** `features` is a map. **Sentinels become `Option`**: `tree_depth` is `None` on a cycle instead of `usize::MAX`, and the visited-set walk is unchanged. **Scalars cross as `f64`.**
 - **Record facts are named for what the detector finds.** `ClausalComplement` and `clausal_complements` replace `Reporting` and `reportings`; `root_mood` (the mood feature of the root, with the root's token id) replaces the `bare_assertion` flag. Name a thing by what it is [dijkstra-systems:c2]; `root_mood` is a retype, and its values are an open set.
 - **One format vocabulary**: `markdown`, `plain_text`, `blocks`, in the JSON, in Python and on the command line.
@@ -571,7 +571,7 @@ The private traits keep their names inside the crate; renaming them would move f
 
 | Release | Contents |
 |---|---|
-| 0.3.0 | Every break: the outcome surface, `Input` and `Block`, the private input side with the new markdown reader, spans, `skipped` and L9, schema 2.0 and its JSON Schema, provenance, errors on every channel, the Python `Document`, the parity test, the stability table and the semver gate |
+| 0.3.0 | Every break: the outcome surface, `Input` and `Block`, the private input side with the new markdown reader, spans, `skipped` and L8, schema 2.0 and its JSON Schema, provenance, errors on every channel, the Python `Document`, the parity test, the stability table and the semver gate |
 | 0.3.x | Fixes |
 | 0.4.0 | The feed for text arriving over time, in all three syntaxes at once; caller extensions (predicates and findings) or x.uma extensions in their own proposal; schema-typed TypeScript and a web component that renders a parse; the result of a UDPipe-in-WebAssembly spike; the permissive parser model as a pin chosen by id |
 
@@ -580,7 +580,7 @@ The private traits keep their names inside the crate; renaming them would move f
 Each is one pull request into `next`, with its documentation, skill text and CHANGELOG entry in the same pull request, and each leaves `next` building with every check green except the semver gate, which binds on the release pull request from `next` into `main`.
 
 1. **The schema.** The metric records, provenance with the parser's identity, the record-fact renames, `features` as a map, `tree_depth` as an `Option`, the format vocabulary; the JSON Schema in `spec/schema/` and its conformance fixtures.
-2. **The input side.** `Span`, `Skipped` and `Paragraph.kind` with their schema entries; `Input`, `Inputs` and `Block`, with `Engine::analyze(Input)` and `analyze_all` replacing `Ingest` and `analyze_one`, and `CorpusEntry` removed; detection; the CommonMark reader with spans and `skipped`; the plain-text reader with spans; structure from blocks; the parser's token spans; L9 and the laws restated over every constructor.
+2. **The input side.** `Span`, `Skipped` and `Paragraph.kind` with their schema entries; `Input`, `Inputs` and `Block`, with `Engine::analyze(Input)` and `analyze_all` replacing `Ingest` and `analyze_one`, and `CorpusEntry` removed; detection; the CommonMark reader with spans and `skipped`; the plain-text reader with spans; structure from blocks; the parser's token spans; L8 and the laws restated over every constructor.
 3. **The outcomes.** `Engine::new`; the outcome functions and their method enums with the method and parameters recorded; the traits, `metrics`, `hearst` and the method modules made private; the `Corpus` aggregate methods removed.
 4. **Errors on every channel.** `details()` and the serde form in Rust; the Python exception classes.
 5. **Python.** The module out of `lib.rs` under boundary rule 7, `Engine`, the read-only `Document`, the outcome functions, the stub file; the parity test.
