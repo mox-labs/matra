@@ -506,7 +506,7 @@ class Engine:
                 bytes: builtins.bytes | None = None, blocks: list[BlockDict] | None = None,
                 format: Literal["markdown", "plain_text", "blocks"] | None = None) -> Document: ...
     def analyze_all(self, *, dir: os.PathLike | None = None, texts: Iterable[str] | None = None,
-                    format: Literal["markdown", "plain_text"] | None = None
+                    format: Literal["markdown", "plain_text", "blocks"] | None = None
                     ) -> Iterator[Document | DocumentError]: ...
 
 def summarize(doc: Document, n: int = 3, *, method: Literal["tfidf", "textrank"] | None = None) -> Summary: ...
@@ -517,7 +517,7 @@ class Document: ...   # read-only; doc["metrics"]["total_words"]; doc.to_dict()
 class MatraError(Exception): kind: str; details: dict
 ```
 
-Exactly one of `text`, `file`, `bytes` and `blocks` (and of `dir` and `texts`) is accepted; any other count is a `TypeError` at the call. A `str` is always text, never a path.
+Exactly one of `text`, `file`, `bytes` and `blocks` (and of `dir` and `texts`) is accepted; any other count is a `TypeError` at the call. A `str` is always text, never a path, and reads as `plain_text` when no `format` is given. Python's vectors-in `semantic_clusters` goes with the rest: it has no Rust counterpart, and `clusters` takes an embedder, which can return vectors the caller already holds.
 
 ```
 matra analyze    PATH|DIR|-  [--format markdown|plain_text|blocks] [--json] [--depth document|paragraph|sentence|token]
