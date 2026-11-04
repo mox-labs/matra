@@ -50,7 +50,7 @@ matra 0.2.1
 features: udpipe cli
 ```
 
-That is the CLI binary from `cargo install`. The Python package prints `features: udpipe model2vec python cli`. Every analysis command behaves the same in both builds.
+That is the CLI binary from `cargo install`. The Python package prints `features: udpipe model2vec python cli`. Every analysis command behaves the same in both builds except `matra clusters`, which needs `model2vec` and refuses, naming it, in a build without; `cargo install matra --features cli,model2vec` builds one with it.
 
 ## The model directory
 
@@ -67,7 +67,7 @@ The library, the CLI and the Python package resolve the model directory the same
 
 | | Parsing model | Embedding model |
 |---|---|---|
-| Fetched by | `Engine::new` and `Engine::from_config`, in Rust and in Python, and the command line, on first use | `Model2Vec::potion_base_8m`, `Model2Vec::from_config` and their Python forms, on first use |
+| Fetched by | `Engine::new` and `Engine::from_config`, in Rust and in Python, and the command line, on first use | `Model2Vec::potion_base_8m`, `Model2Vec::from_config`, their Python forms and `matra clusters`, on first use |
 | Size | about 16 MB | about 30 MB, three files |
 | Verified against | a SHA-256 pinned in the source | a SHA-256 over the three files, pinned in the source |
 | Download cap | 64 MiB | 64 MiB per file |
@@ -87,4 +87,4 @@ matra's code is MIT. The models it downloads are separate files, published by ot
 
 The parsing model's license does not permit commercial use. The [UDPipe models page](https://ufal.mff.cuni.cz/udpipe/1/models) states that the UDPipe 1 models it publishes for Universal Dependencies are distributed under CC BY-NC-SA. This page reports what the licenses say and does not interpret them; read the license text for the terms.
 
-The command line and the config file always use this parsing model: `--model-dir`, `MATRA_MODEL_DIR` and the other settings change where it is stored, not which model it is. `models.udpipe`, which earlier releases wrote into the config file, is deprecated and selects nothing. No surface loads a different UDPipe model file: the model is a pin.
+The command line and the config file always use this parsing model: `--model-dir`, `MATRA_MODEL_DIR` and the other settings change where it is stored, not which model it is. `models.udpipe`, which earlier releases wrote into the config file, is gone, and a file that still sets it fails to load, saying so. No surface loads a different UDPipe model file: the model is a pin.

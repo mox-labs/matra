@@ -99,6 +99,15 @@
       "words": 44
     },
     {
+      "compression_ratio": 0.5377,
+      "kind": "paragraph",
+      "lexical_density": 0.6,
+      "readability_grade": 7.8946,
+      "sentences": 5,
+      "text": "matra clusters builds the reference embedder from the configuration, the model models.embedding names in the model directory, and takes its threshold from --threshold, else clusters.threshold in the config file, 0.85 as shipped. --json writes the same Clusters value inside the envelope; the table lists each cluster's sentence indices and text. It needs a build with model2vec, which the Python package has; a cargo install --features cli build refuses the command and names the feature. The CLI guide has the flags.",
+      "words": 82
+    },
+    {
       "compression_ratio": null,
       "kind": "paragraph",
       "lexical_density": 0.5135,

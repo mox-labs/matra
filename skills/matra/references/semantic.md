@@ -126,8 +126,8 @@ for a, b in combinations(range(len(docs)), 2):
 Three pages of matra's own book, run from a checkout: two covering the same ground for different surfaces, and one unrelated. Reproducible, unlike a corpus nobody else has.
 
 ```text
-0.8215  cli.md <-> rust.md
-0.5857  cli.md <-> roadmap.md
+0.8181  cli.md <-> rust.md
+0.5658  cli.md <-> roadmap.md
 0.6138  rust.md <-> roadmap.md
 ```
 

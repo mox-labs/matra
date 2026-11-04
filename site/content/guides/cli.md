@@ -1,6 +1,6 @@
 # Use the matra CLI
 
-`matra` reads a file (or stdin) and writes to stdout. `matra --help` describes the tool in the line built into the command: "matra parses text into CoNLL-U structure and measures it. It reports what is there; interpretation is yours."
+`matra` reads a file, a directory or stdin and writes to stdout. `matra --help` describes the tool in the line built into the command: "matra parses text into CoNLL-U structure and measures it. It reports what is there; interpretation is yours."
 
 ## Install
 
@@ -12,7 +12,7 @@ uvx 'matra>=0.2' analyze essay.md
 
 The version floor is load-bearing. A bare `uvx matra` takes whatever release is newest, which is 0.2.x today and will not stay that way, and 0.1.0 is still on PyPI for anything pinned to it. 0.1.0's `analyze` is a separate Python implementation rather than this one missing a flag: `--json` prints a bare document with no envelope, the human table is a different renderer, and the model cache lands in `~/.matra/models` instead of the resolved model directory. It does not fail, it succeeds and gives you something else, so pin it.
 
-With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. `cargo install matra --version '^0.2' --features cli` reports `features: udpipe cli`, while the published wheel reports `features: udpipe model2vec python cli`, so the embedding adapter is present on the Python route and absent from a `--features cli` build. `matra --version` prints the list of the binary in front of you on its second line.
+With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. `cargo install matra --version '^0.2' --features cli` reports `features: udpipe cli`, while the published wheel reports `features: udpipe model2vec python cli`, so the embedding adapter is present on the Python route and absent from a `--features cli` build, whose `matra clusters` refuses and names the feature. `cargo install matra --features cli,model2vec` builds one with it. `matra --version` prints the list of the binary in front of you on its second line.
 
 ```bash
 # Rust binary, no Python involved
@@ -38,7 +38,13 @@ Per key, `--model-dir` outranks every environment variable, which outranks the c
 
 ## Commands
 
-`analyze`, `summarize`, and `keyphrases` each read one document. The path they take is a file or `-` for stdin; a directory is refused, because a command that reports on one document cannot report on a directory of them, and picking one file out of it would be an answer to a question nobody asked. Analyzing a directory is a library call today (`Engine::analyze_all` over `Inputs::dir`).
+`analyze`, `summarize`, `keyphrases` and `clusters` each read a file, or `-` for stdin. `analyze` also reads a directory, one result per file. The other three report on one document, so they refuse a directory and name `analyze`, which reads one; picking one file out of it would answer a question nobody asked.
+
+Every subcommand routes through the library pipeline, which rejects symlinks, rejects files over 8 MiB before reading them, and picks a reader from the file's bytes and extension. `--format markdown|plain_text|blocks` names the format instead, which is how a JSON file of blocks is read, since no extension implies one. A PDF or DOCX signature in the bytes still outranks it.
+
+```bash
+matra analyze notes.json --format blocks --json
+```
 
 ### `matra analyze`
 
@@ -52,7 +58,13 @@ matra analyze essay.md --json
 
 `--sections` adds a per-section breakdown under the metric table: one row per section with its heading level, heading, and the paragraph, sentence, and word counts underneath it.
 
-Every subcommand routes through the library pipeline, which rejects symlinks, rejects files over 8 MiB before reading them, and picks a reader from the file's bytes and extension.
+Given a directory, `analyze` reads every regular file in it, one level deep and in name order, and reports each one: a table per file, or under `--json` one envelope per line. A file that fails is reported where it happens, on stderr and under `--json` as its own line with its `error`, and the walk goes on to the next file. The exit code is `2` if any file failed. Symlinks and subdirectories are skipped, as the library's `Inputs::dir` skips them. `--format` is refused with a directory, because each of its files is read as its own name says.
+
+```bash
+matra analyze docs/ --json --depth document | jq -c '{input, words: .result.metrics.total_words}'
+```
+
+`--depth` decides how much of the parse `--json` writes. `document` writes the provenance, the metrics and `skipped`, and no `sections`; `paragraph` adds the sections and their paragraphs, with no sentences; `sentence` adds the sentences, with no tokens; and `token`, the default, writes everything. A level below the depth is absent as a key, never an empty array, because an empty `sentences` would say a paragraph has none. Tokens are most of a document's JSON, so a caller that reads only the measures pays for no more than it reads. `--depth` without `--json` is a usage error.
 
 On a markdown file, front matter, code blocks, tables, HTML blocks, thematic breaks and link reference definitions are not analyzed. They are listed in the JSON's `skipped`, each with its `kind` and `span`, rather than dropped. `## References` is a heading like any other.
 
@@ -80,8 +92,8 @@ matra summarize essay.md -n 5 --method textrank
 
 | Option | Default | Values |
 |---|---|---|
-| `-n` | `summarize.n` from the config, `3` as shipped | any positive integer |
-| `--method` | `summarize.algorithm` from the config, `tfidf` as shipped | `tfidf`, `textrank` |
+| `-n` | `summary.n` from the config, `3` as shipped | any positive integer |
+| `--method` | `summary.method` from the config, `tfidf` as shipped | `tfidf`, `textrank` |
 
 TF-IDF scores each sentence by term frequency against the document. TextRank scores by a graph-coherence measure over sentence similarity. Reach for TextRank when sentences reference each other across the document and mutual reinforcement matters more than raw term weight. TF-IDF is the cheaper default and usually enough. Both reject input over 2000 sentences.
 
@@ -110,7 +122,7 @@ matra keyphrases essay.md -n 20 --method yake
 | Option | Default | Values |
 |---|---|---|
 | `-n` | `keyphrases.n` from the config, `10` as shipped | any positive integer |
-| `--method` | `keyphrases.algorithm` from the config, `rake` as shipped | `rake`, `yake` |
+| `--method` | `keyphrases.method` from the config, `rake` as shipped | `rake`, `yake` |
 
 RAKE splits on stop words and scores the remaining word runs by a co-occurrence degree-to-frequency ratio. It is rule-based and fast. YAKE scores individual terms by position, frequency, and how varied their surrounding context is, then builds one-word to three-word candidates from those scores. It tends to surface longer, more specific phrases and to notice terms that first appear later in a long document, at more computation than RAKE. Both reject input over 200000 tokens.
 
@@ -122,11 +134,30 @@ Phrases are printed as lowercased lemmas, not as the surface text of the documen
 
 Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word `lexical density` scores `5.667` and the three-word `model file name` scores `5.200`. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.
 
-Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE puts `error implement st ::error`, read off the code span `std::error::Error` and the words around it, first at `12.109` and scores the bare `error` at `1.442`, while YAKE's first is `move copy` at `1724.178`. What is low there is the score, not the position: `1.442` sits not far above `1.000`, the floor any single word scores, and 223 of the 544 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking, 273rd. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
+Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE puts `error implement st ::error`, read off the code span `std::error::Error` and the words around it, first at `12.135` and scores the bare `error` at `1.468`, while YAKE's first is `move copy` at `1977.345`. What is low there is the score, not the position: `1.468` sits not far above `1.000`, the floor any single word scores, and 230 of the 576 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking, 299th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
 
 ```bash
 matra keyphrases essay.md --json | jq -S '.result[0:3]'
 ```
+
+### `matra clusters`
+
+Groups a document's sentences by the similarity of their embeddings.
+
+```bash
+matra clusters essay.md
+matra clusters essay.md --threshold 0.8 --json
+```
+
+| Option | Default | Values |
+|---|---|---|
+| `--threshold` | `clusters.threshold` from the config, `0.85` as shipped | a cosine similarity |
+
+Each sentence is embedded with potion-base-8M, the embedding model `models.embedding` names, downloaded into the model directory on first use (about 30 MB). Two sentences whose cosine similarity is at least the threshold are joined, and a cluster is a connected component of that graph, so co-membership is transitive and is not pairwise similarity. A sentence with no partner is in no cluster. The table prints each cluster with its members' sentence indices and text; `--json` writes the `Clusters` value, with `edges`, every pair that cleared the threshold and its score, and the embedder's identity in `provenance.parameters`. Finding no cluster is exit `1`.
+
+The threshold does not travel between models, domains or granularities, and 0.85 is a starting point for sentences only. [Semantic clusters](semantic-clusters.md) says how to choose one.
+
+The command needs a build with the `model2vec` feature, which the Python wheel has. A build without it refuses before it reads anything, with `invalid_input` naming the feature.
 
 ### `matra config`
 
@@ -140,13 +171,16 @@ matra config show
 data_dir = "/home/you/.local/share/matra" # default
 model_dir = "/home/you/.local/share/matra/models" # default
 models.embedding = "potion-base-8M" # default
-summarize.n = 5 # /home/you/.config/matra/config.toml
-summarize.algorithm = "tfidf" # default
+summary.n = 5 # /home/you/.config/matra/config.toml
+summary.method = "tfidf" # default
 keyphrases.n = 10 # default
-keyphrases.algorithm = "rake" # default
+keyphrases.method = "rake" # default
+clusters.threshold = 0.85 # default
 ```
 
-`models.embedding` is the name of the embedding model's directory under `model_dir`, which `Model2Vec::from_config` and `Model2Vec.potion_base_8m()` provision into and load from. A config file written by an earlier `matra config init` also sets `models.udpipe` and `semantic.threshold`. Both are deprecated and ignored: the parsing model's file name is pinned in the source beside its digest, so the first selects no model ([model licenses](../reference/platforms.md#model-licenses) says how to load another one), and every clustering call takes its threshold as an argument, so the second reaches nothing. The file still loads. `config show` leaves both out of the listing and writes a line on stderr for each one the file sets, naming the file, so you can delete them; `--quiet` silences that line.
+`models.embedding` is the name of the embedding model's directory under `model_dir`, which `matra clusters`, `Model2Vec::from_config` and `Model2Vec.potion_base_8m()` provision into and load from. The file's sections are `[models]`, `[summary]` and `[keyphrases]`, each of the last two with `n` and `method`, and `[clusters]` with `threshold`. They configure the command line only: the library and Python take every count, method and threshold as an argument.
+
+A config file from 0.2 does not load. 0.3.0 renamed `[summarize]` to `[summary]`, `algorithm` to `method`, and `semantic.threshold` to `clusters.threshold`, and dropped `models.udpipe`, since the parsing model is pinned in the source beside its digest. Every command that reads such a file fails with `invalid_input`, naming the file and each key's replacement, so the file can be fixed from the message. `matra config init --force` writes a fresh one.
 
 The origin is `default` for a value compiled into the crate, a path for one read from your config file, `environment variable ...` for one an environment variable set, and `command line` for one a flag set. With `--json`, each key carries its value, the rung, and what the rung pointed at.
 
@@ -156,7 +190,7 @@ What that listing does not carry is the config file path. Every key whose origin
 matra config show --json | jq -r .input
 ```
 
-`matra config init` writes the shipped defaults (`models.embedding` and the summary and keyphrase keys) to the resolved config path and prints where it wrote them. It creates the parent directories, writes through a temporary file in the same directory so a reader never sees a half-written config, and refuses to overwrite an existing file unless you pass `--force`.
+`matra config init` writes the shipped defaults (`models.embedding`, and the summary, keyphrase and cluster keys) to the resolved config path and prints where it wrote them. It creates the parent directories, writes through a temporary file in the same directory so a reader never sees a half-written config, and refuses to overwrite an existing file unless you pass `--force`.
 
 ```bash
 matra config init
@@ -193,7 +227,8 @@ Under `--json` the skill uses the same envelope every other command uses, with `
   "format_version": 2,
   "command": "skill",
   "input": null,
-  "result": { "name": "SKILL", "body": "---\nname: matra\n..." }
+  "result": { "name": "SKILL", "body": "---\nname: matra\n..." },
+  "error": null
 }
 ```
 
@@ -204,7 +239,8 @@ Under `--json` the skill uses the same envelope every other command uses, with `
   "format_version": 2,
   "command": "skill",
   "input": null,
-  "result": { "references": [{ "name": "json", "summary": "The JSON envelope every command emits, ..." }] }
+  "result": { "references": [{ "name": "json", "summary": "The JSON envelope every command but completions emits, ..." }] },
+  "error": null
 }
 ```
 
@@ -214,14 +250,15 @@ The same files install as a plugin: `claude --plugin-dir <checkout>` over a clon
 
 ## Reading from stdin
 
-`-` in place of the path reads stdin. `--stdin-filename` gives that input a name, which is the label in the output and the envelope, and whose extension selects the reader. Without it the input is read as plain text and labelled `<stdin>`.
+`-` in place of the path reads stdin, as bytes, and the format is detected the way it is for a file. `--stdin-filename` gives that input a name, which is the label in the output and the envelope, and whose extension stands in for a file's. `--format` names the format outright. With neither, the input is read as plain text and labelled `<stdin>`. Bytes that are not UTF-8 text fail as `unsupported_format`, as a file's do.
 
 ```bash
 pandoc notes.docx -t markdown | matra analyze - --stdin-filename notes.md
+pandoc notes.docx -t markdown | matra analyze - --format markdown
 cat essay.txt | matra keyphrases -
 ```
 
-The 8 MiB cap applies to stdin as it does to a file, and it is enforced while reading rather than after, so an unbounded stream is refused instead of buffered.
+The 8 MiB cap applies to stdin as it does to a file, and it is enforced while reading rather than after, so an unbounded stream is refused instead of buffered. Stdin is read before the model loads, so an oversized stream costs no download.
 
 ## Color, quiet, and version
 
@@ -238,26 +275,54 @@ features: udpipe model2vec python cli
 
 ## The JSON envelope
 
-`--json` emits one object for every command:
+`--json` emits one object for every command but `completions`, success or failure:
 
 ```json
 {
   "format_version": 2,
   "command": "analyze",
   "input": "essay.md",
-  "result": { "provenance": {}, "sections": [], "metrics": {} }
+  "result": { "provenance": {}, "sections": [], "metrics": {}, "skipped": [] },
+  "error": null
 }
 ```
 
-`command` is `analyze`, `summarize`, `keyphrases`, `config`, or `skill`. `input` is the path that was read, or the name `--stdin-filename` gave it. For `config` it is the config file's path when that file exists and null when it does not, and for `skill`, which reads no document, it is always null. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a `Summary` for `summarize` and a `Keyphrases` for `keyphrases`, each of the last two carrying the document's provenance with the `method` that ran and its `parameters`. For `config` it is an object keyed by setting, each carrying `value`, `source` and `origin`, and for `skill` the shapes shown above.
+`command` is `analyze`, `summarize`, `keyphrases`, `clusters`, `config`, `skill` or `schema`. `input` is the path that was read, or the name `--stdin-filename` gave it. For `config` it is the config file the run read, and null when there is none, and for `skill` and `schema`, which read no document, it is always null. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a `Summary` for `summarize`, a `Keyphrases` for `keyphrases` and a `Clusters` for `clusters`, each of the last three carrying the document's provenance with the `method` that ran and its `parameters`. For `config` it is an object keyed by setting, each carrying `value`, `source` and `origin`, and for `skill` the shapes shown above.
+
+All five keys are always present, and exactly one of `result` and `error` is null. A failure writes the envelope with `result` null and `error` holding the failure's `kind`, `message` and `details`, the same three Rust serializes and Python raises:
+
+```json
+{
+  "format_version": 2,
+  "command": "analyze",
+  "input": "missing.md",
+  "result": null,
+  "error": {
+    "kind": "io",
+    "message": "io error: cannot read missing.md: No such file or directory (os error 2)",
+    "details": { "io_kind": "not_found", "path": "missing.md", "reason": "cannot read missing.md: No such file or directory (os error 2)" }
+  }
+}
+```
+
+The message still goes to stderr and the exit code is still `2`, so a script that reads only the exit code is unchanged. Branch on `error.kind` and read values from `error.details`, never from the message. The command line's own refusals carry the kind whose remedy matches, which for every one of them is `invalid_input`, a call to change: a directory given to a command that reads one document, `--format` with a directory, `-r` without `--skill`, an unknown reference or schema name, `config init` over an existing file, and `clusters` in a build without an embedder. A usage error under `--json`, such as an unknown flag, is an envelope too, with `command` null when the arguments name none. [Errors](../reference/errors.md) lists every kind.
+
+`analyze DIR --json` writes one envelope per line, one line per file, each compact rather than indented, so the output is a stream of JSON values that `jq` reads one at a time.
 
 Stability: `format_version` increments on any change to the envelope, and whenever the document schema's major version moves; the `result` value is the serde form of the documented domain types. That is the same promise cargo makes for `cargo metadata --format-version`. Pin your consumer to a `format_version` you have tested against.
 
-A `Document` also names its own schema version, in `result.provenance.schema` (`"2.0"`), and that is the only place it appears. A minor version adds optional fields only; anything else is a major. So ignore fields you do not recognize, treat every string set you receive as open (`format`, `pos`, `dep`, `mood`, `pattern`, the feature names), and reject a major you do not know. The JSON Schema for each major is published in the repository at `spec/schema/v2/document.schema.json`.
+A `Document` also names its own schema version, in `result.provenance.schema` (`"2.0"`), and that is the only place it appears. A minor version adds optional fields only; anything else is a major. So ignore fields you do not recognize, treat every string set you receive as open (`format`, `pos`, `dep`, `mood`, `pattern`, the feature names), and reject a major you do not know.
+
+The JSON Schemas for this major are compiled into the program. `matra --schema` lists them with their titles, and `matra --schema NAME` prints one: `document`, `summary`, `keyphrases`, `clusters` and `error` for the outputs, and `blocks` for block input. Like `--skill` it outranks a subcommand and reads no document, and under `--json` it is the envelope with `command` `schema`. The same files are in the repository under `spec/schema/v2/`.
+
+```bash
+matra --schema
+matra --schema document > document.schema.json
+```
 
 ## Exit codes
 
-`0` on success when the command found something, `1` on success when it found nothing (an empty summary, no keyphrases, a file with zero sentences), and `2` when an error occurred. Model load failure, a missing or unreadable file, a directory where a file was expected, input over the size cap, a bad argument, and a parse failure all land on `2`, with the message on stderr prefixed `matra:`. A broken pipe, which is what you get piping into `head`, is treated as success and exits `0`.
+`0` on success when the command found something, `1` on success when it found nothing (an empty summary, no keyphrases, no clusters, a file with zero sentences), and `2` when an error occurred. Model load failure, a missing or unreadable file, a directory where one document is read, input over the size cap, a bad argument, and a parse failure all land on `2`, with the message on stderr prefixed `matra:` and, under `--json`, the envelope with its `error` on stdout. For a directory the code is `2` if any file failed, `0` if none failed and any had a sentence, and `1` otherwise. A broken pipe, which is what you get piping into `head`, is treated as success and exits `0`.
 
 ```bash
 matra keyphrases notes.txt > /dev/null

@@ -73,7 +73,7 @@ A `Document` does not pickle, so a worker returns `to_dict()`. Concurrent first 
 | Call | Reads |
 |---|---|
 | `analyze(text)` | a `str`, as plain text, or as `format` when you name one |
-| `analyze(file=path)` | a file, its format detected from its name and bytes |
+| `analyze(file=path)` | a file, its format detected from its name and bytes, or as `format` when you name one |
 | `analyze(bytes=data)` | `bytes`, as `format`, or detected when you name none |
 | `analyze(blocks=[...])` | headings and paragraphs you supply |
 
@@ -83,7 +83,7 @@ doc = engine.analyze(text, format="markdown")
 doc = engine.analyze(file="notes.md")
 ```
 
-A `str` is always text, never a path: `engine.analyze("notes.md")` analyzes the eight characters `notes.md`. Name a file with `file=`. Passing no input, or two, raises `TypeError` at the call. `format` is one of `markdown`, `plain_text` and `blocks`, and it applies to `text` and `bytes` only. A file is read by what it is: `.md` as markdown, anything else that is UTF-8 as plain text, and a PDF, a DOCX or bytes that are not text as `matra.UnsupportedFormatError`.
+A `str` is always text, never a path: `engine.analyze("notes.md")` analyzes the eight characters `notes.md`. Name a file with `file=`. Passing no input, or two, raises `TypeError` at the call. `format` is one of `markdown`, `plain_text` and `blocks`, and it applies to `text`, `bytes` and `file`. With no `format`, a file is read by what it is: `.md` as markdown, anything else that is UTF-8 as plain text, and a PDF, a DOCX or bytes that are not text as `matra.UnsupportedFormatError`. A JSON file of blocks is `engine.analyze(file="notes.json", format="blocks")`, since no extension implies it; a PDF or DOCX signature still outranks the format you name.
 
 A file's path travels into the result as `doc["provenance"]["source"]["path"]`. On Unix it is decoded the way Python decodes any filesystem path, so `os.fsencode` on it hands back the bytes the name came from, even when the name is not valid UTF-8. Every path argument takes a `str` or a `pathlib.Path` alike.
 
@@ -289,7 +289,7 @@ Every `domain::Error` variant crosses the FFI boundary as a class of its own, na
 
 `IoNotFoundError` and `IoPermissionError` derive from `IoError`, so `except matra.IoError` catches every I/O failure. `matra.IoError` is not the builtin `IOError`, which is another name for `OSError`. Every exception carries `kind`, the stable string from `matra.ERROR_KINDS`, and `details`, a dict of every value in its message: `what`, `limit` and `actual` on an `InputTooLargeError`, `path` on a missing file, `url` and `retryable` on a download that did not arrive. The [errors reference](../reference/errors.md#kinds-and-details) lists the keys for every kind.
 
-A call with the wrong arguments (no input, two inputs, `format` with `file`) raises the builtin `TypeError`, as any Python function does. It is a mistake in the call, not a failure of the analysis.
+A call with the wrong arguments (no input, two inputs, `format` with `blocks`) raises the builtin `TypeError`, as any Python function does. It is a mistake in the call, not a failure of the analysis.
 
 Loading the model and analyzing text fail in different ways, so catch them separately:
 

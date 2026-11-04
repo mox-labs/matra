@@ -357,9 +357,9 @@ Which reader a document needs.
 | `Pdf` | `pdf` | Extension `.pdf`, or bytes opening with `%PDF` |
 | `Docx` | `docx` | Extension `.docx`, or a zip archive holding `[Content_Types].xml` |
 
-`Format::from_path(path: impl AsRef<Path>) -> Format` is the extension column, and it is the only copy of it. Reading a file applies it, and the command line reads it for the name given to `--stdin-filename`, so a name means the same thing on both routes. When the bytes are read, a PDF or DOCX signature outranks both the extension and a format the caller names.
+`Format::from_path(path: impl AsRef<Path>) -> Format` is the extension column, and it is the only copy of it. Reading a file with `Input::file` applies it, and the command line reads it for the name given to `--stdin-filename` when `--format` names none, so a name means the same thing on both routes. When the bytes are read, a PDF or DOCX signature outranks both the extension and a format the caller names.
 
-`Pdf` and `Docx` have no reader, so analyzing such a document returns `Error::UnsupportedFormat` with that format. `Input::text` takes the format as an argument; `Input::bytes` takes one optionally; `Input::file` detects one. `Format` derives `PartialEq` and `Eq`, which is what the reader table keys on.
+`Pdf` and `Docx` have no reader, so analyzing such a document returns `Error::UnsupportedFormat` with that format. `Input::text` and `Input::file_as` take the format as an argument; `Input::bytes` takes one optionally; `Input::file` detects one. `Format` derives `PartialEq` and `Eq`, which is what the reader table keys on.
 
 ## Block
 

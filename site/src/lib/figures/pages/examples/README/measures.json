@@ -38,11 +38,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5667,
-      "readability_grade": 9.5333,
+      "lexical_density": 0.6071,
+      "readability_grade": 8.4129,
       "sentences": 2,
-      "text": "Analyzing a directory as a corpus has no guide here, because the CLI refuses a directory and these guides show all three calls. The Rust and Python references cover it.",
-      "words": 30
+      "text": "Analyzing a directory as a corpus has no worked example here, because each example pins the output of one input. The CLI, Rust and Python guides cover it.",
+      "words": 28
     }
   ]
 }

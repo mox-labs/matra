@@ -207,13 +207,13 @@
       "words": 23
     },
     {
-      "compression_ratio": 0.5611,
+      "compression_ratio": 0.5883,
       "kind": "paragraph",
-      "lexical_density": 0.5545,
-      "readability_grade": 9.9296,
+      "lexical_density": 0.5222,
+      "readability_grade": 9.3922,
       "sentences": 4,
-      "text": "The label has a second producer. The CLI reads stdin through read_capped in src/cli/mod.rs, which reads at most one byte past MAX_INPUT_BYTES and returns InputTooLarge with what set to \"input\" before the text ever reaches the engine. Same limit, same label, so a caller sees one gate however the text arrived. Two details differ and neither is visible in the value: the CLI counts bytes before decoding them, so an oversized pipe is reported as too large rather than as invalid UTF-8, and the CLI renders the error on stderr and turns it into an exit code rather than returning it.",
-      "words": 102
+      "text": "The label has a second producer. The CLI reads stdin through read_capped in src/cli/mod.rs, which reads at most one byte past MAX_INPUT_BYTES and returns InputTooLarge with what set to \"input\" before the bytes ever reach the engine. Same limit, same label, so a caller sees one gate however the text arrived. The CLI never decodes what it reads: the bytes go to the engine as Input::bytes, so an oversized pipe is reported as too large, and a pipe that is not UTF-8 is UnsupportedFormat, as a file's bytes would be.",
+      "words": 94
     },
     {
       "compression_ratio": 0.4954,
@@ -243,13 +243,13 @@
       "words": 86
     },
     {
-      "compression_ratio": 0.4926,
+      "compression_ratio": 0.5159,
       "kind": "paragraph",
-      "lexical_density": 0.5333,
-      "readability_grade": 14.4656,
+      "lexical_density": 0.5268,
+      "readability_grade": 10.5489,
       "sentences": 3,
-      "text": "Config::resolve and Config::from_file use the same variant for a configuration that cannot be honored: a config file that does not parse, an unknown key, an algorithm name this build does not know, a config file that is not valid UTF-8, or an environment with none of MATRA_DATA_DIR, XDG_DATA_HOME or HOME set. The payload names the file and the offending key or line. A config file that is simply absent is not an error for Config::resolve, and the built-in defaults stand; Config::from_file refuses one with Io, because the caller named it.",
-      "words": 99
+      "text": "Config::resolve and Config::from_file use the same variant for a configuration that cannot be honored: a config file that does not parse, an unknown key, a key 0.3.0 renamed or removed ([summarize], algorithm, [semantic], models.udpipe, each refused with what replaced it), a method name this build does not know, a threshold that is not finite, a config file that is not valid UTF-8, or an environment with none of MATRA_DATA_DIR, XDG_DATA_HOME or HOME set. The payload names the file and the offending key or line. A config file that is simply absent is not an error for Config::resolve, and the built-in defaults stand; Config::from_file refuses one with Io, because the caller named it.",
+      "words": 121
     },
     {
       "compression_ratio": null,
@@ -468,13 +468,13 @@
       "words": 34
     },
     {
-      "compression_ratio": 0.571,
+      "compression_ratio": 0.5249,
       "kind": "paragraph",
-      "lexical_density": 0.5283,
-      "readability_grade": 9.4723,
+      "lexical_density": 0.5588,
+      "readability_grade": 9.4964,
       "sentences": 3,
-      "text": "The notice covers the UDPipe model only. Model2Vec::potion_base_8m fetches 30.2 MB across three artifacts with no notice form of its own, so a first call to Model2Vec::potion_base_8m or Model2Vec::from_config (in Python, Model2Vec.potion_base_8m()) is silent for the length of that download. There is no clustering command, so the command line never makes that call.",
-      "words": 54
+      "text": "The notice covers the UDPipe model only. Model2Vec::potion_base_8m fetches 30.2 MB across three artifacts with no notice form of its own, so a first call to Model2Vec::potion_base_8m or Model2Vec::from_config (in Python, Model2Vec.potion_base_8m()) is silent for the length of that download. matra clusters makes that call, so its first run waits on the download with nothing on either stream; --quiet changes nothing there, because there is nothing to silence.",
+      "words": 69
     },
     {
       "compression_ratio": 0.5493,
@@ -675,31 +675,58 @@
       "words": 56
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5277,
       "kind": "paragraph",
-      "lexical_density": 0.6098,
-      "readability_grade": 6.4327,
-      "sentences": 2,
-      "text": "On exit code 2 the command writes matra:  followed by the error's Display string to standard error. A broken pipe, which is what happens when the reading end of matra analyze file.md | head goes away, exits 0 and prints nothing.",
-      "words": 42
-    },
-    {
-      "compression_ratio": 0.5381,
-      "kind": "paragraph",
-      "lexical_density": 0.5488,
-      "readability_grade": 10.8993,
+      "lexical_density": 0.5802,
+      "readability_grade": 12.8585,
       "sentences": 3,
-      "text": "The table is the whole contract, and no command narrows it. Two cases are worth naming because they are usage failures rather than failures of the text: matra --skill -r <name> with a name no reference answers to exits 2 and names the ones that exist, and -r without --skill exits 2 and says which flag is missing. matra --skill in any of its accepted forms exits 0; it reads no document, so it has nothing to find and never exits 1.",
-      "words": 82
+      "text": "On exit code 2 the command writes matra:  followed by the error's Display string to standard error, prefixed with the path when the failure concerns a file. Under --json it also writes the envelope to standard output, with result null and error holding the serde form above, {kind, message, details}: the same three a Rust caller serializes and a Python caller reads off the exception. The envelope's input names the file, so the error object carries no path of its own.",
+      "words": 83
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5641,
-      "readability_grade": 12.5894,
+      "lexical_density": 0.5667,
+      "readability_grade": 9.14,
+      "sentences": 1,
+      "text": "spec/tests/parity/parity.json pins that equality: the same files through Rust, Python and the command line give the same kind, message and details, and a runner per surface fails on a drift.",
+      "words": 31
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5833,
+      "readability_grade": 4.8233,
+      "sentences": 1,
+      "text": "A broken pipe, which is what happens when the reading end of matra analyze file.md | head goes away, exits 0 and prints nothing.",
+      "words": 24
+    },
+    {
+      "compression_ratio": 0.5673,
+      "kind": "paragraph",
+      "lexical_density": 0.5714,
+      "readability_grade": 9.8317,
+      "sentences": 3,
+      "text": "matra analyze DIR reads every file in the directory and keeps going past a failure. Each failed file is a line on standard error and, under --json, its own envelope line with its error; the run exits 2 if any file failed, after the walk has finished. This is the one partial success the command line has: per-item failure in a bulk operation.",
+      "words": 63
+    },
+    {
+      "compression_ratio": 0.5132,
+      "kind": "paragraph",
+      "lexical_density": 0.5436,
+      "readability_grade": 16.1227,
+      "sentences": 4,
+      "text": "The table is the whole contract, and no command narrows it. The command line's own refusals carry the kind whose remedy matches, which for each of them is InvalidInput, a call to change: a directory given to summarize, keyphrases or clusters, --format with a directory, matra --skill -r <name> or matra --schema <name> with a name nothing answers to (both name the ones that exist), -r without --skill, config init over an existing file without --force, clusters in a build without the model2vec feature, and a usage error such as an unknown flag. A missing path is not one of them: it is the library's own Io failure with not_found, raised before the engine is built so it costs no model load. matra --skill and matra --schema in any of their accepted forms exit 0; they read no document, so they have nothing to find and never exit 1.",
+      "words": 151
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5455,
+      "readability_grade": 13.3718,
       "sentences": 2,
-      "text": "The exception classes above belong to the library surface, not to the command line. A domain::Error reaching the command line is rendered and turned into an exit code; it never surfaces as a Python exception, whichever launcher started it.",
-      "words": 40
+      "text": "The exception classes above belong to the library surface, not to the command line. A domain::Error reaching the command line is rendered and turned into an exit code and, under --json, an envelope; it never surfaces as a Python exception, whichever launcher started it.",
+      "words": 45
     }
   ]
 }
