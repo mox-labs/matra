@@ -74,7 +74,7 @@ model at all.
 
 `format` is `plain_text` or `markdown`, the format vocabulary every surface shares, selecting which reader runs. `expect.metrics` mirrors the document's `metrics`, and a sentence pins only the detections it names: an absent key is not checked, and a `root_mood` of `null` pins "no mood".
 
-The optional `expect.sections` (each heading's `heading`, `level` and `span`), `expect.paragraphs` (each paragraph's `kind` and `span`) and `expect.skipped` pin the reader's output, and a `span` on a sentence or a token pins where it lies. Every span counts UTF-8 bytes of `input`. Whatever a fixture pins, every runner also checks two things over every fixture: each token's span slices `input` to the token's text, and the accounting law L9, that every byte of `input` that is not whitespace lies in exactly one heading, paragraph or skipped span. `markdown-structure.json` is the markdown fixture: front matter, a `## References` heading, inline markup, a quote, a list item and a table.
+The optional `expect.sections` (each heading's `heading`, `level` and `span`), `expect.paragraphs` (each paragraph's `kind` and `span`) and `expect.skipped` pin the reader's output, and a `span` on a sentence or a token pins where it lies. Every span counts UTF-8 bytes of `input`. Whatever a fixture pins, every runner also checks two things over every fixture: each token's span slices `input` to the token's text, and the accounting law L8, that every byte of `input` that is not whitespace lies in exactly one heading, paragraph or skipped span. `markdown-structure.json` is the markdown fixture: front matter, a `## References` heading, inline markup, a quote, a list item and a table.
 
 ## The schema
 

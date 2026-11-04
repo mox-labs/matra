@@ -98,7 +98,7 @@ not a fix.
 
 - `Engine::annotate` must remain the only route from text to
   `NlpProvider::parse`. Grep the diff for new `.parse(` call sites.
-- The seven equivalence laws (L1-L7 tests in `src/lib.rs`) and the accounting law (L9) must not be
+- The seven equivalence laws (L1-L7 tests in `src/lib.rs`) and the accounting law (L8) must not be
   weakened, deleted, or made vacuous. A test edit that keeps the name
   but shrinks the claim is a finding.
 - Per-paragraph parse is load-bearing (FM1): reject anything that

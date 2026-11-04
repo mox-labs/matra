@@ -250,7 +250,7 @@ fn check_spans(input: &str, doc: &Document, name: &str) {
     }
 }
 
-/// L9, the accounting law: every byte of the input that is not
+/// L8, the accounting law: every byte of the input that is not
 /// whitespace lies in exactly one heading, paragraph or skipped span.
 fn accounting(input: &str, doc: &Document) -> Result<(), String> {
     let mut owners = vec![0u32; input.len()];
@@ -314,7 +314,7 @@ fn rust_crust_conforms_to_spec() {
         assert_eq!(p.source.sha256, digest, "{name}: input digest");
 
         check_spans(&fixture.input, &doc, name);
-        accounting(&fixture.input, &doc).unwrap_or_else(|why| panic!("{name}: L9: {why}"));
+        accounting(&fixture.input, &doc).unwrap_or_else(|why| panic!("{name}: L8: {why}"));
         if let Some(want) = &e.sections {
             let got: Vec<_> = doc
                 .sections

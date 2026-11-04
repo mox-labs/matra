@@ -64,7 +64,7 @@ def check_spans(source: bytes, doc: dict[str, Any]) -> None:
 
 
 def check_accounting(text: str, doc: dict[str, Any]) -> None:
-    """L9: every byte of the input that is not whitespace lies in exactly
+    """L8: every byte of the input that is not whitespace lies in exactly
     one heading, paragraph or skipped span."""
     source = text.encode()
     owners = [0] * len(source)
