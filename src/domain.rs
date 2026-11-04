@@ -135,26 +135,27 @@ pub mod limits {
 /// Measured cold starts ran from 3 to 35 seconds with nothing on screen,
 /// which is indistinguishable from a hung process, and the natural
 /// response to a hung process makes it worse. The library writes to no
-/// terminal, so it hands the facts to whoever does: the UDPipe
-/// constructors that provision carry a `_with_notice` form that calls a
-/// closure once per fetch, and only when the artifact is not already on
-/// disk.
+/// terminal, so it hands the facts to whoever does: the constructors that
+/// provision carry a `_with_notice` form that calls a closure once per
+/// fetch, and only when the artifact is not already on disk.
 ///
-/// That is `Udpipe::english_with_notice`,
-/// `Udpipe::from_config_with_notice` and `Engine::from_config_with_notice`.
-/// `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts
-/// and has no notice form, so a semantic first run is still silent.
+/// That is `Engine::from_config_with_notice` for the parsing model, and
+/// `Model2Vec::from_config_with_notice` for the embedding model, whose
+/// three files are fetched and verified as one set and so are one notice.
 ///
 /// Facts rather than a sentence. The caller decides the wording, the
 /// stream, and whether to say anything at all.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct ProvisionNotice {
-    /// The artifact's filename, as it will appear in `destination`.
+    /// What is being fetched: the artifact's filename as it will appear
+    /// in `destination`, or, for a model fetched as a set of files, the
+    /// model's name (`potion-base-8M`).
     pub artifact: String,
-    /// The artifact's pinned size in bytes. Known before the fetch
-    /// because the size is a constant in the source, checked against
-    /// what arrives.
+    /// The artifact's pinned size in bytes, the set's total for a model
+    /// fetched as a set. Known before the fetch because it is a constant
+    /// in the source; the pinned digest decides whether what arrives is
+    /// trusted.
     pub bytes: u64,
     /// The directory the artifact is being fetched into.
     pub destination: PathBuf,
