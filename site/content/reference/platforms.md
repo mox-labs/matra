@@ -74,7 +74,7 @@ The library, the CLI and the Python package resolve the model directory the same
 
 The download is held in memory, checked against the pinned hash, and written only if it matches, so nothing unverified reaches the model directory and an interrupted transfer leaves nothing behind. A mismatch downloads once more; a second mismatch is an error, and nothing is loaded. A cached parsing model that fails the check is replaced only when new bytes verify, so a re-download that cannot reach the network leaves the file that was there. The embedding model is never written over files already in its directory; [Provisioning](semantic-clusters.md#provisioning) has what it does instead.
 
-The library prints nothing while it downloads. The command line prints two lines on stderr before the parsing model's download, naming the artifact, its size, where it is going and the model's license; `--quiet` silences them. [Errors](errors.md#provisioning-failures) has what each failure returns.
+The library prints nothing while it downloads. The command line prints two lines on stderr before either model's download, naming the model, its size, where it is going and its license; `--quiet` silences them. [Errors](errors.md#provisioning-failures) has what each failure returns.
 
 ## Model licenses
 

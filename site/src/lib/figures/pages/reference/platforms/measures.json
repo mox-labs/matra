@@ -137,11 +137,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5714,
-      "readability_grade": 7.289,
+      "lexical_density": 0.575,
+      "readability_grade": 6.72,
       "sentences": 3,
-      "text": "The library prints nothing while it downloads. The command line prints two lines on stderr before the parsing model's download, naming the artifact, its size, where it is going and the model's license; --quiet silences them. Errors has what each failure returns.",
-      "words": 45
+      "text": "The library prints nothing while it downloads. The command line prints two lines on stderr before either model's download, naming the model, its size, where it is going and its license; --quiet silences them. Errors has what each failure returns.",
+      "words": 41
     },
     {
       "compression_ratio": null,
