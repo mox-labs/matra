@@ -312,13 +312,24 @@ jobs:
   semver:
     name: cargo-semver-checks
     runs-on: ubuntu-latest
-    # PR-only: the baseline is the published version, so pushes to main
-    # (which are merges of already-checked PRs) skip it. Armed since
-    # matra 0.1.0 landed on crates.io; a PR that breaks semver now fails.
-    # PRs into `next` skip it: `next` gathers a breaking release's
-    # milestones before the version moves, and the release PR from `next`
-    # into main, which carries the version bump, is where it binds.
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    # The baseline is the newest release on crates.io, so this compares
+    # what main would publish against what users already have. It binds
+    # on every pull request into main and on every push to main, as
+    # EPR-0003 promises: a push that reached main without a pull request,
+    # or a merge whose result differs from the commit its pull request
+    # checked, is still checked against the published release.
+    #
+    # `next` is left out on both events. It gathers a breaking release's
+    # milestones while Cargo.toml still names the last release, so every
+    # milestone is a break the version does not yet allow, and the check
+    # would fail on purpose with nothing to fix. The version moves in the
+    # release pull request from `next` into main, which this job checks,
+    # and the push of its merge is checked again. No release is cut from
+    # any branch but main, so main is the one place the promise binds.
+    # Armed since matra 0.1.0 landed on crates.io.
+    if: >-
+      (github.event_name == 'pull_request' && github.base_ref == 'main')
+      || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
