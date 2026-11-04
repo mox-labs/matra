@@ -52,7 +52,8 @@ Called from `Engine::annotate` before decomposition. Because annotate is the uni
 |---|---|
 | `"input"` | `Engine::annotate` in `lib.rs` |
 | `"file_source"` | `source/file.rs` before reading the file |
-| `"rake"`, `"yake"` | Per-extractor caps in `extraction/` |
+| `"tfidf"`, `"textrank"`, `"rake"`, `"yake"` | Per-method caps in `extraction/` |
+| `"clusters"` | `matra::clusters` in `lib.rs` before embedding, and the clustering in `extraction/semantic.rs` |
 
 When adding a new gate, pick a distinct `what` discriminator.
 

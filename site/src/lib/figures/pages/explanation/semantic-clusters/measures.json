@@ -18,13 +18,13 @@
       "words": 56
     },
     {
-      "compression_ratio": 0.5672,
+      "compression_ratio": 0.5673,
       "kind": "paragraph",
-      "lexical_density": 0.4828,
-      "readability_grade": 10.0569,
+      "lexical_density": 0.4915,
+      "readability_grade": 10.48,
       "sentences": 3,
-      "text": "Everything else matra returns is structure read off the text, checkable against its bytes. Clusters are not: they depend on a model's representation of meaning. So they arrive as their own value from a separate call, never as a field on Document, and they carry the identity of the model that produced them and the threshold you chose.",
-      "words": 59
+      "text": "Everything else matra returns is structure read off the text, checkable against its bytes. Clusters are not: they depend on a model's representation of meaning. So they arrive as their own value from a separate call, never as a field on Document, and their provenance carries the identity of the model that produced them and the threshold you chose.",
+      "words": 60
     },
     {
       "compression_ratio": 0.6077,

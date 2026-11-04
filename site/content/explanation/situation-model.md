@@ -18,7 +18,7 @@ That split runs through every tier:
 | `clausal_complements` names a verb governing a `ccomp` | whether that verb is evidential and whether the source is credible |
 | `hearst_pairs` names a construction that conventionally signals hypernymy | whether the hypernymy relation actually holds |
 | `modals` names `must` on an `aux` arc | whether that `must` is obligation or inference |
-| a `SemanticCluster` groups sentences whose vectors cleared your threshold | whether those sentences say the same thing |
+| a `Cluster` groups sentences whose vectors cleared your threshold | whether those sentences say the same thing |
 
 The reason for the split is reuse. A judgment is fitted to one purpose and is dead weight to the next caller; the arc it was computed from is not.
 
@@ -37,11 +37,11 @@ Two properties make it usable that far downstream. Every value is serde-serializ
 
 ## What it needs from the environment
 
-**Nothing has to be set up first.** `Engine::with_defaults()` in Rust, `Matra.english()` in Python, and any `matra` command resolve where models live and fetch what is missing. The directory comes from an explicit argument if you pass one, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`), with a non-empty `~/.matra/models` from an older install used when the new location does not exist yet. The config file does not move the model directory, and it does not choose the parsing model, which is pinned in the source. [Programming model](programming-model.md#configuration) has the resolution order.
+**Nothing has to be set up first.** `Engine::new()` in Rust, `Matra.english()` in Python, and any `matra` command resolve where models live and fetch what is missing. The directory comes from an explicit argument if you pass one, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`), with a non-empty `~/.matra/models` from an older install used when the new location does not exist yet. The config file does not move the model directory, and it does not choose the parsing model, which is pinned in the source. [Programming model](programming-model.md#configuration) has the resolution order.
 
-**Models are fetched, not bundled, and only against a pinned digest.** The UDPipe English model arrives on the first call to `Udpipe::english`, `Udpipe::from_config` or `Matra.english`; the reference embedding model arrives on the first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config`. Both fetch from URLs written in the source and load nothing whose SHA-256 does not equal a constant written beside them. A download that fails verification is fetched once more, in memory, and a second failed download raises without anything having been written. Exactly one artifact set can arrive this way for each.
+**Models are fetched, not bundled, and only against a pinned digest.** The UDPipe English model arrives on the first call to `Engine::new`, `Engine::from_config` or `Matra.english`; the reference embedding model arrives on the first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config`. Both fetch from URLs written in the source and load nothing whose SHA-256 does not equal a constant written beside them. A download that fails verification is fetched once more, in memory, and a second failed download raises without anything having been written. Exactly one artifact set can arrive this way for each.
 
-**Bringing your own is a first-class path.** `Udpipe::from_path` and `Model2Vec::from_dir` load what you supply and touch no network, whatever the directory holds. For those, the digest is identity rather than proof: it says which artifacts produced a value, not that they are the ones you meant to fetch.
+**Bringing your own is a first-class path.** Python's `Matra.from_path` and `Model2Vec::from_dir` load what you supply and touch no network, whatever the directory holds. For those, the digest is identity rather than proof: it says which artifacts produced a value, not that they are the ones you meant to fetch.
 
 **Verification and load share one read.** Bytes are hashed in memory and the model is loaded from those same bytes. Nothing re-reads the disk between the two.
 

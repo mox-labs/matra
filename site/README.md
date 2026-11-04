@@ -302,9 +302,9 @@ flag and shows as a tag. A row and its words light each other.
 `figure-metrics` answers "where in the document do the paragraph measures
 move, and together?", as small multiples over one paragraph axis. A paragraph
 matra declined to measure is a cross and a break in the line, never a zero. A
-panel has a reference line only where matra computes a document value
-(readability's `Corpus::mean_readability`); the others have none, rather than
-a number the site made up.
+panel has a reference line only where the generator computes a document
+value (readability's mean over the measured paragraphs); the others have
+none, rather than a number the site made up.
 
 `figure-keyphrases` answers "do RAKE and YAKE agree on what ranks high?".
 matra's two scores are not comparable, so it joins each phrase's RAKE rank to
@@ -324,7 +324,7 @@ similarities TextRank ranks over are internal to matra, and the site draws
 only what the public surface returns.
 
 `figure-clusters` answers "how do the clusters change as the threshold
-moves?". The generator runs `embed_and_cluster` at every value of a grid
+moves?". The generator runs `matra::clusters` at every value of a grid
 from 0.50 to 0.95 (the shipped default must be on it), and the figure shows
 one value at a time: each sentence a row, each pair that clears the
 threshold an arc labelled with its cosine, a clustered sentence's marker in
@@ -339,8 +339,8 @@ twin lists the clusters and edges at every
 grid value; gate 9 compares the layer marked `data-current`.
 
 `figure-pipeline` answers "what does each stage add?": one Markdown
-document as `Input::text` hands it over, after `Engine::annotate`, and after
-`Engine::compose`, stepped through with a rail. Without scripts all three
+document as `Input::text` hands it over, read and parsed, and measured (the
+engine's two internal stages), stepped through with a rail. Without scripts all three
 stages render one after another.
 
 ### Diagrams

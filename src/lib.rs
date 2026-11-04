@@ -230,6 +230,10 @@ impl ExactSizeIterator for Inputs {}
 /// The parser is UDPipe with its pinned English model, so an engine is
 /// built only in a build with the `udpipe` feature: [`Engine::new`],
 /// [`Engine::from_config`] and [`Engine::from_config_with_notice`].
+///
+/// An `Engine` is neither `Send` nor `Sync`: the model holds C-side
+/// state its parse path mutates, and the readers are not `Send`. Build
+/// one on each thread that analyzes.
 pub struct Engine {
     nlp: Box<dyn NlpProvider>,
     readers: decompose::Decomposers,
@@ -281,9 +285,9 @@ impl Engine {
     /// # }
     /// ```
     ///
-    /// The returned iterator borrows the engine and is not `Send`: the
-    /// parser is `Send` without `Sync`, so the stream cannot be shared
-    /// across threads.
+    /// The returned iterator borrows the engine and is not `Send`: an
+    /// `Engine` is neither `Send` nor `Sync`, so the stream stays on the
+    /// thread that built the engine.
     pub fn analyze_all<I>(
         &self,
         inputs: I,

@@ -4,32 +4,35 @@ The value semantic clustering returns, the model it embeds with, and its bounds.
 
 ## The value
 
-`embed_and_cluster`, `extraction::semantic_clusters` and their Python forms return a `SemanticClusters`, a standalone value and never a field on `Document`:
+`clusters(&doc, &embedder, threshold)` and Python's `Matra.semantic_clusters` return a `Clusters`, a standalone value and never a field on `Document`. Its JSON Schema is `spec/schema/v2/clusters.schema.json`.
 
 ```text
-SemanticClusters
-  identity     identity of the model whose vector space produced the scores
-  threshold    the cutoff you supplied, narrowed to f32
-  clusters     each: member sentence indices + the edges that cleared
+Clusters
+  provenance   the document's, plus method "cosine" and parameters:
+                 threshold   the cutoff you supplied
+                 embedder    identity of the model whose vector space produced the scores
+  clusters     each: member sentence indices
+  edges        every pair that cleared the threshold
 ```
 
 | Type | Field | Holds |
 |---|---|---|
-| `SemanticClusters` | `identity` | The identity the embedder reports: for `Model2Vec`, the SHA-256 over its three artifacts, the value its `model_hash` returns |
-| | `threshold` | The cosine cutoff the call was given, as an `f32` |
+| `Clusters` | `provenance` | The document's `Provenance`, with `method` and `parameters`. `parameters.embedder` is the identity the embedder reports: for `Model2Vec`, the SHA-256 over its three artifacts, the value its `model_hash` returns. `parameters.threshold` is the cosine cutoff the call was given |
 | | `clusters` | The connected components, ordered by smallest member index |
-| `SemanticCluster` | `members` | Sentence indices in document order, sorted |
-| | `edges` | Every pair in the cluster whose cosine cleared the threshold, sorted |
-| `SemanticEdge` | `a`, `b` | The two sentence indices, `a < b` |
-| | `score` | Their cosine similarity, as an `f32` |
+| | `edges` | Every pair whose cosine cleared the threshold, ordered by `a`, then `b`; both ends lie in one cluster |
+| `Cluster` | `members` | Sentence indices in document order, sorted, at least two |
+| `SimilarityEdge` | `a`, `b` | The two sentence indices, `a < b` |
+| | `score` | Their cosine similarity, an `f64` |
 
 A sentence with no pair above the threshold is in no cluster. Two members of one cluster need not share an edge: they can be joined through a chain of edges.
 
-`threshold` is an `f32`, because that is the precision the whole similarity computation runs at. An `f64` you passed comes back as the nearest `f32`, so a Python caller who passed `0.85` reads `0.8500000238418579` out of the result, and the equality `result["threshold"] == 0.85` does not hold. Echo back the value you passed, or compare with a tolerance. Values that are exact in binary, `0.5` and `0.75` among them, round-trip unchanged, which is what makes the surprise intermittent.
+The threshold is recorded exactly as it was passed. A score is computed in the vectors' own `f32` and widened to `f64`, so it carries more digits than the model resolved: compare scores with a tolerance, not for equality with a number you typed.
+
+Python's module-level `semantic_clusters(vectors, threshold, model_hash)` clusters vectors you already hold. It reads no document, so it returns `parameters`, `clusters` and `edges` with no provenance (`matra.VectorClusters`). From Rust, vectors you hold go through `clusters` with an `Embedder` that returns them.
 
 ## The model
 
-The `Model2Vec` adapter, behind the `model2vec` feature, loads static embedding models in the model2vec artifact format: an embedding matrix (`model.safetensors`), a `tokenizer.json`, and a `config.json` in one directory. The clustering functions and the `Embedder` port are always compiled; with your own `Embedder` implementation, clustering needs no feature at all.
+The `Model2Vec` adapter, behind the `model2vec` feature, loads static embedding models in the model2vec artifact format: an embedding matrix (`model.safetensors`), a `tokenizer.json`, and a `config.json` in one directory. `clusters` and the `Embedder` port are always compiled; with your own `Embedder` implementation, clustering needs no feature at all.
 
 | Constructor | Rust | Python | Reaches the network |
 |---|---|---|---|
@@ -63,7 +66,7 @@ A static model is a lookup table: inference is a row gather, a mean, and a norma
 
 | Condition | Rust | Python |
 |---|---|---|
-| More than 2,000 sentences, checked before the embedding pass runs | `InputTooLarge`, `what` is `"semantic_clusters"` | `ValueError` |
+| More than 2,000 sentences, checked before the embedding pass runs | `InputTooLarge`, `what` is `"clusters"` | `ValueError` |
 | Vectors that disagree on dimension, a non-finite value, a non-finite threshold | `InvalidInput` | `ValueError` |
 | An embedder returning the wrong number of vectors | `InvalidInput` | `ValueError` |
 

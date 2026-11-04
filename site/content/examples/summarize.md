@@ -20,6 +20,7 @@ Every sentence's score in document order, with the three the summary keeps marke
 
 ## What to notice
 
-- Each item has `text`, `score` and `position`, the sentence's place in the document counting from 0. The three come back in document order (positions 32, 33 and 58), not by score: the highest score, 0.0308, is the second. The figure numbers sentences from 1, so there they are 33, 34 and 59.
+- The summary carries the text's `provenance` with what made it: `method` is `textrank` and `parameters` is `{"n": 3}`. Each of its `sentences` has `index`, the sentence's place among the document's sentences counting from 0, its `span` in the input, its `text` and its `score`. The three come back in document order (indices 32, 33 and 58), not by score: the highest score, 0.0308, is the second. The figure numbers sentences from 1, so there they are 33, 34 and 59.
+- All three calls hand matra the text rather than the file, so the provenance records no `path`: the Python method takes text, and the three must record the same input.
 - The summary is extractive: the sentences are as Darwin wrote them, and nothing is rephrased.
-- matra has a second summarizer, `tfidf_summarize`, and it is the CLI's default (`summarize.algorithm` in the configuration). This example names TextRank in all three calls, so they agree whatever a configuration file says.
+- matra has a second summarizer, TF-IDF, and it is the default: `matra::summarize` in Rust, and the command line's `summarize.algorithm` as shipped. This example names TextRank in all three calls (`SummaryMethod::TextRank`, `textrank_summarize`, `--method textrank`), so they agree whatever a configuration file says.

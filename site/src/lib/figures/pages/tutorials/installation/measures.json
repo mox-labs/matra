@@ -119,11 +119,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5909,
-      "readability_grade": 9.9755,
+      "lexical_density": 0.5778,
+      "readability_grade": 10.4511,
       "sentences": 2,
-      "text": "To keep it somewhere else, set MATRA_MODEL_DIR, pass --model-dir to the CLI, or pass the directory to Udpipe::english in Rust or Matra.english in Python. The model directory gives the full resolution order, and the model download what happens when a download fails its check.",
-      "words": 46
+      "text": "To keep it somewhere else, set MATRA_MODEL_DIR, pass --model-dir to the CLI, or pass the directory through Config::with_model_dir in Rust or to Matra.english in Python. The model directory gives the full resolution order, and the model download what happens when a download fails its check.",
+      "words": 47
     },
     {
       "compression_ratio": 0.5817,
@@ -137,11 +137,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5758,
-      "readability_grade": 6.9364,
+      "lexical_density": 0.6389,
+      "readability_grade": 6.4622,
       "sentences": 2,
-      "text": "The command line and the config file always use this model. To parse with a different UDPipe model file, load it by path from the library: Udpipe::from_path in Rust or Matra.from_path in Python.",
-      "words": 34
+      "text": "The command line and the config file always use this model. To parse with a different UDPipe model file, load it by path from Python with Matra.from_path (Python); the Rust surface loads the pinned model alone.",
+      "words": 37
     },
     {
       "compression_ratio": null,

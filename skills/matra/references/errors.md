@@ -37,7 +37,7 @@ Seven kinds exist. The kind string is the stable key a consumer branches on; the
 | `textrank` | TextRank summarization | 2,000 | Sentences in the slice |
 | `rake` | RAKE keyphrases | 200,000 | Tokens across the slice, punctuation included |
 | `yake` | YAKE keyphrases | 200,000 | Tokens across the slice, punctuation included |
-| `semantic_clusters` | Clustering | 2,000 | Sentences in the slice |
+| `clusters` | Clustering | 2,000 | Sentences in the document, or vectors passed in |
 | `udpipe_download` | The UDPipe model fetch | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
 | `embedding_download` | One embedding artifact fetch | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
 | `config_file` | Reading the config file | 64 KiB (65,536) | File size from the filesystem, checked before any read |

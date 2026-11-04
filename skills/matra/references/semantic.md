@@ -5,7 +5,7 @@ summary: Similarity clusters over the sentences of one document, the threshold y
 
 # Semantic clusters
 
-Everything else matra returns is deterministic structure, checkable against the source bytes. This is not. Clusters depend on a model's representation of meaning, they cannot be verified against the text, and the library treats that difference structurally: clusters arrive as a standalone value from a separate call, never as a field on a document or a sentence, and they carry the identity of the model that produced them together with the threshold you chose.
+Everything else matra returns is deterministic structure, checkable against the source bytes. This is not. Clusters depend on a model's representation of meaning, they cannot be verified against the text, and the library treats that difference structurally: clusters arrive as a standalone value from a separate call, never as a field on a document or a sentence, and their provenance carries the identity of the model that produced them together with the threshold you chose.
 
 There is no command line for this. It is a library and Python call. What the command line does expose is where the embedding model lives:
 
@@ -20,25 +20,27 @@ $ matra config show
 Feed a document and an embedding model, get connected components of sentences whose pairwise cosine similarity cleared your threshold. The use it is built for is catching restatement: the same claim in different words, which lexical overlap cannot see.
 
 ```text
-SemanticClusters
-  identity     identity of the model whose vector space produced the scores
-  threshold    the cutoff you supplied, narrowed to f32
-  clusters     each: member sentence indices, plus the edges that cleared
+Clusters
+  provenance   the document's, plus method "cosine" and parameters:
+                 threshold   the cutoff you supplied
+                 embedder    identity of the model whose vector space produced the scores
+  clusters     each: member sentence indices
+  edges        every pair that cleared the threshold, with its score
 ```
 
-`threshold` is an `f32`, the precision the similarity computation runs at, so a Python caller who passes `0.85` reads `0.8500000238418579` back, and the equality `result["threshold"] == 0.85` does not hold. Report the number the caller asked for, not the value the field hands back. Values exact in binary, such as `0.5` and `0.75`, round-trip unchanged, which is what makes the surprise intermittent.
+The threshold comes back exactly as you passed it. A score is computed in the vectors' own `f32` and widened, so it carries more digits than the model resolved: `0.92387664` reads `0.9238766431808472`. Compare scores at four decimal places, not by equality with a number you typed.
 
 | Type | Fields |
 |---|---|
-| `SemanticClusters` | `identity` (string), `threshold` (float), `clusters` (array) |
-| `SemanticCluster` | `members` (sentence indices), `edges` |
-| `SemanticEdge` | `a`, `b` (indices, `a` < `b`), `score` (cosine similarity) |
+| `Clusters` | `provenance` (with `method` and `parameters`), `clusters` (array), `edges` (array) |
+| `Cluster` | `members` (sentence indices, ascending, at least two) |
+| `SimilarityEdge` | `a`, `b` (indices, `a` < `b`), `score` (cosine similarity) |
 
-Members are positions in the sentence list you passed, so a result re-anchors against the document it came from. Clusters are ordered by smallest member index, and each cluster's members and edges are sorted, so the output is deterministic.
+Members are positions among the document's sentences, so a result re-anchors against the document it came from. Clusters are ordered by smallest member index and edges by `a`, then `b`, so the output is deterministic. Both ends of an edge are members of one cluster.
 
 ## Three things the shape means
 
-**Co-membership is transitive, not pairwise.** Clusters are connected components. Sentence A and sentence C can share a cluster because both resemble B, without resembling each other. The above-threshold edges travel inside each cluster precisely so a consumer can see which pairs actually cleared the bar. A missing edge is no claim, not a low score. Never present co-membership as pairwise similarity.
+**Co-membership is transitive, not pairwise.** Clusters are connected components. Sentence A and sentence C can share a cluster because both resemble B, without resembling each other. The above-threshold edges travel beside the clusters precisely so a consumer can see which pairs actually cleared the bar. A missing edge is no claim, not a low score. Never present co-membership as pairwise similarity.
 
 **Singletons are excluded by construction.** A sentence with no above-threshold edge appears in no cluster, so "in no cluster" is a meaningful count rather than an artifact.
 
@@ -64,19 +66,19 @@ Bringing your own model loads what you supply and never reaches the network, wha
 
 ## `identity`
 
-Whatever produced the vectors, its identity travels with every result derived from them, in the `identity` field. That is the field that makes a score attributable: two runs with different `identity` values are not comparable, and a cluster reported without it is a number with no provenance. When you write results down, write the hash down with them.
+Whatever produced the vectors, its identity travels with every result derived from them, in `provenance.parameters.embedder`. That is the field that makes a score attributable: two runs with different identities are not comparable, and a cluster reported without it is a number with no provenance. When you write results down, write the hash down with them.
 
 For a caller-supplied embedder, the identity is whatever that embedder's `identity()` returns. It is read once, when the object is handed over, so scores cannot be reattributed part way through a call. Two embedders that can disagree must not return the same string.
 
 ## Bounds and failures
 
-Capped at 2,000 sentences, with the `what` label `semantic_clusters`. An artifact download is capped at 64 MiB with the label `embedding_download`, bounded at 300 seconds end to end and 30 seconds on the connection.
+Capped at 2,000 sentences, with the `what` label `clusters`. An artifact download is capped at 64 MiB with the label `embedding_download`, bounded at 300 seconds end to end and 30 seconds on the connection.
 
 Contract violations are `invalid_input`, which means the call site is wrong and not the text: vectors disagreeing on dimension, a vector containing a non-finite value, a non-finite threshold, or an embedder returning the wrong number of vectors. An empty slice returns empty clusters rather than failing.
 
 ## Reaching it
 
-From Rust, `embed_and_cluster(document, embedder, threshold)` embeds a document's sentences and clusters them, and `extraction::semantic_clusters(embeddings, threshold, identity)` clusters vectors you already hold. The first needs no feature flag with your own `Embedder` implementation; only the shipped adapter sits behind the `model2vec` feature.
+From Rust, `matra::clusters(&document, &embedder, threshold)` embeds a document's sentences with the embedder you pass and clusters them; matra never builds one inside the call. It needs no feature flag with your own `Embedder` implementation, which is also how vectors you already hold get in: return them from `embed`. Only the shipped adapter sits behind the `model2vec` feature.
 
 That feature is not in the default set and `cli` does not pull it in, so check before promising a user this works. A Rust caller needs `cargo add matra --features model2vec`, and a binary installed with `cargo install matra --features cli` reports `features: udpipe cli` with no embedding adapter compiled in. The published Python wheel is built with it, so from Python `Model2Vec` is always there. `--version` prints the feature list of the binary in front of you on its second line.
 
@@ -84,13 +86,13 @@ That feature is not in the default set and `cli` does not pull it in, so check b
 $ matra --version
 ```
 
-From Python, `Matra.semantic_clusters(text, threshold, model)` takes a `Model2Vec` or any object with `embed` and `identity`, and the module-level `semantic_clusters(embeddings, threshold, model_hash)` is the vectors-in twin: its third argument is the identity the result carries. `Model2Vec.embed(texts)` is where the vectors for that twin come from: it returns one vector per text, in order, each of `model.dimensions` length. See `python` for the signatures.
+From Python, `Matra.semantic_clusters(text, threshold, model)` takes a `Model2Vec` or any object with `embed` and `identity` and returns the `Clusters` dict, and the module-level `semantic_clusters(embeddings, threshold, model_hash)` is the vectors-in twin. It reads no document, so it returns `parameters`, `clusters` and `edges` with no provenance, its third argument recorded as `parameters["embedder"]`. `Model2Vec.embed(texts)` is where the vectors for that twin come from: it returns one vector per text, in order, each of `model.dimensions` length. See `python` for the signatures.
 
 ## Comparing whole documents
 
 **Every clustering call above is over the sentences of one document. There is no cross-document primitive, and matra has no per-document redundancy number at all.** Build the comparison out of the two pieces you already have: embed each document as one text with `Model2Vec.embed`, then cluster those vectors with the module-level `semantic_clusters`.
 
-**The embedder caps every text at 512 tokens, so a whole-document vector is a vector of roughly the document's first 512 tokens.** Truncation happens twice, on bytes before tokenizing and on the token ids after, and nothing past the cap reaches the mean. Tokens are not words, and the ratio depends on what the file holds, so name the basis with any figure. Swept over the 25 pages of matra's own book long enough to reach it, by the recipe below, which embeds the raw file text, 512 tokens ran out between 141 and 377 words. Diagrams, code fences and tables pull the low end down, and a route that reads files off disk gets the low end. Two long texts agreeing for as few as their first 141 words can already embed to byte-identical vectors, so documents with a shared boilerplate opening report as near-duplicates on the opening alone, and paraphrases that diverge early are never compared on the rest. Say which part of the document a cross-document score covers. When the tail is the content, chunk, and size chunks from a token count: a word count is not a safe proxy on raw markup, where a 54-word window inside an inline SVG block already filled the cap. The 2,000 cap also still applies, and on this route it counts documents rather than sentences.
+**The embedder caps every text at 512 tokens, so a whole-document vector is a vector of roughly the document's first 512 tokens.** Truncation happens twice, on bytes before tokenizing and on the token ids after, and nothing past the cap reaches the mean. Tokens are not words, and the ratio depends on what the file holds, so name the basis with any figure. Swept over the 25 pages of matra's own book long enough to reach it, by the recipe below, which embeds the raw file text, 512 tokens ran out between 141 and 378 words. Diagrams, code fences and tables pull the low end down, and a route that reads files off disk gets the low end. Two long texts agreeing for as few as their first 141 words can already embed to byte-identical vectors, so documents with a shared boilerplate opening report as near-duplicates on the opening alone, and paraphrases that diverge early are never compared on the rest. Say which part of the document a cross-document score covers. When the tail is the content, chunk, and size chunks from a token count: a word count is not a safe proxy on raw markup, where a 54-word window inside an inline SVG block already filled the cap. The 2,000 cap also still applies, and on this route it counts documents rather than sentences.
 
 Pass a threshold of `-1.0` and every pair emits an edge, because a cosine is never below it. That is the sanctioned way to read raw pairwise scores, and it is what calibration looks like: read the scores first, choose the cutoff second.
 
@@ -108,17 +110,16 @@ docs = [
 vectors = model.embed([p.read_text() for p in docs])
 
 pairs = semantic_clusters(vectors, -1.0, model.model_hash)
-for cluster in pairs["clusters"]:
-    for edge in cluster["edges"]:
-        print(f"{edge['score']:.4f}  {docs[edge['a']].name} <-> {docs[edge['b']].name}")
+for edge in pairs["edges"]:
+    print(f"{edge['score']:.4f}  {docs[edge['a']].name} <-> {docs[edge['b']].name}")
 ```
 
 Three pages of matra's own book, run from a checkout: two covering the same ground for different surfaces, and one unrelated. Reproducible, unlike a corpus nobody else has.
 
 ```text
-0.8363  cli.md <-> rust.md
+0.8215  cli.md <-> rust.md
 0.5857  cli.md <-> roadmap.md
-0.6036  rust.md <-> roadmap.md
+0.6138  rust.md <-> roadmap.md
 ```
 
-The pair separates decisively, and the shipped 0.85 does not carry over: the same vectors at `0.85` yield zero clusters, so an agent that took the starting value on faith would have reported the near-duplicates as unrelated. Document vectors are means over far more tokens than sentence vectors, so the whole scale shifts: unrelated documents sit well above zero, and near-duplicates need not reach the sentence band. Report the raw edge scores and the `identity`, and say which granularity produced them.
+The pair separates decisively, and the shipped 0.85 does not carry over: the same vectors at `0.85` yield zero clusters, so an agent that took the starting value on faith would have reported the near-duplicates as unrelated. Document vectors are means over far more tokens than sentence vectors, so the whole scale shifts: unrelated documents sit well above zero, and near-duplicates need not reach the sentence band. Report the raw edge scores and the embedder's identity, and say which granularity produced them.

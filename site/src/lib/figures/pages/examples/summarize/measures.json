@@ -27,13 +27,22 @@
       "words": 14
     },
     {
-      "compression_ratio": 0.6268,
+      "compression_ratio": 0.5753,
       "kind": "list_item",
-      "lexical_density": 0.4038,
-      "readability_grade": 3.5492,
-      "sentences": 3,
-      "text": "Each item has text, score and position, the sentence's place in the document counting from 0. The three come back in document order (positions 32, 33 and 58), not by score: the highest score, 0.0308, is the second. The figure numbers sentences from 1, so there they are 33, 34 and 59.",
-      "words": 53
+      "lexical_density": 0.425,
+      "readability_grade": 5.8425,
+      "sentences": 5,
+      "text": "The summary carries the text's provenance with what made it: method is textrank and parameters is {\"n\": 3}. Each of its sentences has index, the sentence's place among the document's sentences counting from 0, its span in the input, its text and its score. The three come back in document order (indices 32, 33 and 58), not by score: the highest score, 0.0308, is the second. The figure numbers sentences from 1, so there they are 33, 34 and 59.",
+      "words": 84
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6,
+      "readability_grade": 11.8433,
+      "sentences": 1,
+      "text": "All three calls hand matra the text rather than the file, so the provenance records no path: the Python method takes text, and the three must record the same input.",
+      "words": 30
     },
     {
       "compression_ratio": null,
@@ -47,11 +56,11 @@
     {
       "compression_ratio": null,
       "kind": "list_item",
-      "lexical_density": 0.5625,
-      "readability_grade": 10.3263,
+      "lexical_density": 0.6098,
+      "readability_grade": 12.7644,
       "sentences": 2,
-      "text": "matra has a second summarizer, tfidf_summarize, and it is the CLI's default (summarize.algorithm in the configuration). This example names TextRank in all three calls, so they agree whatever a configuration file says.",
-      "words": 33
+      "text": "matra has a second summarizer, TF-IDF, and it is the default: matra::summarize in Rust, and the command line's summarize.algorithm as shipped. This example names TextRank in all three calls (SummaryMethod::TextRank, textrank_summarize, --method textrank), so they agree whatever a configuration file says.",
+      "words": 45
     }
   ]
 }

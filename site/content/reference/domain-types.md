@@ -6,10 +6,10 @@ It is not a copy of the generated item-level documentation. For that, run `cargo
 
 ## The type graph
 
-Six types nest, each owning the next. Nothing is owned twice.
+Five types nest, each owning the next. Nothing is owned twice.
 
-<svg class="mx-own" role="img" aria-label="Nested containment from Corpus down to Token, with stored fields and computed methods for each type" viewBox="0 0 720 460" width="720" height="460" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
-<title>Containment from Corpus to Token, stored fields against computed methods</title>
+<svg class="mx-own" role="img" aria-label="Nested containment from Document down to Token, with stored fields and computed methods for each type" viewBox="0 0 720 362" width="720" height="362" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
+<title>Containment from Document to Token, stored fields against computed methods</title>
 <style>
 .mx-own text{fill:currentColor}
 .mx-own .box{fill:none;stroke:currentColor;opacity:.35;stroke-width:1px}
@@ -20,37 +20,32 @@ Six types nest, each owning the next. Nothing is owned twice.
 </style>
 <text class="hd" x="206" y="20">stored fields</text>
 <text class="hd" x="462" y="20">computed on call</text>
-<line class="rule" x1="452" y1="28" x2="452" y2="448"/>
-<rect class="box" x="8" y="36" width="182" height="408" rx="4"/>
-<rect class="box" x="32" y="134" width="152" height="298" rx="4"/>
-<rect class="box" x="44" y="202" width="137" height="224" rx="4"/>
-<rect class="box" x="56" y="246" width="122" height="174" rx="4"/>
-<rect class="box" x="68" y="300" width="107" height="114" rx="4"/>
-<rect class="box" x="80" y="368" width="92" height="40" rx="4"/>
-<text class="ty" x="17" y="55">Corpus</text>
-<text class="ty" x="41" y="153">Document</text>
-<text class="ty" x="53" y="221">Section</text>
-<text class="ty" x="65" y="265">Paragraph</text>
-<text class="ty" x="77" y="319">Sentence</text>
-<text class="ty" x="89" y="387">Token</text>
-<text class="mem" x="206" y="55">documents</text>
-<text class="mem" x="462" y="55">total_words · passive_ratio ·</text>
-<text class="mem" x="462" y="67">mean_readability</text>
-<text class="mem" x="206" y="153">provenance · sections ·</text>
-<text class="mem" x="206" y="165">metrics (DocumentMetrics) ·</text>
-<text class="mem" x="206" y="177">skipped</text>
-<text class="mem" x="206" y="221">heading · level · span ·</text>
-<text class="mem" x="206" y="233">paragraphs</text>
-<text class="mem" x="206" y="265">span · text · kind · sentences ·</text>
-<text class="mem" x="206" y="277">metrics (ParagraphMetrics)</text>
-<text class="mem" x="462" y="265">word_count · sentence_count</text>
-<text class="mem" x="206" y="319">span · text · tokens · word_count ·</text>
-<text class="mem" x="206" y="331">tree_depth · passive ·</text>
-<text class="mem" x="206" y="343">six structural fields</text>
-<text class="mem" x="462" y="319">root_token · head_of · children_of ·</text>
-<text class="mem" x="462" y="331">subtree · content_tokens</text>
-<text class="mem" x="206" y="387">the ten CoNLL-U columns · span ·</text>
-<text class="mem" x="206" y="399">is_punct</text>
+<line class="rule" x1="452" y1="28" x2="452" y2="350"/>
+<rect class="box" x="32" y="36" width="152" height="298" rx="4"/>
+<rect class="box" x="44" y="104" width="137" height="224" rx="4"/>
+<rect class="box" x="56" y="148" width="122" height="174" rx="4"/>
+<rect class="box" x="68" y="202" width="107" height="114" rx="4"/>
+<rect class="box" x="80" y="270" width="92" height="40" rx="4"/>
+<text class="ty" x="41" y="55">Document</text>
+<text class="ty" x="53" y="123">Section</text>
+<text class="ty" x="65" y="167">Paragraph</text>
+<text class="ty" x="77" y="221">Sentence</text>
+<text class="ty" x="89" y="289">Token</text>
+<text class="mem" x="206" y="55">provenance · sections ·</text>
+<text class="mem" x="206" y="67">metrics (DocumentMetrics) ·</text>
+<text class="mem" x="206" y="79">skipped</text>
+<text class="mem" x="206" y="123">heading · level · span ·</text>
+<text class="mem" x="206" y="135">paragraphs</text>
+<text class="mem" x="206" y="167">span · text · kind · sentences ·</text>
+<text class="mem" x="206" y="179">metrics (ParagraphMetrics)</text>
+<text class="mem" x="462" y="167">word_count · sentence_count</text>
+<text class="mem" x="206" y="221">span · text · tokens · word_count ·</text>
+<text class="mem" x="206" y="233">tree_depth · passive ·</text>
+<text class="mem" x="206" y="245">six structural fields</text>
+<text class="mem" x="462" y="221">root_token · head_of · children_of ·</text>
+<text class="mem" x="462" y="233">subtree · content_tokens</text>
+<text class="mem" x="206" y="289">the ten CoNLL-U columns · span ·</text>
+<text class="mem" x="206" y="301">is_punct</text>
 </svg>
 
 The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree. Every number a reader needs from a document is stored, in `DocumentMetrics` and `ParagraphMetrics` and in a sentence's `word_count`, `tree_depth` and `passive`, because a field crosses the language boundary and a method does not.
@@ -60,13 +55,14 @@ The derived structural types (`Negation`, `Modal`, `ClausalComplement`, `RootAdv
 | Type | Role |
 |---|---|
 | `Block` | a heading or paragraph a caller supplies, the input to `Input::blocks`; never returned |
-| `ScoredSentence` | output of `tfidf_summarize` and `textrank_summarize` |
-| `Keyphrase` | output of `rake_keyphrases` and `yake_keyphrases` |
+| `Summary`, `SummarySentence` | output of `summarize` and `summarize_with` |
+| `Keyphrases`, `Keyphrase` | output of `keyphrases` and `keyphrases_with` |
+| `Clusters`, `Cluster`, `SimilarityEdge` | output of `clusters`, described in [Semantic clusters](semantic-clusters.md) |
+| `Parameters` | what shaped an outcome, recorded in its `provenance` |
 | `Format` | which reader a document needs |
 | `Error` | every failure the library can return |
-| `DocumentError`, `CorpusResult` | one document's failure, and the partition of a stream into successes and failures |
+| `DocumentError` | one document's failure, an `Err` item of `analyze_all`'s stream |
 | `Embedding` | one vector from an `Embedder`, the input to clustering |
-| `SemanticClusters`, `SemanticCluster`, `SemanticEdge` | output of `embed_and_cluster` and `extraction::semantic_clusters`, described in [Semantic clusters](semantic-clusters.md) |
 | `ProvisionNotice` | what a model fetch is about to download, handed to the `_with_notice` constructors' callback, described in [Errors](errors.md#the-first-run-says-so) |
 
 Where each of those enters and leaves the pipeline is drawn in [Architecture](../architecture/design.md#one-call-end-to-end).
@@ -82,29 +78,29 @@ Where each of those enters and leaves the pipeline is drawn in [Architecture](..
 | `Section` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Document` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `DocumentMetrics`, `ParagraphMetrics` | `Debug`, `Clone`, `Default`, `PartialEq`, `Serialize`, `Deserialize` | yes |
-| `Provenance`, `Identity`, `ProvenanceSource` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
-| `ScoredSentence` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
-| `Keyphrase` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
+| `Provenance` | `Debug`, `Clone`, `PartialEq`, `Serialize`, `Deserialize` | yes |
+| `Parameters` | `Debug`, `Clone`, `Default`, `PartialEq`, `Serialize`, `Deserialize` | yes |
+| `Identity`, `ProvenanceSource` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
+| `Summary`, `SummarySentence`, `Keyphrases`, `Keyphrase` | `Debug`, `Clone`, `PartialEq`, `Serialize`, `Deserialize` | yes |
+| `Clusters`, `Cluster`, `SimilarityEdge` | `Debug`, `Clone`, `PartialEq`, `Serialize`, `Deserialize` | yes |
 | `Format` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `Span` | `Debug`, `Clone`, `Copy`, `Default`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `Skipped`, `SkippedKind`, `ParagraphKind` | `Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `Block` | `Debug`, `Clone`, `PartialEq`, `Eq` | no |
-| `Corpus` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Error` | `Debug`, `thiserror::Error` | yes |
 | `Negation`, `Modal`, `ClausalComplement`, `RootAdverbial` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `RootMood` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `HearstPair`, `HearstSpan` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `HearstPattern` | `Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
-| `DocumentError`, `CorpusResult` | `Debug` | yes |
+| `DocumentError` | `Debug` | yes |
 | `Embedding` | `Debug`, `Clone`, `PartialEq`, `Serialize`, `Deserialize` | no |
-| `SemanticClusters`, `SemanticCluster`, `SemanticEdge` | `Debug`, `Clone`, `PartialEq`, `Serialize`, `Deserialize` | yes |
 | `ProvisionNotice` | `Debug`, `Clone`, `PartialEq`, `Eq` | yes |
 
 `Block` is the one input type. It has no serde derives and no public fields, so it needs no `#[non_exhaustive]`: a caller builds one with `Block::heading` or `Block::paragraph` and only matra reads it. Its JSON form is the `blocks` format, whose schema is `spec/schema/v2/blocks.schema.json`.
 
-No type in the module derives `Hash`, and the parse tree derives no equality: two `Token`, `Sentence`, `Paragraph`, `Section` or `Document` values cannot be compared with `==`. `Format` derives `PartialEq` and `Eq`, which is what the reader table keys on, and the metric records, the provenance types, `Span`, `Skipped`, the kind enums, `Block`, `RootMood`, the Hearst types, the semantic types, `Embedding` and `ProvisionNotice` derive `PartialEq`. `Error` has no `Clone`, no equality and no serde derives. `Embedding` is the one public type without `#[non_exhaustive]`: on a tuple struct the attribute would make the constructor private, and an `Embedder` implemented outside the crate has to build one.
+No type in the module derives `Hash`, and the parse tree derives no equality: two `Token`, `Sentence`, `Paragraph`, `Section` or `Document` values cannot be compared with `==`. `Format` derives `PartialEq` and `Eq`, which is what the reader table keys on, and the metric records, the provenance types, `Span`, `Skipped`, the kind enums, `Block`, `RootMood`, the Hearst types, the outcome types, `Embedding` and `ProvisionNotice` derive `PartialEq`. `Error` has no `Clone`, no equality and no serde derives. `Embedding` is the one public type without `#[non_exhaustive]`: on a tuple struct the attribute would make the constructor private, and an `Embedder` implemented outside the crate has to build one.
 
-`#[non_exhaustive]` has two effects outside the crate. Struct literal syntax is unavailable, so you build values through the associated constructors listed below. Matches on `Format`, `ParagraphKind`, `SkippedKind` and `Error` need a catch-all arm, because variants can be added in a minor release.
+`#[non_exhaustive]` has two effects outside the crate. Struct literal syntax is unavailable, so you build values through the associated constructors listed below. The outcome types have no public constructor: matra produces them, and serde reads them back. Matches on `Format`, `ParagraphKind`, `SkippedKind` and `Error` need a catch-all arm, because variants can be added in a minor release.
 
 Every field on these types is `pub` and readable. `TokenBuilder` and `Block` are the exceptions: their fields are private, and you reach them through the builder's setters and the block's constructors.
 
@@ -289,9 +285,9 @@ The output of the pipeline.
 | `nominalization_ratio` | `Option<f64>` | Share of nominalizing nouns |
 | `passive_ratio` | `Option<f64>` | Passive sentences over total sentences. `None` with no sentences |
 
-Before `compose` runs every count is 0 and every ratio `None`; `None` after it means the document did not meet the metric's condition, never a computed zero.
+Before the document is measured every count is 0 and every ratio `None`; `None` after it means the document did not meet the metric's condition, never a computed zero. `Engine::analyze` always measures, so this holds for a document you build by hand with `Document::new`.
 
-`Provenance` holds `matra`, the version that produced the document; `schema`, the schema version as `"major.minor"` (`SCHEMA_VERSION`, `"2.0"`), which appears nowhere else; `parser`, the parser's `Identity`; `format`, the `Format` the input was read as; and `source`, a `ProvenanceSource` with the input's `path` (`None` for anything but a file), and the length in `bytes` and the `sha256` of the analysed text every span points into, computed once at annotation. For markdown and plain text that is the input; for block input, the blocks joined. There is no timestamp, so two analyses of the same input by the same build are identical. `Identity` names a model-backed component: `name` (`udpipe`), `model` (`english-ewt-ud-2.5-191206`), `sha256` of the model artifact, and `license`. The UDPipe adapter derives it from the bytes it loaded, so a model matra does not pin reports its digest with `model` and `license` set to `None`. `Provenance::new(parser, format, source)` fills `matra` and `schema` from the build.
+`Provenance` holds `matra`, the version that produced the document; `schema`, the schema version as `"major.minor"` (`SCHEMA_VERSION`, `"2.0"`), which appears nowhere else; `parser`, the parser's `Identity`; `format`, the `Format` the input was read as; and `source`, a `ProvenanceSource` with the input's `path` (`None` for anything but a file), and the length in `bytes` and the `sha256` of the analysed text every span points into, computed once at annotation. For markdown and plain text that is the input; for block input, the blocks joined. On a document, `method` and `parameters` are `None` and absent from the JSON; an outcome derived from the document carries a copy of its provenance with both set (see [Summary](#summary)). There is no timestamp, so two analyses of the same input by the same build are identical. `Identity` names a model-backed component: `name` (`udpipe`), `model` (`english-ewt-ud-2.5-191206`), `sha256` of the model artifact, and `license`. The UDPipe adapter derives it from the bytes it loaded, so a model matra does not pin reports its digest with `model` and `license` set to `None`. `Provenance::new(parser, format, source)` fills `matra` and `schema` from the build.
 
 ### Methods
 
@@ -299,28 +295,52 @@ Before `compose` runs every count is 0 and every ratio `None`; `None` after it m
 |---|---|---|
 | `new(provenance: Provenance, sections: Vec<Section>, skipped: Vec<Skipped>)` | `Document` | Constructor. An empty metric record |
 | `paragraphs(&self)` | `impl Iterator<Item = &Paragraph>` | Every paragraph, in document order |
-| `paragraphs_mut(&mut self)` | `impl Iterator<Item = &mut Paragraph>` | The mutable form, used by `annotate` and by the metric suite `compose` runs |
+| `paragraphs_mut(&mut self)` | `impl Iterator<Item = &mut Paragraph>` | The mutable form, which the engine uses as it parses and measures |
 | `sentences(&self)` | `impl Iterator<Item = &Sentence>` | Every sentence across every paragraph |
 | `tokens(&self)` | `impl Iterator<Item = &Token>` | Every token across every sentence |
 
-## ScoredSentence
+## Summary
+
+What `summarize` and `summarize_with` return. The selector is `matra::SummaryMethod`, at the crate root (`TfIdf`, the default, and `TextRank`, `#[non_exhaustive]`).
 
 | Field | Type | Contents |
 |---|---|---|
-| `text` | `String` | Sentence text |
-| `score` | `f64` | Relevance score, higher is more relevant |
-| `position` | `usize` | Index of the sentence in the slice passed to the summarizer |
+| `provenance` | `Provenance` | The document's, with `method` (`tfidf` or `textrank`, an open set) and `parameters` (`n`) |
+| `sentences` | `Vec<SummarySentence>` | At most `n` sentences, in document order |
 
-Both summarizers select the top N by score and then return them in ascending `position`, so the result reads in document order while `score` carries the ranking. `ScoredSentence::new(text: String, score: f64, position: usize) -> ScoredSentence` is the constructor.
+`SummarySentence` is one sentence a summary keeps:
 
-## Keyphrase
+| Field | Type | Contents |
+|---|---|---|
+| `index` | `usize` | The sentence's position among the document's sentences (`Document::sentences`), counting from 0 |
+| `span` | `Span` | Where it lies in the analysed text, as on the `Sentence` |
+| `text` | `String` | Its text, as on the `Sentence` |
+| `score` | `f64` | The method's score, higher is more representative |
+
+Both summarizers select the top `n` by score and then return them in ascending `index`, so the result reads in document order while `score` carries the ranking. A score compares only with another from the same method.
+
+`Parameters` records what shaped an outcome, each field present only when the method takes it: `n` (`Option<usize>`) for a summary and keyphrases, `threshold` (`Option<f64>`) and `embedder` (`Option<String>`, the embedder's identity) for clusters. In JSON an absent parameter is an absent key, so a summary's is `{"n": 3}`.
+
+## Keyphrases
+
+What `keyphrases` and `keyphrases_with` return. The selector is `matra::KeyphraseMethod` (`Rake`, the default, and `Yake`, `#[non_exhaustive]`).
+
+| Field | Type | Contents |
+|---|---|---|
+| `provenance` | `Provenance` | The document's, with `method` (`rake` or `yake`, an open set) and `parameters` (`n`) |
+| `phrases` | `Vec<Keyphrase>` | At most `n` phrases, highest score first; equal scores in the order the phrases are first met, the same on every run |
+
+`Keyphrase` is one ranked phrase:
 
 | Field | Type | Contents |
 |---|---|---|
 | `phrase` | `String` | The phrase, built from lowercased lemmas joined by single spaces |
 | `score` | `f64` | Relevance score, higher is more relevant |
+| `occurrences` | `Vec<Span>` | Every stretch of the analysed text it was found in, in document order, from its first word's start to its last word's end |
 
-Both extractors return phrases in descending score order. `Keyphrase::new(phrase: String, score: f64) -> Keyphrase` is the constructor.
+## Clusters
+
+What `clusters` returns: `provenance` (the document's, with `method` `cosine` and `parameters` `threshold` and `embedder`), `clusters` (`Vec<Cluster>`, each `members`, sentence indices) and `edges` (`Vec<SimilarityEdge>`, each `a`, `b` and `score: f64`). [Semantic clusters](semantic-clusters.md) describes each field and what co-membership does and does not mean.
 
 ## Format
 
@@ -364,23 +384,6 @@ One construct the reader saw and did not analyse. `SkippedKind` names it: `Table
 
 Together with the heading and paragraph spans, `skipped` accounts for the input: every byte of a markdown or plain-text input that is not whitespace lies in exactly one heading, paragraph or skipped span.
 
-## Corpus
-
-| Field | Type | Contents |
-|---|---|---|
-| `documents` | `Vec<Document>` | One document per successful analysis, in input order, each naming its path in `provenance.source.path` |
-
-Documents that failed do not appear here. They travel as `DocumentError` values and land in `CorpusResult::errors` beside the corpus.
-
-### Methods
-
-| Signature | Returns | Behavior |
-|---|---|---|
-| `new(documents: Vec<Document>)` | `Corpus` | Constructor |
-| `total_words(&self)` | `usize` | Non-punctuation tokens across every document |
-| `passive_ratio(&self)` | `f64` | Passive sentences over total sentences across every document. 0.0 with no sentences |
-| `mean_readability(&self)` | `f64` | Mean of the paragraphs that carry a `readability_grade`, across every document. 0.0 when none do |
-
 ## DocumentError
 
 | Field | Type | Contents |
@@ -388,16 +391,9 @@ Documents that failed do not appear here. They travel as `DocumentError` values 
 | `path` | `Option<PathBuf>` | Where the failure occurred, `None` for input that is not a file |
 | `error` | `Error` | What went wrong |
 
-One per-document failure. `Display` prints `path: error` when a path exists and the bare error otherwise; `source()` returns the wrapped `Error`. `DocumentError::new(path, error)` is the constructor. Not `Serialize` and not `Clone`, because `Error` wraps `std::io::Error`.
+One per-document failure: the `Err` item `Engine::analyze_all` yields in the failed input's place, so documents plus errors equals inputs consumed. `Display` prints `path: error` when a path exists and the bare error otherwise; `source()` returns the wrapped `Error`. `DocumentError::new(path, error)` is the constructor. Not `Serialize` and not `Clone`, because `Error` wraps `std::io::Error`.
 
-## CorpusResult
-
-| Field | Type | Contents |
-|---|---|---|
-| `corpus` | `Corpus` | Every successfully analyzed document |
-| `errors` | `Vec<DocumentError>` | Every per-document failure, in consumption order |
-
-The partition of a per-document result stream: documents plus errors equals inputs consumed. `collect()` is its constructor, via `FromIterator<Result<Document, DocumentError>>`, which is how a stream from `Engine::analyze_all` becomes one value. Inherits `DocumentError`'s serialization gap, so it does not cross the language boundary today.
+matra collects nothing across documents: a stream is the collection, and how to combine documents is the caller's decision (a count sums; `vocabulary_ttr` does not).
 
 ## Constants, aliases, and the error type
 
@@ -466,7 +462,7 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 <text class="nt" x="462" y="244">in the sections it already has</text>
 </svg>
 
-`Token::feat`, `Document::sentences`, `Sentence::subtree`, `Corpus::total_words`, and every other method in the tables above are available to Rust callers only. Nothing a reader needs is method-only: every aggregate is a field of `DocumentMetrics` or `ParagraphMetrics`, and a sentence carries its `word_count`, `tree_depth` and `passive`, so each crosses with the record that holds it.
+`Token::feat`, `Document::sentences`, `Sentence::subtree`, and every other method in the tables above are available to Rust callers only. Nothing a reader needs is method-only: every aggregate is a field of `DocumentMetrics` or `ParagraphMetrics`, and a sentence carries its `word_count`, `tree_depth` and `passive`, so each crosses with the record that holds it.
 
 | Rust type | Python shape |
 |---|---|
@@ -479,18 +475,20 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 | `Provenance`, `Identity`, `ProvenanceSource` | `Provenance`, `Identity`, `ProvenanceSource` |
 | `ClausalComplement`, `RootMood` | `ClausalComplement`, `RootMood` |
 | `Span`, `Skipped` | `Span`, `Skipped` |
-| `ScoredSentence` | `ScoredSentence` |
-| `Keyphrase` | `Keyphrase` |
+| `Parameters` | `Parameters` |
+| `Summary`, `SummarySentence` | `Summary`, `SummarySentence` |
+| `Keyphrases`, `Keyphrase` | `Keyphrases`, `Keyphrase` |
+| `Clusters`, `Cluster`, `SimilarityEdge` | `Clusters`, `Cluster`, `SimilarityEdge` |
 | `DocumentError` | `DocumentError` |
-| `Format`, `Block`, `Corpus`, `CorpusResult` | no Python shape |
+| `Format`, `Block` | no Python shape |
 
 `Document` and `DocumentError` are the two items `Matra.analyze_path` returns, and the Python package names their union `matra.types.CorpusItem`. A `Document` crosses through serde like every shape above it, with one field replaced: its `provenance.source.path` is decoded with the platform's filesystem decoding (`os.fsdecode` on Unix), so a name that is not valid UTF-8 crosses exactly instead of as serde's lossy string. A `DocumentError` is assembled field by field, its `path` decoded the same way, and its error, which wraps `std::io::Error` and has no stable wire shape, becomes `{"kind": str, "message": str}`. `kind` is `Error::kind` on the domain type, pinned across bindings by `spec/tests/corpus/items.json` and exported to Python as `matra.ERROR_KINDS`; `message` is the Rust error's own `Display` text. A future binding must take the same route rather than serializing the error whole.
 
 The Python shapes are `TypedDict` declarations available at runtime. They are declared in `matra.types` and re-exported from the package root, so either import works:
 
 ```python
-from matra.types import Document, Keyphrase, ScoredSentence
-from matra import Document, Keyphrase, ScoredSentence
+from matra.types import Document, Keyphrases, Summary
+from matra import Document, Keyphrases, Summary
 ```
 
 Field names and nesting match the Rust types exactly. `Option<f64>` becomes `float | None`; `Option<String>` becomes `str | None`; `Vec<T>` becomes `list[T]`; `usize` becomes `int`.

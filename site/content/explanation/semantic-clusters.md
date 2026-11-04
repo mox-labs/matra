@@ -2,7 +2,7 @@
 
 matra can group the sentences of a document that say the same thing in different words. It embeds each sentence as a vector, scores every pair by cosine similarity, and links each pair whose score clears a threshold you choose. The clusters are the connected groups those links make. [Cluster sentences by meaning](../guides/semantic-clusters.md) has the calls.
 
-Everything else matra returns is structure read off the text, checkable against its bytes. Clusters are not: they depend on a model's representation of meaning. So they arrive as their own value from a separate call, never as a field on `Document`, and they carry the identity of the model that produced them and the threshold you chose.
+Everything else matra returns is structure read off the text, checkable against its bytes. Clusters are not: they depend on a model's representation of meaning. So they arrive as their own value from a separate call, never as a field on `Document`, and their provenance carries the identity of the model that produced them and the threshold you chose.
 
 ## Three things the shape means
 

@@ -20,7 +20,7 @@ RAKE against YAKE on the same text, as ranks:
 
 ## What to notice
 
-- Each item has `phrase` and `score`, highest score first, and a higher score means more relevant. RAKE's score sums each word's co-occurrence degree over its frequency.
+- The result carries the text's `provenance` with `method` `rake` and `parameters` `{"n": 10}`. Each of its `phrases` has `phrase`, `score` and `occurrences`, the span of every place in the input it was found, highest score first, and a higher score means more relevant. RAKE's score sums each word's co-occurrence degree over its frequency.
 - Phrases are built from lemmas, so the parser's lemma errors show through. `great destruction fal` is "great destruction falling", with `falling` read as `fal`, and `slow -breeding man` is "slow-breeding man" split at the hyphen. RAKE takes the words between stopwords and punctuation, which is why `larger domestic animal tend` runs "animals tends" together.
-- Two phrases tie at 9.0, and equal scores can come back in either order from one run to the next. A cut that falls inside a tie can also change which phrases make the list. This example asks for ten, where the tenth scores 5.972 and no phrase outside the list ties it, so the list itself does not change.
+- Two phrases tie at 9.0. Equal scores come back in the order the phrases first occur, the same on every run, so a cut that falls inside a tie is decided by position in the text, not by merit. This example asks for ten, where the tenth scores 5.972 and no phrase outside the list ties it, so no tie decides the list.
 - The figure shows how little RAKE and YAKE agree on a text like this one. Neither method is right; they rank by different evidence ([Methodology](../reference/methodology.md)).

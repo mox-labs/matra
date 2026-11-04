@@ -21,7 +21,9 @@ mod textrank;
 mod tfidf;
 mod yake;
 
-use crate::domain::{Document, Keyphrases, Parameters, Result, Sentence, Summary, SummarySentence};
+use crate::domain::{
+    Document, Keyphrase, Keyphrases, Parameters, Result, Sentence, Summary, SummarySentence,
+};
 
 pub(crate) use semantic::cluster;
 pub(crate) use textrank::MAX_SENTENCES as MAX_CLUSTER_SENTENCES;
@@ -203,12 +205,10 @@ pub fn keyphrases_with(doc: &Document, n: usize, method: KeyphraseMethod) -> Res
 /// inserted in among equal scores, and keep the first `n`.
 ///
 /// Both keyphrase methods collect their candidates in the order each
-/// phrase first occurs, so a tie resolves the same way on every run,
+/// phrase is first met (RAKE in document order, YAKE by window size
+/// within each sentence), so a tie resolves the same way on every run,
 /// rather than in a hash map's iteration order.
-fn rank_phrases(
-    mut candidates: Vec<crate::domain::Keyphrase>,
-    n: usize,
-) -> Vec<crate::domain::Keyphrase> {
+fn rank_phrases(mut candidates: Vec<Keyphrase>, n: usize) -> Vec<Keyphrase> {
     candidates.sort_by(|a, b| {
         b.score
             .partial_cmp(&a.score)

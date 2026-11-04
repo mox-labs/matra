@@ -50,7 +50,7 @@ Files land in XDG locations: the config at `$XDG_CONFIG_HOME/matra/config.toml` 
 $ matra analyze notes.md --json
 ```
 
-`summarize` ranks the sentences and returns the top N, re-sorted into document order. `result` is a list of `ScoredSentence`: `text`, `score`, `position`. `-n` defaults to the configured `summarize.n`, `3` as shipped; `--method` takes `tfidf` (the default) or `textrank`. The human table rounds each score to three decimals, so scores that differ in the fourth print identically and the ranker can look broken when it is not; read `--json` when the ordering matters.
+`summarize` ranks the sentences and returns the top N, re-sorted into document order. `result` is a `Summary`: `provenance`, the document's with the `method` that ran and its `parameters`, and `sentences`, each with `index` (its position among the document's sentences), `span`, `text` and `score`. `-n` defaults to the configured `summarize.n`, `3` as shipped; `--method` takes `tfidf` (the default) or `textrank`. The human table rounds each score to three decimals, so scores that differ in the fourth print identically and the ranker can look broken when it is not; read `--json` when the ordering matters.
 
 <!-- needs: model -->
 
@@ -58,7 +58,7 @@ $ matra analyze notes.md --json
 $ matra summarize notes.md -n 3 --json
 ```
 
-`keyphrases` ranks phrases and returns them highest score first. `result` is a list of `Keyphrase`: `phrase`, `score`. Phrases are lowercased lemmas, not the document's surface text. `-n` defaults to `keyphrases.n`, `10` as shipped; `--method` takes `rake` (the default) or `yake`.
+`keyphrases` ranks phrases and returns them highest score first. `result` is a `Keyphrases`: `provenance`, with the `method` and `parameters`, and `phrases`, each with `phrase`, `score` and `occurrences`, the span of every place it was found. Phrases are lowercased lemmas, not the document's surface text; an occurrence's span is where the surface text lies. `-n` defaults to `keyphrases.n`, `10` as shipped; `--method` takes `rake` (the default) or `yake`.
 
 <!-- needs: model -->
 
@@ -106,7 +106,7 @@ Every metric row below names a slot on the result. A slot is null when the metri
 
 ## Limits and errors
 
-Input is capped at 8 MiB, checked before decoding. Summarizers cap at 2,000 sentences, keyphrase extractors at 200,000 tokens, the config file at 64 KiB. Over a cap, the failure names which gate fired in a `what` label: `input`, `file_source`, `tfidf`, `textrank`, `rake`, `yake`, `semantic_clusters`, `udpipe_download`, `embedding_download`, `config_file`.
+Input is capped at 8 MiB, checked before decoding. Summarizers cap at 2,000 sentences, keyphrase extractors at 200,000 tokens, the config file at 64 KiB. Over a cap, the failure names which gate fired in a `what` label: `input`, `file_source`, `tfidf`, `textrank`, `rake`, `yake`, `clusters`, `udpipe_download`, `embedding_download`, `config_file`.
 
 Seven failure kinds exist, and `invalid_input` is the one that means the call site is wrong rather than the text: mismatched vector dimensions, a non-finite threshold, an unknown config key. Fix the call, not the document. Every kind, its Python exception, and what to do about it is in `errors`.
 
@@ -133,6 +133,6 @@ $ matra --skill -r json
 | `json` | The envelope and the `Document` JSON, field by field, including the six `Sentence` structural fields |
 | `structure` | Tokens, dependency arcs, the tree, and what each structural field reports |
 | `metrics` | Each measure's formula, its applicability condition, and its limitation |
-| `semantic` | Clusters, the threshold and why it does not travel, comparing whole documents, model provisioning, and what the model's `identity` is for |
+| `semantic` | Clusters, the threshold and why it does not travel, comparing whole documents, model provisioning, and what the embedder's identity is for |
 | `python` | The Python API, the `Embedder` protocol, `Model2Vec.embed` for raw vectors, `analyze_path`, and exception mapping |
 | `errors` | Every failure kind, its Python exception, and what to do about it |

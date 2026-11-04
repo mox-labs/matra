@@ -236,11 +236,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6429,
-      "readability_grade": 8.8343,
+      "lexical_density": 0.6222,
+      "readability_grade": 12.3272,
       "sentences": 2,
-      "text": "The NlpProvider trait requires no change to support a WASM implementation. Any Rust type that can implement NlpProvider::parse without C FFI can be used as the WASM backend.",
-      "words": 29
+      "text": "The NlpProvider trait, private to the crate, requires no change to support a WASM implementation. Any Rust type inside matra that can implement NlpProvider::parse without C FFI can be used as the WASM backend, and the outcome functions over a Document already need no parser.",
+      "words": 46
     },
     {
       "compression_ratio": null,
@@ -333,13 +333,13 @@
       "words": 39
     },
     {
-      "compression_ratio": 0.5437,
+      "compression_ratio": 0.5217,
       "kind": "paragraph",
-      "lexical_density": 0.5692,
-      "readability_grade": 14.2815,
-      "sentences": 3,
-      "text": "What it is. Extraction of the NlpProvider trait into a separately published minimal crate, so third-party NLP provider implementors can depend on the port contract without depending on all of matra. This follows the Pattern 6 criterion: separately publish a minimal port crate if and only if an external implementor ecosystem exists that needs to pin the contract independently of the main crate's version churn.",
-      "words": 67
+      "lexical_density": 0.5484,
+      "readability_grade": 10.6292,
+      "sentences": 5,
+      "text": "What it is. Opening the NlpProvider trait to outside implementors, and extracting it into a separately published minimal crate, so third-party NLP provider implementors can depend on the port contract without depending on all of matra. Since 0.3.0 the trait is private to the crate (EPR-0006, decision 5), so opening it is first an addition to the public surface. This follows the Pattern 6 criterion: separately publish a minimal port crate if and only if an external implementor ecosystem exists that needs to pin the contract independently of the main crate's version churn.",
+      "words": 96
     },
     {
       "compression_ratio": null,
@@ -486,13 +486,13 @@
       "words": 11
     },
     {
-      "compression_ratio": 0.5128,
+      "compression_ratio": 0.5084,
       "kind": "paragraph",
-      "lexical_density": 0.5683,
-      "readability_grade": 11.4017,
+      "lexical_density": 0.5664,
+      "readability_grade": 11.236,
       "sentences": 7,
-      "text": "matra reports the clusters and the numbers; whether they constitute fluff is the caller's reading. The word never appears in the output. That restraint is now empirical as well as principled: the 2026 slop-measurement literature found repetition and templatedness are weak predictors of human quality judgments on their own, so these are structural facts for a caller's argument, never a judgment. Synonym-level paraphrase (different vocabulary, same meaning) is out of reach of lexical overlap by design; catching it needs semantic similarity, which sits above the verifiable tier. That half shipped 2026-09-05 via EP-0009: the Embedder port, the model2vec static adapter, and semantic_clusters (see the semantic clusters guide). The deterministic family above remains the open half of this entry. Published similarity thresholds for that task span 0.67 to 0.9 with no consensus, which is why every threshold here is caller-supplied.",
-      "words": 149
+      "text": "matra reports the clusters and the numbers; whether they constitute fluff is the caller's reading. The word never appears in the output. That restraint is now empirical as well as principled: the 2026 slop-measurement literature found repetition and templatedness are weak predictors of human quality judgments on their own, so these are structural facts for a caller's argument, never a judgment. Synonym-level paraphrase (different vocabulary, same meaning) is out of reach of lexical overlap by design; catching it needs semantic similarity, which sits above the verifiable tier. That half shipped 2026-09-05 via EP-0009: the Embedder port, the model2vec static adapter, and the clustering that clusters runs (see the semantic clusters guide). The deterministic family above remains the open half of this entry. Published similarity thresholds for that task span 0.67 to 0.9 with no consensus, which is why every threshold here is caller-supplied.",
+      "words": 153
     },
     {
       "compression_ratio": null,
@@ -576,13 +576,13 @@
       "words": 38
     },
     {
-      "compression_ratio": 0.5482,
+      "compression_ratio": 0.5323,
       "kind": "paragraph",
-      "lexical_density": 0.6444,
-      "readability_grade": 13.3761,
+      "lexical_density": 0.6429,
+      "readability_grade": 11.0086,
       "sentences": 3,
-      "text": "Shipped, 2026-09-05, via EP-0010: Config resolves locations and defaults per key from argument, environment, config file, then the defaults compiled into the crate; Engine::with_defaults(), Matra.english() and the from_config constructors are the no-setup path on every surface; matra config show and matra config init are the command-line half. The question this entry asks is answered narrowly: the file carries locations and defaults, never which metrics run or how output is shaped. Selecting behavior from a file remains unbuilt, and reopening it needs its own RFC rather than a wider schema here.",
-      "words": 97
+      "text": "Shipped, 2026-09-05, via EP-0010: Config resolves locations and defaults per key from argument, environment, config file, then the defaults compiled into the crate; Engine::with_defaults() (since 0.3.0 Engine::new(), which reads no configuration file), Matra.english() and the from_config constructors are the no-setup path on every surface; matra config show and matra config init are the command-line half. The question this entry asks is answered narrowly: the file carries locations and defaults, never which metrics run or how output is shaped. Selecting behavior from a file remains unbuilt, and reopening it needs its own RFC rather than a wider schema here.",
+      "words": 106
     },
     {
       "compression_ratio": 0.5369,

@@ -36,103 +36,58 @@
       "words": 9
     },
     {
-      "compression_ratio": 0.5543,
+      "compression_ratio": 0.5775,
       "kind": "paragraph",
-      "lexical_density": 0.5313,
-      "readability_grade": 13.8813,
-      "sentences": 3,
-      "text": "Engine::with_defaults resolves a Config (the environment, then your config file, then the defaults compiled into the crate), downloads the English UDPipe model into the resolved directory if it is not already there, and wires the readers this build ships. The directory is MATRA_MODEL_DIR if you set it, otherwise the models subdirectory of $XDG_DATA_HOME/matra, which defaults to ~/.local/share/matra. Programming model has the full resolution order.",
-      "words": 67
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.4,
-      "readability_grade": 5.9933,
-      "sentences": 1,
-      "text": "When you want the resolved values but not all of them, hold the Config yourself:",
-      "words": 15
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.5625,
-      "readability_grade": 11.4325,
-      "sentences": 2,
-      "text": "with_model_dir puts the directory on the Argument rung, which outranks the environment and the defaults, and cfg.sources() reports where every other value came from. Config is also what Udpipe::from_config and Model2Vec::from_config read.",
-      "words": 34
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.5294,
-      "readability_grade": 8.0459,
-      "sentences": 2,
-      "text": "Everything below is the explicit path, which still works and still wins over the resolved one. Take it when you want a provider matra does not ship, or a model file you already hold.",
-      "words": 34
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.5263,
-      "readability_grade": 10.4516,
-      "sentences": 2,
-      "text": "The pipeline owns a Box<dyn NlpProvider>. Udpipe is the adapter that ships with the udpipe feature (on by default):",
-      "words": 21
-    },
-    {
-      "compression_ratio": 0.5137,
-      "kind": "paragraph",
-      "lexical_density": 0.5235,
-      "readability_grade": 17.9442,
+      "lexical_density": 0.5345,
+      "readability_grade": 12.3306,
       "sentences": 4,
-      "text": "Udpipe::english takes the directory as an argument, so a caller who keeps models somewhere specific names it there; the line above passes the configured one, which is what Udpipe::from_config does for you. Name a directory you own: provisioning trusts what it finds there, and a shared one such as /tmp is writable by anybody on the machine. Udpipe::english creates the directory if it is missing, downloads the English model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.",
+      "text": "Engine::new locates the model directory from the environment, downloads the English UDPipe model into it if it is not already there, and wires the readers this build ships. The directory is MATRA_MODEL_DIR if you set it, otherwise the models subdirectory of $XDG_DATA_HOME/matra, which defaults to ~/.local/share/matra. It reads no configuration file. Programming model has the full resolution order.",
+      "words": 61
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.45,
+      "readability_grade": 9.32,
+      "sentences": 1,
+      "text": "When you want your configuration file read, or the resolved values but not all of them, hold the Config yourself:",
+      "words": 20
+    },
+    {
+      "compression_ratio": 0.5674,
+      "kind": "paragraph",
+      "lexical_density": 0.5088,
+      "readability_grade": 10.8763,
+      "sentences": 3,
+      "text": "with_model_dir puts the directory on the Argument rung, which outranks the environment and the defaults, and cfg.sources() reports where every other value came from. Config is also what Model2Vec::from_config reads. Engine::from_config_with_notice takes a closure called once before each model download, with what is about to arrive and its licence, so a caller that renders can say so.",
+      "words": 58
+    },
+    {
+      "compression_ratio": 0.5156,
+      "kind": "paragraph",
+      "lexical_density": 0.5166,
+      "readability_grade": 14.0052,
+      "sentences": 4,
+      "text": "The parser is UDPipe with one pinned English model, english-ewt-ud-2.5-191206, and the engine builds it for you: the parser and reader traits are private to the crate, so there is no provider to construct. Name a directory you own: provisioning trusts what it finds there, and a shared one such as /tmp is writable by anybody on the machine. The engine creates the directory if it is missing, downloads the model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.",
       "words": 155
     },
     {
-      "compression_ratio": 0.5995,
+      "compression_ratio": 0.5909,
       "kind": "paragraph",
       "lexical_density": 0.5167,
       "readability_grade": 13.45,
-      "sentences": 4,
-      "text": "The path is passed to std::fs::create_dir_all unchanged, and ~ in it is taken literally: neither Rust nor matra expands it, so Udpipe::english(\"~/models\") creates a directory literally named ~ under your current working directory. The same holds for MATRA_MODEL_DIR and the other variables when the shell has not already expanded them. Pass an absolute path, or expand the home directory yourself.",
-      "words": 63
+      "sentences": 3,
+      "text": "The path is passed to std::fs::create_dir_all unchanged, and ~ in it is taken literally: neither Rust nor matra expands it, so with_model_dir(\"~/models\") creates a directory literally named ~ under your current working directory. The same holds for MATRA_MODEL_DIR and the other variables when the shell has not already expanded them. Pass an absolute path, or expand the home directory yourself.",
+      "words": 62
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6254,
       "kind": "paragraph",
-      "lexical_density": 0.5,
-      "readability_grade": 5.8067,
-      "sentences": 1,
-      "text": "If you already have a model file on disk, load it directly:",
-      "words": 12
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.5833,
-      "readability_grade": 11.3789,
-      "sentences": 2,
-      "text": "from_path returns Error::ModelNotFound when the path does not exist and Error::ModelInvalid when the file exists but fails to load. A third constructor, Udpipe::from_bytes, loads from an in-memory byte slice, which suits a model embedded with include_bytes!.",
-      "words": 41
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.5926,
-      "readability_grade": 8.4676,
-      "sentences": 2,
-      "text": "Construction is the expensive step: it loads and validates the model once. Build one provider, hand it to one Engine, and reuse that engine for every document.",
-      "words": 27
-    },
-    {
-      "compression_ratio": 0.6435,
-      "kind": "paragraph",
-      "lexical_density": 0.5536,
-      "readability_grade": 6.9379,
+      "lexical_density": 0.5323,
+      "readability_grade": 6.1847,
       "sentences": 5,
-      "text": "NlpProvider is declared Send, not Sync. A Box<dyn NlpProvider> moves between threads, but a reference to it does not, so an Engine (and any stream borrowed from it) belongs to one thread at a time. That is a compile error, not a runtime surprise. Build one engine per worker thread, or serialize calls behind a mutex.",
-      "words": 57
+      "text": "Construction is the expensive step: it loads and validates the model once. Build one engine and reuse it for every document. An Engine is neither Send nor Sync, so an engine, and any stream borrowed from it, stays on the thread that built it. That is a compile error, not a runtime surprise. To parallelize, build one engine on each worker thread.",
+      "words": 62
     },
     {
       "compression_ratio": null,
@@ -167,17 +122,17 @@
       "lexical_density": 0.7143,
       "readability_grade": null,
       "sentences": 1,
-      "text": "Engine exposes the pipeline at three levels:",
+      "text": "Engine exposes the pipeline at two grains:",
       "words": 7
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6024,
       "kind": "paragraph",
-      "lexical_density": 0.6667,
-      "readability_grade": 14.1022,
+      "lexical_density": 0.5818,
+      "readability_grade": 15.3023,
       "sentences": 2,
-      "text": "The levels always agree: analyze_all is analyze mapped over the inputs, and analyze is annotate followed by compose, for every Input constructor. The library's test suite pins that agreement as equivalence laws, so the levels cannot drift apart silently.",
-      "words": 41
+      "text": "The grains always agree: analyze_all is analyze mapped over the inputs, for every Input constructor. Inside, analyze reads and parses the document, then measures it; those two stages are the engine's own, and the library's test suite pins that analysis is exactly the one followed by the other, so the grains cannot drift apart silently.",
+      "words": 58
     },
     {
       "compression_ratio": 0.562,
@@ -207,49 +162,58 @@
       "words": 35
     },
     {
-      "compression_ratio": 0.5846,
+      "compression_ratio": 0.5748,
       "kind": "paragraph",
-      "lexical_density": 0.5079,
-      "readability_grade": 9.4571,
+      "lexical_density": 0.4769,
+      "readability_grade": 9.38,
       "sentences": 3,
-      "text": "A document from disk passes the gates in sequence: the metadata check when the file is read, then the byte and text checks inside annotate. Block input is checked on its analysed text, the blocks joined, so blocks each under the cap that join to more than it are refused. A file at exactly the cap is accepted; one byte over is rejected.",
-      "words": 63
+      "text": "A document from disk passes the gates in sequence: the metadata check when the file is read, then the byte and text checks before it is parsed. Block input is checked on its analysed text, the blocks joined, so blocks each under the cap that join to more than it are refused. A file at exactly the cap is accepted; one byte over is rejected.",
+      "words": 65
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5455,
-      "readability_grade": 7.6515,
+      "lexical_density": 0.5429,
+      "readability_grade": 8.0511,
       "sentences": 2,
-      "text": "The extraction caps are counted after parsing, so a document under 8 MiB can still exceed the TF-IDF sentence cap. Check sentences.len() before calling if you need to decide between summarizing and chunking.",
+      "text": "The outcome caps are counted over the parsed document, so a document under 8 MiB can still exceed the TF-IDF sentence cap. Check doc.metrics.total_sentences before calling if you need to decide between summarizing and chunking.",
+      "words": 37
+    },
+    {
+      "compression_ratio": 0.5706,
+      "kind": "paragraph",
+      "lexical_density": 0.5439,
+      "readability_grade": 13.5355,
+      "sentences": 3,
+      "text": "The parse inside analyze is the expensive step: it runs the parser once per paragraph. The outcome functions are free functions over the Document it returns, and never parse anything themselves, so they need no engine and run in a build without UDPipe. Analyze once, and hand the same document to as many outcomes as you need:",
+      "words": 57
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5588,
+      "readability_grade": 8.74,
+      "sentences": 2,
+      "text": "Each outcome reads the same document; nothing re-parses. The sentences it reads are the ones the reader kept, so markdown headings, code, tables and quotes never reach a summary as if they were prose.",
       "words": 34
     },
     {
-      "compression_ratio": 0.5846,
+      "compression_ratio": 0.5705,
       "kind": "paragraph",
-      "lexical_density": 0.6034,
-      "readability_grade": 16.0648,
+      "lexical_density": 0.6522,
+      "readability_grade": 12.0013,
       "sentences": 3,
-      "text": "The parse inside annotate is the expensive step: it runs the NLP provider once per paragraph. The extraction functions (tfidf_summarize, textrank_summarize, rake_keyphrases, yake_keyphrases) are pure functions over &[Sentence] and never call the NLP provider themselves. Run the pipeline once, read the sentences back off the tree, and hand the same slice to as many extractors as you need:",
-      "words": 59
-    },
-    {
-      "compression_ratio": 0.6086,
-      "kind": "paragraph",
-      "lexical_density": 0.5192,
-      "readability_grade": 8.6431,
-      "sentences": 3,
-      "text": "Each extractor reads the same slice; nothing re-parses. Call annotate instead of analyze if you only want the extractions and not the metrics. The sentences you read off the tree are the ones the reader kept, so markdown headings, code, tables and quotes never reach the extractors as if they were prose.",
-      "words": 52
+      "text": "The method is optional. summarize runs TF-IDF and keyphrases runs RAKE, the defaults config/default.toml ships; summarize_with and keyphrases_with take a SummaryMethod or KeyphraseMethod, both #[non_exhaustive]. Every result is a record carrying the document's provenance plus the method that ran (tfidf, textrank, rake, yake) and the parameters it ran with (n), because the method decides what a score means: TF-IDF and TextRank, or RAKE and YAKE, score on unrelated scales.",
+      "words": 73
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6341,
-      "readability_grade": 9.3855,
-      "sentences": 2,
-      "text": "The two keyphrase extractors return score order, highest first. Phrases with equal scores can swap order between runs, and a tie at the requested count can change which phrase makes the list, so sort the result before diffing it across runs.",
-      "words": 41
+      "lexical_density": 0.5294,
+      "readability_grade": 13.9818,
+      "sentences": 1,
+      "text": "Keyphrases with equal scores come back in the same order on every run, the order the phrases are first met, so a tie at the requested count is decided the same way each time.",
+      "words": 34
     },
     {
       "compression_ratio": null,
@@ -270,13 +234,13 @@
       "words": 36
     },
     {
-      "compression_ratio": 0.5899,
+      "compression_ratio": 0.584,
       "kind": "paragraph",
-      "lexical_density": 0.5862,
-      "readability_grade": 10.0569,
+      "lexical_density": 0.5833,
+      "readability_grade": 10.1067,
       "sentences": 3,
-      "text": "Quotes are never parsed. A paragraph inside a block quote, at any depth, has kind ParagraphKind::Quote; annotate skips it, so its sentences stays empty, its metric slots stay None, and it contributes nothing to total_words or passive_ratio, though it counts in paragraph_count. It stays in the section tree with its text, and its span covers the > markers.",
-      "words": 60
+      "text": "Quotes are never parsed. A paragraph inside a block quote, at any depth, has kind ParagraphKind::Quote; the parser never sees it, so its sentences stays empty, its metric slots stay None, and it contributes nothing to total_words or passive_ratio, though it counts in paragraph_count. It stays in the section tree with its text, and its span covers the > markers.",
+      "words": 62
     },
     {
       "compression_ratio": 0.5864,
@@ -371,19 +335,19 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5854,
-      "readability_grade": 19.6829,
+      "lexical_density": 0.5814,
+      "readability_grade": 20.1149,
       "sentences": 2,
-      "text": "analyze and annotate return domain::Result<T>, an alias for Result<T, domain::Error>. The stream wraps the same error with its path: analyze_all yields DocumentError, whose path field is Some for a file input and whose error field is the domain::Error to match on:",
-      "words": 47
+      "text": "analyze and the outcome functions return domain::Result<T>, an alias for Result<T, domain::Error>. The stream wraps the same error with its path: analyze_all yields DocumentError, whose path field is Some for a file input and whose error field is the domain::Error to match on:",
+      "words": 49
     },
     {
-      "compression_ratio": 0.5956,
+      "compression_ratio": 0.5833,
       "kind": "paragraph",
       "lexical_density": 0.5652,
-      "readability_grade": 12.8757,
+      "readability_grade": 12.7046,
       "sentences": 3,
-      "text": "Error::ParseFailed also carries panics that crossed the UDPipe FFI boundary. The adapter wraps the C-side call in catch_unwind and converts a panic into ParseFailed with the payload message, so a bug inside UDPipe surfaces as a matchable error instead of aborting your process. It is also what a provider returns when it cannot place a token in the text it was given, rather than reporting a span it guessed.",
+      "text": "Error::ParseFailed also carries panics that crossed the UDPipe FFI boundary. The adapter wraps the C-side call in catch_unwind and converts a panic into ParseFailed with the payload message, so a bug inside UDPipe surfaces as a matchable error instead of aborting your process. It is also what the parser returns when it cannot place a token in the text it was given, rather than reporting a span it guessed.",
       "words": 72
     },
     {
@@ -416,29 +380,29 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6471,
-      "readability_grade": 16.0282,
+      "lexical_density": 0.7333,
+      "readability_grade": 9.9267,
       "sentences": 1,
-      "text": "Inputs::dir lists one level of a directory, analyze_all streams it, and collecting into CorpusResult partitions the outcomes:",
-      "words": 18
+      "text": "Inputs::dir lists one level of a directory, and analyze_all streams it, one result per file:",
+      "words": 16
     },
     {
-      "compression_ratio": 0.5772,
+      "compression_ratio": 0.5909,
+      "kind": "paragraph",
+      "lexical_density": 0.5395,
+      "readability_grade": 10.2117,
+      "sentences": 3,
+      "text": "Inputs::dir is Err only when the listing itself fails, such as the directory not existing. Everything else is an Err item carrying its path: an unreadable file as Io, a file over the cap as InputTooLarge with what = \"file_source\", a non-UTF-8 file, a PDF or a DOCX (by signature or by name) as UnsupportedFormat, and a parser failure as ParseFailed. Documents plus errors always equals inputs consumed, and each document names its file in provenance.source.path.",
+      "words": 78
+    },
+    {
+      "compression_ratio": 0.5476,
       "kind": "paragraph",
       "lexical_density": 0.5443,
-      "readability_grade": 10.5872,
+      "readability_grade": 13.3509,
       "sentences": 3,
-      "text": "Inputs::dir is Err only when the listing itself fails, such as the directory not existing. Everything else lands in errors, each carrying its path: an unreadable file as Io, a file over the cap as InputTooLarge with what = \"file_source\", a non-UTF-8 file, a PDF or a DOCX (by signature or by name) as UnsupportedFormat, and a provider failure as ParseFailed. The partition always holds: documents plus errors equals inputs consumed, and each document names its file in provenance.source.path.",
-      "words": 81
-    },
-    {
-      "compression_ratio": 0.5959,
-      "kind": "paragraph",
-      "lexical_density": 0.6066,
-      "readability_grade": 16.8099,
-      "sentences": 2,
-      "text": "Two kinds of entry are skipped without an error entry, so they will not appear in either list: subdirectories, because the walk is one level deep, and symlinks, which are filtered out with symlink_metadata so a link cannot redirect the read elsewhere. Files are attempted in sorted path order, and Corpus gives you total_words(), passive_ratio(), and mean_readability() across the whole set.",
-      "words": 63
+      "text": "Two kinds of entry are skipped without an error entry, so they will not appear in either list: subdirectories, because the walk is one level deep, and symlinks, which are filtered out with symlink_metadata so a link cannot redirect the read elsewhere. Files are attempted in sorted path order. How to aggregate across documents is yours to decide: a count such as total_words sums, and a ratio such as vocabulary_ttr does not, since it falls as a document grows.",
+      "words": 82
     },
     {
       "compression_ratio": null,

@@ -53,7 +53,7 @@ At peak, three representations of the same document are resident at once: the or
 
 For a 40 KB input none of that matters. For a caller sizing a batch job against a memory ceiling it does, because every `Token` carries nine owned `String`s.
 
-A directory changes the shape by streaming. `Inputs::dir` lists the entries up front but reads nothing until pulled, and each pull of `analyze_all` runs one document through the whole pipeline before the next file is read. One document's representations are resident at a time; only what you retain accumulates, and collecting into `CorpusResult` retains everything.
+A directory changes the shape by streaming. `Inputs::dir` lists the entries up front but reads nothing until pulled, and each pull of `analyze_all` runs one document through the whole pipeline before the next file is read. One document's representations are resident at a time; only what you retain accumulates, and collecting the stream retains everything.
 
 ## The model is the expensive thing
 
@@ -61,17 +61,17 @@ Everything above assumes `nlp` already exists. Constructing it is the one genuin
 
 `Udpipe::english(dir)` looks for the English UD-EWT model in the directory you name. If it is absent, the bytes are verified in memory and then written to a temporary subdirectory named for this call, and moved into place with a single `rename`, so two processes pointing at the same directory cannot leave each other a half-written file. The name carries more than the process id, because in a container every process is pid 1 and two cold starts would otherwise collide.
 
-`Udpipe::from_config(&cfg)` is the same call with the directory resolved rather than named, and `Engine::with_defaults()` is `Config::resolve()` followed by that. `Config` is read once, at construction; nothing in the call path above consults it, which is why configuration cannot change what a call computes. `Model2Vec::potion_base_8m(dir)` and `Model2Vec::from_config(&cfg)` do the same for the reference embedding model, against a three-file digest rather than a single one.
+`Udpipe::from_config(&cfg)` is the same call with the directory resolved rather than named, and it is what the public constructors reach: `Engine::new()` with a `Config` resolved from the environment alone, `Engine::from_config(&cfg)` with the one you pass. `Config` is read once, at construction; nothing in the call path above consults it, which is why configuration cannot change what a call computes. `Model2Vec::potion_base_8m(dir)` and `Model2Vec::from_config(&cfg)` do the same for the reference embedding model, against a three-file digest rather than a single one.
 
 The cached file is then checked against a size constant, 16,309,608 bytes, and a SHA-256 constant pinned in `nlp/udpipe.rs`. A size mismatch fails before the file is hashed. A mismatch downloads the model, and a download that also fails the digest is retried once, so a call makes at most two downloads. The file is replaced only if downloaded bytes verify; if both downloads fail, the call returns `Error::ModelInvalid` and leaves the old file untouched. An unverified model is never loaded.
 
 The verify step returns the bytes it hashed, and those exact bytes go to the loader. Nothing re-reads the disk in between. That ordering is the whole point: a hash-then-reopen sequence leaves a window in which an attacker with write access to the model directory can swap the file after the check and before the read.
 
-`Udpipe::from_path` and `Udpipe::from_bytes` verify nothing. They load what you name. Traceability for those two paths belongs to the caller.
+`Udpipe::from_path`, which only Python's `Matra.from_path` reaches, verifies nothing: it loads what you name, and traceability for that path belongs to the caller. A Rust caller loads the pinned model only.
 
 **Load once, reuse.** After construction, the model is a live handle to a C++ object. Parsing does not reload it. The `Engine` owns the provider, so a service builds one engine and keeps it for its lifetime.
 
-**One model per thread, or a lock.** The underlying `Model` is `Send` and deliberately not `Sync`: its parse path mutates internal workspace caches. In Rust this is a compile error rather than a race, because sharing `&Udpipe` across threads will not typecheck. To parallelize you either give each thread its own model, paying another 16 MB load, or put one behind a `Mutex` and serialize the parse calls.
+**One engine per thread.** The underlying `Model` is `Send` and deliberately not `Sync`: its parse path mutates internal workspace caches. The `Engine` that owns it is neither `Send` nor `Sync`, since its readers are not `Send` either, so in Rust sharing or moving an engine across threads is a compile error rather than a race. To parallelize you build an engine on each thread, paying another 16 MB load for each.
 
 Python gets the same constraint through a different mechanism. `Matra` is declared `unsendable`, so PyO3 records the creating thread and refuses access from any other at runtime. A `ProcessPoolExecutor` is unaffected, because each process loads its own model.
 
@@ -172,13 +172,12 @@ A word here is a non-punctuation token, the count `Paragraph::word_count` return
 
 `None` is not zero. A three-word paragraph has no meaningful Flesch-Kincaid grade, and the slot says so rather than reporting a number nobody should use. The compression cap is a CPU bound: the brotli window is 2^18 bytes, and a paragraph larger than one window is skipped instead of pegging a core on adversarial input.
 
-Summarization and keyphrase extraction are not part of this. The pipeline never calls them. They take `&[Sentence]` and are invoked directly by the caller, on sentences read back off the tree:
+Summarization and keyphrase extraction are not part of this. The pipeline never calls them. They are free functions over the analysed `Document`, invoked by the caller, and they need no engine:
 
 ```rust
-let doc = engine.annotate(&raw)?;
-let sentences: Vec<_> = doc.sentences().cloned().collect();
-let summary = matra::extraction::tfidf_summarize(&sentences, 3)?;
-let phrases = matra::extraction::rake_keyphrases(&sentences, 10)?;
+let doc = engine.analyze(Input::file("essay.md"))?;
+let summary = matra::summarize(&doc, 3)?;
+let phrases = matra::keyphrases(&doc, 10)?;
 ```
 
 Keeping them out of the pipeline is a cost decision. TextRank builds a dense sentence-similarity matrix that is quadratic in sentence count, roughly 32 MB of `f64` at its 2,000-sentence ceiling. Folding it into the analysis pass would charge that to every caller who only wanted a readability grade. Inputs above a cap return `Error::InputTooLarge` rather than allocating.
@@ -187,7 +186,7 @@ Keeping them out of the pipeline is a cost decision. TextRank builds a dense sen
 
 Every guard sits at the earliest point where the check is still cheap.
 
-<svg class="mx-grd" role="img" aria-label="Three separate call paths with their guards: model construction, the pipeline, and the extractors" viewBox="0 0 720 245" width="720" height="245" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
+<svg class="mx-grd" role="img" aria-label="Three separate call paths with their guards: model construction, the pipeline, and the outcome functions" viewBox="0 0 720 245" width="720" height="245" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
 <title>Where each guard fires, on which call path</title>
 <style>
 .mx-grd text{fill:currentColor}
@@ -199,7 +198,7 @@ Every guard sits at the earliest point where the check is still cheap.
 .mx-grd .tick{stroke:currentColor;opacity:.55;stroke-width:1px}
 .mx-grd .cap{stroke:currentColor;opacity:.55;stroke-width:1.4px}
 </style>
-<text class="en" x="162" y="43">Udpipe::english(dir)</text>
+<text class="en" x="162" y="43">Engine::new()</text>
 <line class="lane" x1="170" y1="40" x2="470" y2="40"/>
 <line class="cap" x1="170" y1="34" x2="170" y2="46"/>
 <line class="cap" x1="470" y1="34" x2="470" y2="46"/>
@@ -224,17 +223,17 @@ Every guard sits at the earliest point where the check is still cheap.
 <line class="tick" x1="490" y1="130" x2="490" y2="116"/>
 <text class="gd" x="490" y="108">catch_unwind, once per paragraph</text>
 <text class="er" x="490" y="97">Error::ParseFailed</text>
-<text class="en" x="162" y="231">tfidf_summarize(..)</text>
+<text class="en" x="162" y="231">summarize(&amp;doc, n)</text>
 <line class="lane" x1="170" y1="228" x2="470" y2="228"/>
 <line class="cap" x1="170" y1="222" x2="170" y2="234"/>
 <line class="cap" x1="470" y1="222" x2="470" y2="234"/>
-<text class="out" x="478" y="231">ScoredSentence</text>
+<text class="out" x="478" y="231">Summary</text>
 <line class="tick" x1="390" y1="228" x2="390" y2="214"/>
-<text class="gd" x="390" y="206">per-extractor cap</text>
+<text class="gd" x="390" y="206">per-method cap</text>
 <text class="er" x="390" y="195">Error::InputTooLarge</text>
 </svg>
 
-Three separate lanes, because these are three separate call paths. Only the middle one runs during a pipeline call. The model check fires once when you construct the provider, and the extractor caps fire only when you call an extractor, which is why neither shows up in a pipeline stack trace.
+Three separate lanes, because these are three separate call paths. Only the middle one runs during a pipeline call. The model check fires once when you construct the engine, and the outcome caps fire only when you call an outcome function, which is why neither shows up in a pipeline stack trace.
 
 The `catch_unwind` is the one that matters. A panic crossing an FFI boundary does not unwind into your code, it aborts the process: interpreter death in Python, a trap in WASM, from a library that promised typed errors.
 
@@ -346,11 +345,11 @@ Every arrow points down, and that is the rule: a module imports from the row bel
 
 `Config` is not one of the extension points below, and the distinction is worth keeping. An extension point substitutes an implementation; `Config` only supplies values a caller could have passed as arguments. That is why it carries locations and defaults and never behavior: the moment a file selects which metrics run, configuration stops being adaptability and becomes dispatch that nothing type-checks.
 
-Two extension points are dispatched at runtime. `NlpProvider` has two methods, `parse` and `identity`, and the engine holds it as `Box<dyn NlpProvider>`. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. `Embedder` is the same shape one tier over: `embed_and_cluster` takes it as `&dyn Embedder`, and its `identity` travels into every result so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library.
+Two ports are dispatched at runtime. `NlpProvider` has two methods, `parse` and `identity`, and the engine holds it as `Box<dyn NlpProvider>`. It is private to the crate, so a second parser is a file and a registration line inside it, and nothing downstream changes, because nothing downstream of parse knows which parser ran. `Embedder` is the same shape one tier over, and the one port open to outside implementers: `clusters` takes it as `&dyn Embedder`, and its `identity` travels into every result's provenance so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library.
 
 The input side is private to the crate. `Decomposer` dispatch is a value inside it, a table mapping each `Format` to a boxed reader, so a new format is a reader file and a registration line in `lib.rs` and changes no published signature. `Source` stays static: `Input::file` and `Inputs::dir` name the file and directory adapters. To read from somewhere else, fetch the bytes yourself and hand them in with `Input::bytes`; to analyse a format matra has no reader for, hand in its headings and paragraphs with `Input::blocks`. The pipeline does not care where they came from.
 
-The metric suite is data as well. `Metric`, `run_suite`, and `Document::new` are all public, so a caller can assemble a different suite and run it over a document. `compose` always runs the default four.
+The metric suite is data as well, inside the crate: a list of functions over `&mut Document` that `compose` runs. It is private, so a new measure is a function and a line in the list. A caller who wants another measure writes a function over the `Document` it was handed, which is all a metric is.
 
 What you gain from the arrangement is concrete and mostly shows up in test suites. Nothing under `metrics/` or `extraction/` imports a port, which is the one column above that skips the port row entirely, so those functions run with no model loaded. A new metric is testable against hand-built `Sentence` values, with no 16 MB download and no C++ toolchain. The rules that keep it that way, and how weakly some of them are enforced, are listed in [Boundary rules](../reference/boundary-rules.md).
 
@@ -362,7 +361,7 @@ Fields cross. Methods do not. A Rust method has no serde representation, so it h
 
 Errors cross by type. The conversion is a match with no wildcard arm, so adding a variant to `domain::Error` fails to compile until someone decides which Python exception class it becomes. A wildcard would let new failure modes fall through to `RuntimeError` unnoticed.
 
-Every Python method that takes text routes through the same pipeline, so the 8 MiB text cap fires uniformly. The extraction methods add their per-extractor caps on top.
+Every Python method that takes text routes through the same pipeline, so the 8 MiB text cap fires uniformly. The outcome methods add their per-method caps on top.
 
 ## Where to look next
 

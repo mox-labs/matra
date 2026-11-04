@@ -27,7 +27,7 @@ Matra.english().analyze("The report was filed without comment.")
 ```
 
 ```rust,ignore
-let engine = matra::Engine::with_defaults()?;
+let engine = matra::Engine::new()?;
 ```
 
 The `uvx` line carries a version floor for the same reason the `--skill` line above does. Both registries serve 0.2.x, so a bare `uvx matra` resolves to it today; the floor says what these commands need rather than leaving it to whichever release is newest when you run them. 0.1.0 is still published, and its `analyze` is a separate Python implementation and not this one missing a flag: `--json` prints a bare document with no envelope, the table is a different renderer, and the model cache is hardcoded to `~/.matra/models`. That line does not fail, it succeeds and hands you something else.
@@ -56,13 +56,18 @@ The Python package's `matra` command is the Rust CLI reached through the extensi
 ```rust,ignore
 use matra::{Engine, Input, Inputs};
 
-let engine = Engine::with_defaults()?;
+let engine = Engine::new()?;
 
 // One document: a file, read as its extension and bytes say.
 let doc = engine.analyze(Input::file("essay.md"))?;
 println!("Sentences: {}", doc.metrics.total_sentences);
 println!("Mean length: {:?}", doc.metrics.mean_sentence_length);
 println!("Passive: {:?}", doc.metrics.passive_ratio);
+
+// Outcomes are functions of the document: no second parse.
+let summary = matra::summarize(&doc, 3)?;
+let phrases = matra::keyphrases_with(&doc, 10, matra::KeyphraseMethod::Yake)?;
+println!("{:?} kept {} sentences", summary.provenance.method, summary.sentences.len());
 
 // Many documents, lazily and in order; a failure is one item, not an abort.
 for item in engine.analyze_all(Inputs::dir("docs/")?) {
@@ -73,7 +78,9 @@ for item in engine.analyze_all(Inputs::dir("docs/")?) {
 }
 ```
 
-`Input` also takes text in a named format (`Input::text`), bytes from anywhere (`Input::bytes`), and headings and paragraphs you supply for a format matra has no reader for (`Input::blocks`). Every heading, paragraph, sentence and token carries a `span` into the analysed text, in UTF-8 bytes, and `skipped` lists what the reader saw and did not analyse (a table, a code block, front matter). `Engine::new(Box::new(Udpipe::english(dir)?))` is the explicit form, and it is what you reach for with your own provider.
+`Input` also takes text in a named format (`Input::text`), bytes from anywhere (`Input::bytes`), and headings and paragraphs you supply for a format matra has no reader for (`Input::blocks`). Every heading, paragraph, sentence and token carries a `span` into the analysed text, in UTF-8 bytes, and `skipped` lists what the reader saw and did not analyse (a table, a code block, front matter).
+
+`summarize`, `keyphrases` and `clusters` take the analysed `Document` and need no engine, so they also run in a build without UDPipe. The method is optional (`summarize_with(&doc, n, SummaryMethod::TextRank)`), and every result records the method that ran and its parameters in its `provenance`. `clusters(&doc, &embedder, 0.85)` takes the embedder from you, always. `Engine::new()` reads no configuration file; `Engine::from_config(&Config::resolve()?)` reads one, and `Config::with_model_dir(dir)` puts the model somewhere specific.
 
 ## Usage (Python)
 
@@ -111,9 +118,9 @@ matra config show              # every resolved value, with its origin
 
 ## Architecture
 
-Hex architecture. The pipeline depends on port traits (`Source`, `Decomposer`, `NlpProvider`), not on adapters directly. `Source` and `Decomposer`, with detection and the step that turns blocks into sections, are private to the crate: a caller hands in an `Input`. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
+Hex architecture. The pipeline depends on port traits (`Source`, `Decomposer`, `NlpProvider`), not on adapters directly. All three, with detection, the step that turns blocks into sections, the metric suite and the ranking methods, are private to the crate: a caller hands in an `Input` and asks for an outcome. `Embedder` is the one port open to outside implementers. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
 
-The domain sits at the centre and depends on nothing. Four ports (`Source`, `Decomposer`, `NlpProvider`, `Embedder`) depend only on the domain. Adapters implement one port each, and `nlp/udpipe.rs` is the only file that imports the UDPipe bindings. Metrics and extractors are plain functions over the domain. `lib.rs` wires it together and is the only file that knows the whole shape.
+The domain sits at the centre and depends on nothing. Four ports (`Source`, `Decomposer`, `NlpProvider`, `Embedder`) depend only on the domain. Adapters implement one port each, and `nlp/udpipe.rs` is the only file that imports the UDPipe bindings. Metrics and the outcome methods are plain functions over the domain. `lib.rs` wires it together and is the only file that knows the whole shape.
 
 The full walkthrough, with what is resident at each stage and what can fail where, is in [the architecture chapter](https://mox-labs.github.io/matra/architecture/design.html).
 

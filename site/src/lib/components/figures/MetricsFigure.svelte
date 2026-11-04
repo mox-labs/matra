@@ -5,8 +5,8 @@
 	 * One panel per measure, sharing the paragraph axis, so a reader sees where
 	 * in the document each moves and whether they move together. A paragraph
 	 * matra declined to measure (the field is `None`) is a gap with a cross, not
-	 * a zero. A panel carries a reference line only where matra computes a
-	 * document value: readability's is `Corpus::mean_readability`. matra has no
+	 * a zero. A panel carries a reference line only where the generator computes a
+	 * document value: readability's mean over the measured paragraphs. matra has no
 	 * document-level lexical density or compression ratio, so those panels have
 	 * none. The table of every value leads.
 	 *
@@ -200,8 +200,8 @@
 		One panel per paragraph measure, paragraphs in document order along the bottom. A cross marks a
 		paragraph matra declined to measure: the field is <code>None</code> because the paragraph falls
 		outside the measure's applicability conditions above, and the line breaks there rather than
-		inventing a value. The dashed line is the document's mean readability as matra computes it
-		(<code>Corpus::mean_readability</code>); matra computes no document-level lexical density or
+		inventing a value. The dashed line is the document's mean readability: the mean of the grades
+		of the paragraphs matra measured. matra computes no document-level lexical density or
 		compression ratio, so those panels have no line.
 	{/snippet}
 </FigureFrame>

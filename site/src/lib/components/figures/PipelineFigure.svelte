@@ -1,11 +1,13 @@
 <script lang="ts">
 	/**
-	 * One document through the pipeline (EP-0012, M5): its input, annotated,
-	 * composed, each the output of the public call, stepped by the reader.
+	 * One document through the pipeline (EP-0012, M5): its input, read and
+	 * parsed, then measured, stepped by the reader.
 	 *
-	 * `Input::text` hands the text over with its format. `Engine::annotate`
+	 * `Input::text` hands the text over with its format. `Engine::analyze`
 	 * reads it into sections and paragraphs and parses each paragraph that
-	 * is not a quote. `Engine::compose` fills the measures. The stepper
+	 * is not a quote, then fills the measures; the two stages are the
+	 * engine's own (EPR-0006 made them crate-private), and the generator
+	 * shows the first as the analysed document with its measures empty. The stepper
 	 * moves between those three states; each change is the two-stage fade, and
 	 * under reduced motion it is immediate. Without scripts every stage is
 	 * shown, one after another. The twin table holds every paragraph at both
@@ -24,8 +26,8 @@
 
 	const STAGES = [
 		{ key: 'raw', name: 'Input', call: 'Input::text', adds: 'the text and its format' },
-		{ key: 'annotated', name: 'Annotate', call: 'Engine::annotate', adds: 'sections, paragraphs, sentences, tokens' },
-		{ key: 'composed', name: 'Compose', call: 'Engine::compose', adds: 'the measures' }
+		{ key: 'annotated', name: 'Read and parse', call: 'Engine::analyze', adds: 'sections, paragraphs, sentences, tokens' },
+		{ key: 'composed', name: 'Measure', call: 'Engine::analyze', adds: 'the measures' }
 	] as const;
 
 	const data = $derived(file.data);
@@ -153,7 +155,7 @@
 		<!-- A region that scrolls must take focus, or it cannot be scrolled from
 		     the keyboard (WCAG 2.1.1). -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div class="fig-twin" tabindex="0" role="region" aria-label={region('Every paragraph after annotate and after compose')}>
+		<div class="fig-twin" tabindex="0" role="region" aria-label={region('Every paragraph after reading and parsing, and after measuring')}>
 			<table data-twin-for={id}>
 				<thead>
 					<tr>
@@ -183,9 +185,10 @@
 	{/snippet}
 
 	{#snippet note()}
-		Each stage is the output of the public call named, run by matra on the text shown. The quote
+		Each stage is what matra holds at that point, run by matra on the text shown: one call,
+		<code>Engine::analyze</code>, reads and parses, then measures, and returns the last. The quote
 		is kept as a paragraph but never parsed, so it has no sentences and no measures. A measure whose
-		applicability conditions a paragraph does not meet stays <code>None</code> after compose, shown as
+		applicability conditions a paragraph does not meet stays <code>None</code> after measuring, shown as
 		none.
 	{/snippet}
 </FigureFrame>

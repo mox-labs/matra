@@ -18,9 +18,9 @@ The English model is pinned in `src/nlp/udpipe.rs`.
 | Treebank | English Web Treebank, Universal Dependencies 2.5, release 191206 |
 | Distributor | LINDAT/CLARIAH-CZ repository, handle 11234/1-3131 |
 
-`Udpipe::english(model_dir)` downloads the file when it is absent, checks the size, computes the SHA-256, and loads the same bytes it hashed. There is no second read from disk between verification and load. A cached file that fails verification is not loaded: the model is downloaded, and a download that also fails the digest is retried once, so a call makes at most two downloads. The file is replaced only by bytes that verify. If both downloads fail the digest the call returns `Error::ModelInvalid`, nothing is loaded, and the file that was there is still there.
+The engine's constructors, `Engine::new` and `Engine::from_config`, download the file into the model directory when it is absent, checks the size, computes the SHA-256, and loads the same bytes it hashed. There is no second read from disk between verification and load. A cached file that fails verification is not loaded: the model is downloaded, and a download that also fails the digest is retried once, so a call makes at most two downloads. The file is replaced only by bytes that verify. If both downloads fail the digest the call returns `Error::ModelInvalid`, nothing is loaded, and the file that was there is still there.
 
-Verification belongs to that constructor alone. `Udpipe::from_path` and `Udpipe::from_bytes` load whatever you hand them without checking size or hash, so a result produced through either one is only as identifiable as the file you supplied.
+Verification belongs to that path alone. Python's `Matra.from_path` loads whatever file you hand it without checking size or hash, so a result produced through it is only as identifiable as the file you supplied; from Rust, only the pinned model loads.
 
 Changing the model means editing the pinned constants, which makes the change visible in version control and in any caller that pins a matra version.
 
@@ -71,7 +71,7 @@ grade = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
 
 The syllable estimate for one word: keep only alphabetic characters, lowercase them; if the result is three bytes or shorter, return 1; otherwise count runs of the letters `a`, `e`, `i`, `o`, `u`, `y`, where adjacent vowels count once; subtract 1 if the word ends in `e` and the count is above 1; return at least 1.
 
-**Applied to** paragraphs that are not quotes and whose `word_count` is above 10. Stored in `ParagraphMetrics::readability_grade`, the paragraph's `metrics.readability_grade`. The value is unbounded and can be negative on short, simple text. `metrics::readability::flesch_kincaid_grade(text: &str) -> f64` computes it on any string, and returns 0.0 for a string with no whitespace-separated pieces.
+**Applied to** paragraphs that are not quotes and whose `word_count` is above 10. Stored in `ParagraphMetrics::readability_grade`, the paragraph's `metrics.readability_grade`. The value is unbounded and can be negative on short, simple text. The formula is computed inside the metric suite only; matra publishes no function that computes it on a string.
 
 **Citation.** Kincaid, J.P., Fishburne, R.P., Rogers, R.L., & Chisholm, B.S. (1975). *Derivation of New Readability Formulas for Navy Enlisted Personnel*. Research Branch Report 8-75, Naval Technical Training Command.
 
@@ -163,7 +163,7 @@ passive_ratio = passive_sentences / total_sentences
 
 A sentence counts as passive when any of its tokens carries a `dep` of `nsubj:pass`, `nsubjpass`, or `aux:pass`. The first two are the Universal Dependencies and older Stanford spellings of a passive subject; the third is a passive auxiliary.
 
-**Stored** in `DocumentMetrics::passive_ratio` by `Engine::compose`, and per sentence in `Sentence::passive`, which `Sentence::new` sets; both cross to Python as fields. `Corpus::passive_ratio()` pools the same count across documents and stays a method, Rust only. The field is `None` when there are no sentences, and before `compose` has run.
+**Stored** in `DocumentMetrics::passive_ratio` when the document is measured, and per sentence in `Sentence::passive`, which `Sentence::new` sets; both cross to Python as fields. The field is `None` when there are no sentences.
 
 **Citation.** de Marneffe, M.-C., Manning, C.D., Nivre, J., & Zeman, D. (2021). Universal Dependencies. *Computational Linguistics*, 47(2), 255-308.
 
@@ -171,23 +171,15 @@ A sentence counts as passive when any of its tokens carries a `dep` of `nsubj:pa
 
 ### Sentence length statistics
 
-`DocumentMetrics::mean_sentence_length` is `total_words / total_sentences`, where `total_words` counts non-punctuation tokens. `DocumentMetrics::sentence_length_std` is the sample standard deviation of per-sentence non-punctuation token counts, with denominator n minus 1. Both are `None` when undefined: no sentences for the mean, fewer than two for the deviation. `Engine::compose` stores both, with the counts `total_words`, `total_sentences` and `paragraph_count`, so all of them cross to Python.
+`DocumentMetrics::mean_sentence_length` is `total_words / total_sentences`, where `total_words` counts non-punctuation tokens. `DocumentMetrics::sentence_length_std` is the sample standard deviation of per-sentence non-punctuation token counts, with denominator n minus 1. Both are `None` when undefined: no sentences for the mean, fewer than two for the deviation. Measuring the document stores both, with the counts `total_words`, `total_sentences` and `paragraph_count`, so all of them cross to Python.
 
 ### Corpus aggregates
 
-`Corpus` reports three figures over its entries, all computed on demand.
-
-| Method | Definition | Value with nothing to average |
-|---|---|---|
-| `total_words()` | Non-punctuation tokens summed across every entry | 0 |
-| `passive_ratio()` | Passive sentences over total sentences, pooled across every entry | 0.0 |
-| `mean_readability()` | Unweighted mean of every `readability_grade` that is present | 0.0 |
-
-`mean_readability` averages paragraphs, not documents, so a long document contributes more terms than a short one. Paragraphs whose slot is `None` are absent from both the numerator and the count.
+matra computes none. Every measure above is of one document, and how to combine documents is a decision about what the combination is for, so it is the caller's. The counts sum across documents. A ratio pools by summing its numerator and denominator rather than averaging the ratios, so the passive ratio of a set is its passive sentences over its sentences. `vocabulary_ttr` does not pool at all: it falls as text grows, so documents of different lengths are not comparable on it, alone or summed. A mean of paragraph readability grades averages paragraphs, not documents, so a long document contributes more terms than a short one; leave out the paragraphs whose slot is `None`.
 
 ## Summarization
 
-Both summarizers take `&[Sentence]` and a count, score every sentence, keep the highest N, and return them in ascending `position`. Neither generates text: the output sentences are the input sentences.
+Both summarizers take a `Document` and a count, score every sentence, keep the highest N, and return them in ascending `index`, the sentence's position among the document's sentences. Neither generates text: the output sentences are the input sentences.
 
 ### Shared inputs
 
@@ -302,18 +294,17 @@ Candidates whose score is not strictly positive, or is not finite, are dropped b
 
 matra draws no random numbers, sets no seeds, samples nothing, and runs the analysis path on one thread. The model is pinned by SHA-256, and the bytes that pass verification are the bytes that get loaded. Given the same model file and the same input, the parse is the same.
 
-Given the same parse, these are reproducible bit for bit on one machine: every paragraph metric, every document metric, every derived method on `Document` and `Corpus`, TextRank scores and selection, RAKE word and phrase scores, and YAKE term and n-gram scores. TextRank in particular is order-stable because its shared-term counts are integer sums and its iteration walks sentence indices in order.
+Given the same parse, these are reproducible bit for bit on one machine: every paragraph metric, every document metric, every derived method on `Document`, TextRank scores and selection, RAKE word and phrase scores, YAKE term and n-gram scores, and the order of keyphrases with equal scores. TextRank in particular is order-stable because its shared-term counts are integer sums and its iteration walks sentence indices in order.
 
 ### What is not bit-stable
 
-Two places carry hash map iteration order into the result.
+One place carries hash map iteration order into the result.
 
 1. **TF-IDF sentence scores.** The per-sentence score sums over a hash map whose iteration order is not fixed between runs. Floating-point addition is not associative, so the low bits of a score can differ between runs.
 
    Selection changes only when two sentences differ by less than that rounding difference.
-2. **RAKE and YAKE output order among ties.** Candidates are collected out of a hash map into a vector and sorted by score with a stable sort. Phrases with exactly equal scores can therefore come out in a different relative order between runs.
 
-   When such a tie straddles the truncation point, which phrase is returned can differ.
+RAKE and YAKE collect their candidates in the order each phrase is first met and sort them by score with a stable sort, so phrases with exactly equal scores come out in the same order on every run, and a tie straddling the truncation point is decided the same way each time.
 
 Two further sources of variation are worth recording in a methods section.
 
@@ -322,14 +313,15 @@ Two further sources of variation are worth recording in a methods section.
 
 ### What to record
 
-To let someone reproduce a result, report: the matra version, the model file name and its SHA-256, which format the document was analyzed under, and the parameter values you passed, such as the requested sentence count or maximum phrase count.
+To let someone reproduce a result, report: the matra version, the model file name and its SHA-256, which format the document was analyzed under, the method, and the parameter values it ran with, such as the requested sentence count or maximum phrase count. A summary, keyphrases or clusters carry every one of these in their `provenance`: `matra`, `parser`, `format`, `method` and `parameters`.
 
 ```
 matra <crate version> (https://github.com/mox-labs/matra)
 parse: UDPipe, english-ewt-ud-2.5-191206.udpipe
        SHA-256 784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957
 format: markdown
-parameters: tfidf_summarize(sentences, 5)
+method: tfidf
+parameters: n = 5
 ```
 
 Cite the algorithm publications listed above for the methods themselves, and the UDPipe and Universal Dependencies references for the parse layer.
