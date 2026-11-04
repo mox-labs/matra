@@ -1,6 +1,6 @@
 # Migrate from 0.2 to 0.3
 
-0.3.0 changes Rust, Python, the command line, the JSON and the config file at once. Nothing keeps its old name. There are no deprecated aliases, no hidden flags, no fields written under both names and no setting that brings back the 0.2 output. A 0.2 call fails at once in 0.3: a compile error in Rust, an `AttributeError` or `TypeError` in Python, an unknown flag or key at the command line, and a new `format_version` and schema major in the JSON. Nothing keeps working with a different meaning.
+0.3.0 changes Rust, Python, the command line, the JSON and the config file at once. Nothing keeps its old name. There are no deprecated aliases, no hidden flags, no fields written under both names and no setting that brings back the 0.2 output. A renamed or removed call fails at once in 0.3 rather than running with a different meaning: a compile error in Rust, an `AttributeError` or `TypeError` in Python, an unknown key in the config file, and a new `format_version` and schema major in the JSON. A few results do change for the same call, and [the last section](#results-that-change-with-no-rename) lists them.
 
 This page lists every change a 0.2 caller meets, with the 0.2 form and the 0.3 form side by side. Work through the section for each surface you use.
 
@@ -39,7 +39,7 @@ uvx 'matra>=0.3' --skill                              # the skill for 0.3
 | `Matra.rake_keyphrases(text, max_phrases)`, `yake_keyphrases` | `matra.keyphrases(doc, n, method=...)` | Python |
 | `Matra.semantic_clusters(text, threshold, model)` | `matra.clusters(doc, model, threshold)` | Python |
 | `matra.semantic_clusters(vectors, threshold, model_hash)` | none: a cosine over the vectors you hold | Python |
-| `Document`, `CorpusEntry`, `CorpusItem` (types) | `matra.Document` (a class), `DocumentDict`, `Document \| DocumentError` | Python |
+| `Document`, `CorpusEntry`, `CorpusItem` (types) | `matra.Document` (a class), `DocumentDict`, and `Document` or `DocumentError` items | Python |
 | `paragraph["readability_grade"]` and its siblings | `paragraph["metrics"]["readability_grade"]` | JSON, Python |
 | `doc["vocabulary_ttr"]` and its siblings | `doc["metrics"]["vocabulary_ttr"]` | JSON, Python |
 | `Paragraph.in_blockquote` | `Paragraph.kind` (`"quote"`) | all |
@@ -151,7 +151,7 @@ sentence.passive;
 sentence.tree_depth;            // None on a cycle
 ```
 
-`DocumentMetrics` also carries `total_sentences`, `paragraph_count`, `mean_sentence_length` and `sentence_length_std`, which 0.2 computed for the command line's table only.
+`DocumentMetrics` also carries `total_sentences`, `paragraph_count`, `mean_sentence_length` and `sentence_length_std`. In 0.2 these were methods, so they never reached Python or the JSON.
 
 ### Read the record facts
 
@@ -332,7 +332,7 @@ doc["sections"][0]["paragraphs"][0]["kind"] == "quote"
 
 ### Summaries, keyphrases and clusters
 
-The four algorithm-named methods and `semantic_clusters` are module functions over a `Document`. A text is parsed once however many outcomes you ask of it, and a markdown file is read as markdown first: 0.2's methods read every text as plain text, so a README's headings could land in its summary. `max_phrases` is `n`. Each returns a dict whose `provenance` names the method and its parameters.
+The four algorithm-named methods and `semantic_clusters` are module functions over a `Document`. A text is parsed once however many outcomes you ask of it, and in the format you analysed it in: 0.2's methods read every text as plain text, so a README's headings could land in its summary. Analyse a markdown file with `file=`, or a markdown string with `format="markdown"`, and its headings stay headings. `max_phrases` is `n`. Each returns a dict whose `provenance` names the method and its parameters.
 
 ```python
 # 0.2
@@ -488,7 +488,7 @@ The same record is the Rust `Document`, the Python `matra.Document` and `analyze
 | absent | `sentence.word_count`, `tree_depth` (null on a cycle), `passive` |
 | `sentence.reportings` | `sentence.clausal_complements` |
 | `sentence.bare_assertion` | `sentence.root_mood`: `{root_id, mood}`, or null |
-| `token.feats`: `"Mood=Ind\|Tense=Past"` | `token.features`: `{"Mood": "Ind", "Tense": "Past"}` |
+| `token.feats`: one string of pipe-separated features | `token.features`: `{"Mood": "Ind", "Tense": "Past"}` |
 
 Read the record as the schema asks: ignore a field you do not recognize, treat every string set you receive as open, and reject a major you do not know.
 
