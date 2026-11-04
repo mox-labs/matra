@@ -480,6 +480,7 @@ impl Input {
     pub fn text(text: impl Into<String>, format: Format) -> Input;
     pub fn bytes(data: impl Into<Vec<u8>>, format: Option<Format>) -> Input;
     pub fn file(path: impl AsRef<Path>) -> Input;
+    pub fn file_as(path: impl AsRef<Path>, format: Format) -> Input;   // a binary signature still outranks it
     pub fn blocks(blocks: impl IntoIterator<Item = Block>) -> Input;
 }
 impl Inputs { pub fn dir(path: impl AsRef<Path>) -> Result<Inputs>; }   // Iterator<Item = Input>
@@ -521,14 +522,14 @@ Exactly one of `text`, `file`, `bytes` and `blocks` (and of `dir` and `texts`) i
 
 ```
 matra analyze    PATH|DIR|-  [--format markdown|plain_text|blocks] [--json] [--depth document|paragraph|sentence|token]
-matra summarize  PATH|-      [-n 3]  [--method tfidf|textrank] [--json]
-matra keyphrases PATH|-      [-n 10] [--method rake|yake]      [--json]
-matra clusters   PATH|-      [--threshold 0.85]                [--json]
+matra summarize  PATH|-      [-n 3]  [--method tfidf|textrank] [--format F] [--json]
+matra keyphrases PATH|-      [-n 10] [--method rake|yake]      [--format F] [--json]
+matra clusters   PATH|-      [--threshold 0.85]                [--format F] [--json]
 matra config show | init [--force]        matra completions SHELL
 matra --schema [NAME]                     matra --skill [-r NAME]
 ```
 
-`-` reads stdin as bytes and detects the format. `--depth` lets an agent choose how much of the parse it pays for, since every token shown costs the caller [agent-computer-interfaces:c2] (vendor guidance).
+`-` reads stdin as bytes and detects the format. `--depth` lets an agent choose how much of the parse it pays for, since every token shown costs the caller [agent-computer-interfaces:c2] (vendor guidance). It requires `--json`, defaults to `token` (the whole parse), and removes the levels it cuts rather than leaving them empty. `--format` names the format of a file or stdin and is refused with a directory. In `analyze DIR`, a file that is neither text nor a recognised binary format (an image) is an `unsupported_format` line, so a walk over a mixed directory exits 2 (decision 7). Under `--json` a usage error is an envelope too.
 
 ### Names
 
@@ -552,7 +553,7 @@ matra --schema [NAME]                     matra --skill [-r NAME]
 | `Corpus`, `CorpusResult` | none: the caller collects | types removed |
 | Python `Matra.from_path` | none: the model is a pin | constructor removed |
 | Python `Matra`, `analyze_markdown` | `Engine`, `analyze(format=)` | class, method |
-| config `[summarize]`, `semantic.*` | `[summary]`, `[clusters] threshold` | keys |
+| config `[summarize]`, `semantic.*`, `algorithm`, `models.udpipe` | `[summary]`, `[keyphrases]`, `[clusters] threshold`, `method`, removed | keys |
 
 The private traits keep their names inside the crate; renaming them would move files the boundary checks scope by path, for no outside reader.
 
