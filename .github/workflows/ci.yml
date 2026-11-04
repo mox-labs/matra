@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, alpha]
+    branches: [main, next, alpha]
   pull_request:
-    branches: [main, alpha]
+    branches: [main, next, alpha]
 
 # Principle of least privilege at the workflow level. Individual jobs
 # escalate only what they need via a per-job `permissions:` block.
@@ -315,7 +315,10 @@ jobs:
     # PR-only: the baseline is the published version, so pushes to main
     # (which are merges of already-checked PRs) skip it. Armed since
     # matra 0.1.0 landed on crates.io; a PR that breaks semver now fails.
-    if: github.event_name == 'pull_request'
+    # PRs into `next` skip it: `next` gathers a breaking release's
+    # milestones before the version moves, and the release PR from `next`
+    # into main, which carries the version bump, is where it binds.
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
