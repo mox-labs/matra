@@ -76,9 +76,13 @@ guides/cli.html#the-json-envelope
 guides/cli.html#exit-codes
 guides/python.html#use-matra-from-python
 guides/python.html#the-no-setup-path
+guides/python.html#load-the-model-from-a-directory-you-choose
 guides/python.html#threads-and-processes
+guides/python.html#the-six-text-methods
+guides/python.html#analyze-a-directory
 guides/python.html#bring-your-own-embeddings
 guides/python.html#size-limits
+guides/python.html#the-returned-dicts-and-their-shape
 guides/python.html#why-a-metric-field-is-none
 guides/python.html#the-document-level-aggregates
 guides/python.html#exceptions

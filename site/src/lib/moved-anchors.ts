@@ -32,6 +32,15 @@ export const MOVED_ANCHORS: Readonly<Record<string, readonly { id: string; to?: 
 		{ id: 'rfcs', to: '/blueprints/index#legacy' },
 		{ id: 'eps', to: '/blueprints/index#legacy' }
 	],
+	// 0.3.0 replaced the Python class with `Engine` and the outcome functions:
+	// the model is a pin located from the environment, and each old section
+	// has one successor on the same page.
+	'/guides/python': [
+		{ id: 'load-the-model-from-a-directory-you-choose', to: '/guides/python#the-no-setup-path' },
+		{ id: 'the-six-text-methods', to: '/guides/python#summaries-keyphrases-and-clusters' },
+		{ id: 'analyze-a-directory', to: '/guides/python#analyze-many-documents' },
+		{ id: 'the-returned-dicts-and-their-shape', to: '/guides/python#the-shapes-of-the-data' }
+	],
 	// The installation page became the how-to "Install matra"; every section
 	// heading kept its id.
 	'/tutorials/installation': [{ id: 'installation' }],

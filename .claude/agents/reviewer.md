@@ -56,7 +56,7 @@ A change that's good engineering but violates ACES is not good for matra. ACES v
 
 - Library code uses `domain::Result<T>`; the concrete `Error` enum's variants are matchable, not opaque.
 - New error variants are `#[non_exhaustive]` and have a `#[error("…")]` annotation via thiserror.
-- The PyO3 boundary in `lib.rs::python` raises each variant as its own class (`Class::of`, `Class::spec`), deriving from `matra.MatraError` and a builtin. The match is exhaustive (no wildcard arm) so new variants become compile errors: fix that, don't paper over it.
+- The PyO3 boundary in `src/python/errors.rs` raises each variant as its own class (`Class::of`, `Class::spec`), deriving from `matra.MatraError` and a builtin. The match is exhaustive (no wildcard arm) so new variants become compile errors: fix that, don't paper over it.
 
 ### 4. Resilience floor
 

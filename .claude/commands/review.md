@@ -24,7 +24,7 @@ Conditionally:
 - **portsmith**: if the diff touches `src/source/`, `src/decompose/`, `src/nlp/`,
   `src/embed/`, or any port trait. Audits the port contract, pre/post-conditions, object-safety,
   Pattern 6 criterion.
-- **ffi-keeper**: if the diff touches `src/lib.rs` (PyO3 layer), `pyproject.toml`,
+- **ffi-keeper**: if the diff touches `src/python/`, `pyproject.toml`,
   `python/matra/`, the `pyo3` / `pythonize` / `maturin` deps. Audits the dual-publish
   contract, error routing per variant, 4 pythonize blind spots, the 3-axis pin rule.
 - **resilience**: if the diff adds I/O, external library calls, user-input handling,
