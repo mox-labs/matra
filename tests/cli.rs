@@ -432,6 +432,33 @@ fn completions_generate_for_every_supported_shell() {
     }
 }
 
+/// Regression: `matra completions fish | head -2` exited 101 with a panic
+/// from clap_complete, which unwraps its writer. The binary's stdout is a
+/// real pipe here, read for one byte and then closed, as `head` closes it.
+/// Every shell exits 0 and writes no panic to stderr.
+#[test]
+fn completions_into_a_pipe_closed_early_exit_0() {
+    use std::io::Read;
+    use std::process::{Command as Process, Stdio};
+
+    for shell in ["bash", "zsh", "fish"] {
+        let mut child = Process::new(env!("CARGO_BIN_EXE_matra"))
+            .args(["completions", shell])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("the binary starts");
+        let mut first = [0u8; 1];
+        let mut stdout = child.stdout.take().expect("piped stdout");
+        stdout.read_exact(&mut first).expect("the script starts");
+        drop(stdout);
+        let output = child.wait_with_output().expect("the binary exits");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert_eq!(output.status.code(), Some(0), "{shell}: {stderr}");
+        assert!(!stderr.contains("panicked"), "{shell}: {stderr}");
+    }
+}
+
 #[test]
 fn an_unknown_shell_is_rejected() {
     let (code, _, _) = run(&["completions", "powershell"]);
@@ -696,6 +723,35 @@ fn empty_input_exits_one_not_two() {
     assert_eq!(code, 1);
 }
 
+/// Regression: `summarize` and `keyphrases` on a file with nothing in it
+/// wrote nothing to either stream and exited 1, which reads as a hang. Each
+/// says on stderr that it found nothing, as `clusters` does; `--json` and
+/// `--quiet` keep their streams as they were.
+#[test]
+#[ignore = "requires the UDPipe model"]
+fn an_empty_result_says_so_on_stderr() {
+    let f = fixture("", ".txt");
+    for (command, said) in [
+        ("summarize", "matra: found nothing to summarize in"),
+        ("keyphrases", "matra: found no keyphrases in"),
+    ] {
+        let (code, out, err) = run(&[command, path_of(&f)]);
+        assert_eq!(code, 1, "{command}: {err}");
+        assert!(out.is_empty(), "{command}: {out}");
+        assert!(err.contains(said), "{command}: {err}");
+
+        let (code, out, err) = run(&[command, path_of(&f), "--json"]);
+        assert_eq!(code, 1, "{command}: {err}");
+        assert!(!err.contains("found"), "{command} --json: {err}");
+        let parsed: serde_json::Value = serde_json::from_str(&out).expect("JSON");
+        assert!(parsed["error"].is_null());
+
+        let (code, _, err) = run(&[command, path_of(&f), "--quiet"]);
+        assert_eq!(code, 1, "{command}: {err}");
+        assert!(!err.contains("found"), "{command} --quiet: {err}");
+    }
+}
+
 /// Regression: `summarize` and `keyphrases` once read the file raw and parsed
 /// it as plain text, so markdown headings and fenced code were ranked as
 /// prose. Both now go through the same format detection `analyze` uses.
@@ -945,9 +1001,16 @@ fn clusters_groups_sentences_by_meaning() {
         0.85
     );
 
-    // A threshold no pair clears finds nothing, which is exit 1.
-    let (code, _, err) = run(&["clusters", path_of(&f), "--threshold", "0.999"]);
+    // A threshold no pair clears finds nothing, which is exit 1, and the
+    // empty table is announced on stderr with the way to find more.
+    let (code, out, err) = run(&["clusters", path_of(&f), "--threshold", "0.999"]);
     assert_eq!(code, 1, "{err}");
+    assert!(out.is_empty(), "{out}");
+    assert!(
+        err.contains("matra: found no clusters in") && err.contains("at --threshold 0.999"),
+        "{err}"
+    );
+    assert!(err.contains("a lower threshold"), "{err}");
 }
 
 /// Without `model2vec` the command exists, and says what it needs before

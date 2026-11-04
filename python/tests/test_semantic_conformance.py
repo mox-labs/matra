@@ -102,8 +102,9 @@ def test_reference_model_vectors_and_clusters_are_exact(engine: Any) -> None:
     Since EP-0010 M4 the model arrives through ``potion_base_8m``, which
     downloads it into the resolved directory on the first run and
     verifies the same digest this fixture asserts. ``MATRA_MODEL2VEC_DIR``
-    still names the directory when set; without it the directory comes
-    from the resolved configuration. Marked ``model`` because the first
+    names a models directory when set, the model landing in its
+    ``potion-base-8M`` subdirectory; without it the directory comes from
+    the resolved configuration. Marked ``model`` because the first
     run needs a network, and because the clusters run over a parse.
     """
     fixture = json.loads(REF.read_text())

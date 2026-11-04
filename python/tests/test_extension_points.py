@@ -93,10 +93,10 @@ def test_wrong_vector_count_raises_the_same_message_a_rust_caller_gets(
     with pytest.raises(ValueError) as excinfo:
         matra.clusters(engine.analyze(f"{PARAPHRASE_A} {UNRELATED}"), ShortEmbedder(), 0.9)
 
-    count = seen[0]
+    # Two sentences, one vector short: the count is singular where it is one.
+    assert seen == [2]
     assert str(excinfo.value) == (
-        f"invalid input: embedder returned {count - 1} vectors for {count} "
-        "sentences, violating its contract"
+        "invalid input: embedder returned 1 vector for 2 sentences, violating its contract"
     )
 
 
@@ -281,6 +281,33 @@ def test_model2vec_takes_a_pathlib_path(tmp_path: Path) -> None:
     at all proves the argument was accepted."""
     with pytest.raises(matra.ModelNotFoundError):
         matra.Model2Vec.from_dir(tmp_path / "no-such-model")
+
+
+@pytest.mark.model
+def test_potion_base_8m_takes_the_models_directory(
+    tmp_path: Path, capfd: pytest.CaptureFixture[str]
+) -> None:
+    """Regression: `potion_base_8m(dir)` wrote the three files at the root
+    of `dir`, so a caller who passed the model directory, as
+    `MATRA_MODEL_DIR` names it, got a second copy beside the parsing
+    model. `dir` is the models directory: the set is read from
+    `dir/potion-base-8M`, and a set already there loads with no download
+    and nothing on stderr."""
+    models = os.environ.get("MATRA_MODEL_DIR")
+    source = Path(models or "") / "potion-base-8M"
+    if not models or not (source / "model.safetensors").is_file():
+        pytest.skip("needs MATRA_MODEL_DIR holding potion-base-8M")
+    target = tmp_path / "models" / "potion-base-8M"
+    target.mkdir(parents=True)
+    for name in ("model.safetensors", "tokenizer.json", "config.json"):
+        (target / name).write_bytes((source / name).read_bytes())
+    capfd.readouterr()
+
+    model = matra.Model2Vec.potion_base_8m(tmp_path / "models")
+
+    assert model.model_hash == matra.Model2Vec.from_dir(source).model_hash
+    assert sorted(p.name for p in (tmp_path / "models").iterdir()) == ["potion-base-8M"]
+    assert capfd.readouterr().err == ""
 
 
 @pytest.mark.model

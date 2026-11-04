@@ -626,7 +626,14 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
                 CompletionShell::Fish => clap_complete::Shell::Fish,
             };
             let mut command = Cli::command().name("matra").bin_name("matra");
-            clap_complete::generate(shell, &mut command, "matra", out);
+            // clap_complete panics when its writer fails, so a reader that
+            // closes early (`| head`) aborted the process with exit 101.
+            // The script is generated into memory, where writing cannot
+            // fail, and written out here, so a broken pipe takes the same
+            // route as every other command's output and exits 0.
+            let mut script = Vec::new();
+            clap_complete::generate(shell, &mut command, "matra", &mut script);
+            out.write_all(&script)?;
             Ok(Outcome::Found)
         }
         Command::Analyze {
@@ -664,6 +671,9 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
             } else if !cli.quiet {
                 render::sentences(out, &summary)?;
             }
+            if summary.sentences.is_empty() {
+                say_found_nothing(cli, err, &format!("found nothing to summarize in {label}"));
+            }
             Ok(outcome(summary.sentences.is_empty()))
         }
         Command::Keyphrases {
@@ -683,6 +693,9 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
                 write_envelope(out, "keyphrases", Some(&label), &found)?;
             } else if !cli.quiet {
                 render::phrases(out, &found)?;
+            }
+            if found.phrases.is_empty() {
+                say_found_nothing(cli, err, &format!("found no keyphrases in {label}"));
             }
             Ok(outcome(found.phrases.is_empty()))
         }
@@ -716,7 +729,29 @@ fn clusters(
     } else if !cli.quiet {
         render::clusters(out, &doc, &found)?;
     }
+    if found.clusters.is_empty() {
+        say_found_nothing(
+            cli,
+            err,
+            &format!(
+                "found no clusters in {label} at --threshold {threshold}; \
+                 a lower threshold joins less similar sentences"
+            ),
+        );
+    }
     Ok(outcome(found.clusters.is_empty()))
+}
+
+/// The one line `summarize`, `keyphrases` and `clusters` write to stderr
+/// when they find nothing, beside exit 1. The table of an empty result is
+/// empty, and an empty terminal after a download notice read as a hang.
+/// Under `--json` the envelope's empty `result` says it, and `--quiet`
+/// asks for no human-readable output, so neither writes the line.
+fn say_found_nothing(cli: &Cli, err: &mut dyn Write, what: &str) {
+    if cli.json || cli.quiet {
+        return;
+    }
+    let _ = writeln!(err, "matra: {what}");
 }
 
 /// Without `model2vec` this build ships no embedder, and the command says
@@ -943,7 +978,11 @@ fn announce(err: &mut dyn Write, notice: &domain::ProvisionNotice) {
 /// every user of the command line passes through. The license and its
 /// URL come from the notice, pinned beside the model's URL, so a change
 /// of model cannot leave this line naming the old terms.
-fn notice_text(notice: &domain::ProvisionNotice) -> String {
+///
+/// The Python binding writes the same two lines to `sys.stderr` before
+/// its constructors download a model, so this is the one copy of the
+/// wording for both application surfaces.
+pub(crate) fn notice_text(notice: &domain::ProvisionNotice) -> String {
     format!(
         "matra: downloading {} ({}) into {}\n\
          matra: the model is licensed {}, separately from matra: {}\n",
@@ -1310,6 +1349,45 @@ mod tests {
         // This module only compiles under `cli`, which implies `udpipe`.
         assert!(line.contains("udpipe"));
         assert!(line.contains("cli"));
+    }
+
+    /// A reader that takes `left` bytes and then goes away, as `head -2`
+    /// does once it has its lines.
+    struct ClosesEarly {
+        left: usize,
+    }
+
+    impl Write for ClosesEarly {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            if self.left == 0 {
+                return Err(io::Error::from(io::ErrorKind::BrokenPipe));
+            }
+            let n = buf.len().min(self.left);
+            self.left -= n;
+            Ok(n)
+        }
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    /// Regression: `matra completions fish | head -2` panicked inside
+    /// clap_complete with exit 101, because it unwraps its writer. A
+    /// reader closing early is exit 0 for every shell, as for every other
+    /// command, and nothing reaches stderr.
+    #[test]
+    fn completions_into_a_reader_that_closes_early_exit_0() {
+        for shell in ["bash", "zsh", "fish"] {
+            let mut out = ClosesEarly { left: 64 };
+            let mut err = Vec::new();
+            let code = run(
+                ["matra", "completions", shell].into_iter().map(Into::into),
+                &mut out,
+                &mut err,
+            );
+            assert_eq!(code, EXIT_FOUND, "{shell}");
+            assert!(err.is_empty(), "{shell}: {}", String::from_utf8_lossy(&err));
+        }
     }
 
     /// The list a usage failure reads its command from is the list clap
