@@ -580,8 +580,8 @@ The private traits keep their names inside the crate; renaming them would move f
 
 Each is one pull request, with its documentation, skill text and CHANGELOG entry in the same pull request, and each leaves `main` releasable.
 
-1. **The schema.** Span, `Skipped`, `Paragraph.kind`, the metric records, provenance with the parser's identity, the record-fact renames, `features` as a map, `tree_depth` as an `Option`, the format vocabulary; the JSON Schema in `spec/schema/` and its conformance fixtures.
-2. **The input side.** `Input`, `Inputs` and `Block`; detection; the CommonMark reader with spans and `skipped`; the plain-text reader with spans; structure from blocks; the parser's token spans and identity; L9 and the laws restated over every constructor.
+1. **The schema.** The metric records, provenance with the parser's identity, the record-fact renames, `features` as a map, `tree_depth` as an `Option`, the format vocabulary; the JSON Schema in `spec/schema/` and its conformance fixtures.
+2. **The input side.** `Span`, `Skipped` and `Paragraph.kind` with their schema entries; `Input`, `Inputs` and `Block`; detection; the CommonMark reader with spans and `skipped`; the plain-text reader with spans; structure from blocks; the parser's token spans; L9 and the laws restated over every constructor.
 3. **The outcomes.** `Engine::new`, `analyze`, `analyze_all`; the outcome functions and their method enums with the method and parameters recorded; the traits, `metrics`, `hearst` and the method modules made private; `CorpusEntry` and the `Corpus` aggregate methods removed.
 4. **Errors on every channel.** `details()` and the serde form in Rust; the Python exception classes.
 5. **Python.** The module out of `lib.rs` under boundary rule 7, `Engine`, the read-only `Document`, the outcome functions, the stub file; the parity test.
