@@ -7,12 +7,12 @@ Give an agent matra's own instructions, printed by the version it will run, rath
 If the agent has a shell and nothing installed, give it this line:
 
 ```bash
-uvx 'matra>=0.2' --skill
+uvx 'matra>=0.3' --skill
 ```
 
 If matra is already installed, `matra --skill` prints the same text. It says what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not license the agent to conclude, the limits, and the errors.
 
-Keep the version floor in the `uvx` line. `--skill` arrived in 0.2.0, and an unpinned `uvx matra` takes whatever release is newest, which before 0.2.0 was a different command line without the flag.
+Keep the version floor in the `uvx` line. The skill describes the command line of the version that prints it, and 0.2's spells its commands and its JSON differently from the 0.3 these pages describe. 0.1.0's has no `--skill` at all.
 
 ## Give it the deeper references
 

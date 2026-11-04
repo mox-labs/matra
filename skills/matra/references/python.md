@@ -5,7 +5,7 @@ summary: The Python API when the agent writes Python: Engine, analyze and analyz
 
 # The Python API
 
-`pip install 'matra>=0.2'`, or `uv add 'matra>=0.2'`. Python spells what Rust spells: an `Engine` analyzes, and the outcome functions take what it returned.
+`pip install 'matra>=0.3'`, or `uv add 'matra>=0.3'`. Python spells what Rust spells: an `Engine` analyzes, and the outcome functions take what it returned.
 
 ```python
 import matra

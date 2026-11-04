@@ -8,9 +8,9 @@ The `matra` command the Python package installs is not a Python program. From 0.
 
 ## Why every install line names a version
 
-An unpinned install line takes whatever the registry hands out. Today that is 0.2.x on both registries, and it will not stay that way. 0.1.0 is also still published, and its `matra` is the separate Python implementation above. The failure an unpinned line risks is not an error: the install succeeds and gives you a program these pages do not describe, so its version banner and its output do not match theirs.
+An unpinned install line takes whatever the registry hands out. Today that is 0.3.x on both registries, and it will not stay that way. 0.1.0 is also still published, and its `matra` is the separate Python implementation above. So is 0.2, whose surface 0.3.0 renamed throughout. The failure an unpinned line risks is not an error: the install succeeds and gives you a program these pages do not describe, so its version banner and its output do not match theirs.
 
-The Python lines take a floor, `'matra>=0.2'`, because what they claim holds for 0.2.0 and every release after it, and an exact pin would still name 0.2.0 after a later release ships. The cargo lines take a caret requirement, `matra@0.2` and `--version '^0.2'`, which is how cargo states a version. Cargo reads a change in the first non-zero component as breaking, so the caret accepts 0.2.0 and later 0.2 releases and stops short of 0.3.0, which a floor would not.
+The Python lines take a floor, `'matra>=0.3'`, because what they claim holds for 0.3.0 and every release after it, and an exact pin would still name 0.3.0 after a later release ships. The cargo lines take a caret requirement, `matra@0.3` and `--version '^0.3'`, which is how cargo states a version. Cargo reads a change in the first non-zero component as breaking, so the caret accepts 0.3.0 and later 0.3 releases and stops short of 0.4.0, which a floor would not.
 
 ## Same program, different builds
 

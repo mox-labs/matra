@@ -1,4 +1,4 @@
-// cargo add matra@0.2 serde_json
+// cargo add matra@0.3 serde_json
 use matra::domain::Format;
 use matra::{Engine, Input, SummaryMethod};
 

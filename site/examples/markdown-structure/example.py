@@ -1,4 +1,4 @@
-# pip install 'matra>=0.2'
+# pip install 'matra>=0.3'
 import json
 
 import matra
