@@ -33,25 +33,35 @@ pub(super) struct PyEngine {
 #[pymethods]
 impl PyEngine {
     /// `Engine::new`: the model located from the environment alone, and
-    /// downloaded there on first use. No configuration file is read.
+    /// downloaded there on first use, announced on `sys.stderr` first. No
+    /// configuration file is read.
+    ///
+    /// `Engine::new` is `Engine::from_config` over the configuration the
+    /// environment alone resolves, which is what this builds, through
+    /// `from_config_with_notice` so the download is announced in the
+    /// command line's words.
     #[new]
-    fn new() -> PyResult<Self> {
-        let inner = crate::Engine::new().map_err(MatraError)?;
+    fn new(py: Python<'_>) -> PyResult<Self> {
+        let cfg = Config::from_sources(|key| std::env::var(key).ok(), None).map_err(MatraError)?;
+        let inner = crate::Engine::from_config_with_notice(&cfg, |n| super::cli::announce(py, n))
+            .map_err(MatraError)?;
         Ok(Self { inner })
     }
 
     /// `Engine::from_config`, over `Config::from_file(config_file)`, or
     /// over `Config::resolve()` (the environment and the config file it
-    /// names) when no file is given.
+    /// names) when no file is given. A download is announced on
+    /// `sys.stderr`, as `Engine()` announces it.
     #[staticmethod]
     #[pyo3(signature = (config_file=None))]
-    fn from_config(config_file: Option<PathBuf>) -> PyResult<Self> {
+    fn from_config(py: Python<'_>, config_file: Option<PathBuf>) -> PyResult<Self> {
         let cfg = match config_file {
             Some(path) => Config::from_file(path),
             None => Config::resolve(),
         }
         .map_err(MatraError)?;
-        let inner = crate::Engine::from_config(&cfg).map_err(MatraError)?;
+        let inner = crate::Engine::from_config_with_notice(&cfg, |n| super::cli::announce(py, n))
+            .map_err(MatraError)?;
         Ok(Self { inner })
     }
 

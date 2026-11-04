@@ -131,8 +131,9 @@ fn clusters_matches_the_shape_fixture() {
 /// Since EP-0010 M4 the model arrives through `Model2Vec::potion_base_8m`,
 /// which downloads it into the resolved directory when it is absent and
 /// verifies the same digest this fixture asserts. `MATRA_MODEL2VEC_DIR`
-/// still names the directory when set; without it the directory is the
-/// one `Config` resolves.
+/// names a models directory when set, the model landing in its
+/// `potion-base-8M` subdirectory; without it the directory is the one
+/// `Config` resolves.
 #[cfg(feature = "model2vec")]
 mod reference_model {
     use std::fs;

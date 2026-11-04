@@ -108,6 +108,14 @@ const POTION_BASE_8M: Pin<'static> = Pin {
     license_url: POTION_BASE_8M_LICENSE_URL,
 };
 
+/// Where [`Model2Vec::potion_base_8m`] keeps the pinned set inside a
+/// models directory: the subdirectory named for the model, the one
+/// [`Model2Vec::from_config`] reads when `models.embedding` is as shipped.
+#[cfg(not(target_arch = "wasm32"))]
+fn potion_dir(models_dir: &Path) -> PathBuf {
+    models_dir.join(POTION_BASE_8M_NAME)
+}
+
 /// A pinned artifact set: what it is called, how many bytes it is, the
 /// digest it must satisfy, where its three files come from in
 /// [`ARTIFACT_FILES`] order, and the terms it is published under. A test
@@ -227,8 +235,15 @@ impl Model2Vec {
         catch_embed_panic(|| Self::from_bytes(&model_bytes, &tokenizer_bytes, &config_bytes))
     }
 
-    /// Load the pinned reference model from `dir`, downloading it first
-    /// if it is not already there.
+    /// Load the pinned reference model from the models directory
+    /// `models_dir`, downloading it first if it is not already there.
+    ///
+    /// `models_dir` is the directory `MATRA_MODEL_DIR` and
+    /// [`Config::with_model_dir`] name, the one that holds every model:
+    /// the three files live in its `potion-base-8M` subdirectory, which
+    /// is where [`Model2Vec::from_config`] looks for them when the model
+    /// directory is `models_dir` and `models.embedding` is as shipped.
+    /// In the steps below, `dir` is that subdirectory.
     ///
     /// The bytes are trusted only if the SHA-256 over all three artifact
     /// files, in the order `model.safetensors`, `tokenizer.json`,
@@ -275,9 +290,10 @@ impl Model2Vec {
     /// bytes that get parsed; nothing re-reads the directory between
     /// verify and load.
     ///
-    /// `dir` is used as given; a `~` in it is not expanded.
+    /// `models_dir` is used as given; a `~` in it is not expanded.
     /// [`Model2Vec::from_config`] resolves the configured directory
-    /// instead.
+    /// instead, and [`Model2Vec::from_dir`] loads three files from the
+    /// directory that holds them.
     ///
     /// ```no_run
     /// use matra::config::Config;
@@ -287,7 +303,8 @@ impl Model2Vec {
     /// // it finds there; a shared one such as `/tmp` is writable by
     /// // anybody on the machine.
     /// let cfg = Config::resolve()?;
-    /// let model = Model2Vec::potion_base_8m(cfg.model_dir().join(cfg.embedding_model()))?;
+    /// // The files land in `<model_dir>/potion-base-8M/`.
+    /// let model = Model2Vec::potion_base_8m(cfg.model_dir())?;
     /// # Ok::<(), matra::domain::Error>(())
     /// ```
     ///
@@ -303,17 +320,18 @@ impl Model2Vec {
     /// not the pinned set, if the digest still mismatches after one
     /// re-download, or if the verified bytes do not parse.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn potion_base_8m(dir: impl AsRef<Path>) -> domain::Result<Self> {
-        Self::potion_base_8m_with(dir.as_ref(), fetch_capped, &mut |_| {})
+    pub fn potion_base_8m(models_dir: impl AsRef<Path>) -> domain::Result<Self> {
+        Self::potion_base_8m_with(&potion_dir(models_dir.as_ref()), fetch_capped, &mut |_| {})
     }
 
     /// [`Model2Vec::potion_base_8m`] over the directory a [`Config`]
     /// resolves: the model directory joined with the configured
     /// embedding model name.
     ///
-    /// Additive. The explicit-directory constructors are unchanged, and
-    /// this one exists so a caller with no opinion about where models
-    /// live does not have to invent one.
+    /// With the model directory and the embedding model name as shipped,
+    /// this is `Model2Vec::potion_base_8m(cfg.model_dir())`. It exists so
+    /// a caller with no opinion about where models live does not have to
+    /// invent one, and so `models.embedding` is read where it applies.
     ///
     /// ```no_run
     /// use matra::embed::model2vec::Model2Vec;
@@ -328,7 +346,11 @@ impl Model2Vec {
     /// Whatever [`Model2Vec::potion_base_8m`] returns.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn from_config(cfg: &Config) -> domain::Result<Self> {
-        Self::potion_base_8m(cfg.model_dir().join(cfg.embedding_model()))
+        Self::potion_base_8m_with(
+            &cfg.model_dir().join(cfg.embedding_model()),
+            fetch_capped,
+            &mut |_| {},
+        )
     }
 
     /// [`Model2Vec::from_config`], with `notice` called once before each
@@ -2483,6 +2505,25 @@ mod provisioning {
         assert_eq!(POTION_BASE_8M.license, "MIT");
         assert_eq!(POTION_BASE_8M.digest, POTION_BASE_8M_SHA256);
         assert_eq!(POTION_BASE_8M.urls, POTION_BASE_8M_URLS);
+    }
+
+    /// Regression: `potion_base_8m(dir)` put the three files at the root
+    /// of `dir`, where `MATRA_MODEL_DIR` and `Config::with_model_dir`
+    /// mean the directory that holds every model, so a caller who passed
+    /// the model directory got a second copy beside the parsing model.
+    /// `dir` is the models directory, and the set lands where
+    /// `from_config` looks for it.
+    #[test]
+    fn potion_base_8m_takes_the_models_directory_from_config_reads() {
+        let models = Path::new("/srv/matra/models");
+        let cfg = Config::from_sources(|key| (key == "HOME").then(|| "/home/u".to_string()), None)
+            .unwrap()
+            .with_model_dir(models);
+        assert_eq!(
+            potion_dir(models),
+            cfg.model_dir().join(cfg.embedding_model())
+        );
+        assert_eq!(potion_dir(models), models.join("potion-base-8M"));
     }
 
     #[test]

@@ -43,8 +43,9 @@ the same expectations:
 Run them with `just conformance`. Both model lanes fetch on first use and
 load from disk after: the parse lane the UDPipe model, the semantic
 reference lane potion-base-8M through `Model2Vec::potion_base_8m`, into
-the resolved model directory or into `MATRA_MODEL2VEC_DIR` when that is
-set. Each download is pinned by a digest in the source and verified
+the resolved model directory or into the models directory
+`MATRA_MODEL2VEC_DIR` names when that is set (in its `potion-base-8M`
+subdirectory). Each download is pinned by a digest in the source and verified
 before anything loads, so what a lane can obtain is exactly the artifact
 its fixture names. The semantic shape fixture runs in Rust with no model
 at all. Python has no constructor for a `Document` from data, so its runner

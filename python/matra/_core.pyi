@@ -133,6 +133,12 @@ class Engine:
         `~/.matra/models` wins when the new location does not exist yet.
         No configuration file is read.
 
+        The first call downloads the model (about 16 MB) and writes two
+        lines to `sys.stderr` before it does, as the command line does:
+        what is downloading, its size and where to, then the model's
+        licence. Once the model is on disk nothing is written. Redirect
+        `sys.stderr` to silence it.
+
         The download is atomic and SHA-256-verified against a pinned
         hash. Concurrent processes cannot corrupt each other's downloads.
 
@@ -155,6 +161,8 @@ class Engine:
         the environment names (`MATRA_CONFIG_FILE`, else
         `$XDG_CONFIG_HOME/matra/config.toml`, else
         `~/.config/matra/config.toml`), where a missing file is no error.
+        A download is announced on `sys.stderr`, as `Engine()` announces
+        it.
 
         Raises:
             InvalidInputError: the config file is malformed or not UTF-8.
@@ -302,9 +310,15 @@ class Model2Vec:
         artifact set can arrive this way. Downloading happens only into
         a directory holding none of the three, and the set is verified in
         memory before anything is written, so a mismatch retries once and
-        leaves the directory as it was found. With no argument the
-        directory is resolved through the configuration: the model
-        directory joined with the configured embedding model name.
+        leaves the directory as it was found.
+
+        `dir` is a models directory, the one `MATRA_MODEL_DIR` names, and
+        the three files live in its `potion-base-8M` subdirectory, so
+        `potion_base_8m(dir)` and `Engine()` under `MATRA_MODEL_DIR=dir`
+        share one tree. With no argument it is the model directory the
+        configuration resolves, joined with the configured embedding
+        model name. A download (30.9 MB) writes two lines to
+        `sys.stderr` first, as `Engine()` does.
 
         Raises:
             OSError: the directory cannot be created, read, or written,

@@ -106,6 +106,18 @@ fn os_string_of(bytes: Vec<u8>) -> std::ffi::OsString {
     std::ffi::OsString::from(String::from_utf8_lossy(&bytes).into_owned())
 }
 
+/// Say on `sys.stderr` that a model is about to download, in the two
+/// lines the command line writes ([`crate::cli::notice_text`]).
+///
+/// A first `matra.Engine()` waits seconds on a 16 MB fetch, and the first
+/// `Model2Vec.potion_base_8m()` on 30.9 MB; before this, both waits were
+/// silent. Model libraries in Python announce a download on stderr the
+/// same way, and a caller who wants quiet redirects the stream. A notice
+/// that cannot be written is not worth failing the constructor over.
+pub(super) fn announce(py: Python<'_>, notice: &crate::domain::ProvisionNotice) {
+    let _ = write_stream(py, "stderr", crate::cli::notice_text(notice).as_bytes());
+}
+
 /// Write one rendered buffer to the named `sys` stream and flush it.
 fn write_stream(py: Python<'_>, name: &str, bytes: &[u8]) -> PyResult<()> {
     if bytes.is_empty() {

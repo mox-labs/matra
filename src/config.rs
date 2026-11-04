@@ -179,13 +179,20 @@ impl Config {
     /// read, and the same set as [`Config::resolve`] otherwise.
     pub fn from_file(path: impl AsRef<Path>) -> domain::Result<Config> {
         let path = path.as_ref();
-        let contents = read_config_file(path)?.ok_or_else(|| {
-            Error::Io(domain::IoContext::cannot(
-                "read",
-                path,
-                &std::io::Error::from(std::io::ErrorKind::NotFound),
-            ))
-        })?;
+        let contents = match read_config_file(path)? {
+            Some(contents) => contents,
+            None => {
+                // The file the caller named is absent. The error is the
+                // operating system's own, asked for once more, so the
+                // message reads as every other failed read does ("No such
+                // file or directory (os error 2)"), not as the bare
+                // `ErrorKind` text "entity not found".
+                let missing = std::fs::metadata(path)
+                    .err()
+                    .unwrap_or_else(|| std::io::Error::from(std::io::ErrorKind::NotFound));
+                return Err(Error::Io(domain::IoContext::cannot("read", path, &missing)));
+            }
+        };
         let named = path.as_os_str().to_string_lossy().into_owned();
         let env = |key: &str| {
             if key == "MATRA_CONFIG_FILE" {
@@ -1369,5 +1376,11 @@ algorithm = "rake"
             err.to_string().contains(&missing.display().to_string()),
             "{err}"
         );
+        // Regression: the message carried `ErrorKind`'s "entity not
+        // found" where every other failed read carries the operating
+        // system's words. It is the same text a direct read gives.
+        let os = std::fs::metadata(&missing).unwrap_err().to_string();
+        assert!(err.to_string().contains(&os), "{err} lacks {os}");
+        assert!(!err.to_string().contains("entity not found"), "{err}");
     }
 }

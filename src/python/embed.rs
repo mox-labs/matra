@@ -44,21 +44,29 @@ impl PyModel2Vec {
     /// or holding only some of them, is refused without anything
     /// being downloaded over or deleted.
     ///
-    /// With no argument the directory is resolved through `Config`:
-    /// the model directory joined with the configured embedding
-    /// model name. A directory given explicitly is anything Python
-    /// calls a path: a `str`, or an `os.PathLike` such as a
-    /// `pathlib.Path`.
+    /// `dir` is a models directory, the one `MATRA_MODEL_DIR` names,
+    /// and the three files land in its `potion-base-8M` subdirectory.
+    /// With no argument it is the model directory the configuration
+    /// resolves, joined with the configured embedding model name. A
+    /// directory is anything Python calls a path: a `str`, or an
+    /// `os.PathLike` such as a `pathlib.Path`. A download is announced
+    /// on `sys.stderr` first, as the command line announces it.
     #[staticmethod]
     #[pyo3(signature = (dir=None))]
-    fn potion_base_8m(dir: Option<PathBuf>) -> PyResult<Self> {
-        let inner = match dir {
-            Some(dir) => crate::embed::model2vec::Model2Vec::potion_base_8m(dir),
-            None => {
-                let cfg = crate::config::Config::resolve().map_err(MatraError)?;
-                crate::embed::model2vec::Model2Vec::from_config(&cfg)
-            }
+    fn potion_base_8m(py: Python<'_>, dir: Option<PathBuf>) -> PyResult<Self> {
+        // An explicit directory is the model directory and nothing else,
+        // so the configuration file is not read for it: the environment
+        // and the shipped defaults, with `dir` on top, which puts the set
+        // in `dir/potion-base-8M` as `Model2Vec::potion_base_8m(dir)` does.
+        let cfg = match dir {
+            Some(dir) => crate::config::Config::from_sources(|key| std::env::var(key).ok(), None)
+                .map(|cfg| cfg.with_model_dir(dir)),
+            None => crate::config::Config::resolve(),
         }
+        .map_err(MatraError)?;
+        let inner = crate::embed::model2vec::Model2Vec::from_config_with_notice(&cfg, |n| {
+            super::cli::announce(py, n);
+        })
         .map_err(MatraError)?;
         Ok(Self { inner })
     }

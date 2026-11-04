@@ -654,9 +654,9 @@ pub fn clusters(
     let embeddings = embedder.embed(&texts)?;
     if embeddings.len() != texts.len() {
         return Err(domain::Error::InvalidInput(format!(
-            "embedder returned {} vectors for {} sentences, violating its contract",
-            embeddings.len(),
-            texts.len()
+            "embedder returned {} for {}, violating its contract",
+            counted(embeddings.len(), "vector"),
+            counted(texts.len(), "sentence"),
         )));
     }
     let (clusters, edges) = extraction::cluster(&embeddings, threshold)?;
@@ -668,6 +668,15 @@ pub fn clusters(
         clusters,
         edges,
     })
+}
+
+/// `n` with `noun`, singular for one: "1 vector", "2 vectors".
+fn counted(n: usize, noun: &str) -> String {
+    if n == 1 {
+        format!("1 {noun}")
+    } else {
+        format!("{n} {noun}s")
+    }
 }
 
 /// The method [`clusters`] records: connected components of the graph of
@@ -1819,7 +1828,11 @@ mod tests {
         };
         match clusters(&doc, &embedder, 0.9) {
             Err(domain::Error::InvalidInput(msg)) => {
-                assert!(msg.contains("violating its contract"));
+                // Regression: the count read "1 vectors".
+                assert_eq!(
+                    msg,
+                    "embedder returned 1 vector for 2 sentences, violating its contract"
+                );
             }
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
