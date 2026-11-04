@@ -67,7 +67,7 @@ The recipe:
 3. **Implement the port trait** for your new adapter struct.
 4. **Don't import other adapters.** Other adapters live in sibling files; do not reach across.
 5. **Translate external errors** to `domain::Error` variants. Never propagate external crate errors through the boundary.
-6. **Document contract overrides** inline. If your adapter's behavior differs from the port's documented postconditions (e.g., DirectorySource's sort order), document the override at the impl site.
+6. **Document contract overrides** inline. If your adapter's behavior differs from the port's documented postconditions (e.g., FileSource's refusal of a directory with `InvalidInput` naming `Inputs::dir`), document the override at the impl site.
 7. **Add unit tests** for the adapter's contract: what it accepts, what it rejects, what it returns under each input class.
 8. **Wire it into the composition root.** `Source`, `Decomposer` and `NlpProvider` are crate-private, so an adapter of theirs that `lib.rs` does not wire is unreachable; an `Embedder` adapter is the caller's to pass to `clusters`.
 
@@ -102,7 +102,7 @@ If a third-party `matra-stanza`, `matra-spacy`, etc. emerges, extract `matra-nlp
 
 ### Pattern 10 — orthogonal-dispatch axes
 
-Matra uses **one** runtime dispatch axis: `&dyn NlpProvider`. The Source and Decomposer choices are made statically at the composition root (detected format → the markdown, plain-text or block-input reader; `Input::file` vs `Inputs::dir` → FileSource vs DirectorySource).
+Matra uses **one** runtime dispatch axis: `&dyn NlpProvider`. The Source and Decomposer choices are made statically at the composition root (detected format → the markdown, plain-text or block-input reader; `Input::file` reads through FileSource, and `Inputs::dir` lists with DirectorySource, which reads nothing, and hands each file to FileSource).
 
 This is appropriate at matra's scale. The corpus shows N=4 axes only at search-engine scale (tantivy). Resist the temptation to runtime-dispatch the other ports until there's a concrete need.
 

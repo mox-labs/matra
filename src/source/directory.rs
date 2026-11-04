@@ -1,33 +1,45 @@
-//! Directory source adapter. Reads all files in a directory.
+//! Directory listing. Names the files in a directory; reads none of them.
 
 use std::path::{Path, PathBuf};
 
 use crate::domain;
 
+use super::Source;
 use super::file::FileSource;
-use super::{Fetched, Source};
 
-/// Reads all regular files in a directory (non-recursive, symlinks skipped).
+/// Lists the regular files in a directory (non-recursive, symlinks
+/// skipped), and reads none of them.
+///
+/// It is not a [`Source`]. Reading a directory as one call would have to
+/// choose between aborting on the first file that fails and dropping it,
+/// and dropping it is the silent omission matra does not allow: every
+/// failure has to reach the caller as an item carrying its path. So the
+/// library lists here and reads each file through
+/// [`FileSource`](super::file::FileSource) only when `Inputs::dir`'s
+/// `Input` for it is analysed, where a failure is one `Err` item of the
+/// stream. An implementation of `Source` here once read the directory in
+/// one call and discarded every failed file; nothing called it, and it is
+/// gone.
 ///
 /// Behavior:
-/// - Entries that cannot be listed (`read_dir` error on a child) are skipped.
+/// - Entries the listing cannot read are skipped.
 /// - Symlinks are skipped to avoid following attacker-controlled paths
-///   into unexpected parts of the filesystem.
-/// - Files are yielded sorted by path (lexicographic, byte-wise on
-///   `PathBuf`) — consumers may rely on this ordering.
-/// - [`Source::read`] (the trait method) returns only the successfully-read
-///   documents; per-file failures are silently dropped. The library does
-///   not read a directory through it: `Inputs::dir` lists the paths with
-///   [`DirectorySource::candidate_paths`] and reads each when its `Input`
-///   is analysed, so each failure is an item carrying its path.
+///   into unexpected parts of the filesystem, and so is anything that is
+///   not a regular file, a subdirectory included.
+/// - Paths are returned sorted (lexicographic, byte-wise on `PathBuf`),
+///   and consumers may rely on this ordering.
 pub(crate) struct DirectorySource;
 
 impl DirectorySource {
-    /// List candidate paths in the directory, sorted, after the symlink
-    /// filter and `FileSource::accepts` (a regular file). No extension
-    /// is filtered: every regular file is a candidate, and its format is
-    /// assigned from its extension when it is read. Listing is separate from reading so
-    /// the composition root can enumerate eagerly and read lazily.
+    /// The candidate paths in the directory, sorted, after the symlink
+    /// filter and `FileSource::accepts` (a regular file). No extension is
+    /// filtered: every regular file is a candidate, and its format is
+    /// decided when it is read.
+    ///
+    /// # Errors
+    ///
+    /// [`domain::Error::Io`] naming the directory when it cannot be
+    /// listed, `not_found` among them.
     pub(crate) fn candidate_paths(&self, input: &Path) -> domain::Result<Vec<PathBuf>> {
         let file_source = FileSource;
         let mut paths: Vec<_> = std::fs::read_dir(input)
@@ -50,101 +62,81 @@ impl DirectorySource {
     }
 }
 
-impl Source for DirectorySource {
-    /// Reads all documents in the directory, dropping per-file failures
-    /// silently. `Inputs::dir` is the route that reports each failure.
-    fn read(&self, input: &Path) -> domain::Result<Vec<Fetched>> {
-        let file_source = FileSource;
-        let docs = self
-            .candidate_paths(input)?
-            .into_iter()
-            .filter_map(|path| file_source.read(&path).ok())
-            .flatten()
-            .collect();
-        Ok(docs)
-    }
-
-    fn accepts(&self, input: &Path) -> bool {
-        input.is_dir()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn reads_directory_files() {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("a.md"), "# A\n\nText.").unwrap();
-        std::fs::write(dir.path().join("b.txt"), "Plain text.").unwrap();
-
-        let source = DirectorySource;
-        assert!(source.accepts(dir.path()));
-
-        let docs = source.read(dir.path()).unwrap();
-        assert_eq!(docs.len(), 2);
+    fn names(paths: &[PathBuf]) -> Vec<String> {
+        paths
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().into_owned())
+            .collect()
     }
 
     #[test]
-    fn empty_directory() {
+    fn lists_regular_files_sorted() {
         let dir = tempfile::tempdir().unwrap();
-        let docs = DirectorySource.read(dir.path()).unwrap();
-        assert!(docs.is_empty());
+        std::fs::write(dir.path().join("b.txt"), "Plain text.").unwrap();
+        std::fs::write(dir.path().join("a.md"), "# A\n\nText.").unwrap();
+        std::fs::write(dir.path().join("c.bin"), [0xff, 0xfe]).unwrap();
+
+        let paths = DirectorySource.candidate_paths(dir.path()).unwrap();
+        assert_eq!(names(&paths), ["a.md", "b.txt", "c.bin"]);
+    }
+
+    #[test]
+    fn an_empty_directory_lists_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(
+            DirectorySource
+                .candidate_paths(dir.path())
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn a_subdirectory_is_not_listed() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("a.md"), "# A").unwrap();
+        std::fs::create_dir(dir.path().join("nested")).unwrap();
+        std::fs::write(dir.path().join("nested").join("b.md"), "# B").unwrap();
+
+        let paths = DirectorySource.candidate_paths(dir.path()).unwrap();
+        assert_eq!(names(&paths), ["a.md"]);
     }
 
     #[cfg(unix)]
     #[test]
     fn skips_symlinks() {
         let dir = tempfile::tempdir().unwrap();
-        let real = dir.path().join("real.md");
-        std::fs::write(&real, "# Real").unwrap();
+        std::fs::write(dir.path().join("real.md"), "# Real").unwrap();
 
         let target_dir = tempfile::tempdir().unwrap();
         let outside = target_dir.path().join("outside.md");
         std::fs::write(&outside, "# Outside").unwrap();
+        std::os::unix::fs::symlink(&outside, dir.path().join("link.md")).unwrap();
 
-        let link = dir.path().join("link.md");
-        std::os::unix::fs::symlink(&outside, &link).unwrap();
-
-        let docs = DirectorySource.read(dir.path()).unwrap();
-        assert_eq!(docs.len(), 1);
-        assert!(docs[0].path.ends_with("real.md"));
+        let paths = DirectorySource.candidate_paths(dir.path()).unwrap();
+        assert_eq!(names(&paths), ["real.md"]);
     }
 
-    #[cfg(unix)]
+    /// A directory that is not there is the `io` kind, `not_found`, with
+    /// the directory as its path detail.
     #[test]
-    fn read_tolerates_per_file_io_failure() {
-        use std::os::unix::fs::PermissionsExt;
-
+    fn a_missing_directory_is_io_not_found_naming_it() {
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("a.md"), "# A").unwrap();
-        std::fs::write(dir.path().join("b.txt"), "B").unwrap();
-        std::fs::write(dir.path().join("c.md"), "# C").unwrap();
-
-        // Make one file unreadable: chmod 000.
-        let bad = dir.path().join("bad.md");
-        std::fs::write(&bad, "# Bad").unwrap();
-        std::fs::set_permissions(&bad, std::fs::Permissions::from_mode(0o000)).unwrap();
-
-        let result = DirectorySource.read(dir.path());
-        // Restore permissions so tempdir cleanup works.
-        let _ = std::fs::set_permissions(&bad, std::fs::Permissions::from_mode(0o644));
-
-        let docs = result.unwrap();
-        assert_eq!(docs.len(), 3, "three readable files succeed, one drops");
-    }
-
-    #[test]
-    fn trait_read_drops_per_file_errors_silently() {
-        // The Source::read trait method returns only successes; the
-        // collecting variant is the one that surfaces per-file failures.
-        // This test just verifies the contract: trait method does not
-        // propagate per-file failures as an Err.
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("a.md"), "# A").unwrap();
-
-        let docs = DirectorySource.read(dir.path()).unwrap();
-        assert_eq!(docs.len(), 1);
+        let missing = dir.path().join("absent");
+        let err = DirectorySource.candidate_paths(&missing).unwrap_err();
+        assert_eq!(err.kind(), "io");
+        let details = err.details();
+        assert_eq!(
+            details.get("io_kind"),
+            Some(&domain::DetailValue::Text("not_found".to_string()))
+        );
+        assert_eq!(
+            details.get("path"),
+            Some(&domain::DetailValue::Text(missing.display().to_string()))
+        );
     }
 }

@@ -1456,10 +1456,18 @@ mod tests {
 
     #[test]
     fn inputs_dir_on_a_missing_path_or_a_file_is_a_constructor_error() {
-        assert!(matches!(
-            Inputs::dir("/definitely/not/here"),
-            Err(domain::Error::Io(_))
-        ));
+        let missing = Path::new("/definitely/not/here");
+        let err = Inputs::dir(missing).unwrap_err();
+        assert_eq!(err.kind(), "io");
+        let details = err.details();
+        assert_eq!(
+            details.get("io_kind"),
+            Some(&domain::DetailValue::Text("not_found".to_string()))
+        );
+        assert_eq!(
+            details.get("path"),
+            Some(&domain::DetailValue::Text(missing.display().to_string()))
+        );
         let dir = tempfile::tempdir().unwrap();
         let file = dir.path().join("one.txt");
         std::fs::write(&file, "x").unwrap();
@@ -1471,6 +1479,30 @@ mod tests {
         }
     }
 
+    /// A symlink in the directory is neither read nor reported: the walk
+    /// is over the regular files a listing names, and a link is not one.
+    #[cfg(unix)]
+    #[test]
+    fn inputs_dir_skips_a_symlink() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("real.md"), "# Real").unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let target = outside.path().join("outside.md");
+        std::fs::write(&target, "# Outside").unwrap();
+        std::os::unix::fs::symlink(&target, dir.path().join("link.md")).unwrap();
+
+        let items: Vec<_> = law_engine()
+            .analyze_all(Inputs::dir(dir.path()).unwrap())
+            .collect();
+        assert_eq!(items.len(), 1);
+        let doc = items.into_iter().next().unwrap().unwrap();
+        assert!(doc.provenance.source.path.unwrap().ends_with("real.md"));
+    }
+
+    /// Regression: the directory adapter's own `Source::read` dropped a
+    /// file it could not read and returned the rest, the silent omission
+    /// L8 forbids. That route is gone; through `Inputs::dir` the failed
+    /// file is an item carrying its path.
     #[cfg(unix)]
     #[test]
     fn a_per_file_failure_is_an_err_item_not_an_abort() {
