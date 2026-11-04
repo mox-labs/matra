@@ -11,13 +11,13 @@
 
 0.3.0 settles matra's public surface once, as one design, before a TypeScript surface copies it. A caller asks for an outcome: `analyze` a document, `analyze_all` of many, then `summarize`, `keyphrases` or `clusters` of the result. Rust, Python and the command line spell those words the same way, and none of them decides anything the others do not. The method behind an outcome is optional, never in a name, and recorded on the result with every parameter that shaped it. Input is cut by decision, not by processing step: where bytes come from, which format they are, how that format is read, how blocks become sections, and how text is parsed are each one private module, so a new format or a new parser changes no published signature. A caller with a format matra does not read hands in headings and paragraphs directly. Every result carries its provenance, points back into the analysed text by byte span, and lists what was skipped rather than dropping it silently. The document schema becomes a governed interface with a published JSON Schema, and failures carry a kind on every channel. Every break lands in 0.3.0, at once.
 
-The owner has answered every decision but two, recorded in each decision's ruling below. The two still open are [5](#decision-provider-traits), where Claude's recommendation changed after the owner's answer, and [8](#decision-transition-window), which is new.
+The owner has answered every decision, and each ruling is recorded in its decision below. What remains is acceptance.
 
 <pragmatics>
 
 <ask>
 
-Confirm decision 5 (the extension traits private in 0.3.0) and decision 8 (a smaller transition window), then accept the proposal by merging the pull request that changes its status to `accepted`.
+Accept the proposal by merging the pull request that changes its status to `accepted`.
 
 </ask>
 
@@ -32,7 +32,6 @@ Confirm decision 5 (the extension traits private in 0.3.0) and decision 8 (a sma
 
 <needs>
 
-- An answer to decisions 5 and 8: accept, accept with a reservation, object or redirect.
 - Your merge of the acceptance pull request.
 - A reading of the rationale with one caveat in mind. This text merges a design by Claude, an independent design and a canon review by a second Claude agent, and an architect review by a third. All are Claude agents reading one corpus, so where they agree, that is one voice, not several.
 
@@ -48,7 +47,7 @@ Confirm decision 5 (the extension traits private in 0.3.0) and decision 8 (a sma
 
 <silence>
 
-The proposal stays `proposed` and nothing built on it merges. Claude lists decisions 5 and 8 again at the start of the next session that touches the public surface.
+The proposal stays `proposed` and nothing built on it merges. Claude raises the acceptance again at the start of the next session that touches the public surface.
 
 </silence>
 
@@ -279,7 +278,7 @@ except matra.InputTooLarge as e:     # still a ValueError, so old except clauses
 
 ### Migrating
 
-The migration guide lists every rename on one page. What stays callable under its old name for 0.3.x is decision 8.
+The migration guide lists every rename on one page. Renamed Rust functions and methods and renamed Python methods stay as deprecated aliases for 0.3.x, each naming its replacement; types and modules made private go at once, and the JSON makes one clean break to schema 2.0 (decision 8).
 
 ## Reference-level explanation
 
@@ -399,7 +398,7 @@ Each module hides one decision likely to change, and Parnas's procedure is exact
 
 - **Detection.** A binary signature wins over the extension (`%PDF`, a zip with `[Content_Types].xml`). Among text formats, the caller's `Format` or the extension decides. A recognised format this build cannot read fails with `UnsupportedFormat`, whose `details` name the feature to enable; bytes that are not UTF-8 and carry no known signature fail with `UnsupportedFormat` and no feature. A text file with an unknown extension reads as plain text (decision 7).
 - **The markdown reader** is rewritten on a CommonMark parser that reports source offsets, so it recognises lists, tables, code, block quotes and front matter, strips inline markup from the text the parser reads, and gives every block its span. A `## References` heading is a heading like any other. A construct it does not analyse (a table, a code block, front matter) is recorded in `skipped`, never dropped. Which parser is an implementation choice the canon does not address; pulldown-cmark is the candidate, chosen in the milestone's pull request.
-- **`Paragraph.kind`** (`paragraph`, `quote`, `list_item`) arrives, since the reader can now fill it, and an enum can grow where a boolean cannot [api-design-practice:c40]. `in_blockquote` is emitted beside it for 0.3.x if decision 8 keeps a wire window, and removed otherwise.
+- **`Paragraph.kind`** (`paragraph`, `quote`, `list_item`) arrives, since the reader can now fill it, and an enum can grow where a boolean cannot [api-design-practice:c40]. `in_blockquote` is removed in the same release (decision 8).
 - **The parser** reports its own identity and, for each token, its span within the text it was given; the engine shifts those spans to absolute offsets at the one place each paragraph is parsed. The UDPipe adapter takes token positions from UDPipe's own `ranges` tokenizer option, or aligns token forms against the paragraph text, and returns `ParseFailed` naming the token when alignment fails, never a guessed span: a handler that returns normally deceives the caller [neighbours-contracts-simplicity:c14]. <claim id="parser-unvalidated" basis="observed">The parser's contract is trusted unchecked today [nlp/mod.rs:30](../../src/nlp/mod.rs#L30 "nothing validates it on the")</claim>; keeping the trait private keeps that trust inside the crate.
 - **Shared contract tests.** Each port gets one test every adapter must pass, stating which subtyping rule it enforces; the everyday one (an adapter may weaken a precondition and strengthen a postcondition) is Meyer's subcontracting rule [neighbours-contracts-simplicity:c12].
 
@@ -573,7 +572,7 @@ The private traits keep their names inside the crate; renaming them would move f
 | Release | Contents |
 |---|---|
 | 0.3.0 | Every break: the outcome surface, `Input` and `Block`, the private input side with the new markdown reader, spans, `skipped` and L9, schema 2.0 and its JSON Schema, provenance, errors on every channel, the Python `Document`, the parity test, the stability table and the semver gate |
-| 0.3.x | Fixes, and whatever window decision 8 keeps |
+| 0.3.x | Fixes; the deprecated function aliases remain |
 | 0.4.0 | The feed for text arriving over time, in all three syntaxes at once; caller extensions (predicates and findings) or x.uma extensions in their own proposal; schema-typed TypeScript and a web component that renders a parse; the result of a UDPipe-in-WebAssembly spike; the permissive parser model as a pin chosen by id |
 
 ### Milestones
@@ -784,6 +783,12 @@ The owner has asked for matra to be extensible by others, and a WebAssembly or t
 
 </against>
 
+<ruling response="accept" date="2026-11-03">
+
+The owner accepted Claude's recommendations in conversation, for now: the traits are private in 0.3.0, and opening one later is an addition.
+
+</ruling>
+
 </decision>
 
 <decision id="python-document" title="6. What does Python's analyze return?" reversible="costly" grounds="python-annotated">
@@ -879,6 +884,12 @@ The wire already tells a reader which side it is on: the envelope's `format_vers
 Old and new should coexist for a transition period [machine-readable-contracts:c20], and an agent pinned to `format_version: 1` fails at once rather than migrating on its own schedule; the price of not breaking pinned callers is a compatibility projection [neighbours-hoare-brooks-lampson:c39].
 
 </against>
+
+<ruling response="accept" date="2026-11-03">
+
+The owner accepted Claude's recommendations in conversation, for now: deprecated aliases for renamed functions and methods only, and one clean break on the wire.
+
+</ruling>
 
 </decision>
 
