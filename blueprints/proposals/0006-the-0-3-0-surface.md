@@ -111,7 +111,7 @@ Every renamed name, flag and JSON field stayed for 0.3.x, the JSON emitted under
 
 <now>
 
-Decision 8 proposes a smaller window: deprecated aliases for renamed Rust and Python functions only, and one clean break on the wire, which the schema's own version already announces: [decision 8](#decision-transition-window).
+Nothing keeps its old name: 0.3.0 is one clean break in every language and on the wire, which the schema's own version already announces: [decision 8](#decision-transition-window).
 
 </now>
 
@@ -267,7 +267,7 @@ A summary adds what shaped it: `"method": "textrank", "parameters": { "n": 3 }`.
 ```python
 try:
     engine.analyze(text=huge)
-except matra.InputTooLarge as e:     # still a ValueError, so old except clauses keep working
+except matra.InputTooLarge as e:     # also a ValueError
     print(e.kind, e.details["limit"], e.details["actual"])
 ```
 
@@ -278,7 +278,7 @@ except matra.InputTooLarge as e:     # still a ValueError, so old except clauses
 
 ### Migrating
 
-The migration guide lists every rename on one page. Renamed Rust functions and methods and renamed Python methods stay as deprecated aliases for 0.3.x, each naming its replacement; types and modules made private go at once, and the JSON makes one clean break to schema 2.0 (decision 8).
+The migration guide lists every rename on one page. Nothing keeps its old name: 0.3.0 is one clean break in Rust, Python, the command line and the JSON (decision 8).
 
 ## Reference-level explanation
 
@@ -345,7 +345,7 @@ Today the Python box and the command-line box each carry an application rule. Pr
 | keyphrases | `keyphrases(&Document, n)`, `keyphrases_with(&Document, n, KeyphraseMethod)` | `Keyphrases` |
 | clusters | `clusters(&Document, &dyn Embedder, threshold: f64)` | `Clusters` |
 
-- **Construction.** `Engine::new()` builds the defaults (the pinned parser model, the markdown and plain-text readers), locating the model by the existing resolver and reading no behaviour from a configuration file; defaults are written explicitly [api-design-systems:c38]. `Engine::from_config(&Config)` and `from_config_with_notice` stay. There is no builder: it would need the reader and parser traits public, and no use case asks for it [api-design-practice:c6]. <claim id="engine-new-injects" basis="observed">Today's `new` takes the parser and the reader table [lib.rs:159](../../src/lib.rs#L159 "pub fn new(nlp: Box<dyn NlpProvider>")</claim>, so the new `new` is a remove and an add [api-design-systems:c24], caught at compile time, and the migration guide says so. <claim id="with-defaults-reads-config" basis="observed">`with_defaults` reads the configuration file [lib.rs:321](../../src/lib.rs#L321 "Config::resolve()")</claim>, and it keeps doing exactly that as an alias, so no old call changes behaviour.
+- **Construction.** `Engine::new()` builds the defaults (the pinned parser model, the markdown and plain-text readers), locating the model by the existing resolver and reading no behaviour from a configuration file; defaults are written explicitly [api-design-systems:c38]. `Engine::from_config(&Config)` and `from_config_with_notice` stay. There is no builder: it would need the reader and parser traits public, and no use case asks for it [api-design-practice:c6]. <claim id="engine-new-injects" basis="observed">Today's `new` takes the parser and the reader table [lib.rs:159](../../src/lib.rs#L159 "pub fn new(nlp: Box<dyn NlpProvider>")</claim>, so the new `new` is a remove and an add [api-design-systems:c24], caught at compile time, and the migration guide says so. <claim id="with-defaults-reads-config" basis="observed">`with_defaults` reads the configuration file [lib.rs:321](../../src/lib.rs#L321 "Config::resolve()")</claim>, so it goes rather than survive with a meaning its name does not say; `Engine::from_config(&Config::resolve()?)` says the same thing explicitly.
 - **Input.** `Input` is one document, opaque and lazy: `Input::text(s, Format)`, `Input::bytes(data, Option<Format>)` (detected when `None`), `Input::file(path)` (read at `analyze`, so a failed read is an item of a stream, not an abort), `Input::blocks(iter)`. `Inputs::dir(path) -> Result<Inputs>` is an iterator of `Input`. `Input::file` on a directory fails with `InvalidInput` naming `Inputs::dir`. `Ingest`, `Ingested` and `RawDocument` leave the surface. An opaque `Input` hides its representation [parnas-modules:c23], so a URL source later is a new constructor, and `Input::bytes` is what lets fetching stay private: a caller whose bytes come from elsewhere fetches them and hands them in, the cheapest extension mechanism [api-design-practice:c35].
 - **Block.** `Block` is input only and opaque, with two constructors, `Block::heading(level, text)` and `Block::paragraph(text)`. Its JSON form is a published input format, `Format::Blocks`, with an input schema in `spec/schema/`; an unknown `kind` is refused, naming it. The richer vocabulary the readers emit (heading, paragraph, list item, table cell, code) is a separate, private type, so the likely change, more kinds, touches no interface [parnas-process:c22]. A shared format used as an interface becomes costly as a design evolves [parnas-modules:c25], which holds for a type callers receive or implement and not for one they only send.
 - **Outcomes are free functions over a `Document`.** They need no engine and no parser, so they run in a build without UDPipe, which the TypeScript surface will need. The richer mechanism is built using the simpler one [parnas-modules:c33]. The method is a secret behind the outcome's name: the selector is an enum the caller sends, which can gain values safely, and the method recorded on the result is a string the caller receives, which readers treat as an open set (this send-versus-receive distinction is the canon synthesis's own suggestion, not a source finding). `n` is the one word for "how many" everywhere.
@@ -456,7 +456,7 @@ DocumentError    { path?, kind, message, details }
 ### Errors on every channel
 
 - **Rust.** `Error` keeps its variants and `kind()`, and gains `details()`, every dynamic value in the message as structured data, and a serde form `{kind, message, details}`. `DocumentError` serializes as that plus `path`, so the hand-built projection in the Python binding is deleted. Every dynamic value in an error message must also be present as metadata [machine-readable-contracts:c13]. `UnsupportedFormat`'s details name the feature that would read the format, when one exists.
-- **Python.** `matra.MatraError` with `.kind` and `.details`, and one subclass per kind that also inherits today's builtin class (`InputTooLarge(MatraError, ValueError)`), so every documented exception still catches [api-design-practice:c39]. `Io` routes on the kind it wraps: `FileNotFoundError`, `PermissionError`, else `OSError`.
+- **Python.** `matra.MatraError` with `.kind` and `.details`, and one subclass per kind that also inherits today's builtin class (`InputTooLarge(MatraError, ValueError)`), so a caller who catches the builtin class catches it too [api-design-practice:c39]. `Io` routes on the kind it wraps: `FileNotFoundError`, `PermissionError`, else `OSError`.
 - **Command line.** Under `--json`, a failure writes the envelope with `"result": null` and an `error` object to stdout, writes `matra: <message>` to stderr, and exits 2. On success `"error": null`; both keys are always present. The command line's own refusals use the existing kind whose remedy matches: error identity is defined by what the caller would do about it [api-design-systems:c28].
 - **Exit codes** stay 0 (found), 1 (nothing found), 2 (failed). In `analyze DIR --json`, each document is one envelope per line; a failed document is a line with its `error`, the walk continues, and the exit code is 2 if any document failed. Per-item failure in a bulk operation is the one sanctioned partial success [api-design-systems:c30].
 - **Retry.** Download failures carry `details.retryable: true`. Whether a retry is safe depends on both the operation and the failure [machine-readable-contracts:c16].
@@ -572,7 +572,7 @@ The private traits keep their names inside the crate; renaming them would move f
 | Release | Contents |
 |---|---|
 | 0.3.0 | Every break: the outcome surface, `Input` and `Block`, the private input side with the new markdown reader, spans, `skipped` and L9, schema 2.0 and its JSON Schema, provenance, errors on every channel, the Python `Document`, the parity test, the stability table and the semver gate |
-| 0.3.x | Fixes; the deprecated function aliases remain |
+| 0.3.x | Fixes |
 | 0.4.0 | The feed for text arriving over time, in all three syntaxes at once; caller extensions (predicates and findings) or x.uma extensions in their own proposal; schema-typed TypeScript and a web component that renders a parse; the result of a UDPipe-in-WebAssembly spike; the permissive parser model as a pin chosen by id |
 
 ### Milestones
@@ -873,6 +873,12 @@ Choice (a), plus every renamed JSON field emitted under both names for 0.3.x, re
 
 </choice>
 
+<choice key="c" title="Nothing: one clean break everywhere">
+
+No deprecated aliases in Rust or Python, no hidden CLI flags, no both-name JSON and no 0.2 projection. The migration guide lists every rename.
+
+</choice>
+
 <recommendation choice="a">
 
 The wire already tells a reader which side it is on: the envelope's `format_version` moves to 2 and every result carries `provenance.schema`, and the consumer rule is to reject a major you do not know. A both-name emitter and a 0.2 projection are a second implementation of the output, maintained for one minor and then removed, and every later session must read past them until then. A deprecated alias for a renamed function is one line that the compiler and the interpreter both announce, and a deprecation that names its replacement is an instruction an agent can follow [agent-computer-interfaces:c16]. The callers of 0.2.1 are few and named, so the full window buys little.
@@ -885,9 +891,9 @@ Old and new should coexist for a transition period [machine-readable-contracts:c
 
 </against>
 
-<ruling response="accept" date="2026-11-03">
+<ruling response="redirect" date="2026-11-03">
 
-The owner accepted Claude's recommendations in conversation, for now: deprecated aliases for renamed functions and methods only, and one clean break on the wire.
+The owner redirected to (c) in conversation: "we don't have to worry about backwards compatibility". 0.3.0 keeps no old name anywhere; the migration guide carries the renames.
 
 </ruling>
 
