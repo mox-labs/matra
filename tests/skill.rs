@@ -8,16 +8,22 @@
 //! Drift between the skill text and the command line fails CI the way a
 //! stale type name fails the docsite.
 //!
-//! Two annotations may sit directly above a block:
+//! Three annotations may sit directly above a block:
 //!
 //! ```text
-//! <!-- expect: exit 2 -->   the exit code the block should produce (default 0)
-//! <!-- needs: model -->     run only in the model-gated lane
+//! <!-- expect: exit 2 -->    the exit code the block should produce (default 0)
+//! <!-- needs: model -->      run only in the model-gated lane
+//! <!-- needs: embedder -->   run only in the model-gated lane of a build
+//!                            with `model2vec`, which `matra clusters` needs
 //! ```
 //!
 //! The model-gated blocks run under the existing convention:
 //!
-//!     cargo test --features cli --test skill -- --ignored
+//!     cargo test --features cli,model2vec --test skill -- --ignored
+//!
+//! A bare `notes.md` or `draft.txt` names a file under
+//! `tests/fixtures/skill/`, and a token ending in `/` names a directory
+//! there, so `docs/` is `tests/fixtures/skill/docs/`.
 //!
 //! A block takes one of two routes. Any block whose first argument is
 //! `config` is run as a subprocess with `MATRA_CONFIG_FILE`,
@@ -158,6 +164,9 @@ struct Incantation {
     expect: u8,
     /// Whether the block is annotated as needing the UDPipe model.
     needs_model: bool,
+    /// Whether the block is annotated as needing an embedder, which a
+    /// build without `model2vec` does not have.
+    needs_embedder: bool,
 }
 
 /// True for a line that a scanner should count as a command: the same
@@ -248,23 +257,27 @@ fn extract(path: &Path, text: &str) -> Vec<Incantation> {
             continue;
         }
 
-        let (expect, needs_model) = annotations(&lines[..opened_at - 1]);
+        let (expect, needs_model, needs_embedder) = annotations(&lines[..opened_at - 1]);
         found.push(Incantation {
             source: name.clone(),
             line: opened_at,
             command: first.strip_prefix("$ ").unwrap_or(first).to_string(),
             expect,
             needs_model,
+            needs_embedder,
         });
     }
     found
 }
 
 /// The annotations directly above a fence: the nearest run of HTML
-/// comments, ignoring blank lines between them and the fence.
-fn annotations(before: &[&str]) -> (u8, bool) {
+/// comments, ignoring blank lines between them and the fence. An
+/// embedder is downloaded and run beside the parser, so needing one is
+/// needing the model lane too.
+fn annotations(before: &[&str]) -> (u8, bool, bool) {
     let mut expect = 0u8;
     let mut needs_model = false;
+    let mut needs_embedder = false;
     for line in before.iter().rev() {
         let line = line.trim();
         if line.is_empty() {
@@ -281,9 +294,12 @@ fn annotations(before: &[&str]) -> (u8, bool) {
             expect = code.trim().parse().expect("an exit code after `expect:`");
         } else if inner == "needs: model" {
             needs_model = true;
+        } else if inner == "needs: embedder" {
+            needs_model = true;
+            needs_embedder = true;
         }
     }
-    (expect, needs_model)
+    (expect, needs_model, needs_embedder)
 }
 
 // ---------------------------------------------------------------------------
@@ -308,7 +324,7 @@ fn argv(incantation: &Incantation) -> Vec<OsString> {
     command
         .split_whitespace()
         .map(|token| {
-            if token.ends_with(".md") || token.ends_with(".txt") {
+            if token.ends_with(".md") || token.ends_with(".txt") || token.ends_with('/') {
                 OsString::from(Path::new(FIXTURE_DIR).join(token))
             } else {
                 OsString::from(token)
@@ -384,24 +400,42 @@ fn run(incantation: &Incantation) {
         incantation.source, incantation.line, incantation.command, incantation.expect
     );
 
-    // A `--json` block that succeeded promises the envelope, on either
-    // route. `completions` is the exception: it prints a shell script and
-    // ignores the flag. Exit 2 writes nothing to stdout by design, so
-    // there is no object to parse.
-    if incantation.command.contains("--json")
-        && code != 2
-        && subcommand(incantation) != Some("completions")
-    {
-        let value: serde_json::Value = serde_json::from_str(&stdout).unwrap_or_else(|e| {
-            panic!(
-                "{}:{} `{}` did not emit JSON: {e}\nstdout: {stdout}",
-                incantation.source, incantation.line, incantation.command
-            )
-        });
+    // A `--json` block promises the envelope on either route, whatever its
+    // exit code: a failure is an envelope too, with its `error`. A
+    // directory writes one envelope per line, so stdout is read as a
+    // stream of values. `completions` is the exception: it prints a shell
+    // script and ignores the flag.
+    if incantation.command.contains("--json") && subcommand(incantation) != Some("completions") {
+        let envelopes: Vec<serde_json::Value> = serde_json::Deserializer::from_str(&stdout)
+            .into_iter()
+            .collect::<Result<_, _>>()
+            .unwrap_or_else(|e| {
+                panic!(
+                    "{}:{} `{}` did not emit JSON: {e}\nstdout: {stdout}",
+                    incantation.source, incantation.line, incantation.command
+                )
+            });
+        assert!(
+            !envelopes.is_empty() || code == 1,
+            "{}:{} `{}` emitted no envelope",
+            incantation.source,
+            incantation.line,
+            incantation.command
+        );
+        for value in &envelopes {
+            assert_eq!(
+                value.get("format_version").and_then(|v| v.as_u64()),
+                Some(2),
+                "{}:{} `{}` emitted no format_version",
+                incantation.source,
+                incantation.line,
+                incantation.command
+            );
+        }
         assert_eq!(
-            value.get("format_version").and_then(|v| v.as_u64()),
-            Some(2),
-            "{}:{} `{}` emitted no format_version",
+            envelopes.iter().any(|v| !v["error"].is_null()),
+            code == 2,
+            "{}:{} `{}` exited {code}, so an envelope carries an error exactly when it is 2",
             incantation.source,
             incantation.line,
             incantation.command
@@ -514,11 +548,16 @@ fn every_model_free_incantation_runs() {
     }
 }
 
-/// Every incantation, including the ones that parse.
+/// Every incantation, including the ones that parse. Those that need an
+/// embedder run only in a build with `model2vec`; in a build without it
+/// `matra clusters` refuses by design, which `tests/cli.rs` holds it to.
 #[test]
 #[ignore = "requires the UDPipe model"]
 fn every_incantation_runs() {
-    for incantation in &all_incantations() {
+    for incantation in all_incantations()
+        .iter()
+        .filter(|i| cfg!(feature = "model2vec") || !i.needs_embedder)
+    {
         run(incantation);
     }
 }

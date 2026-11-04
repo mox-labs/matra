@@ -18,7 +18,7 @@ One Rust library, a Python API on top of it, and one command line reachable from
 
 Reach for matra when the user has prose in hand: documentation, a README, an essay, a specification, release notes, a draft, or text a model just produced.
 
-Reach for it when the question is about passive voice, lexical density, readability, vocabulary variety, nominalization, repetition in wording, which sentences carry a document, or which phrases it keeps returning to. Repetition in paraphrase is a library and Python call, not a command: there is no clustering subcommand, and `semantic` says how to make the call.
+Reach for it when the question is about passive voice, lexical density, readability, vocabulary variety, nominalization, repetition in wording or in paraphrase, which sentences carry a document, or which phrases it keeps returning to.
 
 Reach for it when something downstream needs sentences and dependency arcs as input: a rule that fires on modal verbs, a prompt that quotes only bare assertions, a check that counts hedges, a diff that compares two drafts at the sentence level.
 
@@ -40,17 +40,19 @@ Files land in XDG locations: the config at `$XDG_CONFIG_HOME/matra/config.toml` 
 
 ## The commands
 
-`analyze`, `summarize` and `keyphrases` each read one file, or `-` for stdin with `--stdin-filename` naming it. A directory is refused, because a command that reports on one document cannot report on a directory of them. Under `--json` each emits the same envelope, and so do `config show` and `--skill`; `completions` prints a script and ignores `--json`. Four keys at the top level: `format_version` (the integer `2` today), `command`, `input` (the path or the stdin name; for `config show` the config file's path when it exists and null when not; null for `--skill`, which reads none), and `result`. Pin a consumer to a `format_version` you tested against. See `json` for the field by field shape.
+`analyze`, `summarize`, `keyphrases` and `clusters` each read one file, or `-` for stdin with `--stdin-filename` naming it. `analyze` also reads a directory, one result per file in name order; the other three refuse one. Each detects the format from the name and the bytes, and `--format markdown|plain_text|blocks` names it instead, which is how a JSON file of blocks is read.
 
-`analyze` parses the document and measures it. `result` is a `Document`: `provenance` (the matra version, the schema version, the parser and its model, the format, and the input's digest), `sections`, each with `heading`, `level`, `span` and `paragraphs`, each paragraph with `span`, `text`, `kind` (`paragraph`, `quote`, `list_item`), `sentences` and its `metrics`, the document's own `metrics`, the counts and ratios the table prints among them, and `skipped`, what the reader saw and did not analyse. Every `span` counts UTF-8 bytes of the input: slice the file's bytes with it to find where a value came from, since the text fields are normalized. The document's schema version is `provenance.schema`, `"2.0"` today: ignore fields you do not recognize, treat every string set as open, and reject a major you do not know. Add `--sections` for a per-section table of counts.
+Under `--json` every command but `completions` emits the same envelope, five keys: `format_version` (the integer `2` today), `command`, `input` (the path or the stdin name; for `config show` the config file it read, or null; null for `--skill` and `--schema`), `result` and `error`. A success has `error: null`; a failure has `result: null` and an `error` of `{kind, message, details}`, still exits 2, and still writes the message to stderr. Pin a consumer to a `format_version` you tested against. See `json` for the field by field shape.
+
+`analyze` parses the document and measures it. `result` is a `Document`: `provenance` (the matra version, the schema version, the parser and its model, the format, and the input's digest), `sections`, each with `heading`, `level`, `span` and `paragraphs`, each paragraph with `span`, `text`, `kind` (`paragraph`, `quote`, `list_item`), `sentences` and its `metrics`, the document's own `metrics`, the counts and ratios the table prints among them, and `skipped`, what the reader saw and did not analyse. Every `span` counts UTF-8 bytes of the input: slice the file's bytes with it to find where a value came from, since the text fields are normalized. The document's schema version is `provenance.schema`, `"2.0"` today: ignore fields you do not recognize, treat every string set as open, and reject a major you do not know. Add `--sections` for a per-section table of counts. `--depth document|paragraph|sentence|token` cuts the JSON: `document` drops `sections`, `paragraph` drops the sentences, `sentence` drops the tokens, and `token`, the default, keeps everything. Ask for no more than you will read. On a directory, `--json` writes one envelope per line, one per file; a file that fails is its own line with its `error`, and the walk goes on.
 
 <!-- needs: model -->
 
 ```console
-$ matra analyze notes.md --json
+$ matra analyze notes.md --json --depth sentence
 ```
 
-`summarize` ranks the sentences and returns the top N, re-sorted into document order. `result` is a `Summary`: `provenance`, the document's with the `method` that ran and its `parameters`, and `sentences`, each with `index` (its position among the document's sentences), `span`, `text` and `score`. `-n` defaults to the configured `summarize.n`, `3` as shipped; `--method` takes `tfidf` (the default) or `textrank`. The human table rounds each score to three decimals, so scores that differ in the fourth print identically and the ranker can look broken when it is not; read `--json` when the ordering matters.
+`summarize` ranks the sentences and returns the top N, re-sorted into document order. `result` is a `Summary`: `provenance`, the document's with the `method` that ran and its `parameters`, and `sentences`, each with `index` (its position among the document's sentences), `span`, `text` and `score`. `-n` defaults to the configured `summary.n`, `3` as shipped; `--method` takes `tfidf` (the default) or `textrank`. The human table rounds each score to three decimals, so scores that differ in the fourth print identically and the ranker can look broken when it is not; read `--json` when the ordering matters.
 
 <!-- needs: model -->
 
@@ -66,7 +68,15 @@ $ matra summarize notes.md -n 3 --json
 $ matra keyphrases notes.md -n 10 --json
 ```
 
-`config show` prints every resolved value with the rung it came from. Under `--json` each key carries its value, the rung, and what the rung pointed at, and `input` is the config file's path when that file exists, null when it does not. `config init` writes the shipped defaults there and refuses to overwrite without `--force`. A config file from an earlier `config init` may still set `models.udpipe` or `semantic.threshold`. Both are deprecated and ignored (the parsing model is pinned, and every clustering call takes its threshold as an argument): the file still loads, `config show` leaves them out, and it names each on stderr.
+`clusters` groups sentences whose embeddings lie close, with the potion-base-8M embedder, downloaded on first use (about 30 MB). `result` is a `Clusters`: `provenance` with the `threshold` and the embedder's identity, `clusters`, each a list of sentence `members` by index, and `edges`, every pair that cleared the threshold with its `score`. `--threshold` defaults to `clusters.threshold`, `0.85` as shipped, and does not travel between documents or models; see `semantic`. It needs a build with the `model2vec` feature, which the Python wheel has.
+
+<!-- needs: embedder -->
+
+```console
+$ matra clusters notes.md --json
+```
+
+`config show` prints every resolved value with the rung it came from. Under `--json` each key carries its value, the rung, and what the rung pointed at, and `input` is the config file it read, null when none exists. `config init` writes the shipped defaults there and refuses to overwrite without `--force`. The sections are `[models]`, `[summary]` and `[keyphrases]` (each `n` and `method`), and `[clusters]` (`threshold`). A config file from 0.2 fails, and the message names each key's replacement.
 
 ```console
 $ matra config show --json
@@ -78,15 +88,17 @@ $ matra config show --json
 $ matra completions zsh
 ```
 
-Global flags: `--json` (the envelope, on `analyze`, `summarize`, `keyphrases` and `config show`), `--model-dir DIR`, `--quiet` (suppresses the human table, leaves `--json` and the exit code alone), `--color auto|always|never` (honors `NO_COLOR`), and `--stdin-filename NAME`.
+`--schema` lists the published JSON Schemas, and `--schema NAME` prints one: `document`, `summary`, `keyphrases`, `clusters`, `error`, or `blocks` for block input. They are the contract of the version installed; `json` says how to read them.
+
+Global flags: `--json`, `--model-dir DIR`, `--quiet` (suppresses the human table, leaves `--json` and the exit code alone), `--color auto|always|never` (honors `NO_COLOR`), and `--stdin-filename NAME`.
 
 ## Exit codes
 
 | Code | Means |
 |---|---|
 | 0 | Succeeded, and where applicable something was found. A broken pipe is also 0 |
-| 1 | Succeeded and found nothing: an empty summary, no keyphrases, a document with no sentences |
-| 2 | Failed. The message goes to stderr prefixed `matra: ` |
+| 1 | Succeeded and found nothing: an empty summary, no keyphrases, no clusters, a document with no sentences |
+| 2 | Failed. The message goes to stderr prefixed `matra: `, and under `--json` the envelope carries the error. For a directory, any file failed |
 
 Branch on the code, not on the text. Exit 1 is not an error, and treating it as one turns an empty document into a crash.
 
@@ -108,7 +120,7 @@ Every metric row below names a slot on the result. A slot is null when the metri
 
 Input is capped at 8 MiB, checked before decoding. Summarizers cap at 2,000 sentences, keyphrase extractors at 200,000 tokens, the config file at 64 KiB. Over a cap, the failure names which gate fired in a `what` label: `input`, `file_source`, `tfidf`, `textrank`, `rake`, `yake`, `clusters`, `udpipe_download`, `embedding_download`, `config_file`.
 
-Seven failure kinds exist, and `invalid_input` is the one that means the call site is wrong rather than the text: mismatched vector dimensions, a non-finite threshold, an unknown config key. Fix the call, not the document. In Rust and Python a failure also carries `details`, every value in its message by name, so read those rather than the message; the command line reports the message only. Every kind, its details, its Python exception, and what to do about it is in `errors`.
+Seven failure kinds exist, and `invalid_input` is the one that means the call site is wrong rather than the text: mismatched vector dimensions, a non-finite threshold, an unknown config key. Fix the call, not the document. Every failure carries `details`, every value in its message by name, in Rust, in Python and in the `--json` envelope, so read those rather than the message. The command line's own refusals (a directory where one file is read, `--format` on a directory, an existing config file) are `invalid_input` too. Every kind, its details, its Python exception, and what to do about it is in `errors`.
 
 Quotes are never parsed and never measured. Markdown is read as CommonMark: front matter, code, tables, HTML blocks, thematic breaks and link reference definitions are not analysed, and each is listed in `skipped` with its `kind` and `span` rather than dropped. A file that is a PDF, a DOCX, or not UTF-8 text fails as `unsupported_format`; any other UTF-8 file with an extension matra does not know reads as plain text.
 

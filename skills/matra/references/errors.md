@@ -66,7 +66,7 @@ The four ranking extractors check their caps after their empty-result checks, so
 
 **`unsupported_format`.** PDF and DOCX are recognised, by extension and by their bytes, and no reader for either ships, so the message says no feature reads them, and `details.format` names the format with no `feature` beside it. Bytes that are not UTF-8 text fail the same way. Convert to markdown or plain text first, or extract the text yourself and pass it in. A UTF-8 file with an extension matra does not know is not refused: it reads as plain text.
 
-**`invalid_input`.** This one means the call site is wrong, not the document. Nothing about the analyzed text produces it. It fires for embeddings that disagree on dimension, an embedding containing a non-finite value, a non-finite threshold, an embedder that broke its own length contract, and for a configuration that cannot be honored: a config file that does not parse, an unknown key, an algorithm name the build does not know, a config file that is not valid text, or an environment naming no home directory at all. Fix the call or the config. A config file that is simply absent is not an error; the built-in defaults stand.
+**`invalid_input`.** This one means the call site is wrong, not the document. Nothing about the analyzed text produces it. It fires for embeddings that disagree on dimension, an embedding containing a non-finite value, a non-finite threshold, an embedder that broke its own length contract, and for a configuration that cannot be honored: a config file that does not parse, an unknown key, a key 0.3.0 renamed or removed (the message names what replaced it), a method name the build does not know, a config file that is not valid text, or an environment naming no home directory at all. Fix the call or the config. A config file that is simply absent is not an error; the built-in defaults stand.
 
 **`io`.** A read, listing, directory creation, write, or rename failed, or a download failed at the transport or answered with a non-2xx status. A filesystem failure names the operation and the path, and carries the path in `details.path`; a transport failure names the URL, carries it in `details.url`, and sets `details.retryable`, which is `true` unless the certificate was rejected. Read `details.io_kind` for the class of failure rather than the message. It is also what a refused input looks like: a symlink is refused rather than followed, and a path that is not a regular file is refused. A file whose bytes are not text is `unsupported_format`, not `io`. Bytes that arrived and then failed their digest are `model_invalid` instead; this kind is for the ones that never arrived.
 
@@ -83,10 +83,14 @@ Two kinds of entry appear on neither side: the directory listing skips symlinks 
 <!-- expect: exit 2 -->
 
 ```console
-$ matra analyze missing.md
+$ matra analyze missing.md --json
 ```
 
-Exit 2, with `matra: ` and the display string on stderr. Nothing is written to stdout, so a consumer parsing JSON sees an empty stream rather than a half object. The model is not touched: a missing path and a directory are both refused before the engine is built, so a bad argument never costs a 16 MB download.
+Exit 2, with `matra: ` and the display string on stderr. Under `--json` the envelope goes to stdout with `result: null` and `error` holding the `kind`, `message` and `details` Rust serializes and Python raises, so a consumer branches on `kind` on every surface. Without `--json`, nothing goes to stdout. The model is not touched: a missing path, and a directory given to a command that reads one document, are refused before the engine is built, so a bad argument never costs a 16 MB download.
+
+The command line's own refusals carry the kind whose remedy matches, and each is a call to change, so each is `invalid_input`: a directory given to `summarize`, `keyphrases` or `clusters`, `--format` with a directory, `-r` without `--skill`, an unknown `--skill -r` or `--schema` name, `config init` over an existing file without `--force`, `clusters` in a build without the `model2vec` feature, and a usage error under `--json`.
+
+`analyze DIR` reports a file that fails where it happened: on stderr, and under `--json` as that file's own line with its `error`. The walk goes on, and the exit code is 2 if any file failed.
 
 Exit 1 is not a failure. It is success with nothing found, and under `--json` the envelope is still emitted with an empty result.
 
@@ -97,7 +101,7 @@ Exit 1 is not a failure. It is success with nothing found, and under `--json` th
 $ matra summarize draft.txt -n 0 --json
 ```
 
-The exception classes above belong to the library surface, not to the command line. A failure reaching the command line is rendered and turned into an exit code; it never surfaces as a Python exception, whichever launcher started it.
+The exception classes above belong to the library surface, not to the command line. A failure reaching the command line is rendered and turned into an exit code and, under `--json`, an envelope; it never surfaces as a Python exception, whichever launcher started it.
 
 ## One failure with no kind behind it
 

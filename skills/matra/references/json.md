@@ -1,52 +1,52 @@
 ---
 name: json
-summary: The JSON envelope the commands with JSON output emit, and the Document shape field by field.
+summary: The JSON envelope every command but completions emits, success or failure, and the Document shape field by field.
 ---
 
 # The JSON envelope and the Document shape
 
 ## The envelope
 
-`--json` on `analyze`, `summarize`, `keyphrases` or `config show` emits exactly one object with four keys, and nothing else on stdout. `completions` is the one command it does not reach: that prints a shell script and ignores the flag.
+`--json` writes the envelope on stdout and nothing else there: one object for one result, and one per line for `analyze DIR`, one line per file. Every command takes it except `completions`, which prints a shell script and ignores the flag.
 
 ```json
-{
-  "format_version": 2,
-  "command": "analyze",
-  "input": "notes.md",
-  "result": {}
-}
+{ "format_version": 2, "command": "analyze", "input": "notes.md", "result": {}, "error": null }
 ```
 
 | Key | Type | Holds |
 |---|---|---|
 | `format_version` | integer | `2` today. It increments on any change to the envelope, and whenever the document schema's major version moves |
-| `command` | string | `analyze`, `summarize`, `keyphrases`, `config`, or `skill` |
-| `input` | string or null | The path that was read, or the name `--stdin-filename` gave stdin. For `config show` it is the config file path when that file exists, and null when it does not. Null for `skill`, which reads no document |
-| `result` | varies | The serde form of the value the command produced |
+| `command` | string or null | `analyze`, `summarize`, `keyphrases`, `clusters`, `config`, `skill` or `schema`. Null only for a usage failure whose arguments name no command |
+| `input` | string or null | The path that was read, or the name `--stdin-filename` gave stdin. For `config show`, the config file it read, and null when none exists. Null for `skill` and `schema`, which read none |
+| `result` | varies, or null | The serde form of the value the command produced. Null on a failure |
+| `error` | object or null | Null on a success. On a failure `{kind, message, details}`, the form Rust serializes and Python raises; `errors` lists every kind |
 
-`result` is a `Document` for `analyze`, a `Summary` for `summarize`, a `Keyphrases` for `keyphrases`, a map of resolved keys for `config show`, and for `skill` either `{"name", "body"}` or `{"references": [{"name", "summary"}]}`. Pin a consumer to a `format_version` it was tested against, the same promise cargo makes for `cargo metadata --format-version`.
+All five keys are always present. `result` is a `Document` for `analyze`, a `Summary`, `Keyphrases` or `Clusters` for the outcomes, a map of resolved keys for `config show`, `{"name", "body"}` or `{"references": [...]}` for `skill`, and `{"name", "schema"}` or `{"schemas": [{"name", "title"}]}` for `schema`. A failure still exits 2 and writes `matra: <message>` to stderr. In a directory walk a file that fails is its own line with its `error`, the walk goes on, and the exit code is 2 if any file failed. Pin a consumer to a `format_version` it was tested against, the same promise cargo makes for `cargo metadata --format-version`.
+
+<!-- needs: model -->
+
+```console
+$ matra analyze docs/ --json --depth document
+```
+
+`--depth` cuts what `analyze --json` writes: `document` drops `sections`, `paragraph` drops each paragraph's `sentences`, `sentence` drops each sentence's `tokens`, and `token`, the default, keeps everything. A key below the depth is absent, never an empty array.
 
 ## Versions, and the rules for reading
 
-A `Document` carries its own schema version in `provenance.schema`, as `"major.minor"`: `"2.0"` today, and nowhere else. The JSON Schema for each major is published in the repository at `spec/schema/v2/document.schema.json`.
+A `Document` carries its own schema version in `provenance.schema`, as `"major.minor"`: `"2.0"` today, and nowhere else. `format_version` moves with the schema's major, so a consumer of the envelope sees the same break. `matra --schema` lists the JSON Schemas of this major, compiled into the program, and `matra --schema document` prints one.
 
 - A minor adds optional fields only. A major is anything else: a field removed, renamed or retyped, or a field whose meaning changes.
 - Ignore fields you do not recognize; a newer minor adds them.
 - Treat every string set you receive as open: `format`, `kind` (on paragraphs and on `skipped`), `pos`, `dep`, `mood`, `pattern` and the feature names in `features`. An unknown value is data, not an error.
 - Reject a `provenance.schema` major you do not know.
 
-`format_version` moves with the schema's major, so a consumer of the envelope sees the same break.
-
-<!-- needs: model -->
-
 ```console
-$ matra analyze draft.txt --json
+$ matra --schema document
 ```
 
 ## `Document`
 
-Four keys: `{"provenance": {}, "sections": [], "metrics": {}, "skipped": []}`.
+Four keys: `{"provenance": {}, "sections": [], "metrics": {}, "skipped": []}`, with `sections` absent under `--depth document`.
 
 | Field | Type | Holds |
 |---|---|---|
@@ -180,7 +180,7 @@ Ten CoNLL-U columns, the token's span and one derived flag, all present on every
 
 ## `Summary` and `Keyphrases`
 
-Each carries `provenance`: the document's, with two keys a document's lacks. `method` names what ranked the result (`tfidf`, `textrank`, `rake` or `yake`; treat the set as open) and `parameters` holds what it ran with, `{ "n": integer }`. Scores from different methods are on unrelated scales, so read `method` before comparing two results. The schemas are `spec/schema/v2/summary.schema.json` and `keyphrases.schema.json`.
+Each carries `provenance`: the document's, with two keys a document's lacks. `method` names what ranked the result (`tfidf`, `textrank`, `rake` or `yake`; treat the set as open) and `parameters` holds what it ran with, `{ "n": integer }`. Scores from different methods are on unrelated scales, so read `method` before comparing two results. `matra --schema summary` and `matra --schema keyphrases` print their schemas.
 
 `summarize`'s `sentences` are `{ "index": integer, "span": { "start", "end" }, "text": string, "score": float }`, in ascending `index`, which is document order and not score order. `index` is the sentence's position among the document's sentences, and `span` is where it lies in the input.
 

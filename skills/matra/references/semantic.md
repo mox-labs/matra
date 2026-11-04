@@ -7,13 +7,15 @@ summary: Similarity clusters over the sentences of one document, the threshold y
 
 Everything else matra returns is deterministic structure, checkable against the source bytes. This is not. Clusters depend on a model's representation of meaning, they cannot be verified against the text, and the library treats that difference structurally: clusters arrive as a standalone value from a separate call, never as a field on a document or a sentence, and their provenance carries the identity of the model that produced them together with the threshold you chose.
 
-There is no command line for this. It is a library and Python call. What the command line does expose is where the embedding model lives:
+`matra clusters FILE` runs it from the command line, with the reference embedder that `models.embedding` names (`potion-base-8M` as shipped, downloaded into the model directory on first use) and the threshold `--threshold` gives, or `clusters.threshold` from the config, `0.85` as shipped. `--json` writes the `Clusters` below in the envelope. It needs a build with the `model2vec` feature (below); without it the command refuses before it reads anything, naming the feature.
+
+<!-- needs: embedder -->
 
 ```console
-$ matra config show
+$ matra clusters notes.md --threshold 0.8 --json
 ```
 
-`models.embedding` names the model directory (`potion-base-8M` as shipped), and `Model2Vec.potion_base_8m()` with no argument provisions into it. There is no configured threshold: every clustering call takes its threshold as an argument, so pass the number yourself. A config file from an earlier `matra config init` may still set `semantic.threshold`; it is deprecated and ignored, and `config show` says so on stderr.
+The library and Python take the threshold as an argument and read no configuration. `Model2Vec.potion_base_8m()` with no argument provisions into the same directory the command line uses.
 
 ## What you get
 
@@ -80,7 +82,7 @@ Contract violations are `invalid_input`, which means the call site is wrong and 
 
 From Rust, `matra::clusters(&document, &embedder, threshold)` embeds a document's sentences with the embedder you pass and clusters them; matra never builds one inside the call. It needs no feature flag with your own `Embedder` implementation, which is also how vectors you already hold get in: return them from `embed`. Only the shipped adapter sits behind the `model2vec` feature.
 
-That feature is not in the default set and `cli` does not pull it in, so check before promising a user this works. A Rust caller needs `cargo add matra --features model2vec`, and a binary installed with `cargo install matra --features cli` reports `features: udpipe cli` with no embedding adapter compiled in. The published Python wheel is built with it, so from Python `Model2Vec` is always there. `--version` prints the feature list of the binary in front of you on its second line.
+That feature is not in the default set and `cli` does not pull it in, so check before promising a user this works. A Rust caller needs `cargo add matra --features model2vec`, and a binary installed with `cargo install matra --features cli` reports `features: udpipe cli` with no embedding adapter compiled in, so its `matra clusters` refuses; `--features cli,model2vec` builds one that runs it. The published Python wheel is built with it, so from Python `Model2Vec` is always there. `--version` prints the feature list of the binary in front of you on its second line.
 
 ```console
 $ matra --version
