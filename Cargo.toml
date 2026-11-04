@@ -105,7 +105,14 @@ default = ["udpipe"]
 udpipe = ["dep:udpipe-rs", "dep:ureq"]
 model2vec = ["dep:safetensors", "dep:tokenizers", "dep:ureq"]
 python = ["dep:pyo3", "dep:pythonize", "cli"]
-cli = ["dep:clap", "dep:clap_complete", "udpipe"]
+# `serde_json/preserve_order` keeps a JSON object's keys in the order they
+# were inserted (indexmap), where the default sorts them. The command line
+# builds JSON through `serde_json::Value` in three places, `analyze
+# --depth`, `config show --json` and `--schema --json`, and each should
+# read in the order of the type, the listing or the file it came from.
+# Without it `--depth sentence` ordered keys differently from the whole
+# document, which made the two hard to diff.
+cli = ["dep:clap", "dep:clap_complete", "udpipe", "serde_json/preserve_order"]
 
 [lints.rust]
 missing_docs = "warn"

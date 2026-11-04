@@ -873,6 +873,29 @@ fn depth_cuts_the_document_at_the_level_asked_for() {
         token, whole["result"],
         "token is the default, and everything"
     );
+
+    // The cut keeps the whole document's key order, so the two diff line
+    // for line. This test file is built with the `cli` feature, so these
+    // `Value`s keep the order the output was written in.
+    let keys = |value: &serde_json::Value| -> Vec<String> {
+        value
+            .as_object()
+            .expect("an object")
+            .keys()
+            .cloned()
+            .collect()
+    };
+    let whole_paragraph = &whole["result"]["sections"][0]["paragraphs"][0];
+    let mut expected = keys(whole_paragraph);
+    expected.retain(|k| k != "sentences");
+    assert_eq!(keys(para), expected, "a paragraph at --depth paragraph");
+    let mut sorted = keys(whole_paragraph);
+    sorted.sort();
+    assert_ne!(
+        keys(whole_paragraph),
+        sorted,
+        "declaration order, not sorted"
+    );
 }
 
 /// `--format blocks` reads a JSON file of blocks, which no extension

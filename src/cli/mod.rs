@@ -709,7 +709,7 @@ fn clusters(
 ) -> Fallible<Outcome> {
     let (label, doc, cfg) = one_document(cli, "clusters", path, format, err)?;
     let threshold = threshold.unwrap_or_else(|| cfg.clusters_threshold());
-    let embedder = crate::embed::model2vec::Model2Vec::from_config(&cfg)?;
+    let embedder = build_embedder(cli, &cfg, err)?;
     let found = crate::clusters(&doc, &embedder, threshold)?;
     if cli.json {
         write_envelope(out, "clusters", Some(&label), &found)?;
@@ -905,12 +905,34 @@ fn build_engine(cli: &Cli, cfg: &Config, err: &mut dyn Write) -> domain::Result<
     if cli.quiet {
         return crate::Engine::from_config(cfg);
     }
-    crate::Engine::from_config_with_notice(cfg, |notice| {
-        // A diagnostic that cannot be written is not worth failing a
-        // run over, and there is nowhere left to report it to.
-        let _ = err.write_all(notice_text(notice).as_bytes());
-        let _ = err.flush();
+    crate::Engine::from_config_with_notice(cfg, |notice| announce(err, notice))
+}
+
+/// The configured embedder, saying so on stderr before it downloads the
+/// 30.9 MB it does not have, in the same two lines and under the same
+/// `--quiet` as the parser's notice ([`build_engine`]). Until it could,
+/// the first `matra clusters` waited on that download with nothing on
+/// either stream.
+#[cfg(feature = "model2vec")]
+fn build_embedder(
+    cli: &Cli,
+    cfg: &Config,
+    err: &mut dyn Write,
+) -> domain::Result<crate::embed::model2vec::Model2Vec> {
+    if cli.quiet {
+        return crate::embed::model2vec::Model2Vec::from_config(cfg);
+    }
+    crate::embed::model2vec::Model2Vec::from_config_with_notice(cfg, |notice| {
+        announce(err, notice);
     })
+}
+
+/// Write a download notice to stderr. A diagnostic that cannot be
+/// written is not worth failing a run over, and there is nowhere left to
+/// report it to.
+fn announce(err: &mut dyn Write, notice: &domain::ProvisionNotice) {
+    let _ = err.write_all(notice_text(notice).as_bytes());
+    let _ = err.flush();
 }
 
 /// What a first run writes to stderr before the fetch: the artifact,
@@ -1187,6 +1209,11 @@ fn write_document(
 /// an empty array in its place, because an empty `sentences` would say a
 /// paragraph has none. The document schema marks the three keys this can
 /// remove as absent only here.
+///
+/// The keys keep the order the whole document is written in: the `cli`
+/// feature turns on `serde_json/preserve_order`, so the `Value` keeps the
+/// domain types' declaration order rather than sorting it, and
+/// `shift_remove` takes a key out without moving the others.
 fn at_depth(doc: &Document, depth: Depth) -> io::Result<serde_json::Value> {
     let mut value = serde_json::to_value(doc).map_err(io::Error::other)?;
     let each = |value: &mut serde_json::Value, key: &str| -> Vec<serde_json::Value> {
@@ -1200,7 +1227,7 @@ fn at_depth(doc: &Document, depth: Depth) -> io::Result<serde_json::Value> {
         Depth::Token => {}
         Depth::Document => {
             if let Some(object) = value.as_object_mut() {
-                object.remove("sections");
+                object.shift_remove("sections");
             }
         }
         Depth::Paragraph | Depth::Sentence => {
@@ -1210,14 +1237,14 @@ fn at_depth(doc: &Document, depth: Depth) -> io::Result<serde_json::Value> {
                 for paragraph in &mut paragraphs {
                     if depth == Depth::Paragraph {
                         if let Some(object) = paragraph.as_object_mut() {
-                            object.remove("sentences");
+                            object.shift_remove("sentences");
                         }
                         continue;
                     }
                     let mut sentences = each(paragraph, "sentences");
                     for sentence in &mut sentences {
                         if let Some(object) = sentence.as_object_mut() {
-                            object.remove("tokens");
+                            object.shift_remove("tokens");
                         }
                     }
                     paragraph["sentences"] = serde_json::Value::Array(sentences);
@@ -1411,6 +1438,65 @@ mod tests {
 
         let paragraph = at_depth(&doc, Depth::Paragraph).expect("value");
         assert_eq!(paragraph["sections"][0]["heading"], "Notes");
+    }
+
+    /// `--depth` output keeps the keys in the order the whole document is
+    /// written in, the domain types' declaration order, so a cut document
+    /// diffs against the whole one line for line. Built through a sorted
+    /// map, it ordered every object alphabetically instead.
+    #[test]
+    fn depth_keeps_the_key_order_of_the_whole_document() {
+        let mut paragraph = domain::Paragraph::new(
+            "A sentence.".to_string(),
+            domain::ParagraphKind::Paragraph,
+            domain::Span::new(0, 11),
+        );
+        paragraph
+            .sentences
+            .push(domain::Sentence::new("A sentence.".to_string(), Vec::new()));
+        let doc = Document::new(
+            domain::Provenance::for_test(),
+            vec![domain::Section::new(None, 0, None, vec![paragraph])],
+            Vec::new(),
+        );
+        // The whole document as `--json` writes it, read back in order.
+        let whole: serde_json::Value =
+            serde_json::from_str(&serde_json::to_string(&doc).expect("json")).expect("parse");
+        let keys = |value: &serde_json::Value| -> Vec<String> {
+            value
+                .as_object()
+                .expect("an object")
+                .keys()
+                .cloned()
+                .collect()
+        };
+        let without = |value: &serde_json::Value, gone: &str| -> Vec<String> {
+            keys(value).into_iter().filter(|k| k != gone).collect()
+        };
+
+        let paragraph_whole = &whole["sections"][0]["paragraphs"][0];
+        let cut = at_depth(&doc, Depth::Paragraph).expect("value");
+        assert_eq!(
+            keys(&cut["sections"][0]["paragraphs"][0]),
+            without(paragraph_whole, "sentences")
+        );
+        let cut = at_depth(&doc, Depth::Sentence).expect("value");
+        assert_eq!(
+            keys(&cut["sections"][0]["paragraphs"][0]["sentences"][0]),
+            without(&paragraph_whole["sentences"][0], "tokens")
+        );
+        assert_eq!(
+            keys(&cut["sections"][0]["paragraphs"][0]),
+            keys(paragraph_whole)
+        );
+        let cut = at_depth(&doc, Depth::Document).expect("value");
+        assert_eq!(keys(&cut), without(&whole, "sections"));
+
+        // The declaration order is not the alphabetical one, so a sorted
+        // map would fail the assertions above.
+        let mut sorted = keys(paragraph_whole);
+        sorted.sort();
+        assert_ne!(keys(paragraph_whole), sorted);
     }
 
     /// Regression: the notice a first run prints names the artifact, a

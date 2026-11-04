@@ -70,6 +70,60 @@ const POTION_BASE_8M_URLS: [&str; 3] = [
     "https://huggingface.co/minishlab/potion-base-8M/resolve/bf8b056651a2c21b8d2565580b8569da283cab23/config.json",
 ];
 
+/// The pinned model's name, which a download notice names it by.
+#[cfg(not(target_arch = "wasm32"))]
+const POTION_BASE_8M_NAME: &str = "potion-base-8M";
+
+/// The pinned release's three artifacts together, in bytes: 30,236,760
+/// for `model.safetensors`, 683,666 for `tokenizer.json` and 202 for
+/// `config.json`. Only the download notice reads it, so a first run can
+/// say how much is coming before it comes; what decides whether the
+/// bytes are trusted is the digest.
+#[cfg(not(target_arch = "wasm32"))]
+const POTION_BASE_8M_BYTES: u64 = 30_920_628;
+
+/// The pinned model's license, as its model card states it at the pinned
+/// revision: `license: mit` in the front matter of
+/// <https://huggingface.co/minishlab/potion-base-8M/blob/bf8b056651a2c21b8d2565580b8569da283cab23/README.md>.
+/// The repository publishes no license file of its own. matra's code is
+/// MIT too, but the model is a separate work with its own terms, so the
+/// download notice carries them as the parsing model's does. Beside the
+/// URLs because a new revision means checking both.
+#[cfg(not(target_arch = "wasm32"))]
+const POTION_BASE_8M_LICENSE: &str = "MIT";
+
+/// Where the text of [`POTION_BASE_8M_LICENSE`] is published.
+#[cfg(not(target_arch = "wasm32"))]
+const POTION_BASE_8M_LICENSE_URL: &str = "https://opensource.org/license/mit";
+
+/// The pinned release as one record, so the provisioning path takes the
+/// pin whole.
+#[cfg(not(target_arch = "wasm32"))]
+const POTION_BASE_8M: Pin<'static> = Pin {
+    name: POTION_BASE_8M_NAME,
+    bytes: POTION_BASE_8M_BYTES,
+    digest: POTION_BASE_8M_SHA256,
+    urls: POTION_BASE_8M_URLS,
+    license: POTION_BASE_8M_LICENSE,
+    license_url: POTION_BASE_8M_LICENSE_URL,
+};
+
+/// A pinned artifact set: what it is called, how many bytes it is, the
+/// digest it must satisfy, where its three files come from in
+/// [`ARTIFACT_FILES`] order, and the terms it is published under. A test
+/// pins a fixture of its own through the same shape, as `nlp/udpipe.rs`
+/// does with its own `Pin`.
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug, Clone, Copy)]
+struct Pin<'a> {
+    name: &'a str,
+    bytes: u64,
+    digest: &'a str,
+    urls: [&'a str; 3],
+    license: &'a str,
+    license_url: &'a str,
+}
+
 /// Ceiling on any one downloaded artifact, past which
 /// [`Error::InputTooLarge`] has `what` set to `"embedding_download"`:
 /// [`limits::MAX_DOWNLOAD_BYTES`](crate::domain::limits::MAX_DOWNLOAD_BYTES).
@@ -250,7 +304,7 @@ impl Model2Vec {
     /// re-download, or if the verified bytes do not parse.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn potion_base_8m(dir: impl AsRef<Path>) -> domain::Result<Self> {
-        Self::potion_base_8m_with(dir.as_ref(), fetch_capped)
+        Self::potion_base_8m_with(dir.as_ref(), fetch_capped, &mut |_| {})
     }
 
     /// [`Model2Vec::potion_base_8m`] over the directory a [`Config`]
@@ -277,20 +331,63 @@ impl Model2Vec {
         Self::potion_base_8m(cfg.model_dir().join(cfg.embedding_model()))
     }
 
-    /// [`Model2Vec::potion_base_8m`] with the fetcher as an argument.
-    /// The public constructor passes [`fetch_capped`]; tests pass a
-    /// closure, so the download path is exercised without a network.
+    /// [`Model2Vec::from_config`], with `notice` called once before each
+    /// fetch of the pinned set and not at all when the set is already on
+    /// disk: [`Engine::from_config_with_notice`](crate::Engine::from_config_with_notice)
+    /// for the embedding model.
+    ///
+    /// A first run downloads 30.9 MB across three files, and the library
+    /// writes to no terminal, so the facts travel out as a
+    /// [`domain::ProvisionNotice`] naming the model, its size, where it
+    /// is going and its license, and the caller decides the wording. The
+    /// three files are one notice, because they are fetched and verified
+    /// as one set; a set that fails its digest is fetched once more, with
+    /// a second notice.
+    ///
+    /// ```no_run
+    /// use matra::embed::model2vec::Model2Vec;
+    ///
+    /// let cfg = matra::config::Config::resolve()?;
+    /// let model = Model2Vec::from_config_with_notice(&cfg, |n| {
+    ///     eprintln!("fetching {} into {}", n.artifact, n.destination.display());
+    /// })?;
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Whatever [`Model2Vec::potion_base_8m`] returns.
     #[cfg(not(target_arch = "wasm32"))]
-    fn potion_base_8m_with<F>(dir: &Path, fetch: F) -> domain::Result<Self>
+    pub fn from_config_with_notice(
+        cfg: &Config,
+        mut notice: impl FnMut(&domain::ProvisionNotice),
+    ) -> domain::Result<Self> {
+        Self::potion_base_8m_with(
+            &cfg.model_dir().join(cfg.embedding_model()),
+            fetch_capped,
+            &mut notice,
+        )
+    }
+
+    /// [`Model2Vec::potion_base_8m`] with the fetcher and the notice as
+    /// arguments. The public constructors pass [`fetch_capped`]; tests
+    /// pass a closure, so the download path is exercised without a
+    /// network.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn potion_base_8m_with<F>(
+        dir: &Path,
+        fetch: F,
+        notice: &mut dyn FnMut(&domain::ProvisionNotice),
+    ) -> domain::Result<Self>
     where
         F: Fn(&str) -> domain::Result<Vec<u8>>,
     {
-        Self::provision(dir, POTION_BASE_8M_SHA256, &POTION_BASE_8M_URLS, &fetch)
+        Self::provision(dir, &POTION_BASE_8M, notice, &fetch)
     }
 
     /// The provisioning sequence [`Model2Vec::potion_base_8m`] documents,
-    /// with the three things that make it "potion-base-8M" as arguments:
-    /// the pinned digest, the pinned URLs, and the fetcher.
+    /// with what makes it "potion-base-8M" as arguments: the pin (its
+    /// digest, URLs, size and license), the notice, and the fetcher.
     ///
     /// The pin is a parameter rather than a constant read from scope so
     /// that a test can pin a three-file fixture of its own. A test that
@@ -309,13 +406,14 @@ impl Model2Vec {
     #[cfg(not(target_arch = "wasm32"))]
     fn provision<F>(
         dir: &Path,
-        expected_digest: &str,
-        urls: &[&str; 3],
+        pin: &Pin<'_>,
+        notice: &mut dyn FnMut(&domain::ProvisionNotice),
         fetch: &F,
     ) -> domain::Result<Self>
     where
         F: Fn(&str) -> domain::Result<Vec<u8>>,
     {
+        let expected_digest = pin.digest;
         // Before the download rather than after it, so a directory that
         // cannot be created fails in milliseconds instead of after
         // 30 MB has travelled. `nlp/udpipe.rs` orders it the same way.
@@ -351,7 +449,7 @@ impl Model2Vec {
         // the pin ever carries an artifact's name, not even for the
         // length of a rename, and a mismatch costs the directory
         // nothing.
-        let artifacts = fetch_verified(dir, expected_digest, urls, fetch)?;
+        let artifacts = fetch_verified(dir, pin, notice, fetch)?;
         install_artifacts(dir, &paths, &artifacts)?;
         // The bytes that satisfied the digest are the bytes that parse.
         // Nothing re-reads the directory between the two.
@@ -815,18 +913,30 @@ impl Drop for Transaction {
 /// The digest covers the three artifacts as a set, so a mismatch
 /// condemns the set: the retry refetches all three rather than the one
 /// that might have drifted.
+///
+/// `notice` is called before each round, so a caller can say what is
+/// coming before the wait rather than after it. One notice per round,
+/// not per file: the three are one set, fetched and verified together.
 #[cfg(not(target_arch = "wasm32"))]
 fn fetch_verified<F>(
     dir: &Path,
-    expected_digest: &str,
-    urls: &[&str; 3],
+    pin: &Pin<'_>,
+    notice: &mut dyn FnMut(&domain::ProvisionNotice),
     fetch: &F,
 ) -> domain::Result<[Vec<u8>; 3]>
 where
     F: Fn(&str) -> domain::Result<Vec<u8>>,
 {
+    let expected_digest = pin.digest;
     for _ in 0..2 {
-        let artifacts = fetch_all(urls, fetch)?;
+        notice(&domain::ProvisionNotice {
+            artifact: pin.name.to_string(),
+            bytes: pin.bytes,
+            destination: dir.to_path_buf(),
+            license: pin.license.to_string(),
+            license_url: pin.license_url.to_string(),
+        });
+        let artifacts = fetch_all(&pin.urls, fetch)?;
         if digest_of(&artifacts).eq_ignore_ascii_case(expected_digest) {
             return Ok(artifacts);
         }
@@ -1686,12 +1796,39 @@ mod provisioning {
         }
     }
 
+    const FIXTURE_NAME: &str = "fixture-model";
+    const FIXTURE_LICENSE: &str = "Fixture License 1.0";
+    const FIXTURE_LICENSE_URL: &str = "https://licenses.example/fixture";
+
+    /// The fixture's pin: its digest, the stand-in URLs, its size, and a
+    /// license of its own, so a notice can be told apart from the real
+    /// pin's.
+    fn pin_of(fixture: &Fixture) -> Pin<'_> {
+        Pin {
+            name: FIXTURE_NAME,
+            bytes: fixture.bytes.iter().map(|b| b.len() as u64).sum(),
+            digest: &fixture.digest,
+            urls: URLS,
+            license: FIXTURE_LICENSE,
+            license_url: FIXTURE_LICENSE_URL,
+        }
+    }
+
     fn provision(
         dir: &Path,
         fixture: &Fixture,
         fetcher: &Fetcher<'_>,
     ) -> domain::Result<Model2Vec> {
-        Model2Vec::provision(dir, &fixture.digest, &URLS, &|url| fetcher.fetch(url))
+        provision_noting(dir, fixture, fetcher, &mut |_| {})
+    }
+
+    fn provision_noting(
+        dir: &Path,
+        fixture: &Fixture,
+        fetcher: &Fetcher<'_>,
+        notice: &mut dyn FnMut(&domain::ProvisionNotice),
+    ) -> domain::Result<Model2Vec> {
+        Model2Vec::provision(dir, &pin_of(fixture), notice, &|url| fetcher.fetch(url))
     }
 
     /// `Result::unwrap_err` would need `Model2Vec: Debug`, and a loaded
@@ -2030,7 +2167,7 @@ mod provisioning {
         let dir = tempfile::tempdir().unwrap();
         let seen: RefCell<Vec<(Vec<&'static str>, Vec<String>)>> = RefCell::new(Vec::new());
 
-        let model = Model2Vec::provision(dir.path(), &fixture.digest, &URLS, &|url| {
+        let model = Model2Vec::provision(dir.path(), &pin_of(&fixture), &mut |_| {}, &|url| {
             seen.borrow_mut()
                 .push((present(dir.path()), temporaries(dir.path())));
             let index = URLS.iter().position(|u| *u == url).expect("known url");
@@ -2283,6 +2420,69 @@ mod provisioning {
              refresh both with scripts/fetch-embedding-hash.sh",
             path.display()
         );
+    }
+
+    /// Regression (EPR-0006, defect 11): the first provision of the
+    /// embedding model was silent for a 30.9 MB download. The notice
+    /// fires once before the set is fetched, naming the model, its size,
+    /// where it is going and its license.
+    #[test]
+    fn a_fetch_is_announced_once_for_the_set() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+        let fetcher = Fetcher::new(&fixture, Serves::TheModel);
+        let mut notices = Vec::new();
+        provision_noting(dir.path(), &fixture, &fetcher, &mut |n| {
+            notices.push(n.clone())
+        })
+        .unwrap();
+
+        assert_eq!(notices.len(), 1, "one notice for the set of three files");
+        let notice = &notices[0];
+        assert_eq!(notice.artifact, FIXTURE_NAME);
+        assert_eq!(
+            notice.bytes,
+            fixture.bytes.iter().map(|b| b.len() as u64).sum::<u64>()
+        );
+        assert_eq!(notice.destination, dir.path());
+        assert_eq!(notice.license, FIXTURE_LICENSE);
+        assert_eq!(notice.license_url, FIXTURE_LICENSE_URL);
+    }
+
+    /// A set already on disk is not fetched, so nothing is announced; a
+    /// set that fails its digest is fetched again, and each round is
+    /// announced.
+    #[test]
+    fn the_notice_follows_the_fetches() {
+        let fixture = Fixture::new();
+        let dir = tempfile::tempdir().unwrap();
+        let fetcher = Fetcher::new(&fixture, Serves::TheModel);
+        provision(dir.path(), &fixture, &fetcher).unwrap();
+
+        let mut notices = 0;
+        let nothing = Fetcher::new(&fixture, Serves::Nothing);
+        provision_noting(dir.path(), &fixture, &nothing, &mut |_| notices += 1).unwrap();
+        assert_eq!(notices, 0, "a warm start announces nothing");
+
+        let fresh = tempfile::tempdir().unwrap();
+        let flaky = Fetcher::new(&fixture, Serves::GarbageThenTheModel);
+        provision_noting(fresh.path(), &fixture, &flaky, &mut |_| notices += 1).unwrap();
+        assert_eq!(
+            notices, 2,
+            "one notice per round, and the first round failed"
+        );
+    }
+
+    /// The pinned record says what the notice will tell a user: the model
+    /// by name, the three files' total size, and the license its model
+    /// card states.
+    #[test]
+    fn the_pin_carries_its_name_size_and_license() {
+        assert_eq!(POTION_BASE_8M.name, "potion-base-8M");
+        assert_eq!(POTION_BASE_8M.bytes, 30_236_760 + 683_666 + 202);
+        assert_eq!(POTION_BASE_8M.license, "MIT");
+        assert_eq!(POTION_BASE_8M.digest, POTION_BASE_8M_SHA256);
+        assert_eq!(POTION_BASE_8M.urls, POTION_BASE_8M_URLS);
     }
 
     #[test]
