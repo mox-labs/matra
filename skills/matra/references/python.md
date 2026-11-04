@@ -33,11 +33,11 @@ The loaded pipeline. Create it once and reuse it; loading the model is the expen
 `analyze` takes exactly one input; none or two raise `TypeError`. **A `str` is always text, never a path**: name a file with `file=`.
 
 - `text` is read as plain text, or as `format` (`markdown`, `plain_text`, `blocks`).
-- `file` is read at the call, its format detected from its name and bytes: `.md` as markdown, PDF and DOCX refused, any other UTF-8 file as plain text. Its path is in `doc["provenance"]["source"]["path"]`.
+- `file` is read at the call, as `format` when one is named, else in the format its name and bytes imply: `.md` as markdown, PDF and DOCX refused, any other UTF-8 file as plain text. A JSON file of blocks is `format="blocks"`. Its path is in `doc["provenance"]["source"]["path"]`.
 - `bytes` is read as `format`, or detected when none is named.
 - `blocks` is a list of `{"kind": "heading", "level": 1, "text": ...}` and `{"kind": "paragraph", "text": ...}`, for text from somewhere matra does not read. An unknown `kind` or key raises `matra.InvalidInputError` naming it.
 
-`format` applies to `text` and `bytes` only. Every input passes the 8 MiB cap on its way to the parser.
+`format` applies to `text`, `bytes` and `file`, and a PDF or DOCX signature in the bytes outranks it. Every input passes the 8 MiB cap on its way to the parser.
 
 **Threading.** The engine is unsendable: the loaded model holds C-side state that is not thread-safe, so touching one engine from a thread other than the one that created it fails at runtime. Multi-process is fine. Use `ProcessPoolExecutor`, not `ThreadPoolExecutor`, and return `doc.to_dict()` from a worker, since a `Document` does not pickle.
 
