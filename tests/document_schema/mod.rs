@@ -1,8 +1,9 @@
-//! The published document schema, as the test suites check against it.
+//! The published schemas, as the test suites check against them.
 //!
 //! Included with `mod document_schema;` by every runner whose output is a
-//! document: the parse conformance lane, the corpus lane, the command
-//! line's envelope lane and the schema's own tests.
+//! document or an outcome: the parse conformance lane, the outcome lane,
+//! the command line's envelope lane, and the crate's own model-free lanes
+//! in `src/lib.rs`, which include it by path.
 //!
 //! The check is stricter than the published schema in one way. The
 //! schema lets objects carry fields it does not list, because a minor
@@ -15,27 +16,50 @@
 
 use std::path::PathBuf;
 
-/// Validate `document` against `spec/schema/v2/document.schema.json`,
-/// closed as described above, and panic naming every violation.
-pub(crate) fn assert_valid_document(document: &serde_json::Value, context: &str) {
-    let path =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("spec/schema/v2/document.schema.json");
+/// Validate `value` against `spec/schema/v2/{name}.schema.json`, closed as
+/// described above, and panic naming every violation.
+///
+/// `name` is `document`, `summary`, `keyphrases` or `clusters`. The
+/// outcome schemas refer to the document schema's definitions by its
+/// `$id`, so the document schema, closed the same way, is registered
+/// under that `$id` for every check.
+pub(crate) fn assert_valid(name: &str, value: &serde_json::Value, context: &str) {
+    let document = closed_schema("document");
+    let id = document["$id"]
+        .as_str()
+        .expect("the document schema names its $id")
+        .to_string();
+    let registry = jsonschema::Registry::new()
+        .add(id, document)
+        .and_then(|r| r.prepare())
+        .unwrap_or_else(|e| panic!("the document schema does not register: {e}"));
+    let schema = closed_schema(name);
+    let validator = jsonschema::options()
+        .with_registry(&registry)
+        .build(&schema)
+        .unwrap_or_else(|e| panic!("{name}.schema.json is not a valid JSON Schema: {e}"));
+    let errors: Vec<String> = validator
+        .iter_errors(value)
+        .map(|e| format!("{} at {}", e, e.instance_path()))
+        .collect();
+    assert!(
+        errors.is_empty(),
+        "{context}: the {name} does not match schema 2:\n  {}",
+        errors.join("\n  ")
+    );
+}
+
+/// `spec/schema/v2/{name}.schema.json`, with every object closed.
+fn closed_schema(name: &str) -> serde_json::Value {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("spec/schema/v2")
+        .join(format!("{name}.schema.json"));
     let raw = std::fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
     let mut schema: serde_json::Value = serde_json::from_str(&raw)
         .unwrap_or_else(|e| panic!("{} is not JSON: {e}", path.display()));
     close_objects(&mut schema);
-    let validator = jsonschema::draft202012::new(&schema)
-        .unwrap_or_else(|e| panic!("{} is not a valid JSON Schema: {e}", path.display()));
-    let errors: Vec<String> = validator
-        .iter_errors(document)
-        .map(|e| format!("{} at {}", e, e.instance_path()))
-        .collect();
-    assert!(
-        errors.is_empty(),
-        "{context}: the document does not match schema 2:\n  {}",
-        errors.join("\n  ")
-    );
+    schema
 }
 
 /// Set `additionalProperties: false` on every object schema that lists

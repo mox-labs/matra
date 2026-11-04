@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mox-labs.github.io/matra/schema/v2/summary.schema.json",
+  "title": "matra Summary, schema 2.x",
+  "description": "The sentences that best represent a document: the serde form of `matra::domain::Summary`, from `matra::summarize` and `summarize_with`, and the `result` of `matra summarize --json`. Schema 2.x, read by the same rules as the document schema: ignore fields you do not recognize, treat every string set as open (`method` among them), and reject a major you do not know. Every key listed here is always present. Each method scores on its own scale, so a score compares only with another score from the same method.",
+  "type": "object",
+  "required": ["provenance", "sentences"],
+  "properties": {
+    "provenance": {
+      "description": "The document's provenance, with the method that ran and the parameters that shaped the result.",
+      "allOf": [
+        {
+          "$ref": "https://mox-labs.github.io/matra/schema/v2/document.schema.json#/$defs/Provenance"
+        },
+        {
+          "required": ["method", "parameters"],
+          "properties": { "parameters": { "required": ["n"] } },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "sentences": {
+      "description": "At most `n` sentences, in document order.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/SummarySentence" }
+    }
+  },
+  "$defs": {
+    "SummarySentence": {
+      "description": "One sentence a summary keeps.",
+      "type": "object",
+      "required": ["index", "span", "text", "score"],
+      "properties": {
+        "index": {
+          "description": "The sentence's position among the document's sentences, in document order, counting from 0.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "span": { "$ref": "https://mox-labs.github.io/matra/schema/v2/document.schema.json#/$defs/Span" },
+        "text": {
+          "description": "The sentence's text, as on the document's sentence.",
+          "type": "string"
+        },
+        "score": {
+          "description": "The method's score, higher is more representative.",
+          "type": "number"
+        }
+      }
+    }
+  }
+}

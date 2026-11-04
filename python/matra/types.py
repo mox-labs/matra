@@ -10,7 +10,7 @@ Keep in lockstep with `python/matra/_core.pyi`.
 
 from __future__ import annotations
 
-from typing import Final, Literal, Protocol, TypedDict
+from typing import Final, Literal, NotRequired, Protocol, TypedDict
 
 ERROR_KINDS: Final[tuple[str, ...]] = (
     "model_not_found",
@@ -300,12 +300,31 @@ class ProvenanceSource(TypedDict):
     sha256: str
 
 
+class Parameters(TypedDict, total=False):
+    """The parameters that shaped a derived result, as it ran. Mirrors
+    `matra::domain::Parameters`.
+
+    Only the parameters the method takes are present: ``n`` for a
+    summary and keyphrases, ``threshold`` and ``embedder`` for clusters.
+    """
+
+    n: int
+    threshold: float
+    embedder: str
+
+
 class Provenance(TypedDict):
-    """Where a document came from. Mirrors `matra::domain::Provenance`.
+    """Where a result came from. Mirrors `matra::domain::Provenance`.
 
     ``schema`` is the schema version, ``"major.minor"``, and the one
     place it appears; reject a major you do not know. ``format`` is one
     of ``markdown``, ``plain_text`` and ``blocks`` today, an open set.
+
+    A document's provenance has no ``method`` and no ``parameters``. A
+    result derived from a document (``Summary``, ``Keyphrases``,
+    ``Clusters``) carries the document's provenance with both added:
+    ``method`` names what ran (``tfidf``, ``textrank``, ``rake``,
+    ``yake``, ``cosine`` today, an open set).
     """
 
     matra: str
@@ -313,6 +332,8 @@ class Provenance(TypedDict):
     parser: Identity
     format: str
     source: ProvenanceSource
+    method: NotRequired[str]
+    parameters: NotRequired[Parameters]
 
 
 class Document(TypedDict):
@@ -329,26 +350,57 @@ class Document(TypedDict):
     skipped: list[Skipped]
 
 
-class ScoredSentence(TypedDict):
-    """One ranked sentence. Output of TF-IDF and TextRank."""
+class SummarySentence(TypedDict):
+    """One sentence a summary keeps. Mirrors `matra::domain::SummarySentence`.
 
+    ``index`` is its position among the document's sentences, counting
+    from 0; ``span`` is where it lies in the analysed text.
+    """
+
+    index: int
+    span: Span
     text: str
     score: float
-    position: int
+
+
+class Summary(TypedDict):
+    """The sentences that best represent a document. Mirrors
+    `matra::domain::Summary`.
+
+    ``provenance`` is the document's, with ``method`` and
+    ``parameters["n"]``. Each method scores on its own scale.
+    """
+
+    provenance: Provenance
+    sentences: list[SummarySentence]
 
 
 class Keyphrase(TypedDict):
-    """One ranked keyphrase. Output of RAKE and YAKE."""
+    """One ranked keyphrase and every place it occurs. Mirrors
+    `matra::domain::Keyphrase`."""
 
     phrase: str
     score: float
+    occurrences: list[Span]
 
 
-class SemanticEdge(TypedDict):
-    """An above-threshold similarity between two sentences, ``a < b``.
+class Keyphrases(TypedDict):
+    """The phrases that best name what a document is about, highest score
+    first. Mirrors `matra::domain::Keyphrases`.
 
-    Mirrors ``matra::domain::SemanticEdge``. The score is cosine
-    similarity in the producing model's geometry.
+    ``provenance`` is the document's, with ``method`` and
+    ``parameters["n"]``. Each method scores on its own scale.
+    """
+
+    provenance: Provenance
+    phrases: list[Keyphrase]
+
+
+class SimilarityEdge(TypedDict):
+    """A pair of sentences whose similarity cleared the threshold,
+    ``a < b``. Mirrors `matra::domain::SimilarityEdge`.
+
+    The score is cosine similarity in the embedder's geometry.
     """
 
     a: int
@@ -356,31 +408,40 @@ class SemanticEdge(TypedDict):
     score: float
 
 
-class SemanticCluster(TypedDict):
+class Cluster(TypedDict):
     """One connected component of the above-threshold similarity graph.
+    Mirrors `matra::domain::Cluster`.
 
-    Mirrors ``matra::domain::SemanticCluster``. Co-membership is
-    transitive: two members can share a cluster without sharing an
-    edge, and must never be read as pairwise similar. The edges list
-    every pair that actually cleared the threshold.
+    Co-membership is transitive: two members can share a cluster without
+    sharing an edge, and must never be read as pairwise similar.
     """
 
     members: list[int]
-    edges: list[SemanticEdge]
 
 
-class SemanticClusters(TypedDict):
-    """Semantic-similarity clusters: Tier 2 output, standing alone.
+class Clusters(TypedDict):
+    """Sentences grouped by embedding similarity: model opinion, standing
+    alone. Mirrors `matra::domain::Clusters`.
 
-    Mirrors ``matra::domain::SemanticClusters``. Never attached to
-    ``Document`` (RFC-0010); carries the producing model's identity and
-    the caller-supplied threshold as provenance. A sentence with no
-    above-threshold edge appears in no cluster.
+    Never attached to ``Document`` (RFC-0010). ``provenance`` is the
+    document's, with ``method`` and the ``threshold`` and ``embedder``
+    parameters. ``edges`` lists every pair that cleared the threshold. A
+    sentence with no edge appears in no cluster.
     """
 
-    identity: str
-    threshold: float
-    clusters: list[SemanticCluster]
+    provenance: Provenance
+    clusters: list[Cluster]
+    edges: list[SimilarityEdge]
+
+
+class VectorClusters(TypedDict):
+    """What the vectors-in ``semantic_clusters`` returns: a ``Clusters``
+    without its provenance, since no document was read, and with the two
+    parameters that provenance would record in its place."""
+
+    parameters: Parameters
+    clusters: list[Cluster]
+    edges: list[SimilarityEdge]
 
 
 class ErrorInfo(TypedDict):
@@ -448,6 +509,8 @@ class Embedder(Protocol):
 __all__ = [
     "ERROR_KINDS",
     "ClausalComplement",
+    "Cluster",
+    "Clusters",
     "CorpusItem",
     "Document",
     "DocumentError",
@@ -456,21 +519,23 @@ __all__ = [
     "ErrorInfo",
     "Identity",
     "Keyphrase",
+    "Keyphrases",
     "Modal",
     "Negation",
     "Paragraph",
     "ParagraphMetrics",
+    "Parameters",
     "Provenance",
     "ProvenanceSource",
     "RootAdverbial",
     "RootMood",
-    "ScoredSentence",
     "Section",
-    "SemanticCluster",
-    "SemanticClusters",
-    "SemanticEdge",
     "Sentence",
+    "SimilarityEdge",
     "Skipped",
     "Span",
+    "Summary",
+    "SummarySentence",
     "Token",
+    "VectorClusters",
 ]

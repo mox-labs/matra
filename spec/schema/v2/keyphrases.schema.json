@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mox-labs.github.io/matra/schema/v2/keyphrases.schema.json",
+  "title": "matra Keyphrases, schema 2.x",
+  "description": "The phrases that best name what a document is about: the serde form of `matra::domain::Keyphrases`, from `matra::keyphrases` and `keyphrases_with`, and the `result` of `matra keyphrases --json`. Schema 2.x, read by the same rules as the document schema: ignore fields you do not recognize, treat every string set as open (`method` among them), and reject a major you do not know. Every key listed here is always present. Each method scores on its own scale, so a score compares only with another score from the same method.",
+  "type": "object",
+  "required": ["provenance", "phrases"],
+  "properties": {
+    "provenance": {
+      "description": "The document's provenance, with the method that ran and the parameters that shaped the result.",
+      "allOf": [
+        {
+          "$ref": "https://mox-labs.github.io/matra/schema/v2/document.schema.json#/$defs/Provenance"
+        },
+        {
+          "required": ["method", "parameters"],
+          "properties": { "parameters": { "required": ["n"] } },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "phrases": {
+      "description": "At most `n` phrases, highest score first.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/Keyphrase" }
+    }
+  },
+  "$defs": {
+    "Keyphrase": {
+      "description": "One ranked phrase and where it occurs.",
+      "type": "object",
+      "required": ["phrase", "score", "occurrences"],
+      "properties": {
+        "phrase": {
+          "description": "The lowercased lemmas of the phrase's words, joined by a space.",
+          "type": "string"
+        },
+        "score": {
+          "description": "The method's score, higher is more relevant.",
+          "type": "number"
+        },
+        "occurrences": {
+          "description": "Every stretch of the analysed text the phrase was found in, in document order, from its first word's start to its last word's end.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "https://mox-labs.github.io/matra/schema/v2/document.schema.json#/$defs/Span" }
+        }
+      }
+    }
+  }
+}

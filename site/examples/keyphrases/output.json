@@ -1,42 +1,124 @@
-[
-  {
-    "phrase": "larger domestic animal tend",
-    "score": 12.636363636363637
+{
+  "provenance": {
+    "matra": "0.2.1",
+    "schema": "2.0",
+    "parser": {
+      "name": "udpipe",
+      "model": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957",
+      "license": "CC BY-NC-SA 4.0 (non-commercial)"
+    },
+    "format": "plain_text",
+    "source": {
+      "path": null,
+      "bytes": 12808,
+      "sha256": "858cb32e93b9a95293e00afae7bd4049e8c0fda79abca22ea01b456f2a18a580"
+    },
+    "method": "rake",
+    "parameters": {
+      "n": 10
+    }
   },
-  {
-    "phrase": "elder de candolle",
-    "score": 9.0
-  },
-  {
-    "phrase": "fulmar petrel lay",
-    "score": 9.0
-  },
-  {
-    "phrase": "mere theoretical calculation",
-    "score": 8.5
-  },
-  {
-    "phrase": "great horticultural knowledge",
-    "score": 8.2
-  },
-  {
-    "phrase": "probable minimum rate",
-    "score": 7.6
-  },
-  {
-    "phrase": "astonishingly rapid increase",
-    "score": 7.357142857142858
-  },
-  {
-    "phrase": "great destruction fal",
-    "score": 6.914285714285715
-  },
-  {
-    "phrase": "slow -breeding man",
-    "score": 6.666666666666667
-  },
-  {
-    "phrase": "numerous record case",
-    "score": 5.972222222222222
-  }
-]
+  "phrases": [
+    {
+      "phrase": "larger domestic animal tend",
+      "score": 12.636363636363637,
+      "occurrences": [
+        {
+          "start": 10132,
+          "end": 10161
+        }
+      ]
+    },
+    {
+      "phrase": "elder de candolle",
+      "score": 9.0,
+      "occurrences": [
+        {
+          "start": 3228,
+          "end": 3245
+        }
+      ]
+    },
+    {
+      "phrase": "fulmar petrel lay",
+      "score": 9.0,
+      "occurrences": [
+        {
+          "start": 10791,
+          "end": 10809
+        }
+      ]
+    },
+    {
+      "phrase": "mere theoretical calculation",
+      "score": 8.5,
+      "occurrences": [
+        {
+          "start": 8016,
+          "end": 8045
+        }
+      ]
+    },
+    {
+      "phrase": "great horticultural knowledge",
+      "score": 8.2,
+      "occurrences": [
+        {
+          "start": 3501,
+          "end": 3530
+        }
+      ]
+    },
+    {
+      "phrase": "probable minimum rate",
+      "score": 7.6,
+      "occurrences": [
+        {
+          "start": 7626,
+          "end": 7647
+        }
+      ]
+    },
+    {
+      "phrase": "astonishingly rapid increase",
+      "score": 7.357142857142858,
+      "occurrences": [
+        {
+          "start": 8090,
+          "end": 8118
+        }
+      ]
+    },
+    {
+      "phrase": "great destruction fal",
+      "score": 6.914285714285715,
+      "occurrences": [
+        {
+          "start": 10197,
+          "end": 10222
+        }
+      ]
+    },
+    {
+      "phrase": "slow -breeding man",
+      "score": 6.666666666666667,
+      "occurrences": [
+        {
+          "start": 7123,
+          "end": 7140
+        }
+      ]
+    },
+    {
+      "phrase": "numerous record case",
+      "score": 5.972222222222222,
+      "occurrences": [
+        {
+          "start": 8059,
+          "end": 8082
+        }
+      ]
+    }
+  ]
+}

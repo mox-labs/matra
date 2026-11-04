@@ -1,8 +1,9 @@
 //! Generate the docsite's figure data (EP-0012).
 //!
 //! Runs the released pipeline, through the public surface only (`config`,
-//! `Engine`, `Input`, `extraction`, `embed_and_cluster`, and
-//! `embed::model2vec::Model2Vec` for the embedder it takes), over every input in
+//! `Engine`, `Input`, the outcome functions `summarize_with`,
+//! `keyphrases_with` and `clusters`, and `embed::model2vec::Model2Vec` for
+//! the embedder `clusters` takes), over every input in
 //! `site/inputs/` and writes one JSON file per figure:
 //! `site/src/lib/figures/<input>/<figure>.json`. The site reads those files at
 //! build time; the browser never recomputes matra's output, so there is no
@@ -26,7 +27,8 @@
 //!   textrank     every sentence's TextRank score, and the summary it picks
 //!   clusters     semantic clusters at each threshold of a fixed grid
 //!                (needs the `model2vec` feature and the embedding model)
-//!   pipeline     one document at each stage: input, annotated, composed
+//!   pipeline     one document at each stage: input, read and parsed,
+//!                measured
 //!
 //! Beside the inputs, every page of the docsite measures itself: each page
 //! under `site/content/` goes through the same pipeline as Markdown
@@ -57,10 +59,9 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use matra::Engine;
 use matra::config::Config;
-use matra::domain::{Corpus, Document, Format, Keyphrase, Sentence};
-use matra::extraction::{rake_keyphrases, textrank_summarize, yake_keyphrases};
+use matra::domain::{Document, DocumentMetrics, Format, Keyphrase, ParagraphMetrics};
+use matra::{Engine, KeyphraseMethod, SummaryMethod};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -109,7 +110,7 @@ const CLUSTER_GRID: std::ops::RangeInclusive<u8> = 10..=19;
 /// matra ships no default threshold; every clustering call takes one as an
 /// argument (RFC-0020).
 #[cfg(feature = "model2vec")]
-const STARTING_THRESHOLD: f32 = 0.85;
+const STARTING_THRESHOLD: f64 = 0.85;
 
 /// The pinned UDPipe model's name, the stem of the file the adapter writes
 /// (`nlp/udpipe.rs`). If the pin moves and this does not, the read of the
@@ -373,9 +374,10 @@ fn primitives_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
 }
 
 /// The measures: every paragraph's three, and the document-level values
-/// matra computes. Readability's document value is `Corpus::mean_readability`
-/// over a corpus of this one document; matra has no document-level lexical
-/// density or compression ratio, so none is written.
+/// matra computes. Readability's document value is the mean of the
+/// paragraphs' grades, computed here, because matra records readability per
+/// paragraph only; matra has no document-level lexical density or
+/// compression ratio, so none is written.
 fn metrics_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
     let doc = input.doc;
     let mut paragraphs = Vec::new();
@@ -391,16 +393,16 @@ fn metrics_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
             "compression_ratio": p.metrics.compression_ratio.map(round4),
         }));
     }
-    let measured = doc
-        .sections
-        .iter()
-        .flat_map(|s| &s.paragraphs)
-        .any(|p| p.metrics.readability_grade.is_some());
-    let corpus = Corpus::new(vec![doc.clone()]);
+    let grades: Vec<f64> = doc
+        .paragraphs()
+        .filter_map(|p| p.metrics.readability_grade)
+        .collect();
+    let mean_readability =
+        (!grades.is_empty()).then(|| round4(grades.iter().sum::<f64>() / grades.len() as f64));
     Ok(json!({
         "paragraphs": paragraphs,
         "document": {
-            "mean_readability": measured.then(|| round4(corpus.mean_readability())),
+            "mean_readability": mean_readability,
             "vocabulary_ttr": doc.metrics.vocabulary_ttr.map(round4),
             "nominalization_ratio": doc.metrics.nominalization_ratio.map(round4),
             "passive_ratio": doc.metrics.passive_ratio.map(round4),
@@ -416,9 +418,8 @@ fn metrics_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
 /// not depend on hash order.
 fn keyphrases_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
     let doc = input.doc;
-    let sentences: Vec<Sentence> = doc.sentences().cloned().collect();
-    let rake = ranked(rake_keyphrases(&sentences, usize::MAX)?);
-    let yake = ranked(yake_keyphrases(&sentences, usize::MAX)?);
+    let rake = ranked(matra::keyphrases_with(doc, usize::MAX, KeyphraseMethod::Rake)?.phrases);
+    let yake = ranked(matra::keyphrases_with(doc, usize::MAX, KeyphraseMethod::Yake)?.phrases);
     let top = |list: &[(String, f64, usize)]| -> Vec<Value> {
         list.iter()
             .take(KEYPHRASES_SHOWN)
@@ -479,18 +480,19 @@ fn round4(x: f64) -> f64 {
 }
 
 /// TextRank: every sentence's score, in document order, and the summary
-/// matra picks at its shipped length. `textrank_summarize` asked for every
+/// matra picks at its shipped length. A TextRank summary asked for every
 /// sentence returns every score; asked for the shipped `n`, it returns the
 /// summary. The similarity edges between sentences are internal to matra and
 /// not written: drawing them here would be a second implementation.
 fn textrank_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
     let doc = input.doc;
-    let sentences: Vec<Sentence> = doc.sentences().cloned().collect();
     let n = input.shipped.summarize_n();
-    let all = textrank_summarize(&sentences, sentences.len())?;
-    let picked: Vec<usize> = textrank_summarize(&sentences, n)?
+    let all =
+        matra::summarize_with(doc, doc.sentences().count(), SummaryMethod::TextRank)?.sentences;
+    let picked: Vec<usize> = matra::summarize_with(doc, n, SummaryMethod::TextRank)?
+        .sentences
         .into_iter()
-        .map(|s| s.position)
+        .map(|s| s.index)
         .collect();
     // The paragraph each sentence came from, in the order doc.sentences()
     // yields them.
@@ -504,11 +506,11 @@ fn textrank_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
         .iter()
         .map(|s| {
             json!({
-                "position": s.position,
-                "paragraph": paragraph_of.get(s.position).copied(),
+                "position": s.index,
+                "paragraph": paragraph_of.get(s.index).copied(),
                 "text": s.text,
                 "score": round4(s.score),
-                "summary": picked.contains(&s.position),
+                "summary": picked.contains(&s.index),
             })
         })
         .collect();
@@ -516,8 +518,10 @@ fn textrank_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
 }
 
 /// Semantic clusters of the input's sentences at every threshold of the grid,
-/// each from `embed_and_cluster`, the call a caller makes. The figure's
-/// control snaps to these values; the browser never recomputes a cluster.
+/// each from `matra::clusters`, the call a caller makes. Each cluster is
+/// written with the edges between its members, read off the result's edge
+/// list. The figure's control snaps to these values; the browser never
+/// recomputes a cluster.
 #[cfg(feature = "model2vec")]
 fn clusters_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
     let embedder = input
@@ -527,24 +531,25 @@ fn clusters_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
     let mut grid = Vec::new();
     let mut default_on_grid = false;
     for step in CLUSTER_GRID {
-        let threshold = f32::from(step) / 20.0;
+        let threshold = f64::from(step) / 20.0;
         if (threshold - default).abs() < 1e-6 {
             default_on_grid = true;
         }
-        let result = matra::embed_and_cluster(input.doc, embedder, threshold)?;
+        let result = matra::clusters(input.doc, embedder, threshold)?;
         let clusters: Vec<Value> = result
             .clusters
             .iter()
             .map(|c| {
-                let edges: Vec<Value> = c
+                let edges: Vec<Value> = result
                     .edges
                     .iter()
-                    .map(|e| json!({ "a": e.a, "b": e.b, "score": round4(f64::from(e.score)) }))
+                    .filter(|e| c.members.contains(&e.a))
+                    .map(|e| json!({ "a": e.a, "b": e.b, "score": round4(e.score) }))
                     .collect();
                 json!({ "members": c.members, "edges": edges })
             })
             .collect();
-        grid.push(json!({ "threshold": round4(f64::from(threshold)), "clusters": clusters }));
+        grid.push(json!({ "threshold": round4(threshold), "clusters": clusters }));
     }
     if !default_on_grid {
         return Err(format!("the starting threshold {default} is not on the figure's grid").into());
@@ -556,7 +561,7 @@ fn clusters_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
         .map(|(i, s)| json!({ "index": i, "text": s.text }))
         .collect();
     Ok(json!({
-        "default_threshold": round4(f64::from(default)),
+        "default_threshold": round4(default),
         "grid": grid,
         "sentences": sentences,
     }))
@@ -567,16 +572,24 @@ fn clusters_figure(_: &Input) -> Result<Value, Box<dyn Error>> {
     Err("the clusters figure needs --features model2vec".into())
 }
 
-/// One document through the pipeline's stages, each the public call: the
-/// `Input` `Input::text` builds, then `Engine::annotate` (read and parse),
-/// then `Engine::compose` (the measures).
+/// One document through the pipeline's stages: the `Input` `Input::text`
+/// builds, then the document read and parsed, then measured.
+///
+/// The two stages are internal to the engine; `Engine::analyze` is the one
+/// public call, and it returns the measured document. The measuring stage
+/// writes only the metric records, which an equivalence law in `src/lib.rs`
+/// pins, so the read-and-parsed stage is the analysed document with its
+/// metric records empty.
 fn pipeline_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
     // The figure names `Input::text` as the first stage, so that is the
     // call.
     let raw = matra::Input::text(input.text.to_owned(), input.format.clone());
-    let annotated = input.engine.annotate(raw)?;
-    let mut composed = annotated.clone();
-    input.engine.compose(&mut composed);
+    let composed = input.engine.analyze(raw)?;
+    let mut annotated = composed.clone();
+    annotated.metrics = DocumentMetrics::default();
+    for paragraph in annotated.paragraphs_mut() {
+        paragraph.metrics = ParagraphMetrics::default();
+    }
     Ok(json!({
         "raw": {
             "format": format_name(&input.format),

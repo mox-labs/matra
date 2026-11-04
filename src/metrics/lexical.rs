@@ -5,7 +5,7 @@ use crate::stopwords::is_stop_word;
 
 /// Populate `ParagraphMetrics::lexical_density` for every non-empty,
 /// paragraph that is not a quote.
-pub fn compute(analysis: &mut Document) {
+pub(crate) fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
         if para.word_count() == 0 || para.kind == ParagraphKind::Quote {
             continue;

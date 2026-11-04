@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 
-use crate::domain::{Error, Keyphrase, Result, Sentence};
+use crate::domain::{Error, Keyphrase, Result, Sentence, Span};
 use crate::stopwords::is_stop_word;
 
 /// YAKE accumulates per-term position vectors, context-word sets, and
@@ -19,7 +19,8 @@ use crate::stopwords::is_stop_word;
 /// (not sentences) per Knuth's correction — same reasoning as RAKE.
 const MAX_TOKENS: usize = 200_000;
 
-/// Extract ranked keyphrases using YAKE.
+/// At most `n` keyphrases ranked by YAKE, each with every place it
+/// occurs.
 ///
 /// Scores individual terms by position, frequency, and context diversity,
 /// then combines into n-gram candidates (1-3 words). Returns top phrases
@@ -27,8 +28,8 @@ const MAX_TOKENS: usize = 200_000;
 ///
 /// Returns [`Error::InputTooLarge`] when the total token count across all
 /// input sentences exceeds the per-extractor `MAX_TOKENS` cap.
-pub fn yake_keyphrases(sentences: &[Sentence], max: usize) -> Result<Vec<Keyphrase>> {
-    if sentences.is_empty() || max == 0 {
+pub(super) fn keyphrases(sentences: &[&Sentence], n: usize) -> Result<Vec<Keyphrase>> {
+    if sentences.is_empty() || n == 0 {
         return Ok(Vec::new());
     }
     let total_tokens: usize = sentences.iter().map(|s| s.tokens.len()).sum();
@@ -118,51 +119,63 @@ pub fn yake_keyphrases(sentences: &[Sentence], max: usize) -> Result<Vec<Keyphra
         })
         .collect();
 
-    // Build n-gram candidates (1-3 words).
-    let mut candidates: HashMap<String, f64> = HashMap::new();
+    // Build n-gram candidates (1-3 words), in the order they are first
+    // met, with every window each one occurs in.
+    let mut candidates: Vec<(String, f64, Vec<Span>)> = Vec::new();
+    let mut slot: HashMap<String, usize> = HashMap::new();
 
     for sent in sentences {
-        let content: Vec<String> = sent
+        let content: Vec<(String, Span)> = sent
             .tokens
             .iter()
             .filter(|t| !t.is_punct)
-            .map(|t| t.lemma.to_lowercase())
-            .filter(|l| !is_stop_word(l) && l.len() > 1)
+            .map(|t| (t.lemma.to_lowercase(), t.span))
+            .filter(|(l, _)| !is_stop_word(l) && l.len() > 1)
             .collect();
 
         for window in 1..=3.min(content.len()) {
             for ngram in content.windows(window) {
-                let phrase = ngram.join(" ");
+                let phrase = ngram
+                    .iter()
+                    .map(|(lemma, _)| lemma.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 // N-gram score: product of individual term scores.
                 let score: f64 = ngram
                     .iter()
-                    .map(|w| term_scores.get(w.as_str()).copied().unwrap_or(f64::MAX))
+                    .map(|(w, _)| term_scores.get(w.as_str()).copied().unwrap_or(f64::MAX))
                     .product();
-                let entry = candidates.entry(phrase).or_insert(f64::MAX);
-                if score < *entry {
-                    *entry = score;
+                // A window spans its first word's start to its last
+                // word's end, stop words between them included.
+                let span = Span::new(ngram[0].1.start, ngram[ngram.len() - 1].1.end);
+                match slot.get(&phrase) {
+                    Some(&at) => {
+                        let entry = &mut candidates[at];
+                        if score < entry.1 {
+                            entry.1 = score;
+                        }
+                        entry.2.push(span);
+                    }
+                    None => {
+                        slot.insert(phrase.clone(), candidates.len());
+                        candidates.push((phrase, score.min(f64::MAX), vec![span]));
+                    }
                 }
             }
         }
     }
 
-    // Invert scores so higher = more relevant, then sort.
-    let mut ranked: Vec<Keyphrase> = candidates
+    // Invert scores so higher = more relevant, then rank.
+    let phrases: Vec<Keyphrase> = candidates
         .into_iter()
-        .filter(|(_, score)| *score > 0.0 && score.is_finite())
-        .map(|(phrase, score)| Keyphrase {
+        .filter(|(_, score, _)| *score > 0.0 && score.is_finite())
+        .map(|(phrase, score, occurrences)| Keyphrase {
             phrase,
             score: 1.0 / score,
+            occurrences,
         })
         .collect();
-
-    ranked.sort_by(|a, b| {
-        b.score
-            .partial_cmp(&a.score)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
-    ranked.truncate(max);
-    Ok(ranked)
+    Ok(super::rank_phrases(phrases, n))
 }
 
 #[cfg(test)]
@@ -191,15 +204,51 @@ mod tests {
         Sentence::new(text.to_string(), tokens)
     }
 
+    fn run(sentences: &[Sentence], n: usize) -> Result<Vec<Keyphrase>> {
+        keyphrases(&sentences.iter().collect::<Vec<_>>(), n)
+    }
+
+    /// Every occurrence of a phrase is reported, in document order, and a
+    /// window that passes over a stop word spans it.
+    #[test]
+    fn a_phrase_reports_every_occurrence() {
+        let text = "red data of red data";
+        let mut at = 0;
+        let tokens = text
+            .split(' ')
+            .enumerate()
+            .map(|(i, word)| {
+                let mut token = tok(i + 1, word, "NOUN");
+                token.span = Span::new(at, at + word.len());
+                at += word.len() + 1;
+                token
+            })
+            .collect();
+        let result = run(&[sent(text, tokens)], 20).unwrap();
+        let occurrences = |phrase: &str| {
+            result
+                .iter()
+                .find(|k| k.phrase == phrase)
+                .map(|k| k.occurrences.clone())
+                .unwrap_or_default()
+        };
+        assert_eq!(
+            occurrences("red data"),
+            [Span::new(0, 8), Span::new(12, 20)]
+        );
+        assert_eq!(occurrences("data red"), [Span::new(4, 15)]);
+        assert_eq!(&text[4..15], "data of red");
+    }
+
     #[test]
     fn empty_returns_empty() {
-        assert!(yake_keyphrases(&[], 5).unwrap().is_empty());
+        assert!(keyphrases(&[], 5).unwrap().is_empty());
     }
 
     #[test]
     fn max_zero_returns_empty() {
         let sentences = vec![sent("hello", vec![tok(1, "hello", "NOUN")])];
-        assert!(yake_keyphrases(&sentences, 0).unwrap().is_empty());
+        assert!(run(&sentences, 0).unwrap().is_empty());
     }
 
     #[test]
@@ -227,7 +276,7 @@ mod tests {
             ),
         ];
 
-        let result = yake_keyphrases(&sentences, 5).unwrap();
+        let result = run(&sentences, 5).unwrap();
         assert!(!result.is_empty());
         // "machine learning" should appear as a high-scoring phrase.
         let phrases: Vec<&str> = result.iter().map(|k| k.phrase.as_str()).collect();
@@ -251,7 +300,7 @@ mod tests {
             ],
         )];
 
-        let result = yake_keyphrases(&sentences, 5).unwrap();
+        let result = run(&sentences, 5).unwrap();
         for kp in &result {
             assert!(kp.score > 0.0, "score should be positive: {}", kp.score);
         }
@@ -286,7 +335,7 @@ mod tests {
             ),
         ];
 
-        let result = yake_keyphrases(&sentences, 3).unwrap();
+        let result = run(&sentences, 3).unwrap();
         // "system design" appears twice, should rank high.
         assert!(!result.is_empty());
         let top = &result[0];
@@ -304,7 +353,7 @@ mod tests {
             .map(|i| tok(i + 1, "x", "NOUN"))
             .collect();
         let sentences = vec![sent("x".repeat(MAX_TOKENS + 1).as_str(), tokens)];
-        match yake_keyphrases(&sentences, 5) {
+        match run(&sentences, 5) {
             Err(Error::InputTooLarge {
                 limit,
                 actual,

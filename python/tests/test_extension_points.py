@@ -79,20 +79,21 @@ def test_a_python_object_is_an_embedder(engine: Matra) -> None:
 
     # The embedder's own identity travels into the result, so the scores
     # cannot be attributed to a model that did not produce them.
-    assert result["identity"] == "fake-embedder-v1"
+    assert result["provenance"]["parameters"]["embedder"] == "fake-embedder-v1"
+    assert result["provenance"]["parameters"]["threshold"] == 0.9
+    assert result["provenance"]["method"] == "cosine"
     assert len(result["clusters"]) == 1
 
-    cluster = result["clusters"][0]
-    assert cluster["members"] == [0, 1]
-    assert len(cluster["edges"]) == 1
-    assert cluster["edges"][0]["score"] > 0.99
+    assert result["clusters"][0]["members"] == [0, 1]
+    assert len(result["edges"]) == 1
+    assert result["edges"][0]["score"] > 0.99
 
 
 @pytest.mark.model
 def test_wrong_vector_count_raises_the_same_message_a_rust_caller_gets(
     engine: Matra,
 ) -> None:
-    """The contract check lives in `embed_and_cluster`, once, for every
+    """The contract check lives in `matra::clusters`, once, for every
     implementor. A Python embedder is held to it identically, and reads
     the same sentence."""
     seen: list[int] = []

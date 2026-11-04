@@ -11,7 +11,17 @@ use crate::config::{Config, ValueSource};
 // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
 use crate::domain::{self, Document, Format, MAX_INPUT_BYTES, Sentence};
 // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
+use crate::{Engine, Input, Inputs, SummaryMethod, summarize_with};
+// ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
+use crate::{KeyphraseMethod, keyphrases, keyphrases_with, summarize, clusters};
+// ruleid: boundary-rule7-cli-imports
 use crate::{Engine, Input, Inputs, extraction::tfidf_summarize};
+// ruleid: boundary-rule7-cli-imports
+use crate::metrics::default_suite;
+// ruleid: boundary-rule7-cli-imports
+use crate::hearst;
+// ruleid: boundary-rule7-cli-imports
+use crate::summarize_text;
 // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
 use crate::Block;
 // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
@@ -62,7 +72,13 @@ use super::{config::Config, source};
 
 fn build_engine(cfg: &Config) -> domain::Result<crate::Engine> {
     // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
-    let s = crate::extraction::tfidf_summarize(&sentences, n)?;
+    let s = crate::summarize_with(&doc, n, crate::SummaryMethod::TfIdf)?;
+    // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
+    let k = crate::keyphrases_with(&doc, n, crate::KeyphraseMethod::Rake)?;
+    // ruleid: boundary-rule7-cli-imports
+    let t = crate::extraction::tfidf_summarize(&sentences, n)?;
+    // ruleid: boundary-rule7-cli-root-super
+    let r = super::extraction::rake_keyphrases(&sentences, n)?;
     // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
     let e = crate::domain::Error::Io(std::io::Error::other("x"));
     // ruleid: boundary-rule7-cli-imports

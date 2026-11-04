@@ -4,7 +4,7 @@
 
 use std::io::Write;
 
-use crate::domain::{Document, Keyphrase, ScoredSentence};
+use crate::domain::{Document, Keyphrases, Summary};
 
 use super::Fallible;
 
@@ -104,15 +104,15 @@ pub(super) fn sections(out: &mut dyn Write, doc: &Document) -> Fallible<()> {
     Ok(())
 }
 
-pub(super) fn sentences(out: &mut dyn Write, picked: &[ScoredSentence]) -> Fallible<()> {
-    for s in picked {
+pub(super) fn sentences(out: &mut dyn Write, summary: &Summary) -> Fallible<()> {
+    for s in &summary.sentences {
         writeln!(out, "{:.3}  {}", s.score, s.text)?;
     }
     Ok(())
 }
 
-pub(super) fn phrases(out: &mut dyn Write, phrases: &[Keyphrase]) -> Fallible<()> {
-    for p in phrases {
+pub(super) fn phrases(out: &mut dyn Write, found: &Keyphrases) -> Fallible<()> {
+    for p in &found.phrases {
         writeln!(out, "{:.3}  {}", p.score, p.phrase)?;
     }
     Ok(())

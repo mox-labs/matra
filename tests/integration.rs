@@ -1,20 +1,15 @@
-//! Integration test. Requires UDPipe English model at /tmp/matra-models/.
+//! Integration test through the public surface. Requires the UDPipe
+//! English model, which `Engine::new` downloads into the resolved model
+//! directory on first use (`MATRA_MODEL_DIR` names one).
 //! Run with: cargo test --test integration -- --ignored
 
 #[cfg(feature = "udpipe")]
 mod with_model {
     use matra::domain::{Document, Format};
-    use matra::nlp::NlpProvider;
-    use matra::nlp::udpipe::Udpipe;
     use matra::{Engine, Input};
 
-    fn model() -> Udpipe {
-        Udpipe::from_path("/tmp/matra-models/english-ewt-ud-2.5-191206.udpipe")
-            .expect("UDPipe model not found. Download to /tmp/matra-models/")
-    }
-
     fn engine() -> Engine {
-        Engine::new(Box::new(model()))
+        Engine::new().expect("the UDPipe model loads")
     }
 
     fn analyze(text: &str, format: Format) -> Document {
@@ -22,7 +17,7 @@ mod with_model {
     }
 
     #[test]
-    #[ignore] // requires model file
+    #[ignore] // requires the model
     fn full_pipeline_plain_text() {
         let analysis = analyze(
             "The cat sat on the mat. The dog chased the cat quickly.",
@@ -55,12 +50,9 @@ mod with_model {
 
     #[test]
     #[ignore]
-    fn nlp_parse_produces_pos_and_deps() {
-        let nlp = model();
-        let sentences = nlp.parse("Engineers build systems.").unwrap();
-
-        assert!(!sentences.is_empty());
-        let tokens = &sentences[0].tokens;
+    fn the_parse_carries_pos_and_deps() {
+        let analysis = analyze("Engineers build systems.", Format::PlainText);
+        let tokens = &analysis.sentences().next().expect("a sentence").tokens;
 
         let engineers = tokens.iter().find(|t| t.text == "Engineers").unwrap();
         assert_eq!(engineers.pos, "NOUN");
@@ -95,12 +87,20 @@ mod with_model {
         assert!(has_ratio, "long paragraph should have compression ratio");
     }
 
+    /// The outcome functions read the analysed document and need no
+    /// engine: a summary and keyphrases of a real parse.
     #[test]
     #[ignore]
-    fn error_on_missing_model() {
-        let result = Udpipe::from_path("/nonexistent/model.udpipe");
-        assert!(result.is_err());
-        let err = result.unwrap_err();
-        assert!(matches!(err, matra::domain::Error::ModelNotFound(_)));
+    fn outcomes_over_a_real_parse() {
+        let analysis = analyze(
+            "Rivers carry silt to the sea. The silt builds a delta. A delta needs silt.",
+            Format::PlainText,
+        );
+        let summary = matra::summarize(&analysis, 2).unwrap();
+        assert_eq!(summary.sentences.len(), 2);
+        assert_eq!(summary.provenance.method.as_deref(), Some("tfidf"));
+        let phrases = matra::keyphrases(&analysis, 5).unwrap();
+        assert!(phrases.phrases.iter().any(|p| p.phrase.contains("silt")));
+        assert_eq!(phrases.provenance.method.as_deref(), Some("rake"));
     }
 }

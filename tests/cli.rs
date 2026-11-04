@@ -547,7 +547,7 @@ fn the_result_is_the_domain_value_unchanged() {
         result["sections"][0]["paragraphs"][0]["sentences"][0]["tokens"][0]["lemma"].is_string(),
         "token lemma reachable at the documented path"
     );
-    document_schema::assert_valid_document(result, "analyze --json");
+    document_schema::assert_valid("document", result, "analyze --json");
 }
 
 /// The shared CLI fixture, run through the Rust launcher. The Python
@@ -607,7 +607,7 @@ fn envelope_matches_the_conformance_fixture() {
         got["result"]["metrics"]["total_sentences"],
         expect["result_sentences"]
     );
-    document_schema::assert_valid_document(&got["result"], "the envelope fixture");
+    document_schema::assert_valid("document", &got["result"], "the envelope fixture");
 
     let sections = got["result"]["sections"].as_array().expect("sections");
     assert_eq!(serde_json::json!(sections.len()), expect["result_sections"]);

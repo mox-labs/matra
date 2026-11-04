@@ -4,7 +4,7 @@ use crate::domain::{Document, ParagraphKind};
 
 /// Populate `ParagraphMetrics::readability_grade` for every paragraph with
 /// more than 10 whitespace-counted words that is not a quote.
-pub fn compute(analysis: &mut Document) {
+pub(crate) fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
         if para.word_count() > 10 && para.kind != ParagraphKind::Quote {
             para.metrics.readability_grade = Some(flesch_kincaid_grade(&para.text));
@@ -14,7 +14,7 @@ pub fn compute(analysis: &mut Document) {
 
 /// Flesch-Kincaid grade level. Uses raw whitespace splitting per the
 /// formula's original specification, not NLP token counts.
-pub fn flesch_kincaid_grade(text: &str) -> f64 {
+pub(crate) fn flesch_kincaid_grade(text: &str) -> f64 {
     let words: Vec<&str> = text.split_whitespace().collect();
     let n = words.len() as f64;
     if n == 0.0 {

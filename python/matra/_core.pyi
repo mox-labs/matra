@@ -19,12 +19,13 @@ from collections.abc import Sequence
 from typing import final
 
 from matra.types import (
+    Clusters,
     CorpusItem,
     Document,
     Embedder,
-    Keyphrase,
-    ScoredSentence,
-    SemanticClusters,
+    Keyphrases,
+    Summary,
+    VectorClusters,
 )
 
 __all__ = ["Matra", "Model2Vec", "cli_main", "semantic_clusters"]
@@ -105,8 +106,10 @@ class Matra:
         """
         ...
 
-    def tfidf_summarize(self, text: str, n: int) -> list[ScoredSentence]:
-        """TF-IDF extractive summary. Returns the top-`n` sentences.
+    def tfidf_summarize(self, text: str, n: int) -> Summary:
+        """TF-IDF extractive summary of the top `n` sentences, in document
+        order, with the method and `n` recorded in its provenance. The
+        text is read as plain text.
 
         Raises:
             ValueError: input exceeds the size cap (8 MiB) or the
@@ -115,8 +118,10 @@ class Matra:
         """
         ...
 
-    def textrank_summarize(self, text: str, n: int) -> list[ScoredSentence]:
-        """TextRank extractive summary. Returns the top-`n` sentences.
+    def textrank_summarize(self, text: str, n: int) -> Summary:
+        """TextRank extractive summary of the top `n` sentences, in
+        document order, with the method and `n` recorded in its
+        provenance. The text is read as plain text.
 
         Raises:
             ValueError: input exceeds the size cap (8 MiB) or the
@@ -125,8 +130,10 @@ class Matra:
         """
         ...
 
-    def rake_keyphrases(self, text: str, max_phrases: int) -> list[Keyphrase]:
-        """RAKE keyphrase extraction. Returns up to `max_phrases` ranked phrases.
+    def rake_keyphrases(self, text: str, max_phrases: int) -> Keyphrases:
+        """RAKE keyphrase extraction: up to `max_phrases` ranked phrases,
+        each with every place it occurs, and the method and `n` recorded
+        in the provenance. The text is read as plain text.
 
         Raises:
             ValueError: input exceeds the size cap (8 MiB) or the
@@ -135,8 +142,10 @@ class Matra:
         """
         ...
 
-    def yake_keyphrases(self, text: str, max_phrases: int) -> list[Keyphrase]:
-        """YAKE keyphrase extraction. Returns up to `max_phrases` ranked phrases.
+    def yake_keyphrases(self, text: str, max_phrases: int) -> Keyphrases:
+        """YAKE keyphrase extraction: up to `max_phrases` ranked phrases,
+        each with every place it occurs, and the method and `n` recorded
+        in the provenance. The text is read as plain text.
 
         Raises:
             ValueError: input exceeds the size cap (8 MiB) or the
@@ -145,7 +154,7 @@ class Matra:
         """
         ...
 
-    def semantic_clusters(self, text: str, threshold: float, model: Embedder) -> SemanticClusters:
+    def semantic_clusters(self, text: str, threshold: float, model: Embedder) -> Clusters:
         """Parse plain text, embed its sentences, cluster at `threshold`.
 
         `model` is any object satisfying the `Embedder` protocol: two
@@ -156,8 +165,9 @@ class Matra:
         parsed.
 
         Tier 2 output: the clusters reflect `model`'s geometry, and the
-        result carries its identity. See `matra.types.SemanticClusters`
-        for what co-membership does and does not mean.
+        result's provenance records its identity and the threshold. See
+        `matra.types.Clusters` for what co-membership does and does not
+        mean.
 
         Raises:
             ValueError: input exceeds the size cap (8 MiB), the sentence
@@ -298,13 +308,14 @@ def cli_main(argv: Sequence[str | bytes | os.PathLike[str] | os.PathLike[bytes]]
 
 def semantic_clusters(
     embeddings: list[list[float]], threshold: float, model_hash: str
-) -> SemanticClusters:
+) -> VectorClusters:
     """Cluster caller-supplied embedding vectors at `threshold`.
 
     The vectors-in twin of `Matra.semantic_clusters` for consumers who
     already hold embeddings; indices in the result are positions in
-    `embeddings`, and the scores are attributed to `model_hash`, which
-    the result carries as `identity`.
+    `embeddings`. No document is read, so the result has no provenance:
+    it carries the threshold and `model_hash`, as `embedder`, in
+    `parameters`.
 
     Raises:
         ValueError: vectors disagree on dimension, contain a non-finite

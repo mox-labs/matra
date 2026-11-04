@@ -4,7 +4,7 @@
 //! live in domain.rs. Adapters live in submodules behind feature flags.
 
 #[cfg(feature = "udpipe")]
-pub mod udpipe;
+pub(crate) mod udpipe;
 
 use crate::domain;
 
@@ -50,7 +50,7 @@ use crate::domain;
 /// `Engine::annotate` applies [`domain::MAX_INPUT_BYTES`] before any text
 /// reaches a provider; a caller invoking `parse` directly bypasses that
 /// bound and should validate size itself.
-pub trait NlpProvider: Send {
+pub(crate) trait NlpProvider: Send {
     /// Parse text into sentences with POS tags and dependency labels,
     /// satisfying the contract above.
     fn parse(&self, text: &str) -> domain::Result<Vec<domain::Sentence>>;

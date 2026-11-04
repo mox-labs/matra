@@ -12,10 +12,10 @@
 //! - [`compression`]  — brotli compression ratio per paragraph
 //! - [`document`]     — the document metric record: counts, sentence length, TTR, nominalization, passive ratio
 
-pub mod compression;
-pub mod document;
-pub mod lexical;
-pub mod readability;
+pub(crate) mod compression;
+pub(crate) mod document;
+pub(crate) mod lexical;
+pub(crate) mod readability;
 
 use crate::domain::Document;
 
@@ -28,7 +28,7 @@ use crate::domain::Document;
 /// slice plus the paragraph attachment) with nothing enforcing
 /// agreement, which is how `analyze_from` shipped half-populated
 /// documents.
-pub type Metric = Box<dyn Fn(&mut Document)>;
+pub(crate) type Metric = Box<dyn Fn(&mut Document)>;
 
 /// Default metric suite.
 ///
@@ -40,7 +40,7 @@ pub type Metric = Box<dyn Fn(&mut Document)>;
 /// `paragraph.sentences`, which the composition root populates by parsing
 /// each paragraph individually. Document-level metrics aggregate over
 /// the same attachment via [`Document::sentences`].
-pub fn default_suite() -> Vec<Metric> {
+pub(crate) fn default_suite() -> Vec<Metric> {
     vec![
         Box::new(readability::compute),
         Box::new(lexical::compute),
@@ -50,7 +50,7 @@ pub fn default_suite() -> Vec<Metric> {
 }
 
 /// Run every metric in the suite, in order.
-pub fn run_suite(analysis: &mut Document, suite: &[Metric]) {
+pub(crate) fn run_suite(analysis: &mut Document, suite: &[Metric]) {
     for metric in suite {
         metric(analysis);
     }

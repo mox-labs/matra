@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from document_schema import assert_valid_document
+from document_schema import assert_valid
 
 cli_main = pytest.importorskip("matra._core", reason="matra wheel not built").cli_main
 
@@ -133,7 +133,7 @@ def test_envelope_matches_the_conformance_fixture(
     assert got["result"]["provenance"]["schema"] == expect["schema"]
     assert got["result"]["provenance"]["format"] == expect["format"]
     assert got["result"]["metrics"]["total_sentences"] == expect["result_sentences"]
-    assert_valid_document(got["result"], "the envelope fixture")
+    assert_valid("document", got["result"], "the envelope fixture")
     sections = got["result"]["sections"]
     assert len(sections) == expect["result_sections"]
     sentences = sum(

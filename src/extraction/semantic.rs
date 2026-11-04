@@ -1,29 +1,30 @@
 //! Semantic-equivalence clustering over precomputed sentence embeddings.
 //!
 //! A pure function over domain values (rule 5): it never calls the embed
-//! port. Whoever holds both the `Document` and an `Embedder` runs one,
-//! then the other; the composition root owns that pairing. Everything
-//! here is a total computation over the vectors it is handed.
+//! port. The composition root's `matra::clusters` embeds a document's
+//! sentences, then calls [`cluster`] here; everything here is a total
+//! computation over the vectors it is handed.
 
-use crate::domain::{Embedding, Error, Result, SemanticCluster, SemanticClusters, SemanticEdge};
+use crate::domain::{Cluster, Embedding, Error, Result, SimilarityEdge};
 
 // The O(n^2) cap: literally TextRank's bound, not a copy of it, so the
 // two cannot drift apart.
 use super::textrank::MAX_SENTENCES;
 
-/// Cluster texts whose embedding cosine similarity clears `threshold`.
+/// Cluster texts whose embedding cosine similarity is at least
+/// `threshold`, returning the clusters and every edge that cleared it.
 ///
 /// Indices in the result are positions in `embeddings`; the caller knows
-/// what each vector stands for (the composition root's
-/// `embed_and_cluster` pairs them with a document's sentences and
-/// validates the correspondence before calling here).
+/// what each vector stands for (`matra::clusters` pairs them with a
+/// document's sentences and validates the correspondence before calling
+/// here).
 ///
-/// Clusters are connected components of the above-threshold graph, with
-/// the clearing edges reported alongside the members (see
-/// [`SemanticClusters`] for what co-membership does and does not mean).
-/// `identity` is the identity of the model that produced `embeddings`,
-/// as the embed adapter reports it; it travels into the result so the
-/// scores stay attributable to a geometry.
+/// Clusters are connected components of the above-threshold graph (see
+/// [`crate::domain::Clusters`] for what co-membership does and does not
+/// mean), ordered by their smallest member; members are ascending, and
+/// edges are ordered by `a`, then `b`. Similarity is computed in the
+/// vectors' own `f32` and widened to `f64` for the comparison and the
+/// result.
 ///
 /// A zero-magnitude embedding (an empty sentence embeds to zero) has no
 /// defined cosine with anything, so it gets no edges and lands in no
@@ -33,13 +34,11 @@ use super::textrank::MAX_SENTENCES;
 ///
 /// [`Error::InvalidInput`] when the embeddings disagree on dimension,
 /// contain a non-finite value, or when `threshold` is not finite.
-/// [`Error::InputTooLarge`] (what = `"semantic_clusters"`) past the
-/// O(n^2) cap.
-pub fn semantic_clusters(
+/// [`Error::InputTooLarge`] (what = `"clusters"`) past the O(n^2) cap.
+pub(crate) fn cluster(
     embeddings: &[Embedding],
-    threshold: f32,
-    identity: &str,
-) -> Result<SemanticClusters> {
+    threshold: f64,
+) -> Result<(Vec<Cluster>, Vec<SimilarityEdge>)> {
     if !threshold.is_finite() {
         return Err(Error::InvalidInput(format!(
             "threshold must be finite, got {threshold}"
@@ -49,7 +48,7 @@ pub fn semantic_clusters(
         return Err(Error::InputTooLarge {
             limit: MAX_SENTENCES,
             actual: embeddings.len(),
-            what: "semantic_clusters",
+            what: "clusters",
         });
     }
     let dim = embeddings.first().map_or(0, |e| e.0.len());
@@ -87,7 +86,8 @@ pub fn semantic_clusters(
         }
         x
     }
-    let mut edges: Vec<SemanticEdge> = Vec::new();
+    // Generated in (a, b) order, which is the order the result carries.
+    let mut edges: Vec<SimilarityEdge> = Vec::new();
     for a in 0..n {
         if norms[a] == 0.0 {
             continue;
@@ -102,9 +102,9 @@ pub fn semantic_clusters(
                 .zip(&embeddings[b].0)
                 .map(|(x, y)| x * y)
                 .sum();
-            let score = dot / (norms[a] * norms[b]);
+            let score = f64::from(dot / (norms[a] * norms[b]));
             if score >= threshold {
-                edges.push(SemanticEdge { a, b, score });
+                edges.push(SimilarityEdge::new(a, b, score));
                 let (ra, rb) = (find(&mut parent, a), find(&mut parent, b));
                 if ra != rb {
                     parent[rb] = ra;
@@ -115,7 +115,7 @@ pub fn semantic_clusters(
 
     // Group members by component root; only sentences with an edge are
     // in a component of size > 1, so singletons fall out naturally.
-    let mut clusters: Vec<SemanticCluster> = Vec::new();
+    let mut members: Vec<Vec<usize>> = Vec::new();
     let mut root_to_cluster: Vec<Option<usize>> = vec![None; n];
     for i in 0..n {
         let root = find(&mut parent, i);
@@ -125,33 +125,19 @@ pub fn semantic_clusters(
         let slot = match root_to_cluster[root] {
             Some(s) => s,
             None => {
-                clusters.push(SemanticCluster {
-                    members: vec![root],
-                    edges: Vec::new(),
-                });
-                root_to_cluster[root] = Some(clusters.len() - 1);
-                clusters.len() - 1
+                members.push(vec![root]);
+                root_to_cluster[root] = Some(members.len() - 1);
+                members.len() - 1
             }
         };
-        clusters[slot].members.push(i);
+        members[slot].push(i);
     }
-    for edge in edges {
-        let root = find(&mut parent, edge.a);
-        if let Some(slot) = root_to_cluster[root] {
-            clusters[slot].edges.push(edge);
-        }
+    for cluster in &mut members {
+        cluster.sort_unstable();
     }
-    for cluster in &mut clusters {
-        cluster.members.sort_unstable();
-        cluster.edges.sort_unstable_by_key(|e| (e.a, e.b));
-    }
-    clusters.sort_unstable_by_key(|c| c.members[0]);
+    members.sort_unstable_by_key(|m| m[0]);
 
-    Ok(SemanticClusters {
-        identity: identity.to_string(),
-        threshold,
-        clusters,
-    })
+    Ok((members.into_iter().map(Cluster::new).collect(), edges))
 }
 
 #[cfg(test)]
@@ -164,7 +150,7 @@ mod tests {
 
     #[test]
     fn chained_similarity_is_one_component_without_the_far_edge() {
-        // a ~ b and b ~ c clear 0.9; a ~ c does not. One cluster of
+        // a ~ b and b ~ c clear 0.92; a ~ c does not. One cluster of
         // three, exactly two edges, the far pair absent.
         let f = std::f32::consts::FRAC_1_SQRT_2;
         let emb = [
@@ -172,11 +158,10 @@ mod tests {
             e(&[0.9239, 0.3827]), // ~cos 22.5 deg from a
             e(&[f, f]),           // cos 45 deg from a, ~22.5 from b
         ];
-        let out = semantic_clusters(&emb, 0.92, "h").unwrap();
-        assert_eq!(out.clusters.len(), 1);
-        let c = &out.clusters[0];
-        assert_eq!(c.members, vec![0, 1, 2]);
-        let pairs: Vec<(usize, usize)> = c.edges.iter().map(|e| (e.a, e.b)).collect();
+        let (clusters, edges) = cluster(&emb, 0.92).unwrap();
+        assert_eq!(clusters.len(), 1);
+        assert_eq!(clusters[0].members, vec![0, 1, 2]);
+        let pairs: Vec<(usize, usize)> = edges.iter().map(|e| (e.a, e.b)).collect();
         assert_eq!(pairs, vec![(0, 1), (1, 2)]);
     }
 
@@ -189,27 +174,30 @@ mod tests {
             e(&[0.0, 1.0]),
             e(&[-1.0, 0.0]),
         ];
-        let out = semantic_clusters(&emb, 0.99, "h").unwrap();
+        let threshold = 0.99;
+        let (clusters, edges) = cluster(&emb, threshold).unwrap();
         // Two clusters; index 4 is a singleton and appears nowhere.
-        assert_eq!(out.clusters.len(), 2);
+        assert_eq!(clusters.len(), 2);
         let mut seen = std::collections::HashSet::new();
-        for c in &out.clusters {
+        for c in &clusters {
             for &m in &c.members {
                 assert!(seen.insert(m), "member {m} in two clusters");
             }
-            for edge in &c.edges {
-                assert!(edge.score >= out.threshold);
+            let own: Vec<&SimilarityEdge> =
+                edges.iter().filter(|e| c.members.contains(&e.a)).collect();
+            for edge in &own {
+                assert!(edge.score >= threshold);
                 assert!(edge.a < edge.b);
-                assert!(c.members.contains(&edge.a) && c.members.contains(&edge.b));
+                assert!(c.members.contains(&edge.b), "an edge leaves its cluster");
             }
             // membership = transitive closure of the reported edges:
             // every member is REACHABLE from members[0] over the
-            // cluster's own edge list, not merely incident to some edge.
+            // cluster's own edges, not merely incident to some edge.
             let mut reach = std::collections::HashSet::from([c.members[0]]);
             let mut grew = true;
             while grew {
                 grew = false;
-                for edge in &c.edges {
+                for edge in &own {
                     if reach.contains(&edge.a) && reach.insert(edge.b) {
                         grew = true;
                     }
@@ -226,26 +214,31 @@ mod tests {
             }
         }
         assert!(!seen.contains(&4), "singleton clustered");
+        let order: Vec<(usize, usize)> = edges.iter().map(|e| (e.a, e.b)).collect();
+        let mut sorted = order.clone();
+        sorted.sort_unstable();
+        assert_eq!(order, sorted, "edges are ordered by a, then b");
     }
 
     #[test]
     fn empty_input_yields_empty_clusters_not_an_error() {
-        let out = semantic_clusters(&[], 0.8, "h").unwrap();
-        assert!(out.clusters.is_empty());
-        assert_eq!(out.identity, "h");
+        let (clusters, edges) = cluster(&[], 0.8).unwrap();
+        assert!(clusters.is_empty());
+        assert!(edges.is_empty());
     }
 
     #[test]
     fn zero_norm_embeddings_get_no_edges_even_at_threshold_zero() {
         let emb = [e(&[0.0, 0.0]), e(&[0.0, 0.0]), e(&[1.0, 0.0])];
-        let out = semantic_clusters(&emb, 0.0, "h").unwrap();
-        assert!(out.clusters.is_empty());
+        let (clusters, edges) = cluster(&emb, 0.0).unwrap();
+        assert!(clusters.is_empty());
+        assert!(edges.is_empty());
     }
 
     #[test]
     fn dimension_disagreement_is_invalid_input() {
         let emb = [e(&[1.0, 0.0]), e(&[1.0, 0.0, 0.0])];
-        match semantic_clusters(&emb, 0.8, "h") {
+        match cluster(&emb, 0.8) {
             Err(Error::InvalidInput(msg)) => assert!(msg.contains("dimension")),
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
@@ -254,7 +247,7 @@ mod tests {
     #[test]
     fn non_finite_embedding_value_is_invalid_input() {
         let emb = [e(&[1.0, 0.0]), e(&[f32::NAN, 0.0])];
-        match semantic_clusters(&emb, 0.8, "h") {
+        match cluster(&emb, 0.8) {
             Err(Error::InvalidInput(msg)) => assert!(msg.contains("non-finite")),
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
@@ -262,7 +255,7 @@ mod tests {
 
     #[test]
     fn non_finite_threshold_is_invalid_input() {
-        match semantic_clusters(&[], f32::NAN, "h") {
+        match cluster(&[], f64::NAN) {
             Err(Error::InvalidInput(msg)) => assert!(msg.contains("finite")),
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
@@ -272,8 +265,8 @@ mod tests {
     fn sentence_cap_is_enforced_with_its_own_label() {
         let n = MAX_SENTENCES + 1;
         let emb: Vec<Embedding> = (0..n).map(|_| e(&[1.0])).collect();
-        match semantic_clusters(&emb, 0.9, "h") {
-            Err(Error::InputTooLarge { what, .. }) => assert_eq!(what, "semantic_clusters"),
+        match cluster(&emb, 0.9) {
+            Err(Error::InputTooLarge { what, .. }) => assert_eq!(what, "clusters"),
             other => panic!("expected InputTooLarge, got {:?}", other.map(|_| ())),
         }
     }
@@ -286,8 +279,8 @@ mod tests {
             e(&[0.0, 1.0]),
             e(&[1.0, 0.0]),
         ];
-        let out = semantic_clusters(&emb, 0.99, "h").unwrap();
-        assert_eq!(out.clusters[0].members, vec![0, 2]);
-        assert_eq!(out.clusters[1].members, vec![1, 3]);
+        let (clusters, _) = cluster(&emb, 0.99).unwrap();
+        assert_eq!(clusters[0].members, vec![0, 2]);
+        assert_eq!(clusters[1].members, vec![1, 3]);
     }
 }

@@ -116,7 +116,7 @@ const PARSER_NAME: &str = "udpipe";
 
 /// UDPipe adapter. Validated at construction: if the model is invalid,
 /// construction fails. After construction, parse calls are trusted.
-pub struct Udpipe {
+pub(crate) struct Udpipe {
     model: Model,
     /// Derived once, from the loaded bytes, at construction.
     identity: Identity,
@@ -133,7 +133,11 @@ impl Udpipe {
     ///
     /// The file is read once and loaded from those bytes, so the digest
     /// in [`NlpProvider::identity`] is of exactly what was loaded.
-    pub fn from_path(path: impl AsRef<Path>) -> crate::domain::Result<Self> {
+    ///
+    /// The Python binding's `Matra.from_path` is its one caller: the Rust
+    /// surface loads only the pinned model.
+    #[cfg(any(feature = "python", test))]
+    pub(crate) fn from_path(path: impl AsRef<Path>) -> crate::domain::Result<Self> {
         let path = path.as_ref();
         if !path.exists() {
             return Err(Error::ModelNotFound(path.to_path_buf()));
@@ -147,7 +151,7 @@ impl Udpipe {
     /// The identity is derived from the bytes: their SHA-256 always, and
     /// the model's name and licence when the digest is the pinned
     /// model's. A model matra does not pin reports `None` for both.
-    pub fn from_bytes(data: &[u8]) -> crate::domain::Result<Self> {
+    pub(crate) fn from_bytes(data: &[u8]) -> crate::domain::Result<Self> {
         let model =
             Model::load_from_memory(data).map_err(|e| Error::ModelInvalid(e.to_string()))?;
         Ok(Self {
@@ -204,7 +208,7 @@ impl Udpipe {
     /// [`MAX_MODEL_BYTES`](self). [`Error::ModelInvalid`] if two
     /// downloads in a row fail the digest, or if the verified bytes do not
     /// load.
-    pub fn english(model_dir: impl AsRef<Path>) -> crate::domain::Result<Self> {
+    pub(crate) fn english(model_dir: impl AsRef<Path>) -> crate::domain::Result<Self> {
         Self::english_with_notice(model_dir, |_| {})
     }
 
@@ -214,22 +218,13 @@ impl Udpipe {
     /// The first run downloads 16 MB from a university server in Prague.
     /// Measured cold starts ran from 3 to 35 seconds with nothing on
     /// screen, which reads as a hung process. The library renders
-    /// nothing itself, so this is the seam a caller renders through.
-    ///
-    /// ```no_run
-    /// use matra::nlp::udpipe::Udpipe;
-    ///
-    /// let cfg = matra::config::Config::resolve()?;
-    /// let nlp = Udpipe::english_with_notice(cfg.model_dir(), |n| {
-    ///     eprintln!("fetching {} ({} bytes)", n.artifact, n.bytes);
-    /// })?;
-    /// # Ok::<(), matra::domain::Error>(())
-    /// ```
+    /// nothing itself, so this is the seam a caller renders through,
+    /// reached from outside the crate as `Engine::from_config_with_notice`.
     ///
     /// # Errors
     ///
     /// Whatever [`Udpipe::english`] returns.
-    pub fn english_with_notice(
+    pub(crate) fn english_with_notice(
         model_dir: impl AsRef<Path>,
         mut notice: impl FnMut(&ProvisionNotice),
     ) -> crate::domain::Result<Self> {
@@ -242,44 +237,24 @@ impl Udpipe {
         Self::from_bytes(&bytes)
     }
 
-    /// [`Udpipe::english`] over the model directory a [`Config`] resolved.
-    ///
-    /// Additive: the explicit-directory constructors are unchanged, and
-    /// this one exists so a caller who has no opinion about where models
-    /// live does not have to invent one.
-    ///
-    /// ```no_run
-    /// use matra::nlp::udpipe::Udpipe;
-    ///
-    /// let cfg = matra::config::Config::resolve()?;
-    /// let nlp = Udpipe::from_config(&cfg)?;
-    /// # Ok::<(), matra::domain::Error>(())
-    /// ```
+    /// [`Udpipe::english`] over the model directory a [`Config`] resolved:
+    /// what `Engine::new` and `Engine::from_config` wire.
     ///
     /// # Errors
     ///
     /// Whatever [`Udpipe::english`] returns.
-    pub fn from_config(cfg: &Config) -> crate::domain::Result<Self> {
+    pub(crate) fn from_config(cfg: &Config) -> crate::domain::Result<Self> {
         Self::english(cfg.model_dir())
     }
 
     /// [`Udpipe::from_config`] with the say-so
-    /// [`Udpipe::english_with_notice`] takes.
-    ///
-    /// ```no_run
-    /// use matra::nlp::udpipe::Udpipe;
-    ///
-    /// let cfg = matra::config::Config::resolve()?;
-    /// let nlp = Udpipe::from_config_with_notice(&cfg, |n| {
-    ///     eprintln!("fetching {} ({} bytes)", n.artifact, n.bytes);
-    /// })?;
-    /// # Ok::<(), matra::domain::Error>(())
-    /// ```
+    /// [`Udpipe::english_with_notice`] takes: what
+    /// `Engine::from_config_with_notice` wires.
     ///
     /// # Errors
     ///
     /// Whatever [`Udpipe::english`] returns.
-    pub fn from_config_with_notice(
+    pub(crate) fn from_config_with_notice(
         cfg: &Config,
         notice: impl FnMut(&ProvisionNotice),
     ) -> crate::domain::Result<Self> {
@@ -877,6 +852,15 @@ fn locate(text: &str, cursor: usize, form: &str) -> Option<(usize, usize)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_missing_model_file_is_model_not_found() {
+        let missing = Path::new("/nonexistent/model.udpipe");
+        match Udpipe::from_path(missing) {
+            Err(Error::ModelNotFound(path)) => assert_eq!(path, missing),
+            other => panic!("expected ModelNotFound, got {:?}", other.map(|_| ())),
+        }
+    }
 
     #[test]
     fn locate_skips_leading_whitespace_and_matches_exactly() {
