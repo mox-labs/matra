@@ -18,7 +18,7 @@ For the Rust library and the CLI, and for the Python package on a platform with 
 | Arch | `pacman -S base-devel` |
 | macOS | `xcode-select --install` |
 
-For the Python package, use Python 3.12 or later (check with `python --version`). [Python wheels](../reference/platforms.md#python-wheels) lists the platforms with a prebuilt wheel; on any other, and on a free-threaded interpreter, `pip` builds from source and needs the Rust toolchain and the C++ compiler above.
+For the Python package, use Python 3.12 or later (check with `python3 --version`, or `python --version` inside an activated virtual environment; stock macOS has only `python3`). [Python wheels](../reference/platforms.md#python-wheels) lists the platforms with a prebuilt wheel; on any other, and on a free-threaded interpreter, `pip` builds from source and needs the Rust toolchain and the C++ compiler above.
 
 ---
 
@@ -28,7 +28,7 @@ For the Python package, use Python 3.12 or later (check with `python --version`)
 cargo add matra@0.3
 ```
 
-The default features include `udpipe`, so `matra::nlp::udpipe::Udpipe` is available without a feature flag.
+The default features include `udpipe`, so `matra::Engine::new()` builds the pinned UDPipe parser without a feature flag. The parser itself is private to the crate: you reach it through `Engine`.
 
 ---
 
@@ -113,7 +113,7 @@ sections: 1
 vocabulary_ttr: 0.8571428571428571
 ```
 
-That first run fetches the model from a university server in Prague and prints nothing while it does. Cold starts measured on a fast connection ranged from 3 to 35 seconds; on a slow network it takes longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
+That first run fetches the model from a university server in Prague, and before it does, `matra.Engine()` writes two lines to standard error: what is downloading, its size and where to, then the model's licence. They are the lines the command line prints for the same download. Cold starts measured on a fast connection ranged from 3 to 35 seconds; on a slow network it takes longer, and the call is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
 
 If `matra.Engine()` raises `OSError` (a `matra.IoError`), either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path, as `details["url"]` or `details["path"]` do. Check your network connection first; then run `matra config show` to see which directory matra resolved and check the permissions on it. If it raises `RuntimeError` (a `matra.ModelInvalidError`), bytes did arrive and then failed the pinned hash check; run the snippet again.
 

@@ -38,20 +38,20 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6552,
-      "readability_grade": 14.8441,
+      "lexical_density": 0.6429,
+      "readability_grade": 8.8343,
       "sentences": 2,
-      "text": "Take the reference model, potion-base-8M. The first call downloads it (about 30 MB) and verifies it against a digest compiled into matra; every later call loads it from disk:",
-      "words": 32
+      "text": "Take the reference model, potion-base-8M. The first call downloads it (30.9 MB) and verifies it against a digest compiled into matra; every later call loads it from disk:",
+      "words": 31
     },
     {
-      "compression_ratio": 0.5248,
+      "compression_ratio": 0.4738,
       "kind": "paragraph",
-      "lexical_density": 0.6557,
-      "readability_grade": 14.6832,
-      "sentences": 3,
-      "text": "It goes into a directory named for the configured embedding model (models.embedding, potion-base-8M as shipped) inside the configured model directory. To keep it somewhere else, name the directory: Model2Vec::potion_base_8m(dir) in Rust, Model2Vec.potion_base_8m(dir) in Python. The call refuses a directory that already holds another model's files and names it; remove them, or name another directory, or point MATRA_MODEL_DIR or models.embedding somewhere else.",
-      "words": 68
+      "lexical_density": 0.6355,
+      "readability_grade": 14.192,
+      "sentences": 4,
+      "text": "It goes into a directory named for the configured embedding model (models.embedding, potion-base-8M as shipped) inside the configured model directory. To keep it somewhere else, name a models directory: Model2Vec::potion_base_8m(dir) in Rust, Model2Vec.potion_base_8m(dir) in Python. dir is the directory that holds every model, the one MATRA_MODEL_DIR names, not the model's own: the three files land in dir/potion-base-8M/, beside the parsing model in dir, so passing the directory matra config show reports as model_dir reuses a model that is already there. The call refuses a directory that already holds another model's files and names it; remove them, or name another directory, or point MATRA_MODEL_DIR or models.embedding somewhere else.",
+      "words": 118
     },
     {
       "compression_ratio": null,
@@ -79,6 +79,15 @@
       "sentences": 1,
       "text": "With your own Embedder implementation in place of Model2Vec, clusters needs no feature at all; an embedder that returns vectors you already hold is how they get in.",
       "words": 28
+    },
+    {
+      "compression_ratio": 0.5625,
+      "kind": "paragraph",
+      "lexical_density": 0.5614,
+      "readability_grade": 8.1086,
+      "sentences": 4,
+      "text": "Name the format the text is in. Read as plain text, a markdown document's heading markers (#, ##) become sentences of their own, and identical short sentences embed identically, so they come back as one cluster of \"restatements\". Read as markdown, a heading is a heading and never a sentence. engine.analyze(file=path) detects the format from the file.",
+      "words": 60
     },
     {
       "compression_ratio": null,

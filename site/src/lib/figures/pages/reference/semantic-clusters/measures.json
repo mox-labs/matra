@@ -74,11 +74,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5556,
-      "readability_grade": 14.6067,
+      "lexical_density": 0.5517,
+      "readability_grade": 9.1891,
       "sentences": 2,
-      "text": "potion-base-8M, about 30 MB, MIT per its model card. The SHA-256 over its three files, concatenated in the order above, is a constant compiled into the library:",
-      "words": 32
+      "text": "potion-base-8M, 30.9 MB in three files, MIT per its model card. The SHA-256 over its three files, concatenated in the order above, is a constant compiled into the library:",
+      "words": 34
     },
     {
       "compression_ratio": null,

@@ -65,7 +65,7 @@ Ten gate labels produce this variant. The `what` field carries the label so a ca
 
 `limit` carries the cap and `actual` carries the measured size, so an error message can be built without hardcoding the constants. Each cap is a published constant in `domain::limits`, named in the table; the module's documentation carries the cost model behind each value. No configuration changes any of them.
 
-The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens. The two download caps are the gates whose input is not the caller's: they bound what a redirected or misbehaving server can make the process hold, and the read stops at the bound rather than continuing, so `actual` reports the bound that was breached rather than the response's full length. Both are 64 MiB against pinned artifacts of 16.3 MB and 30.2 MB, which is headroom for a later version and still finite.
+The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens. The two download caps are the gates whose input is not the caller's: they bound what a redirected or misbehaving server can make the process hold, and the read stops at the bound rather than continuing, so `actual` reports the bound that was breached rather than the response's full length. Both are 64 MiB per file, against the 16.3 MB parsing model and the embedding model's largest file, 30.2 MB of its 30.9 MB set, which is headroom for a later version and still finite.
 
 A document from disk crosses both gates in sequence: `"file_source"` when the file is read, `"input"` before it is parsed. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
@@ -164,7 +164,7 @@ matra: downloading potion-base-8M (30.9 MB) into /home/u/.local/share/matra/mode
 matra: the model is licensed MIT, separately from matra: https://opensource.org/license/mit
 ```
 
-A library caller gets those facts from `Model2Vec::from_config_with_notice`. The other constructors, `Model2Vec::potion_base_8m` and `Model2Vec::from_config`, and from Python `Model2Vec.potion_base_8m()`, `Engine()` and `Engine.from_config()`, take no notice and are silent for the length of their download.
+Python writes the same two lines to `sys.stderr` before `Engine()`, `Engine.from_config()` or `Model2Vec.potion_base_8m()` downloads; redirect `sys.stderr` to silence them. A Rust caller gets the facts from `Engine::from_config_with_notice` and `Model2Vec::from_config_with_notice` and chooses the wording, since the library writes to no terminal. The other Rust constructors, `Engine::new`, `Engine::from_config`, `Model2Vec::potion_base_8m` and `Model2Vec::from_config`, take no notice and say nothing for the length of their download.
 
 ## Per-document failures: `DocumentError`
 

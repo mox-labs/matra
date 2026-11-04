@@ -37,14 +37,14 @@ The `Model2Vec` adapter, behind the `model2vec` feature, loads static embedding 
 | Constructor | Rust | Python | Reaches the network |
 |---|---|---|---|
 | The configured directory | `Model2Vec::from_config(&cfg)` | `Model2Vec.potion_base_8m()` | when the pinned model is absent |
-| A directory you name | `Model2Vec::potion_base_8m(dir)` | `Model2Vec.potion_base_8m(dir)` | when the pinned model is absent |
+| A models directory you name, the model in its `potion-base-8M` subdirectory | `Model2Vec::potion_base_8m(dir)` | `Model2Vec.potion_base_8m(dir)` | when the pinned model is absent |
 | Files you supply | `Model2Vec::from_dir(dir)` | `Model2Vec.from_dir(dir)` | never |
 
 The configured directory is `models.embedding` (`potion-base-8M` as shipped) inside the configured model directory.
 
 ### The reference model
 
-[potion-base-8M](https://huggingface.co/minishlab/potion-base-8M), about 30 MB, MIT per its model card. The SHA-256 over its three files, concatenated in the order above, is a constant compiled into the library:
+[potion-base-8M](https://huggingface.co/minishlab/potion-base-8M), 30.9 MB in three files, MIT per its model card. The SHA-256 over its three files, concatenated in the order above, is a constant compiled into the library:
 
 ```text
 81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4

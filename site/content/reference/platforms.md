@@ -68,7 +68,7 @@ The library, the CLI and the Python package resolve the model directory the same
 | | Parsing model | Embedding model |
 |---|---|---|
 | Fetched by | `Engine::new` and `Engine::from_config`, in Rust and in Python, and the command line, on first use | `Model2Vec::potion_base_8m`, `Model2Vec::from_config`, their Python forms and `matra clusters`, on first use |
-| Size | about 16 MB | about 30 MB, three files |
+| Size | 16.3 MB | 30.9 MB, three files |
 | Verified against | a SHA-256 pinned in the source | a SHA-256 over the three files, pinned in the source |
 | Download cap | 64 MiB | 64 MiB per file |
 

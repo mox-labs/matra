@@ -68,7 +68,7 @@ $ matra summarize notes.md -n 3 --json
 $ matra keyphrases notes.md -n 10 --json
 ```
 
-`clusters` groups sentences whose embeddings lie close, with the potion-base-8M embedder, downloaded on first use (about 30 MB). `result` is a `Clusters`: `provenance` with the `threshold` and the embedder's identity, `clusters`, each a list of sentence `members` by index, and `edges`, every pair that cleared the threshold with its `score`. `--threshold` defaults to `clusters.threshold`, `0.85` as shipped, and does not travel between documents or models; see `semantic`. It needs a build with the `model2vec` feature, which the Python wheel has.
+`clusters` groups sentences whose embeddings lie close, with the potion-base-8M embedder, downloaded on first use (30.9 MB). `result` is a `Clusters`: `provenance` with the `threshold` and the embedder's identity, `clusters`, each a list of sentence `members` by index, and `edges`, every pair that cleared the threshold with its `score`. `--threshold` defaults to `clusters.threshold`, `0.85` as shipped, and does not travel between documents or models; see `semantic`. It needs a build with the `model2vec` feature, which the Python wheel has.
 
 <!-- needs: embedder -->
 

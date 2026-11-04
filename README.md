@@ -32,7 +32,7 @@ let engine = matra::Engine::new()?;
 
 The `uvx` line carries a version floor for the same reason the `--skill` line above does. Both registries serve 0.3.x, so a bare `uvx matra` resolves to it today; the floor says what these commands need rather than leaving it to whichever release is newest when you run them. 0.2 is still published too, and its command line and JSON are the ones the [migration guide](https://mox-labs.github.io/matra/guides/migrate-to-0-3.html) moves you off. 0.1.0 is still published, and its `analyze` is a separate Python implementation and not this one missing a flag: `--json` prints a bare document with no envelope, the table is a different renderer, and the model cache is hardcoded to `~/.matra/models`. That line does not fail, it succeeds and hands you something else.
 
-The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file does not move the model directory: its `[models] embedding` key names the embedding model's subdirectory inside it,, and nothing selects the parsing model, which is pinned in the source. To put it somewhere specific, pass it explicitly (`--model-dir`, `Config::with_model_dir`), or set `MATRA_MODEL_DIR`, which is how Python names it. `matra config show` prints every resolved value and where it came from.
+The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file does not move the model directory: its `[models] embedding` key names the embedding model's subdirectory inside it, and nothing selects the parsing model, which is pinned in the source. To put it somewhere specific, pass it explicitly (`--model-dir`, `Config::with_model_dir`), or set `MATRA_MODEL_DIR`, which is how Python names it. `matra config show` prints every resolved value and where it came from.
 
 ## Install
 
@@ -112,7 +112,7 @@ matra analyze essay.md -s                    # section breakdown
 matra analyze docs/ --json --depth document  # one line per file, measures only
 matra summarize essay.md -n 3 --method textrank
 matra keyphrases essay.md --json
-matra clusters essay.md --threshold 0.85     # needs the model2vec feature
+matra clusters essay.md --threshold 0.85     # restated sentences; none is exit 1
 matra analyze notes.json --format blocks     # a JSON file of blocks
 matra --schema document                      # the JSON Schema of the output
 matra config show                            # every resolved value, with its origin

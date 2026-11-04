@@ -49,10 +49,13 @@ let engine = Engine::new()?;
 let doc = engine.analyze(Input::text("Plain text in memory.", Format::PlainText))?;
 println!("{} sentences", doc.metrics.total_sentences);
 
-// Many documents, lazily and in order.
+// Many documents, lazily and in order. A failure is one item, and the
+// walk goes on past it.
 for item in engine.analyze_all(Inputs::dir("./corpus")?) {
-    let doc = item?;
-    println!("{:?}", doc.provenance.source.path);
+    match item {
+        Ok(doc) => println!("{:?}", doc.provenance.source.path),
+        Err(e) => eprintln!("skipped: {e}"),
+    }
 }
 ```
 
@@ -272,7 +275,7 @@ for sentence in doc.sentences() {
 }
 ```
 
-Token fields carry the CoNLL-U columns under Rust names: `text` is the surface form, `pos` is the universal POS tag, `xpos` is the language-specific tag, and `dep` is the dependency relation. `feats`, `deps`, and `misc` hold their raw column strings, and `is_punct` is derived by the adapter.
+Token fields carry the CoNLL-U columns under Rust names: `text` is the surface form, `pos` is the universal POS tag, `xpos` is the language-specific tag, and `dep` is the dependency relation. `features` is the FEATS column as a map from feature name to value (`token.feat("Mood")` reads one), `deps` and `misc` hold their raw column strings, and `is_punct` is derived by the adapter.
 
 `subtree(id)` collects every token reachable from a given token, sorted back into document order, which is the tool for pulling a phrase out from under a dependency relation rather than a single token. Pulling the direct object out of every sentence that has one:
 

@@ -202,6 +202,7 @@ What moved inside the results:
 - `Keyphrase` gains `occurrences`, every span the phrase was found in, and sits in `Keyphrases.phrases`.
 - `SemanticClusters { model_hash, threshold, clusters }` is `Clusters { provenance, clusters, edges }`. The embedder's identity is `provenance.parameters.embedder` and the threshold `provenance.parameters.threshold`. The edges moved out of each cluster into one list, ordered by `a` and then `b`. Each `Cluster` holds only `members`.
 - The threshold and every score are `f64`, not `f32`.
+- `Model2Vec::potion_base_8m(dir)` takes the models directory, the one `MATRA_MODEL_DIR` names, and keeps the three files in `dir/potion-base-8M/`. In 0.2 `dir` was the model's own directory. Pass the parent: `potion_base_8m(cfg.model_dir())` where 0.2 took `potion_base_8m(cfg.model_dir().join("potion-base-8M"))`. Python's `Model2Vec.potion_base_8m(dir)` changed the same way.
 
 ### Errors
 
@@ -502,3 +503,6 @@ A few results differ for the same input, and nothing about the call tells you so
 - **TF-IDF scores** are the same to the last bit on every run.
 - **A binary file** is `unsupported_format`, naming the format when it is a PDF or DOCX. In 0.2 it was an I/O error.
 - **The size cap's message** reads `input too large`, where 0.2 read `input input too large`.
+- **`Model2Vec.potion_base_8m(dir)`** looks in `dir/potion-base-8M/`, where 0.2 looked in `dir` itself. A 0.2 call that passed the model's own directory still runs, and downloads a second copy one level down. Pass the models directory instead.
+- **Python's constructors announce a download.** `Engine()`, `Engine.from_config()` and `Model2Vec.potion_base_8m()` write two lines to `sys.stderr` before they download a model, the ones the command line prints. Once the model is on disk they write nothing.
+- **An empty result says so.** `matra summarize`, `keyphrases` and `clusters` still exit 1 when they find nothing, and now also write one line to stderr saying so, unless `--json` or `--quiet` is given.
