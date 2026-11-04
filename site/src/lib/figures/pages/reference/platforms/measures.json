@@ -1,6 +1,6 @@
 {
   "generator": {
-    "matra": "0.2.1",
+    "matra": "0.3.0",
     "udpipe_model": {
       "name": "english-ewt-ud-2.5-191206",
       "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
@@ -45,13 +45,13 @@
       "words": 17
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5955,
       "kind": "paragraph",
-      "lexical_density": 0.5263,
-      "readability_grade": 6.9372,
-      "sentences": 2,
-      "text": "An install line with no version takes the newest release on the registry. 0.1.0 is still published, and its matra command is a separate Python implementation with its own --json shape and a model directory fixed at ~/.matra/models.",
-      "words": 39
+      "lexical_density": 0.4528,
+      "readability_grade": 4.518,
+      "sentences": 3,
+      "text": "An install line with no version takes the newest release on the registry. 0.1.0 is still published, and its matra command is a separate Python implementation with its own --json shape and a model directory fixed at ~/.matra/models. 0.2 is published too, with the surface Migrate from 0.2 to 0.3 moves you off.",
+      "words": 54
     },
     {
       "compression_ratio": null,

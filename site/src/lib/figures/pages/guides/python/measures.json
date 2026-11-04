@@ -1,6 +1,6 @@
 {
   "generator": {
-    "matra": "0.2.1",
+    "matra": "0.3.0",
     "udpipe_model": {
       "name": "english-ewt-ud-2.5-191206",
       "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
@@ -14,7 +14,7 @@
       "lexical_density": 0.5246,
       "readability_grade": 6.191,
       "sentences": 3,
-      "text": "You installed matra with uv add 'matra>=0.2' or pip install 'matra>=0.2'. That gave you two things: the library described on this page, and the matra command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the CLI guide; the Python package adds no behavior to it.",
+      "text": "You installed matra with uv add 'matra>=0.3' or pip install 'matra>=0.3'. That gave you two things: the library described on this page, and the matra command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the CLI guide; the Python package adds no behavior to it.",
       "words": 63
     },
     {

@@ -1,6 +1,6 @@
 {
   "generator": {
-    "matra": "0.2.1",
+    "matra": "0.3.0",
     "udpipe_model": {
       "name": "english-ewt-ud-2.5-191206",
       "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
@@ -23,7 +23,7 @@
       "lexical_density": 0.6154,
       "readability_grade": 5.8185,
       "sentences": 2,
-      "text": "Install matra the way you mean to use it: the library, the CLI, or the Python package (Install matra). The Rust calls also need serde_json to print, which is the first line of each one: cargo add matra@0.2 serde_json.",
+      "text": "Install matra the way you mean to use it: the library, the CLI, or the Python package (Install matra). The Rust calls also need serde_json to print, which is the first line of each one: cargo add matra@0.3 serde_json.",
       "words": 39
     },
     {

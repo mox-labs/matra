@@ -1,6 +1,6 @@
 {
   "generator": {
-    "matra": "0.2.1",
+    "matra": "0.3.0",
     "udpipe_model": {
       "name": "english-ewt-ud-2.5-191206",
       "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
@@ -47,11 +47,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5882,
-      "readability_grade": 7.1603,
+      "lexical_density": 0.6111,
+      "readability_grade": 10.2089,
       "sentences": 2,
-      "text": "Every entry below names the trigger condition. When the condition is met, write an RFC and proceed.",
-      "words": 17
+      "text": "Every entry below names the trigger condition. When the condition is met, write an enhancement proposal and proceed.",
+      "words": 18
     },
     {
       "compression_ratio": 0.5445,
@@ -72,22 +72,67 @@
       "words": 39
     },
     {
-      "compression_ratio": 0.5792,
+      "compression_ratio": 0.5743,
       "kind": "paragraph",
-      "lexical_density": 0.662,
-      "readability_grade": 18.5696,
+      "lexical_density": 0.6364,
+      "readability_grade": 17.8668,
       "sentences": 3,
-      "text": "Capabilities with no reliable affordance stay out, and the gap is recorded rather than simulated. Pragmatic enrichment (implicature, purport, illocutionary force) and claim or fallacy certification have no deterministic path and no reliable model path either; the honest output there is a structural gap marker, not simulated confidence. matra's idiom already encodes this (Option slots that mean \"declined to compute\", the usize::MAX cycle sentinel, UnsupportedFormat, DocumentError), and new capabilities inherit it.",
-      "words": 73
+      "text": "Capabilities with no reliable affordance stay out, and the gap is recorded rather than simulated. Pragmatic enrichment (implicature, purport, illocutionary force) and claim or fallacy certification have no deterministic path and no reliable model path either; the honest output there is a structural gap marker, not simulated confidence. matra's idiom already encodes this (Option slots that mean \"declined to compute\", a tree_depth of None on a cycle, UnsupportedFormat, DocumentError, the skipped list), and new capabilities inherit it.",
+      "words": 78
     },
     {
-      "compression_ratio": 0.5924,
+      "compression_ratio": 0.5795,
       "kind": "paragraph",
       "lexical_density": 0.6164,
-      "readability_grade": 15.5603,
+      "readability_grade": 15.0753,
       "sentences": 3,
-      "text": "Capabilities that need a specialist model are adapter work, not extensions of the parse. Coreference is the clearest case: it sits a tier above UDPipe, the research synthesis places it above matra beside SRL and NLI, and pretending otherwise would put unverifiable output behind a surface that promises verifiability. If a specialist coreference adapter ever lands, it arrives as a new NlpProvider implementation behind its own feature flag, with its tier stated plainly.",
+      "text": "Capabilities that need a specialist model are adapter work, not extensions of the parse. Coreference is the clearest case: it sits a tier above UDPipe, the research synthesis places it above matra beside SRL and NLI, and pretending otherwise would put unverifiable output behind a surface that promises verifiability. If a specialist coreference adapter ever lands, it arrives as a new parser adapter behind its own feature flag, with its tier stated plainly.",
       "words": 74
+    },
+    {
+      "compression_ratio": 0.6012,
+      "kind": "paragraph",
+      "lexical_density": 0.5574,
+      "readability_grade": 3.496,
+      "sentences": 3,
+      "text": "0.3.0 settled the public surface: one set of outcome names in Rust, Python and the command line, input through Input, a span and provenance on every result, schema 2.0 with a published JSON Schema, and an error kind on every channel. Migrate from 0.2 to 0.3 lists every change. Four things are planned for 0.4.0, each an addition to that surface:",
+      "words": 61
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5789,
+      "readability_grade": 3.6413,
+      "sentences": 2,
+      "text": "A feed for text arriving over time, in Rust, Python and the command line at once. See Streaming source.",
+      "words": 19
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5417,
+      "readability_grade": 10.7233,
+      "sentences": 2,
+      "text": "Caller extensions: predicates and the findings they produce, over a Document and its schema, in their own proposal. See Rule evaluation over parsed structure.",
+      "words": 24
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5789,
+      "readability_grade": 11.6937,
+      "sentences": 2,
+      "text": "TypeScript: types generated from the published schema, a web component that renders a parse from matra's JSON, and the result of a spike, with a go or no-go, on compiling UDPipe to WebAssembly. See WASM binding for TypeScript/browser.",
+      "words": 41
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.7368,
+      "readability_grade": 12.3361,
+      "sentences": 2,
+      "text": "A permissively licensed parsing model, as a second pinned model chosen by id. See A permissively licensed parsing model.",
+      "words": 19
     },
     {
       "compression_ratio": 0.5937,
@@ -108,13 +153,13 @@
       "words": 45
     },
     {
-      "compression_ratio": 0.5425,
+      "compression_ratio": 0.5118,
       "kind": "paragraph",
-      "lexical_density": 0.6452,
-      "readability_grade": 10.5023,
-      "sentences": 6,
-      "text": "Where it lands. Inside matra, in a new src/rules/ module, occupying the abstract extension point RFC-0007 reserves between structure and purpose-fitted output. The vocabulary is locked by RFC-0006: Rule, Predicate, Finding, SourceSpan. Rule evaluation is not a separate crate; callers compose against one surface. The Finding type's shape (trait vs enum) is deferred to Phase 2; the name is locked. Rules are deterministic predicates over structure, so their findings stay at the verifiable tier: a Finding names the pattern and points at the bytes, and whether the pattern matters remains the caller's judgment.",
-      "words": 98
+      "lexical_density": 0.6165,
+      "readability_grade": 8.1626,
+      "sentences": 8,
+      "text": "Where it lands. Inside matra, in a new src/rules/ module, occupying the abstract extension point RFC-0007 reserves between structure and purpose-fitted output. The vocabulary is locked by RFC-0006: Rule, Predicate, Finding, SourceSpan. Rule evaluation is not a separate crate; callers compose against one surface. The Finding type's shape (trait vs enum) is deferred to Phase 2; the name is locked. Since 0.3.0 every heading, paragraph, sentence and token carries a Span into the analysed text, so a finding can point at bytes without a new addressing scheme. Caller extensions are planned for 0.4.0, in their own proposal, on schema 2. Rules are deterministic predicates over structure, so their findings stay at the verifiable tier: a Finding names the pattern and points at the bytes, and whether the pattern matters remains the caller's judgment.",
+      "words": 138
     },
     {
       "compression_ratio": null,
@@ -180,22 +225,22 @@
       "words": 48
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5433,
       "kind": "list_item",
-      "lexical_density": 0.6667,
-      "readability_grade": 12.0375,
+      "lexical_density": 0.6481,
+      "readability_grade": 12.8448,
       "sentences": 3,
-      "text": "A multi-arc construction with optional participants. The reporting construction is a verb governing a ccomp, plus its nsubj when the sentence has one (Reporting). The subject slot is optional because sentence segmentation strands attribution across boundaries; a construction predicate must match with an absent argument rather than fail.",
-      "words": 48
+      "text": "A multi-arc construction with optional participants. The reporting construction is a verb governing a ccomp, plus its nsubj when the sentence has one (ClausalComplement, named for what the detector finds). The subject slot is optional because sentence segmentation strands attribution across boundaries; a construction predicate must match with an absent argument rather than fail.",
+      "words": 54
     },
     {
-      "compression_ratio": 0.5925,
+      "compression_ratio": 0.6021,
       "kind": "list_item",
       "lexical_density": 0.6111,
-      "readability_grade": 15.03,
+      "readability_grade": 15.467,
       "sentences": 3,
-      "text": "A lexicon as a parameter, for open classes. Reporting verbs and evidential adverbs have no closed list, so the detectors report every structural match and Sentence::reportings_in and Sentence::root_adverbials_in filter by a caller-supplied lexicon. A Rule over an open class carries its lexicon as data; embedding one would ship an incomplete list that looks authoritative.",
-      "words": 56
+      "text": "A lexicon as a parameter, for open classes. Reporting verbs and evidential adverbs have no closed list, so the detectors report every structural match and Sentence::clausal_complements_in and Sentence::root_adverbials_in filter by a caller-supplied lexicon. A Rule over an open class carries its lexicon as data; embedding one would ship an incomplete list that looks authoritative.",
+      "words": 55
     },
     {
       "compression_ratio": 0.5973,
@@ -243,13 +288,22 @@
       "words": 46
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6059,
       "kind": "paragraph",
-      "lexical_density": 0.641,
-      "readability_grade": 12.1723,
-      "sentences": 3,
-      "text": "Trigger condition. A browser-side or Node.js caller with a documented requirement for matra analysis without a Python or Rust runtime, paired with an NlpProvider implementation that compiles to WASM and delivers sufficient parse quality for the target use case.",
-      "words": 40
+      "lexical_density": 0.5733,
+      "readability_grade": 6.2099,
+      "sentences": 5,
+      "text": "Planned for 0.4.0, in three steps, each usable alone. First, TypeScript types generated from the published JSON Schema in spec/schema/v2/, and a web component that renders a parse from matra's JSON. These need no WASM at all. Second, the pure-Rust core in WASM: the outcome functions over a Document already build without the parser. Third, a spike on compiling UDPipe's C++ to WASM, which ends in a go or a no-go for an in-browser parser.",
+      "words": 82
+    },
+    {
+      "compression_ratio": 0.6512,
+      "kind": "paragraph",
+      "lexical_density": 0.5769,
+      "readability_grade": 9.9031,
+      "sentences": 4,
+      "text": "Trigger condition. A browser-side or Node.js caller with a documented requirement for matra analysis without a Python or Rust runtime, paired with an NlpProvider implementation that compiles to WASM and delivers sufficient parse quality for the target use case. The first two steps above do not wait for it; the parser does.",
+      "words": 53
     },
     {
       "compression_ratio": 0.6096,
@@ -281,11 +335,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6098,
-      "readability_grade": 13.0522,
+      "lexical_density": 0.6316,
+      "readability_grade": 12.95,
       "sentences": 3,
-      "text": "What it is. A DirectorySource variant that descends into subdirectories rather than stopping at depth one. This enables processing nested document collections (a repository of markdown files organized by directory, for example) without the caller having to walk the tree manually.",
-      "words": 41
+      "text": "What it is. Inputs::dir descending into subdirectories rather than stopping at depth one. This enables processing nested document collections (a repository of markdown files organized by directory, for example) without the caller having to walk the tree manually.",
+      "words": 39
     },
     {
       "compression_ratio": 0.5472,
@@ -308,29 +362,38 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5918,
-      "readability_grade": 12.6943,
+      "lexical_density": 0.4082,
+      "readability_grade": 4.1259,
       "sentences": 3,
-      "text": "What it is. A Source variant that yields documents one at a time rather than collecting every document a path names into a Vec before returning. This enables processing document collections that exceed available memory, and supports push-semantics integrations where documents arrive from a queue rather than a filesystem.",
-      "words": 50
+      "text": "What it is. A feed: text that arrives over time, such as a transcript or a message queue, analysed as it comes rather than handed over whole. It is planned for 0.4.0, in Rust, Python and the command line at once, so no surface gets it before the others.",
+      "words": 49
     },
     {
-      "compression_ratio": 0.5264,
+      "compression_ratio": 0.5449,
       "kind": "paragraph",
-      "lexical_density": 0.5914,
-      "readability_grade": 10.7561,
-      "sentences": 6,
-      "text": "What is blocking it. The current Source::read signature returns a Vec of the documents read. Inputs::dir already lists paths up front and reads each file only when analyze_all reaches it, so this is about sources other than a directory. A streaming variant requires a different return type: an iterator, a channel, or a Stream in the async sense. The async reactor decision (deferred per RFC-0004) is a prerequisite for the most useful form of streaming: async document processing. Without an async reactor, a synchronous iterator-based streaming source is possible but limited in value.",
-      "words": 97
+      "lexical_density": 0.5,
+      "readability_grade": 8.5436,
+      "sentences": 5,
+      "text": "What is in place. Engine::analyze_all is already lazy: it takes any iterator of Input, yields one result per input in order, and Inputs::dir reads each file only when the stream reaches it. So a caller can already stream documents that are each complete. What the feed adds is text that is not yet complete when analysis starts. The readers and the parser are private to the crate, so the feed arrives as an addition to the public surface, not a change to a signature that ships.",
+      "words": 88
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6053,
-      "readability_grade": 13.8674,
-      "sentences": 2,
-      "text": "Trigger condition. A caller requiring processing of more documents than can be held in memory simultaneously, or a push-semantics integration (a message queue feeding documents into matra in real time) where the Vec return type is genuinely blocking.",
-      "words": 39
+      "lexical_density": 0.5532,
+      "readability_grade": 8.5966,
+      "sentences": 3,
+      "text": "What is blocking it. The design: where a paragraph or a sentence ends when more text may still arrive, and what a partial result promises. The async reactor decision (deferred per RFC-0004) bears on the most useful form, async processing; a synchronous feed is possible without it.",
+      "words": 48
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5556,
+      "readability_grade": 3.514,
+      "sentences": 3,
+      "text": "Trigger condition. FIRED. EPR-0006 places the feed in 0.4.0 (decision 2), as an addition in all three syntaxes.",
+      "words": 19
     },
     {
       "compression_ratio": 0.5217,
@@ -360,13 +423,13 @@
       "words": 50
     },
     {
-      "compression_ratio": 0.5884,
+      "compression_ratio": 0.5732,
       "kind": "paragraph",
-      "lexical_density": 0.5094,
-      "readability_grade": 7.3888,
+      "lexical_density": 0.5185,
+      "readability_grade": 8.4676,
       "sentences": 4,
-      "text": "The pattern across all of these: capability waits for the caller that justifies it. Adding structure in advance of use is complexity that the next collaborator pays for. The trigger conditions are the guard against that. When one fires, write the RFC, explain why this trigger and not the next one, and proceed.",
-      "words": 53
+      "text": "The pattern across all of these: capability waits for the caller that justifies it. Adding structure in advance of use is complexity that the next collaborator pays for. The trigger conditions are the guard against that. When one fires, write the enhancement proposal, explain why this trigger and not the next one, and proceed.",
+      "words": 54
     },
     {
       "compression_ratio": 0.5933,
@@ -393,6 +456,33 @@
       "readability_grade": 10.4428,
       "sentences": 2,
       "text": "Trigger condition. A caller that needs to eyeball a parse rather than consume it programmatically, most likely a researcher working in a notebook.",
+      "words": 23
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6154,
+      "readability_grade": 4.6982,
+      "sentences": 3,
+      "text": "What it is. A second pinned English parsing model whose licence permits commercial use, trained on UD English EWT, chosen by id beside the model that ships. The model that ships, english-ewt-ud-2.5-191206, is CC BY-NC-SA 4.0, which does not.",
+      "words": 41
+    },
+    {
+      "compression_ratio": 0.601,
+      "kind": "paragraph",
+      "lexical_density": 0.481,
+      "readability_grade": 6.2874,
+      "sentences": 5,
+      "text": "Where it lands. As a pin, like the first: a URL, a SHA-256 and a licence compiled into the adapter, and an id a caller names. Every document already records the parser and its model's digest in provenance.parser, so a reader sees which model produced a parse rather than discovering it as a shift in the numbers. Choosing by id is an addition; 0.3.0 removed loading a model file by path so that this would not be a break.",
+      "words": 81
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5455,
+      "readability_grade": 3.0036,
+      "sentences": 4,
+      "text": "Trigger condition. FIRED. EPR-0006 places it in 0.4.0. What remains is training the model and measuring it against the one that ships.",
       "words": 23
     },
     {
@@ -432,13 +522,13 @@
       "words": 37
     },
     {
-      "compression_ratio": 0.5406,
+      "compression_ratio": 0.5421,
       "kind": "paragraph",
-      "lexical_density": 0.5882,
-      "readability_grade": 7.8544,
+      "lexical_density": 0.5977,
+      "readability_grade": 7.7209,
       "sentences": 6,
-      "text": "Why these three specifically. An internal note dated 2026-04-21 records a writing-assistant agent blocked on a calibration loop against a measured baseline: 26.6 word mean sentence length, 36.9 percent passive, 0 percent contractions, 7.7 percent nominalisation, 0.76 burstiness. Checked against what ships, three of those five are already Document methods or fields. Burstiness is derivable from sentence_length_std and the mean but is not exposed. Contractions are not counted at all. That note estimated the remaining work as a small configuration layer rather than a rewrite.",
-      "words": 90
+      "text": "Why these three specifically. An internal note dated 2026-04-21 records a writing-assistant agent blocked on a calibration loop against a measured baseline: 26.6 word mean sentence length, 36.9 percent passive, 0 percent contractions, 7.7 percent nominalisation, 0.76 burstiness. Checked against what ships, three of those five are already Document fields. Burstiness is derivable from metrics.sentence_length_std and metrics.mean_sentence_length, both fields since 0.3.0, but is not itself exposed. Contractions are not counted at all. That note estimated the remaining work as a small configuration layer rather than a rewrite.",
+      "words": 94
     },
     {
       "compression_ratio": 0.5743,
@@ -504,13 +594,13 @@
       "words": 45
     },
     {
-      "compression_ratio": 0.6369,
+      "compression_ratio": 0.6374,
       "kind": "paragraph",
-      "lexical_density": 0.6809,
-      "readability_grade": 10.3329,
+      "lexical_density": 0.6875,
+      "readability_grade": 11.4608,
       "sentences": 4,
-      "text": "Trigger condition. FIRED, 2026-08-21. A concrete caller pattern was named that field access cannot serve: quantifying restatement across a document for LLM-output auditing. Design against EP-0007's primitives and the rule-vocabulary shape; an RFC settles whether this is a metric family, an extractor, or the first rule pack.",
-      "words": 52
+      "text": "Trigger condition. FIRED, 2026-08-21. A concrete caller pattern was named that field access cannot serve: quantifying restatement across a document for LLM-output auditing. Design against EP-0007's primitives and the rule-vocabulary shape; an enhancement proposal settles whether this is a metric family, an extractor, or the first rule pack.",
+      "words": 53
     },
     {
       "compression_ratio": 0.5194,
@@ -522,30 +612,30 @@
       "words": 142
     },
     {
-      "compression_ratio": 0.509,
+      "compression_ratio": 0.5082,
       "kind": "paragraph",
-      "lexical_density": 0.622,
-      "readability_grade": 14.2209,
+      "lexical_density": 0.6202,
+      "readability_grade": 14.84,
       "sentences": 6,
-      "text": "Where it lands. Metric functions over Document, same family as the shipping metrics suite. The DEPID relation inventory is Stanford-style, so an explicit mapping to UD relations is part of the design; the CPIDR path additionally holds only for English models, since Token::xpos carries whatever tagset the provider's model emits and PTB tags are the English case. Three counting rules the literature leaves genuinely unsettled (direct objects, coordinating conjunctions, the denominator) get settled by RFC rather than inherited silently, and the RFC also states the non-English story. The reference implementations are GPL, so the derivation is clean-room from the published rules, and exact numeric parity with them is a non-goal. No implementation of idea density exists for CoNLL-U input in any language; this would be the first.",
-      "words": 132
+      "text": "Where it lands. Metric functions over Document, same family as the shipping metrics suite. The DEPID relation inventory is Stanford-style, so an explicit mapping to UD relations is part of the design; the CPIDR path additionally holds only for English models, since Token::xpos carries whatever tagset the provider's model emits and PTB tags are the English case. Three counting rules the literature leaves genuinely unsettled (direct objects, coordinating conjunctions, the denominator) get settled by an enhancement proposal rather than inherited silently, and the proposal also states the non-English story. The reference implementations are GPL, so the derivation is clean-room from the published rules, and exact numeric parity with them is a non-goal. No implementation of idea density exists for CoNLL-U input in any language; this would be the first.",
+      "words": 134
     },
     {
-      "compression_ratio": 0.6368,
+      "compression_ratio": 0.6375,
       "kind": "paragraph",
       "lexical_density": 0.6102,
-      "readability_grade": 14.68,
+      "readability_grade": 15.08,
       "sentences": 3,
-      "text": "What stays out, and why. Hedging and booster density need a lexicon, and no canonical machine-readable hedge list exists; per the open-class precedent (reportings_in), any such lexicon is caller-supplied data, never shipped as if authoritative. Surprisal needs frequency norms or a language model, and sycophancy detection has no deterministic path at all; both gaps are recorded rather than simulated.",
+      "text": "What stays out, and why. Hedging and booster density need a lexicon, and no canonical machine-readable hedge list exists; per the open-class precedent (clausal_complements_in), any such lexicon is caller-supplied data, never shipped as if authoritative. Surprisal needs frequency norms or a language model, and sycophancy detection has no deterministic path at all; both gaps are recorded rather than simulated.",
       "words": 62
     },
     {
-      "compression_ratio": 0.566,
+      "compression_ratio": 0.5612,
       "kind": "paragraph",
       "lexical_density": 0.6078,
-      "readability_grade": 12.057,
+      "readability_grade": 12.5198,
       "sentences": 4,
-      "text": "Trigger condition. FIRED, 2026-09-04. The same LLM-output-auditing caller pattern that fired the redundancy entry names low density as the second failure mode, and the 2026-09-04 landscape survey (internal, not in this repository) established implementability from matra's existing parse output. Design together with the redundancy family; the same RFC should place both.",
+      "text": "Trigger condition. FIRED, 2026-09-04. The same LLM-output-auditing caller pattern that fired the redundancy entry names low density as the second failure mode, and the 2026-09-04 landscape survey (internal, not in this repository) established implementability from matra's existing parse output. Design together with the redundancy family; the same proposal should place both.",
       "words": 55
     },
     {
@@ -558,12 +648,12 @@
       "words": 34
     },
     {
-      "compression_ratio": 0.5416,
+      "compression_ratio": 0.5518,
       "kind": "paragraph",
-      "lexical_density": 0.5424,
-      "readability_grade": 10.9625,
-      "sentences": 5,
-      "text": "What is blocking it. Nothing structural, and the extension point already exists. default_suite() returns Vec<Metric> and run_suite is public, so choosing a suite is already choosing the contents of a vector. What is absent is the surface: a format, a resolution order, and a decision about whether configuration is a library concern or belongs only to the application tier.",
+      "lexical_density": 0.4915,
+      "readability_grade": 6.412,
+      "sentences": 3,
+      "text": "What is blocking it. The metric suite is private to the crate since 0.3.0, so choosing metrics from a file would first need a public way to name them. What is absent beyond that is the surface: a format, a resolution order, and a decision about whether configuration is a library concern or belongs only to the application tier.",
       "words": 59
     },
     {
@@ -576,13 +666,13 @@
       "words": 38
     },
     {
-      "compression_ratio": 0.5239,
+      "compression_ratio": 0.5172,
       "kind": "paragraph",
-      "lexical_density": 0.6346,
-      "readability_grade": 10.5139,
+      "lexical_density": 0.6381,
+      "readability_grade": 11.0505,
       "sentences": 3,
-      "text": "Shipped, 2026-09-05, via EP-0010: Config resolves locations and defaults per key from argument, environment, config file, then the defaults compiled into the crate; Engine::with_defaults() (since 0.3.0 Engine::new(), which reads no configuration file, and matra.Engine() in Python, which replaced Matra.english()) and the from_config constructors are the no-setup path on every surface; matra config show and matra config init are the command-line half. The question this entry asks is answered narrowly: the file carries locations and defaults, never which metrics run or how output is shaped. Selecting behavior from a file remains unbuilt, and reopening it needs its own RFC rather than a wider schema here.",
-      "words": 112
+      "text": "Shipped, 2026-09-05, via EP-0010: Config resolves locations and defaults per key from argument, environment, config file, then the defaults compiled into the crate; Engine::with_defaults() (since 0.3.0 Engine::new(), which reads no configuration file, and matra.Engine() in Python, which replaced Matra.english()) and the from_config constructors are the no-setup path on every surface; matra config show and matra config init are the command-line half. The question this entry asks is answered narrowly: the file carries locations and defaults, never which metrics run or how output is shaped. Selecting behavior from a file remains unbuilt, and reopening it needs its own enhancement proposal rather than a wider schema here.",
+      "words": 113
     },
     {
       "compression_ratio": 0.5369,
