@@ -167,6 +167,7 @@ figures/pages/explanation/install-routes/measures.json
 figures/pages/explanation/semantic-clusters/measures.json
 figures/pages/explanation/how-matra-is-maintained/measures.json
 figures/pages/guides/agent/measures.json
+figures/pages/guides/migrate-to-0-3/measures.json
 figures/pages/guides/tls-proxy/measures.json
 figures/pages/reference/platforms/measures.json
 figures/pages/reference/semantic-clusters/measures.json
@@ -217,6 +218,8 @@ guides/agent.html
 guides/agent.md
 guides/cli.html
 guides/cli.md
+guides/migrate-to-0-3.html
+guides/migrate-to-0-3.md
 guides/python.html
 guides/python.md
 guides/rust.html
