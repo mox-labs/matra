@@ -5,7 +5,21 @@
 # without it fails here by design; the message names the missing feature
 # instead of a bare symbol.
 try:
-    from matra._core import Matra, Model2Vec, semantic_clusters
+    from matra._core import (
+        InputTooLarge,
+        InvalidInput,
+        Io,
+        IoNotFound,
+        IoPermissionDenied,
+        Matra,
+        MatraError,
+        Model2Vec,
+        ModelInvalid,
+        ModelNotFound,
+        ParseFailed,
+        UnsupportedFormat,
+        semantic_clusters,
+    )
 except ImportError as _exc:  # pragma: no cover
     raise ImportError(
         "matra's Python package requires the extension to be built with "
@@ -20,6 +34,7 @@ from matra.types import (
     Document,
     DocumentError,
     Embedder,
+    ErrorDetails,
     ErrorInfo,
     Keyphrase,
     Keyphrases,
@@ -44,13 +59,23 @@ __all__ = [
     "Document",
     "DocumentError",
     "Embedder",
+    "ErrorDetails",
     "ErrorInfo",
+    "InputTooLarge",
+    "InvalidInput",
+    "Io",
+    "IoNotFound",
+    "IoPermissionDenied",
     "Keyphrase",
     "Keyphrases",
     "Matra",
+    "MatraError",
     "Model2Vec",
+    "ModelInvalid",
+    "ModelNotFound",
     "Paragraph",
     "Parameters",
+    "ParseFailed",
     "Section",
     "Sentence",
     "SimilarityEdge",
@@ -59,6 +84,7 @@ __all__ = [
     "Summary",
     "SummarySentence",
     "Token",
+    "UnsupportedFormat",
     "VectorClusters",
     "semantic_clusters",
 ]

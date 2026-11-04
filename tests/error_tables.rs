@@ -3,18 +3,20 @@
 //! Four surfaces tell a reader which Python exception a failure raises:
 //! `site/content/reference/errors.md`, `site/content/guides/python.md`, the
 //! agent skill's `skills/matra/references/errors.md`, and the typed stub
-//! `python/matra/_core.pyi`. Nothing tied any of them to
-//! `From<MatraError> for PyErr` in `src/lib.rs`, and the docsite floor
-//! cannot help: gate 3 resolves backticked names against `src/`, and
-//! `OSError` and `RuntimeError` are Python names that resolve nowhere,
-//! so they pass unexamined. The reclassification of transport failures
-//! from `ModelInvalid` to `Io` in 0.2.0 changed which `except` clause
-//! fires and left three of the four surfaces saying the old thing.
+//! `python/matra/_core.pyi`. Nothing tied any of them to the routing in
+//! `src/lib.rs`, and the docsite floor cannot help: gate 3 resolves
+//! backticked names against `src/`, and `OSError` and `RuntimeError` are
+//! Python names that resolve nowhere, so they pass unexamined. The
+//! reclassification of transport failures from `ModelInvalid` to `Io` in
+//! 0.2.0 changed which `except` clause fires and left three of the four
+//! surfaces saying the old thing.
 //!
 //! So this test reads the routing out of the source and holds the three
-//! tables to it. The stub is the one surface it cannot reach: its claims
-//! are sentences in docstrings rather than rows, and pinning prose would
-//! mean pinning wording. Reviewers own that file.
+//! tables to it: which class each variant raises (`Class::of`), and which
+//! builtin each class also derives from (`Class::spec`). The stub is the
+//! one surface it cannot reach as a table; `mypy.stubtest` holds its class
+//! names to the built module, and the Python suite asserts every class's
+//! bases at runtime.
 //!
 //! The source is read as text rather than exercised, because the routing
 //! lives behind `#[cfg(feature = "python")]` and needs an interpreter to
@@ -64,65 +66,107 @@ fn variant_of(pattern: &str) -> String {
         .to_string()
 }
 
-/// Variant name to Python exception class, read out of the
-/// `From<MatraError> for PyErr` match in `src/lib.rs`.
-///
-/// The match has no wildcard arm by design, so what this returns is the
-/// whole routing rather than a sample of it.
-fn routing() -> BTreeMap<String, String> {
-    let lib = read("src/lib.rs");
-    let arms = flatten(between(
-        &lib,
-        "impl From<MatraError> for PyErr {",
-        "\n    }\n",
-    ));
-    let arms = &arms[arms.find("match e.0 {").expect("the routing match") + "match e.0 {".len()..];
+/// How one Python class is raised: the `domain::Error` variant behind
+/// it, the I/O kind that selects it when the variant is refined by one,
+/// and the builtin it also derives from.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct Raised {
+    variant: String,
+    io_kind: Option<String>,
+    builtin: String,
+}
 
-    let mut out = BTreeMap::new();
-    let mut cursor = 0usize;
-    while let Some(offset) = arms[cursor..].find("=>") {
-        let split = cursor + offset;
-        // The cursor is left at the end of the previous arm, so this is
-        // exactly this arm's patterns.
-        let patterns = &arms[cursor..split];
-        let body = &arms[split + 2..];
-        let call = body
-            .find("::new_err")
-            .unwrap_or_else(|| panic!("an arm with no exception class: {body}"));
-        let class = body[..call]
-            .split_whitespace()
-            .next_back()
-            .expect("an exception class name")
-            .trim_start_matches('{')
-            .trim();
-        for pattern in patterns.split('|') {
-            let variant = variant_of(pattern);
-            if !variant.is_empty() {
-                out.insert(variant, class.trim_start_matches("Py").to_string());
-            }
+/// Class name to how it is raised, read out of `Class::of` and
+/// `Class::spec` in the Python module of `src/lib.rs`.
+///
+/// `Class::of` has no wildcard over the variants by design, so what this
+/// returns is the whole routing rather than a sample of it. Its one
+/// wildcard is inside the `Io` arm, over the I/O kinds, and selects the
+/// unrefined `Io` class.
+fn routing() -> BTreeMap<String, Raised> {
+    let lib = read("src/lib.rs");
+
+    let mut variant_of_class: BTreeMap<String, (String, Option<String>)> = BTreeMap::new();
+    let mut outer: Option<String> = None;
+    for line in between(
+        &lib,
+        "fn of(error: &domain::Error) -> Class {",
+        "fn spec(self)",
+    )
+    .lines()
+    {
+        let Some((pattern, body)) = line.split_once("=>") else {
+            continue;
+        };
+        let pattern = pattern.trim();
+        if body.trim().starts_with("match") {
+            outer = Some(variant_of(pattern));
+            continue;
         }
-        // Step over the call's balanced parentheses and whatever closes
-        // the arm, so the next pass starts on patterns and nothing else.
-        let mut at = split + 2 + call;
-        let mut depth = 0usize;
-        for (index, ch) in arms[at..].char_indices() {
-            match ch {
-                '(' => depth += 1,
-                ')' => depth -= 1,
-                _ => {}
-            }
-            if depth == 0 && ch == ')' {
-                at += index + 1;
-                break;
-            }
-        }
-        cursor = at
-            + arms[at..]
-                .find(|c: char| !c.is_whitespace() && c != '}' && c != ',')
-                .unwrap_or(arms.len() - at);
+        let Some(class) = body.trim().strip_prefix("Class::") else {
+            continue;
+        };
+        let class = class.trim_end_matches(',').trim().to_string();
+        let raised = match pattern.strip_prefix("std::io::ErrorKind::") {
+            Some(io_kind) => (
+                outer
+                    .clone()
+                    .expect("an I/O kind arm inside a variant's arm"),
+                Some(io_kind.to_string()),
+            ),
+            None if pattern == "_" => (
+                outer.clone().expect("a wildcard inside a variant's arm"),
+                None,
+            ),
+            None => (variant_of(pattern), None),
+        };
+        variant_of_class.insert(class, raised);
     }
-    assert!(out.len() >= 7, "the routing match parsed as {out:?}");
+
+    let spec = flatten(between(
+        &lib,
+        "fn spec(self) -> (&'static str, &'static str, Option<Class>) {",
+        "fn kind(self)",
+    ));
+    let mut out = BTreeMap::new();
+    for arm in spec.split("Class::").skip(1) {
+        let Some((class, rest)) = arm.split_once("=>") else {
+            continue;
+        };
+        let strings: Vec<&str> = rest.split('"').collect();
+        let (name, builtin) = (strings[1], strings[3]);
+        assert_eq!(class.trim(), name, "a class is named as its arm is");
+        let (variant, io_kind) = variant_of_class
+            .get(name)
+            .unwrap_or_else(|| panic!("{name} has a spec but nothing raises it"))
+            .clone();
+        out.insert(
+            name.to_string(),
+            Raised {
+                variant,
+                io_kind,
+                builtin: builtin.to_string(),
+            },
+        );
+    }
+    assert_eq!(
+        out.len(),
+        variant_of_class.len(),
+        "every class raised has a spec: {variant_of_class:?}"
+    );
+    assert!(out.len() >= 9, "the routing parsed as {out:?}");
     out
+}
+
+/// The class a variant raises when nothing refines it: the one named as
+/// the variant is.
+fn base_class(routing: &BTreeMap<String, Raised>, variant: &str) -> Raised {
+    let raised = routing
+        .get(variant)
+        .unwrap_or_else(|| panic!("{variant} raises no class of its own name"))
+        .clone();
+    assert_eq!(raised.variant, variant);
+    raised
 }
 
 /// Variant name to kind string, read out of `Error::kind` in
@@ -178,20 +222,41 @@ fn rows(markdown: &str, heading: &str) -> Vec<Vec<String>> {
     out
 }
 
-/// The reference page's variant-to-exception table is the routing.
+/// The reference page's class table is the routing: every class, the
+/// variant (and I/O kind) that raises it, and the builtin it derives from.
 #[test]
 fn the_reference_page_agrees_with_the_pyerr_routing() {
     let page = read("site/content/reference/errors.md");
-    let documented: BTreeMap<String, String> = rows(&page, "## Python exception mapping")
+    let documented: BTreeMap<String, Raised> = rows(&page, "## Python exception mapping")
         .into_iter()
-        .filter(|r| r.len() == 2)
-        .map(|r| (r[0].clone(), r[1].clone()))
+        .filter(|r| r.len() == 3)
+        .map(|r| {
+            // `Io`, or `Io`, kind `NotFound`, or `Io`, any other kind.
+            let (variant, refinement) = match r[0].split_once(',') {
+                Some((variant, refinement)) => (variant, Some(refinement)),
+                None => (r[0].as_str(), None),
+            };
+            let io_kind = refinement.and_then(|text| {
+                text.split('`')
+                    .nth(1)
+                    .map(str::to_string)
+                    .filter(|_| text.contains("kind `"))
+            });
+            (
+                r[1].clone(),
+                Raised {
+                    variant: variant.trim().trim_matches('`').to_string(),
+                    io_kind,
+                    builtin: r[2].clone(),
+                },
+            )
+        })
         .collect();
 
     assert_eq!(
         documented,
         routing(),
-        "site/content/reference/errors.md disagrees with From<MatraError> for PyErr in src/lib.rs"
+        "site/content/reference/errors.md disagrees with Class::of and Class::spec in src/lib.rs"
     );
 }
 
@@ -212,55 +277,55 @@ fn the_reference_page_agrees_with_error_kind() {
     );
 }
 
-/// The Python guide's table names a variant and an exception per row, so
-/// every row it carries has to be a row the routing agrees with. It is
-/// keyed by situation rather than by variant, so more than one row may
-/// name the same variant; none of them may name the wrong exception.
+/// The Python guide's table names a class and the builtin it also is,
+/// per row, so every row it carries has to agree with the routing. It is
+/// keyed by situation rather than by class, so more than one row may name
+/// a class; none may name the wrong builtin, and every class appears.
 #[test]
 fn the_python_guide_agrees_with_the_pyerr_routing() {
     let page = read("site/content/guides/python.md");
     let routing = routing();
-    let mut seen = 0usize;
+    let mut seen = std::collections::BTreeSet::new();
     for row in rows(&page, "## Exceptions") {
         if row.len() != 3 {
             continue;
         }
-        let (variant, exception) = (&row[1], &row[2]);
-        let Some(expected) = routing.get(variant.as_str()) else {
-            continue;
-        };
+        let (class, builtin) = (&row[1], &row[2]);
+        let raised = routing.get(class.as_str()).unwrap_or_else(|| {
+            panic!("site/content/guides/python.md names {class}, which matra does not raise")
+        });
         assert_eq!(
-            exception, expected,
-            "site/content/guides/python.md maps {variant} to {exception}, the routing says {expected}"
+            builtin, &raised.builtin,
+            "site/content/guides/python.md says {class} is a {builtin}, the routing says {}",
+            raised.builtin
         );
-        seen += 1;
+        seen.insert(class.clone());
     }
     assert_eq!(
-        seen,
+        seen.len(),
         routing.len(),
-        "the guide's table does not cover every variant"
+        "the guide's table does not cover every class"
     );
 }
 
 /// The agent skill ships inside the binary, so an agent reading a stale
 /// table cannot tell. Its rows are keyed by kind rather than by variant,
-/// which is the composition of the two source-of-truth maps.
+/// which is the composition of the two source-of-truth maps, and name the
+/// class the variant raises when no I/O kind refines it.
 #[test]
 fn the_skill_reference_agrees_with_the_pyerr_routing() {
     let page = read("skills/matra/references/errors.md");
     let (kinds, routing) = (kinds(), routing());
 
-    let expected: BTreeMap<String, String> = kinds
+    let expected: BTreeMap<String, (String, String)> = kinds
         .iter()
         .map(|(variant, kind)| {
-            let exception = routing
-                .get(variant)
-                .unwrap_or_else(|| panic!("{variant} has a kind but no exception"));
-            (kind.clone(), exception.clone())
+            let raised = base_class(&routing, variant);
+            (kind.clone(), (variant.clone(), raised.builtin))
         })
         .collect();
 
-    let documented: BTreeMap<String, String> = page
+    let documented: BTreeMap<String, (String, String)> = page
         .lines()
         .map(str::trim)
         .filter(|l| l.starts_with('|'))
@@ -270,8 +335,8 @@ fn the_skill_reference_agrees_with_the_pyerr_routing() {
                 .map(|c| c.trim().trim_matches('`').to_string())
                 .collect::<Vec<_>>()
         })
-        .filter(|cells| cells.len() == 4 && expected.contains_key(&cells[0]))
-        .map(|cells| (cells[0].clone(), cells[2].clone()))
+        .filter(|cells| cells.len() == 5 && expected.contains_key(&cells[0]))
+        .map(|cells| (cells[0].clone(), (cells[2].clone(), cells[3].clone())))
         .collect();
 
     assert_eq!(

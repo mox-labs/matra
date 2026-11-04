@@ -1,0 +1,131 @@
+"""Every failure crosses into Python as a class of its own (EPR-0006,
+milestone 4): ``kind`` to branch on, ``details`` to read values from, and
+the builtin class matra raised before 0.3.0 still in its bases.
+
+No model is needed. Each failure here is one the binding can produce
+without a parser: the vectors-in clustering, a missing model path, and an
+embedding directory matra may not read.
+"""
+
+from __future__ import annotations
+
+import os
+import pickle
+from pathlib import Path
+
+import matra
+import pytest
+from document_schema import assert_valid
+
+# The class each kind raises as, and the builtin it also derives from.
+# `src/lib.rs` (`Class::spec`) is the source; `tests/error_tables.rs` holds
+# the documentation to it, and this holds the built module to it.
+CLASSES: dict[str, tuple[str, type[BaseException]]] = {
+    "ModelNotFound": ("model_not_found", FileNotFoundError),
+    "ModelInvalid": ("model_invalid", RuntimeError),
+    "ParseFailed": ("parse_failed", RuntimeError),
+    "InputTooLarge": ("input_too_large", ValueError),
+    "UnsupportedFormat": ("unsupported_format", ValueError),
+    "InvalidInput": ("invalid_input", ValueError),
+    "Io": ("io", OSError),
+    "IoNotFound": ("io", FileNotFoundError),
+    "IoPermissionDenied": ("io", PermissionError),
+}
+
+
+def _as_data(error: matra.MatraError) -> dict[str, object]:
+    """The exception as the serde form of the error it carries."""
+    return {"kind": error.kind, "message": str(error), "details": error.details}
+
+
+@pytest.mark.parametrize("name", sorted(CLASSES))
+def test_every_class_is_a_matra_error_and_its_builtin(name: str) -> None:
+    kind, builtin = CLASSES[name]
+    cls = getattr(matra, name)
+    assert issubclass(cls, matra.MatraError)
+    assert issubclass(cls, builtin)
+    assert cls.kind == kind
+    assert cls.__module__ == "matra"
+    assert name in matra.__all__
+
+
+def test_the_classes_cover_every_kind() -> None:
+    """A kind with no class would raise as some other kind's class."""
+    assert {kind for kind, _ in CLASSES.values()} == set(matra.ERROR_KINDS)
+
+
+def test_the_io_refinements_are_io() -> None:
+    """``except matra.Io`` catches every I/O failure, refined or not."""
+    assert issubclass(matra.IoNotFound, matra.Io)
+    assert issubclass(matra.IoPermissionDenied, matra.Io)
+
+
+def test_an_oversized_input_is_input_too_large_with_its_gate() -> None:
+    with pytest.raises(ValueError) as caught:
+        matra.semantic_clusters([[1.0, 0.0]] * 2001, 0.5, "fixed")
+
+    error = caught.value
+    assert isinstance(error, matra.InputTooLarge)
+    assert error.kind == "input_too_large"
+    assert error.details == {"what": "clusters", "limit": 2000, "actual": 2001}
+    assert_valid("error", _as_data(error), "input_too_large")
+
+
+def test_a_broken_contract_is_invalid_input_with_its_reason() -> None:
+    with pytest.raises(ValueError) as caught:
+        matra.semantic_clusters([[1.0, 0.0], [1.0]], 0.5, "fixed")
+
+    error = caught.value
+    assert isinstance(error, matra.InvalidInput)
+    assert error.details["reason"] in str(error)
+    assert_valid("error", _as_data(error), "invalid_input")
+
+
+def test_a_missing_model_is_model_not_found_with_its_path(tmp_path: Path) -> None:
+    missing = tmp_path / "english.udpipe"
+    with pytest.raises(FileNotFoundError) as caught:
+        matra.Matra.from_path(missing)
+
+    error = caught.value
+    assert isinstance(error, matra.ModelNotFound)
+    assert error.details == {"path": str(missing)}
+    assert_valid("error", _as_data(error), "model_not_found")
+
+
+@pytest.mark.skipif(
+    os.name != "posix" or os.geteuid() == 0, reason="needs a file this user may not read"
+)
+def test_an_unreadable_file_is_io_permission_denied(tmp_path: Path) -> None:
+    """Defect 8 of EPR-0006's other half: ``Io`` routes on the kind it
+    wraps, so a refused read is a ``PermissionError``, and the path it
+    concerns is a detail."""
+    for name in ("model.safetensors", "tokenizer.json", "config.json"):
+        artifact = tmp_path / name
+        artifact.write_bytes(b"{}")
+        artifact.chmod(0)
+    try:
+        with pytest.raises(PermissionError) as caught:
+            matra.Model2Vec.from_dir(tmp_path)
+    finally:
+        for name in ("model.safetensors", "tokenizer.json", "config.json"):
+            (tmp_path / name).chmod(0o600)
+
+    error = caught.value
+    assert isinstance(error, matra.IoPermissionDenied)
+    assert error.kind == "io"
+    assert error.details["io_kind"] == "permission_denied"
+    assert Path(error.details["path"]).parent == tmp_path
+    assert_valid("error", _as_data(error), "io")
+
+
+def test_an_exception_survives_pickling() -> None:
+    """The classes name ``matra`` as their module and the package exports
+    them, so an exception crosses a process boundary whole."""
+    with pytest.raises(matra.InputTooLarge) as caught:
+        matra.semantic_clusters([[1.0, 0.0]] * 2001, 0.5, "fixed")
+
+    copy = pickle.loads(pickle.dumps(caught.value))
+    assert type(copy) is matra.InputTooLarge
+    assert str(copy) == str(caught.value)
+    assert copy.kind == caught.value.kind
+    assert copy.details == caught.value.details

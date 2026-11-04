@@ -2,9 +2,10 @@
 items must carry the shapes and the kind vocabulary
 ``spec/tests/corpus/items.json`` pins.
 
-``DocumentError`` has no serde form, so each binding materializes its
-fields by hand. That is the drift this lane exists to catch: a renamed
-key or a kind spelled differently in one crust than in the other.
+A failure item is ``DocumentError``'s serde form, with its path put back
+through ``os.fsdecode``. This lane catches what a binding could still get
+wrong on the way across: a renamed key, a kind spelled differently in one
+crust than in the other, a detail lost.
 
 The vocabulary and the declared shapes are checked with no model. The
 directory expectation needs one, because ``analyze_path`` is a method on
@@ -17,6 +18,7 @@ import json
 import os
 from pathlib import Path
 
+import matra
 import pytest
 from document_schema import assert_valid
 from matra import ERROR_KINDS, Document, DocumentError, ErrorInfo, Matra
@@ -74,9 +76,10 @@ def test_a_directory_walk_yields_the_items_the_fixture_expects(
         else:
             assert Path(item["path"]).name == expect["name"]
             assert set(item) == set(FIXTURE["item_shapes"]["error"])
-            assert set(item["error"]) == set(FIXTURE["item_shapes"]["error_object"])
-            assert item["error"]["kind"] == expect["kind"]
-            assert item["error"]["message"]
+            assert item["kind"] == expect["kind"]
+            assert item["message"]
+            assert item["details"] == expect["details"]
+            assert_valid("error", item, expect["name"])
 
 
 def test_every_provisioning_kind_is_in_the_vocabulary() -> None:
@@ -89,13 +92,13 @@ def test_every_provisioning_kind_is_in_the_vocabulary() -> None:
 def test_a_model_directory_that_cannot_be_created_is_an_os_error(tmp_path: Path) -> None:
     """The provisioning classification RFC-0015 records, on the one
     failure a runner can produce with no model and no network:
-    ``create_dir_all`` fails first, ``io`` crosses into Python as
-    ``OSError``.
+    ``create_dir_all`` fails first, and ``io`` crosses into Python as
+    ``matra.Io``, an ``OSError``, carrying the directory as a detail.
 
     Not itself the contract change. ``create_dir_all`` already converted
     through ``Error::Io`` and routed to ``OSError`` before RFC-0015; the
     reclassification is DNS, TLS and a full disk, which no runner
-    exercises. What is new here is the message naming the directory."""
+    exercises."""
     expect = FIXTURE["provisioning"]["unwritable_model_dir"]["expect"]
     assert expect["kind"] == "io"
 
@@ -105,7 +108,17 @@ def test_a_model_directory_that_cannot_be_created_is_an_os_error(tmp_path: Path)
     with pytest.raises(OSError) as caught:
         Matra.english(str(blocked / "models"))
 
-    message = str(caught.value)
+    error = caught.value
+    assert isinstance(error, matra.Io)
+    assert error.kind == expect["kind"]
+    message = str(error)
     for fragment in expect["message_contains"]:
         assert fragment in message, f"{fragment!r} missing from {message!r}"
     assert str(blocked) in message
+    assert list(error.details) == expect["detail_keys"]
+    assert error.details["path"] == str(blocked / "models")
+    assert_valid(
+        "error",
+        {"kind": error.kind, "message": message, "details": error.details},
+        "unwritable model directory",
+    )

@@ -41,7 +41,7 @@ def assert_valid(name: str, value: Any, context: str) -> None:
     """Validate ``value`` against ``spec/schema/v2/{name}.schema.json``,
     closed, naming every violation.
 
-    ``name`` is ``document``, ``summary``, ``keyphrases`` or ``clusters``.
+    ``name`` is ``document``, ``summary``, ``keyphrases``, ``clusters`` or ``error``.
     The outcome schemas refer to the document schema's definitions by its
     ``$id``, so the document schema, closed the same way, is registered
     under it.

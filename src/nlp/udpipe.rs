@@ -469,7 +469,10 @@ fn body_failure(url: &str, error: std::io::Error) -> Error {
 /// request rather than a model. The `io::ErrorKind` is preserved where
 /// `ureq` knows it, so a caller can tell a timeout from an unreachable
 /// host without reading the message. RFC-0015 records the classification
-/// and what it replaced.
+/// and what it replaced. The failure is marked retryable (EPR-0006):
+/// nothing was written, so the same call can be made again. A rejected
+/// certificate is the exception, since its message names a remedy no
+/// retry supplies.
 fn transport_failure(url: &str, error: &ureq::Error) -> Error {
     use std::io::ErrorKind;
 
@@ -479,7 +482,13 @@ fn transport_failure(url: &str, error: &ureq::Error) -> Error {
         ureq::Error::ConnectionFailed | ureq::Error::HostNotFound => ErrorKind::NotConnected,
         _ => ErrorKind::Other,
     };
-    Error::Io(std::io::Error::new(kind, download_message(url, error)))
+    let retryable = !is_certificate_rejection(&error.to_string(), error);
+    Error::Io(crate::domain::IoContext::download(
+        kind,
+        url,
+        download_message(url, error),
+        retryable,
+    ))
 }
 
 /// What the user reads when a download fails.
@@ -541,8 +550,9 @@ fn host_of(url: &str) -> &str {
 /// user got when the model directory could not be created, with the
 /// directory sitting in a variable one line away.
 fn io_at(operation: &str, path: &Path, error: &std::io::Error) -> Error {
-    Error::Io(std::io::Error::new(
+    Error::Io(crate::domain::IoContext::at_path(
         error.kind(),
+        path,
         format!("cannot {operation} {}: {error}", path.display()),
     ))
 }
@@ -852,6 +862,7 @@ fn locate(text: &str, cursor: usize, form: &str) -> Option<(usize, usize)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::DetailValue;
 
     #[test]
     fn a_missing_model_file_is_model_not_found() {
@@ -1282,6 +1293,11 @@ mod tests {
             message.contains(&dir.display().to_string()),
             "names the path: {message}"
         );
+        assert_eq!(
+            err.details().get("path"),
+            Some(&DetailValue::Text(dir.display().to_string())),
+            "the path is data, not only words in the message"
+        );
     }
 
     /// Regression (report H3): a temporary directory left by a killed
@@ -1391,7 +1407,38 @@ mod tests {
             message.contains("CaUsedAsEndEntity"),
             "the underlying failure survives: {message}"
         );
-        assert_eq!(transport_failure(ENGLISH_MODEL_URL, &error).kind(), "io");
+        let mapped = transport_failure(ENGLISH_MODEL_URL, &error);
+        assert_eq!(mapped.kind(), "io");
+        assert_eq!(
+            mapped.details().get("retryable"),
+            Some(&DetailValue::Bool(false)),
+            "the message says to fetch by hand, so a retry is not offered"
+        );
+    }
+
+    /// A download that did not arrive says so as data (EPR-0006): its
+    /// URL, and that the same call may succeed when made again, since a
+    /// failed fetch writes nothing.
+    #[test]
+    fn a_transport_failure_is_retryable_and_names_its_url() {
+        for error in [
+            ureq::Error::HostNotFound,
+            ureq::Error::ConnectionFailed,
+            ureq::Error::Timeout(ureq::Timeout::Global),
+            ureq::Error::StatusCode(503),
+        ] {
+            let details = transport_failure(ENGLISH_MODEL_URL, &error).details();
+            assert_eq!(
+                details.get("url"),
+                Some(&DetailValue::Text(ENGLISH_MODEL_URL.to_string())),
+                "{error}"
+            );
+            assert_eq!(
+                details.get("retryable"),
+                Some(&DetailValue::Bool(true)),
+                "{error}"
+            );
+        }
     }
 
     /// A failure that is not about certificates keeps its own words.

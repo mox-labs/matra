@@ -64,9 +64,17 @@ def oversized() -> str:
 def test_every_text_method_enforces_the_cap(engine, oversized, call) -> None:
     """No method that takes text may reach the parser with oversized input.
 
-    ``Error::InputTooLarge`` routes to ``ValueError`` through the exhaustive
-    PyErr mapping, so the assertion is on the Python exception class a caller
-    would actually write ``except`` for.
+    ``Error::InputTooLarge`` is raised as ``matra.InputTooLarge``, which is
+    also a ``ValueError``, so the assertion is on the builtin class a caller
+    written before 0.3.0 catches, and then on what the main gate reports.
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as caught:
         call(engine, oversized)
+
+    assert type(caught.value).__name__ == "InputTooLarge"
+    assert caught.value.kind == "input_too_large"
+    assert caught.value.details == {
+        "what": "input",
+        "limit": MAX_INPUT_BYTES,
+        "actual": MAX_INPUT_BYTES + 1,
+    }

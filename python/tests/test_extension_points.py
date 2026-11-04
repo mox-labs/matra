@@ -174,7 +174,7 @@ def test_an_embedder_without_identity_is_refused_before_any_work(
 @pytest.mark.model
 def item_path(item: CorpusItem) -> str | None:
     """The path an item names: a document's own provenance, or an error's."""
-    if "error" in item:
+    if "kind" in item:
         return item["path"]
     return item["provenance"]["source"]["path"]
 
@@ -196,9 +196,10 @@ def test_analyze_path_returns_one_item_per_file_in_order(engine: Matra, tmp_path
     assert "provenance" in items[0]
     assert items[0]["sections"][0]["paragraphs"][0]["sentences"]
 
-    assert "error" in items[1]
-    assert items[1]["error"]["kind"] == "unsupported_format"
-    assert items[1]["error"]["message"]
+    assert "kind" in items[1]
+    assert items[1]["kind"] == "unsupported_format"
+    assert items[1]["message"]
+    assert items[1]["details"] == {}
 
     assert "provenance" in items[2]
     assert items[2]["metrics"]["passive_ratio"] is not None
@@ -292,21 +293,25 @@ def test_analyze_path_takes_a_pathlib_path(engine: Matra, tmp_path: Path) -> Non
 
 def test_model2vec_takes_a_pathlib_path(tmp_path: Path) -> None:
     """The same extraction on the embedding adapter. No model needed: a
-    missing directory is `Error::ModelNotFound`, which routes to
-    `FileNotFoundError`, and reaching that error at all proves the
-    argument was accepted."""
-    with pytest.raises(FileNotFoundError):
+    missing directory is `Error::ModelNotFound`, raised as
+    `matra.ModelNotFound`, a `FileNotFoundError`, and reaching that error
+    at all proves the argument was accepted."""
+    with pytest.raises(matra.ModelNotFound):
         matra.Model2Vec.from_dir(tmp_path / "no-such-model")
 
 
 @pytest.mark.model
 def test_analyze_path_on_a_missing_directory_raises(engine: Matra, tmp_path: Path) -> None:
     """A listing failure has no per-document result to travel in, so it
-    is raised rather than returned. `Error::Io` routes to `OSError`, the
-    same mapping every other I/O failure on the surface uses."""
-    with pytest.raises(OSError) as excinfo:
+    is raised rather than returned. `Error::Io` routes on the I/O kind it
+    wraps (defect 8 of EPR-0006): a missing path is `matra.IoNotFound`, a
+    `FileNotFoundError`, where it used to be a bare `OSError`."""
+    with pytest.raises(FileNotFoundError) as excinfo:
         engine.analyze_path(str(tmp_path / "no-such-directory"))
 
+    assert isinstance(excinfo.value, matra.IoNotFound)
+    assert excinfo.value.kind == "io"
+    assert excinfo.value.details["io_kind"] == "not_found"
     assert "No such file or directory" in str(excinfo.value)
 
 
@@ -320,11 +325,11 @@ def test_the_new_shapes_are_importable_from_the_package_root() -> None:
     not, and a consumer's `from matra import ...` is the check."""
     from matra import CorpusItem, Document, DocumentError, Embedder, ErrorInfo, Skipped, Span
 
-    assert set(DocumentError.__annotations__) == {"path", "error"}
+    assert set(DocumentError.__annotations__) == {"path", "kind", "message", "details"}
     assert set(Document.__annotations__) == {"provenance", "sections", "metrics", "skipped"}
     assert set(Span.__annotations__) == {"start", "end"}
     assert set(Skipped.__annotations__) == {"kind", "span"}
-    assert set(ErrorInfo.__annotations__) == {"kind", "message"}
+    assert set(ErrorInfo.__annotations__) == {"kind", "message", "details"}
     assert callable(Embedder.embed) and callable(Embedder.identity)
     assert CorpusItem is not None
 

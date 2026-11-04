@@ -21,8 +21,8 @@ ERROR_KINDS: Final[tuple[str, ...]] = (
     "invalid_input",
     "io",
 )
-"""Every value ``ErrorInfo["kind"]`` can take, in the order the Rust
-enum declares them.
+"""Every value ``ErrorInfo["kind"]`` and ``MatraError.kind`` can take, in
+the order the Rust enum declares them.
 
 Mirrors ``matra::domain::Error::kind``, the one place the vocabulary is
 written on the Rust side. ``spec/tests/corpus/items.json`` pins the list
@@ -444,20 +444,41 @@ class VectorClusters(TypedDict):
     edges: list[SimilarityEdge]
 
 
+type ErrorDetails = dict[str, str | int | bool]
+"""Every dynamic value in a failure's message, by name. Mirrors
+``matra::domain::ErrorDetails``.
+
+The keys per kind: ``path`` for ``model_not_found``; ``reason`` for
+``model_invalid``, ``parse_failed`` and ``invalid_input``; ``what``,
+``limit`` and ``actual`` for ``input_too_large``; ``format`` (when one was
+recognised) and ``feature`` (when one would read it) for
+``unsupported_format``; and for ``io``, ``io_kind`` and ``reason``, with
+``path`` when the failure concerns a path matra named, and ``url`` and
+``retryable`` when a download did not arrive. A key that does not apply
+is absent. A key a kind carries keeps appearing in later versions, and
+new keys may be added, so read the ones you know and ignore the rest.
+"""
+
+
 class ErrorInfo(TypedDict):
-    """One failure, projected for consumers. Mirrors ``matra::domain::Error``.
+    """One failure as data. Mirrors the serde form of
+    ``matra::domain::Error``, and what ``MatraError`` carries.
 
     ``kind`` is a stable string naming the variant; ``ERROR_KINDS`` holds
     the whole vocabulary. Branch on it. ``message`` is the Rust error's
-    own text, meant for a human and not a contract.
+    own text, meant for a human and not a contract. ``details`` holds
+    every dynamic value in the message, so nothing has to be parsed out
+    of it.
     """
 
     kind: str
     message: str
+    details: ErrorDetails
 
 
-class DocumentError(TypedDict):
-    """One document that failed. Mirrors ``matra::domain::DocumentError``.
+class DocumentError(ErrorInfo):
+    """One document that failed. Mirrors the serde form of
+    ``matra::domain::DocumentError``: the error's own keys plus ``path``.
 
     A failure reading or parsing one file does not abort a directory
     walk: it arrives as one of these, in the position the document would
@@ -466,7 +487,6 @@ class DocumentError(TypedDict):
     """
 
     path: str | None
-    error: ErrorInfo
 
 
 type CorpusItem = Document | DocumentError
@@ -474,7 +494,7 @@ type CorpusItem = Document | DocumentError
 that failed.
 
 The two are told apart by their keys, and a type checker narrows the
-union on that test: ``"error" in item`` selects the failure,
+union on that test: ``"kind" in item`` selects the failure,
 ``"provenance" in item`` the success, whose path is
 ``item["provenance"]["source"]["path"]``.
 """
@@ -516,6 +536,7 @@ __all__ = [
     "DocumentError",
     "DocumentMetrics",
     "Embedder",
+    "ErrorDetails",
     "ErrorInfo",
     "Identity",
     "Keyphrase",

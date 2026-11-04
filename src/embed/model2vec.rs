@@ -682,8 +682,9 @@ fn not_the_pinned_model(dir: &Path, reason: &str, expected_digest: &str) -> Erro
 /// two provisioners share a discipline rather than a module, so this is
 /// the discipline implemented twice, not a helper imported twice.
 fn io_at(operation: &str, path: &Path, error: &std::io::Error) -> Error {
-    Error::Io(std::io::Error::new(
+    Error::Io(crate::domain::IoContext::at_path(
         error.kind(),
+        path,
         format!("cannot {operation} {}: {error}", path.display()),
     ))
 }
@@ -757,8 +758,9 @@ impl Transaction {
             .create_new(true)
             .open(tmp)
             .map_err(|e| {
-                std::io::Error::new(
+                domain::IoContext::at_path(
                     e.kind(),
+                    tmp,
                     format!(
                         "cannot create the temporary file {}: {e} (a leftover from a killed \
                          process, or one planted there; remove it and try again)",
@@ -1058,7 +1060,10 @@ fn body_failure(url: &str, error: std::io::Error) -> Error {
 /// belongs on this side too, because what came back was a server's
 /// answer about the request rather than a model. The `io::ErrorKind` is
 /// preserved where `ureq` knows it, so a caller can tell a timeout from
-/// an unreachable host without reading the message.
+/// an unreachable host without reading the message, and the failure is
+/// marked retryable (EPR-0006): nothing was written, so the same call can
+/// be made again. A rejected certificate is the exception, since its
+/// message names a remedy no retry supplies.
 #[cfg(not(target_arch = "wasm32"))]
 fn transport_failure(url: &str, error: &ureq::Error) -> Error {
     use std::io::ErrorKind;
@@ -1069,7 +1074,13 @@ fn transport_failure(url: &str, error: &ureq::Error) -> Error {
         ureq::Error::ConnectionFailed | ureq::Error::HostNotFound => ErrorKind::NotConnected,
         _ => ErrorKind::Other,
     };
-    Error::Io(std::io::Error::new(kind, download_message(url, error)))
+    let retryable = !is_certificate_rejection(&error.to_string(), error);
+    Error::Io(crate::domain::IoContext::download(
+        kind,
+        url,
+        download_message(url, error),
+        retryable,
+    ))
 }
 
 /// What the user reads when an artifact download fails.
@@ -1808,10 +1819,39 @@ mod provisioning {
         assert!(message.contains("system trust store"), "{message}");
         assert!(message.contains("from_dir"), "{message}");
         assert!(message.contains("CaUsedAsEndEntity"), "{message}");
+        let mapped = transport_failure(POTION_BASE_8M_URLS[0], &error);
+        assert_eq!(mapped.kind(), "io");
         assert_eq!(
-            transport_failure(POTION_BASE_8M_URLS[0], &error).kind(),
-            "io"
+            mapped.details().get("retryable"),
+            Some(&domain::DetailValue::Bool(false)),
+            "the message says to load by hand, so a retry is not offered"
         );
+    }
+
+    /// A download that did not arrive says so as data (EPR-0006): its
+    /// URL, and that the same call may succeed when made again, since a
+    /// failed fetch writes nothing.
+    #[test]
+    fn a_transport_failure_is_retryable_and_names_its_url() {
+        for error in [
+            ureq::Error::HostNotFound,
+            ureq::Error::Timeout(ureq::Timeout::Connect),
+            ureq::Error::StatusCode(502),
+        ] {
+            let details = transport_failure(POTION_BASE_8M_URLS[0], &error).details();
+            assert_eq!(
+                details.get("url"),
+                Some(&domain::DetailValue::Text(
+                    POTION_BASE_8M_URLS[0].to_string()
+                )),
+                "{error}"
+            );
+            assert_eq!(
+                details.get("retryable"),
+                Some(&domain::DetailValue::Bool(true)),
+                "{error}"
+            );
+        }
     }
 
     #[test]
@@ -2056,6 +2096,11 @@ mod provisioning {
         assert!(
             message.contains(&dir.display().to_string()),
             "names the path: {message}"
+        );
+        assert_eq!(
+            err.details().get("path"),
+            Some(&domain::DetailValue::Text(dir.display().to_string())),
+            "the path is data, not only words in the message"
         );
     }
 

@@ -23,12 +23,79 @@ from matra.types import (
     CorpusItem,
     Document,
     Embedder,
+    ErrorDetails,
     Keyphrases,
     Summary,
     VectorClusters,
 )
 
-__all__ = ["Matra", "Model2Vec", "cli_main", "semantic_clusters"]
+__all__ = [
+    "InputTooLarge",
+    "InvalidInput",
+    "Io",
+    "IoNotFound",
+    "IoPermissionDenied",
+    "Matra",
+    "MatraError",
+    "Model2Vec",
+    "ModelInvalid",
+    "ModelNotFound",
+    "ParseFailed",
+    "UnsupportedFormat",
+    "cli_main",
+    "semantic_clusters",
+]
+
+class MatraError(Exception):
+    """Every failure matra raises.
+
+    `kind` is the stable string to branch on, one of `ERROR_KINDS`; each
+    subclass below carries its own. `details` holds every dynamic value
+    in the message, by name (see `matra.ErrorDetails` for the keys per
+    kind), so nothing has to be parsed out of `str(exc)`.
+
+    Each subclass also derives from the builtin class matra raised before
+    0.3.0, so `except ValueError` still catches an `InputTooLarge`.
+    """
+
+    kind: str
+    details: ErrorDetails
+
+class ModelNotFound(MatraError, FileNotFoundError):
+    """A model file does not exist at the path given. `kind` is
+    `model_not_found`; `details["path"]` is the path."""
+
+class ModelInvalid(MatraError, RuntimeError):
+    """Bytes that arrived could not be verified against the pin, or could
+    not be loaded. `kind` is `model_invalid`."""
+
+class ParseFailed(MatraError, RuntimeError):
+    """The parser failed on the input, or panicked. `kind` is
+    `parse_failed`."""
+
+class InputTooLarge(MatraError, ValueError):
+    """A size gate rejected the input. `kind` is `input_too_large`;
+    `details` carries `what` (the gate), `limit` and `actual`."""
+
+class UnsupportedFormat(MatraError, ValueError):
+    """The input is in a format this build cannot read, or is not UTF-8
+    text. `kind` is `unsupported_format`; `details` carries `format` when
+    one was recognised and `feature` when one would read it."""
+
+class InvalidInput(MatraError, ValueError):
+    """A caller broke a documented contract. `kind` is
+    `invalid_input`."""
+
+class Io(MatraError, OSError):
+    """A filesystem operation failed, or a download did not arrive. `kind`
+    is `io`; `details` carries `io_kind` and `reason`, `path` when the
+    failure concerns one, and `url` and `retryable` for a download."""
+
+class IoNotFound(Io, FileNotFoundError):
+    """An `Io` failure whose I/O kind is `not_found`."""
+
+class IoPermissionDenied(Io, PermissionError):
+    """An `Io` failure whose I/O kind is `permission_denied`."""
 
 @final
 class Matra:

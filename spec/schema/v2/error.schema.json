@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mox-labs.github.io/matra/schema/v2/error.schema.json",
+  "title": "matra error, schema 2.x",
+  "description": "One failure as matra reports it: the serde form of `matra::domain::Error` (`kind`, `message`, `details`), and of `matra::domain::DocumentError`, which adds `path`. Python's `analyze_path` returns the second for a document that failed, and every Python exception matra raises carries the first as `kind`, `str(exc)` and `details`. Read by the same rules as the document schema: ignore fields you do not recognize, treat every string set as open (`kind` and `io_kind` among them), and reject a major you do not know. Branch on `kind`, read values from `details`, and never parse `message`, which is for a person and may change. A detail that does not apply is absent; a key a kind carries keeps appearing in later versions.",
+  "type": "object",
+  "required": ["kind", "message", "details"],
+  "properties": {
+    "kind": {
+      "description": "The stable name of the failure: `model_not_found`, `model_invalid`, `parse_failed`, `input_too_large`, `unsupported_format`, `invalid_input` or `io`. An open set.",
+      "type": "string"
+    },
+    "message": {
+      "description": "The error's text, for a person. Every dynamic value in it is also in `details`.",
+      "type": "string"
+    },
+    "details": {
+      "description": "Every dynamic value in `message`, by name. The keys depend on `kind`; each value is a string, a whole number or a boolean.",
+      "type": "object",
+      "additionalProperties": { "type": ["string", "integer", "boolean"] }
+    },
+    "path": {
+      "description": "On a per-document failure only: the file the document came from, or null for input that never came from disk.",
+      "type": ["string", "null"]
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "model_not_found" } }, "required": ["kind"], "additionalProperties": true },
+      "then": {
+        "properties": {
+          "details": {
+            "required": ["path"],
+            "properties": {
+              "path": { "description": "The path where no model was found.", "type": "string" }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "enum": ["model_invalid", "parse_failed", "invalid_input"] } },
+        "required": ["kind"],
+        "additionalProperties": true
+      },
+      "then": {
+        "properties": {
+          "details": {
+            "required": ["reason"],
+            "properties": {
+              "reason": {
+                "description": "What went wrong, as the variant's own text.",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "input_too_large" } }, "required": ["kind"], "additionalProperties": true },
+      "then": {
+        "properties": {
+          "details": {
+            "required": ["what", "limit", "actual"],
+            "properties": {
+              "what": {
+                "description": "The gate that fired: `input`, `file_source`, `tfidf`, `textrank`, `rake`, `yake`, `clusters`, `udpipe_download`, `embedding_download` or `config_file`. An open set.",
+                "type": "string"
+              },
+              "limit": { "description": "The cap.", "type": "integer", "minimum": 0 },
+              "actual": {
+                "description": "The size measured against the cap.",
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "unsupported_format" } }, "required": ["kind"], "additionalProperties": true },
+      "then": {
+        "properties": {
+          "details": {
+            "properties": {
+              "format": {
+                "description": "The format recognised (`pdf`, `docx`), absent when the bytes are neither UTF-8 text nor a signature matra recognises.",
+                "type": "string"
+              },
+              "feature": {
+                "description": "The Cargo feature that would read `format`, absent when none does.",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "io" } }, "required": ["kind"], "additionalProperties": true },
+      "then": {
+        "properties": {
+          "details": {
+            "required": ["io_kind", "reason"],
+            "properties": {
+              "io_kind": {
+                "description": "The class of the I/O failure, in snake case: `not_found`, `permission_denied`, `already_exists`, `unsupported`, `invalid_input`, `invalid_data`, `timed_out`, `not_connected`, `connection_refused`, `connection_reset`, `unexpected_eof`, `interrupted`, `not_a_directory`, `is_a_directory`, `storage_full` or `other`. An open set.",
+                "type": "string"
+              },
+              "path": {
+                "description": "The path the failure concerns, when matra named one.",
+                "type": "string"
+              },
+              "url": {
+                "description": "The URL of a download that did not arrive.",
+                "type": "string"
+              },
+              "retryable": {
+                "description": "On a download that did not arrive: whether the same call can be made again as it is and may succeed. Absent elsewhere, which makes no claim either way.",
+                "type": "boolean"
+              },
+              "reason": {
+                "description": "The I/O failure's own text.",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  ]
+}

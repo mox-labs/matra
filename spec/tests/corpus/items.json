@@ -1,6 +1,6 @@
 {
   "name": "corpus-items",
-  "description": "The corpus item shapes (EP-0010 M5): what one document's result looks like when it crosses a binding, and the kind vocabulary a consumer branches on instead of reading a message. A success item is the document itself, which names its own path in provenance.source.path; there is no wrapper around it. DocumentError has no serde form, because it wraps std::io::Error, so every binding materializes its fields by hand, which is the drift this fixture makes loud. The directory expectation needs no model: reading, detection and their failure path all run before any parse.",
+  "description": "The corpus item shapes (EP-0010 M5): what one document's result looks like when it crosses a binding, and the kind vocabulary a consumer branches on instead of reading a message. A success item is the document itself, which names its own path in provenance.source.path; there is no wrapper around it. A failure item is the serde form of DocumentError (EPR-0006 milestone 4): the error's kind, message and details, plus the path, validated against spec/schema/v2/error.schema.json. The directory expectation needs no model: reading, detection and their failure path all run before any parse.",
   "error_kinds": [
     "model_not_found",
     "model_invalid",
@@ -19,15 +19,18 @@
     ],
     "error": [
       "path",
-      "error"
+      "kind",
+      "message",
+      "details"
     ],
     "error_object": [
       "kind",
-      "message"
+      "message",
+      "details"
     ]
   },
   "directory": {
-    "description": "One readable file and one whose bytes are not UTF-8, analyzed as a directory. Two items come back in path order: the document for the file that read, naming its path in provenance.source.path, and an error item of kind unsupported_format for the file whose bytes are not text, so one unreadable file costs one item rather than the walk. Bytes that are not UTF-8 and carry no signature matra recognises are an unsupported format, not an I/O failure: nothing went wrong reading them. A path is null only for a document that never came from disk, which a directory walk never produces.",
+    "description": "One readable file and one whose bytes are not UTF-8, analyzed as a directory. Two items come back in path order: the document for the file that read, naming its path in provenance.source.path, and an error item of kind unsupported_format for the file whose bytes are not text, whose details are empty because no format was recognised and so no feature would read one, so one unreadable file costs one item rather than the walk. Bytes that are not UTF-8 and carry no signature matra recognises are an unsupported format, not an I/O failure: nothing went wrong reading them. A path is null only for a document that never came from disk, which a directory walk never produces.",
     "files": [
       {
         "name": "a.txt",
@@ -59,12 +62,13 @@
       {
         "name": "b.txt",
         "shape": "error",
-        "kind": "unsupported_format"
+        "kind": "unsupported_format",
+        "details": {}
       }
     ]
   },
   "provisioning": {
-    "description": "Which kind a model provisioning failure reports (RFC-0015). A download that never arrived is a transport failure rather than an invalid model, so it is `io` with the URL in the message; a filesystem failure creating or writing the model directory is `io` with the operation and the path in the message; only bytes that arrived and then failed the pinned digest are `model_invalid`. Before 0.2.0 all three were `model_invalid`, so a consumer that branched on it for a DNS failure has to move to `io`. The filesystem row is the one a runner can produce with no network, so it is the one asserted here; the other two state the contract the adapters are written to.",
+    "description": "Which kind a model provisioning failure reports (RFC-0015). A download that never arrived is a transport failure rather than an invalid model, so it is `io` with the URL in the message and in `details.url`, and `details.retryable` true; a filesystem failure creating or writing the model directory is `io` with the operation and the path in the message, and the path in `details.path`; only bytes that arrived and then failed the pinned digest are `model_invalid`. Before 0.2.0 all three were `model_invalid`, so a consumer that branched on it for a DNS failure has to move to `io`. The filesystem row is the one a runner can produce with no network, so it is the one asserted here; the other two state the contract the adapters are written to.",
     "kinds": {
       "transport": "io",
       "filesystem": "io",
@@ -76,6 +80,11 @@
         "kind": "io",
         "message_contains": [
           "create the model directory"
+        ],
+        "detail_keys": [
+          "io_kind",
+          "path",
+          "reason"
         ]
       }
     }
