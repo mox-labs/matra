@@ -1,6 +1,6 @@
 {
   "generator": {
-    "matra": "0.2.1",
+    "matra": "0.3.0",
     "udpipe_model": {
       "name": "english-ewt-ud-2.5-191206",
       "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
@@ -38,11 +38,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5758,
-      "readability_grade": 3.3611,
-      "sentences": 2,
-      "text": "Keep the version floor in the uvx line. --skill arrived in 0.2.0, and an unpinned uvx matra takes whatever release is newest, which before 0.2.0 was a different command line without the flag.",
-      "words": 33
+      "lexical_density": 0.4878,
+      "readability_grade": 1.3723,
+      "sentences": 3,
+      "text": "Keep the version floor in the uvx line. The skill describes the command line of the version that prints it, and 0.2's spells its commands and its JSON differently from the 0.3 these pages describe. 0.1.0's has no --skill at all.",
+      "words": 42
     },
     {
       "compression_ratio": null,

@@ -1,0 +1,489 @@
+{
+  "generator": {
+    "matra": "0.3.0",
+    "udpipe_model": {
+      "name": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957"
+    }
+  },
+  "page": "guides/migrate-to-0-3.md",
+  "paragraphs": [
+    {
+      "compression_ratio": 0.5377,
+      "kind": "paragraph",
+      "lexical_density": 0.5227,
+      "readability_grade": 4.067,
+      "sentences": 5,
+      "text": "0.3.0 changes Rust, Python, the command line, the JSON and the config file at once. Nothing keeps its old name. There are no deprecated aliases, no hidden flags, no fields written under both names and no setting that brings back the 0.2 output. A 0.2 call fails at once in 0.3: a compile error in Rust, an AttributeError or TypeError in Python, an unknown flag or key at the command line, and a new format_version and schema major in the JSON. Nothing keeps working with a different meaning.",
+      "words": 89
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.4828,
+      "readability_grade": -0.7142,
+      "sentences": 2,
+      "text": "This page lists every change a 0.2 caller meets, with the 0.2 form and the 0.3 form side by side. Work through the section for each surface you use.",
+      "words": 29
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.625,
+      "readability_grade": 5.7217,
+      "sentences": 2,
+      "text": "Move the version requirement first. The old requirement keeps you on 0.2, because cargo reads a change in the first non-zero component as breaking.",
+      "words": 24
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5667,
+      "readability_grade": 7.9767,
+      "sentences": 3,
+      "text": "Engine::new takes no arguments and builds the pinned parser itself. It reads no configuration file. Engine::with_defaults is gone, because it read one under a name that did not say so.",
+      "words": 32
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.4737,
+      "readability_grade": 7.3463,
+      "sentences": 2,
+      "text": "The parser and reader traits are private to the crate, so there is no provider to construct and no reader table to pass. No surface loads a UDPipe model file of your choosing: the model is a pin.",
+      "words": 38
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5217,
+      "readability_grade": 8.4348,
+      "sentences": 3,
+      "text": "Input is one document. Engine::analyze returns its Document or the error. There is no stream to unwrap and no CorpusEntry around the document.",
+      "words": 24
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6,
+      "readability_grade": 11.385,
+      "sentences": 2,
+      "text": "Input has five constructors: text, bytes, file, file_as (a file read as the format you name) and blocks (headings and paragraphs you supply for a format matra has no reader for). Input::file on a directory fails with InvalidInput, naming Inputs::dir.",
+      "words": 42
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5938,
+      "readability_grade": 7.8775,
+      "sentences": 3,
+      "text": "Ingest::path on a directory is Inputs::dir, and analyze_all streams one result per file. A failed file is an Err item carrying its path. The path of a document that analyzed is doc.provenance.source.path.",
+      "words": 34
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5556,
+      "readability_grade": 10.2089,
+      "sentences": 4,
+      "text": "Corpus and CorpusResult are gone, with Corpus::total_words, passive_ratio and mean_readability. Collect the stream yourself. A count such as total_words sums across documents. A ratio such as vocabulary_ttr does not, because it falls as a document grows.",
+      "words": 38
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5,
+      "readability_grade": 9.1835,
+      "sentences": 2,
+      "text": "The aggregate methods are fields now, so they reach Python and the JSON too. The paragraph measures moved into Paragraph.metrics, and the document measures into Document.metrics.",
+      "words": 26
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6471,
+      "readability_grade": 16.1838,
+      "sentences": 1,
+      "text": "DocumentMetrics also carries total_sentences, paragraph_count, mean_sentence_length and sentence_length_std, which 0.2 computed for the command line's table only.",
+      "words": 18
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.4516,
+      "readability_grade": 6.711,
+      "sentences": 3,
+      "text": "The facts on a sentence are named for what the detector finds. ClausalComplement is a verb governing a clausal complement. Which of those verbs report speech is your lexicon, as before.",
+      "words": 31
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5714,
+      "readability_grade": 9.3791,
+      "sentences": 4,
+      "text": "The 0.2 bare_assertion flag is root_mood.mood == \"Ind\" with no modal whose head_id is root_mood.root_id. Token::feat(\"Mood\") reads one feature, as before. Paragraph.in_blockquote is Paragraph.kind: in_blockquote: true is ParagraphKind::Quote, and a list item is now ParagraphKind::ListItem.",
+      "words": 40
+    },
+    {
+      "compression_ratio": 0.5888,
+      "kind": "paragraph",
+      "lexical_density": 0.5091,
+      "readability_grade": 7.1507,
+      "sentences": 4,
+      "text": "The outcomes are free functions at the crate root. They take the analysed &Document, not a slice of its sentences, and need no engine, so they run in a build without UDPipe. The method is optional and never in the name. Each returns a record whose provenance names the method that ran and its parameters.",
+      "words": 56
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "What moved inside the results:",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6316,
+      "readability_grade": 7.3747,
+      "sentences": 3,
+      "text": "ScoredSentence { text, score, position } is SummarySentence { index, span, text, score }, in Summary.sentences. position is index.",
+      "words": 15
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6429,
+      "readability_grade": 7.3686,
+      "sentences": 1,
+      "text": "Keyphrase gains occurrences, every span the phrase was found in, and sits in Keyphrases.phrases.",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5349,
+      "readability_grade": 10.1063,
+      "sentences": 5,
+      "text": "SemanticClusters { model_hash, threshold, clusters } is Clusters { provenance, clusters, edges }. The embedder's identity is provenance.parameters.embedder and the threshold provenance.parameters.threshold. The edges moved out of each cluster into one list, ordered by a and then b. Each Cluster holds only members.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5556,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "The threshold and every score are f64, not f32.",
+      "words": 9
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.7778,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "Error keeps its variants and kind(). Two shapes changed.",
+      "words": 9
+    },
+    {
+      "compression_ratio": 0.5419,
+      "kind": "paragraph",
+      "lexical_density": 0.5949,
+      "readability_grade": 6.5042,
+      "sentences": 7,
+      "text": "Error::details() is new. It returns every value in the message by name, so no caller parses a message. Error and DocumentError serialize as {kind, message, details}, and DocumentError adds path. A failed read now names its path: io error: cannot read essay.md: No such file or directory (os error 2). A file whose bytes are not UTF-8 is UnsupportedFormat, not Io. Every cap is in domain::limits, with the same values as 0.2. Errors lists every kind and its details.",
+      "words": 82
+    },
+    {
+      "compression_ratio": 0.5595,
+      "kind": "paragraph",
+      "lexical_density": 0.5821,
+      "readability_grade": 13.0599,
+      "sentences": 4,
+      "text": "These modules and items are private to the crate in 0.3: nlp with NlpProvider and Udpipe, metrics with Metric, default_suite, run_suite and readability::flesch_kincaid_grade, hearst, extraction, decompose with MarkdownDecomposer, PlainTextDecomposer and Decomposers, source with FileSource and DirectorySource, and standard_decomposers. The measures stay public as fields of the Document. For another measure, write a function over &Document. Embedder stays public and unchanged: it is the one port you implement.",
+      "words": 69
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Config reads the renamed sections, so its accessors follow them.",
+      "words": 10
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.4706,
+      "readability_grade": 10.4753,
+      "sentences": 1,
+      "text": "Config::from_file(path) is new: the configuration with a file you name, where a missing file is an error.",
+      "words": 19
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5484,
+      "readability_grade": 7.3828,
+      "sentences": 3,
+      "text": "Matra is Engine. A model directory is named by MATRA_MODEL_DIR, or by a config file you pass to Engine.from_config. Matra.from_path is gone: no surface loads a model file of your choosing.",
+      "words": 33
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6333,
+      "readability_grade": 5.2367,
+      "sentences": 4,
+      "text": "engine.analyze takes exactly one input. A str alone is text, never a path, and reads as plain text unless you name a format. It returns a matra.Document, not a dict.",
+      "words": 30
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.7368,
+      "readability_grade": 14.2063,
+      "sentences": 7,
+      "text": "analyze_path returned CorpusEntry dicts ({\"path\", \"analysis\"}) and DocumentError dicts ({\"path\", \"error\": {\"kind\", \"message\"}}). analyze_all yields a matra.Document or a DocumentError dict, {\"path\", \"kind\", \"message\", \"details\"}. Tell them apart with isinstance(item, matra.Document). The path of a document is item[\"provenance\"][\"source\"][\"path\"].",
+      "words": 42
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5854,
+      "readability_grade": 6.0701,
+      "sentences": 5,
+      "text": "A matra.Document reads like the dict it replaced: doc[\"metrics\"][\"total_words\"], list(doc) and len(doc) work. It is read-only. Call doc.to_dict() where your code needs a dict, changes the result, or pickles it. The keys follow the schema 2.0 record, so the measures moved:",
+      "words": 47
+    },
+    {
+      "compression_ratio": 0.6,
+      "kind": "paragraph",
+      "lexical_density": 0.5846,
+      "readability_grade": 8.36,
+      "sentences": 4,
+      "text": "The four algorithm-named methods and semantic_clusters are module functions over a Document. A text is parsed once however many outcomes you ask of it, and a markdown file is read as markdown first: 0.2's methods read every text as plain text, so a README's headings could land in its summary. max_phrases is n. Each returns a dict whose provenance names the method and its parameters.",
+      "words": 67
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6786,
+      "readability_grade": 10.3857,
+      "sentences": 2,
+      "text": "The vectors-in matra.semantic_clusters(vectors, threshold, model_hash) is gone, because Rust never had it. To compare vectors you already hold, compute the cosine yourself, as the semantic clusters guide shows.",
+      "words": 31
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5862,
+      "readability_grade": 7.1754,
+      "sentences": 3,
+      "text": "Every exception is a matra.MatraError subclass with kind and details. Each also derives from the builtin class 0.2 raised, so except ValueError and except OSError catch what they caught.",
+      "words": 29
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.4242,
+      "readability_grade": 10.5126,
+      "sentences": 3,
+      "text": "A missing file was a bare OSError in 0.2. It is now matra.IoNotFoundError, which is a FileNotFoundError and an OSError, so except FileNotFoundError now catches it. A permission failure is matra.IoPermissionError, a PermissionError.",
+      "words": 33
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6279,
+      "readability_grade": 15.4803,
+      "sentences": 4,
+      "text": "matra.types follows the record. ScoredSentence is SummarySentence inside Summary; SemanticClusters, SemanticCluster and SemanticEdge are Clusters, Cluster and SimilarityEdge; Reporting is ClausalComplement; CorpusEntry and CorpusItem are gone. The TypedDict that was named Document is DocumentDict, the shape to_dict() returns, and matra.Document is the class.",
+      "words": 43
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6111,
+      "readability_grade": 4.6367,
+      "sentences": 3,
+      "text": "A config file from 0.2 does not load. Every command that reads one fails with invalid_input, naming the file and each key's replacement. Edit the file, or write a fresh one with matra config init --force.",
+      "words": 37
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6471,
+      "readability_grade": 8.5485,
+      "sentences": 1,
+      "text": "models.udpipe goes without a replacement, because the parsing model is pinned in the source beside its digest.",
+      "words": 17
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5278,
+      "readability_grade": 6.1344,
+      "sentences": 4,
+      "text": "format_version is 2, and the envelope gains a fifth key, error. All five are always present, and exactly one of result and error is null. A consumer pinned to format_version: 1 should fail, and then move.",
+      "words": 36
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6667,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "result changed too:",
+      "words": 3
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6,
+      "readability_grade": null,
+      "sentences": 2,
+      "text": "analyze: a schema 2.0 Document. See The JSON record below.",
+      "words": 10
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.7143,
+      "readability_grade": 10.9414,
+      "sentences": 1,
+      "text": "summarize: a Summary record, {provenance, sentences}, not a bare list of {text, score, position}.",
+      "words": 14
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6923,
+      "readability_grade": 8.5415,
+      "sentences": 1,
+      "text": "keyphrases: a Keyphrases record, {provenance, phrases}, not a bare list of {phrase, score}.",
+      "words": 13
+    },
+    {
+      "compression_ratio": 0.5621,
+      "kind": "paragraph",
+      "lexical_density": 0.5085,
+      "readability_grade": 4.245,
+      "sentences": 4,
+      "text": "In 0.2 a failure under --json wrote nothing to stdout. In 0.3 it writes the envelope there, with result null and error holding the kind, message and details. It still writes matra: <message> to stderr and still exits 2, so a script that reads only the exit code is unchanged. A usage error under --json is an envelope too.",
+      "words": 59
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5806,
+      "readability_grade": 2.3674,
+      "sentences": 4,
+      "text": "The message for a missing file changed with it: io error: cannot read missing.md: ... where 0.2 printed no such file: missing.md. Branch on error.kind and read error.details, never the message.",
+      "words": 30
+    },
+    {
+      "compression_ratio": 0.614,
+      "kind": "paragraph",
+      "lexical_density": 0.4694,
+      "readability_grade": 6.2855,
+      "sentences": 3,
+      "text": "Standard input is read as bytes, and its format is detected as a file's is. --stdin-filename still names it, and its extension still picks the format. Bytes that are not UTF-8 fail as unsupported_format, as a file's do, where 0.2 failed with a read error that had no kind.",
+      "words": 52
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6098,
+      "readability_grade": 6.7205,
+      "sentences": 2,
+      "text": "These do not break a 0.2 command, and are listed so you know they exist: matra analyze DIR, one result per file; matra clusters; --format on every document command; --depth on analyze --json; and matra --schema. The CLI guide has each.",
+      "words": 41
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5455,
+      "readability_grade": 7.2944,
+      "sentences": 4,
+      "text": "The same record is the Rust Document, the Python matra.Document and analyze --json's result. It now names its own schema version in provenance.schema, \"2.0\". The schema is published: matra --schema document prints it.",
+      "words": 34
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5333,
+      "readability_grade": 12.2367,
+      "sentences": 2,
+      "text": "Read the record as the schema asks: ignore a field you do not recognize, treat every string set you receive as open, and reject a major you do not know.",
+      "words": 30
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.4375,
+      "readability_grade": 6.1375,
+      "sentences": 1,
+      "text": "A few results differ for the same input, and nothing about the call tells you so.",
+      "words": 16
+    },
+    {
+      "compression_ratio": 0.5322,
+      "kind": "list_item",
+      "lexical_density": 0.5408,
+      "readability_grade": 7.5167,
+      "sentences": 4,
+      "text": "Markdown is read by a CommonMark parser. 0.2 dropped tables without a trace, ended the document at a ## References line, read #hashtag as a heading, and passed inline markup such as ** and link syntax to the parser as words. In 0.3 tables, code, front matter and HTML are skipped entries, a ## References heading is a heading like any other, a heading needs a space after its #, list items are paragraphs of kind list_item, and inline markup is removed from the text the parser reads. The counts and measures of a markdown document can change.",
+      "words": 95
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.56,
+      "readability_grade": 11.624,
+      "sentences": 1,
+      "text": "Plain text splits paragraphs at a line of only whitespace, so \\r\\n endings and a line of spaces separate paragraphs as an empty line does.",
+      "words": 25
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5909,
+      "readability_grade": 6.4,
+      "sentences": 1,
+      "text": "Keyphrases with equal scores come in the same order on every run, by first occurrence, where 0.2 followed a hash map's order.",
+      "words": 23
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5,
+      "readability_grade": 3.84,
+      "sentences": 1,
+      "text": "TF-IDF scores are the same to the last bit on every run.",
+      "words": 13
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.4091,
+      "readability_grade": 3.8973,
+      "sentences": 2,
+      "text": "A binary file is unsupported_format, naming the format when it is a PDF or DOCX. In 0.2 it was an I/O error.",
+      "words": 23
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6667,
+      "readability_grade": 1.495,
+      "sentences": 1,
+      "text": "The size cap's message reads input too large, where 0.2 read input input too large.",
+      "words": 16
+    }
+  ]
+}

@@ -4,7 +4,7 @@
   "input": "field-notes.md",
   "result": {
     "provenance": {
-      "matra": "0.2.1",
+      "matra": "0.3.0",
       "schema": "2.0",
       "parser": {
         "name": "udpipe",
