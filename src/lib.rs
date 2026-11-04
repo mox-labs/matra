@@ -1530,10 +1530,10 @@ mod tests {
     }
 
     // ------------------------------------------------------------------
-    // L9, the accounting law
+    // L8, the accounting law
     // ------------------------------------------------------------------
 
-    /// L9: every byte of the analysed text that is not whitespace lies in
+    /// L8: every byte of the analysed text that is not whitespace lies in
     /// exactly one heading span, paragraph span or skipped span. `Err`
     /// names the first byte that does not, with its count.
     fn accounting(text: &str, doc: &Document) -> std::result::Result<(), String> {
@@ -1576,7 +1576,7 @@ mod tests {
         Engine::new(Box::new(EmptyNlp))
     }
 
-    /// L9 over every conformance fixture, in the format it names.
+    /// L8 over every conformance fixture, in the format it names.
     #[test]
     fn law_l9_holds_over_every_conformance_fixture() {
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("spec/tests");
@@ -1693,7 +1693,7 @@ mod tests {
         (0..pieces).map(|_| rng.pick(SOUP)).collect()
     }
 
-    /// L9 as a property: thousands of generated markdown and plain text
+    /// L8 as a property: thousands of generated markdown and plain text
     /// documents, half built from constructs the readers recognise and
     /// the edge cases they once got wrong, half from markup fragments in
     /// any order.
