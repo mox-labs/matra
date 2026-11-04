@@ -146,11 +146,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5625,
-      "readability_grade": 14.5623,
+      "lexical_density": 0.525,
+      "readability_grade": 12.605,
       "sentences": 4,
-      "text": "Naming the directory changes where, not what. Engine::from_config(&cfg.with_model_dir(dir)), Python's matra.Engine() under MATRA_MODEL_DIR, and Model2Vec::potion_base_8m(dir) fetch the same pinned artifacts into the directory you name. Take them when the model belongs somewhere specific.",
-      "words": 36
+      "text": "Naming the directory changes where, not what. Engine::from_config(&cfg.with_model_dir(dir)), Python's matra.Engine() under MATRA_MODEL_DIR, and Model2Vec::potion_base_8m(dir) fetch the same pinned artifacts into the models directory you name, each model in its own place there. Take them when the model belongs somewhere specific.",
+      "words": 44
     },
     {
       "compression_ratio": 0.4944,

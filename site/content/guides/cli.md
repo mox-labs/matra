@@ -95,7 +95,7 @@ matra summarize essay.md -n 5 --method textrank
 | `-n` | `summary.n` from the config, `3` as shipped | any positive integer |
 | `--method` | `summary.method` from the config, `tfidf` as shipped | `tfidf`, `textrank` |
 
-TF-IDF scores each sentence by term frequency against the document. TextRank scores by a graph-coherence measure over sentence similarity. Reach for TextRank when sentences reference each other across the document and mutual reinforcement matters more than raw term weight. TF-IDF is the cheaper default and usually enough. Both reject input over 2000 sentences.
+TF-IDF scores each sentence by term frequency against the document. TextRank scores by a graph-coherence measure over sentence similarity. TF-IDF is the default because it is cheap and needs no graph, not because it picks better sentences. It favours sentences dense in the document's rarer terms, and on narrative prose that can mean short sentences that make little sense on their own. Reach for TextRank when the summary should carry the document's main thread, when sentences restate and build on each other, or when the TF-IDF picks read as fragments. Read both on your own text before you rely on either. Both reject input over 2000 sentences.
 
 Both methods select their top-N sentences by score internally, then return that selection re-sorted into document order, not score order. The `score` field tells you how each sentence ranked; the list order tells you where each sentence sits in the source text.
 
@@ -128,16 +128,16 @@ RAKE splits on stop words and scores the remaining word runs by a co-occurrence 
 
 Unlike `summarize`, `keyphrases` output stays in score order, highest first. A phrase is not tied to one location the way a sentence is, so under `--json` each carries `occurrences`, the span of every place in the input it was found, beside the result's `provenance` with its `method` and `parameters`.
 
-Phrases are printed as lowercased lemmas, not as the surface text of the document. "Dependency Parses" appears as `dependency parse`, and its occurrences point at the surface text. Phrases with equal scores come back in the same order on every run, the order they are first met, so a tie at the `-n` boundary is decided the same way each time.
+Phrases are printed as lowercased lemmas, not as the surface text of the document. "Dependency Parses" appears as `dependency parse`, and its occurrences point at the surface text. The lemma is the parser's, read in each sentence's context, and the parser does not always lemmatize one word the same way twice. "Reading room" can come out as `reading room` in one sentence and `read room` in another, two phrases for one surface form. Merge such pairs yourself if they matter. Phrases with equal scores come back in the same order on every run, the order they are first met, so a tie at the `-n` boundary is decided the same way each time.
 
 #### Reading the scores
 
 Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word `lexical density` scores `5.667` and the three-word `model file name` scores `5.200`. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.
 
-Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE puts `error implement st ::error`, read off the code span `std::error::Error` and the words around it, first at `12.135` and scores the bare `error` at `1.468`, while YAKE's first is `move copy` at `1966.368`. What is low there is the score, not the position: `1.468` sits not far above `1.000`, the floor any single word scores, and 232 of the 577 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking, 298th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
+Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE puts `error implement st ::error`, read off the code span `std::error::Error` and the words around it, first at `12.135` and scores the bare `error` at `1.468`, while YAKE's first is `move copy` at `2011.470`. What is low there is the score, not the position: `1.468` sits not far above `1.000`, the floor any single word scores, and 230 of the 583 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking, 304th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
 
 ```bash
-matra keyphrases essay.md --json | jq -S '.result[0:3]'
+matra keyphrases essay.md --json | jq '.result.phrases[0:3]'
 ```
 
 ### `matra clusters`
@@ -148,6 +148,14 @@ Groups a document's sentences by the similarity of their embeddings.
 matra clusters essay.md
 matra clusters essay.md --threshold 0.8 --json
 ```
+
+On prose that does not repeat itself, expect the first line to find nothing. 0.85 joins near-restatements, and an essay whose sentences each say something new has none, so the table is empty, stderr says so, and the exit code is `1`:
+
+```text
+matra: found no clusters in essay.md at --threshold 0.85; a lower threshold joins less similar sentences
+```
+
+That is a result, not a failure. `summarize` and `keyphrases` say the same when they find nothing, and under `--json` or `--quiet` none of the three writes the line.
 
 | Option | Default | Values |
 |---|---|---|
@@ -202,7 +210,7 @@ matra config init --force
 Prints a completion script for `bash`, `zsh`, or `fish`.
 
 ```bash
-matra completions zsh > ~/.zfunc/_matra
+mkdir -p ~/.zfunc && matra completions zsh > ~/.zfunc/_matra   # ~/.zfunc must be on your fpath
 matra completions bash > /etc/bash_completion.d/matra
 ```
 

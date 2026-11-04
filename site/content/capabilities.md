@@ -118,7 +118,7 @@ Not a field on any type above. The port and `clusters` are always compiled; the 
 | Item | Is |
 |---|---|
 | `Embedder` | the port: `embed(&[&str])` returning one `Embedding` per text, plus `identity()` |
-| `Model2Vec` | the adapter, reading `model.safetensors`, `tokenizer.json`, and `config.json` from a directory. `from_dir(dir)` loads what is there; `potion_base_8m(dir)` and `from_config(cfg)` fetch the pinned reference model when it is absent |
+| `Model2Vec` | the adapter, reading `model.safetensors`, `tokenizer.json`, and `config.json` from a directory. `from_dir(dir)` loads what is there; `potion_base_8m(dir)`, with `dir` a models directory, and `from_config(cfg)` fetch the pinned reference model into its `potion-base-8M` subdirectory when it is absent |
 | `clusters(doc, embedder, threshold)` | embeds a document's sentences with the embedder you pass, then clusters them; vectors you already hold arrive through an `Embedder` that returns them |
 | `Clusters` | the document's `provenance` with the method (`cosine`), the `threshold` and the embedder's identity recorded, `clusters`, and `edges` |
 | `Cluster`, `SimilarityEdge` | a cluster's `members` (sentence indices), and a pair `a`, `b` whose `score` cleared the threshold |

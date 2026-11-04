@@ -25,7 +25,7 @@ The loaded pipeline. Create it once and reuse it; loading the model is the expen
 
 | Member | Signature | Returns |
 |---|---|---|
-| `Engine()` | `() -> Engine` | The engine, downloading the pinned English model if it is absent. The directory comes from the environment (`MATRA_MODEL_DIR`, else the data root's `models`); no configuration file is read |
+| `Engine()` | `() -> Engine` | The engine, downloading the pinned English model if it is absent, with two lines on `sys.stderr` first, as the command line prints. The directory comes from the environment (`MATRA_MODEL_DIR`, else the data root's `models`); no configuration file is read |
 | `Engine.from_config` | `(config_file=None) -> Engine` | The same, with a configuration file read and checked: the one named, which must exist, else the one the environment names |
 | `analyze` | `(text=None, *, file=None, bytes=None, blocks=None, format=None) -> Document` | One document |
 | `analyze_all` | `(*, dir=None, texts=None, format=None) -> Iterator[Document \| DocumentError]` | Many, lazily, in input order |
@@ -90,7 +90,7 @@ found = matra.clusters(doc, model, threshold=0.85)
 | Member | Signature | Notes |
 |---|---|---|
 | `Model2Vec.from_dir` | `(dir) -> Model2Vec` | Loads three artifacts from a directory. Never touches the network |
-| `Model2Vec.potion_base_8m` | `(dir=None) -> Model2Vec` | Downloads the pinned reference model if absent. With no argument the directory comes from the configuration |
+| `Model2Vec.potion_base_8m` | `(dir=None) -> Model2Vec` | Downloads the pinned reference model if absent, announced on `sys.stderr`. `dir` is a models directory, as `MATRA_MODEL_DIR` is, and the files live in its `potion-base-8M` subdirectory; with no argument the directory comes from the configuration |
 | `model_hash` | property, `str` | SHA-256 over the three artifact files: the model identity |
 | `dimensions` | property, `int` | Length of every vector this model produces |
 | `embed` | `(texts: list[str]) -> list[list[float]]` | One vector per text, in order, all of `dimensions` length |

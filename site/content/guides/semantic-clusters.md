@@ -10,7 +10,7 @@ Start around 0.85 with the reference model on sentences, and calibrate on your o
 
 ## The model
 
-Take the reference model, potion-base-8M. The first call downloads it (about 30 MB) and verifies it against a digest compiled into matra; every later call loads it from disk:
+Take the reference model, potion-base-8M. The first call downloads it (30.9 MB) and verifies it against a digest compiled into matra; every later call loads it from disk:
 
 ```rust,ignore
 use matra::config::Config;
@@ -25,7 +25,7 @@ from matra import Model2Vec
 model = Model2Vec.potion_base_8m()
 ```
 
-It goes into a directory named for the configured embedding model (`models.embedding`, `potion-base-8M` as shipped) inside the configured model directory. To keep it somewhere else, name the directory: `Model2Vec::potion_base_8m(dir)` in Rust, `Model2Vec.potion_base_8m(dir)` in Python. The call refuses a directory that already holds another model's files and names it; remove them, or name another directory, or point `MATRA_MODEL_DIR` or `models.embedding` somewhere else.
+It goes into a directory named for the configured embedding model (`models.embedding`, `potion-base-8M` as shipped) inside the configured model directory. To keep it somewhere else, name a models directory: `Model2Vec::potion_base_8m(dir)` in Rust, `Model2Vec.potion_base_8m(dir)` in Python. `dir` is the directory that holds every model, the one `MATRA_MODEL_DIR` names, not the model's own: the three files land in `dir/potion-base-8M/`, beside the parsing model in `dir`, so passing the directory `matra config show` reports as `model_dir` reuses a model that is already there. The call refuses a directory that already holds another model's files and names it; remove them, or name another directory, or point `MATRA_MODEL_DIR` or `models.embedding` somewhere else.
 
 To use files you already have, or a different model2vec artifact, put the three files in one directory and load it with `Model2Vec::from_dir(dir)`, which never reaches the network:
 
@@ -67,11 +67,13 @@ import matra
 model = matra.Model2Vec.potion_base_8m()
 engine = matra.Engine()
 
-doc = engine.analyze(text)
+doc = engine.analyze(text, format="markdown")   # or plain_text; a str alone reads as plain text
 result = matra.clusters(doc, model, threshold=0.85)
 for cluster in result["clusters"]:
     print("restated:", cluster["members"])
 ```
+
+Name the format the text is in. Read as plain text, a markdown document's heading markers (`#`, `##`) become sentences of their own, and identical short sentences embed identically, so they come back as one cluster of "restatements". Read as markdown, a heading is a heading and never a sentence. `engine.analyze(file=path)` detects the format from the file.
 
 Already hold embeddings? Pass an object whose `embed` returns them, one per sentence, and whose `identity` names the model that made them, as in Rust. And `model.embed(texts)` returns the raw vectors when you want to do something else with them.
 

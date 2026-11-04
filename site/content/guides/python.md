@@ -24,7 +24,14 @@ import matra
 engine = matra.Engine()
 ```
 
-`Engine()` downloads the English UDPipe model on first use, verifies it against a pinned SHA-256 hash, and loads from the cache after that. It finds the model directory from the environment alone: `MATRA_MODEL_DIR` if you set it, otherwise the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`. A pre-existing `~/.matra/models` is used instead when the new location does not exist yet and that one is not empty, so a cache from 0.1.0 keeps working. [Programming model](../explanation/programming-model.md#configuration) has the full resolution order.
+`Engine()` downloads the English UDPipe model on first use, verifies it against a pinned SHA-256 hash, and loads from the cache after that. Before the download it writes two lines to `sys.stderr`, the ones the command line prints for the same wait:
+
+```text
+matra: downloading english-ewt-ud-2.5-191206.udpipe (16.3 MB) into /home/you/.local/share/matra/models
+matra: the model is licensed CC BY-NC-SA 4.0 (non-commercial), separately from matra: https://creativecommons.org/licenses/by-nc-sa/4.0/
+```
+
+Once the model is on disk nothing is written. `Engine.from_config()` and `Model2Vec.potion_base_8m()` announce a download the same way. Redirect `sys.stderr` if a notice must not reach your terminal. It finds the model directory from the environment alone: `MATRA_MODEL_DIR` if you set it, otherwise the `models` subdirectory of `$XDG_DATA_HOME/matra`, which defaults to `~/.local/share/matra`. A pre-existing `~/.matra/models` is used instead when the new location does not exist yet and that one is not empty, so a cache from 0.1.0 keeps working. [Programming model](../explanation/programming-model.md#configuration) has the full resolution order.
 
 To put the model somewhere specific, set `MATRA_MODEL_DIR` before you build the engine. Name a directory you own: provisioning trusts what it finds there, and a shared one such as `/tmp` is writable by anybody on the machine. The value is used as a path unchanged, so `~` is taken literally.
 
@@ -60,11 +67,14 @@ def analyze_chunk(text: str) -> matra.DocumentDict:
     return _engine.analyze(text).to_dict()
 
 
-with ProcessPoolExecutor(initializer=_init) as pool:
-    results = list(pool.map(analyze_chunk, chunks))
+if __name__ == "__main__":
+    chunks = ["The report was filed.", "Nobody read it.", "The committee met again on Friday."]
+    with ProcessPoolExecutor(initializer=_init) as pool:
+        results = list(pool.map(analyze_chunk, chunks))
+    print(len(results), [r["metrics"]["total_words"] for r in results])
 ```
 
-A `Document` does not pickle, so a worker returns `to_dict()`. Concurrent first runs against the same model directory are safe. Each process downloads into its own temporary subdirectory and moves the file into place with a single rename.
+The `if __name__ == "__main__":` guard is required. On macOS and Windows a worker process starts by importing your script afresh (the `spawn` start method), so a pool created at module level would start again inside every worker, and Python stops that with a `RuntimeError` about the bootstrapping phase. Under the guard, only the parent builds the pool. A `Document` does not pickle, so a worker returns `to_dict()`. Concurrent first runs against the same model directory are safe. Each process downloads into its own temporary subdirectory and moves the file into place with a single rename.
 
 ## Analyze one document
 

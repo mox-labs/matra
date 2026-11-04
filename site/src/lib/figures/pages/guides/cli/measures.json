@@ -162,13 +162,13 @@
       "words": 9
     },
     {
-      "compression_ratio": 0.5552,
+      "compression_ratio": 0.4684,
       "kind": "paragraph",
-      "lexical_density": 0.6226,
-      "readability_grade": 9.6949,
-      "sentences": 5,
-      "text": "TF-IDF scores each sentence by term frequency against the document. TextRank scores by a graph-coherence measure over sentence similarity. Reach for TextRank when sentences reference each other across the document and mutual reinforcement matters more than raw term weight. TF-IDF is the cheaper default and usually enough. Both reject input over 2000 sentences.",
-      "words": 56
+      "lexical_density": 0.5421,
+      "readability_grade": 8.0163,
+      "sentences": 7,
+      "text": "TF-IDF scores each sentence by term frequency against the document. TextRank scores by a graph-coherence measure over sentence similarity. TF-IDF is the default because it is cheap and needs no graph, not because it picks better sentences. It favours sentences dense in the document's rarer terms, and on narrative prose that can mean short sentences that make little sense on their own. Reach for TextRank when the summary should carry the document's main thread, when sentences restate and build on each other, or when the TF-IDF picks read as fragments. Read both on your own text before you rely on either. Both reject input over 2000 sentences.",
+      "words": 113
     },
     {
       "compression_ratio": null,
@@ -225,13 +225,13 @@
       "words": 50
     },
     {
-      "compression_ratio": 0.5929,
+      "compression_ratio": 0.5293,
       "kind": "paragraph",
-      "lexical_density": 0.541,
-      "readability_grade": 10.3302,
-      "sentences": 3,
-      "text": "Phrases are printed as lowercased lemmas, not as the surface text of the document. \"Dependency Parses\" appears as dependency parse, and its occurrences point at the surface text. Phrases with equal scores come back in the same order on every run, the order they are first met, so a tie at the -n boundary is decided the same way each time.",
-      "words": 61
+      "lexical_density": 0.5664,
+      "readability_grade": 8.7762,
+      "sentences": 6,
+      "text": "Phrases are printed as lowercased lemmas, not as the surface text of the document. \"Dependency Parses\" appears as dependency parse, and its occurrences point at the surface text. The lemma is the parser's, read in each sentence's context, and the parser does not always lemmatize one word the same way twice. \"Reading room\" can come out as reading room in one sentence and read room in another, two phrases for one surface form. Merge such pairs yourself if they matter. Phrases with equal scores come back in the same order on every run, the order they are first met, so a tie at the -n boundary is decided the same way each time.",
+      "words": 115
     },
     {
       "compression_ratio": 0.5091,
@@ -243,12 +243,12 @@
       "words": 141
     },
     {
-      "compression_ratio": 0.5562,
+      "compression_ratio": 0.5519,
       "kind": "paragraph",
       "lexical_density": 0.5333,
       "readability_grade": 5.315,
       "sentences": 5,
-      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.135 and scores the bare error at 1.468, while YAKE's first is move copy at 1966.368. What is low there is the score, not the position: 1.468 sits not far above 1.000, the floor any single word scores, and 232 of the 577 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 298th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
+      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.135 and scores the bare error at 1.468, while YAKE's first is move copy at 2011.470. What is low there is the score, not the position: 1.468 sits not far above 1.000, the floor any single word scores, and 230 of the 583 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 304th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
       "words": 125
     },
     {
@@ -259,6 +259,24 @@
       "sentences": 1,
       "text": "Groups a document's sentences by the similarity of their embeddings.",
       "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5476,
+      "readability_grade": 8.0524,
+      "sentences": 2,
+      "text": "On prose that does not repeat itself, expect the first line to find nothing. 0.85 joins near-restatements, and an essay whose sentences each say something new has none, so the table is empty, stderr says so, and the exit code is 1:",
+      "words": 42
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.4483,
+      "readability_grade": 5.5271,
+      "sentences": 2,
+      "text": "That is a result, not a failure. summarize and keyphrases say the same when they find nothing, and under --json or --quiet none of the three writes the line.",
+      "words": 29
     },
     {
       "compression_ratio": 0.5007,

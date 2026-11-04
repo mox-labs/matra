@@ -450,13 +450,13 @@
       "words": 46
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.589,
       "kind": "paragraph",
-      "lexical_density": 0.6383,
-      "readability_grade": 11.9027,
+      "lexical_density": 0.629,
+      "readability_grade": 10.5506,
       "sentences": 2,
-      "text": "Token fields carry the CoNLL-U columns under Rust names: text is the surface form, pos is the universal POS tag, xpos is the language-specific tag, and dep is the dependency relation. feats, deps, and misc hold their raw column strings, and is_punct is derived by the adapter.",
-      "words": 49
+      "text": "Token fields carry the CoNLL-U columns under Rust names: text is the surface form, pos is the universal POS tag, xpos is the language-specific tag, and dep is the dependency relation. features is the FEATS column as a map from feature name to value (token.feat(\"Mood\") reads one), deps and misc hold their raw column strings, and is_punct is derived by the adapter.",
+      "words": 65
     },
     {
       "compression_ratio": null,

@@ -36,22 +36,22 @@
       "words": 59
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5698,
       "kind": "paragraph",
-      "lexical_density": 0.5682,
-      "readability_grade": 6.7573,
+      "lexical_density": 0.5965,
+      "readability_grade": 10.0375,
       "sentences": 2,
-      "text": "For the Python package, use Python 3.12 or later (check with python --version). Python wheels lists the platforms with a prebuilt wheel; on any other, and on a free-threaded interpreter, pip builds from source and needs the Rust toolchain and the C++ compiler above.",
-      "words": 46
+      "text": "For the Python package, use Python 3.12 or later (check with python3 --version, or python --version inside an activated virtual environment; stock macOS has only python3). Python wheels lists the platforms with a prebuilt wheel; on any other, and on a free-threaded interpreter, pip builds from source and needs the Rust toolchain and the C++ compiler above.",
+      "words": 59
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6923,
-      "readability_grade": 13.9877,
-      "sentences": 1,
-      "text": "The default features include udpipe, so matra::nlp::udpipe::Udpipe is available without a feature flag.",
-      "words": 16
+      "lexical_density": 0.6207,
+      "readability_grade": 9.1891,
+      "sentences": 2,
+      "text": "The default features include udpipe, so matra::Engine::new() builds the pinned UDPipe parser without a feature flag. The parser itself is private to the crate: you reach it through Engine.",
+      "words": 31
     },
     {
       "compression_ratio": null,
@@ -171,13 +171,13 @@
       "words": 2
     },
     {
-      "compression_ratio": 0.5787,
+      "compression_ratio": 0.5427,
       "kind": "paragraph",
-      "lexical_density": 0.5231,
-      "readability_grade": 9.7431,
-      "sentences": 3,
-      "text": "That first run fetches the model from a university server in Prague and prints nothing while it does. Cold starts measured on a fast connection ranged from 3 to 35 seconds; on a slow network it takes longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.",
-      "words": 65
+      "lexical_density": 0.5,
+      "readability_grade": 8.5633,
+      "sentences": 5,
+      "text": "That first run fetches the model from a university server in Prague, and before it does, matra.Engine() writes two lines to standard error: what is downloading, its size and where to, then the model's licence. They are the lines the command line prints for the same download. Cold starts measured on a fast connection ranged from 3 to 35 seconds; on a slow network it takes longer, and the call is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.",
+      "words": 96
     },
     {
       "compression_ratio": 0.5261,
