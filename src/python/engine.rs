@@ -94,7 +94,12 @@ impl PyEngine {
             match (file, blocks) {
                 (Some(file), _) => crate::Input::file(file),
                 (None, Some(blocks)) => blocks_input(&blocks)?,
-                (None, None) => unreachable!("exactly one input was counted above"),
+                // Counted above, so not reached; refused rather than a panic.
+                (None, None) => {
+                    return Err(PyTypeError::new_err(
+                        "analyze() takes exactly one of text, file, bytes and blocks; got none",
+                    ));
+                }
             }
         };
         let doc = self.inner.analyze(input).map_err(MatraError)?;
@@ -206,18 +211,23 @@ impl DocumentStream {
     }
 }
 
-/// A format name in the vocabulary every surface shares, read by the
-/// same serde form the JSON writes, so the two cannot spell one
-/// differently.
+/// A format name in the vocabulary every surface shares (`FormatName` in
+/// `matra.types`), read by the same serde form the JSON writes, so the
+/// two cannot spell one differently.
 fn format_of(name: &str) -> PyResult<Format> {
     serde_json::from_value(serde_json::Value::String(name.to_string()))
         .map_err(|e| invalid_input(format!("format: {e}")))
 }
 
 /// Block input from Python data: the list of heading and paragraph dicts
+/// (`BlockDict` in `matra.types`, a `HeadingBlock` or a `ParagraphBlock`)
 /// read as the `blocks` format, whose reader is the one place the block
 /// vocabulary is defined, so a `kind` or a field it does not know is
 /// refused by name exactly as it is from JSON.
+///
+/// pythonize's blind spots do not reach this route: the dicts become
+/// JSON values, so a non-string key, bytes or a bytearray is refused by
+/// `depythonize` or by the reader rather than widened.
 fn blocks_input(blocks: &Bound<'_, PyAny>) -> PyResult<crate::Input> {
     let value: serde_json::Value = pythonize::depythonize(blocks)
         .map_err(|e| invalid_input(format!("block input is not a block array: {e}")))?;
