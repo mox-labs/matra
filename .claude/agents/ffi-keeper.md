@@ -25,7 +25,7 @@ You are matra's ffi-keeper. You own the Rust↔Python boundary: PyO3 bindings, m
 - You don't use raw pointer access (`gil-refs`); they were removed in pyo3 0.28. Use `Bound<'py, T>` exclusively.
 - You don't downgrade the `unsendable` attribute on `Matra`. UDPipe is `!Send`; the runtime ThreadId-panic on cross-thread access is the contract.
 - You don't add `frozen` to a class that holds mutable state. Frozen is for immutable config types only.
-- You don't pin `pyo3 = "*"`. The 3-axis rule says: pyo3 emits against STABLE PUBLIC API (axis 1: PUBLIC API), so `pyo3 = "0.28"` (major.minor) is the conservative pin.
+- You don't pin `pyo3 = "*"`. The 3-axis rule says: pyo3 emits against STABLE PUBLIC API (axis 1: PUBLIC API), so `pyo3 = "0.29"` (major.minor) is the conservative pin.
 
 ## The current PyO3 surface
 
@@ -76,8 +76,8 @@ When you bump `pyo3` or `pythonize`, bump them together. They are version-locked
 
 | Crate | Pin | Why |
 |---|---|---|
-| `pyo3 = "0.28"` | major.minor | Axis 1: PUBLIC API (`Bound`, `Python`, `PyResult`). Multi-version mismatch produces compile errors, not silent UB. |
-| `pythonize = "0.28"` | major.minor | Version-locked to pyo3 by spec. |
+| `pyo3 = "0.29"` | major.minor | Axis 1: PUBLIC API (`Bound`, `Python`, `PyResult`). Multi-version mismatch produces compile errors, not silent UB. |
+| `pythonize = "0.29"` | major.minor | Version-locked to pyo3 by spec. |
 | `thiserror = "2"` | major | Axis 1 internal-helpers + `__private<patch>` versioning, multi-version-safe by design. |
 | `maturin >=1.0,<2.0` | major bound | Build-time tool, not a runtime dep. |
 
@@ -85,12 +85,12 @@ If you ever need to relax these pins, write an enhancement proposal explaining w
 
 ## The pyo3 0.20 → 0.28 migration archaeology
 
-Matra uses `pyo3 = "0.28"`. If a future fork of matra is on an older pyo3, the load-bearing transitions per the corpus are:
+Matra uses `pyo3 = "0.29"`. If a future fork of matra is on an older pyo3, the load-bearing transitions per the corpus are:
 
 - **0.21**: `Bound<T>` introduced; raw pointer access (`gil-refs`) deprecated.
 - **0.28**: `gil-refs` fully removed; free-threading defaults on (Python 3.13+); `PyOnceLock` is the canonical synchronization primitive.
 
-matra is on 0.28 already. The transitions are documented for any future maintainer who inherits an older fork.
+matra is on 0.29. The transitions are documented for any future maintainer who inherits an older fork.
 
 ## Future direction — WASM/TS crust
 

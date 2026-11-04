@@ -24,14 +24,14 @@ The Rust↔Python FFI surface for matra. This skill codifies the disciplines tha
 
 The `_core` module in `src/lib.rs::python` (matched by pyproject.toml's `module-name = "matra._core"`) registers two classes and two functions. This section is the one place in `.claude/` that lists them; the `ffi-keeper` agent points here.
 
-- **`Matra`** (`src/lib.rs:874`), `#[pyclass(unsendable)]`: UDPipe is `!Send` due to internal C state, so cross-thread access panics at runtime.
+- **`Matra`** (`src/lib.rs:880`), `#[pyclass(unsendable)]`: UDPipe is `!Send` due to internal C state, so cross-thread access panics at runtime.
   - Constructors: `from_path(model_path)`, `english(model_dir=None)` (both gated on the `udpipe` feature).
   - Methods: `analyze`, `analyze_markdown`, `analyze_path`, `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`, `semantic_clusters`.
-- **`Model2Vec`** (`src/lib.rs:1094`), `#[pyclass(frozen)]`, registered only under the `model2vec` feature: an immutable embedder.
+- **`Model2Vec`** (`src/lib.rs:1104`), `#[pyclass(frozen)]`, registered only under the `model2vec` feature: an immutable embedder.
   - Constructors: `from_dir(dir)`, `potion_base_8m(dir=None)`.
   - Getters `model_hash` and `dimensions`; methods `identity` and `embed`.
 - **Functions**: `semantic_clusters` (clusters vectors the caller already holds) and `cli_main` (the command line, which `python/matra/cli.py` launches).
-- **Exception classes**: `MatraError` and one class per variant (`ModelNotFound`, `ModelInvalid`, `ParseFailed`, `InputTooLarge`, `UnsupportedFormat`, `InvalidInput`, `Io`), plus `IoNotFound` and `IoPermissionDenied` refining `Io`. Built once per interpreter with `type()` by `error_classes`, since a `#[pyclass]` cannot have two bases, and added to the module at init (below).
+- **Exception classes**: `MatraError` and one class per variant, named for it with PEP 8's `Error` suffix (`ModelNotFoundError`, `ModelInvalidError`, `ParseFailedError`, `InputTooLargeError`, `UnsupportedFormatError`, `InvalidInputError`, `IoError`), plus `IoNotFoundError` and `IoPermissionError` refining `IoError`. Built once per interpreter with `type()` by `error_classes`, since a `#[pyclass]` cannot have two bases, and added to the module at init (below).
 
 ## The four PyO3 disciplines
 
@@ -68,7 +68,7 @@ Matra doesn't use either today (single-threaded composition), but if a future fe
 
 ## Error routing — the load-bearing detail
 
-`From<MatraError> for PyErr` raises each `domain::Error` as a class of its own, named as the variant is. Every class derives from `matra.MatraError` and from the builtin class matra raised before 0.3.0, so `except ValueError` still catches an `InputTooLarge`. The exception carries `kind` (a class attribute) and `details` (a dict, set when raised from `Error::details`), with the `Display` text as its message: a method's answer crosses as a field. `Class::of` picks the class with a match that is exhaustive over the variants (no wildcard), so a new variant becomes a compile error: fix it at the routing site, don't paper over it. The match:
+`From<MatraError> for PyErr` raises each `domain::Error` as a class of its own, named for the variant with PEP 8's `Error` suffix (the `Class` enum's Rust names drop it). Every class derives from `matra.MatraError` and from the builtin class matra raised before 0.3.0, so `except ValueError` still catches an `InputTooLarge`. The exception carries `kind` (a class attribute) and `details` (a dict, set when raised from `Error::details`), with the `Display` text as its message: a method's answer crosses as a field. `Class::of` picks the class with a match that is exhaustive over the variants (no wildcard), so a new variant becomes a compile error: fix it at the routing site, don't paper over it. The match:
 
 ```rust
 match error {
@@ -82,7 +82,7 @@ match error {
 }
 ```
 
-`Class::spec` names each class, its builtin, and its parent inside matra. The classes set `__module__` to `matra`, where `python/matra/__init__.py` re-exports them, so a traceback reads `matra.InputTooLarge` and an exception pickles.
+`Class::spec` names each class, its builtin, and its parent inside matra. The classes set `__module__` to `matra`, where `python/matra/__init__.py` re-exports them, so a traceback reads `matra.InputTooLargeError` and an exception pickles.
 
 When adding a `domain::Error` variant:
 
@@ -137,11 +137,11 @@ When you change `module-name` or rename `_core`, both files update together.
 
 | Dep | Pin | Why |
 |---|---|---|
-| `pyo3 = "0.28"` | major.minor | Axis 1: PUBLIC API. Multi-version mismatch produces compile errors, not silent UB. |
-| `pythonize = "0.28"` | major.minor | Version-locked to pyo3 by spec. |
+| `pyo3 = "0.29"` | major.minor | Axis 1: PUBLIC API. Multi-version mismatch produces compile errors, not silent UB. |
+| `pythonize = "0.29"` | major.minor | Version-locked to pyo3 by spec. |
 | `maturin >=1.0,<2.0` | major bound | Build-time tool, not runtime. |
 
-When pyo3 releases 0.29, bump both pyo3 and pythonize together. The migration archaeology (0.20 → 0.28) showed each minor version may carry meaningful API changes (0.21: `Bound<T>` introduced; 0.28: gil-refs removed).
+When pyo3 releases 0.30, bump both pyo3 and pythonize together. The migration archaeology (0.20 → 0.28) showed each minor version may carry meaningful API changes (0.21: `Bound<T>` introduced; 0.28: gil-refs removed).
 
 ## What you don't put through FFI
 

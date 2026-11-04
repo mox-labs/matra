@@ -54,17 +54,17 @@ Ten gate labels produce this variant. The `what` field carries the label so a ca
 | `what` | Gate | Limit | Measured over |
 |---|---|---|---|
 | `"input"` | The engine's reading stage, the only route from text to the parser, for every `Input` constructor, and the CLI's stdin read, which applies the same cap first | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | Byte length of the input handed in, and of the analysed text the reader produces (for block input, the blocks joined); the CLI counts the bytes as they arrive, before decoding them |
-| `"file_source"` | Reading the file an `Input::file` names | 8,388,608 bytes | File size reported by the filesystem, checked before any read |
-| `"tfidf"` | `summarize`, and `summarize_with` with `SummaryMethod::TfIdf` | 2,000 | Number of sentences in the document |
-| `"textrank"` | `summarize_with` with `SummaryMethod::TextRank` | 2,000 | Number of sentences in the document |
-| `"rake"` | `keyphrases`, and `keyphrases_with` with `KeyphraseMethod::Rake` | 200,000 | Total tokens across the document's sentences, punctuation included |
-| `"yake"` | `keyphrases_with` with `KeyphraseMethod::Yake` | 200,000 | Total tokens across the document's sentences, punctuation included |
-| `"clusters"` | `clusters`, before anything is embedded, and Python's vectors-in `semantic_clusters` | 2,000 | Number of sentences in the document, or of vectors passed in |
-| `"udpipe_download"` | The UDPipe provisioner | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
-| `"embedding_download"` | `Model2Vec::potion_base_8m`, per artifact | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
-| `"config_file"` | `Config::resolve`, reading the user's config file | 64 KiB (65,536) | File size reported by the filesystem, checked before any read |
+| `"file_source"` | Reading the file an `Input::file` names | `MAX_INPUT_BYTES`, 8,388,608 bytes | File size reported by the filesystem, checked before any read |
+| `"tfidf"` | `summarize`, and `summarize_with` with `SummaryMethod::TfIdf` | `MAX_TFIDF_SENTENCES`, 2,000 | Number of sentences in the document |
+| `"textrank"` | `summarize_with` with `SummaryMethod::TextRank` | `MAX_TEXTRANK_SENTENCES`, 2,000 | Number of sentences in the document |
+| `"rake"` | `keyphrases`, and `keyphrases_with` with `KeyphraseMethod::Rake` | `MAX_RAKE_TOKENS`, 200,000 | Total tokens across the document's sentences, punctuation included |
+| `"yake"` | `keyphrases_with` with `KeyphraseMethod::Yake` | `MAX_YAKE_TOKENS`, 200,000 | Total tokens across the document's sentences, punctuation included |
+| `"clusters"` | `clusters`, before anything is embedded, and Python's vectors-in `semantic_clusters` | `MAX_CLUSTER_SENTENCES`, 2,000 | Number of sentences in the document, or of vectors passed in |
+| `"udpipe_download"` | The UDPipe provisioner | `MAX_DOWNLOAD_BYTES`, 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
+| `"embedding_download"` | `Model2Vec::potion_base_8m`, per artifact | `MAX_DOWNLOAD_BYTES`, 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
+| `"config_file"` | `Config::resolve`, reading the user's config file | `MAX_CONFIG_FILE_BYTES`, 64 KiB (65,536) | File size reported by the filesystem, checked before any read |
 
-`limit` carries the cap and `actual` carries the measured size, so an error message can be built without hardcoding the constants.
+`limit` carries the cap and `actual` carries the measured size, so an error message can be built without hardcoding the constants. Each cap is a published constant in `domain::limits`, named in the table; the module's documentation carries the cost model behind each value. No configuration changes any of them.
 
 The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens. The two download caps are the gates whose input is not the caller's: they bound what a redirected or misbehaving server can make the process hold, and the read stops at the bound rather than continuing, so `actual` reports the bound that was breached rather than the response's full length. Both are 64 MiB against pinned artifacts of 16.3 MB and 30.2 MB, which is headroom for a later version and still finite.
 
@@ -76,7 +76,7 @@ The label has a second producer. The CLI reads stdin through `read_capped` in `s
 
 The four ranking methods check their caps after their empty-result checks. `summarize_with(&doc, 0, ..)` and `keyphrases_with(&doc, 0, ..)` return an empty result without evaluating the cap, whatever the size of the document. The same holds for a document with no sentences. `clusters` has no count parameter; its cap is checked first, before anything is embedded, then its contract, and a document with no sentences returns empty clusters.
 
-A metric has no gate of its own. The compression ratio skips any paragraph over 262,144 bytes and leaves its metric slot at `None` rather than returning an error.
+A metric has no gate of its own. The compression ratio skips any paragraph over 262,144 bytes (`MAX_COMPRESSION_PARAGRAPH_BYTES`) and leaves its metric slot at `None` rather than returning an error, and a paragraph under a metric's minimum word count (`MIN_READABILITY_WORDS`, `MIN_COMPRESSION_WORDS`) does the same.
 
 ### InvalidInput
 
@@ -127,7 +127,7 @@ The rule behind the table: `model_invalid` is about bytes that arrived. Anything
 
 `retryable` is `true` when the same call can be made again as it is and may succeed. A failed fetch writes nothing, so a retry starts from where the first call did. A rejected certificate is `false`: a retry meets the same proxy, and the message names the way out instead.
 
-The rule has a consequence in Python that is easy to miss, because it changes which `except` clause fires rather than only which string a message carries. `Io` is an `OSError` and `ModelInvalid` is a `RuntimeError`, so from 0.2.0 a DNS failure, a rejected certificate, a timeout or a non-2xx status raises an `OSError` from `Matra.english()` where it used to raise `RuntimeError`. A caller that wrapped a bootstrap in `except RuntimeError` catches nothing now and the `OSError` propagates past it. Catch `matra.MatraError`, which both derive from, and branch on `kind`.
+The rule has a consequence in Python that is easy to miss, because it changes which `except` clause fires rather than only which string a message carries. `IoError` is an `OSError` and `ModelInvalidError` is a `RuntimeError`, so from 0.2.0 a DNS failure, a rejected certificate, a timeout or a non-2xx status raises an `OSError` from `Matra.english()` where it used to raise `RuntimeError`. A caller that wrapped a bootstrap in `except RuntimeError` catches nothing now and the `OSError` propagates past it. Catch `matra.MatraError`, which both derive from, and branch on `kind`.
 
 Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. A failed run removes nothing either. A cached file that is already there and fails verification is not loaded and not deleted: the UDPipe provisioner downloads again, at most twice, and replaces the file only with bytes that verified, through the same atomic rename every install lands through. A run whose downloads fail, at the network or at the digest, leaves that file byte-identical. `Model2Vec::potion_base_8m` replaces nothing and refuses a directory whose artifacts fail verification, because its three filenames belong to the artifact format rather than to this one model and so may be a caller's own ([RFC-0015](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0015-provisioning-failures.md)). A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. The UDPipe provisioner leaves a temporary directory and `Model2Vec::potion_base_8m` three temporary files, and each reclaims its own by the same rule.
 
@@ -250,21 +250,21 @@ fn limit_of(err: &Error) -> Option<u64> {
 
 ## Python exception mapping
 
-The PyO3 binding raises each `Error` as a class of its own, named as the variant is. Every class derives from `matra.MatraError` and from the builtin class matra raised before 0.3.0, so `except ValueError` still catches an `InputTooLarge`. The routing is a match with no wildcard arm over the variants, so adding a variant to `Error` without assigning it a class fails to compile.
+The PyO3 binding raises each `Error` as a class of its own, named for the variant with PEP 8's `Error` suffix. The name a failure shares across languages is its `kind`, not its class. Every class derives from `matra.MatraError` and from the builtin class matra raised before 0.3.0, so `except ValueError` still catches an `InputTooLargeError`. The routing is a match with no wildcard arm over the variants, so adding a variant to `Error` without assigning it a class fails to compile.
 
 | Variant | Python class | Also a |
 |---|---|---|
-| `ModelNotFound` | `ModelNotFound` | `FileNotFoundError` |
-| `ModelInvalid` | `ModelInvalid` | `RuntimeError` |
-| `ParseFailed` | `ParseFailed` | `RuntimeError` |
-| `InputTooLarge` | `InputTooLarge` | `ValueError` |
-| `UnsupportedFormat` | `UnsupportedFormat` | `ValueError` |
-| `InvalidInput` | `InvalidInput` | `ValueError` |
-| `Io`, any other kind | `Io` | `OSError` |
-| `Io`, kind `NotFound` | `IoNotFound` | `FileNotFoundError` |
-| `Io`, kind `PermissionDenied` | `IoPermissionDenied` | `PermissionError` |
+| `ModelNotFound` | `ModelNotFoundError` | `FileNotFoundError` |
+| `ModelInvalid` | `ModelInvalidError` | `RuntimeError` |
+| `ParseFailed` | `ParseFailedError` | `RuntimeError` |
+| `InputTooLarge` | `InputTooLargeError` | `ValueError` |
+| `UnsupportedFormat` | `UnsupportedFormatError` | `ValueError` |
+| `InvalidInput` | `InvalidInputError` | `ValueError` |
+| `Io`, any other kind | `IoError` | `OSError` |
+| `Io`, kind `NotFound` | `IoNotFoundError` | `FileNotFoundError` |
+| `Io`, kind `PermissionDenied` | `IoPermissionError` | `PermissionError` |
 
-`Io` routes on the I/O kind it wraps. A missing file is an `IoNotFound`, which is a `FileNotFoundError`; a refused permission is an `IoPermissionDenied`, which is a `PermissionError`. Both derive from `Io`, so `except matra.Io` catches all three.
+`Io` routes on the I/O kind it wraps. A missing file is an `IoNotFoundError`, which is a `FileNotFoundError`; a refused permission is an `IoPermissionError`, which is a `PermissionError`. Both derive from `IoError`, so `except matra.IoError` catches all three. `matra.IoError` is matra's class, not the builtin `IOError`, which is another name for `OSError`.
 
 Every exception carries the same three things as the serde form: `kind`, the string `Error::kind` names; `details`, a `dict` of the [details](#kinds-and-details); and the `Display` string as its message, which `str(exc)` returns. Branch on the class or on `kind`, and read values from `details`:
 
@@ -273,11 +273,11 @@ import matra
 
 try:
     engine.analyze(huge)
-except matra.InputTooLarge as exc:   # also a ValueError
+except matra.InputTooLargeError as exc:   # also a ValueError
     print(exc.kind, exc.details["what"], exc.details["limit"], exc.details["actual"])
 ```
 
-`ModelNotFound` is a `FileNotFoundError`, so the conventional Python idiom works:
+`ModelNotFoundError` is a `FileNotFoundError`, so the conventional Python idiom works:
 
 ```python
 from matra import Matra
@@ -288,7 +288,7 @@ except FileNotFoundError as exc:
     print(exc)  # model not found: models/english-ewt-ud-2.5-191206.udpipe
 ```
 
-The classes name `matra` as their module, so a traceback reads `matra.InputTooLarge`, and an exception survives `pickle` with its `kind` and `details`.
+The classes name `matra` as their module, so a traceback reads `matra.InputTooLargeError`, and an exception survives `pickle` with its `kind` and `details`.
 
 Every Python method that takes text routes through the engine's reading stage, so the 8 MiB `"input"` gate applies uniformly: to `analyze` and `analyze_markdown`, and to the four summary and keyphrase methods, whose per-method caps apply on top.
 

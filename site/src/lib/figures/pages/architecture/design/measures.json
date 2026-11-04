@@ -351,6 +351,15 @@
       "words": 62
     },
     {
+      "compression_ratio": 0.561,
+      "kind": "paragraph",
+      "lexical_density": 0.5424,
+      "readability_grade": 13.715,
+      "sentences": 2,
+      "text": "Every cap a gate checks, and every minimum a metric needs, is a constant in domain::limits, defined once and read where it applies. It sits inside the domain, the one module every row may import, so the gates in the adapters, the outcome functions and the metrics all read the same number without boundary rule 5 bending for it.",
+      "words": 59
+    },
+    {
       "compression_ratio": 0.5699,
       "kind": "paragraph",
       "lexical_density": 0.5319,

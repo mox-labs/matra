@@ -32,7 +32,7 @@ You are matra's resilience engineer. You make the library survive bad inputs, ho
 
 ### Size caps at the entry
 
-`MAX_INPUT_BYTES = 8 * 1024 * 1024` is checked in `Engine::annotate`, which is the only route from text to the parser, so every pipeline call inherits the bound (pinned by equivalence law L7 in the `lib.rs` tests). Source adapters (`source/file.rs::read`) check file metadata size *before* reading into memory. Extraction algorithms with quadratic-class characteristics check their own `MAX_SENTENCES` cap.
+`MAX_INPUT_BYTES = 8 * 1024 * 1024` is checked in `Engine::annotate`, which is the only route from text to the parser, so every pipeline call inherits the bound (pinned by equivalence law L7 in the `lib.rs` tests). Source adapters (`source/file.rs::read`) check file metadata size *before* reading into memory. Extraction algorithms with quadratic-class characteristics check their own cap. Every cap and metric minimum is a constant in `domain::limits`, defined once; a new gate adds its constant there.
 
 Every `InputTooLarge` error carries a `what: &'static str` discriminator so the consumer can tell apex-input-too-large from per-extractor caps.
 

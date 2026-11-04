@@ -182,11 +182,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.619,
-      "readability_grade": 11.1429,
-      "sentences": 1,
-      "text": "limit carries the cap and actual carries the measured size, so an error message can be built without hardcoding the constants.",
-      "words": 21
+      "lexical_density": 0.5918,
+      "readability_grade": 10.5269,
+      "sentences": 3,
+      "text": "limit carries the cap and actual carries the measured size, so an error message can be built without hardcoding the constants. Each cap is a published constant in domain::limits, named in the table; the module's documentation carries the cost model behind each value. No configuration changes any of them.",
+      "words": 50
     },
     {
       "compression_ratio": 0.534,
@@ -236,11 +236,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5172,
-      "readability_grade": 7.1547,
+      "lexical_density": 0.5227,
+      "readability_grade": 14.7127,
       "sentences": 2,
-      "text": "A metric has no gate of its own. The compression ratio skips any paragraph over 262,144 bytes and leaves its metric slot at None rather than returning an error.",
-      "words": 30
+      "text": "A metric has no gate of its own. The compression ratio skips any paragraph over 262,144 bytes (MAX_COMPRESSION_PARAGRAPH_BYTES) and leaves its metric slot at None rather than returning an error, and a paragraph under a metric's minimum word count (MIN_READABILITY_WORDS, MIN_COMPRESSION_WORDS) does the same.",
+      "words": 45
     },
     {
       "compression_ratio": 0.5398,
@@ -414,12 +414,12 @@
       "words": 51
     },
     {
-      "compression_ratio": 0.5376,
+      "compression_ratio": 0.5315,
       "kind": "paragraph",
       "lexical_density": 0.5111,
-      "readability_grade": 7.9397,
+      "readability_grade": 8.3331,
       "sentences": 5,
-      "text": "The rule has a consequence in Python that is easy to miss, because it changes which except clause fires rather than only which string a message carries. Io is an OSError and ModelInvalid is a RuntimeError, so from 0.2.0 a DNS failure, a rejected certificate, a timeout or a non-2xx status raises an OSError from Matra.english() where it used to raise RuntimeError. A caller that wrapped a bootstrap in except RuntimeError catches nothing now and the OSError propagates past it. Catch matra.MatraError, which both derive from, and branch on kind.",
+      "text": "The rule has a consequence in Python that is easy to miss, because it changes which except clause fires rather than only which string a message carries. IoError is an OSError and ModelInvalidError is a RuntimeError, so from 0.2.0 a DNS failure, a rejected certificate, a timeout or a non-2xx status raises an OSError from Matra.english() where it used to raise RuntimeError. A caller that wrapped a bootstrap in except RuntimeError catches nothing now and the OSError propagates past it. Catch matra.MatraError, which both derive from, and branch on kind.",
       "words": 92
     },
     {
@@ -612,22 +612,22 @@
       "words": 24
     },
     {
-      "compression_ratio": 0.5973,
+      "compression_ratio": 0.5574,
       "kind": "paragraph",
-      "lexical_density": 0.5156,
-      "readability_grade": 6.6388,
-      "sentences": 4,
-      "text": "The PyO3 binding raises each Error as a class of its own, named as the variant is. Every class derives from matra.MatraError and from the builtin class matra raised before 0.3.0, so except ValueError still catches an InputTooLarge. The routing is a match with no wildcard arm over the variants, so adding a variant to Error without assigning it a class fails to compile.",
-      "words": 64
+      "lexical_density": 0.5432,
+      "readability_grade": 6.9871,
+      "sentences": 5,
+      "text": "The PyO3 binding raises each Error as a class of its own, named for the variant with PEP 8's Error suffix. The name a failure shares across languages is its kind, not its class. Every class derives from matra.MatraError and from the builtin class matra raised before 0.3.0, so except ValueError still catches an InputTooLargeError. The routing is a match with no wildcard arm over the variants, so adding a variant to Error without assigning it a class fails to compile.",
+      "words": 83
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5414,
       "kind": "paragraph",
-      "lexical_density": 0.5,
-      "readability_grade": 7.9887,
-      "sentences": 4,
-      "text": "Io routes on the I/O kind it wraps. A missing file is an IoNotFound, which is a FileNotFoundError; a refused permission is an IoPermissionDenied, which is a PermissionError. Both derive from Io, so except matra.Io catches all three.",
-      "words": 39
+      "lexical_density": 0.5192,
+      "readability_grade": 8.44,
+      "sentences": 6,
+      "text": "Io routes on the I/O kind it wraps. A missing file is an IoNotFoundError, which is a FileNotFoundError; a refused permission is an IoPermissionError, which is a PermissionError. Both derive from IoError, so except matra.IoError catches all three. matra.IoError is matra's class, not the builtin IOError, which is another name for OSError.",
+      "words": 54
     },
     {
       "compression_ratio": null,
@@ -644,16 +644,16 @@
       "lexical_density": 0.6,
       "readability_grade": null,
       "sentences": 1,
-      "text": "ModelNotFound is a FileNotFoundError, so the conventional Python idiom works:",
+      "text": "ModelNotFoundError is a FileNotFoundError, so the conventional Python idiom works:",
       "words": 10
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
       "lexical_density": 0.5455,
-      "readability_grade": 8.0091,
+      "readability_grade": 9.0818,
       "sentences": 2,
-      "text": "The classes name matra as their module, so a traceback reads matra.InputTooLarge, and an exception survives pickle with its kind and details.",
+      "text": "The classes name matra as their module, so a traceback reads matra.InputTooLargeError, and an exception survives pickle with its kind and details.",
       "words": 22
     },
     {

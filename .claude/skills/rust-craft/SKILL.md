@@ -73,8 +73,8 @@ Applied to matra's deps:
 
 | Dep | Pin | Axis 1 (path target) | Why |
 |---|---|---|---|
-| `pyo3 = "0.28"` | major.minor | PUBLIC API (`Bound`, `Python`, `PyResult`) | Compile-error on mismatch; major.minor is conservative |
-| `pythonize = "0.28"` | major.minor | Version-locked to pyo3 by spec | Same as pyo3 |
+| `pyo3 = "0.29"` | major.minor | PUBLIC API (`Bound`, `Python`, `PyResult`) | Compile-error on mismatch; major.minor is conservative |
+| `pythonize = "0.29"` | major.minor | Version-locked to pyo3 by spec | Same as pyo3 |
 | `thiserror = "2"` | major | INTERNAL HELPERS + `__private<patch>` | Multi-version safe by design |
 | `serde = "1"` | major | Foundational; stable since 1.0 | Industry standard pin |
 | `udpipe-rs = "0.2"` | major.minor | Stable-API consumer | Conservative |

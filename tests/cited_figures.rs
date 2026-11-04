@@ -38,13 +38,13 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
             "site/content/guides/cli.md",
-            "19548:9d46b15f720bc8a1",
+            "19548:ae7eb796747d0cda",
             "the 0.8215 pair score in site/content/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md, and the 0.5857 unrelated score",
         ),
         (
             "site/content/guides/rust.md",
-            "21856:1764e3f448d36c83",
+            "21864:42ad8a854365162b",
             "the 0.8215 pair score and the 0.6138 unrelated score, in the same two files",
         ),
         (
@@ -54,13 +54,13 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/reference/errors.md",
-            "30322:cba9dfee92034c53",
-            "the RAKE and YAKE figures in site/content/guides/cli.md: 530 phrases, \
-             the one first at 12.095, 1.429 (270th), 219 at the floor, and YAKE's 1628.490",
+            "31137:fcce5bed8e68ffbe",
+            "the RAKE and YAKE figures in site/content/guides/cli.md: 544 phrases, \
+             the one first at 12.109, 1.442 (273rd), 225 at the floor, and YAKE's 1700.000",
         ),
         (
             "site/content/reference/domain-types.md",
-            "44440:160fc50461309816",
+            "46250:858f5862ae13a650",
             "the 141-word saturation floor and the 54-word window in \
              site/content/guides/semantic-clusters.md and skills/matra/references/semantic.md",
         ),

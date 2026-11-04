@@ -11,15 +11,15 @@ Seven kinds exist. The kind string is the stable key a consumer branches on; the
 
 | Kind | Display | Python class | Also a | Means |
 |---|---|---|---|---|
-| `model_not_found` | `model not found: {path}` | `ModelNotFound` | `FileNotFoundError` | A model file does not exist at the path given |
-| `model_invalid` | `invalid model: {s}` | `ModelInvalid` | `RuntimeError` | Bytes that arrived could not be verified against the pin, or could not be loaded |
-| `parse_failed` | `parse failed: {s}` | `ParseFailed` | `RuntimeError` | The parser failed on the input, panicked, or produced an unusable token id |
-| `input_too_large` | `{what} input too large: {actual} > limit {limit}`, or `input too large: ...` for the main gate, whose `what` is `"input"` | `InputTooLarge` | `ValueError` | A size gate rejected the input. `what` names the gate |
-| `unsupported_format` | `unsupported format: {format}; ...`, or `unsupported format: the input is not UTF-8 text ...` | `UnsupportedFormat` | `ValueError` | The input is a PDF or DOCX, which no reader in this build reads, or is not UTF-8 text |
-| `invalid_input` | `invalid input: {s}` | `InvalidInput` | `ValueError` | A caller violated a documented contract |
-| `io` | `io error: {e}` | `Io` | `OSError` | A filesystem or network operation failed |
+| `model_not_found` | `model not found: {path}` | `ModelNotFoundError` | `FileNotFoundError` | A model file does not exist at the path given |
+| `model_invalid` | `invalid model: {s}` | `ModelInvalidError` | `RuntimeError` | Bytes that arrived could not be verified against the pin, or could not be loaded |
+| `parse_failed` | `parse failed: {s}` | `ParseFailedError` | `RuntimeError` | The parser failed on the input, panicked, or produced an unusable token id |
+| `input_too_large` | `{what} input too large: {actual} > limit {limit}`, or `input too large: ...` for the main gate, whose `what` is `"input"` | `InputTooLargeError` | `ValueError` | A size gate rejected the input. `what` names the gate |
+| `unsupported_format` | `unsupported format: {format}; ...`, or `unsupported format: the input is not UTF-8 text ...` | `UnsupportedFormatError` | `ValueError` | The input is a PDF or DOCX, which no reader in this build reads, or is not UTF-8 text |
+| `invalid_input` | `invalid input: {s}` | `InvalidInputError` | `ValueError` | A caller violated a documented contract |
+| `io` | `io error: {e}` | `IoError` | `OSError` | A filesystem or network operation failed |
 
-Each Python class lives in `matra` and derives from `matra.MatraError` and from the builtin beside it, so an `except ValueError` still catches an `InputTooLarge`. An `io` failure whose I/O kind is not found is an `IoNotFound`, also a `FileNotFoundError`, and one whose kind is permission denied is an `IoPermissionDenied`, also a `PermissionError`; both derive from `Io`.
+Each Python class lives in `matra` and derives from `matra.MatraError` and from the builtin beside it, so an `except ValueError` still catches an `InputTooLargeError`. An `io` failure whose I/O kind is not found is an `IoNotFoundError`, also a `FileNotFoundError`, and one whose kind is permission denied is an `IoPermissionError`, also a `PermissionError`; both derive from `IoError`, which is not the builtin `IOError`.
 
 ## Details
 
@@ -70,7 +70,7 @@ The four ranking extractors check their caps after their empty-result checks, so
 
 **`io`.** A read, listing, directory creation, write, or rename failed, or a download failed at the transport or answered with a non-2xx status. A filesystem failure names the operation and the path, and carries the path in `details.path`; a transport failure names the URL, carries it in `details.url`, and sets `details.retryable`, which is `true` unless the certificate was rejected. Read `details.io_kind` for the class of failure rather than the message. It is also what a refused input looks like: a symlink is refused rather than followed, and a path that is not a regular file is refused. A file whose bytes are not text is `unsupported_format`, not `io`. Bytes that arrived and then failed their digest are `model_invalid` instead; this kind is for the ones that never arrived.
 
-In Python this kind is `matra.Io`, an `OSError`. From 0.2.0 that includes every failed download, which raised `RuntimeError` before, so a caller catching `RuntimeError` around a first run needs `OSError` as well, or catches `matra.MatraError` and branches on `kind`.
+In Python this kind is `matra.IoError`, an `OSError`. From 0.2.0 that includes every failed download, which raised `RuntimeError` before, so a caller catching `RuntimeError` around a first run needs `OSError` as well, or catches `matra.MatraError` and branches on `kind`.
 
 ## Per-document failures
 
