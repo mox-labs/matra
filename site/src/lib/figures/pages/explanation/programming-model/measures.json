@@ -263,38 +263,38 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.7857,
-      "readability_grade": 11.7843,
-      "sentences": 1,
-      "text": "Matra, Model2Vec, one module-level function, and the entry point the matra console script launches.",
-      "words": 15
+      "lexical_density": 0.6098,
+      "readability_grade": 10.5367,
+      "sentences": 3,
+      "text": "The same words Rust has, in Python's syntax: Engine, the read-only Document, the outcome functions, Model2Vec, and the entry point the matra console script launches. A Rust Input constructor is a Python keyword, and a Rust _with form is Python's method=.",
+      "words": 45
     },
     {
-      "compression_ratio": 0.5077,
+      "compression_ratio": 0.5261,
       "kind": "paragraph",
-      "lexical_density": 0.5643,
-      "readability_grade": 13.0643,
-      "sentences": 6,
-      "text": "Two things a Python caller used to write by hand now come from the library. analyze_path is the path-taking call, and Document and DocumentError cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And semantic_clusters takes any object with embed and identity: the Embedder port was always the extension point, and the binding now reaches it. Model2Vec carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. In the extension module that arm needs no embedding adapter compiled in. The matra package itself still requires an extension built with model2vec: its __init__ imports Model2Vec and raises ImportError naming the feature when it is absent, and every published wheel includes it.",
-      "words": 143
+      "lexical_density": 0.584,
+      "readability_grade": 13.7952,
+      "sentences": 5,
+      "text": "A stream crosses item by item: analyze_all yields a Document or a DocumentError dict per input, so a failure on one file is one item rather than an exception that ends the walk. And clusters takes any object with embed and identity: the Embedder port was always the extension point, and the binding now reaches it. Model2Vec carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. In the extension module that arm needs no embedding adapter compiled in. The matra package itself still requires an extension built with model2vec: its __init__ imports Model2Vec and raises ImportError naming the feature when it is absent, and every published wheel includes it.",
+      "words": 127
     },
     {
-      "compression_ratio": 0.6143,
+      "compression_ratio": 0.5691,
       "kind": "paragraph",
-      "lexical_density": 0.6122,
-      "readability_grade": 12.7487,
-      "sentences": 2,
-      "text": "Not on the Python surface: an outcome taken from a document you already analyzed, which Rust's free functions take; each Python outcome method parses its text again. Parsing is the one thing no caller substitutes, in either language, because the size cap and the panic boundary live behind it.",
-      "words": 51
+      "lexical_density": 0.5833,
+      "readability_grade": 11.7048,
+      "sentences": 4,
+      "text": "An outcome takes a document you already analyzed, in both languages, so a text is parsed once however many outcomes are asked of it. Python's outcome functions take only a Document, never a dict: a dict could carry provenance no matra run produced. Parsing is the one thing no caller substitutes, in either language, because the size cap and the panic boundary live behind it. The Python binding lives in src/python/ and uses only the public surface, which boundary rule 7 holds it to.",
+      "words": 86
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6923,
-      "readability_grade": 7.18,
+      "lexical_density": 0.6786,
+      "readability_grade": 7.57,
       "sentences": 3,
-      "text": "Matra is unsendable, because the UDPipe model holds C-side state that is not thread safe. Multi-process Python is fine; sharing one instance across threads is not.",
-      "words": 27
+      "text": "Engine is unsendable in Python, because the UDPipe model holds C-side state that is not thread safe. Multi-process Python is fine; sharing one engine across threads is not.",
+      "words": 29
     }
   ]
 }

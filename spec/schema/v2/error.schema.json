@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mox-labs.github.io/matra/schema/v2/error.schema.json",
   "title": "matra error, schema 2.x",
-  "description": "One failure as matra reports it: the serde form of `matra::domain::Error` (`kind`, `message`, `details`), and of `matra::domain::DocumentError`, which adds `path`. Python's `analyze_path` returns the second for a document that failed, and every Python exception matra raises carries the first as `kind`, `str(exc)` and `details`. Read by the same rules as the document schema: ignore fields you do not recognize, treat every string set as open (`kind` and `io_kind` among them), and reject a major you do not know. Branch on `kind`, read values from `details`, and never parse `message`, which is for a person and may change. A detail that does not apply is absent; a key a kind carries keeps appearing in later versions.",
+  "description": "One failure as matra reports it: the serde form of `matra::domain::Error` (`kind`, `message`, `details`), and of `matra::domain::DocumentError`, which adds `path`. Python's `Engine.analyze_all` yields the second for a document that failed, and every Python exception matra raises carries the first as `kind`, `str(exc)` and `details`. Read by the same rules as the document schema: ignore fields you do not recognize, treat every string set as open (`kind` and `io_kind` among them), and reject a major you do not know. Branch on `kind`, read values from `details`, and never parse `message`, which is for a person and may change. A detail that does not apply is absent; a key a kind carries keeps appearing in later versions.",
   "type": "object",
   "required": ["kind", "message", "details"],
   "properties": {

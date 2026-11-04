@@ -98,7 +98,8 @@ impl PyDocument {
     }
 
     /// The whole document as the schema's JSON shape: a new dict, which
-    /// the caller may change freely.
+    /// the caller may change freely. `matra.types` names its shape
+    /// `DocumentDict`.
     fn to_dict<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let dict = to_py(py, &self.inner)?;
         with_source_path(&dict, &self.inner.provenance)?;

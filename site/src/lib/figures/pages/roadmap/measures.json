@@ -441,13 +441,13 @@
       "words": 90
     },
     {
-      "compression_ratio": 0.5741,
+      "compression_ratio": 0.5743,
       "kind": "paragraph",
       "lexical_density": 0.4851,
       "readability_grade": 10.1298,
       "sentences": 5,
-      "text": "One of them is a defect, not an addition. vocabulary_ttr is a raw type-token ratio and TTR falls mechanically as text grows. Measured on this repository: README scores 0.690 against architecture/design.md at 0.227, but README has 35 sentences and the other has 266, so most of that gap is length rather than voice. As a cross-document feature it is unsound, which matters most when a directory is analyzed (Engine::analyze_all over Inputs::dir, or analyze_path in Python), because the result invites the comparison. The limitation is documented on the field; what remains is a length-normalized measure beside it (MTLD, MATTR, or standardized TTR).",
-      "words": 106
+      "text": "One of them is a defect, not an addition. vocabulary_ttr is a raw type-token ratio and TTR falls mechanically as text grows. Measured on this repository: README scores 0.690 against architecture/design.md at 0.227, but README has 35 sentences and the other has 266, so most of that gap is length rather than voice. As a cross-document feature it is unsound, which matters most when a directory is analyzed (Engine::analyze_all over Inputs::dir, or analyze_all(dir=) in Python), because the result invites the comparison. The limitation is documented on the field; what remains is a length-normalized measure beside it (MTLD, MATTR, or standardized TTR).",
+      "words": 108
     },
     {
       "compression_ratio": 0.5605,
@@ -576,13 +576,13 @@
       "words": 38
     },
     {
-      "compression_ratio": 0.5323,
+      "compression_ratio": 0.5239,
       "kind": "paragraph",
-      "lexical_density": 0.6429,
-      "readability_grade": 11.0086,
+      "lexical_density": 0.6346,
+      "readability_grade": 10.5139,
       "sentences": 3,
-      "text": "Shipped, 2026-09-05, via EP-0010: Config resolves locations and defaults per key from argument, environment, config file, then the defaults compiled into the crate; Engine::with_defaults() (since 0.3.0 Engine::new(), which reads no configuration file), Matra.english() and the from_config constructors are the no-setup path on every surface; matra config show and matra config init are the command-line half. The question this entry asks is answered narrowly: the file carries locations and defaults, never which metrics run or how output is shaped. Selecting behavior from a file remains unbuilt, and reopening it needs its own RFC rather than a wider schema here.",
-      "words": 106
+      "text": "Shipped, 2026-09-05, via EP-0010: Config resolves locations and defaults per key from argument, environment, config file, then the defaults compiled into the crate; Engine::with_defaults() (since 0.3.0 Engine::new(), which reads no configuration file, and matra.Engine() in Python, which replaced Matra.english()) and the from_config constructors are the no-setup path on every surface; matra config show and matra config init are the command-line half. The question this entry asks is answered narrowly: the file carries locations and defaults, never which metrics run or how output is shaped. Selecting behavior from a file remains unbuilt, and reopening it needs its own RFC rather than a wider schema here.",
+      "words": 112
     },
     {
       "compression_ratio": 0.5369,

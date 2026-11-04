@@ -12,17 +12,17 @@ matra reports the structure of text and measurements over it. It parses a docume
 ## End to end
 
 ```python
-from matra import Matra
+import matra
 
-v = Matra.english()
+engine = matra.Engine()
 text = (
     "The committee approved the proposal without debate. "
     "Three amendments were submitted by the working group."
 )
-result = v.analyze(text)
+doc = engine.analyze(text)
 
-print(result["metrics"]["passive_ratio"])
-print(result["sections"][0]["paragraphs"][0]["metrics"]["readability_grade"])
+print(doc["metrics"]["passive_ratio"])
+print(doc["sections"][0]["paragraphs"][0]["metrics"]["readability_grade"])
 ```
 
 The same analysis from Rust, and from the command line:
@@ -50,7 +50,7 @@ essay.md
   passive ratio      0.057
 ```
 
-All three return the same shape: a struct in Rust, a dict in Python, a table or `--json` at the command line. The second sentence in the example is passive, and `amendments` carries the relation `nsubj:pass`. matra records that and stops there.
+All three return the same shape: a struct in Rust, a read-only `Document` that reads as a dict in Python, a table or `--json` at the command line. The second sentence in the example is passive, and `amendments` carries the relation `nsubj:pass`. matra records that and stops there.
 
 ## Where to go next
 

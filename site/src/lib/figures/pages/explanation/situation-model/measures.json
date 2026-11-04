@@ -72,31 +72,31 @@
       "words": 86
     },
     {
-      "compression_ratio": 0.5676,
+      "compression_ratio": 0.5653,
       "kind": "paragraph",
       "lexical_density": 0.5816,
       "readability_grade": 9.4161,
       "sentences": 5,
-      "text": "Nothing has to be set up first. Engine::new() in Rust, Matra.english() in Python, and any matra command resolve where models live and fetch what is missing. The directory comes from an explicit argument if you pass one, else MATRA_MODEL_DIR, else the models subdirectory of the data root (MATRA_DATA_DIR, else $XDG_DATA_HOME/matra, else ~/.local/share/matra), with a non-empty ~/.matra/models from an older install used when the new location does not exist yet. The config file does not move the model directory, and it does not choose the parsing model, which is pinned in the source. Programming model has the resolution order.",
+      "text": "Nothing has to be set up first. Engine::new() in Rust, matra.Engine() in Python, and any matra command resolve where models live and fetch what is missing. The directory comes from an explicit argument if you pass one, else MATRA_MODEL_DIR, else the models subdirectory of the data root (MATRA_DATA_DIR, else $XDG_DATA_HOME/matra, else ~/.local/share/matra), with a non-empty ~/.matra/models from an older install used when the new location does not exist yet. The config file does not move the model directory, and it does not choose the parsing model, which is pinned in the source. Programming model has the resolution order.",
       "words": 103
     },
     {
-      "compression_ratio": 0.5308,
+      "compression_ratio": 0.5313,
       "kind": "paragraph",
-      "lexical_density": 0.5934,
-      "readability_grade": 10.9426,
-      "sentences": 6,
-      "text": "Models are fetched, not bundled, and only against a pinned digest. The UDPipe English model arrives on the first call to Engine::new, Engine::from_config or Matra.english; the reference embedding model arrives on the first call to Model2Vec::potion_base_8m or Model2Vec::from_config. Both fetch from URLs written in the source and load nothing whose SHA-256 does not equal a constant written beside them. A download that fails verification is fetched once more, in memory, and a second failed download raises without anything having been written. Exactly one artifact set can arrive this way for each.",
-      "words": 95
+      "lexical_density": 0.5789,
+      "readability_grade": 11.9421,
+      "sentences": 5,
+      "text": "Models are fetched, not bundled, and only against a pinned digest. The UDPipe English model arrives on the first call to Engine::new or Engine::from_config, in Rust or in Python; the reference embedding model arrives on the first call to Model2Vec::potion_base_8m or Model2Vec::from_config. Both fetch from URLs written in the source and load nothing whose SHA-256 does not equal a constant written beside them. A download that fails verification is fetched once more, in memory, and a second failed download raises without anything having been written. Exactly one artifact set can arrive this way for each.",
+      "words": 99
     },
     {
-      "compression_ratio": 0.6612,
+      "compression_ratio": 0.6335,
       "kind": "paragraph",
-      "lexical_density": 0.4898,
-      "readability_grade": 7.4895,
-      "sentences": 3,
-      "text": "Bringing your own is a first-class path. Python's Matra.from_path and Model2Vec::from_dir load what you supply and touch no network, whatever the directory holds. For those, the digest is identity rather than proof: it says which artifacts produced a value, not that they are the ones you meant to fetch.",
-      "words": 52
+      "lexical_density": 0.5,
+      "readability_grade": 7.812,
+      "sentences": 4,
+      "text": "Bringing your own embedding model is a first-class path. Model2Vec::from_dir loads what you supply and touches no network, whatever the directory holds. The parsing model is a pin. For those, the digest is identity rather than proof: it says which artifacts produced a value, not that they are the ones you meant to fetch.",
+      "words": 55
     },
     {
       "compression_ratio": null,

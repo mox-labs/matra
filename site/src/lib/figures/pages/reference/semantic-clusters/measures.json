@@ -20,11 +20,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6522,
-      "readability_grade": 11.8562,
+      "lexical_density": 0.68,
+      "readability_grade": 11.376,
       "sentences": 2,
-      "text": "clusters(&doc, &embedder, threshold) and Python's Matra.semantic_clusters return a Clusters, a standalone value and never a field on Document. Its JSON Schema is spec/schema/v2/clusters.schema.json.",
-      "words": 28
+      "text": "clusters(&doc, &embedder, threshold) and Python's matra.clusters(doc, embedder, threshold) return a Clusters, a standalone value and never a field on Document. Its JSON Schema is spec/schema/v2/clusters.schema.json.",
+      "words": 32
     },
     {
       "compression_ratio": null,
@@ -47,11 +47,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6154,
-      "readability_grade": 11.5099,
-      "sentences": 4,
-      "text": "Python's module-level semantic_clusters(vectors, threshold, model_hash) clusters vectors you already hold. It reads no document, so it returns parameters, clusters and edges with no provenance (matra.VectorClusters). From Rust, vectors you hold go through clusters with an Embedder that returns them.",
-      "words": 42
+      "lexical_density": 0.5588,
+      "readability_grade": 17.1053,
+      "sentences": 1,
+      "text": "Vectors you already hold go through clusters with an Embedder that returns them, in Rust and in Python alike: the clustering always runs over a document's sentences, so its result always carries a provenance.",
+      "words": 35
     },
     {
       "compression_ratio": null,
@@ -126,13 +126,13 @@
       "words": 64
     },
     {
-      "compression_ratio": 0.5788,
+      "compression_ratio": 0.6547,
       "kind": "paragraph",
-      "lexical_density": 0.5846,
-      "readability_grade": 8.9013,
+      "lexical_density": 0.5686,
+      "readability_grade": 7.8923,
       "sentences": 4,
-      "text": "The 2,000 cap counts whatever the vectors stand for, so clustering one vector per document caps the corpus at 2,000 documents. The contract violations mean the call site or the embedder is wrong, never the text. A zero-magnitude vector has no defined cosine with anything, so it gets no edge at any threshold and no cluster. Errors has the full table, the provisioning failures included.",
-      "words": 67
+      "text": "The 2,000 cap counts the document's sentences. The contract violations mean the call site or the embedder is wrong, never the text. A zero-magnitude vector has no defined cosine with anything, so it gets no edge at any threshold and no cluster. Errors has the full table, the provisioning failures included.",
+      "words": 54
     }
   ]
 }

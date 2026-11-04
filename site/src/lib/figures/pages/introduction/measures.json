@@ -65,11 +65,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5238,
-      "readability_grade": 5.8843,
+      "lexical_density": 0.5208,
+      "readability_grade": 7.1208,
       "sentences": 3,
-      "text": "All three return the same shape: a struct in Rust, a dict in Python, a table or --json at the command line. The second sentence in the example is passive, and amendments carries the relation nsubj:pass. matra records that and stops there.",
-      "words": 43
+      "text": "All three return the same shape: a struct in Rust, a read-only Document that reads as a dict in Python, a table or --json at the command line. The second sentence in the example is passive, and amendments carries the relation nsubj:pass. matra records that and stops there.",
+      "words": 50
     },
     {
       "compression_ratio": null,

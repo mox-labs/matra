@@ -137,11 +137,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5667,
-      "readability_grade": 9.1567,
+      "lexical_density": 0.5,
+      "readability_grade": 7.3518,
       "sentences": 2,
-      "text": "Udpipe::from_path, which only Python's Matra.from_path reaches, verifies nothing: it loads what you name, and traceability for that path belongs to the caller. A Rust caller loads the pinned model only.",
-      "words": 32
+      "text": "No surface loads a model file the caller names. The pinned model is the only one a parse can come from, so the identity on every result is proof as well as a name.",
+      "words": 34
     },
     {
       "compression_ratio": null,
@@ -164,11 +164,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5789,
-      "readability_grade": 10.4658,
+      "lexical_density": 0.5641,
+      "readability_grade": 10.3569,
       "sentences": 3,
-      "text": "Python gets the same constraint through a different mechanism. Matra is declared unsendable, so PyO3 records the creating thread and refuses access from any other at runtime. A ProcessPoolExecutor is unaffected, because each process loads its own model.",
-      "words": 39
+      "text": "Python gets the same constraint through a different mechanism. Its Engine is declared unsendable, so PyO3 records the creating thread and refuses access from any other at runtime. A ProcessPoolExecutor is unaffected, because each process loads its own model.",
+      "words": 40
     },
     {
       "compression_ratio": null,

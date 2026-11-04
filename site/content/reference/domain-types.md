@@ -497,7 +497,7 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 | `Sentence` | `Sentence` |
 | `Paragraph` | `Paragraph` |
 | `Section` | `Section` |
-| `Document` | `Document` |
+| `Document` | `matra.Document`, read-only, whose `to_dict()` is a `DocumentDict` |
 | `DocumentMetrics`, `ParagraphMetrics` | `DocumentMetrics`, `ParagraphMetrics` |
 | `Provenance`, `Identity`, `ProvenanceSource` | `Provenance`, `Identity`, `ProvenanceSource` |
 | `ClausalComplement`, `RootMood` | `ClausalComplement`, `RootMood` |
@@ -509,15 +509,16 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 | `DocumentError` | `DocumentError` |
 | `Error` | `matra.ErrorInfo`, and the exception classes under `matra.MatraError` |
 | `ErrorDetails` | `ErrorDetails` |
-| `Format`, `Block` | no Python shape |
+| `Block` | `BlockDict`, a `HeadingBlock` or a `ParagraphBlock` |
+| `Format` | its name, a `FormatName` |
 
-`Document` and `DocumentError` are the two items `Matra.analyze_path` returns, and the Python package names their union `matra.types.CorpusItem`. A `Document` crosses through serde like every shape above it, with one field replaced: its `provenance.source.path` is decoded with the platform's filesystem decoding (`os.fsdecode` on Unix), so a name that is not valid UTF-8 crosses exactly instead of as serde's lossy string. A `DocumentError` crosses through serde too, as `{"path", "kind", "message", "details"}`, with its `path` decoded the same way. `kind` is `Error::kind` on the domain type, pinned across bindings by `spec/tests/corpus/items.json` and exported to Python as `matra.ERROR_KINDS`; `message` is the Rust error's own `Display` text; `details` is `Error::details`. An `Error` raised rather than returned crosses as a Python exception carrying the same three, `kind`, `str(exc)` and `details`: a method is computed into a value before it crosses, as an aggregate is. A future binding takes the same serde form.
+`Document` and `DocumentError` are the two items Python's `Engine.analyze_all` yields. A `Document` stays a Rust value behind a read-only handle, and every read of it crosses through serde like every shape above it, with one field replaced: its `provenance.source.path` is decoded with the platform's filesystem decoding (`os.fsdecode` on Unix), so a name that is not valid UTF-8 crosses exactly instead of as serde's lossy string. A `DocumentError` crosses through serde too, as `{"path", "kind", "message", "details"}`, with its `path` decoded the same way. `kind` is `Error::kind` on the domain type, pinned across bindings by `spec/tests/corpus/items.json` and exported to Python as `matra.ERROR_KINDS`; `message` is the Rust error's own `Display` text; `details` is `Error::details`. An `Error` raised rather than returned crosses as a Python exception carrying the same three, `kind`, `str(exc)` and `details`: a method is computed into a value before it crosses, as an aggregate is. A future binding takes the same serde form.
 
 The Python shapes are `TypedDict` declarations available at runtime. They are declared in `matra.types` and re-exported from the package root, so either import works:
 
 ```python
-from matra.types import Document, Keyphrases, Summary
-from matra import Document, Keyphrases, Summary
+from matra.types import DocumentDict, Keyphrases, Summary
+from matra import DocumentDict, Keyphrases, Summary
 ```
 
 Field names and nesting match the Rust types exactly. `Option<f64>` becomes `float | None`; `Option<String>` becomes `str | None`; `Vec<T>` becomes `list[T]`; `usize` becomes `int`.

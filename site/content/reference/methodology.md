@@ -20,7 +20,7 @@ The English model is pinned in `src/nlp/udpipe.rs`.
 
 The engine's constructors, `Engine::new` and `Engine::from_config`, download the file into the model directory when it is absent, checks the size, computes the SHA-256, and loads the same bytes it hashed. There is no second read from disk between verification and load. A cached file that fails verification is not loaded: the model is downloaded, and a download that also fails the digest is retried once, so a call makes at most two downloads. The file is replaced only by bytes that verify. If both downloads fail the digest the call returns `Error::ModelInvalid`, nothing is loaded, and the file that was there is still there.
 
-Verification belongs to that path alone. Python's `Matra.from_path` loads whatever file you hand it without checking size or hash, so a result produced through it is only as identifiable as the file you supplied; from Rust, only the pinned model loads.
+That path is the only way a parsing model arrives: no surface loads another model file, so every result names the pinned model it came from.
 
 Changing the model means editing the pinned constants, which makes the change visible in version control and in any caller that pins a matra version.
 

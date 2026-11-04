@@ -32,7 +32,7 @@
       "lexical_density": 0.5588,
       "readability_grade": 6.1191,
       "sentences": 3,
-      "text": "In Python the same failure is a matra.IoError, an OSError, from Matra.english(), with the URL in details[\"url\"] and details[\"retryable\"] false, since retrying meets the same proxy. Errors lists every way a download can fail.",
+      "text": "In Python the same failure is a matra.IoError, an OSError, from matra.Engine(), with the URL in details[\"url\"] and details[\"retryable\"] false, since retrying meets the same proxy. Errors lists every way a download can fail.",
       "words": 36
     },
     {

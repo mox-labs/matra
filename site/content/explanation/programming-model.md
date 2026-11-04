@@ -124,23 +124,25 @@ When an aggregate needs to be visible cross-language it is materialized as a fie
 
 ## What Python exposes
 
-`Matra`, `Model2Vec`, one module-level function, and the entry point the `matra` console script launches.
+The same words Rust has, in Python's syntax: `Engine`, the read-only `Document`, the outcome functions, `Model2Vec`, and the entry point the `matra` console script launches. A Rust `Input` constructor is a Python keyword, and a Rust `_with` form is Python's `method=`.
 
 | Python | Rust equivalent |
 |---|---|
-| `Matra.from_path`, `Matra.english` | the UDPipe adapter loading a model file you name, or the pinned model in a directory, wired into an `Engine`; `Matra.english()` with no argument resolves the directory as `Engine::from_config(&Config::resolve()?)` does. Rust has no counterpart to `from_path`: it loads the pinned model only |
-| `Matra.analyze`, `Matra.analyze_markdown` | `analyze` on an `Input::text` of that format |
-| `Matra.tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases` | the text read as plain text and parsed, then `summarize_with` or `keyphrases_with` with the matching method |
-| `Matra.semantic_clusters` | the text read as plain text and parsed, then `clusters` |
-| `Matra.analyze_path` | `Inputs::dir` for a directory, else `Input::file`, into `Engine::analyze_all`, collected in order |
-| `semantic_clusters(vectors, threshold, model_hash)` | the clustering inside `clusters`, over vectors you hold, with no document and so no provenance |
+| `Engine()`, `Engine.from_config(config_file=None)` | `Engine::new()`, and `Engine::from_config` over `Config::from_file(path)`, or over `Config::resolve()` with no file named |
+| `engine.analyze(text, format=)` | `analyze(Input::text(text, format))`, plain text when no format is named |
+| `engine.analyze(file=)`, `bytes=`, `blocks=` | `analyze` on `Input::file`, `Input::bytes` or block input |
+| `engine.analyze_all(dir=)`, `texts=` | `analyze_all` over `Inputs::dir`, or over `Input::text` per text, lazily |
+| `doc["metrics"]`, `doc.to_dict()` | the fields of `Document`, through serde |
+| `summarize(doc, n=3, method=)`, `keyphrases(doc, n=10, method=)` | `summarize` or `summarize_with`, `keyphrases` or `keyphrases_with` |
+| `clusters(doc, embedder, threshold=0.85)` | `clusters` |
+| `span_text(text, span)` | slicing the analysed text by a `Span` |
 | `Model2Vec.from_dir`, `.model_hash`, `.dimensions`, `.embed`, `.identity` | `Model2Vec` behind the `Embedder` port |
 | `Model2Vec.potion_base_8m` | `Model2Vec::potion_base_8m`; with no argument it is `Model2Vec::from_config` |
 | any object with `embed` and `identity` | an `Embedder` implementor, wrapped by an adapter in the binding |
 | `_core.cli_main(argv)` | `cli::run`, which is what the `matra` console script launches |
 
-Two things a Python caller used to write by hand now come from the library. `analyze_path` is the path-taking call, and `Document` and `DocumentError` cross with it, so a failure on one file is one item in the returned list rather than an exception that ends the walk. And `semantic_clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. In the extension module that arm needs no embedding adapter compiled in. The `matra` package itself still requires an extension built with `model2vec`: its `__init__` imports `Model2Vec` and raises `ImportError` naming the feature when it is absent, and every published wheel includes it.
+A stream crosses item by item: `analyze_all` yields a `Document` or a `DocumentError` dict per input, so a failure on one file is one item rather than an exception that ends the walk. And `clusters` takes any object with `embed` and `identity`: the `Embedder` port was always the extension point, and the binding now reaches it. `Model2Vec` carries both methods too, so it satisfies the same protocol a caller's own object does rather than sitting beside it as a second accepted type. In the extension module that arm needs no embedding adapter compiled in. The `matra` package itself still requires an extension built with `model2vec`: its `__init__` imports `Model2Vec` and raises `ImportError` naming the feature when it is absent, and every published wheel includes it.
 
-Not on the Python surface: an outcome taken from a document you already analyzed, which Rust's free functions take; each Python outcome method parses its text again. Parsing is the one thing no caller substitutes, in either language, because the size cap and the panic boundary live behind it.
+An outcome takes a document you already analyzed, in both languages, so a text is parsed once however many outcomes are asked of it. Python's outcome functions take only a `Document`, never a dict: a dict could carry provenance no matra run produced. Parsing is the one thing no caller substitutes, in either language, because the size cap and the panic boundary live behind it. The Python binding lives in `src/python/` and uses only the public surface, which boundary rule 7 holds it to.
 
-`Matra` is `unsendable`, because the UDPipe model holds C-side state that is not thread safe. Multi-process Python is fine; sharing one instance across threads is not.
+`Engine` is `unsendable` in Python, because the UDPipe model holds C-side state that is not thread safe. Multi-process Python is fine; sharing one engine across threads is not.

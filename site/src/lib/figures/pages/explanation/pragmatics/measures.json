@@ -135,22 +135,22 @@
       "words": 19
     },
     {
-      "compression_ratio": 0.5702,
+      "compression_ratio": 0.5746,
       "kind": "paragraph",
       "lexical_density": 0.463,
       "readability_grade": 8.2422,
       "sentences": 4,
-      "text": "Ask for nothing and you get the pinned model in the resolved place. Engine::new(), Engine::from_config(cfg) and Model2Vec::from_config(cfg) resolve the directory through Config and fetch the pinned model when it is absent. In Python that is Matra.english() and Model2Vec.potion_base_8m() with no argument. This is the path to take unless you have a reason not to.",
+      "text": "Ask for nothing and you get the pinned model in the resolved place. Engine::new(), Engine::from_config(cfg) and Model2Vec::from_config(cfg) resolve the directory through Config and fetch the pinned model when it is absent. In Python that is matra.Engine() and Model2Vec.potion_base_8m() with no argument. This is the path to take unless you have a reason not to.",
       "words": 59
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5517,
-      "readability_grade": 13.9341,
-      "sentences": 3,
-      "text": "Naming the directory changes where, not what. Engine::from_config(&cfg.with_model_dir(dir)), Matra.english(dir) and Model2Vec::potion_base_8m(dir) fetch the same pinned artifacts into the directory you name. Take them when the model belongs somewhere specific.",
-      "words": 33
+      "lexical_density": 0.5625,
+      "readability_grade": 14.5623,
+      "sentences": 4,
+      "text": "Naming the directory changes where, not what. Engine::from_config(&cfg.with_model_dir(dir)), Python's matra.Engine() under MATRA_MODEL_DIR, and Model2Vec::potion_base_8m(dir) fetch the same pinned artifacts into the directory you name. Take them when the model belongs somewhere specific.",
+      "words": 36
     },
     {
       "compression_ratio": 0.4944,
@@ -171,13 +171,13 @@
       "words": 95
     },
     {
-      "compression_ratio": 0.5709,
+      "compression_ratio": 0.5729,
       "kind": "paragraph",
-      "lexical_density": 0.5176,
-      "readability_grade": 8.9538,
+      "lexical_density": 0.5185,
+      "readability_grade": 9.2292,
       "sentences": 5,
-      "text": "Bringing your own. Python's Matra.from_path(path) and Model2Vec::from_dir(dir) load what you supply and never reach the network, whatever the directory holds. That is the path for a model this build does not pin: a different UDPipe language from Python, a different model2vec artifact from either language. From Rust only the pinned parsing model loads. Nothing verifies it, so the model_hash on a result is identity rather than proof: it tells you which artifacts produced a score, not that they are the ones you meant to fetch.",
-      "words": 90
+      "text": "Bringing your own. Model2Vec::from_dir(dir) loads what you supply and never reaches the network, whatever the directory holds. That is the path for a model2vec artifact this build does not pin, from either language. The parsing model is a pin on every surface: no surface loads another UDPipe model file. Nothing verifies it, so the model_hash on a result is identity rather than proof: it tells you which artifacts produced a score, not that they are the ones you meant to fetch.",
+      "words": 83
     },
     {
       "compression_ratio": null,

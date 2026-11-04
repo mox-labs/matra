@@ -47,11 +47,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.561,
-      "readability_grade": 8.7351,
-      "sentences": 2,
-      "text": "Verification belongs to that path alone. Python's Matra.from_path loads whatever file you hand it without checking size or hash, so a result produced through it is only as identifiable as the file you supplied; from Rust, only the pinned model loads.",
-      "words": 43
+      "lexical_density": 0.6154,
+      "readability_grade": 13.1577,
+      "sentences": 1,
+      "text": "That path is the only way a parsing model arrives: no surface loads another model file, so every result names the pinned model it came from.",
+      "words": 26
     },
     {
       "compression_ratio": null,

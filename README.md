@@ -21,9 +21,9 @@ uvx 'matra>=0.2' analyze essay.md
 ```
 
 ```python
-from matra import Matra
+import matra
 
-Matra.english().analyze("The report was filed without comment.")
+matra.Engine().analyze("The report was filed without comment.")
 ```
 
 ```rust,ignore
@@ -32,7 +32,7 @@ let engine = matra::Engine::new()?;
 
 The `uvx` line carries a version floor for the same reason the `--skill` line above does. Both registries serve 0.2.x, so a bare `uvx matra` resolves to it today; the floor says what these commands need rather than leaving it to whichever release is newest when you run them. 0.1.0 is still published, and its `analyze` is a separate Python implementation and not this one missing a flag: `--json` prints a bare document with no envelope, the table is a different renderer, and the model cache is hardcoded to `~/.matra/models`. That line does not fail, it succeeds and hands you something else.
 
-The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file does not move the model directory: its `[models] embedding` key names the embedding model's subdirectory inside it, and `[models] udpipe` is printed by `matra config show` but selects nothing, because the parsing model is pinned in the source. Every constructor takes the directory explicitly when you want it somewhere specific, and `matra config show` prints every resolved value and where it came from.
+The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file does not move the model directory: its `[models] embedding` key names the embedding model's subdirectory inside it, and `[models] udpipe` is printed by `matra config show` but selects nothing, because the parsing model is pinned in the source. To put it somewhere specific, pass it explicitly (`--model-dir`, `Config::with_model_dir`), or set `MATRA_MODEL_DIR`, which is how Python names it. `matra config show` prints every resolved value and where it came from.
 
 ## Install
 
@@ -85,19 +85,23 @@ for item in engine.analyze_all(Inputs::dir("docs/")?) {
 ## Usage (Python)
 
 ```python
-from pathlib import Path
-from matra import Matra
+import matra
 
-v = Matra.english()
+engine = matra.Engine()
 
-result = v.analyze_markdown(Path("essay.md").read_text())
+doc = engine.analyze(file="essay.md")       # a str alone is text, never a path
+print(doc["metrics"]["total_words"])
+summary = matra.summarize(doc, n=3)
+phrases = matra.keyphrases(doc, n=10, method="yake")
 
-for item in v.analyze_path("docs/"):        # a whole directory
-    if "kind" in item:                      # a failure: kind, message, details
-        print(item["path"], item["kind"])
-    else:
+for item in engine.analyze_all(dir="docs/"):   # lazily, one item per file
+    if isinstance(item, matra.Document):
         print(item["provenance"]["source"]["path"], item["metrics"]["total_words"])
+    else:                                      # a failure: path, kind, message, details
+        print(item["path"], item["kind"])
 ```
+
+A `Document` is read-only and reads as its JSON (`doc.to_dict()` for the whole). Python spells every word Rust spells: `analyze(text=, file=, bytes=, blocks=, format=)` for the `Input` constructors, and `method=` for the `_with` forms.
 
 ## Usage (CLI)
 
