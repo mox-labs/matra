@@ -94,7 +94,7 @@ From Python, `matra.clusters(doc, embedder, threshold=0.85)` takes the `Document
 
 **Every clustering call above is over the sentences of one document. There is no cross-document primitive, and matra has no per-document redundancy number at all.** Build the comparison yourself: embed each document as one text with `Model2Vec.embed`, then compute the cosine of each pair.
 
-**The embedder caps every text at 512 tokens, so a whole-document vector is a vector of roughly the document's first 512 tokens.** Truncation happens twice, on bytes before tokenizing and on the token ids after, and nothing past the cap reaches the mean. Tokens are not words, and the ratio depends on what the file holds, so name the basis with any figure. Swept over the 25 pages of matra's own book long enough to reach it, by the recipe below, which embeds the raw file text, 512 tokens ran out between 141 and 378 words. Diagrams, code fences and tables pull the low end down, and a route that reads files off disk gets the low end. Two long texts agreeing for as few as their first 141 words can already embed to byte-identical vectors, so documents with a shared boilerplate opening report as near-duplicates on the opening alone, and paraphrases that diverge early are never compared on the rest. Say which part of the document a cross-document score covers. When the tail is the content, chunk, and size chunks from a token count: a word count is not a safe proxy on raw markup, where a 54-word window inside an inline SVG block already filled the cap.
+**The embedder caps every text at 512 tokens, so a whole-document vector is a vector of roughly the document's first 512 tokens.** Truncation happens twice, on bytes before tokenizing and on the token ids after, and nothing past the cap reaches the mean. Tokens are not words, and the ratio depends on what the file holds, so name the basis with any figure. Swept over the 26 pages of matra's own book long enough to reach it, by the recipe below, which embeds the raw file text, 512 tokens ran out between 141 and 378 words. Diagrams, code fences and tables pull the low end down, and a route that reads files off disk gets the low end. Two long texts agreeing for as few as their first 141 words can already embed to byte-identical vectors, so documents with a shared boilerplate opening report as near-duplicates on the opening alone, and paraphrases that diverge early are never compared on the rest. Say which part of the document a cross-document score covers. When the tail is the content, chunk, and size chunks from a token count: a word count is not a safe proxy on raw markup, where a 54-word window inside an inline SVG block already filled the cap.
 
 Read every pairwise score before choosing a cutoff. That is what calibration looks like: read the scores first, choose the cutoff second.
 
@@ -126,9 +126,9 @@ for a, b in combinations(range(len(docs)), 2):
 Three pages of matra's own book, run from a checkout: two covering the same ground for different surfaces, and one unrelated. Reproducible, unlike a corpus nobody else has.
 
 ```text
-0.8181  cli.md <-> rust.md
-0.5658  cli.md <-> roadmap.md
-0.6138  rust.md <-> roadmap.md
+0.8272  cli.md <-> rust.md
+0.5800  cli.md <-> roadmap.md
+0.6114  rust.md <-> roadmap.md
 ```
 
 The pair separates decisively, and the shipped 0.85 does not carry over: against `0.85` no pair clears, so an agent that took the starting value on faith would have reported the near-duplicates as unrelated. Document vectors are means over far more tokens than sentence vectors, so the whole scale shifts: unrelated documents sit well above zero, and near-duplicates need not reach the sentence band. Report the raw scores and the embedder's identity (`model.model_hash`), and say which granularity produced them.

@@ -89,7 +89,7 @@ matra clusters notes.md --threshold 0.85 --json
 
 `clusters` works over the sentences of one document, in every language. There is no cross-document primitive. Build one out of what you have: embed each document as a single text with `model.embed`, then compare the vectors yourself.
 
-One bound decides what the answer means. `Model2Vec` caps every text at 512 tokens, pre-truncating on bytes and then truncating the token ids, so "embed each document as a single text" embeds roughly the first 512 tokens of it and nothing after. Tokens are not words, and how many words 512 tokens buys depends on what the file holds. Say which basis a figure is on. Swept over the 25 pages of this book long enough to reach it, with the call below, which embeds the raw file text, the cap ran out between 141 and 378 words. Diagrams, code fences and tables pull the low end down; the recipe below reads files off disk, so the low end is the one that applies to it. Two long texts that agree for as few as their first 141 words can already embed to byte-identical vectors. That cuts both ways: documents sharing a boilerplate opening score as near-duplicates on the opening alone, and two real paraphrases that diverge inside their first few hundred words never get compared on the part that matters.
+One bound decides what the answer means. `Model2Vec` caps every text at 512 tokens, pre-truncating on bytes and then truncating the token ids, so "embed each document as a single text" embeds roughly the first 512 tokens of it and nothing after. Tokens are not words, and how many words 512 tokens buys depends on what the file holds. Say which basis a figure is on. Swept over the 26 pages of this book long enough to reach it, with the call below, which embeds the raw file text, the cap ran out between 141 and 378 words. Diagrams, code fences and tables pull the low end down; the recipe below reads files off disk, so the low end is the one that applies to it. Two long texts that agree for as few as their first 141 words can already embed to byte-identical vectors. That cuts both ways: documents sharing a boilerplate opening score as near-duplicates on the opening alone, and two real paraphrases that diverge inside their first few hundred words never get compared on the part that matters.
 
 If the tail carries the content, split each document into chunks and compare the chunks, and size the chunks from a token count rather than a word count. A word count is not a safe proxy on raw markup, and the gap is not small: sliding a window across the same pages, a window of 54 words landed inside an inline SVG block and had already filled the cap. Any word figure has to be measured against your own files, because getting it wrong does not raise. It returns a score computed on less text than you handed it.
 
@@ -123,9 +123,9 @@ for a, b in combinations(range(len(docs)), 2):
 Those three are pages of this book, run from a checkout of the repository, so the numbers below are yours to reproduce. Two of them cover the same ground for different surfaces, and the third is unrelated. It prints:
 
 ```text
-0.8181  cli.md <-> rust.md
-0.5658  cli.md <-> roadmap.md
-0.6138  rust.md <-> roadmap.md
+0.8272  cli.md <-> rust.md
+0.5800  cli.md <-> roadmap.md
+0.6114  rust.md <-> roadmap.md
 ```
 
 The separation is decisive, and the sentence-level starting point does not carry over: against a cutoff of `0.85` no pair clears, so the near-duplicate pair would have been reported as unrelated. This is what "the threshold does not travel" costs when it is taken on faith. Calibrate on scores you have read.

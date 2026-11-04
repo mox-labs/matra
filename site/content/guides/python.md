@@ -1,6 +1,6 @@
 # Use matra from Python
 
-You installed matra with `uv add 'matra>=0.2'` or `pip install 'matra>=0.2'`. That gave you two things: the library described on this page, and the `matra` command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the [CLI guide](cli.md); the Python package adds no behavior to it.
+You installed matra with `uv add 'matra>=0.3'` or `pip install 'matra>=0.3'`. That gave you two things: the library described on this page, and the `matra` command, which is the Rust CLI reached through the extension module rather than a Python program of its own. Everything the command does is in the [CLI guide](cli.md); the Python package adds no behavior to it.
 
 The Python surface spells what Rust spells. You ask an `Engine` to `analyze` a document, then ask for an outcome of the result: `summarize`, `keyphrases` or `clusters`.
 

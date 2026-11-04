@@ -6,9 +6,9 @@ What each of matra's install routes needs and installs, and the models matra dow
 
 | Route | Command | Builds from source | Features in the build |
 |---|---|---|---|
-| Rust library | `cargo add matra@0.2` | yes | `udpipe` (the default) |
-| CLI binary | `cargo install matra --version '^0.2' --features cli` | yes | `udpipe cli` |
-| Python package | `pip install 'matra>=0.2'` | only where no wheel fits | `udpipe model2vec python cli` |
+| Rust library | `cargo add matra@0.3` | yes | `udpipe` (the default) |
+| CLI binary | `cargo install matra --version '^0.3' --features cli` | yes | `udpipe cli` |
+| Python package | `pip install 'matra>=0.3'` | only where no wheel fits | `udpipe model2vec python cli` |
 
 The Python package installs the library and the `matra` command, which is the Rust CLI reached through the extension module, and has no runtime dependencies of its own.
 
@@ -36,17 +36,17 @@ Every release file from 0.2.1 on carries a build provenance attestation; [Verify
 
 | Requirement | Used by | Accepts |
 |---|---|---|
-| `matra@0.2`, `--version '^0.2'` | cargo | 0.2.0 or a later release semver-compatible with it, so not 0.3.0 |
-| `'matra>=0.2'` | pip, uv, uvx | 0.2.0 and every later release |
+| `matra@0.3`, `--version '^0.3'` | cargo | 0.3.0 or a later release semver-compatible with it, so not 0.4.0 |
+| `'matra>=0.3'` | pip, uv, uvx | 0.3.0 and every later release |
 
-An install line with no version takes the newest release on the registry. 0.1.0 is still published, and its `matra` command is a separate Python implementation with its own `--json` shape and a model directory fixed at `~/.matra/models`.
+An install line with no version takes the newest release on the registry. 0.1.0 is still published, and its `matra` command is a separate Python implementation with its own `--json` shape and a model directory fixed at `~/.matra/models`. 0.2 is published too, with the surface [Migrate from 0.2 to 0.3](../guides/migrate-to-0-3.md) moves you off.
 
 ## Build features
 
 `matra --version` prints the version, then the features the build was compiled with:
 
 ```
-matra 0.2.1
+matra 0.3.0
 features: udpipe cli
 ```
 

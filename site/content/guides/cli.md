@@ -7,19 +7,19 @@
 Nothing installed, nothing configured:
 
 ```bash
-uvx 'matra>=0.2' analyze essay.md
+uvx 'matra>=0.3' analyze essay.md
 ```
 
-The version floor is load-bearing. A bare `uvx matra` takes whatever release is newest, which is 0.2.x today and will not stay that way, and 0.1.0 is still on PyPI for anything pinned to it. 0.1.0's `analyze` is a separate Python implementation rather than this one missing a flag: `--json` prints a bare document with no envelope, the human table is a different renderer, and the model cache lands in `~/.matra/models` instead of the resolved model directory. It does not fail, it succeeds and gives you something else, so pin it.
+The version floor is load-bearing. A bare `uvx matra` takes whatever release is newest, which is 0.3.x today and will not stay that way, and 0.1.0 and 0.2 are still on PyPI for anything pinned to them. 0.2's command line spells its JSON and its config file differently; [Migrate from 0.2 to 0.3](migrate-to-0-3.md#command-line) lists each change. 0.1.0's `analyze` is a separate Python implementation rather than this one missing a flag: `--json` prints a bare document with no envelope, the human table is a different renderer, and the model cache lands in `~/.matra/models` instead of the resolved model directory. It does not fail, it succeeds and gives you something else, so pin it.
 
-With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. `cargo install matra --version '^0.2' --features cli` reports `features: udpipe cli`, while the published wheel reports `features: udpipe model2vec python cli`, so the embedding adapter is present on the Python route and absent from a `--features cli` build, whose `matra clusters` refuses and names the feature. `cargo install matra --features cli,model2vec` builds one with it. `matra --version` prints the list of the binary in front of you on its second line.
+With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. `cargo install matra --version '^0.3' --features cli` reports `features: udpipe cli`, while the published wheel reports `features: udpipe model2vec python cli`, so the embedding adapter is present on the Python route and absent from a `--features cli` build, whose `matra clusters` refuses and names the feature. `cargo install matra --features cli,model2vec` builds one with it. `matra --version` prints the list of the binary in front of you on its second line.
 
 ```bash
 # Rust binary, no Python involved
-cargo install matra --version '^0.2' --features cli
+cargo install matra --version '^0.3' --features cli
 
 # or through the Python package
-uv add 'matra>=0.2'   # then: matra --help
+uv add 'matra>=0.3'   # then: matra --help
 ```
 
 Every route caches the model at the resolved model directory (about 16 MB) and downloads it the first time any command needs it. No flag and no environment variable is required to make that happen. If the cached file fails its SHA-256 check, matra never deletes it: a download that verifies replaces it through an atomic rename, and a download that fails leaves the file you had exactly as it was.
@@ -208,7 +208,7 @@ matra completions bash > /etc/bash_completion.d/matra
 
 ## For an agent
 
-`matra --skill` prints the agent skill: what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not mean, the limits, and the errors. It is the whole hand-off. If you are pointing an agent at matra and it has nothing installed, `uvx 'matra>=0.2' --skill` is the line to give it. Pin the version: `--skill` arrived in 0.2.0, and a bare `uvx matra` takes whatever release is newest, which before 0.2.0 was a different command line that does not have the flag.
+`matra --skill` prints the agent skill: what matra is for, when to reach for it, every command with its JSON shape, how to read each number and what it does not mean, the limits, and the errors. It is the whole hand-off. If you are pointing an agent at matra and it has nothing installed, `uvx 'matra>=0.3' --skill` is the line to give it. Pin the version: `--skill` arrived in 0.2.0, and a bare `uvx matra` takes whatever release is newest, which before 0.2.0 was a different command line that does not have the flag.
 
 ```bash
 matra --skill                 # the skill itself
@@ -269,7 +269,7 @@ The 8 MiB cap applies to stdin as it does to a file, and it is enforced while re
 `--version` prints the version and then the features this build was compiled with:
 
 ```
-matra 0.2.1
+matra 0.3.0
 features: udpipe model2vec python cli
 ```
 

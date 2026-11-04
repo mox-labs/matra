@@ -25,7 +25,7 @@ For the Python package, use Python 3.12 or later (check with `python --version`)
 ## The Rust library
 
 ```bash
-cargo add matra@0.2
+cargo add matra@0.3
 ```
 
 The default features include `udpipe`, so `matra::nlp::udpipe::Udpipe` is available without a feature flag.
@@ -35,7 +35,7 @@ The default features include `udpipe`, so `matra::nlp::udpipe::Udpipe` is availa
 ## The CLI binary
 
 ```bash
-cargo install matra --version '^0.2' --features cli
+cargo install matra --version '^0.3' --features cli
 ```
 
 `--features cli` is required: the binary is gated behind it. This compiles from source and places the binary in your cargo bin directory, which can take a minute or more. Confirm it landed:
@@ -47,7 +47,7 @@ matra --version
 Expected output:
 
 ```
-matra 0.2.1
+matra 0.3.0
 features: udpipe cli
 ```
 
@@ -58,15 +58,15 @@ The second line names the features this build was compiled with, so the Python p
 ## The Python package
 
 ```bash
-pip install 'matra>=0.2'    # or: uv add 'matra>=0.2'
+pip install 'matra>=0.3'    # or: uv add 'matra>=0.3'
 ```
 
-This installs the library and the `matra` command together; the command is the same program as the CLI binary above, so `uvx 'matra>=0.2' analyze essay.md` and the installed binary do the same thing. Keep the version floor in the line: [why the install lines name a version](../explanation/install-routes.md#why-every-install-line-names-a-version) says what an unpinned one can give you.
+This installs the library and the `matra` command together; the command is the same program as the CLI binary above, so `uvx 'matra>=0.3' analyze essay.md` and the installed binary do the same thing. Keep the version floor in the line: [why the install lines name a version](../explanation/install-routes.md#why-every-install-line-names-a-version) says what an unpinned one can give you.
 
 On a platform with a wheel this installs in seconds. Its version banner reads:
 
 ```
-matra 0.2.1
+matra 0.3.0
 features: udpipe model2vec python cli
 ```
 
@@ -121,7 +121,7 @@ If `matra.Engine()` raises `OSError` (a `matra.IoError`), either the download ne
 
 ## What you have
 
-- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.2.x core.
+- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.3.x core.
 - The English UDPipe model cached in the resolved model directory, verified against a pinned hash.
 - A confirmed working call from `matra.Engine()` through `analyze()` to a result.
 

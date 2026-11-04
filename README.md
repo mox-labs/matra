@@ -8,7 +8,7 @@ NLP library. Text in, structured analysis out.
 
 UDPipe-based structured parse (full CoNLL-U: tokens, lemmas, POS, dependency trees), base text metrics (readability, lexical density, compression), summarization (TF-IDF, TextRank), and keyphrase extraction (RAKE, YAKE). Rust core with Python bindings via PyO3.
 
-If you are an agent, run `uvx 'matra>=0.2' --skill`, which needs nothing installed, or `matra --skill` if you already have the binary. Either way the program prints [`skills/matra/SKILL.md`](https://github.com/mox-labs/matra/blob/main/skills/matra/SKILL.md) out of its own binary, so the text always matches the version you are running. Keep the version floor: `--skill` arrived in 0.2.0, and a bare `uvx matra` takes whatever release is newest, which before 0.2.0 was a different command line that does not have the flag.
+If you are an agent, run `uvx 'matra>=0.3' --skill`, which needs nothing installed, or `matra --skill` if you already have the binary. Either way the program prints [`skills/matra/SKILL.md`](https://github.com/mox-labs/matra/blob/main/skills/matra/SKILL.md) out of its own binary, so the text always matches the version you are running. Keep the version floor: 0.2's command line spells its commands and its JSON differently, and 0.1.0's has no `--skill` at all.
 
 A pure, performant NLP library, built to be adaptable, composable, and extensible. Hex architecture, domain has zero internal dependencies, public enums and structs with public fields are `#[non_exhaustive]`. The library is small and stable; the interpretation lives in your code.
 
@@ -17,7 +17,7 @@ A pure, performant NLP library, built to be adaptable, composable, and extensibl
 Nothing installed, nothing configured, no flags. Each of these resolves the model directory and downloads the English model (~16MB) on first use.
 
 ```bash
-uvx 'matra>=0.2' analyze essay.md
+uvx 'matra>=0.3' analyze essay.md
 ```
 
 ```python
@@ -30,24 +30,24 @@ matra.Engine().analyze("The report was filed without comment.")
 let engine = matra::Engine::new()?;
 ```
 
-The `uvx` line carries a version floor for the same reason the `--skill` line above does. Both registries serve 0.2.x, so a bare `uvx matra` resolves to it today; the floor says what these commands need rather than leaving it to whichever release is newest when you run them. 0.1.0 is still published, and its `analyze` is a separate Python implementation and not this one missing a flag: `--json` prints a bare document with no envelope, the table is a different renderer, and the model cache is hardcoded to `~/.matra/models`. That line does not fail, it succeeds and hands you something else.
+The `uvx` line carries a version floor for the same reason the `--skill` line above does. Both registries serve 0.3.x, so a bare `uvx matra` resolves to it today; the floor says what these commands need rather than leaving it to whichever release is newest when you run them. 0.2 is still published too, and its command line and JSON are the ones the [migration guide](https://mox-labs.github.io/matra/guides/migrate-to-0-3.html) moves you off. 0.1.0 is still published, and its `analyze` is a separate Python implementation and not this one missing a flag: `--json` prints a bare document with no envelope, the table is a different renderer, and the model cache is hardcoded to `~/.matra/models`. That line does not fail, it succeeds and hands you something else.
 
-The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file does not move the model directory: its `[models] embedding` key names the embedding model's subdirectory inside it, and `[models] udpipe` is printed by `matra config show` but selects nothing, because the parsing model is pinned in the source. To put it somewhere specific, pass it explicitly (`--model-dir`, `Config::with_model_dir`), or set `MATRA_MODEL_DIR`, which is how Python names it. `matra config show` prints every resolved value and where it came from.
+The directory is the one you pass explicitly, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`); a non-empty `~/.matra/models` from an older install is still used when the new location does not exist yet. The config file does not move the model directory: its `[models] embedding` key names the embedding model's subdirectory inside it,, and nothing selects the parsing model, which is pinned in the source. To put it somewhere specific, pass it explicitly (`--model-dir`, `Config::with_model_dir`), or set `MATRA_MODEL_DIR`, which is how Python names it. `matra config show` prints every resolved value and where it came from.
 
 ## Install
 
 ```bash
 # Rust library
-cargo add matra@0.2
+cargo add matra@0.3
 
 # Rust CLI
-cargo install matra --version '^0.2' --features cli
+cargo install matra --version '^0.3' --features cli
 
 # Python library and the matra command
-pip install 'matra>=0.2'
+pip install 'matra>=0.3'
 ```
 
-Each command names a version for the reason the `uvx` line above does. A bare `cargo add matra` or `pip install matra` takes whatever the registry hands out, which is 0.2.x today and will not stay that way, and 0.1.0 is still there for anything already pinned to it: that route does not fail, it succeeds and gives you a different program. The Python routes take a floor, and `uv add 'matra>=0.2'` is that same floor for uv. The cargo routes take a caret requirement, which is how cargo states a version, so they accept 0.2.0 or a later release semver-compatible with it and stop short of 0.3.0.
+Each command names a version for the reason the `uvx` line above does. A bare `cargo add matra` or `pip install matra` takes whatever the registry hands out, which is 0.3.x today and will not stay that way, and 0.1.0 and 0.2 are still there for anything already pinned to them: that route does not fail, it succeeds and gives you a different program. The Python routes take a floor, and `uv add 'matra>=0.3'` is that same floor for uv. The cargo routes take a caret requirement, which is how cargo states a version, so they accept 0.3.0 or a later release semver-compatible with it and stop short of 0.4.0. Coming from 0.2, read [Migrate from 0.2 to 0.3](https://mox-labs.github.io/matra/guides/migrate-to-0-3.html) first: nothing keeps its old name.
 
 The Python package's `matra` command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output and the exit codes are the same either way. Wheels ship for Linux x86_64, Linux aarch64, macOS x86_64 and macOS arm64. They are built against the CPython stable ABI, so one wheel per platform serves 3.12 and every later 3.x on GIL-enabled CPython, and the Linux ones are manylinux2014, which installs on glibc 2.17 or newer and so reaches back through Debian 11, Ubuntu 20.04, RHEL 8 and Amazon Linux 2. Anything else builds from the sdist, which needs a Rust toolchain and a C++ compiler, because UDPipe is C++. On Windows that path is untested rather than known to work, and it needs the MSVC build tools rather than any of the packages the installation page names. Free-threaded CPython also falls here, which takes a different ABI tag than the one these wheels carry.
 
