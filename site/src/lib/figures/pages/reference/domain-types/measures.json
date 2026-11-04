@@ -450,22 +450,22 @@
       "words": 5
     },
     {
-      "compression_ratio": 0.6184,
+      "compression_ratio": 0.6035,
       "kind": "paragraph",
-      "lexical_density": 0.4688,
-      "readability_grade": 9.6925,
+      "lexical_density": 0.4857,
+      "readability_grade": 10.7043,
       "sentences": 3,
-      "text": "Format::from_path(path: impl AsRef<Path>) -> Format is the extension column, and it is the only copy of it. Reading a file applies it, and the command line reads it for the name given to --stdin-filename, so a name means the same thing on both routes. When the bytes are read, a PDF or DOCX signature outranks both the extension and a format the caller names.",
-      "words": 68
+      "text": "Format::from_path(path: impl AsRef<Path>) -> Format is the extension column, and it is the only copy of it. Reading a file with Input::file applies it, and the command line reads it for the name given to --stdin-filename when --format names none, so a name means the same thing on both routes. When the bytes are read, a PDF or DOCX signature outranks both the extension and a format the caller names.",
+      "words": 75
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6047,
-      "readability_grade": 11.9535,
+      "lexical_density": 0.6,
+      "readability_grade": 12.2867,
       "sentences": 3,
-      "text": "Pdf and Docx have no reader, so analyzing such a document returns Error::UnsupportedFormat with that format. Input::text takes the format as an argument; Input::bytes takes one optionally; Input::file detects one. Format derives PartialEq and Eq, which is what the reader table keys on.",
-      "words": 46
+      "text": "Pdf and Docx have no reader, so analyzing such a document returns Error::UnsupportedFormat with that format. Input::text and Input::file_as take the format as an argument; Input::bytes takes one optionally; Input::file detects one. Format derives PartialEq and Eq, which is what the reader table keys on.",
+      "words": 48
     },
     {
       "compression_ratio": null,

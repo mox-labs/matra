@@ -108,13 +108,13 @@
       "words": 32
     },
     {
-      "compression_ratio": 0.5162,
+      "compression_ratio": 0.5685,
       "kind": "paragraph",
-      "lexical_density": 0.5825,
-      "readability_grade": 9.7389,
-      "sentences": 7,
-      "text": "Config resolves locations and defaults, never behavior. It carries the model directory, the embedding model's directory name, and the default counts and algorithm names the command line uses, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped. A config file may still set models.udpipe or semantic.threshold, which earlier releases wrote: both are deprecated and nothing reads them, because the parsing model is pinned in the source and every clustering call takes its threshold as an argument. The file still loads, and Config::deprecated_keys reports which of the two it set.",
-      "words": 105
+      "lexical_density": 0.5854,
+      "readability_grade": 8.6977,
+      "sentences": 4,
+      "text": "Config resolves locations and defaults, never behavior. It carries the model directory, the embedding model's directory name, and the default counts, methods and cluster threshold the command line uses, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped. A key 0.3.0 renamed or removed ([summarize], algorithm, [semantic], models.udpipe) is refused with Error::InvalidInput naming what replaced it, so a config file from 0.2 fails to load rather than half-load.",
+      "words": 85
     },
     {
       "compression_ratio": 0.5335,

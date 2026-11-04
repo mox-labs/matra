@@ -6,7 +6,7 @@
 
 | Value | Constructors | Meaning |
 |---|---|---|
-| `Input` | `text(string, format)`, `bytes(data, format)`, `file(path)`, `blocks(blocks)` | one document: text in a named format, bytes from anywhere, a file, or headings and paragraphs you supply |
+| `Input` | `text(string, format)`, `bytes(data, format)`, `file(path)`, `file_as(path, format)`, `blocks(blocks)` | one document: text in a named format, bytes from anywhere, a file read as its name says or as a format you name, or headings and paragraphs you supply |
 | `Inputs` | `dir(path)` | the files in a directory, an iterator of `Input::file` |
 | `Engine` | `new()`, `from_config(cfg)`, `from_config_with_notice(cfg, notice)` | the assembled pipeline: UDPipe with its pinned model, and the readers this build ships |
 
@@ -50,7 +50,7 @@ let engine = Engine::from_config(&Config::resolve()?)?;
 
 `Engine::new()` resolves the locations from the environment alone and reads no configuration file; `Engine::from_config(&Config::resolve()?)` reads the file as well. An explicit directory, `Config::with_model_dir`, wins over everything below.
 
-`Config` resolves locations and defaults, never behavior. It carries the model directory, the embedding model's directory name, and the default counts and algorithm names the command line uses, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped. A config file may still set `models.udpipe` or `semantic.threshold`, which earlier releases wrote: both are deprecated and nothing reads them, because the parsing model is pinned in the source and every clustering call takes its threshold as an argument. The file still loads, and `Config::deprecated_keys` reports which of the two it set.
+`Config` resolves locations and defaults, never behavior. It carries the model directory, the embedding model's directory name, and the default counts, methods and cluster threshold the command line uses, which are all things a caller could pass as arguments instead. It does not carry which metrics run or how output is shaped. A key 0.3.0 renamed or removed (`[summarize]`, `algorithm`, `[semantic]`, `models.udpipe`) is refused with `Error::InvalidInput` naming what replaced it, so a config file from 0.2 fails to load rather than half-load.
 
 Resolution order, per key: an explicit argument, then the environment, then the config file, then the defaults compiled into the crate from `config/default.toml`. The argument rung has one producer, `Config::with_model_dir`, which returns the same configuration with the model directory replaced and that one key's source changed. It is the rung a command line's `--model-dir` lands on, so the flag reaches the adapter through `Config` rather than past it.
 
@@ -130,7 +130,7 @@ The same words Rust has, in Python's syntax: `Engine`, the read-only `Document`,
 |---|---|
 | `Engine()`, `Engine.from_config(config_file=None)` | `Engine::new()`, and `Engine::from_config` over `Config::from_file(path)`, or over `Config::resolve()` with no file named |
 | `engine.analyze(text, format=)` | `analyze(Input::text(text, format))`, plain text when no format is named |
-| `engine.analyze(file=)`, `bytes=`, `blocks=` | `analyze` on `Input::file`, `Input::bytes` or block input |
+| `engine.analyze(file=)`, `bytes=`, `blocks=` | `analyze` on `Input::file` (`Input::file_as` with `format=`), `Input::bytes` or block input |
 | `engine.analyze_all(dir=)`, `texts=` | `analyze_all` over `Inputs::dir`, or over `Input::text` per text, lazily |
 | `doc["metrics"]`, `doc.to_dict()` | the fields of `Document`, through serde |
 | `summarize(doc, n=3, method=)`, `keyphrases(doc, n=10, method=)` | `summarize` or `summarize_with`, `keyphrases` or `keyphrases_with` |

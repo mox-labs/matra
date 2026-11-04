@@ -104,17 +104,17 @@
       "lexical_density": 0.5556,
       "readability_grade": 5.8454,
       "sentences": 2,
-      "text": "Input has four constructors. None of them reads anything or fails: the read, the format and the size cap are settled when the engine reaches the input.",
+      "text": "Input has five constructors. None of them reads anything or fails: the read, the format and the size cap are settled when the engine reaches the input.",
       "words": 27
     },
     {
-      "compression_ratio": 0.5643,
+      "compression_ratio": 0.5489,
       "kind": "paragraph",
-      "lexical_density": 0.5694,
-      "readability_grade": 8.4061,
+      "lexical_density": 0.5789,
+      "readability_grade": 9.0755,
       "sentences": 5,
-      "text": ".md and .markdown read as markdown; any other extension, or none, reads as plain text when the bytes are UTF-8. Format::Blocks names the same headings and paragraphs as a JSON array, for Input::text, Input::bytes or a file, with the schema in spec/schema/v2/blocks.schema.json. Inputs::dir(path) lists one level of a directory, up front, and is an iterator of Input::file; its Err is the listing failing. Input::file on a directory fails with Error::InvalidInput naming Inputs::dir.",
-      "words": 81
+      "text": ".md and .markdown read as markdown; any other extension, or none, reads as plain text when the bytes are UTF-8. Format::Blocks names the same headings and paragraphs as a JSON array, for Input::text, Input::bytes or Input::file_as, since no extension implies it, with the schema in spec/schema/v2/blocks.schema.json. Inputs::dir(path) lists one level of a directory, up front, and is an iterator of Input::file; its Err is the listing failing. Input::file on a directory fails with Error::InvalidInput naming Inputs::dir.",
+      "words": 85
     },
     {
       "compression_ratio": null,

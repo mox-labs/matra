@@ -65,11 +65,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6538,
-      "readability_grade": 8.6669,
+      "lexical_density": 0.6735,
+      "readability_grade": 11.4902,
       "sentences": 3,
-      "text": "That is the CLI binary from cargo install. The Python package prints features: udpipe model2vec python cli. Every analysis command behaves the same in both builds.",
-      "words": 26
+      "text": "That is the CLI binary from cargo install. The Python package prints features: udpipe model2vec python cli. Every analysis command behaves the same in both builds except matra clusters, which needs model2vec and refuses, naming it, in a build without; cargo install matra --features cli,model2vec builds one with it.",
+      "words": 49
     },
     {
       "compression_ratio": null,
@@ -162,13 +162,13 @@
       "words": 51
     },
     {
-      "compression_ratio": 0.5799,
+      "compression_ratio": 0.587,
       "kind": "paragraph",
-      "lexical_density": 0.5636,
-      "readability_grade": 8.867,
+      "lexical_density": 0.5469,
+      "readability_grade": 7.7969,
       "sentences": 3,
-      "text": "The command line and the config file always use this parsing model: --model-dir, MATRA_MODEL_DIR and the other settings change where it is stored, not which model it is. models.udpipe, which earlier releases wrote into the config file, is deprecated and selects nothing. No surface loads a different UDPipe model file: the model is a pin.",
-      "words": 56
+      "text": "The command line and the config file always use this parsing model: --model-dir, MATRA_MODEL_DIR and the other settings change where it is stored, not which model it is. models.udpipe, which earlier releases wrote into the config file, is gone, and a file that still sets it fails to load, saying so. No surface loads a different UDPipe model file: the model is a pin.",
+      "words": 65
     }
   ]
 }

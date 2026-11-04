@@ -67,6 +67,7 @@ guides/cli.html#matra-analyze
 guides/cli.html#matra-summarize
 guides/cli.html#matra-keyphrases
 guides/cli.html#reading-the-scores
+guides/cli.html#matra-clusters
 guides/cli.html#matra-config
 guides/cli.html#matra-completions
 guides/cli.html#for-an-agent
@@ -101,6 +102,7 @@ guides/semantic-clusters.html#what-you-get
 guides/semantic-clusters.html#the-model
 guides/semantic-clusters.html#rust
 guides/semantic-clusters.html#python
+guides/semantic-clusters.html#the-command-line
 guides/semantic-clusters.html#comparing-whole-documents
 guides/semantic-clusters.html#bounds-and-failure
 index.html#matra

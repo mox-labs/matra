@@ -57,9 +57,9 @@
       "compression_ratio": null,
       "kind": "list_item",
       "lexical_density": 0.6098,
-      "readability_grade": 12.4766,
-      "sentences": 2,
-      "text": "matra has a second summarizer, TF-IDF, and it is the default: matra::summarize in Rust, and the command line's summarize.algorithm as shipped. This example names TextRank in all three calls (SummaryMethod::TextRank, method=\"textrank\", --method textrank), so they agree whatever a configuration file says.",
+      "readability_grade": 12.1888,
+      "sentences": 3,
+      "text": "matra has a second summarizer, TF-IDF, and it is the default: matra::summarize in Rust, and the command line's summary.method as shipped. This example names TextRank in all three calls (SummaryMethod::TextRank, method=\"textrank\", --method textrank), so they agree whatever a configuration file says.",
       "words": 46
     }
   ]

@@ -97,7 +97,7 @@ The optional `expect.sections` (each heading's `heading`, `level` and `span`), `
 
 ## The parity lane
 
-`tests/parity/parity.json` holds the same files through three surfaces: the Rust library, Python, and the command line. Each runner writes a case's `input` to a file named by `file`, analyzes it through its own surface, and compares the whole `Document`, every summary and every keyphrase result to the fixture's `expect`, after setting `provenance.matra` to the fixture's and clearing `provenance.source.path` (checked first to be the path passed). A case with no `n` or `method` runs each surface's default, so the defaults are held together too: Python's keyword defaults, the library's default method, and the command line's configuration defaults, run with no configuration file. An error case pins the failure's `kind`, `message` and `details`; Python raises them, and the command line, until its `--json` errors carry a `kind`, prints `matra: FILE: MESSAGE` on stderr and exits 2.
+`tests/parity/parity.json` holds the same files through three surfaces: the Rust library, Python, and the command line. Each runner writes a case's `input` to a file named by `file`, analyzes it through its own surface, and compares the whole `Document`, every summary and every keyphrase result to the fixture's `expect`, after setting `provenance.matra` to the fixture's and clearing `provenance.source.path` (checked first to be the path passed). A case with no `n` or `method` runs each surface's default, so the defaults are held together too: Python's keyword defaults, the library's default method, and the command line's configuration defaults, run with no configuration file. An error case pins the failure's `kind`, `message` and `details`; Python raises them, and the command line writes them as the `error` of its `--json` envelope beside a null `result`, prints `matra: FILE: MESSAGE` on stderr and exits 2.
 
 `tests/parity.rs` runs the library and the command line binary (`cargo test --features cli --test parity -- --ignored`), and `python/tests/test_parity.py` runs Python. A surface that drifts fails its own runner. All three need the model. With `MATRA_REGENERATE_PARITY=1` the Rust library test rewrites every expectation; read what changed before committing it.
 
@@ -111,7 +111,7 @@ stream, a launcher that mangles its arguments.
 
 `tests/cli/envelope.json` pins the `--json` envelope for a fixed input. Each
 runner writes the fixture's `input` to a file named by `filename`, runs the
-`args` against it, and asserts the envelope's four keys, its `format_version`,
+`args` against it, and asserts the envelope's five keys, its `format_version`,
 its `command`, its `input` (the path it passed), and the structure of `result`:
 which keys the domain value carries, how many sections, how many sentences.
 `result` is compared structurally rather than byte for byte, because its

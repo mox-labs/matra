@@ -11,11 +11,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5641,
-      "readability_grade": 7.0287,
+      "lexical_density": 0.561,
+      "readability_grade": 7.8717,
       "sentences": 3,
-      "text": "matra reads a file (or stdin) and writes to stdout. matra --help describes the tool in the line built into the command: \"matra parses text into CoNLL-U structure and measures it. It reports what is there; interpretation is yours.\"",
-      "words": 40
+      "text": "matra reads a file, a directory or stdin and writes to stdout. matra --help describes the tool in the line built into the command: \"matra parses text into CoNLL-U structure and measures it. It reports what is there; interpretation is yours.\"",
+      "words": 42
     },
     {
       "compression_ratio": null,
@@ -36,13 +36,13 @@
       "words": 95
     },
     {
-      "compression_ratio": 0.4942,
+      "compression_ratio": 0.4721,
       "kind": "paragraph",
-      "lexical_density": 0.5862,
-      "readability_grade": 9.65,
-      "sentences": 7,
-      "text": "With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's matra command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. cargo install matra --version '^0.2' --features cli reports features: udpipe cli, while the published wheel reports features: udpipe model2vec python cli, so the embedding adapter is present on the Python route and absent from a --features cli build. matra --version prints the list of the binary in front of you on its second line.",
-      "words": 117
+      "lexical_density": 0.609,
+      "readability_grade": 10.008,
+      "sentences": 8,
+      "text": "With the floor in place the command ships two ways beyond that, and all three run the same program. The Python package's matra command is the Rust CLI reached through the extension module, not a second implementation, so the flags, the output, and the exit codes are the same whichever route you took. One thing does differ: which features were compiled in. cargo install matra --version '^0.2' --features cli reports features: udpipe cli, while the published wheel reports features: udpipe model2vec python cli, so the embedding adapter is present on the Python route and absent from a --features cli build, whose matra clusters refuses and names the feature. cargo install matra --features cli,model2vec builds one with it. matra --version prints the list of the binary in front of you on its second line.",
+      "words": 134
     },
     {
       "compression_ratio": 0.5693,
@@ -72,13 +72,22 @@
       "words": 54
     },
     {
-      "compression_ratio": 0.5771,
+      "compression_ratio": 0.5859,
       "kind": "paragraph",
-      "lexical_density": 0.5231,
-      "readability_grade": 12.8292,
+      "lexical_density": 0.6154,
+      "readability_grade": 9.5508,
       "sentences": 3,
-      "text": "analyze, summarize, and keyphrases each read one document. The path they take is a file or - for stdin; a directory is refused, because a command that reports on one document cannot report on a directory of them, and picking one file out of it would be an answer to a question nobody asked. Analyzing a directory is a library call today (Engine::analyze_all over Inputs::dir).",
-      "words": 67
+      "text": "analyze, summarize, keyphrases and clusters each read a file, or - for stdin. analyze also reads a directory, one result per file. The other three report on one document, so they refuse a directory and name analyze, which reads one; picking one file out of it would answer a question nobody asked.",
+      "words": 51
+    },
+    {
+      "compression_ratio": 0.6032,
+      "kind": "paragraph",
+      "lexical_density": 0.5833,
+      "readability_grade": 10.8933,
+      "sentences": 3,
+      "text": "Every subcommand routes through the library pipeline, which rejects symlinks, rejects files over 8 MiB before reading them, and picks a reader from the file's bytes and extension. --format markdown|plain_text|blocks names the format instead, which is how a JSON file of blocks is read, since no extension implies one. A PDF or DOCX signature in the bytes still outranks it.",
+      "words": 65
     },
     {
       "compression_ratio": null,
@@ -99,13 +108,22 @@
       "words": 28
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5414,
       "kind": "paragraph",
-      "lexical_density": 0.5714,
-      "readability_grade": 15.5586,
-      "sentences": 1,
-      "text": "Every subcommand routes through the library pipeline, which rejects symlinks, rejects files over 8 MiB before reading them, and picks a reader from the file's bytes and extension.",
-      "words": 29
+      "lexical_density": 0.53,
+      "readability_grade": 8.73,
+      "sentences": 5,
+      "text": "Given a directory, analyze reads every regular file in it, one level deep and in name order, and reports each one: a table per file, or under --json one envelope per line. A file that fails is reported where it happens, on stderr and under --json as its own line with its error, and the walk goes on to the next file. The exit code is 2 if any file failed. Symlinks and subdirectories are skipped, as the library's Inputs::dir skips them. --format is refused with a directory, because each of its files is read as its own name says.",
+      "words": 102
+    },
+    {
+      "compression_ratio": 0.4893,
+      "kind": "paragraph",
+      "lexical_density": 0.5313,
+      "readability_grade": 9.8438,
+      "sentences": 5,
+      "text": "--depth decides how much of the parse --json writes. document writes the provenance, the metrics and skipped, and no sections; paragraph adds the sections and their paragraphs, with no sentences; sentence adds the sentences, with no tokens; and token, the default, writes everything. A level below the depth is absent as a key, never an empty array, because an empty sentences would say a paragraph has none. Tokens are most of a document's JSON, so a caller that reads only the measures pays for no more than it reads. --depth without --json is a usage error.",
+      "words": 97
     },
     {
       "compression_ratio": null,
@@ -230,8 +248,44 @@
       "lexical_density": 0.5333,
       "readability_grade": 5.315,
       "sentences": 5,
-      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.109 and scores the bare error at 1.442, while YAKE's first is move copy at 1724.178. What is low there is the score, not the position: 1.442 sits not far above 1.000, the floor any single word scores, and 223 of the 544 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 273rd. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
-      "words": 126
+      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.135 and scores the bare error at 1.468, while YAKE's first is move copy at 1977.345. What is low there is the score, not the position: 1.468 sits not far above 1.000, the floor any single word scores, and 230 of the 576 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 299th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
+      "words": 125
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5,
+      "readability_grade": 11.91,
+      "sentences": 1,
+      "text": "Groups a document's sentences by the similarity of their embeddings.",
+      "words": 11
+    },
+    {
+      "compression_ratio": 0.5062,
+      "kind": "paragraph",
+      "lexical_density": 0.549,
+      "readability_grade": 10.4536,
+      "sentences": 5,
+      "text": "Each sentence is embedded with potion-base-8M, the embedding model models.embedding names, downloaded into the model directory on first use (about 30 MB). Two sentences whose cosine similarity is at least the threshold are joined, and a cluster is a connected component of that graph, so co-membership is transitive and is not pairwise similarity. A sentence with no partner is in no cluster. The table prints each cluster with its members' sentence indices and text; --json writes the Clusters value, with edges, every pair that cleared the threshold and its score, and the embedder's identity in provenance.parameters. Finding no cluster is exit 1.",
+      "words": 107
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5,
+      "readability_grade": 6.3977,
+      "sentences": 2,
+      "text": "The threshold does not travel between models, domains or granularities, and 0.85 is a starting point for sentences only. Semantic clusters says how to choose one.",
+      "words": 26
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5357,
+      "readability_grade": 8.8343,
+      "sentences": 2,
+      "text": "The command needs a build with the model2vec feature, which the Python wheel has. A build without it refuses before it reads anything, with invalid_input naming the feature.",
+      "words": 28
     },
     {
       "compression_ratio": null,
@@ -243,13 +297,22 @@
       "words": 26
     },
     {
-      "compression_ratio": 0.5325,
+      "compression_ratio": 0.5747,
       "kind": "paragraph",
-      "lexical_density": 0.5763,
-      "readability_grade": 9.0233,
-      "sentences": 6,
-      "text": "models.embedding is the name of the embedding model's directory under model_dir, which Model2Vec::from_config and Model2Vec.potion_base_8m() provision into and load from. A config file written by an earlier matra config init also sets models.udpipe and semantic.threshold. Both are deprecated and ignored: the parsing model's file name is pinned in the source beside its digest, so the first selects no model (model licenses says how to load another one), and every clustering call takes its threshold as an argument, so the second reaches nothing. The file still loads. config show leaves both out of the listing and writes a line on stderr for each one the file sets, naming the file, so you can delete them; --quiet silences that line.",
-      "words": 121
+      "lexical_density": 0.5484,
+      "readability_grade": 10.9428,
+      "sentences": 3,
+      "text": "models.embedding is the name of the embedding model's directory under model_dir, which matra clusters, Model2Vec::from_config and Model2Vec.potion_base_8m() provision into and load from. The file's sections are [models], [summary] and [keyphrases], each of the last two with n and method, and [clusters] with threshold. They configure the command line only: the library and Python take every count, method and threshold as an argument.",
+      "words": 65
+    },
+    {
+      "compression_ratio": 0.5645,
+      "kind": "paragraph",
+      "lexical_density": 0.5652,
+      "readability_grade": 5.9126,
+      "sentences": 7,
+      "text": "A config file from 0.2 does not load. 0.3.0 renamed [summarize] to [summary], algorithm to method, and semantic.threshold to clusters.threshold, and dropped models.udpipe, since the parsing model is pinned in the source beside its digest. Every command that reads such a file fails with invalid_input, naming the file and each key's replacement, so the file can be fixed from the message. matra config init --force writes a fresh one.",
+      "words": 70
     },
     {
       "compression_ratio": 0.5267,
@@ -270,13 +333,13 @@
       "words": 114
     },
     {
-      "compression_ratio": 0.5734,
+      "compression_ratio": 0.5606,
       "kind": "paragraph",
-      "lexical_density": 0.5862,
-      "readability_grade": 11.8879,
+      "lexical_density": 0.5932,
+      "readability_grade": 12.08,
       "sentences": 2,
-      "text": "matra config init writes the shipped defaults (models.embedding and the summary and keyphrase keys) to the resolved config path and prints where it wrote them. It creates the parent directories, writes through a temporary file in the same directory so a reader never sees a half-written config, and refuses to overwrite an existing file unless you pass --force.",
-      "words": 59
+      "text": "matra config init writes the shipped defaults (models.embedding, and the summary, keyphrase and cluster keys) to the resolved config path and prints where it wrote them. It creates the parent directories, writes through a temporary file in the same directory so a reader never sees a half-written config, and refuses to overwrite an existing file unless you pass --force.",
+      "words": 60
     },
     {
       "compression_ratio": null,
@@ -351,22 +414,22 @@
       "words": 55
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5375,
       "kind": "paragraph",
-      "lexical_density": 0.5238,
-      "readability_grade": 6.1652,
-      "sentences": 3,
-      "text": "- in place of the path reads stdin. --stdin-filename gives that input a name, which is the label in the output and the envelope, and whose extension selects the reader. Without it the input is read as plain text and labelled <stdin>.",
-      "words": 42
+      "lexical_density": 0.4868,
+      "readability_grade": 6.7959,
+      "sentences": 5,
+      "text": "- in place of the path reads stdin, as bytes, and the format is detected the way it is for a file. --stdin-filename gives that input a name, which is the label in the output and the envelope, and whose extension stands in for a file's. --format names the format outright. With neither, the input is read as plain text and labelled <stdin>. Bytes that are not UTF-8 text fail as unsupported_format, as a file's do.",
+      "words": 79
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.4194,
-      "readability_grade": 12.8677,
-      "sentences": 1,
-      "text": "The 8 MiB cap applies to stdin as it does to a file, and it is enforced while reading rather than after, so an unbounded stream is refused instead of buffered.",
-      "words": 31
+      "lexical_density": 0.4667,
+      "readability_grade": 9.705,
+      "sentences": 2,
+      "text": "The 8 MiB cap applies to stdin as it does to a file, and it is enforced while reading rather than after, so an unbounded stream is refused instead of buffered. Stdin is read before the model loads, so an oversized stream costs no download.",
+      "words": 45
     },
     {
       "compression_ratio": null,
@@ -398,20 +461,47 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.8571,
-      "readability_grade": null,
+      "lexical_density": 0.75,
+      "readability_grade": 9.74,
       "sentences": 1,
-      "text": "--json emits one object for every command:",
-      "words": 7
+      "text": "--json emits one object for every command but completions, success or failure:",
+      "words": 12
     },
     {
-      "compression_ratio": 0.4547,
+      "compression_ratio": 0.4595,
       "kind": "paragraph",
-      "lexical_density": 0.4912,
-      "readability_grade": 10.588,
+      "lexical_density": 0.5083,
+      "readability_grade": 11.0767,
       "sentences": 5,
-      "text": "command is analyze, summarize, keyphrases, config, or skill. input is the path that was read, or the name --stdin-filename gave it. For config it is the config file's path when that file exists and null when it does not, and for skill, which reads no document, it is always null. result is the serde form of the domain value the command produced: a Document for analyze, a Summary for summarize and a Keyphrases for keyphrases, each of the last two carrying the document's provenance with the method that ran and its parameters. For config it is an object keyed by setting, each carrying value, source and origin, and for skill the shapes shown above.",
-      "words": 116
+      "text": "command is analyze, summarize, keyphrases, clusters, config, skill or schema. input is the path that was read, or the name --stdin-filename gave it. For config it is the config file the run read, and null when there is none, and for skill and schema, which read no document, it is always null. result is the serde form of the domain value the command produced: a Document for analyze, a Summary for summarize, a Keyphrases for keyphrases and a Clusters for clusters, each of the last three carrying the document's provenance with the method that ran and its parameters. For config it is an object keyed by setting, each carrying value, source and origin, and for skill the shapes shown above.",
+      "words": 121
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.625,
+      "readability_grade": 18.3,
+      "sentences": 2,
+      "text": "All five keys are always present, and exactly one of result and error is null. A failure writes the envelope with result null and error holding the failure's kind, message and details, the same three Rust serializes and Python raises:",
+      "words": 41
+    },
+    {
+      "compression_ratio": 0.5057,
+      "kind": "paragraph",
+      "lexical_density": 0.5738,
+      "readability_grade": 9.1973,
+      "sentences": 7,
+      "text": "The message still goes to stderr and the exit code is still 2, so a script that reads only the exit code is unchanged. Branch on error.kind and read values from error.details, never from the message. The command line's own refusals carry the kind whose remedy matches, which for every one of them is invalid_input, a call to change: a directory given to a command that reads one document, --format with a directory, -r without --skill, an unknown reference or schema name, config init over an existing file, and clusters in a build without an embedder. A usage error under --json, such as an unknown flag, is an envelope too, with command null when the arguments name none. Errors lists every kind.",
+      "words": 123
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.697,
+      "readability_grade": 13.0133,
+      "sentences": 1,
+      "text": "analyze DIR --json writes one envelope per line, one line per file, each compact rather than indented, so the output is a stream of JSON values that jq reads one at a time.",
+      "words": 33
     },
     {
       "compression_ratio": 0.5627,
@@ -423,22 +513,31 @@
       "words": 52
     },
     {
-      "compression_ratio": 0.5496,
+      "compression_ratio": 0.558,
       "kind": "paragraph",
-      "lexical_density": 0.5467,
-      "readability_grade": 7.484,
-      "sentences": 4,
-      "text": "A Document also names its own schema version, in result.provenance.schema (\"2.0\"), and that is the only place it appears. A minor version adds optional fields only; anything else is a major. So ignore fields you do not recognize, treat every string set you receive as open (format, pos, dep, mood, pattern, the feature names), and reject a major you do not know. The JSON Schema for each major is published in the repository at spec/schema/v2/document.schema.json.",
-      "words": 75
+      "lexical_density": 0.5645,
+      "readability_grade": 6.9013,
+      "sentences": 3,
+      "text": "A Document also names its own schema version, in result.provenance.schema (\"2.0\"), and that is the only place it appears. A minor version adds optional fields only; anything else is a major. So ignore fields you do not recognize, treat every string set you receive as open (format, pos, dep, mood, pattern, the feature names), and reject a major you do not know.",
+      "words": 62
     },
     {
-      "compression_ratio": 0.5349,
+      "compression_ratio": 0.5577,
       "kind": "paragraph",
-      "lexical_density": 0.5057,
-      "readability_grade": 12.5384,
-      "sentences": 3,
-      "text": "0 on success when the command found something, 1 on success when it found nothing (an empty summary, no keyphrases, a file with zero sentences), and 2 when an error occurred. Model load failure, a missing or unreadable file, a directory where a file was expected, input over the size cap, a bad argument, and a parse failure all land on 2, with the message on stderr prefixed matra:. A broken pipe, which is what you get piping into head, is treated as success and exits 0.",
-      "words": 88
+      "lexical_density": 0.5373,
+      "readability_grade": 9.6112,
+      "sentences": 4,
+      "text": "The JSON Schemas for this major are compiled into the program. matra --schema lists them with their titles, and matra --schema NAME prints one: document, summary, keyphrases, clusters and error for the outputs, and blocks for block input. Like --skill it outranks a subcommand and reads no document, and under --json it is the envelope with command schema. The same files are in the repository under spec/schema/v2/.",
+      "words": 68
+    },
+    {
+      "compression_ratio": 0.5077,
+      "kind": "paragraph",
+      "lexical_density": 0.4918,
+      "readability_grade": 12.6509,
+      "sentences": 4,
+      "text": "0 on success when the command found something, 1 on success when it found nothing (an empty summary, no keyphrases, no clusters, a file with zero sentences), and 2 when an error occurred. Model load failure, a missing or unreadable file, a directory where one document is read, input over the size cap, a bad argument, and a parse failure all land on 2, with the message on stderr prefixed matra: and, under --json, the envelope with its error on stdout. For a directory the code is 2 if any file failed, 0 if none failed and any had a sentence, and 1 otherwise. A broken pipe, which is what you get piping into head, is treated as success and exits 0.",
+      "words": 123
     }
   ]
 }

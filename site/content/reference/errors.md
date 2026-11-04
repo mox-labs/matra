@@ -71,7 +71,7 @@ A document from disk crosses both gates in sequence: `"file_source"` when the fi
 
 The parser is private to the crate, so no caller reaches it except through the engine, and no text bypasses the `"input"` gate.
 
-The label has a second producer. The CLI reads stdin through `read_capped` in `src/cli/mod.rs`, which reads at most one byte past `MAX_INPUT_BYTES` and returns `InputTooLarge` with `what` set to `"input"` before the text ever reaches the engine. Same limit, same label, so a caller sees one gate however the text arrived. Two details differ and neither is visible in the value: the CLI counts bytes before decoding them, so an oversized pipe is reported as too large rather than as invalid UTF-8, and the CLI renders the error on stderr and turns it into an exit code rather than returning it.
+The label has a second producer. The CLI reads stdin through `read_capped` in `src/cli/mod.rs`, which reads at most one byte past `MAX_INPUT_BYTES` and returns `InputTooLarge` with `what` set to `"input"` before the bytes ever reach the engine. Same limit, same label, so a caller sees one gate however the text arrived. The CLI never decodes what it reads: the bytes go to the engine as `Input::bytes`, so an oversized pipe is reported as too large, and a pipe that is not UTF-8 is `UnsupportedFormat`, as a file's bytes would be.
 
 The four ranking methods check their caps after their empty-result checks. `summarize_with(&doc, 0, ..)` and `keyphrases_with(&doc, 0, ..)` return an empty result without evaluating the cap, whatever the size of the document. The same holds for a document with no sentences. `clusters` has no count parameter; its cap is checked first, before anything is embedded, then its contract, and a document with no sentences returns empty clusters.
 
@@ -81,7 +81,7 @@ A metric has no gate of its own. The compression ratio skips any paragraph over 
 
 Returned by `clusters` when a caller or an embedder breaks a documented contract (a non-finite threshold, an embedder returning the wrong number of vectors, embeddings disagreeing on dimension, an embedding containing a non-finite value). Python's outcome functions use it for a method name they do not know, and `Engine.analyze` for a `format` name it does not know. The payload names the violation. This variant means a call site or a provider implementation is wrong, not the input data; nothing about the analyzed text produces it.
 
-`Config::resolve` and `Config::from_file` use the same variant for a configuration that cannot be honored: a config file that does not parse, an unknown key, an algorithm name this build does not know, a config file that is not valid UTF-8, or an environment with none of `MATRA_DATA_DIR`, `XDG_DATA_HOME` or `HOME` set. The payload names the file and the offending key or line. A config file that is simply absent is not an error for `Config::resolve`, and the built-in defaults stand; `Config::from_file` refuses one with `Io`, because the caller named it.
+`Config::resolve` and `Config::from_file` use the same variant for a configuration that cannot be honored: a config file that does not parse, an unknown key, a key 0.3.0 renamed or removed (`[summarize]`, `algorithm`, `[semantic]`, `models.udpipe`, each refused with what replaced it), a method name this build does not know, a threshold that is not finite, a config file that is not valid UTF-8, or an environment with none of `MATRA_DATA_DIR`, `XDG_DATA_HOME` or `HOME` set. The payload names the file and the offending key or line. A config file that is simply absent is not an error for `Config::resolve`, and the built-in defaults stand; `Config::from_file` refuses one with `Io`, because the caller named it.
 
 ### UnsupportedFormat
 
@@ -157,7 +157,7 @@ The second line is there because the model is a separate file with its own licen
 
 Standard error, so `--json` output stays a single object on standard output. `--quiet` silences it. A library caller gets the same facts as a `domain::ProvisionNotice` from `Engine::from_config_with_notice`, and decides the wording itself.
 
-The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts with no notice form of its own, so a first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config` (in Python, `Model2Vec.potion_base_8m()`) is silent for the length of that download. There is no clustering command, so the command line never makes that call.
+The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts with no notice form of its own, so a first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config` (in Python, `Model2Vec.potion_base_8m()`) is silent for the length of that download. `matra clusters` makes that call, so its first run waits on the download with nothing on either stream; `--quiet` changes nothing there, because there is nothing to silence.
 
 ## Per-document failures: `DocumentError`
 
@@ -301,8 +301,19 @@ One program is installed under the name `matra`, by either of two routes. The Ru
 | 1 | The command succeeded and found nothing |
 | 2 | An error occurred |
 
-On exit code 2 the command writes `matra: ` followed by the error's `Display` string to standard error. A broken pipe, which is what happens when the reading end of `matra analyze file.md | head` goes away, exits 0 and prints nothing.
+On exit code 2 the command writes `matra: ` followed by the error's `Display` string to standard error, prefixed with the path when the failure concerns a file. Under `--json` it also writes the envelope to standard output, with `result` null and `error` holding the serde form above, `{kind, message, details}`: the same three a Rust caller serializes and a Python caller reads off the exception. The envelope's `input` names the file, so the error object carries no `path` of its own.
 
-The table is the whole contract, and no command narrows it. Two cases are worth naming because they are usage failures rather than failures of the text: `matra --skill -r <name>` with a name no reference answers to exits 2 and names the ones that exist, and `-r` without `--skill` exits 2 and says which flag is missing. `matra --skill` in any of its accepted forms exits 0; it reads no document, so it has nothing to find and never exits 1.
+```json
+{ "format_version": 2, "command": "analyze", "input": "scan.pdf", "result": null,
+  "error": { "kind": "unsupported_format", "message": "unsupported format: pdf; no feature of this matra version reads it", "details": { "format": "pdf" } } }
+```
 
-The exception classes above belong to the library surface, not to the command line. A `domain::Error` reaching the command line is rendered and turned into an exit code; it never surfaces as a Python exception, whichever launcher started it.
+`spec/tests/parity/parity.json` pins that equality: the same files through Rust, Python and the command line give the same `kind`, `message` and `details`, and a runner per surface fails on a drift.
+
+A broken pipe, which is what happens when the reading end of `matra analyze file.md | head` goes away, exits 0 and prints nothing.
+
+`matra analyze DIR` reads every file in the directory and keeps going past a failure. Each failed file is a line on standard error and, under `--json`, its own envelope line with its `error`; the run exits 2 if any file failed, after the walk has finished. This is the one partial success the command line has: per-item failure in a bulk operation.
+
+The table is the whole contract, and no command narrows it. The command line's own refusals carry the kind whose remedy matches, which for each of them is `InvalidInput`, a call to change: a directory given to `summarize`, `keyphrases` or `clusters`, `--format` with a directory, `matra --skill -r <name>` or `matra --schema <name>` with a name nothing answers to (both name the ones that exist), `-r` without `--skill`, `config init` over an existing file without `--force`, `clusters` in a build without the `model2vec` feature, and a usage error such as an unknown flag. A missing path is not one of them: it is the library's own `Io` failure with `not_found`, raised before the engine is built so it costs no model load. `matra --skill` and `matra --schema` in any of their accepted forms exit 0; they read no document, so they have nothing to find and never exit 1.
+
+The exception classes above belong to the library surface, not to the command line. A `domain::Error` reaching the command line is rendered and turned into an exit code and, under `--json`, an envelope; it never surfaces as a Python exception, whichever launcher started it.

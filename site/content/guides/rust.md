@@ -56,16 +56,17 @@ for item in engine.analyze_all(Inputs::dir("./corpus")?) {
 }
 ```
 
-`Input` has four constructors. None of them reads anything or fails: the read, the format and the size cap are settled when the engine reaches the input.
+`Input` has five constructors. None of them reads anything or fails: the read, the format and the size cap are settled when the engine reaches the input.
 
 | Constructor | The document is | Format from |
 |---|---|---|
 | `Input::text(string, format)` | the text itself | the argument |
 | `Input::bytes(data, format)` | bytes from anywhere | a PDF or DOCX signature, else the argument, else plain text |
 | `Input::file(path)` | the file, read when analysed | a PDF or DOCX signature, else the extension |
+| `Input::file_as(path, format)` | the file, read when analysed | a PDF or DOCX signature, else the argument |
 | `Input::blocks(blocks)` | headings and paragraphs you supply (`Block::heading`, `Block::paragraph`) | `blocks` |
 
-`.md` and `.markdown` read as markdown; any other extension, or none, reads as plain text when the bytes are UTF-8. `Format::Blocks` names the same headings and paragraphs as a JSON array, for `Input::text`, `Input::bytes` or a file, with the schema in `spec/schema/v2/blocks.schema.json`. `Inputs::dir(path)` lists one level of a directory, up front, and is an iterator of `Input::file`; its `Err` is the listing failing. `Input::file` on a directory fails with `Error::InvalidInput` naming `Inputs::dir`.
+`.md` and `.markdown` read as markdown; any other extension, or none, reads as plain text when the bytes are UTF-8. `Format::Blocks` names the same headings and paragraphs as a JSON array, for `Input::text`, `Input::bytes` or `Input::file_as`, since no extension implies it, with the schema in `spec/schema/v2/blocks.schema.json`. `Inputs::dir(path)` lists one level of a directory, up front, and is an iterator of `Input::file`; its `Err` is the listing failing. `Input::file` on a directory fails with `Error::InvalidInput` naming `Inputs::dir`.
 
 `Engine` exposes the pipeline at two grains:
 

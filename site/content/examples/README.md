@@ -20,4 +20,4 @@ Each call reads its input from the directory it runs in, under the file name the
 
 ## What is not here
 
-Analyzing a directory as a corpus has no guide here, because the CLI refuses a directory and these guides show all three calls. The [Rust](../guides/rust.md#analyze-a-directory) and [Python](../guides/python.md#analyze-many-documents) references cover it.
+Analyzing a directory as a corpus has no worked example here, because each example pins the output of one input. The [CLI](../guides/cli.md#matra-analyze), [Rust](../guides/rust.md#analyze-a-directory) and [Python](../guides/python.md#analyze-many-documents) guides cover it.

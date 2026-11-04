@@ -378,13 +378,13 @@
       "words": 52
     },
     {
-      "compression_ratio": 0.5236,
+      "compression_ratio": 0.4793,
       "kind": "paragraph",
-      "lexical_density": 0.5581,
-      "readability_grade": 7.7247,
-      "sentences": 4,
-      "text": "Every arrow points down, and that is the rule: a module imports from the row below it, never the row above. Two arrows run sideways. source/directory.rs reaches into source/file.rs, inside a single port, so a directory read inherits the same symlink and size guards rather than reimplementing them. And src/bin/matra.rs reaches into src/cli/, which is the whole of that file: the command line lives in the library so both launchers run one program, and the binary only collects arguments, locks the streams, and returns the code.",
-      "words": 88
+      "lexical_density": 0.58,
+      "readability_grade": 8.668,
+      "sentences": 6,
+      "text": "Every arrow points down, and that is the rule: a module imports from the row below it, never the row above. Two arrows run sideways. source/directory.rs reaches into source/file.rs, inside a single port, so a directory read inherits the same symlink and size guards rather than reimplementing them. And src/bin/matra.rs reaches into src/cli/, which is the whole of that file: the command line lives in the library so both launchers run one program, and the binary only collects arguments, locks the streams, and returns the code. One arrow from src/cli/ reaches past lib.rs, and it still points down: matra clusters builds Model2Vec from the configuration, because the library builds no embedder inside an outcome call and choosing the default one is the application's decision. embed is the one port open to outside implementers, and boundary rule 7 admits it for the command line as it does for the Python binding.",
+      "words": 153
     },
     {
       "compression_ratio": 0.5414,

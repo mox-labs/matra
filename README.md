@@ -108,9 +108,17 @@ A `Document` is read-only and reads as its JSON (`doc.to_dict()` for the whole).
 ```bash
 matra analyze essay.md
 matra analyze essay.md --json
-matra analyze essay.md -s      # section breakdown
-matra config show              # every resolved value, with its origin
+matra analyze essay.md -s                    # section breakdown
+matra analyze docs/ --json --depth document  # one line per file, measures only
+matra summarize essay.md -n 3 --method textrank
+matra keyphrases essay.md --json
+matra clusters essay.md --threshold 0.85     # needs the model2vec feature
+matra analyze notes.json --format blocks     # a JSON file of blocks
+matra --schema document                      # the JSON Schema of the output
+matra config show                            # every resolved value, with its origin
 ```
+
+Under `--json` every command writes one envelope, `{format_version, command, input, result, error}`, and a failure is an envelope too: `result` null, `error` its `kind`, `message` and `details`, and exit code 2.
 
 ## Metrics
 

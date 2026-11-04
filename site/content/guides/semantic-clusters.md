@@ -77,6 +77,14 @@ Already hold embeddings? Pass an object whose `embed` returns them, one per sent
 
 The threshold comes back in `result["provenance"]["parameters"]["threshold"]` exactly as you passed it, beside the embedder's identity. An edge's score is computed in the vectors' `f32` and widened, so compare scores at a few decimal places rather than for equality.
 
+## The command line
+
+```bash
+matra clusters notes.md --threshold 0.85 --json
+```
+
+`matra clusters` builds the reference embedder from the configuration, the model `models.embedding` names in the model directory, and takes its threshold from `--threshold`, else `clusters.threshold` in the config file, `0.85` as shipped. `--json` writes the same `Clusters` value inside the envelope; the table lists each cluster's sentence indices and text. It needs a build with `model2vec`, which the Python package has; a `cargo install --features cli` build refuses the command and names the feature. The [CLI guide](cli.md#matra-clusters) has the flags.
+
 ## Comparing whole documents
 
 `clusters` works over the sentences of one document, in every language. There is no cross-document primitive. Build one out of what you have: embed each document as a single text with `model.embed`, then compare the vectors yourself.
@@ -115,8 +123,8 @@ for a, b in combinations(range(len(docs)), 2):
 Those three are pages of this book, run from a checkout of the repository, so the numbers below are yours to reproduce. Two of them cover the same ground for different surfaces, and the third is unrelated. It prints:
 
 ```text
-0.8215  cli.md <-> rust.md
-0.5857  cli.md <-> roadmap.md
+0.8181  cli.md <-> rust.md
+0.5658  cli.md <-> roadmap.md
 0.6138  rust.md <-> roadmap.md
 ```
 
