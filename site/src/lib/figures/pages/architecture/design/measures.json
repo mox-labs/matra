@@ -450,13 +450,13 @@
       "words": 72
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5135,
       "kind": "paragraph",
-      "lexical_density": 0.6279,
-      "readability_grade": 9.4837,
-      "sentences": 3,
-      "text": "Errors cross by type. The conversion is a match with no wildcard arm, so adding a variant to domain::Error fails to compile until someone decides which Python exception class it becomes. A wildcard would let new failure modes fall through to RuntimeError unnoticed.",
-      "words": 44
+      "lexical_density": 0.5455,
+      "readability_grade": 9.5104,
+      "sentences": 5,
+      "text": "Errors cross by type and as data. Each variant is raised as a class of its own, named as the variant is and deriving from matra.MatraError, and the exception carries kind and details, the values Error::kind and Error::details compute, so a method's answer crosses as a field. The choice of class is a match with no wildcard arm, so adding a variant to domain::Error fails to compile until someone decides which class it becomes. A wildcard would let new failure modes fall through to another variant's class unnoticed.",
+      "words": 93
     },
     {
       "compression_ratio": null,

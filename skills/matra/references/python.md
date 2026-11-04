@@ -55,17 +55,17 @@ from matra import Matra
 
 engine = Matra.english()
 for item in engine.analyze_path("docs/"):
-    if "error" in item:
-        print(item["path"], item["error"]["kind"], item["error"]["message"])
+    if "kind" in item:
+        print(item["path"], item["kind"], item["message"])
     else:
         print(item["provenance"]["source"]["path"], item["metrics"]["passive_ratio"])
 ```
 
-A document that analyzed arrives as the document itself, the dict `analyze` returns, naming its file in `provenance.source.path`. One that did not arrives as `{"path": str | None, "error": {"kind": str, "message": str}}`. Test `"error" in item` to tell them apart; a type checker narrows the union on that test. One unreadable file costs one item rather than the whole walk. A failure listing the path itself raises instead of arriving as an item.
+A document that analyzed arrives as the document itself, the dict `analyze` returns, naming its file in `provenance.source.path`. One that did not arrives as `{"path": str | None, "kind": str, "message": str, "details": dict}`. Test `"kind" in item` to tell them apart; a type checker narrows the union on that test. One unreadable file costs one item rather than the whole walk. A failure listing the path itself raises instead of arriving as an item.
 
 A path is `None` only for a document that never came from disk, which a directory walk never produces. On Unix a returned path is decoded with `os.fsdecode`, so `os.fsencode` on it names the same file even when the name is not valid text.
 
-`kind` is one of seven stable strings, exported as `matra.ERROR_KINDS`. Branch on it. The message is for a human to read and is not a contract.
+`kind` is one of seven stable strings, exported as `matra.ERROR_KINDS`. Branch on it. The message is for a human to read and is not a contract; `details` holds every value in it by name (the errors reference lists the keys per kind).
 
 ## `Model2Vec` and the embedder protocol
 
@@ -101,7 +101,7 @@ class Constant:
 clusters = Matra.english().semantic_clusters(text, 0.9, Constant())
 ```
 
-The contract is checked in the library, so a Python embedder returning the wrong number of vectors raises `ValueError` with the same message a Rust implementor would read, and an exception raised inside `embed` arrives as `ValueError` carrying its own text. `identity` is read once, before the text is parsed, so a broken embedder costs one method call rather than a document's parse.
+The contract is checked in the library, so a Python embedder returning the wrong number of vectors raises `matra.InvalidInput`, a `ValueError`, with the same message a Rust implementor would read, and an exception raised inside `embed` arrives as `matra.InvalidInput` carrying its own text. `identity` is read once, before the text is parsed, so a broken embedder costs one method call rather than a document's parse.
 
 Two embedders that can disagree must not return the same identity string.
 
@@ -113,31 +113,39 @@ from matra import semantic_clusters
 clusters = semantic_clusters(vectors, 0.85, "my-model-v1")
 ```
 
-For a caller who already holds embeddings. It reads no document, so the result is `parameters` (`threshold`, and the hash given as `embedder`), `clusters` and `edges`, with no provenance. Indices in the result are positions in the list passed in. Raises `ValueError` when vectors disagree on dimension, contain a non-finite value, exceed the 2,000-vector cap, or the threshold is not finite.
+For a caller who already holds embeddings. It reads no document, so the result is `parameters` (`threshold`, and the hash given as `embedder`), `clusters` and `edges`, with no provenance. Indices in the result are positions in the list passed in. Raises `matra.InvalidInput` when vectors disagree on dimension, contain a non-finite value, or the threshold is not finite, and `matra.InputTooLarge` past the 2,000-vector cap; both are `ValueError`s.
 
 ## Exceptions
 
-The binding converts every library failure into a Python exception class through a match with no catch-all arm, so a new failure variant cannot silently inherit another one's class.
+Every library failure is raised as a class of its own in `matra`, named as the failure is, through a match with no catch-all arm, so a new failure variant cannot silently inherit another one's class. Each class derives from `matra.MatraError` and from the builtin class matra raised before 0.3.0, so `except ValueError` still catches an `InputTooLarge`.
 
-| Failure | Python exception |
-|---|---|
-| model not found | `FileNotFoundError` |
-| input too large | `ValueError` |
-| unsupported format | `ValueError` |
-| invalid input | `ValueError` |
-| io | `OSError` |
-| model invalid | `RuntimeError` |
-| parse failed | `RuntimeError` |
+| Failure | Python class | Also a |
+|---|---|---|
+| model not found | `ModelNotFound` | `FileNotFoundError` |
+| input too large | `InputTooLarge` | `ValueError` |
+| unsupported format | `UnsupportedFormat` | `ValueError` |
+| invalid input | `InvalidInput` | `ValueError` |
+| io | `Io` | `OSError` |
+| io, a path that does not exist | `IoNotFound` | `FileNotFoundError` |
+| io, permission denied | `IoPermissionDenied` | `PermissionError` |
+| model invalid | `ModelInvalid` | `RuntimeError` |
+| parse failed | `ParseFailed` | `RuntimeError` |
 
-The exception message is the library's own display string. Variant identity beyond the exception class does not cross, so a caller separating an oversized input from an unsupported format inspects the message. Where a stable machine-readable key is needed, use `analyze_path`, whose items carry `kind`.
+Every exception carries `kind`, the stable string, and `details`, a dict of every value in the message. The message, `str(exc)`, is the library's own display string, for a person. Branch on the class or on `kind`, and read values from `details` rather than parsing the message.
 
 ```python
+import matra
 from matra import Matra
 
 try:
     engine = Matra.from_path("models/english-ewt-ud-2.5-191206.udpipe")
 except FileNotFoundError as exc:
-    print(exc)  # model not found: models/english-ewt-ud-2.5-191206.udpipe
+    print(exc.details["path"])  # models/english-ewt-ud-2.5-191206.udpipe
+
+try:
+    engine.analyze(text)
+except matra.InputTooLarge as exc:
+    print(exc.details["what"], exc.details["limit"], exc.details["actual"])
 ```
 
 ## The command line from Python

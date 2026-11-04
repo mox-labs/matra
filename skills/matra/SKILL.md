@@ -108,7 +108,7 @@ Every metric row below names a slot on the result. A slot is null when the metri
 
 Input is capped at 8 MiB, checked before decoding. Summarizers cap at 2,000 sentences, keyphrase extractors at 200,000 tokens, the config file at 64 KiB. Over a cap, the failure names which gate fired in a `what` label: `input`, `file_source`, `tfidf`, `textrank`, `rake`, `yake`, `clusters`, `udpipe_download`, `embedding_download`, `config_file`.
 
-Seven failure kinds exist, and `invalid_input` is the one that means the call site is wrong rather than the text: mismatched vector dimensions, a non-finite threshold, an unknown config key. Fix the call, not the document. Every kind, its Python exception, and what to do about it is in `errors`.
+Seven failure kinds exist, and `invalid_input` is the one that means the call site is wrong rather than the text: mismatched vector dimensions, a non-finite threshold, an unknown config key. Fix the call, not the document. In Rust and Python a failure also carries `details`, every value in its message by name, so read those rather than the message; the command line reports the message only. Every kind, its details, its Python exception, and what to do about it is in `errors`.
 
 Quotes are never parsed and never measured. Markdown is read as CommonMark: front matter, code, tables, HTML blocks, thematic breaks and link reference definitions are not analysed, and each is listed in `skipped` with its `kind` and `span` rather than dropped. A file that is a PDF, a DOCX, or not UTF-8 text fails as `unsupported_format`; any other UTF-8 file with an extension matra does not know reads as plain text.
 
@@ -135,4 +135,4 @@ $ matra --skill -r json
 | `metrics` | Each measure's formula, its applicability condition, and its limitation |
 | `semantic` | Clusters, the threshold and why it does not travel, comparing whole documents, model provisioning, and what the embedder's identity is for |
 | `python` | The Python API, the `Embedder` protocol, `Model2Vec.embed` for raw vectors, `analyze_path`, and exception mapping |
-| `errors` | Every failure kind, its Python exception, and what to do about it |
+| `errors` | Every failure kind, its details, its Python exception, and what to do about it |

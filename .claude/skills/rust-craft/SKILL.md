@@ -34,10 +34,12 @@ pub enum Error {
     ModelInvalid(String),
     #[error("parse failed: {0}")]
     ParseFailed(String),
-    #[error("{what} input too large: {actual} > limit {limit}")]
+    #[error("{} too large: {actual} > limit {limit}", GateSubject(.what))]
     InputTooLarge { limit: usize, actual: usize, what: &'static str },
     #[error("{}", FormatSubject(.format.as_ref(), *.feature))]
     UnsupportedFormat { format: Option<Format>, feature: Option<&'static str> },
+    #[error("invalid input: {0}")]
+    InvalidInput(String),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -45,11 +47,13 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 ```
 
+Every channel reads it the same way: `kind()`, a stable string to branch on; the `Display` text, for a person; and `details()`, an `ErrorDetails` holding every dynamic value in the message by name. `Serialize` is written by hand as `{kind, message, details}`, because the enum wraps `std::io::Error`, which has no serde form. A new variant needs all three, and a new dynamic value in a message needs a key in `details()`. An I/O failure matra raises itself carries its path or URL through the crate-private `IoContext` inside the `std::io::Error`, so the variant's payload stays a plain `std::io::Error`.
+
 **Why thiserror, not anyhow:** The decision rule is: if a caller may *match* on the error variant, the crate is library-tier and concrete enums (thiserror) preserve variant identity. If only the application's top-level handler will display/log/exit, type erasure (anyhow) is ergonomic.
 
 matra is a library. Its callers will match on `InputTooLarge` (route to PyValueError, retry with smaller input, etc.), `ModelNotFound` (prompt for path, download, etc.), `Io(_)` (filesystem-specific recovery). Type preservation is required; thiserror is correct.
 
-**Why not anyhow at any layer:** matra has no lib/app boundary inside its Rust surface — it is a single crate. The PyO3 boundary in `lib.rs::python` routes variants to PyErr subclasses via an exhaustive match (no wildcard). A new variant becomes a compile error there — exactly what we want.
+**Why not anyhow at any layer:** matra has no lib/app boundary inside its Rust surface: it is a single crate. The PyO3 boundary in `lib.rs::python` raises each variant as its own Python class through an exhaustive match (`Class::of`, no wildcard). A new variant becomes a compile error there, which is exactly what we want.
 
 If a future submodule (e.g., a CLI tool consuming matra) needs `.context()` chains, *that* code uses anyhow. matra itself stays on `domain::Result`.
 
@@ -95,7 +99,7 @@ Every public enum and every public struct with public fields in `domain.rs` has 
 - Adding a variant or field later without `#[non_exhaustive]` is a breaking change. With it, additive changes are minor-version bumps.
 - Pattern-matches on `#[non_exhaustive]` enums must include `_` (the additive variant escape hatch) — forces consumers to write code that survives variant additions.
 
-Exception: the PyErr routing match in `lib.rs::python` deliberately omits the wildcard so new variants become compile errors. This is *inside* matra, where exhaustiveness is the contract, not the breakage risk.
+Exception: the routing match `Class::of` in `lib.rs::python` deliberately omits the wildcard over the variants so new variants become compile errors. This is *inside* matra, where exhaustiveness is the contract, not the breakage risk.
 
 ## Feature flag discipline
 

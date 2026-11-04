@@ -26,7 +26,7 @@ v = Matra.english(Path.home() / "models" / "matra")
 
 The argument is a `str` or any `os.PathLike`, such as the `pathlib.Path` above. Pass a real path, not a shell shorthand: `~` is taken literally. The path goes straight to Rust's `create_dir_all`, which does not expand it, so `Matra.english("~/models")` creates a directory literally named `~` under your current working directory and caches a 16 MB model inside it. `Path.home()`, or `os.path.expanduser`, does the expansion in Python. Name a directory you own: provisioning trusts what it finds there, and a shared one such as `/tmp` is writable by anybody on the machine.
 
-`Matra.english` downloads the English UDPipe model into that directory on first use, verifies it against a pinned SHA-256 hash, and loads from the cache on every call after that. The two ways that can fail raise different exceptions, and the split is the one the [errors reference](../reference/errors.md#provisioning-failures) describes: a download that never arrived, or a directory that could not be written, raises `OSError`; bytes that arrived and then failed the hash raise `RuntimeError`. A bootstrap that wants to survive both catches both. Before 0.2.0 a failed download also raised `RuntimeError`, so an `except RuntimeError` written against an older version stops catching network failures. If you already have a model file, load it directly; a missing path raises `FileNotFoundError`, a corrupt file raises `RuntimeError`:
+`Matra.english` downloads the English UDPipe model into that directory on first use, verifies it against a pinned SHA-256 hash, and loads from the cache on every call after that. The two ways that can fail raise different exceptions, and the split is the one the [errors reference](../reference/errors.md#provisioning-failures) describes: a download that never arrived, or a directory that could not be written, raises `matra.Io`, an `OSError`; bytes that arrived and then failed the hash raise `matra.ModelInvalid`, a `RuntimeError`. A bootstrap that wants to survive both catches `matra.MatraError`. A download that did not arrive carries `details["retryable"]`, which says whether calling again may succeed. Before 0.2.0 a failed download also raised `RuntimeError`, so an `except RuntimeError` written against an older version stops catching network failures. If you already have a model file, load it directly; a missing path raises `matra.ModelNotFound`, a `FileNotFoundError`, and a corrupt file raises `matra.ModelInvalid`:
 
 ```python
 v = Matra.from_path("/path/to/english-ewt-ud-2.5-191206.udpipe")
@@ -97,17 +97,17 @@ The `score` on a `Keyphrase` is an ordering key and nothing more. RAKE's is a su
 
 ```python
 for item in v.analyze_path("docs/"):
-    if "error" in item:
-        print(f"{item['path']}: {item['error']['kind']}: {item['error']['message']}")
+    if "kind" in item:
+        print(f"{item['path']}: {item['kind']}: {item['message']}")
     else:
         print(item["provenance"]["source"]["path"], item["metrics"]["vocabulary_ttr"])
 ```
 
-One unreadable file costs one item, not the walk. A document that analyzed arrives as the same `Document` shape `analyze` returns, naming its file in `provenance.source.path`; one that did not arrives as a `DocumentError` (`path`, `error`), holding the position the document would have had. Each file is read as its bytes and extension say: `.md` as markdown, anything else that is UTF-8 as plain text, and a PDF, a DOCX or bytes that are not text as an `unsupported_format` error. The `error` object carries a `kind` you can branch on and a `message` for a human to read. `matra.ERROR_KINDS` is the whole vocabulary, in the order the Rust enum declares it: `model_not_found`, `model_invalid`, `parse_failed`, `input_too_large`, `unsupported_format`, `invalid_input`, `io`. Testing `"error" in item` is also what narrows the union for a type checker.
+One unreadable file costs one item, not the walk. A document that analyzed arrives as the same `Document` shape `analyze` returns, naming its file in `provenance.source.path`; one that did not arrives as a `DocumentError` (`path`, `kind`, `message`, `details`), holding the position the document would have had. Each file is read as its bytes and extension say: `.md` as markdown, anything else that is UTF-8 as plain text, and a PDF, a DOCX or bytes that are not text as an `unsupported_format` error. It carries a `kind` you can branch on, a `message` for a human to read, and `details`, every value in the message by name, so nothing has to be parsed out of the message. `matra.ERROR_KINDS` is the whole vocabulary, in the order the Rust enum declares it: `model_not_found`, `model_invalid`, `parse_failed`, `input_too_large`, `unsupported_format`, `invalid_input`, `io`. Testing `"kind" in item` is also what narrows the union for a type checker.
 
 A path in an item is a `str` decoded the way Python decodes any filesystem path; on Unix, `os.fsencode` on it hands back the bytes the name came from and opens the file even when the name is not valid UTF-8 (elsewhere an undecodable name is decoded lossily). Every path argument on the surface goes the other way through the same encoding: `analyze_path`, `Matra.english`, `Matra.from_path`, `Model2Vec.from_dir` and `Model2Vec.potion_base_8m` take a `str` or a `pathlib.Path` alike.
 
-The walk is not recursive, and symlinks and subdirectories are skipped rather than followed. Only a failure listing the path itself raises: a missing directory is `OSError`, because there is no per-document result for it to travel in.
+The walk is not recursive, and symlinks and subdirectories are skipped rather than followed. Only a failure listing the path itself raises: a missing directory is `matra.IoNotFound`, a `FileNotFoundError`, because there is no per-document result for it to travel in.
 
 ## Bring your own embeddings
 
@@ -130,15 +130,15 @@ assert clusters["provenance"]["parameters"]["embedder"] == "my-service/v3"
 
 The object is asked for its identity before the text is parsed, so an embedder that cannot name its geometry is refused for the price of one method call.
 
-The contract is the one the Rust port carries: exactly one vector per input text, in input order, every vector the same length. Break it and the call raises `ValueError` with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your `embed` arrives as `ValueError` too, with your exception's own text inside the message.
+The contract is the one the Rust port carries: exactly one vector per input text, in input order, every vector the same length. Break it and the call raises `matra.InvalidInput`, a `ValueError`, with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your `embed` arrives as `matra.InvalidInput` too, with your exception's own text inside the message.
 
 `identity` is read once, when the object is handed over, and travels into the result's provenance as `parameters["embedder"]`. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.
 
 ## Size limits
 
-Every method that takes text rejects text over 8 MiB with `ValueError`. The gate lives in the pipeline stage every method routes through, not in each method, so there is no method that skips it.
+Every method that takes text rejects text over 8 MiB with `matra.InputTooLarge`, a `ValueError`, whose `details` carry `what` (`"input"`), `limit` and `actual`. The gate lives in the pipeline stage every method routes through, not in each method, so there is no method that skips it.
 
-The per-method caps apply on top: 2000 sentences for `tfidf_summarize`, `textrank_summarize` and `semantic_clusters` (the method and the module-level function alike), and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `ValueError` when exceeded.
+The per-method caps apply on top: 2000 sentences for `tfidf_summarize`, `textrank_summarize` and `semantic_clusters` (the method and the module-level function alike), and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `matra.InputTooLarge` when exceeded, with the method in `details["what"]`.
 
 ## The returned dicts and their shape
 
@@ -225,38 +225,43 @@ passive = [
 
 ## Exceptions
 
-Every `domain::Error` variant crosses the FFI boundary as a specific Python exception class, not a generic error:
+Every `domain::Error` variant crosses the FFI boundary as a class of its own, named as the variant is. Each derives from `matra.MatraError` and from a builtin class, the one matra raised before 0.3.0, so an `except ValueError` written then still catches what it caught:
 
-| Situation | Rust variant | Python exception |
+| Situation | Python class | Also a |
 |---|---|---|
 | Model path does not exist | `ModelNotFound` | `FileNotFoundError` |
 | Input exceeds the 8 MiB cap, or a per-extractor cap | `InputTooLarge` | `ValueError` |
 | Input format has no reader, or the bytes are not UTF-8 text | `UnsupportedFormat` | `ValueError` |
 | A caller broke a documented contract, such as an embedder returning the wrong number of vectors | `InvalidInput` | `ValueError` |
 | File I/O error, or a download that did not arrive | `Io` | `OSError` |
+| A path that does not exist | `IoNotFound` | `FileNotFoundError` |
+| A path matra may not read or write | `IoPermissionDenied` | `PermissionError` |
 | Model file corrupt or wrong format, or bytes that arrived and failed the pinned hash | `ModelInvalid` | `RuntimeError` |
 | NLP parsing failed, including a panic caught at the UDPipe boundary | `ParseFailed` | `RuntimeError` |
+
+`IoNotFound` and `IoPermissionDenied` derive from `Io`, so `except matra.Io` catches every I/O failure. Every exception carries `kind`, the stable string from `matra.ERROR_KINDS`, and `details`, a dict of every value in its message: `what`, `limit` and `actual` on an `InputTooLarge`, `path` on a missing model, `url` and `retryable` on a download that did not arrive. The [errors reference](../reference/errors.md#kinds-and-details) lists the keys for every kind.
 
 Loading the model and analyzing text fail in different ways, so catch them separately:
 
 ```python
+import matra
 from matra import Matra
 
 try:
     v = Matra.from_path("models/english-ewt-ud-2.5-191206.udpipe")
 except FileNotFoundError as e:
-    raise SystemExit(f"model missing: {e}")
+    raise SystemExit(f"model missing: {e.details['path']}")
 
 try:
     result = v.analyze(text)
-except ValueError as e:
-    print(f"bad input: {e}")       # over the 8 MiB cap
-except RuntimeError as e:
-    print(f"parse failed: {e}")
+except matra.InputTooLarge as e:
+    print(f"{e.details['what']} gate: {e.details['actual']} > {e.details['limit']}")
+except matra.MatraError as e:
+    print(f"{e.kind}: {e}")
 ```
 
-The message on each exception is the Rust error's own `Display` output, so an `InputTooLarge` message names the gate that fired. The text methods raise `input`, `tfidf`, `textrank`, `rake`, `yake` and `clusters`; the constructors that resolve or download a model raise `config_file`, `udpipe_download` and `embedding_download`. `analyze_path` raises none of them: an oversized file there is an item whose `kind` is `input_too_large`, with `file_source` in its message.
+The message on each exception is the Rust error's own `Display` output, for a person to read. Branch on the class or on `kind`, and read values from `details`. An `InputTooLarge` names its gate in `details["what"]`. The text methods raise `input`, `tfidf`, `textrank`, `rake`, `yake` and `clusters`; the constructors that resolve or download a model raise `config_file`, `udpipe_download` and `embedding_download`. `analyze_path` raises none of them: an oversized file there is an item whose `kind` is `input_too_large`, with `file_source` in its `details`.
 
-The mapping is exhaustive and enforced at compile time on the Rust side. The match that builds the Python exception has no wildcard arm, so adding a new `domain::Error` variant without also wiring it to a Python exception class fails to build. A new variant cannot fall through to `RuntimeError` by accident.
+The mapping is exhaustive and enforced at compile time on the Rust side. The match that picks the class has no wildcard arm over the variants, so adding a new `domain::Error` variant without also giving it a class fails to build. A new variant cannot fall through to another variant's class by accident.
 
 The one failure that does not follow this table is the cross-thread access described above, which arrives as `pyo3_runtime.PanicException` and bypasses `except Exception` entirely.
