@@ -10,21 +10,23 @@
 
 use std::collections::HashMap;
 
-use crate::domain::{Error, Result, ScoredSentence, Sentence};
+use crate::domain::{Error, Result, Sentence};
 use crate::stopwords::is_stop_word;
 
-/// Maximum input size for [`textrank_summarize`]. At 2000 sentences the
-/// similarity matrix is ~32 MB of f64; the ceiling for unattended use.
+/// Maximum input size for [`rank`]. At 2000 sentences the similarity
+/// matrix is ~32 MB of f64; the ceiling for unattended use. Clustering
+/// builds the same quadratic graph and shares the bound.
 pub(crate) const MAX_SENTENCES: usize = 2000;
 
-/// Extract top-N sentences by TextRank score, returned in document order.
+/// The top `n` sentences by TextRank score, as `(index, score)` pairs in
+/// document order.
 ///
 /// Similarity between sentences is computed as the count of shared
 /// content lemmas divided by the log of their lengths (to avoid
 /// favoring long sentences).
 ///
 /// Returns [`Error::InputTooLarge`] when `sentences.len() > MAX_SENTENCES`.
-pub fn textrank_summarize(sentences: &[Sentence], n: usize) -> Result<Vec<ScoredSentence>> {
+pub(super) fn rank(sentences: &[&Sentence], n: usize) -> Result<Vec<(usize, f64)>> {
     if sentences.is_empty() || n == 0 {
         return Ok(Vec::new());
     }
@@ -103,14 +105,7 @@ pub fn textrank_summarize(sentences: &[Sentence], n: usize) -> Result<Vec<Scored
     indexed.truncate(n);
     indexed.sort_by_key(|&(idx, _)| idx);
 
-    Ok(indexed
-        .into_iter()
-        .map(|(idx, score)| ScoredSentence {
-            text: sentences[idx].text.clone(),
-            score,
-            position: idx,
-        })
-        .collect())
+    Ok(indexed)
 }
 
 /// Similarity between two sentences: shared terms / log normalization.
@@ -163,15 +158,19 @@ mod tests {
         Sentence::new(text.to_string(), tokens)
     }
 
+    fn summarize(sentences: &[Sentence], n: usize) -> Result<Vec<(usize, f64)>> {
+        rank(&sentences.iter().collect::<Vec<_>>(), n)
+    }
+
     #[test]
     fn empty_returns_empty() {
-        assert!(textrank_summarize(&[], 3).unwrap().is_empty());
+        assert!(summarize(&[], 3).unwrap().is_empty());
     }
 
     #[test]
     fn n_zero_returns_empty() {
         let sentences = vec![sent("hello", vec![tok(1, "hello", "INTJ")])];
-        assert!(textrank_summarize(&sentences, 0).unwrap().is_empty());
+        assert!(summarize(&sentences, 0).unwrap().is_empty());
     }
 
     #[test]
@@ -180,7 +179,7 @@ mod tests {
         let sentences: Vec<Sentence> = (0..MAX_SENTENCES + 1)
             .map(|_| sent("word", toks.clone()))
             .collect();
-        match textrank_summarize(&sentences, 3) {
+        match summarize(&sentences, 3) {
             Err(crate::domain::Error::InputTooLarge {
                 limit,
                 actual,
@@ -226,9 +225,9 @@ mod tests {
             ),
         ];
 
-        let result = textrank_summarize(&sentences, 2).unwrap();
+        let result = summarize(&sentences, 2).unwrap();
         assert_eq!(result.len(), 2);
-        assert!(result[0].position < result[1].position);
+        assert!(result[0].0 < result[1].0);
     }
 
     #[test]
@@ -261,9 +260,9 @@ mod tests {
             ),
         ];
 
-        let result = textrank_summarize(&sentences, 2).unwrap();
+        let result = summarize(&sentences, 2).unwrap();
         // The two ML sentences should be selected (higher mutual reinforcement).
-        let positions: Vec<usize> = result.iter().map(|s| s.position).collect();
+        let positions: Vec<usize> = result.iter().map(|s| s.0).collect();
         assert!(positions.contains(&0));
         assert!(positions.contains(&2));
     }
@@ -274,8 +273,8 @@ mod tests {
             "only one",
             vec![tok(1, "only", "ADV"), tok(2, "one", "NUM")],
         )];
-        let result = textrank_summarize(&sentences, 5).unwrap();
+        let result = summarize(&sentences, 5).unwrap();
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0].position, 0);
+        assert_eq!(result[0].0, 0);
     }
 }

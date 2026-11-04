@@ -2,21 +2,55 @@
   "format_version": 2,
   "command": "summarize",
   "input": "origin-struggle.txt",
-  "result": [
-    {
-      "text": "Every being, which during its natural lifetime produces several eggs or seeds, must suffer destruction during some period of its life, and during some season or occasional year, otherwise, on the principle of geometrical increase, its numbers would quickly become so inordinately great that no country could support the product.",
-      "score": 0.029215311359903445,
-      "position": 32
+  "result": {
+    "provenance": {
+      "matra": "0.2.1",
+      "schema": "2.0",
+      "parser": {
+        "name": "udpipe",
+        "model": "english-ewt-ud-2.5-191206",
+        "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957",
+        "license": "CC BY-NC-SA 4.0 (non-commercial)"
+      },
+      "format": "plain_text",
+      "source": {
+        "path": null,
+        "bytes": 12808,
+        "sha256": "858cb32e93b9a95293e00afae7bd4049e8c0fda79abca22ea01b456f2a18a580"
+      },
+      "method": "textrank",
+      "parameters": {
+        "n": 3
+      }
     },
-    {
-      "text": "Hence, as more individuals are produced than can possibly survive, there must in every case be a struggle for existence, either one individual with another of the same species, or with the individuals of distinct species, or with the physical conditions of life.",
-      "score": 0.03081881474196398,
-      "position": 33
-    },
-    {
-      "text": "In looking at Nature, it is most necessary to keep the foregoing considerations always in mind—never to forget that every single organic being around us may be said to be striving to the utmost to increase in numbers; that each lives by a struggle at some period of its life; that heavy destruction inevitably falls either on the young or old, during each generation or at recurrent intervals.",
-      "score": 0.030089482622730077,
-      "position": 58
-    }
-  ]
+    "sentences": [
+      {
+        "index": 32,
+        "span": {
+          "start": 6000,
+          "end": 6328
+        },
+        "text": "Every being, which during its natural lifetime produces several eggs or seeds, must suffer destruction during some period of its life, and during some season or occasional year, otherwise, on the principle of geometrical increase, its numbers would quickly become so inordinately great that no country could support the product.",
+        "score": 0.029215311359903445
+      },
+      {
+        "index": 33,
+        "span": {
+          "start": 6329,
+          "end": 6591
+        },
+        "text": "Hence, as more individuals are produced than can possibly survive, there must in every case be a struggle for existence, either one individual with another of the same species, or with the individuals of distinct species, or with the physical conditions of life.",
+        "score": 0.03081881474196398
+      },
+      {
+        "index": 58,
+        "span": {
+          "start": 12049,
+          "end": 12444
+        },
+        "text": "In looking at Nature, it is most necessary to keep the foregoing considerations always in mind—never to forget that every single organic being around us may be said to be striving to the utmost to increase in numbers; that each lives by a struggle at some period of its life; that heavy destruction inevitably falls either on the young or old, during each generation or at recurrent intervals.",
+        "score": 0.030089482622730077
+      }
+    ]
+  }
 }

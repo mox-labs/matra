@@ -94,59 +94,6 @@ pub struct ProvisionNotice {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Embedding(pub Vec<f32>);
 
-/// Semantic-similarity clusters over a document's sentences: Tier 2
-/// output, standing alone, never attached to [`Document`] (RFC-0010).
-///
-/// Clusters are connected components of the similarity graph whose edges
-/// cleared `threshold`, so co-membership is transitive: two sentences can
-/// share a cluster without sharing an edge, and co-membership must never
-/// be read as pairwise similarity. The above-threshold edges travel in
-/// each cluster precisely so a consumer can see which pairs actually
-/// cleared the bar; a missing edge means no claim, not low similarity.
-///
-/// A sentence with no above-threshold edge appears in no cluster:
-/// singletons are excluded by construction, so "not in any cluster" is a
-/// meaningful consumer count, not an artifact.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[non_exhaustive]
-pub struct SemanticClusters {
-    /// Identity of the model whose geometry produced the scores, as the
-    /// embedder reports it (`Embedder::identity`; for a file-loaded model,
-    /// a digest over its artifacts).
-    pub identity: String,
-    /// The caller-supplied similarity cutoff the edges cleared. matra
-    /// knows no universal threshold; the literature's published values
-    /// span 0.67 to 0.9 with no consensus.
-    pub threshold: f32,
-    /// The clusters, ordered by smallest member index; each cluster's
-    /// members and edges are sorted, so output order is deterministic.
-    pub clusters: Vec<SemanticCluster>,
-}
-
-/// One connected component of the above-threshold similarity graph.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[non_exhaustive]
-pub struct SemanticCluster {
-    /// Sentence indices (document order positions) in this component.
-    pub members: Vec<usize>,
-    /// Every pair whose cosine similarity cleared the threshold. Pairs of
-    /// members without an edge here did not clear it individually; they
-    /// share the cluster through the chain.
-    pub edges: Vec<SemanticEdge>,
-}
-
-/// An above-threshold similarity between two sentences, `a < b`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[non_exhaustive]
-pub struct SemanticEdge {
-    /// Lower sentence index.
-    pub a: usize,
-    /// Higher sentence index.
-    pub b: usize,
-    /// Cosine similarity, in the model's geometry.
-    pub score: f32,
-}
-
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
@@ -217,7 +164,7 @@ pub enum Error {
         /// Discriminator naming which gate fired, so consumers can route
         /// differently per gate. The labels in use: `"input"`,
         /// `"file_source"`, `"tfidf"`, `"textrank"`, `"rake"`, `"yake"`,
-        /// `"semantic_clusters"`, `"udpipe_download"`,
+        /// `"clusters"`, `"udpipe_download"`,
         /// `"embedding_download"` and `"config_file"`.
         what: &'static str,
     },
@@ -1398,13 +1345,19 @@ fn serialize_path_lossy<S: serde::Serializer>(
     }
 }
 
-/// Where a [`Document`] came from: the matra build and schema version
-/// that produced it, the parser that read it, the format it was read as,
-/// and the input itself.
+/// Where a result came from: the matra build and schema version that
+/// produced it, the parser that read the document, the format it was read
+/// as, and the input itself.
+///
+/// A [`Document`] carries it as recorded when the document was read. A
+/// result derived from a document ([`Summary`], [`Keyphrases`],
+/// [`Clusters`]) carries a copy of the document's, plus the `method` that
+/// ran and the `parameters` that shaped it; on a document both are
+/// `None`, and absent from the JSON.
 ///
 /// No timestamp: matra's outputs are deterministic, and a timestamp would
 /// make two identical analyses differ.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Provenance {
     /// The matra version that produced the result, for example `0.3.0`.
@@ -1418,6 +1371,53 @@ pub struct Provenance {
     pub format: Format,
     /// The input.
     pub source: ProvenanceSource,
+    /// The method that produced a derived result, for example `tfidf`:
+    /// `None` on a document. A reader treats the set as open.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    /// The parameters that shaped a derived result: `None` on a
+    /// document.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<Parameters>,
+}
+
+/// The parameters that shaped a derived result, as it ran: only those
+/// the method takes are `Some`, and only those appear in the JSON.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Parameters {
+    /// How many sentences a summary keeps, or how many phrases keyphrase
+    /// extraction returns at most.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub n: Option<usize>,
+    /// The cosine similarity an edge between two sentences cleared to
+    /// join them in a cluster.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub threshold: Option<f64>,
+    /// The identity of the embedder whose vectors were clustered, as it
+    /// reports it (for a file-loaded model, a digest over its artifacts),
+    /// so the scores stay attributable to one geometry.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub embedder: Option<String>,
+}
+
+impl Parameters {
+    /// The parameters of a method that takes a count.
+    pub(crate) fn count(n: usize) -> Self {
+        Self {
+            n: Some(n),
+            ..Self::default()
+        }
+    }
+
+    /// The parameters of clustering: the threshold and the embedder.
+    pub(crate) fn clustering(threshold: f64, embedder: impl Into<String>) -> Self {
+        Self {
+            threshold: Some(threshold),
+            embedder: Some(embedder.into()),
+            ..Self::default()
+        }
+    }
 }
 
 impl Provenance {
@@ -1430,6 +1430,18 @@ impl Provenance {
             parser,
             format,
             source,
+            method: None,
+            parameters: None,
+        }
+    }
+
+    /// This provenance, copied onto a result derived from the document it
+    /// describes, with the method that ran and its parameters.
+    pub(crate) fn derived(&self, method: &str, parameters: Parameters) -> Self {
+        Self {
+            method: Some(method.to_string()),
+            parameters: Some(parameters),
+            ..self.clone()
         }
     }
 
@@ -1511,53 +1523,147 @@ impl Document {
 }
 
 // ---------------------------------------------------------------------------
-// Extraction output — what extraction algorithms produce
+// Outcomes: what the outcome functions derive from a document
 // ---------------------------------------------------------------------------
 
-/// A sentence ranked by relevance score with its original document position.
+/// The sentences that best represent a document, from `matra::summarize`.
 ///
-/// Output of [`extraction::tfidf_summarize`](crate::extraction::tfidf_summarize)
-/// and [`extraction::textrank_summarize`](crate::extraction::textrank_summarize).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// `provenance` is the document's, with the method that ranked the
+/// sentences and the `n` it was asked for. Each method scores on its own
+/// scale, so a score compares with another score from the same method
+/// only.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
-pub struct ScoredSentence {
-    /// The selected sentence's text, as on [`Sentence::text`].
-    pub text: String,
-    /// Relevance score, higher is more relevant.
-    pub score: f64,
-    /// Original document position (sentence index), preserved so
-    /// consumers can re-anchor scored sentences in document order.
-    pub position: usize,
+pub struct Summary {
+    /// The document's provenance, plus `method` and `parameters`.
+    pub provenance: Provenance,
+    /// At most `n` sentences, in document order.
+    pub sentences: Vec<SummarySentence>,
 }
 
-impl ScoredSentence {
-    /// Construct a new `ScoredSentence`.
-    pub fn new(text: String, score: f64, position: usize) -> Self {
+/// One sentence a summary keeps.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct SummarySentence {
+    /// The sentence's position among the document's sentences
+    /// ([`Document::sentences`]), counting from 0.
+    pub index: usize,
+    /// Where the sentence lies in the analysed text, as on
+    /// [`Sentence::span`].
+    pub span: Span,
+    /// The sentence's text, as on [`Sentence::text`].
+    pub text: String,
+    /// The method's score for it, higher is more representative.
+    pub score: f64,
+}
+
+impl SummarySentence {
+    /// The sentence at `index` of `sentence`, with its score.
+    pub(crate) fn new(index: usize, sentence: &Sentence, score: f64) -> Self {
         Self {
-            text,
+            index,
+            span: sentence.span,
+            text: sentence.text.clone(),
             score,
-            position,
         }
     }
 }
 
-/// A ranked keyphrase extracted from text.
+/// The phrases that best name what a document is about, from
+/// `matra::keyphrases`.
 ///
-/// Output of [`extraction::rake_keyphrases`](crate::extraction::rake_keyphrases)
-/// and [`extraction::yake_keyphrases`](crate::extraction::yake_keyphrases).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// `provenance` is the document's, with the method that ranked the
+/// phrases and the `n` it was asked for. Each method scores on its own
+/// scale, so a score compares with another score from the same method
+/// only.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Keyphrases {
+    /// The document's provenance, plus `method` and `parameters`.
+    pub provenance: Provenance,
+    /// At most `n` phrases, highest score first. Equal scores are ordered
+    /// the same way on every run.
+    pub phrases: Vec<Keyphrase>,
+}
+
+/// One ranked keyphrase and where it occurs.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Keyphrase {
-    /// The keyphrase text.
+    /// The phrase: the lowercased lemmas of its words, joined by a space.
     pub phrase: String,
-    /// Relevance score, higher is more relevant.
+    /// The method's score for it, higher is more relevant.
+    pub score: f64,
+    /// Every stretch of the analysed text the phrase was found in, in
+    /// document order: from its first word's start to its last word's
+    /// end, so a word the method passes over (a stop word between two
+    /// content words) lies inside the span.
+    pub occurrences: Vec<Span>,
+}
+
+/// Sentences of a document grouped by the similarity of their
+/// embeddings, from `matra::clusters`: model opinion, standing alone,
+/// never attached to [`Document`] (RFC-0010).
+///
+/// `provenance` is the document's, with the method and the `threshold`
+/// and `embedder` that shaped the result, so the scores cannot be
+/// attributed to a model that did not produce them.
+///
+/// A cluster is a connected component of the graph whose edges are the
+/// sentence pairs with a cosine similarity of at least `threshold`, so
+/// membership is transitive: two sentences can share a cluster without
+/// sharing an edge, and co-membership must never be read as pairwise
+/// similarity. `edges` lists every pair that cleared the bar; a pair not
+/// listed is no claim, not low similarity.
+///
+/// A sentence with no edge appears in no cluster: singletons are excluded
+/// by construction, so "not in any cluster" is a meaningful count.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Clusters {
+    /// The document's provenance, plus `method` and `parameters`.
+    pub provenance: Provenance,
+    /// The clusters, ordered by their smallest member.
+    pub clusters: Vec<Cluster>,
+    /// Every pair of sentences whose similarity cleared the threshold,
+    /// ordered by `a`, then `b`. Both ends of an edge are members of the
+    /// same cluster.
+    pub edges: Vec<SimilarityEdge>,
+}
+
+/// One connected component of the above-threshold similarity graph.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Cluster {
+    /// The sentence indices ([`Document::sentences`] positions) in the
+    /// component, ascending.
+    pub members: Vec<usize>,
+}
+
+impl Cluster {
+    /// A cluster of `members`, ascending.
+    pub(crate) fn new(members: Vec<usize>) -> Self {
+        Self { members }
+    }
+}
+
+/// A similarity between two sentences that cleared the threshold,
+/// `a < b`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct SimilarityEdge {
+    /// The lower sentence index.
+    pub a: usize,
+    /// The higher sentence index.
+    pub b: usize,
+    /// Their cosine similarity, in the embedder's geometry.
     pub score: f64,
 }
 
-impl Keyphrase {
-    /// Construct a new `Keyphrase`.
-    pub fn new(phrase: String, score: f64) -> Self {
-        Self { phrase, score }
+impl SimilarityEdge {
+    /// The edge between sentences `a < b`.
+    pub(crate) fn new(a: usize, b: usize, score: f64) -> Self {
+        Self { a, b, score }
     }
 }
 
@@ -1750,65 +1856,6 @@ impl Skipped {
     }
 }
 
-/// A collection of analyzed documents.
-///
-/// Each document names its own path in `provenance.source.path`, so the
-/// collection holds documents and nothing beside them.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[non_exhaustive]
-pub struct Corpus {
-    /// One document per successful analysis, in input order.
-    pub documents: Vec<Document>,
-}
-
-impl Corpus {
-    /// Construct a new `Corpus` from its documents.
-    pub fn new(documents: Vec<Document>) -> Self {
-        Self { documents }
-    }
-
-    /// Total non-punctuation token count across every document.
-    pub fn total_words(&self) -> usize {
-        self.documents.iter().map(|d| d.metrics.total_words).sum()
-    }
-
-    /// Fraction of sentences across all documents containing a passive-
-    /// voice construction. Returns `0.0` when the corpus has no
-    /// sentences.
-    pub fn passive_ratio(&self) -> f64 {
-        let total: usize = self
-            .documents
-            .iter()
-            .map(|d| d.metrics.total_sentences)
-            .sum();
-        if total == 0 {
-            return 0.0;
-        }
-        let passive: usize = self
-            .documents
-            .iter()
-            .map(|d| d.sentences().filter(|s| s.passive).count())
-            .sum();
-        passive as f64 / total as f64
-    }
-
-    /// Mean readability grade across all paragraphs that carry a
-    /// `readability_grade` value. Returns `0.0` when no paragraphs have
-    /// been measured.
-    pub fn mean_readability(&self) -> f64 {
-        let grades: Vec<f64> = self
-            .documents
-            .iter()
-            .flat_map(|d| d.paragraphs())
-            .filter_map(|p| p.metrics.readability_grade)
-            .collect();
-        if grades.is_empty() {
-            return 0.0;
-        }
-        grades.iter().sum::<f64>() / grades.len() as f64
-    }
-}
-
 /// A per-document failure: the error plus the path it occurred at, if
 /// the document came from disk.
 ///
@@ -1843,50 +1890,6 @@ impl std::fmt::Display for DocumentError {
 impl std::error::Error for DocumentError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         Some(&self.error)
-    }
-}
-
-/// The outcome of analyzing a stream of documents: every success in a
-/// [`Corpus`], every per-document failure alongside it.
-///
-/// The partition invariant: documents plus errors equals inputs
-/// consumed. Nothing is silently dropped.
-///
-/// Not `Serialize`: [`DocumentError`] wraps [`Error`], which wraps
-/// `std::io::Error`. Crossing a language boundary needs a projection
-/// with stable kind strings, not a serialization of `io::Error`.
-#[derive(Debug)]
-#[non_exhaustive]
-pub struct CorpusResult {
-    /// Every successfully analyzed document.
-    pub corpus: Corpus,
-    /// Every per-document failure, in consumption order.
-    pub errors: Vec<DocumentError>,
-}
-
-impl CorpusResult {
-    /// Construct a new `CorpusResult`.
-    pub fn new(corpus: Corpus, errors: Vec<DocumentError>) -> Self {
-        Self { corpus, errors }
-    }
-}
-
-/// `collect()` is the corpus constructor: a stream of per-document
-/// results partitions into successes and failures, preserving order
-/// within each.
-impl FromIterator<std::result::Result<Document, DocumentError>> for CorpusResult {
-    fn from_iter<I: IntoIterator<Item = std::result::Result<Document, DocumentError>>>(
-        iter: I,
-    ) -> Self {
-        let mut documents = Vec::new();
-        let mut errors = Vec::new();
-        for item in iter {
-            match item {
-                Ok(document) => documents.push(document),
-                Err(err) => errors.push(err),
-            }
-        }
-        CorpusResult::new(Corpus::new(documents), errors)
     }
 }
 
@@ -3091,53 +3094,6 @@ mod tests {
             elapsed < std::time::Duration::from_millis(50),
             "tree_depth on 1000-chain took {elapsed:?} (expected < 50ms; suggests non-linear complexity)"
         );
-    }
-
-    #[test]
-    fn corpus_result_partition_holds() {
-        // |documents| + |errors| = items consumed, order preserved per side.
-        let from = |path: Option<&str>| {
-            let mut provenance = Provenance::for_test();
-            provenance.source.path = path.map(PathBuf::from);
-            Document::new(provenance, Vec::new(), Vec::new())
-        };
-        let items: Vec<std::result::Result<Document, DocumentError>> = vec![
-            Ok(from(Some("a.md"))),
-            Err(DocumentError::new(
-                Some(PathBuf::from("b.md")),
-                Error::ParseFailed("bad".to_string()),
-            )),
-            Ok(from(None)),
-            Err(DocumentError::new(
-                None,
-                Error::ParseFailed("worse".to_string()),
-            )),
-        ];
-        let consumed = items.len();
-        let result: CorpusResult = items.into_iter().collect();
-        assert_eq!(
-            result.corpus.documents.len() + result.errors.len(),
-            consumed
-        );
-        assert_eq!(result.corpus.documents.len(), 2);
-        assert_eq!(
-            result.corpus.documents[0].provenance.source.path,
-            Some(PathBuf::from("a.md")),
-            "success order preserved"
-        );
-        assert_eq!(
-            result.errors[0].path,
-            Some(PathBuf::from("b.md")),
-            "failure order preserved"
-        );
-        assert_eq!(result.errors[1].path, None, "path-less failure stays None");
-    }
-
-    #[test]
-    fn corpus_result_from_empty_iterator() {
-        let result: CorpusResult = std::iter::empty().collect();
-        assert!(result.corpus.documents.is_empty());
-        assert!(result.errors.is_empty());
     }
 
     #[test]

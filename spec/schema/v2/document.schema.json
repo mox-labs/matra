@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mox-labs.github.io/matra/schema/v2/document.schema.json",
   "title": "matra Document, schema 2.x",
-  "description": "One analysed document as matra emits it: the `result` of `matra analyze --json`, the dict `Matra.analyze` returns, and the serde form of `matra::domain::Document`. Schema 2.x: `provenance.schema` is \"2.minor\". A minor adds optional fields only, so a reader ignores fields it does not recognize and rejects a major it does not know. Every string set a reader receives is open (`format`, `kind`, `pos`, `dep`, `mood`, `pattern`, feature names): treat an unknown value as data, not as an error. Every key listed here is always present; a value that does not apply is null rather than absent. Every `span` counts UTF-8 bytes of the analysed text: for markdown and plain text the input itself, for block input the blocks' texts joined by a blank line. The text fields are normalized; a span is the authority on where a value came from.",
+  "description": "One analysed document as matra emits it: the `result` of `matra analyze --json`, the dict `Matra.analyze` returns, and the serde form of `matra::domain::Document`. Schema 2.x: `provenance.schema` is \"2.minor\". A minor adds optional fields only, so a reader ignores fields it does not recognize and rejects a major it does not know. Every string set a reader receives is open (`format`, `kind`, `pos`, `dep`, `mood`, `pattern`, feature names): treat an unknown value as data, not as an error. Every key listed here is always present, except the two a provenance carries only on a derived result (`method`, `parameters`); a value that does not apply is null rather than absent. Every `span` counts UTF-8 bytes of the analysed text: for markdown and plain text the input itself, for block input the blocks' texts joined by a blank line. The text fields are normalized; a span is the authority on where a value came from.",
   "type": "object",
   "required": ["provenance", "sections", "metrics", "skipped"],
   "properties": {
@@ -48,7 +48,7 @@
       "pattern": "^[0-9a-f]{64}$"
     },
     "Provenance": {
-      "description": "Where the document came from and what produced it. No timestamp: matra's outputs are deterministic.",
+      "description": "Where a result came from and what produced it. A document carries it without `method` and `parameters`, the two keys of this schema that are not always present; a result derived from a document (a summary, keyphrases, clusters) carries the document's provenance with both added. No timestamp: matra's outputs are deterministic.",
       "type": "object",
       "required": ["matra", "schema", "parser", "format", "source"],
       "properties": {
@@ -63,7 +63,30 @@
           "description": "The format the input was read as: `markdown`, `plain_text` or `blocks` today. An open set.",
           "type": "string"
         },
-        "source": { "$ref": "#/$defs/ProvenanceSource" }
+        "source": { "$ref": "#/$defs/ProvenanceSource" },
+        "method": {
+          "description": "The method that produced a derived result: `tfidf`, `textrank`, `rake`, `yake` or `cosine` today. An open set. Absent on a document.",
+          "type": "string"
+        },
+        "parameters": { "$ref": "#/$defs/Parameters" }
+      }
+    },
+    "Parameters": {
+      "description": "The parameters that shaped a derived result, as it ran. Only those the method takes are present: `n` for a summary and keyphrases, `threshold` and `embedder` for clusters. Absent on a document.",
+      "type": "object",
+      "properties": {
+        "n": {
+          "description": "How many sentences a summary keeps, or how many phrases keyphrase extraction returns at most.",
+          "$ref": "#/$defs/count"
+        },
+        "threshold": {
+          "description": "The cosine similarity an edge between two sentences cleared to join them in a cluster.",
+          "type": "number"
+        },
+        "embedder": {
+          "description": "The identity of the embedder whose vectors were clustered, as it reports it.",
+          "type": "string"
+        }
       }
     },
     "Identity": {

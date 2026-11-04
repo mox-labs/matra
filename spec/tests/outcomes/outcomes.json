@@ -1,0 +1,1866 @@
+{
+  "name": "outcomes",
+  "description": "The outcome lane: summarize, keyphrases and clusters over a document from a fixture, with no parser in the build. `document` is the whole Document the pinned parser produces from `input`, apart from the matra version; the ignored Rust test checks that against the model, and regenerates the fixture with MATRA_REGENERATE_OUTCOMES=1. Each case pins what one call returns: a summary's sentences by index, span and score; keyphrases by phrase, score and every occurrence; clusters by members and edges. `embeddings` holds one hand-built vector per sentence, returned by an embedder named `embedder`, so the clusters case pins the clustering, not a model: sentences 0, 1 and 2 chain at 0.92 while 0 and 2 alone do not clear it, 3 stands apart, and 4 and 5 pair.",
+  "input": "Rivers carry silt from the mountains to the sea. Where a river slows, the silt settles and builds a delta. A delta grows for as long as the river carries silt.\n\nEngineers who dam a river starve its delta of silt. The delta then shrinks, and the sea takes the land. Restoring the flow of silt is how a delta is saved.",
+  "format": "plain_text",
+  "embedder": "outcomes-fixture-vectors",
+  "embeddings": [
+    [
+      1.0,
+      0.0
+    ],
+    [
+      0.9239,
+      0.3827
+    ],
+    [
+      0.70710677,
+      0.70710677
+    ],
+    [
+      0.0,
+      1.0
+    ],
+    [
+      -1.0,
+      0.0
+    ],
+    [
+      -0.9239,
+      0.3827
+    ]
+  ],
+  "summaries": [
+    {
+      "n": 2,
+      "method": "tfidf",
+      "expect": [
+        {
+          "index": 0,
+          "span": {
+            "start": 0,
+            "end": 48
+          },
+          "score": 0.23852260290345137
+        },
+        {
+          "index": 4,
+          "span": {
+            "start": 213,
+            "end": 264
+          },
+          "score": 0.26624849012584917
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "method": "textrank",
+      "expect": [
+        {
+          "index": 1,
+          "span": {
+            "start": 49,
+            "end": 106
+          },
+          "score": 0.19232253890235745
+        },
+        {
+          "index": 2,
+          "span": {
+            "start": 107,
+            "end": 159
+          },
+          "score": 0.21067522402579855
+        },
+        {
+          "index": 3,
+          "span": {
+            "start": 161,
+            "end": 212
+          },
+          "score": 0.19232253890235745
+        }
+      ]
+    }
+  ],
+  "keyphrases": [
+    {
+      "n": 5,
+      "method": "rake",
+      "expect": [
+        {
+          "phrase": "silt settle",
+          "score": 3.25,
+          "occurrences": [
+            {
+              "start": 74,
+              "end": 86
+            }
+          ]
+        },
+        {
+          "phrase": "silt",
+          "score": 1.25,
+          "occurrences": [
+            {
+              "start": 13,
+              "end": 17
+            },
+            {
+              "start": 207,
+              "end": 211
+            },
+            {
+              "start": 287,
+              "end": 291
+            }
+          ]
+        },
+        {
+          "phrase": "rivers",
+          "score": 1.0,
+          "occurrences": [
+            {
+              "start": 0,
+              "end": 6
+            }
+          ]
+        },
+        {
+          "phrase": "mountain",
+          "score": 1.0,
+          "occurrences": [
+            {
+              "start": 27,
+              "end": 36
+            }
+          ]
+        },
+        {
+          "phrase": "sea",
+          "score": 1.0,
+          "occurrences": [
+            {
+              "start": 44,
+              "end": 47
+            },
+            {
+              "start": 245,
+              "end": 248
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "n": 5,
+      "method": "yake",
+      "expect": [
+        {
+          "phrase": "carry silt mountain",
+          "score": 14.515387431853066,
+          "occurrences": [
+            {
+              "start": 7,
+              "end": 36
+            }
+          ]
+        },
+        {
+          "phrase": "silt mountain",
+          "score": 13.593116974101944,
+          "occurrences": [
+            {
+              "start": 13,
+              "end": 36
+            }
+          ]
+        },
+        {
+          "phrase": "mountain",
+          "score": 13.101497743316209,
+          "occurrences": [
+            {
+              "start": 27,
+              "end": 36
+            }
+          ]
+        },
+        {
+          "phrase": "silt mountain sea",
+          "score": 10.263741568096126,
+          "occurrences": [
+            {
+              "start": 13,
+              "end": 47
+            }
+          ]
+        },
+        {
+          "phrase": "mountain sea",
+          "score": 9.892535115278534,
+          "occurrences": [
+            {
+              "start": 27,
+              "end": 47
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "clusters": [
+    {
+      "threshold": 0.92,
+      "expect": {
+        "clusters": [
+          {
+            "members": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "members": [
+              4,
+              5
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "a": 0,
+            "b": 1,
+            "score": 0.9238766431808472
+          },
+          {
+            "a": 1,
+            "b": 2,
+            "score": 0.9238824844360352
+          },
+          {
+            "a": 4,
+            "b": 5,
+            "score": 0.9238766431808472
+          }
+        ]
+      }
+    },
+    {
+      "threshold": 0.7,
+      "expect": {
+        "clusters": [
+          {
+            "members": [
+              0,
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "members": [
+              4,
+              5
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "a": 0,
+            "b": 1,
+            "score": 0.9238766431808472
+          },
+          {
+            "a": 0,
+            "b": 2,
+            "score": 0.7071068286895752
+          },
+          {
+            "a": 1,
+            "b": 2,
+            "score": 0.9238824844360352
+          },
+          {
+            "a": 2,
+            "b": 3,
+            "score": 0.7071068286895752
+          },
+          {
+            "a": 4,
+            "b": 5,
+            "score": 0.9238766431808472
+          }
+        ]
+      }
+    }
+  ],
+  "document": {
+    "provenance": {
+      "matra": "0.2.1",
+      "schema": "2.0",
+      "parser": {
+        "name": "udpipe",
+        "model": "english-ewt-ud-2.5-191206",
+        "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957",
+        "license": "CC BY-NC-SA 4.0 (non-commercial)"
+      },
+      "format": "plain_text",
+      "source": {
+        "path": null,
+        "bytes": 316,
+        "sha256": "5b9ece4f66f63e47821744f52b41a93cf6a6ccecb5f8191549b295d3f4a53858"
+      }
+    },
+    "sections": [
+      {
+        "heading": null,
+        "level": 0,
+        "span": null,
+        "paragraphs": [
+          {
+            "span": {
+              "start": 0,
+              "end": 159
+            },
+            "text": "Rivers carry silt from the mountains to the sea. Where a river slows, the silt settles and builds a delta. A delta grows for as long as the river carries silt.",
+            "kind": "paragraph",
+            "sentences": [
+              {
+                "span": {
+                  "start": 0,
+                  "end": 48
+                },
+                "text": "Rivers carry silt from the mountains to the sea.",
+                "tokens": [
+                  {
+                    "id": 1,
+                    "span": {
+                      "start": 0,
+                      "end": 6
+                    },
+                    "text": "Rivers",
+                    "lemma": "Rivers",
+                    "pos": "NOUN",
+                    "xpos": "NNS",
+                    "features": {
+                      "Number": "Plur"
+                    },
+                    "head": 2,
+                    "dep": "nsubj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 2,
+                    "span": {
+                      "start": 7,
+                      "end": 12
+                    },
+                    "text": "carry",
+                    "lemma": "carry",
+                    "pos": "VERB",
+                    "xpos": "VBP",
+                    "features": {
+                      "Mood": "Ind",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 0,
+                    "dep": "root",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 3,
+                    "span": {
+                      "start": 13,
+                      "end": 17
+                    },
+                    "text": "silt",
+                    "lemma": "silt",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 2,
+                    "dep": "obj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 4,
+                    "span": {
+                      "start": 18,
+                      "end": 22
+                    },
+                    "text": "from",
+                    "lemma": "from",
+                    "pos": "ADP",
+                    "xpos": "IN",
+                    "features": {},
+                    "head": 6,
+                    "dep": "case",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 5,
+                    "span": {
+                      "start": 23,
+                      "end": 26
+                    },
+                    "text": "the",
+                    "lemma": "the",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
+                    "head": 6,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 6,
+                    "span": {
+                      "start": 27,
+                      "end": 36
+                    },
+                    "text": "mountains",
+                    "lemma": "mountain",
+                    "pos": "NOUN",
+                    "xpos": "NNS",
+                    "features": {
+                      "Number": "Plur"
+                    },
+                    "head": 2,
+                    "dep": "obl",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 7,
+                    "span": {
+                      "start": 37,
+                      "end": 39
+                    },
+                    "text": "to",
+                    "lemma": "to",
+                    "pos": "ADP",
+                    "xpos": "IN",
+                    "features": {},
+                    "head": 9,
+                    "dep": "case",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 8,
+                    "span": {
+                      "start": 40,
+                      "end": 43
+                    },
+                    "text": "the",
+                    "lemma": "the",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
+                    "head": 9,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 9,
+                    "span": {
+                      "start": 44,
+                      "end": 47
+                    },
+                    "text": "sea",
+                    "lemma": "sea",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 6,
+                    "dep": "nmod",
+                    "deps": "_",
+                    "misc": "SpaceAfter=No",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 10,
+                    "span": {
+                      "start": 47,
+                      "end": 48
+                    },
+                    "text": ".",
+                    "lemma": ".",
+                    "pos": "PUNCT",
+                    "xpos": ".",
+                    "features": {},
+                    "head": 2,
+                    "dep": "punct",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": true
+                  }
+                ],
+                "word_count": 9,
+                "tree_depth": 3,
+                "passive": false,
+                "negations": [],
+                "modals": [],
+                "clausal_complements": [],
+                "root_adverbials": [],
+                "hearst_pairs": [],
+                "root_mood": {
+                  "root_id": 2,
+                  "mood": "Ind"
+                }
+              },
+              {
+                "span": {
+                  "start": 49,
+                  "end": 106
+                },
+                "text": "Where a river slows, the silt settles and builds a delta.",
+                "tokens": [
+                  {
+                    "id": 1,
+                    "span": {
+                      "start": 49,
+                      "end": 54
+                    },
+                    "text": "Where",
+                    "lemma": "where",
+                    "pos": "ADV",
+                    "xpos": "WRB",
+                    "features": {
+                      "PronType": "Int"
+                    },
+                    "head": 4,
+                    "dep": "advmod",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 2,
+                    "span": {
+                      "start": 55,
+                      "end": 56
+                    },
+                    "text": "a",
+                    "lemma": "a",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Ind",
+                      "PronType": "Art"
+                    },
+                    "head": 3,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 3,
+                    "span": {
+                      "start": 57,
+                      "end": 62
+                    },
+                    "text": "river",
+                    "lemma": "river",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 4,
+                    "dep": "nsubj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 4,
+                    "span": {
+                      "start": 63,
+                      "end": 68
+                    },
+                    "text": "slows",
+                    "lemma": "slows",
+                    "pos": "VERB",
+                    "xpos": "VBZ",
+                    "features": {
+                      "Mood": "Ind",
+                      "Number": "Sing",
+                      "Person": "3",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 0,
+                    "dep": "root",
+                    "deps": "_",
+                    "misc": "SpaceAfter=No",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 5,
+                    "span": {
+                      "start": 68,
+                      "end": 69
+                    },
+                    "text": ",",
+                    "lemma": ",",
+                    "pos": "PUNCT",
+                    "xpos": ",",
+                    "features": {},
+                    "head": 4,
+                    "dep": "punct",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": true
+                  },
+                  {
+                    "id": 6,
+                    "span": {
+                      "start": 70,
+                      "end": 73
+                    },
+                    "text": "the",
+                    "lemma": "the",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
+                    "head": 8,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 7,
+                    "span": {
+                      "start": 74,
+                      "end": 78
+                    },
+                    "text": "silt",
+                    "lemma": "silt",
+                    "pos": "ADJ",
+                    "xpos": "JJ",
+                    "features": {
+                      "Degree": "Pos"
+                    },
+                    "head": 8,
+                    "dep": "amod",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 8,
+                    "span": {
+                      "start": 79,
+                      "end": 86
+                    },
+                    "text": "settles",
+                    "lemma": "settle",
+                    "pos": "NOUN",
+                    "xpos": "NNS",
+                    "features": {
+                      "Number": "Plur"
+                    },
+                    "head": 4,
+                    "dep": "obj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 9,
+                    "span": {
+                      "start": 87,
+                      "end": 90
+                    },
+                    "text": "and",
+                    "lemma": "and",
+                    "pos": "CCONJ",
+                    "xpos": "CC",
+                    "features": {},
+                    "head": 10,
+                    "dep": "cc",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 10,
+                    "span": {
+                      "start": 91,
+                      "end": 97
+                    },
+                    "text": "builds",
+                    "lemma": "build",
+                    "pos": "VERB",
+                    "xpos": "VBZ",
+                    "features": {
+                      "Mood": "Ind",
+                      "Number": "Sing",
+                      "Person": "3",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 4,
+                    "dep": "conj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 11,
+                    "span": {
+                      "start": 98,
+                      "end": 99
+                    },
+                    "text": "a",
+                    "lemma": "a",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Ind",
+                      "PronType": "Art"
+                    },
+                    "head": 12,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 12,
+                    "span": {
+                      "start": 100,
+                      "end": 105
+                    },
+                    "text": "delta",
+                    "lemma": "delta",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 10,
+                    "dep": "obj",
+                    "deps": "_",
+                    "misc": "SpaceAfter=No",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 13,
+                    "span": {
+                      "start": 105,
+                      "end": 106
+                    },
+                    "text": ".",
+                    "lemma": ".",
+                    "pos": "PUNCT",
+                    "xpos": ".",
+                    "features": {},
+                    "head": 4,
+                    "dep": "punct",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": true
+                  }
+                ],
+                "word_count": 11,
+                "tree_depth": 3,
+                "passive": false,
+                "negations": [],
+                "modals": [],
+                "clausal_complements": [],
+                "root_adverbials": [
+                  {
+                    "adv_id": 1,
+                    "adv_lemma": "where"
+                  }
+                ],
+                "hearst_pairs": [],
+                "root_mood": {
+                  "root_id": 4,
+                  "mood": "Ind"
+                }
+              },
+              {
+                "span": {
+                  "start": 107,
+                  "end": 159
+                },
+                "text": "A delta grows for as long as the river carries silt.",
+                "tokens": [
+                  {
+                    "id": 1,
+                    "span": {
+                      "start": 107,
+                      "end": 108
+                    },
+                    "text": "A",
+                    "lemma": "a",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Ind",
+                      "PronType": "Art"
+                    },
+                    "head": 2,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 2,
+                    "span": {
+                      "start": 109,
+                      "end": 114
+                    },
+                    "text": "delta",
+                    "lemma": "delta",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 3,
+                    "dep": "nsubj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 3,
+                    "span": {
+                      "start": 115,
+                      "end": 120
+                    },
+                    "text": "grows",
+                    "lemma": "grow",
+                    "pos": "VERB",
+                    "xpos": "VBZ",
+                    "features": {
+                      "Mood": "Ind",
+                      "Number": "Sing",
+                      "Person": "3",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 0,
+                    "dep": "root",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 4,
+                    "span": {
+                      "start": 121,
+                      "end": 124
+                    },
+                    "text": "for",
+                    "lemma": "for",
+                    "pos": "ADP",
+                    "xpos": "IN",
+                    "features": {},
+                    "head": 6,
+                    "dep": "case",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 5,
+                    "span": {
+                      "start": 125,
+                      "end": 127
+                    },
+                    "text": "as",
+                    "lemma": "as",
+                    "pos": "ADV",
+                    "xpos": "RB",
+                    "features": {},
+                    "head": 6,
+                    "dep": "advmod",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 6,
+                    "span": {
+                      "start": 128,
+                      "end": 132
+                    },
+                    "text": "long",
+                    "lemma": "long",
+                    "pos": "ADV",
+                    "xpos": "RB",
+                    "features": {
+                      "Degree": "Pos"
+                    },
+                    "head": 3,
+                    "dep": "obl",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 7,
+                    "span": {
+                      "start": 133,
+                      "end": 135
+                    },
+                    "text": "as",
+                    "lemma": "as",
+                    "pos": "SCONJ",
+                    "xpos": "IN",
+                    "features": {},
+                    "head": 10,
+                    "dep": "mark",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 8,
+                    "span": {
+                      "start": 136,
+                      "end": 139
+                    },
+                    "text": "the",
+                    "lemma": "the",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
+                    "head": 9,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 9,
+                    "span": {
+                      "start": 140,
+                      "end": 145
+                    },
+                    "text": "river",
+                    "lemma": "river",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 10,
+                    "dep": "nsubj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 10,
+                    "span": {
+                      "start": 146,
+                      "end": 153
+                    },
+                    "text": "carries",
+                    "lemma": "carry",
+                    "pos": "VERB",
+                    "xpos": "VBZ",
+                    "features": {
+                      "Mood": "Ind",
+                      "Number": "Sing",
+                      "Person": "3",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 3,
+                    "dep": "advcl",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 11,
+                    "span": {
+                      "start": 154,
+                      "end": 158
+                    },
+                    "text": "silt",
+                    "lemma": "silt",
+                    "pos": "ADV",
+                    "xpos": "RB",
+                    "features": {},
+                    "head": 10,
+                    "dep": "advmod",
+                    "deps": "_",
+                    "misc": "SpaceAfter=No",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 12,
+                    "span": {
+                      "start": 158,
+                      "end": 159
+                    },
+                    "text": ".",
+                    "lemma": ".",
+                    "pos": "PUNCT",
+                    "xpos": ".",
+                    "features": {},
+                    "head": 3,
+                    "dep": "punct",
+                    "deps": "_",
+                    "misc": "SpaceAfter=No",
+                    "is_punct": true
+                  }
+                ],
+                "word_count": 11,
+                "tree_depth": 3,
+                "passive": false,
+                "negations": [],
+                "modals": [],
+                "clausal_complements": [],
+                "root_adverbials": [],
+                "hearst_pairs": [],
+                "root_mood": {
+                  "root_id": 3,
+                  "mood": "Ind"
+                }
+              }
+            ],
+            "metrics": {
+              "readability_grade": 3.665806451612905,
+              "lexical_density": 0.5483870967741935,
+              "compression_ratio": null
+            }
+          },
+          {
+            "span": {
+              "start": 161,
+              "end": 316
+            },
+            "text": "Engineers who dam a river starve its delta of silt. The delta then shrinks, and the sea takes the land. Restoring the flow of silt is how a delta is saved.",
+            "kind": "paragraph",
+            "sentences": [
+              {
+                "span": {
+                  "start": 161,
+                  "end": 212
+                },
+                "text": "Engineers who dam a river starve its delta of silt.",
+                "tokens": [
+                  {
+                    "id": 1,
+                    "span": {
+                      "start": 161,
+                      "end": 170
+                    },
+                    "text": "Engineers",
+                    "lemma": "engineer",
+                    "pos": "NOUN",
+                    "xpos": "NNS",
+                    "features": {
+                      "Number": "Plur"
+                    },
+                    "head": 6,
+                    "dep": "nsubj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 2,
+                    "span": {
+                      "start": 171,
+                      "end": 174
+                    },
+                    "text": "who",
+                    "lemma": "who",
+                    "pos": "PRON",
+                    "xpos": "WP",
+                    "features": {
+                      "PronType": "Rel"
+                    },
+                    "head": 3,
+                    "dep": "nsubj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 3,
+                    "span": {
+                      "start": 175,
+                      "end": 178
+                    },
+                    "text": "dam",
+                    "lemma": "dam",
+                    "pos": "VERB",
+                    "xpos": "VBP",
+                    "features": {
+                      "Mood": "Ind",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 1,
+                    "dep": "acl:relcl",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 4,
+                    "span": {
+                      "start": 179,
+                      "end": 180
+                    },
+                    "text": "a",
+                    "lemma": "a",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Ind",
+                      "PronType": "Art"
+                    },
+                    "head": 5,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 5,
+                    "span": {
+                      "start": 181,
+                      "end": 186
+                    },
+                    "text": "river",
+                    "lemma": "river",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 3,
+                    "dep": "obj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 6,
+                    "span": {
+                      "start": 187,
+                      "end": 193
+                    },
+                    "text": "starve",
+                    "lemma": "starve",
+                    "pos": "VERB",
+                    "xpos": "VB",
+                    "features": {
+                      "VerbForm": "Inf"
+                    },
+                    "head": 0,
+                    "dep": "root",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 7,
+                    "span": {
+                      "start": 194,
+                      "end": 197
+                    },
+                    "text": "its",
+                    "lemma": "its",
+                    "pos": "PRON",
+                    "xpos": "PRP$",
+                    "features": {
+                      "Gender": "Neut",
+                      "Number": "Sing",
+                      "Person": "3",
+                      "Poss": "Yes",
+                      "PronType": "Prs"
+                    },
+                    "head": 8,
+                    "dep": "nmod:poss",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 8,
+                    "span": {
+                      "start": 198,
+                      "end": 203
+                    },
+                    "text": "delta",
+                    "lemma": "delta",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 6,
+                    "dep": "obj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 9,
+                    "span": {
+                      "start": 204,
+                      "end": 206
+                    },
+                    "text": "of",
+                    "lemma": "of",
+                    "pos": "ADP",
+                    "xpos": "IN",
+                    "features": {},
+                    "head": 10,
+                    "dep": "case",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 10,
+                    "span": {
+                      "start": 207,
+                      "end": 211
+                    },
+                    "text": "silt",
+                    "lemma": "silt",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 8,
+                    "dep": "nmod",
+                    "deps": "_",
+                    "misc": "SpaceAfter=No",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 11,
+                    "span": {
+                      "start": 211,
+                      "end": 212
+                    },
+                    "text": ".",
+                    "lemma": ".",
+                    "pos": "PUNCT",
+                    "xpos": ".",
+                    "features": {},
+                    "head": 6,
+                    "dep": "punct",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": true
+                  }
+                ],
+                "word_count": 10,
+                "tree_depth": 4,
+                "passive": false,
+                "negations": [],
+                "modals": [],
+                "clausal_complements": [],
+                "root_adverbials": [],
+                "hearst_pairs": [],
+                "root_mood": null
+              },
+              {
+                "span": {
+                  "start": 213,
+                  "end": 264
+                },
+                "text": "The delta then shrinks, and the sea takes the land.",
+                "tokens": [
+                  {
+                    "id": 1,
+                    "span": {
+                      "start": 213,
+                      "end": 216
+                    },
+                    "text": "The",
+                    "lemma": "the",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
+                    "head": 2,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 2,
+                    "span": {
+                      "start": 217,
+                      "end": 222
+                    },
+                    "text": "delta",
+                    "lemma": "delta",
+                    "pos": "PROPN",
+                    "xpos": "NNP",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 4,
+                    "dep": "nsubj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 3,
+                    "span": {
+                      "start": 223,
+                      "end": 227
+                    },
+                    "text": "then",
+                    "lemma": "then",
+                    "pos": "ADV",
+                    "xpos": "RB",
+                    "features": {
+                      "PronType": "Dem"
+                    },
+                    "head": 4,
+                    "dep": "advmod",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 4,
+                    "span": {
+                      "start": 228,
+                      "end": 235
+                    },
+                    "text": "shrinks",
+                    "lemma": "shrink",
+                    "pos": "VERB",
+                    "xpos": "VBZ",
+                    "features": {
+                      "Mood": "Ind",
+                      "Number": "Sing",
+                      "Person": "3",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 0,
+                    "dep": "root",
+                    "deps": "_",
+                    "misc": "SpaceAfter=No",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 5,
+                    "span": {
+                      "start": 235,
+                      "end": 236
+                    },
+                    "text": ",",
+                    "lemma": ",",
+                    "pos": "PUNCT",
+                    "xpos": ",",
+                    "features": {},
+                    "head": 9,
+                    "dep": "punct",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": true
+                  },
+                  {
+                    "id": 6,
+                    "span": {
+                      "start": 237,
+                      "end": 240
+                    },
+                    "text": "and",
+                    "lemma": "and",
+                    "pos": "CCONJ",
+                    "xpos": "CC",
+                    "features": {},
+                    "head": 9,
+                    "dep": "cc",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 7,
+                    "span": {
+                      "start": 241,
+                      "end": 244
+                    },
+                    "text": "the",
+                    "lemma": "the",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
+                    "head": 8,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 8,
+                    "span": {
+                      "start": 245,
+                      "end": 248
+                    },
+                    "text": "sea",
+                    "lemma": "sea",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 9,
+                    "dep": "nsubj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 9,
+                    "span": {
+                      "start": 249,
+                      "end": 254
+                    },
+                    "text": "takes",
+                    "lemma": "take",
+                    "pos": "VERB",
+                    "xpos": "VBZ",
+                    "features": {
+                      "Mood": "Ind",
+                      "Number": "Sing",
+                      "Person": "3",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 4,
+                    "dep": "conj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 10,
+                    "span": {
+                      "start": 255,
+                      "end": 258
+                    },
+                    "text": "the",
+                    "lemma": "the",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
+                    "head": 11,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 11,
+                    "span": {
+                      "start": 259,
+                      "end": 263
+                    },
+                    "text": "land",
+                    "lemma": "land",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 9,
+                    "dep": "obj",
+                    "deps": "_",
+                    "misc": "SpaceAfter=No",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 12,
+                    "span": {
+                      "start": 263,
+                      "end": 264
+                    },
+                    "text": ".",
+                    "lemma": ".",
+                    "pos": "PUNCT",
+                    "xpos": ".",
+                    "features": {},
+                    "head": 4,
+                    "dep": "punct",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": true
+                  }
+                ],
+                "word_count": 10,
+                "tree_depth": 3,
+                "passive": false,
+                "negations": [],
+                "modals": [],
+                "clausal_complements": [],
+                "root_adverbials": [
+                  {
+                    "adv_id": 3,
+                    "adv_lemma": "then"
+                  }
+                ],
+                "hearst_pairs": [],
+                "root_mood": {
+                  "root_id": 4,
+                  "mood": "Ind"
+                }
+              },
+              {
+                "span": {
+                  "start": 265,
+                  "end": 316
+                },
+                "text": "Restoring the flow of silt is how a delta is saved.",
+                "tokens": [
+                  {
+                    "id": 1,
+                    "span": {
+                      "start": 265,
+                      "end": 274
+                    },
+                    "text": "Restoring",
+                    "lemma": "Restor",
+                    "pos": "VERB",
+                    "xpos": "VB",
+                    "features": {
+                      "Mood": "Imp",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 0,
+                    "dep": "root",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 2,
+                    "span": {
+                      "start": 275,
+                      "end": 278
+                    },
+                    "text": "the",
+                    "lemma": "the",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
+                    "head": 3,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 3,
+                    "span": {
+                      "start": 279,
+                      "end": 283
+                    },
+                    "text": "flow",
+                    "lemma": "flow",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 6,
+                    "dep": "nsubj",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 4,
+                    "span": {
+                      "start": 284,
+                      "end": 286
+                    },
+                    "text": "of",
+                    "lemma": "of",
+                    "pos": "ADP",
+                    "xpos": "IN",
+                    "features": {},
+                    "head": 5,
+                    "dep": "case",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 5,
+                    "span": {
+                      "start": 287,
+                      "end": 291
+                    },
+                    "text": "silt",
+                    "lemma": "silt",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 3,
+                    "dep": "nmod",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 6,
+                    "span": {
+                      "start": 292,
+                      "end": 294
+                    },
+                    "text": "is",
+                    "lemma": "be",
+                    "pos": "VERB",
+                    "xpos": "VBZ",
+                    "features": {
+                      "Mood": "Ind",
+                      "Number": "Sing",
+                      "Person": "3",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 1,
+                    "dep": "ccomp",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 7,
+                    "span": {
+                      "start": 295,
+                      "end": 298
+                    },
+                    "text": "how",
+                    "lemma": "how",
+                    "pos": "ADV",
+                    "xpos": "WRB",
+                    "features": {
+                      "PronType": "Int"
+                    },
+                    "head": 11,
+                    "dep": "advmod",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 8,
+                    "span": {
+                      "start": 299,
+                      "end": 300
+                    },
+                    "text": "a",
+                    "lemma": "a",
+                    "pos": "DET",
+                    "xpos": "DT",
+                    "features": {
+                      "Definite": "Ind",
+                      "PronType": "Art"
+                    },
+                    "head": 9,
+                    "dep": "det",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 9,
+                    "span": {
+                      "start": 301,
+                      "end": 306
+                    },
+                    "text": "delta",
+                    "lemma": "delta",
+                    "pos": "NOUN",
+                    "xpos": "NN",
+                    "features": {
+                      "Number": "Sing"
+                    },
+                    "head": 11,
+                    "dep": "nsubj:pass",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 10,
+                    "span": {
+                      "start": 307,
+                      "end": 309
+                    },
+                    "text": "is",
+                    "lemma": "be",
+                    "pos": "AUX",
+                    "xpos": "VBZ",
+                    "features": {
+                      "Mood": "Ind",
+                      "Number": "Sing",
+                      "Person": "3",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
+                    "head": 11,
+                    "dep": "aux:pass",
+                    "deps": "_",
+                    "misc": "",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 11,
+                    "span": {
+                      "start": 310,
+                      "end": 315
+                    },
+                    "text": "saved",
+                    "lemma": "save",
+                    "pos": "VERB",
+                    "xpos": "VBN",
+                    "features": {
+                      "Tense": "Past",
+                      "VerbForm": "Part",
+                      "Voice": "Pass"
+                    },
+                    "head": 6,
+                    "dep": "ccomp",
+                    "deps": "_",
+                    "misc": "SpaceAfter=No",
+                    "is_punct": false
+                  },
+                  {
+                    "id": 12,
+                    "span": {
+                      "start": 315,
+                      "end": 316
+                    },
+                    "text": ".",
+                    "lemma": ".",
+                    "pos": "PUNCT",
+                    "xpos": ".",
+                    "features": {},
+                    "head": 1,
+                    "dep": "punct",
+                    "deps": "_",
+                    "misc": "SpaceAfter=No",
+                    "is_punct": true
+                  }
+                ],
+                "word_count": 11,
+                "tree_depth": 4,
+                "passive": true,
+                "negations": [],
+                "modals": [],
+                "clausal_complements": [
+                  {
+                    "verb_id": 1,
+                    "verb_lemma": "Restor",
+                    "ccomp_id": 6,
+                    "subject_id": null,
+                    "subject_lemma": null
+                  },
+                  {
+                    "verb_id": 6,
+                    "verb_lemma": "be",
+                    "ccomp_id": 11,
+                    "subject_id": 3,
+                    "subject_lemma": "flow"
+                  }
+                ],
+                "root_adverbials": [],
+                "hearst_pairs": [],
+                "root_mood": {
+                  "root_id": 1,
+                  "mood": "Imp"
+                }
+              }
+            ],
+            "metrics": {
+              "readability_grade": 4.046451612903226,
+              "lexical_density": 0.5161290322580645,
+              "compression_ratio": null
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_words": 62,
+      "total_sentences": 6,
+      "paragraph_count": 2,
+      "mean_sentence_length": 10.333333333333334,
+      "sentence_length_std": 0.816496580927726,
+      "vocabulary_ttr": 0.5645161290322581,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.16666666666666666
+    },
+    "skipped": []
+  }
+}

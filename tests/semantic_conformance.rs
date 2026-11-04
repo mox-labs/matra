@@ -1,37 +1,124 @@
-//! The FFI shape fixture (EP-0009 M5): `semantic_clusters` over the fixture's
-//! hand-built vectors must produce exactly the serialized value in
+//! The FFI shape fixture (EP-0009 M5): `matra::clusters` over a document
+//! whose embedder returns the fixture's hand-built vectors must produce
+//! exactly the clusters, edges and parameters in
 //! `spec/tests/semantic/clusters.json`. No model is required, so this
-//! runs everywhere. Comparison happens in the typed struct (f32 space),
-//! because JSON shortest-repr floats and f32-to-f64 widening disagree in
-//! the last bits while denoting the same f32.
+//! runs everywhere, a build without default features included. Scores
+//! are compared in f32 space, the precision the vectors carry: a JSON
+//! shortest-repr float and an f32 widened to f64 denote the same f32
+//! while differing as f64.
 
 use std::fs;
 use std::path::PathBuf;
 
-use matra::domain::{Embedding, SemanticClusters};
+use matra::domain::{
+    Cluster, Document, Embedding, Format, Identity, Paragraph, ParagraphKind, Parameters,
+    Provenance, ProvenanceSource, Section, Sentence, SimilarityEdge, Span,
+};
+use matra::embed::Embedder;
 
 #[derive(serde::Deserialize)]
 struct Fixture {
     name: String,
     embeddings: Vec<Vec<f32>>,
-    threshold: f32,
+    threshold: f64,
+    embedder: String,
+    expect: Expect,
+}
+
+#[derive(serde::Deserialize)]
+struct Expect {
+    parameters: Parameters,
+    clusters: Vec<Cluster>,
+    edges: Vec<SimilarityEdge>,
+}
+
+/// Returns the vectors it was built with, one per sentence, whatever the
+/// sentences say: the clustering, not an embedding model, is under test.
+struct Vectors {
+    vectors: Vec<Vec<f32>>,
     identity: String,
-    expect: SemanticClusters,
+}
+
+impl Embedder for Vectors {
+    fn embed(&self, texts: &[&str]) -> matra::domain::Result<Vec<Embedding>> {
+        assert_eq!(texts.len(), self.vectors.len(), "one vector per sentence");
+        Ok(self.vectors.iter().cloned().map(Embedding).collect())
+    }
+
+    fn identity(&self) -> &str {
+        &self.identity
+    }
+}
+
+/// A document of one paragraph holding one sentence per text: what
+/// `clusters` reads is the document's sentences, in order.
+fn document_of(texts: &[String]) -> Document {
+    let mut paragraph = Paragraph::new(String::new(), ParagraphKind::Paragraph, Span::default());
+    paragraph.sentences = texts
+        .iter()
+        .map(|text| Sentence::new(text.clone(), Vec::new()))
+        .collect();
+    Document::new(
+        Provenance::new(
+            Identity::new("fixture", None, None, None),
+            Format::PlainText,
+            ProvenanceSource::new(None, 0, "0".repeat(64)),
+        ),
+        vec![Section::new(None, 0, None, vec![paragraph])],
+        Vec::new(),
+    )
+}
+
+/// Clusters and edges equal, with scores compared in f32 space.
+fn assert_same(
+    got: &matra::domain::Clusters,
+    clusters: &[Cluster],
+    edges: &[SimilarityEdge],
+    at: &str,
+) {
+    assert_eq!(got.clusters, clusters, "{at}: clusters");
+    assert_eq!(got.edges.len(), edges.len(), "{at}: edge count");
+    for (g, e) in got.edges.iter().zip(edges) {
+        assert_eq!((g.a, g.b), (e.a, e.b), "{at}: edge");
+        assert_eq!(
+            g.score as f32, e.score as f32,
+            "{at}: edge ({}, {})",
+            g.a, g.b
+        );
+    }
 }
 
 #[test]
-fn semantic_clusters_matches_the_shape_fixture() {
+fn clusters_matches_the_shape_fixture() {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("spec/tests/semantic/clusters.json");
     let raw =
         fs::read_to_string(&path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
     let fixture: Fixture = serde_json::from_str(&raw)
         .unwrap_or_else(|e| panic!("malformed fixture {}: {e}", path.display()));
 
-    let embeddings: Vec<Embedding> = fixture.embeddings.into_iter().map(Embedding).collect();
-    let got =
-        matra::extraction::semantic_clusters(&embeddings, fixture.threshold, &fixture.identity)
-            .unwrap();
-    assert_eq!(got, fixture.expect, "fixture {}", fixture.name);
+    let texts: Vec<String> = (0..fixture.embeddings.len())
+        .map(|i| format!("Sentence {i}."))
+        .collect();
+    let doc = document_of(&texts);
+    let embedder = Vectors {
+        vectors: fixture.embeddings,
+        identity: fixture.embedder,
+    };
+    let got = matra::clusters(&doc, &embedder, fixture.threshold).unwrap();
+
+    assert_eq!(
+        got.provenance.parameters.as_ref(),
+        Some(&fixture.expect.parameters),
+        "fixture {}: parameters",
+        fixture.name
+    );
+    assert_eq!(got.provenance.source, doc.provenance.source);
+    assert_same(
+        &got,
+        &fixture.expect.clusters,
+        &fixture.expect.edges,
+        &fixture.name,
+    );
 }
 
 /// Reference-model conformance (EP-0009 M6): exact-vector and exact-cluster
@@ -51,7 +138,7 @@ mod reference_model {
     use std::fs;
     use std::path::PathBuf;
 
-    use matra::domain::SemanticCluster;
+    use matra::domain::{Cluster, SimilarityEdge};
     use matra::embed::Embedder;
     use matra::embed::model2vec::Model2Vec;
     use sha2::{Digest, Sha256};
@@ -71,8 +158,9 @@ mod reference_model {
     }
     #[derive(serde::Deserialize)]
     struct Case {
-        threshold: f32,
-        clusters: Vec<SemanticCluster>,
+        threshold: f64,
+        clusters: Vec<Cluster>,
+        edges: Vec<SimilarityEdge>,
     }
 
     /// The pinned model, from `MATRA_MODEL2VEC_DIR` when it is set and
@@ -122,10 +210,24 @@ mod reference_model {
             "vector bytes drifted: the bit-determinism contract is broken"
         );
 
+        // The same inputs as a document's sentences, through the outcome
+        // function a caller uses: the model embeds them there.
+        let doc = super::document_of(&fixture.inputs);
         for case in fixture.cases {
-            let got = matra::extraction::semantic_clusters(&embs, case.threshold, m.model_hash())
-                .expect("cluster");
-            assert_eq!(got.clusters, case.clusters, "threshold {}", case.threshold);
+            let got = matra::clusters(&doc, &m, case.threshold).expect("cluster");
+            assert_eq!(
+                got.provenance
+                    .parameters
+                    .as_ref()
+                    .and_then(|p| p.embedder.as_deref()),
+                Some(m.model_hash())
+            );
+            super::assert_same(
+                &got,
+                &case.clusters,
+                &case.edges,
+                &format!("threshold {}", case.threshold),
+            );
         }
     }
 }

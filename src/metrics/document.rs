@@ -18,7 +18,7 @@ const NOMINALIZATION_SUFFIXES: &[&str] = &["tion", "ment", "ness", "ity", "ence"
 /// two, and the type-token and nominalization ratios need a
 /// non-punctuation token. Materialized so the aggregates cross FFI as
 /// data (RFC-0008).
-pub fn compute(analysis: &mut Document) {
+pub(crate) fn compute(analysis: &mut Document) {
     let lengths: Vec<usize> = analysis.sentences().map(|s| s.word_count).collect();
     let total_sentences = lengths.len();
     let total_words: usize = lengths.iter().sum();

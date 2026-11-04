@@ -29,7 +29,7 @@ use std::path::{Path, PathBuf};
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
 
 use crate::config::Config;
-use crate::domain::{self, Document, Format, MAX_INPUT_BYTES, Sentence};
+use crate::domain::{self, Document, Format, MAX_INPUT_BYTES};
 
 /// The envelope's version integer. It increments on any change to the
 /// envelope's own shape or to the meaning of a field inside `result`.
@@ -175,7 +175,7 @@ enum Command {
         /// Number of sentences to return. Defaults to `summarize.n`.
         #[arg(short)]
         n: Option<usize>,
-        /// Ranking algorithm. Defaults to `summarize.algorithm`.
+        /// Ranking method. Defaults to `summarize.algorithm`.
         #[arg(long, value_enum)]
         method: Option<SummaryMethod>,
     },
@@ -186,7 +186,7 @@ enum Command {
         /// Maximum number of phrases to return. Defaults to `keyphrases.n`.
         #[arg(short)]
         n: Option<usize>,
-        /// Extraction algorithm. Defaults to `keyphrases.algorithm`.
+        /// Ranking method. Defaults to `keyphrases.algorithm`.
         #[arg(long, value_enum)]
         method: Option<KeyphraseMethod>,
     },
@@ -215,12 +215,16 @@ enum ConfigAction {
     },
 }
 
+/// `--method` for `summarize`: the command line's spelling of
+/// [`crate::SummaryMethod`], which [`summary_method`] translates.
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 enum SummaryMethod {
     Tfidf,
     Textrank,
 }
 
+/// `--method` for `keyphrases`: the command line's spelling of
+/// [`crate::KeyphraseMethod`], which [`keyphrase_method`] translates.
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 enum KeyphraseMethod {
     Rake,
@@ -444,40 +448,35 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
             Ok(outcome(doc.metrics.total_sentences == 0))
         }
         Command::Summarize { n, method, .. } => {
-            let sentences: Vec<Sentence> = doc.sentences().cloned().collect();
+            // The configuration applies here, at the application tier:
+            // the library's own default is `summarize(doc, n)`, and the
+            // command line always names the method it was told to use.
             let n = n.unwrap_or_else(|| cfg.summarize_n());
             let method = match method {
-                Some(m) => *m,
+                Some(m) => summary_method_of(*m),
                 None => summary_method(cfg.summarize_algorithm())?,
             };
-            let picked = match method {
-                SummaryMethod::Tfidf => crate::extraction::tfidf_summarize(&sentences, n)?,
-                SummaryMethod::Textrank => crate::extraction::textrank_summarize(&sentences, n)?,
-            };
+            let summary = crate::summarize_with(&doc, n, method)?;
             if cli.json {
-                write_envelope(out, "summarize", Some(&label), &picked)?;
+                write_envelope(out, "summarize", Some(&label), &summary)?;
             } else if !cli.quiet {
-                render::sentences(out, &picked)?;
+                render::sentences(out, &summary)?;
             }
-            Ok(outcome(picked.is_empty()))
+            Ok(outcome(summary.sentences.is_empty()))
         }
         Command::Keyphrases { n, method, .. } => {
-            let sentences: Vec<Sentence> = doc.sentences().cloned().collect();
             let n = n.unwrap_or_else(|| cfg.keyphrases_n());
             let method = match method {
-                Some(m) => *m,
+                Some(m) => keyphrase_method_of(*m),
                 None => keyphrase_method(cfg.keyphrases_algorithm())?,
             };
-            let phrases = match method {
-                KeyphraseMethod::Rake => crate::extraction::rake_keyphrases(&sentences, n)?,
-                KeyphraseMethod::Yake => crate::extraction::yake_keyphrases(&sentences, n)?,
-            };
+            let found = crate::keyphrases_with(&doc, n, method)?;
             if cli.json {
-                write_envelope(out, "keyphrases", Some(&label), &phrases)?;
+                write_envelope(out, "keyphrases", Some(&label), &found)?;
             } else if !cli.quiet {
-                render::phrases(out, &phrases)?;
+                render::phrases(out, &found)?;
             }
-            Ok(outcome(phrases.is_empty()))
+            Ok(outcome(found.phrases.is_empty()))
         }
         Command::Config { .. } | Command::Completions { .. } => unreachable!("dispatched above"),
     }
@@ -578,20 +577,39 @@ fn resolve_config(cli: &Cli) -> domain::Result<Config> {
     })
 }
 
-fn summary_method(name: &str) -> Fallible<SummaryMethod> {
+/// The library's method for `--method`.
+fn summary_method_of(method: SummaryMethod) -> crate::SummaryMethod {
+    match method {
+        SummaryMethod::Tfidf => crate::SummaryMethod::TfIdf,
+        SummaryMethod::Textrank => crate::SummaryMethod::TextRank,
+    }
+}
+
+/// The library's method for `--method`.
+fn keyphrase_method_of(method: KeyphraseMethod) -> crate::KeyphraseMethod {
+    match method {
+        KeyphraseMethod::Rake => crate::KeyphraseMethod::Rake,
+        KeyphraseMethod::Yake => crate::KeyphraseMethod::Yake,
+    }
+}
+
+/// The library's method for the configured `summarize.algorithm`. The
+/// names are the flag's, which `Config::resolve` already checked.
+fn summary_method(name: &str) -> Fallible<crate::SummaryMethod> {
     match name {
-        "tfidf" => Ok(SummaryMethod::Tfidf),
-        "textrank" => Ok(SummaryMethod::Textrank),
+        "tfidf" => Ok(crate::SummaryMethod::TfIdf),
+        "textrank" => Ok(crate::SummaryMethod::TextRank),
         other => {
             Err(format!("summarize.algorithm is `{other}`, which this build cannot run").into())
         }
     }
 }
 
-fn keyphrase_method(name: &str) -> Fallible<KeyphraseMethod> {
+/// The library's method for the configured `keyphrases.algorithm`.
+fn keyphrase_method(name: &str) -> Fallible<crate::KeyphraseMethod> {
     match name {
-        "rake" => Ok(KeyphraseMethod::Rake),
-        "yake" => Ok(KeyphraseMethod::Yake),
+        "rake" => Ok(crate::KeyphraseMethod::Rake),
+        "yake" => Ok(crate::KeyphraseMethod::Yake),
         other => {
             Err(format!("keyphrases.algorithm is `{other}`, which this build cannot run").into())
         }

@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 
-use crate::domain::{Error, Result, ScoredSentence, Sentence};
+use crate::domain::{Error, Result, Sentence};
 use crate::stopwords::is_stop_word;
 
 /// TF-IDF builds a sentence × term matrix and scores each sentence in linear
@@ -20,10 +20,11 @@ use crate::stopwords::is_stop_word;
 /// tuning silently changes TF-IDF behavior).
 const MAX_SENTENCES: usize = 2000;
 
-/// Extract top-N sentences by TF-IDF score, returned in document order.
+/// The top `n` sentences by TF-IDF score, as `(index, score)` pairs in
+/// document order.
 ///
 /// Returns [`Error::InputTooLarge`] when `sentences.len() > MAX_SENTENCES`.
-pub fn summarize(sentences: &[Sentence], n: usize) -> Result<Vec<ScoredSentence>> {
+pub(super) fn rank(sentences: &[&Sentence], n: usize) -> Result<Vec<(usize, f64)>> {
     if sentences.is_empty() || n == 0 {
         return Ok(Vec::new());
     }
@@ -98,14 +99,7 @@ pub fn summarize(sentences: &[Sentence], n: usize) -> Result<Vec<ScoredSentence>
     // Re-sort by document position.
     scored.sort_by_key(|&(idx, _)| idx);
 
-    Ok(scored
-        .into_iter()
-        .map(|(idx, score)| ScoredSentence {
-            text: sentences[idx].text.clone(),
-            score,
-            position: idx,
-        })
-        .collect())
+    Ok(scored)
 }
 
 #[cfg(test)]
@@ -132,6 +126,10 @@ mod tests {
 
     fn sent(text: &str, tokens: Vec<Token>) -> Sentence {
         Sentence::new(text.to_string(), tokens)
+    }
+
+    fn summarize(sentences: &[Sentence], n: usize) -> Result<Vec<(usize, f64)>> {
+        rank(&sentences.iter().collect::<Vec<_>>(), n)
     }
 
     #[test]
@@ -182,7 +180,7 @@ mod tests {
 
         let result = summarize(&sentences, 2).unwrap();
         assert_eq!(result.len(), 2);
-        assert!(result[0].position < result[1].position);
+        assert!(result[0].0 < result[1].0);
     }
 
     #[test]
@@ -208,7 +206,7 @@ mod tests {
 
         let result = summarize(&sentences, 1).unwrap();
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0].position, 1);
+        assert_eq!(result[0].0, 1);
     }
 
     #[test]

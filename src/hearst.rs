@@ -104,7 +104,7 @@ fn span(tokens: &[Token], head: &Token, marker_ids: &[usize]) -> HearstSpan {
 /// ids into `tokens`. An empty result means no construction matched,
 /// which (by the precision bias) includes sentences the model
 /// misparsed: the detector reports only what the arcs support.
-pub fn hypernymy_pairs(tokens: &[Token]) -> Vec<HearstPair> {
+pub(crate) fn hypernymy_pairs(tokens: &[Token]) -> Vec<HearstPair> {
     let mut pairs = Vec::new();
     for t in tokens {
         if !is_nominal(t) {

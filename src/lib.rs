@@ -3,24 +3,37 @@
 #[cfg(feature = "cli")]
 pub mod cli;
 pub mod config;
+// Without `udpipe` the build ships no parser, so no engine is built and no
+// reader runs: the readers are unreachable there, and still compile, which
+// is what boundary rule 6 asks of that build.
+#[cfg_attr(not(feature = "udpipe"), allow(dead_code))]
 mod decompose;
 mod detect;
 mod digest;
 pub mod domain;
 pub mod embed;
-pub mod extraction;
-pub mod hearst;
-pub mod metrics;
-pub mod nlp;
+mod extraction;
+mod hearst;
+mod metrics;
+mod nlp;
 mod source;
 mod stopwords;
 mod structure;
+
+// The published schemas, as the test suites check against them: one copy,
+// shared with the runners in tests/.
+#[cfg(test)]
+#[path = "../tests/document_schema/mod.rs"]
+mod document_schema;
 
 use std::path::{Path, PathBuf};
 
 use decompose::Decomposer;
 pub use domain::Block;
 use domain::{Document, Format, MAX_INPUT_BYTES, ParagraphKind};
+pub use extraction::{
+    KeyphraseMethod, SummaryMethod, keyphrases, keyphrases_with, summarize, summarize_with,
+};
 use nlp::NlpProvider;
 use source::Source;
 
@@ -29,8 +42,8 @@ use source::Source;
 ///
 /// Returns `Error::InputTooLarge { what: "input", .. }` so consumers can
 /// distinguish the bound check from per-extractor caps (which use distinct
-/// `what` labels). [`Engine::annotate`] runs this gate, and annotate is
-/// the only route from text to the parser.
+/// `what` labels). `Engine::annotate` runs this gate, and annotate is the
+/// only route from text to the parser.
 fn check_input_size(len: usize) -> domain::Result<()> {
     if len > MAX_INPUT_BYTES {
         return Err(domain::Error::InputTooLarge {
@@ -59,8 +72,8 @@ fn check_input_size(len: usize) -> domain::Result<()> {
 /// for fails with [`domain::Error::UnsupportedFormat`], and so do bytes
 /// that are not UTF-8 text.
 ///
-/// Every constructor reaches the parser through [`Engine::annotate`], so
-/// the [`MAX_INPUT_BYTES`] cap holds for all of them.
+/// Every constructor reaches the parser through the same step, so the
+/// [`MAX_INPUT_BYTES`] cap holds for all of them.
 #[derive(Debug, Clone)]
 pub struct Input(InputKind);
 
@@ -204,13 +217,19 @@ impl Iterator for Inputs {
 
 impl ExactSizeIterator for Inputs {}
 
-/// The assembled pipeline: a parser, plus the readers this build ships.
+/// The assembled pipeline: the parser, plus the readers this build ships.
 ///
 /// Construction is the wiring step; after it, analysis is
 /// `fetch -> detect -> read -> structure -> parse -> measure`, each step
 /// a crate-private module hiding one decision. Variation lives in the
 /// data ([`Input`]'s constructors, the format), not in the function
-/// namespace.
+/// namespace. What a caller does with the [`Document`] it returns is an
+/// outcome function's job ([`summarize`], [`keyphrases`], [`clusters`]),
+/// and those need no engine.
+///
+/// The parser is UDPipe with its pinned English model, so an engine is
+/// built only in a build with the `udpipe` feature: [`Engine::new`],
+/// [`Engine::from_config`] and [`Engine::from_config_with_notice`].
 pub struct Engine {
     nlp: Box<dyn NlpProvider>,
     readers: decompose::Decomposers,
@@ -218,19 +237,28 @@ pub struct Engine {
 
 impl Engine {
     /// Wire an engine around a parser, with the readers this build ships
-    /// (markdown, plain text and block input).
-    pub fn new(nlp: Box<dyn NlpProvider>) -> Self {
+    /// (markdown, plain text and block input). Crate-private: the parser
+    /// trait is, so the one parser outside the tests is UDPipe, wired by
+    /// the public constructors.
+    #[cfg(any(feature = "udpipe", test))]
+    pub(crate) fn with_parser(nlp: Box<dyn NlpProvider>) -> Self {
         Self {
             nlp,
             readers: standard_readers(),
         }
     }
 
-    /// Analyze one document: annotate, then compose.
+    /// Analyze one document: read it, parse each paragraph, and measure
+    /// the result.
     ///
     /// # Errors
     ///
-    /// Whatever [`Engine::annotate`] returns.
+    /// [`domain::Error::InputTooLarge`] over [`MAX_INPUT_BYTES`];
+    /// [`domain::Error::UnsupportedFormat`] for a format no reader ships
+    /// for, or bytes that are not UTF-8; [`domain::Error::InvalidInput`]
+    /// for a directory named as a file and for block input that does not
+    /// parse; [`domain::Error::Io`] when a file cannot be read; and
+    /// [`domain::Error::ParseFailed`] when the parser fails.
     pub fn analyze(&self, input: Input) -> domain::Result<Document> {
         let mut doc = self.annotate(input)?;
         self.compose(&mut doc);
@@ -242,20 +270,20 @@ impl Engine {
     /// Nothing is read or parsed until the returned iterator is pulled,
     /// and each pull runs one input through [`Engine::analyze`]. A
     /// failure is an `Err` item carrying the input's path when it has
-    /// one, and the stream goes on. Collect into [`domain::CorpusResult`]
-    /// to partition successes from failures:
+    /// one, and the stream goes on, so partitioning is the caller's:
     ///
     /// ```no_run
     /// # fn example(engine: &matra::Engine) -> matra::domain::Result<()> {
-    /// let result: matra::domain::CorpusResult =
-    ///     engine.analyze_all(matra::Inputs::dir("docs/")?).collect();
+    /// let (documents, failures): (Vec<_>, Vec<_>) = engine
+    ///     .analyze_all(matra::Inputs::dir("docs/")?)
+    ///     .partition(Result::is_ok);
     /// # Ok(())
     /// # }
     /// ```
     ///
-    /// The returned iterator borrows the engine and is not `Send`:
-    /// [`NlpProvider`] is `Send` without `Sync`, so the stream cannot be
-    /// shared across threads.
+    /// The returned iterator borrows the engine and is not `Send`: the
+    /// parser is `Send` without `Sync`, so the stream cannot be shared
+    /// across threads.
     pub fn analyze_all<I>(
         &self,
         inputs: I,
@@ -279,6 +307,10 @@ impl Engine {
     /// makes the input size cap a property of the pipeline rather than of
     /// each entry point: no input or analysed text over
     /// [`MAX_INPUT_BYTES`] reaches [`NlpProvider::parse`].
+    ///
+    /// Crate-private, with [`Engine::compose`]: a caller analyzes. A
+    /// public parse-only call would publish a second shape of `Document`,
+    /// every metric empty, under the same name (EPR-0006).
     ///
     /// Each paragraph is parsed on its own (never a whole document joined
     /// and matched back), and the token and sentence spans the parser
@@ -305,7 +337,7 @@ impl Engine {
     /// for a directory named as a file and for block input that does not
     /// parse; [`domain::Error::Io`] when a file cannot be read; and
     /// whatever the parser returns.
-    pub fn annotate(&self, input: Input) -> domain::Result<Document> {
+    pub(crate) fn annotate(&self, input: Input) -> domain::Result<Document> {
         let path = input.path().map(Path::to_path_buf);
         let (format, input_text, read) = match input.0 {
             InputKind::Text { text, format } => {
@@ -389,7 +421,7 @@ impl Engine {
     /// Run the metric suite over an annotated document. Total: metrics
     /// read what is attached and skip what is not; there is no failure
     /// path.
-    pub fn compose(&self, doc: &mut Document) {
+    pub(crate) fn compose(&self, doc: &mut Document) {
         let suite = metrics::default_suite();
         metrics::run_suite(doc, &suite);
     }
@@ -397,13 +429,37 @@ impl Engine {
 
 #[cfg(feature = "udpipe")]
 impl Engine {
-    /// Wire the standard pipeline from a resolved [`config::Config`]: the
-    /// UDPipe adapter over the configured model directory, plus the
-    /// readers this build ships.
+    /// The standard pipeline: UDPipe with its pinned English model, plus
+    /// the readers this build ships (markdown, plain text and block
+    /// input).
     ///
-    /// Additive to [`Engine::new`], which takes any provider. This is the
-    /// wiring most callers want, named once instead of rewritten per call
-    /// site.
+    /// The model is located the way every matra surface locates it,
+    /// from the environment alone: `MATRA_MODEL_DIR`, else the `models`
+    /// directory of the data root (`MATRA_DATA_DIR`, else
+    /// `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`), else an
+    /// existing `~/.matra/models`. It is downloaded there on first use
+    /// and verified against a digest pinned in the source. No
+    /// configuration file is read: a caller who wants one passes it,
+    /// with `Engine::from_config(&Config::resolve()?)`.
+    ///
+    /// ```no_run
+    /// let engine = matra::Engine::new()?;
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// [`domain::Error::InvalidInput`] when the environment names no
+    /// home directory at all, and whatever [`Engine::from_config`]
+    /// returns.
+    pub fn new() -> domain::Result<Engine> {
+        let cfg = config::Config::from_sources(|key| std::env::var(key).ok(), None)?;
+        Engine::from_config(&cfg)
+    }
+
+    /// The standard pipeline over the model directory a resolved
+    /// [`config::Config`] names: [`Engine::new`], with the locations
+    /// the caller resolved.
     ///
     /// ```no_run
     /// let cfg = matra::config::Config::resolve()?;
@@ -413,12 +469,12 @@ impl Engine {
     ///
     /// # Errors
     ///
-    /// Whatever [`nlp::udpipe::Udpipe::from_config`] returns: the model
-    /// download or its hash verification failed, or the model directory
-    /// is not writable.
+    /// [`domain::Error::Io`] when the model directory cannot be created
+    /// or written, or the download fails; [`domain::Error::ModelInvalid`]
+    /// when the downloaded bytes fail the pinned digest or do not load.
     pub fn from_config(cfg: &config::Config) -> domain::Result<Engine> {
         let nlp = nlp::udpipe::Udpipe::from_config(cfg)?;
-        Ok(Engine::new(Box::new(nlp)))
+        Ok(Engine::with_parser(Box::new(nlp)))
     }
 
     /// [`Engine::from_config`], with `notice` called once before each
@@ -445,22 +501,7 @@ impl Engine {
         notice: impl FnMut(&domain::ProvisionNotice),
     ) -> domain::Result<Engine> {
         let nlp = nlp::udpipe::Udpipe::from_config_with_notice(cfg, notice)?;
-        Ok(Engine::new(Box::new(nlp)))
-    }
-
-    /// [`config::Config::resolve()`] then [`Engine::from_config`]: the no-setup
-    /// path, and the only one-liner worth a second name.
-    ///
-    /// ```no_run
-    /// let engine = matra::Engine::with_defaults()?;
-    /// # Ok::<(), matra::domain::Error>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Whatever [`config::Config::resolve`] or [`Engine::from_config`] returns.
-    pub fn with_defaults() -> domain::Result<Engine> {
-        Engine::from_config(&config::Config::resolve()?)
+        Ok(Engine::with_parser(Box::new(nlp)))
     }
 }
 
@@ -471,6 +512,7 @@ impl Engine {
 /// `Format` variant fails compilation here, so a new format is a
 /// conscious registration decision rather than a silent
 /// `Error::UnsupportedFormat` at run time.
+#[cfg(any(feature = "udpipe", test))]
 fn default_reader(format: &Format) -> Option<Box<dyn Decomposer>> {
     match format {
         Format::Markdown => Some(Box::new(decompose::markdown::MarkdownDecomposer)),
@@ -493,6 +535,7 @@ fn reader_feature(format: &Format) -> Option<&'static str> {
 /// The reader table this build ships: markdown, plain text and block
 /// input. Lives in the composition root because it is the only place
 /// that names every adapter (boundary rule 7).
+#[cfg(any(feature = "udpipe", test))]
 fn standard_readers() -> decompose::Decomposers {
     let mut table = decompose::Decomposers::new();
     for format in [
@@ -509,35 +552,66 @@ fn standard_readers() -> decompose::Decomposers {
     table
 }
 
-/// Embed a document's sentences, then cluster them: the one place both
-/// halves of the semantic pipeline meet (rule 7). The embedder's own
-/// [`identity`](embed::Embedder::identity) travels into the result, so
-/// the scores cannot be attributed to a model that did not produce them.
+/// The sentences of `doc` grouped by the similarity of their embeddings:
+/// each sentence is embedded with `embedder`, and two sentences whose
+/// cosine similarity is at least `threshold` are joined by an edge. A
+/// cluster is a connected component of that graph (see
+/// [`domain::Clusters`] for what co-membership does and does not mean).
 ///
-/// Sentence text reaching the embedder already passed the pipeline's
-/// size cap on its way through `annotate`; no second cap applies here.
+/// The embedder is the caller's, always: matra builds none inside an
+/// outcome call, because building the default one downloads a model.
+/// [`embed::Embedder`] is the one port open to outside implementers. The
+/// result's provenance is the document's, with the method (`cosine`),
+/// the `threshold` and the embedder's
+/// [`identity`](embed::Embedder::identity) recorded, so the scores
+/// cannot be attributed to a model that did not produce them. matra knows
+/// no universal threshold; published values span 0.67 to 0.9.
+///
+/// This is the one place both halves meet, the embedding port and the
+/// clustering over its vectors, which is why it lives in the composition
+/// root (boundary rule 7). Sentence text reaching the embedder already
+/// passed the pipeline's size cap when the document was analysed.
+///
+/// ```no_run
+/// # #[cfg(feature = "model2vec")]
+/// # fn example(doc: &matra::domain::Document) -> matra::domain::Result<()> {
+/// let cfg = matra::config::Config::resolve()?;
+/// let embedder = matra::embed::model2vec::Model2Vec::from_config(&cfg)?;
+/// let found = matra::clusters(doc, &embedder, 0.85)?;
+/// println!("{} clusters", found.clusters.len());
+/// # Ok(())
+/// # }
+/// ```
 ///
 /// # Errors
 ///
-/// Whatever the embedder returns, plus [`domain::Error::InvalidInput`]
-/// if the embedder violates its length contract, plus everything
-/// [`extraction::semantic_clusters`] rejects.
-pub fn embed_and_cluster(
+/// [`domain::Error::InputTooLarge`] (`what` = `"clusters"`) when the
+/// document has more than 2,000 sentences, checked before anything is
+/// embedded; [`domain::Error::InvalidInput`] when `threshold` is not
+/// finite, or the embedder breaks its contract (the wrong number of
+/// vectors, vectors of different lengths, a non-finite value); and
+/// whatever the embedder returns.
+pub fn clusters(
     doc: &Document,
     embedder: &dyn embed::Embedder,
-    threshold: f32,
-) -> domain::Result<domain::SemanticClusters> {
+    threshold: f64,
+) -> domain::Result<domain::Clusters> {
     let texts: Vec<&str> = doc.sentences().map(|s| s.text.as_str()).collect();
     // The count cap fires before the expensive stage, not after it: an
     // over-cap document must not run a full embedding pass just to be
     // rejected by the clustering gate. The same check inside
-    // `extraction::semantic_clusters` still guards the vectors-in path.
-    if texts.len() > extraction::MAX_SEMANTIC_SENTENCES {
+    // `extraction::cluster` still guards the vectors themselves.
+    if texts.len() > extraction::MAX_CLUSTER_SENTENCES {
         return Err(domain::Error::InputTooLarge {
-            limit: extraction::MAX_SEMANTIC_SENTENCES,
+            limit: extraction::MAX_CLUSTER_SENTENCES,
             actual: texts.len(),
-            what: "semantic_clusters",
+            what: "clusters",
         });
+    }
+    if !threshold.is_finite() {
+        return Err(domain::Error::InvalidInput(format!(
+            "threshold must be finite, got {threshold}"
+        )));
     }
     let embeddings = embedder.embed(&texts)?;
     if embeddings.len() != texts.len() {
@@ -547,8 +621,20 @@ pub fn embed_and_cluster(
             texts.len()
         )));
     }
-    extraction::semantic_clusters(&embeddings, threshold, embedder.identity())
+    let (clusters, edges) = extraction::cluster(&embeddings, threshold)?;
+    Ok(domain::Clusters {
+        provenance: doc.provenance.derived(
+            CLUSTERS_METHOD,
+            domain::Parameters::clustering(threshold, embedder.identity()),
+        ),
+        clusters,
+        edges,
+    })
 }
+
+/// The method [`clusters`] records: connected components of the graph of
+/// sentence pairs whose cosine similarity clears the threshold.
+const CLUSTERS_METHOD: &str = "cosine";
 
 // ---------------------------------------------------------------------------
 // PyO3 bindings (behind "python" feature flag)
@@ -620,7 +706,7 @@ mod python {
     impl Matra {
         fn from_nlp(nlp: Box<dyn NlpProvider>) -> Self {
             Self {
-                engine: crate::Engine::new(nlp),
+                engine: crate::Engine::with_parser(nlp),
             }
         }
 
@@ -631,20 +717,17 @@ mod python {
                 .map_err(MatraError)
         }
 
-        /// Annotated structure for one in-memory plain-text document.
+        /// The document the outcome methods read: one in-memory text,
+        /// read as plain text and parsed, with the same size gate and
+        /// the same quote skipping as `analyze`.
         ///
-        /// Parse only: compose would fill a metric suite the callers of
-        /// this helper immediately discard.
+        /// Parse only: measuring would fill metric records no outcome
+        /// reads. Reading markdown as plain text here is a defect the
+        /// Python redesign removes (EPR-0006 milestone 5).
         fn annotated(&self, text: &str) -> Result<domain::Document, MatraError> {
             self.engine
                 .annotate(crate::Input::text(text, Format::PlainText))
                 .map_err(MatraError)
-        }
-
-        /// Pipeline-routed sentences for the extractors: same size gate,
-        /// same decomposition, same blockquote skipping as `analyze`.
-        fn sentences(&self, text: &str) -> Result<Vec<domain::Sentence>, MatraError> {
-            Ok(self.annotated(text)?.sentences().cloned().collect())
         }
     }
 
@@ -700,60 +783,65 @@ mod python {
             to_dict(py, &analysis)
         }
 
-        /// TF-IDF extractive summary. Returns a list of dicts.
+        /// A TF-IDF summary of the top `n` sentences: `summarize_with`,
+        /// returned as the `Summary` dict.
         fn tfidf_summarize<'py>(
             &self,
             py: Python<'py>,
             text: &str,
             n: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self.sentences(text)?;
-            let result = crate::extraction::tfidf_summarize(&sentences, n).map_err(MatraError)?;
+            let doc = self.annotated(text)?;
+            let result =
+                crate::summarize_with(&doc, n, crate::SummaryMethod::TfIdf).map_err(MatraError)?;
             to_dict(py, &result)
         }
 
-        /// TextRank extractive summary. Returns a list of dicts.
+        /// A TextRank summary of the top `n` sentences: `summarize_with`,
+        /// returned as the `Summary` dict.
         fn textrank_summarize<'py>(
             &self,
             py: Python<'py>,
             text: &str,
             n: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self.sentences(text)?;
-            let result =
-                crate::extraction::textrank_summarize(&sentences, n).map_err(MatraError)?;
+            let doc = self.annotated(text)?;
+            let result = crate::summarize_with(&doc, n, crate::SummaryMethod::TextRank)
+                .map_err(MatraError)?;
             to_dict(py, &result)
         }
 
-        /// RAKE keyphrase extraction. Returns a list of dicts.
+        /// At most `max_phrases` RAKE keyphrases: `keyphrases_with`,
+        /// returned as the `Keyphrases` dict.
         fn rake_keyphrases<'py>(
             &self,
             py: Python<'py>,
             text: &str,
             max_phrases: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self.sentences(text)?;
-            let result =
-                crate::extraction::rake_keyphrases(&sentences, max_phrases).map_err(MatraError)?;
+            let doc = self.annotated(text)?;
+            let result = crate::keyphrases_with(&doc, max_phrases, crate::KeyphraseMethod::Rake)
+                .map_err(MatraError)?;
             to_dict(py, &result)
         }
 
-        /// YAKE keyphrase extraction. Returns a list of dicts.
+        /// At most `max_phrases` YAKE keyphrases: `keyphrases_with`,
+        /// returned as the `Keyphrases` dict.
         fn yake_keyphrases<'py>(
             &self,
             py: Python<'py>,
             text: &str,
             max_phrases: usize,
         ) -> PyResult<Bound<'py, PyAny>> {
-            let sentences = self.sentences(text)?;
-            let result =
-                crate::extraction::yake_keyphrases(&sentences, max_phrases).map_err(MatraError)?;
+            let doc = self.annotated(text)?;
+            let result = crate::keyphrases_with(&doc, max_phrases, crate::KeyphraseMethod::Yake)
+                .map_err(MatraError)?;
             to_dict(py, &result)
         }
 
         /// Parse plain text, embed its sentences with `model`, and
-        /// cluster them at `threshold`. Returns the serialized
-        /// `SemanticClusters` as a dict.
+        /// cluster them at `threshold`: `clusters`, returned as the
+        /// `Clusters` dict.
         ///
         /// `model` is any Python object with `embed` and `identity`,
         /// `Model2Vec` included. Anything that is not the built-in
@@ -769,7 +857,7 @@ mod python {
             &self,
             py: Python<'py>,
             text: &str,
-            threshold: f32,
+            threshold: f64,
             model: &Bound<'py, PyAny>,
         ) -> PyResult<Bound<'py, PyAny>> {
             // Fast path: the built-in adapter is used directly, so the
@@ -777,14 +865,13 @@ mod python {
             #[cfg(feature = "model2vec")]
             if let Ok(loaded) = model.cast::<Model2Vec>() {
                 let doc = self.annotated(text)?;
-                let result = crate::embed_and_cluster(&doc, &loaded.get().inner, threshold)
-                    .map_err(MatraError)?;
+                let result =
+                    crate::clusters(&doc, &loaded.get().inner, threshold).map_err(MatraError)?;
                 return to_dict(py, &result);
             }
             let embedder = PyEmbedder::new(model)?;
             let doc = self.annotated(text)?;
-            let result =
-                crate::embed_and_cluster(&doc, &embedder, threshold).map_err(MatraError)?;
+            let result = crate::clusters(&doc, &embedder, threshold).map_err(MatraError)?;
             to_dict(py, &result)
         }
 
@@ -912,6 +999,16 @@ mod python {
         }
     }
 
+    /// What the vectors-in `semantic_clusters` returns: a `Clusters`
+    /// without its provenance, since no document was read, and with the
+    /// two parameters that provenance would record in its place.
+    #[derive(serde::Serialize)]
+    struct VectorClusters {
+        parameters: domain::Parameters,
+        clusters: Vec<domain::Cluster>,
+        edges: Vec<domain::SimilarityEdge>,
+    }
+
     /// Cluster caller-supplied embedding vectors at `threshold`,
     /// attributing the scores to `model_hash`. The vectors-in twin of
     /// `Matra.semantic_clusters` for consumers who already hold
@@ -921,14 +1018,21 @@ mod python {
     pub fn semantic_clusters<'py>(
         py: Python<'py>,
         embeddings: Vec<Vec<f32>>,
-        threshold: f32,
+        threshold: f64,
         model_hash: &str,
     ) -> PyResult<Bound<'py, PyAny>> {
         let embeddings: Vec<domain::Embedding> =
             embeddings.into_iter().map(domain::Embedding).collect();
-        let result = crate::extraction::semantic_clusters(&embeddings, threshold, model_hash)
-            .map_err(MatraError)?;
-        to_dict(py, &result)
+        let (clusters, edges) =
+            crate::extraction::cluster(&embeddings, threshold).map_err(MatraError)?;
+        to_dict(
+            py,
+            &VectorClusters {
+                parameters: domain::Parameters::clustering(threshold, model_hash),
+                clusters,
+                edges,
+            },
+        )
     }
 
     /// Run the matra command line and return its exit code.
@@ -1118,8 +1222,8 @@ mod python {
                         // Python floats are f64 and matra's carrier is
                         // f32, so every vector narrows here. The count
                         // and dimension contract is checked once, in
-                        // `embed_and_cluster` and `semantic_clusters`,
-                        // and is not restated here.
+                        // `clusters` and the clustering it calls, and is
+                        // not restated here.
                         let values = row.extract::<Vec<f64>>().map_err(|e| {
                             domain::Error::InvalidInput(format!(
                                 "the embedder's embed() returned a vector at index {i} that is not a sequence of numbers: {e}"
@@ -1341,7 +1445,7 @@ mod tests {
     }
 
     fn law_engine() -> Engine {
-        Engine::new(Box::new(DotSplitNlp))
+        Engine::with_parser(Box::new(DotSplitNlp))
     }
 
     /// Structural fingerprint for law equality: serialized documents plus
@@ -1438,7 +1542,7 @@ mod tests {
     #[test]
     fn law_l5_partition_documents_plus_errors_equals_inputs() {
         let (nlp, _, _) = ObservableNlp::new();
-        let engine = Engine::new(Box::new(nlp));
+        let engine = Engine::with_parser(Box::new(nlp));
         let dir = tempfile::tempdir().unwrap();
         let mut inputs: Vec<Input> = constructors("Good document one.", dir.path())
             .into_iter()
@@ -1451,10 +1555,11 @@ mod tests {
         );
         inputs.push(Input::file(dir.path().join("lost.md")));
         let n = inputs.len();
-        let result: domain::CorpusResult = engine.analyze_all(inputs).collect();
-        assert_eq!(result.corpus.documents.len() + result.errors.len(), n);
-        assert_eq!(result.corpus.documents.len(), 4);
-        assert_eq!(result.errors.len(), 5);
+        let (documents, errors): (Vec<_>, Vec<_>) =
+            engine.analyze_all(inputs).partition(Result::is_ok);
+        assert_eq!(documents.len() + errors.len(), n);
+        assert_eq!(documents.len(), 4);
+        assert_eq!(errors.len(), 5);
     }
 
     /// A failed read never reaches the parser, whatever the reason: a
@@ -1464,7 +1569,7 @@ mod tests {
     #[test]
     fn law_l6_a_failed_read_never_reaches_the_parser() {
         let (nlp, calls, _) = ObservableNlp::new();
-        let engine = Engine::new(Box::new(nlp));
+        let engine = Engine::with_parser(Box::new(nlp));
         let dir = tempfile::tempdir().unwrap();
         let ghost = dir.path().join("ghost.md");
         let inputs = vec![
@@ -1496,7 +1601,7 @@ mod tests {
     #[test]
     fn law_l7_no_oversized_input_reaches_the_parser() {
         let (nlp, _, max_len) = ObservableNlp::new();
-        let engine = Engine::new(Box::new(nlp));
+        let engine = Engine::with_parser(Box::new(nlp));
         let dir = tempfile::tempdir().unwrap();
         let oversized = "a".repeat(MAX_INPUT_BYTES + 1);
         for (name, input) in constructors(&oversized, dir.path()) {
@@ -1573,7 +1678,7 @@ mod tests {
     }
 
     fn accounting_engine() -> Engine {
-        Engine::new(Box::new(EmptyNlp))
+        Engine::with_parser(Box::new(EmptyNlp))
     }
 
     /// L8 over every conformance fixture, in the format it names.
@@ -1729,7 +1834,7 @@ mod tests {
     /// removed.
     #[test]
     fn token_and_sentence_spans_point_into_the_analysed_text() {
-        let engine = Engine::new(Box::new(WordNlp));
+        let engine = Engine::with_parser(Box::new(WordNlp));
         let md = "# Title\n\nSome **bold** and `code` here.\n\n- item text";
         let doc = engine.analyze(Input::text(md, Format::Markdown)).unwrap();
         let tokens: Vec<&str> = doc
@@ -1749,7 +1854,7 @@ mod tests {
 
     #[test]
     fn spans_count_bytes_not_characters() {
-        let engine = Engine::new(Box::new(WordNlp));
+        let engine = Engine::with_parser(Box::new(WordNlp));
         let text = "Café naïve.\n\nÜber.";
         let doc = engine
             .analyze(Input::text(text, Format::PlainText))
@@ -1765,7 +1870,7 @@ mod tests {
     /// and every span and the provenance describe that text.
     #[test]
     fn block_input_spans_point_into_the_joined_text() {
-        let engine = Engine::new(Box::new(WordNlp));
+        let engine = Engine::with_parser(Box::new(WordNlp));
         let doc = engine
             .analyze(Input::blocks([
                 Block::heading(1, "Field notes"),
@@ -1789,7 +1894,7 @@ mod tests {
     #[test]
     fn a_quote_is_not_parsed() {
         let (nlp, calls, _) = ObservableNlp::new();
-        let engine = Engine::new(Box::new(nlp));
+        let engine = Engine::with_parser(Box::new(nlp));
         let doc = engine
             .analyze(Input::text("> Quoted words.", Format::Markdown))
             .unwrap();
@@ -1989,7 +2094,7 @@ mod tests {
     #[test]
     fn input_at_cap_is_accepted() {
         // "a" repeated MAX_INPUT_BYTES times = exactly the cap.
-        let engine = Engine::new(Box::new(EmptyNlp));
+        let engine = Engine::with_parser(Box::new(EmptyNlp));
         assert!(
             engine
                 .annotate(Input::text("a".repeat(MAX_INPUT_BYTES), Format::PlainText))
@@ -2000,7 +2105,7 @@ mod tests {
 
     #[test]
     fn input_one_byte_over_cap_is_rejected() {
-        let engine = Engine::new(Box::new(EmptyNlp));
+        let engine = Engine::with_parser(Box::new(EmptyNlp));
         match engine.annotate(Input::text(
             "a".repeat(MAX_INPUT_BYTES + 1),
             Format::PlainText,
@@ -2084,7 +2189,7 @@ mod tests {
             }
         }
 
-        let engine = Engine::new(Box::new(SuchAsNlp));
+        let engine = Engine::with_parser(Box::new(SuchAsNlp));
         let doc = engine
             .annotate(Input::text("any text", Format::PlainText))
             .unwrap();
@@ -2191,7 +2296,7 @@ mod tests {
     }
 
     // ------------------------------------------------------------------
-    // embed_and_cluster: the composition root's pairing of the halves
+    // clusters: the composition root's pairing of the two halves
     // ------------------------------------------------------------------
 
     /// Mock embedder: a fixed vector per call, optionally lying about
@@ -2211,8 +2316,19 @@ mod tests {
         }
     }
 
+    /// An embedder that panics if reached: a gate must fire first.
+    struct MustNotEmbed;
+    impl embed::Embedder for MustNotEmbed {
+        fn embed(&self, _texts: &[&str]) -> domain::Result<Vec<domain::Embedding>> {
+            panic!("embed ran when a gate should have refused first");
+        }
+        fn identity(&self) -> &str {
+            "unreached"
+        }
+    }
+
     fn two_sentence_doc() -> Document {
-        let engine = Engine::new(Box::new(DotSplitNlp));
+        let engine = Engine::with_parser(Box::new(DotSplitNlp));
         engine
             .annotate(Input::text(
                 "One sentence. Another sentence.",
@@ -2221,27 +2337,38 @@ mod tests {
             .expect("annotate")
     }
 
+    /// The result carries the document's provenance, plus the method,
+    /// the threshold and the embedder's own identity.
     #[test]
-    fn embed_and_cluster_carries_the_embedder_identity() {
+    fn clusters_records_the_embedder_and_the_threshold() {
         let doc = two_sentence_doc();
         let embedder = FixedEmbedder {
             identity: "the-real-model",
             force_count: None,
         };
-        let out = embed_and_cluster(&doc, &embedder, 0.9).expect("cluster");
-        assert_eq!(out.identity, "the-real-model");
+        let out = clusters(&doc, &embedder, 0.9).expect("cluster");
+        let p = &out.provenance;
+        assert_eq!(p.method.as_deref(), Some(CLUSTERS_METHOD));
+        let parameters = p.parameters.as_ref().expect("parameters");
+        assert_eq!(parameters.embedder.as_deref(), Some("the-real-model"));
+        assert_eq!(parameters.threshold, Some(0.9));
+        assert_eq!(parameters.n, None);
+        assert_eq!(p.source, doc.provenance.source, "the document's input");
+        assert_eq!(p.parser, doc.provenance.parser, "the document's parser");
         // Identical vectors cluster together, sanity of the plumbing.
         assert_eq!(out.clusters.len(), 1);
+        assert_eq!(out.clusters[0].members, [0, 1]);
+        assert_eq!(out.edges.len(), 1);
     }
 
     #[test]
-    fn embed_and_cluster_rejects_a_length_contract_violation() {
+    fn clusters_rejects_a_length_contract_violation() {
         let doc = two_sentence_doc();
         let embedder = FixedEmbedder {
             identity: "liar",
             force_count: Some(1),
         };
-        match embed_and_cluster(&doc, &embedder, 0.9) {
+        match clusters(&doc, &embedder, 0.9) {
             Err(domain::Error::InvalidInput(msg)) => {
                 assert!(msg.contains("violating its contract"));
             }
@@ -2250,27 +2377,404 @@ mod tests {
     }
 
     #[test]
-    fn embed_and_cluster_caps_before_embedding() {
-        /// An embedder that panics if reached: the cap must fire first.
-        struct MustNotEmbed;
-        impl embed::Embedder for MustNotEmbed {
-            fn embed(&self, _texts: &[&str]) -> domain::Result<Vec<domain::Embedding>> {
-                panic!("embed ran on an over-cap document");
-            }
-            fn identity(&self) -> &str {
-                "unreached"
-            }
-        }
-        let many = "Word. ".repeat(extraction::MAX_SEMANTIC_SENTENCES + 1);
-        let engine = Engine::new(Box::new(DotSplitNlp));
+    fn clusters_caps_before_embedding() {
+        let many = "Word. ".repeat(extraction::MAX_CLUSTER_SENTENCES + 1);
+        let engine = Engine::with_parser(Box::new(DotSplitNlp));
         let doc = engine
             .annotate(Input::text(many, Format::PlainText))
             .expect("annotate");
-        match embed_and_cluster(&doc, &MustNotEmbed, 0.9) {
+        match clusters(&doc, &MustNotEmbed, 0.9) {
             Err(domain::Error::InputTooLarge { what, .. }) => {
-                assert_eq!(what, "semantic_clusters");
+                assert_eq!(what, "clusters");
             }
             other => panic!("expected InputTooLarge, got {:?}", other.map(|_| ())),
+        }
+    }
+
+    #[test]
+    fn clusters_refuses_a_non_finite_threshold_before_embedding() {
+        let doc = two_sentence_doc();
+        for threshold in [f64::NAN, f64::INFINITY] {
+            assert!(matches!(
+                clusters(&doc, &MustNotEmbed, threshold),
+                Err(domain::Error::InvalidInput(_))
+            ));
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // The outcome functions' provenance and defaults
+    // ------------------------------------------------------------------
+
+    /// A summary and keyphrases copy the document's provenance and add
+    /// the method that ran and the `n` they were asked for.
+    #[test]
+    fn outcomes_record_the_method_and_n() {
+        let doc = Engine::with_parser(Box::new(WordNlp))
+            .analyze(Input::text(
+                "Rivers carry silt.\n\nSilt builds deltas.",
+                Format::PlainText,
+            ))
+            .unwrap();
+        let summary = summarize(&doc, 1).unwrap();
+        assert_eq!(summary.provenance.method.as_deref(), Some("tfidf"));
+        let summary_with = summarize_with(&doc, 1, SummaryMethod::TextRank).unwrap();
+        assert_eq!(summary_with.provenance.method.as_deref(), Some("textrank"));
+        let phrases = keyphrases(&doc, 4).unwrap();
+        assert_eq!(phrases.provenance.method.as_deref(), Some("rake"));
+        let phrases_with = keyphrases_with(&doc, 4, KeyphraseMethod::Yake).unwrap();
+        assert_eq!(phrases_with.provenance.method.as_deref(), Some("yake"));
+        for (provenance, n) in [
+            (&summary.provenance, 1),
+            (&summary_with.provenance, 1),
+            (&phrases.provenance, 4),
+            (&phrases_with.provenance, 4),
+        ] {
+            let parameters = provenance.parameters.as_ref().unwrap();
+            assert_eq!(parameters.n, Some(n));
+            assert_eq!(parameters.threshold, None);
+            assert_eq!(parameters.embedder, None);
+            assert_eq!(provenance.source, doc.provenance.source);
+            assert_eq!(provenance.schema, doc.provenance.schema);
+        }
+        assert!(doc.provenance.method.is_none(), "a document has no method");
+        let json = serde_json::to_value(&summary).unwrap();
+        assert_eq!(
+            json["provenance"]["parameters"],
+            serde_json::json!({ "n": 1 }),
+            "only the parameters the method takes"
+        );
+        let json = serde_json::to_value(&doc).unwrap();
+        assert!(json["provenance"].get("method").is_none());
+        assert!(json["provenance"].get("parameters").is_none());
+    }
+
+    /// A summary sentence points back at the document's sentence: its
+    /// index among `Document::sentences`, its span and its text.
+    #[test]
+    fn a_summary_sentence_points_into_the_document() {
+        let text = "Rivers carry silt downstream.\n\nThe silt settles where rivers slow.";
+        let doc = Engine::with_parser(Box::new(WordNlp))
+            .analyze(Input::text(text, Format::PlainText))
+            .unwrap();
+        let summary = summarize(&doc, 2).unwrap();
+        assert_eq!(summary.sentences.len(), 2);
+        for picked in &summary.sentences {
+            let sentence = doc.sentences().nth(picked.index).unwrap();
+            assert_eq!(picked.span, sentence.span);
+            assert_eq!(picked.text, sentence.text);
+            assert_eq!(&text[picked.span.start..picked.span.end], picked.text);
+        }
+    }
+
+    /// The library's default methods are the ones `config/default.toml`
+    /// ships. The library reads no configuration, so the default is
+    /// written twice, and this is what holds the two together.
+    #[test]
+    fn the_default_methods_are_the_shipped_configuration_defaults() {
+        let cfg = config::Config::from_sources(
+            |key| (key == "HOME").then(|| "/nonexistent/matra-test-home".to_string()),
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            extraction::DEFAULT_SUMMARY_METHOD.name(),
+            cfg.summarize_algorithm()
+        );
+        assert_eq!(
+            extraction::DEFAULT_KEYPHRASE_METHOD.name(),
+            cfg.keyphrases_algorithm()
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // The schema lane with no model: what the pipeline emits matches the
+    // published schema. The conformance lanes check the real parser's
+    // output against the same schema; this keeps the check in every
+    // `cargo test`, through a stand-in parser that emits every kind of
+    // record field.
+    // ------------------------------------------------------------------
+
+    use crate::document_schema;
+
+    /// One sentence for any input: "Smith never said that animals such as
+    /// dogs bark." with the arcs a live parse gives it, so every derived
+    /// field on `Sentence` is populated.
+    struct RecordParser;
+
+    impl NlpProvider for RecordParser {
+        fn parse(&self, _text: &str) -> domain::Result<Vec<domain::Sentence>> {
+            let tok = |id: usize, text: &str, pos: &str, dep: &str, head: usize, feats: &str| {
+                domain::Token::builder(
+                    id,
+                    text.to_string(),
+                    text.to_lowercase(),
+                    pos.to_string(),
+                    head,
+                    dep.to_string(),
+                )
+                .feats(feats.to_string())
+                .is_punct(pos == "PUNCT")
+                .build()
+            };
+            Ok(vec![domain::Sentence::new(
+                "Smith never said that animals such as dogs may bark.".to_string(),
+                vec![
+                    tok(1, "Smith", "PROPN", "nsubj", 3, "Number=Sing"),
+                    tok(2, "never", "ADV", "advmod", 3, "_"),
+                    tok(
+                        3,
+                        "said",
+                        "VERB",
+                        "root",
+                        0,
+                        "Mood=Ind|Tense=Past|VerbForm=Fin",
+                    ),
+                    tok(4, "that", "SCONJ", "mark", 10, "_"),
+                    tok(5, "animals", "NOUN", "nsubj", 10, "Number=Plur"),
+                    tok(6, "such", "ADJ", "case", 8, "Degree=Pos"),
+                    tok(7, "as", "ADP", "fixed", 6, "_"),
+                    tok(8, "dogs", "NOUN", "nmod", 5, "Number=Plur"),
+                    tok(9, "may", "AUX", "aux", 10, "VerbForm=Fin"),
+                    tok(10, "bark", "VERB", "ccomp", 3, "VerbForm=Inf"),
+                    tok(11, ".", "PUNCT", "punct", 3, "_"),
+                ],
+            )])
+        }
+
+        fn identity(&self) -> domain::Identity {
+            domain::Identity::new(
+                "record-parser",
+                Some("fixture".to_string()),
+                Some("0".repeat(64)),
+                Some("MIT".to_string()),
+            )
+        }
+    }
+
+    fn record_document(text: &str, format: Format) -> Document {
+        Engine::with_parser(Box::new(RecordParser))
+            .analyze(Input::text(text, format))
+            .expect("analyze")
+    }
+
+    fn record_json(text: &str, format: Format) -> serde_json::Value {
+        serde_json::to_value(record_document(text, format)).expect("a document serializes")
+    }
+
+    #[test]
+    fn a_plain_text_document_matches_the_schema() {
+        let doc = record_json("One paragraph of prose.", Format::PlainText);
+        // The stand-in emits every record field, so the check below is
+        // over populated arrays and objects rather than empty ones.
+        let sentence = &doc["sections"][0]["paragraphs"][0]["sentences"][0];
+        for field in [
+            "negations",
+            "modals",
+            "clausal_complements",
+            "root_adverbials",
+            "hearst_pairs",
+        ] {
+            assert!(
+                !sentence[field].as_array().expect(field).is_empty(),
+                "the stand-in parse populates {field}"
+            );
+        }
+        assert!(sentence["root_mood"].is_object());
+        document_schema::assert_valid("document", &doc, "plain text");
+    }
+
+    #[test]
+    fn a_markdown_document_with_a_blockquote_matches_the_schema() {
+        let doc = record_json(
+            "# Title\n\nA paragraph.\n\n> A quotation, never parsed.\n\n## Second\n\nMore prose.\n",
+            Format::Markdown,
+        );
+        assert_eq!(doc["provenance"]["format"], "markdown");
+        document_schema::assert_valid("document", &doc, "markdown");
+    }
+
+    /// Lists, skipped constructs and their spans are in the schema too.
+    #[test]
+    fn a_markdown_document_with_skipped_constructs_matches_the_schema() {
+        let doc = record_json(
+            "---\ntitle: x\n---\n\n# Title\n\n- an item\n- another\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n```\ncode\n```\n",
+            Format::Markdown,
+        );
+        let kinds: Vec<&str> = doc["skipped"]
+            .as_array()
+            .expect("skipped")
+            .iter()
+            .map(|s| s["kind"].as_str().expect("kind"))
+            .collect();
+        assert_eq!(kinds, ["front_matter", "table", "code"]);
+        assert_eq!(
+            doc["sections"][0]["paragraphs"][0]["kind"], "list_item",
+            "a list item is a paragraph of its own kind"
+        );
+        document_schema::assert_valid("document", &doc, "markdown with skipped constructs");
+    }
+
+    /// Block input, as JSON, validates against its own published schema,
+    /// reads into a document that validates against the document schema,
+    /// and a block the schema does not allow is refused by the reader too.
+    #[test]
+    fn block_input_matches_its_schema_and_reads_into_a_document() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("spec/schema/v2/blocks.schema.json");
+        let schema: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(path).expect("read")).expect("parse");
+        let validator = jsonschema::draft202012::new(&schema).expect("a valid JSON Schema");
+
+        let good = serde_json::json!([
+            {"kind": "heading", "level": 1, "text": "Field notes"},
+            {"kind": "paragraph", "text": "The river rose overnight."}
+        ]);
+        assert!(validator.is_valid(&good));
+        let doc = record_json(&good.to_string(), Format::Blocks);
+        assert_eq!(doc["provenance"]["format"], "blocks");
+        assert_eq!(doc["sections"][0]["heading"], "Field notes");
+        document_schema::assert_valid("document", &doc, "block input");
+
+        let engine = Engine::with_parser(Box::new(RecordParser));
+        for bad in [
+            serde_json::json!([{"kind": "table", "text": "x"}]),
+            serde_json::json!([{"kind": "heading", "level": 0, "text": "x"}]),
+            serde_json::json!([{"kind": "paragraph", "text": "x", "style": "bold"}]),
+        ] {
+            assert!(!validator.is_valid(&bad), "the schema refuses {bad}");
+            let err = engine
+                .analyze(Input::text(bad.to_string(), Format::Blocks))
+                .expect_err("the reader refuses it too");
+            assert_eq!(err.kind(), "invalid_input", "{bad}: {err}");
+        }
+    }
+
+    /// A document with no sentences is where the ratios are null, and
+    /// null has to be something the schema allows.
+    #[test]
+    fn an_empty_document_matches_the_schema() {
+        let doc = record_json("", Format::PlainText);
+        assert!(doc["metrics"]["mean_sentence_length"].is_null());
+        document_schema::assert_valid("document", &doc, "empty");
+    }
+
+    /// The closed check is what catches an undocumented field: a document
+    /// carrying one more key than the schema lists fails.
+    #[test]
+    #[should_panic(expected = "does not match schema 2")]
+    fn an_undocumented_field_fails_the_check() {
+        let mut doc = record_json("Prose.", Format::PlainText);
+        doc["metrics"]["undocumented"] = serde_json::json!(1);
+        document_schema::assert_valid("document", &doc, "undocumented field");
+    }
+
+    /// Every outcome of a pipeline-built document matches its published
+    /// schema, with the derived provenance the document's schema allows.
+    #[test]
+    fn every_outcome_of_a_parsed_document_matches_its_schema() {
+        let doc = record_document("First paragraph.\n\nSecond paragraph.", Format::PlainText);
+        for method in [SummaryMethod::TfIdf, SummaryMethod::TextRank] {
+            let value = serde_json::to_value(summarize_with(&doc, 1, method).unwrap()).unwrap();
+            document_schema::assert_valid("summary", &value, method.name());
+        }
+        for method in [KeyphraseMethod::Rake, KeyphraseMethod::Yake] {
+            let value = serde_json::to_value(keyphrases_with(&doc, 5, method).unwrap()).unwrap();
+            assert!(
+                !value["phrases"].as_array().unwrap().is_empty(),
+                "{}: the check runs over populated phrases",
+                method.name()
+            );
+            document_schema::assert_valid("keyphrases", &value, method.name());
+        }
+        let embedder = FixedEmbedder {
+            identity: "fixed",
+            force_count: None,
+        };
+        let value = serde_json::to_value(clusters(&doc, &embedder, 0.5).unwrap()).unwrap();
+        assert!(!value["edges"].as_array().unwrap().is_empty());
+        document_schema::assert_valid("clusters", &value, "clusters");
+    }
+
+    // ------------------------------------------------------------------
+    // The corpus lane's directory walk, with no model
+    // ------------------------------------------------------------------
+
+    /// `spec/tests/corpus/items.json`'s directory: one readable file and
+    /// one whose bytes are not UTF-8 give two items, in path order, the
+    /// second an error item of the kind the fixture names. The failure is
+    /// reported rather than raised, and it does not end the walk. The
+    /// parser returns no sentences, because what is pinned is the shape
+    /// of the item and the order of the walk, not the parse; the
+    /// fixture's other expectations run outside the crate, in
+    /// `tests/corpus_conformance.rs`.
+    #[test]
+    fn a_directory_walk_yields_one_item_per_file() {
+        #[derive(serde::Deserialize)]
+        struct Fixture {
+            directory: Directory,
+        }
+        #[derive(serde::Deserialize)]
+        struct Directory {
+            files: Vec<FixtureFile>,
+            expect: Vec<Expect>,
+        }
+        #[derive(serde::Deserialize)]
+        struct FixtureFile {
+            name: String,
+            text: Option<String>,
+            bytes: Option<Vec<u8>>,
+        }
+        #[derive(serde::Deserialize)]
+        struct Expect {
+            name: String,
+            shape: String,
+            kind: Option<String>,
+        }
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("spec/tests/corpus/items.json");
+        let fixture: Fixture =
+            serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        for file in &fixture.directory.files {
+            let path = dir.path().join(&file.name);
+            match (&file.text, &file.bytes) {
+                (Some(text), None) => std::fs::write(&path, text).unwrap(),
+                (None, Some(bytes)) => std::fs::write(&path, bytes).unwrap(),
+                _ => panic!(
+                    "fixture file {} needs exactly one of text, bytes",
+                    file.name
+                ),
+            }
+        }
+
+        let items: Vec<_> = Engine::with_parser(Box::new(EmptyNlp))
+            .analyze_all(Inputs::dir(dir.path()).unwrap())
+            .collect();
+
+        assert_eq!(items.len(), fixture.directory.expect.len());
+        for (item, expect) in items.iter().zip(&fixture.directory.expect) {
+            match (item, expect.shape.as_str()) {
+                (Ok(document), "document") => {
+                    let path = document.provenance.source.path.as_ref().unwrap();
+                    assert_eq!(path.file_name().unwrap(), expect.name.as_str());
+                    document_schema::assert_valid(
+                        "document",
+                        &serde_json::to_value(document).unwrap(),
+                        &expect.name,
+                    );
+                }
+                (Err(err), "error") => {
+                    let path = err.path.as_ref().unwrap();
+                    assert_eq!(path.file_name().unwrap(), expect.name.as_str());
+                    assert_eq!(err.error.kind(), expect.kind.as_deref().unwrap());
+                    assert!(!err.error.to_string().is_empty());
+                }
+                (got, shape) => panic!(
+                    "{} expected shape {shape}, got {}",
+                    expect.name,
+                    if got.is_ok() { "document" } else { "error" }
+                ),
+            }
         }
     }
 }

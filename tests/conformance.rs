@@ -16,8 +16,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use matra::domain::{Document, Format, Span};
-use matra::nlp::udpipe::Udpipe;
-use matra::{Engine, Input};
+use matra::{Engine, Input, KeyphraseMethod, SummaryMethod};
 use serde::{Deserialize, Deserializer};
 use sha2::{Digest, Sha256};
 
@@ -182,16 +181,6 @@ fn spec_dir() -> PathBuf {
         .join("tests")
 }
 
-fn model_dir() -> PathBuf {
-    std::env::var_os("MATRA_MODEL_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            PathBuf::from(std::env::var_os("HOME").expect("HOME"))
-                .join(".matra")
-                .join("models")
-        })
-}
-
 fn load_fixtures() -> Vec<Fixture> {
     let dir = spec_dir();
     let mut fixtures: Vec<Fixture> = fs::read_dir(&dir)
@@ -219,6 +208,44 @@ fn load_fixtures() -> Vec<Fixture> {
 
 fn close(a: f64, b: f64) -> bool {
     (a - b).abs() < TOLERANCE
+}
+
+/// Every summary and keyphrase method over a real parse: each result
+/// matches its schema, a summary sentence's span slices the input to a
+/// sentence of the document, and every keyphrase occurrence lies in the
+/// input.
+fn check_outcomes(input: &str, doc: &Document, name: &str) {
+    for method in [SummaryMethod::TfIdf, SummaryMethod::TextRank] {
+        let summary = matra::summarize_with(doc, 3, method).expect("summarize");
+        document_schema::assert_valid(
+            "summary",
+            &serde_json::to_value(&summary).expect("serialize"),
+            name,
+        );
+        for picked in &summary.sentences {
+            let sentence = doc.sentences().nth(picked.index).expect("an index");
+            assert_eq!(picked.span, sentence.span, "{name}: summary span");
+            assert!(picked.span.end <= input.len(), "{name}: summary span");
+        }
+    }
+    for method in [KeyphraseMethod::Rake, KeyphraseMethod::Yake] {
+        let found = matra::keyphrases_with(doc, 10, method).expect("keyphrases");
+        document_schema::assert_valid(
+            "keyphrases",
+            &serde_json::to_value(&found).expect("serialize"),
+            name,
+        );
+        for phrase in &found.phrases {
+            for span in &phrase.occurrences {
+                assert!(
+                    span.start < span.end && input.is_char_boundary(span.start),
+                    "{name}: {} occurs at {span:?}",
+                    phrase.phrase
+                );
+                assert!(input.is_char_boundary(span.end), "{name}: {span:?}");
+            }
+        }
+    }
 }
 
 /// Every span names the text it claims: a token's span slices the
@@ -277,8 +304,9 @@ fn accounting(input: &str, doc: &Document) -> Result<(), String> {
 #[test]
 #[ignore = "requires the UDPipe model"]
 fn rust_crust_conforms_to_spec() {
-    let nlp = Udpipe::english(model_dir()).expect("load english model");
-    let engine = Engine::new(Box::new(nlp));
+    // The model directory comes from the environment, as `Engine::new`
+    // resolves it for every caller: `MATRA_MODEL_DIR` names one.
+    let engine = Engine::new().expect("load english model");
 
     for fixture in load_fixtures() {
         let doc: Document = engine
@@ -288,10 +316,14 @@ fn rust_crust_conforms_to_spec() {
         let e = &fixture.expect;
         let name = &fixture.name;
 
-        document_schema::assert_valid_document(
+        document_schema::assert_valid(
+            "document",
             &serde_json::to_value(&doc).expect("serialize"),
             name,
         );
+        // Every outcome of a real parse matches its schema too, and its
+        // spans point into the input.
+        check_outcomes(&fixture.input, &doc, name);
 
         // Provenance: this build's schema, the parser's own identity,
         // and the input as it was handed in.

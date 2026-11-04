@@ -18,7 +18,7 @@ import os
 from pathlib import Path
 
 import pytest
-from document_schema import assert_valid_document
+from document_schema import assert_valid
 from matra import ERROR_KINDS, Document, DocumentError, ErrorInfo, Matra
 
 SPEC = Path(__file__).resolve().parents[2] / "spec" / "tests" / "corpus" / "items.json"
@@ -70,7 +70,7 @@ def test_a_directory_walk_yields_the_items_the_fixture_expects(
         if expect["shape"] == "document":
             assert set(item) == set(FIXTURE["item_shapes"]["document"])
             assert Path(item["provenance"]["source"]["path"]).name == expect["name"]
-            assert_valid_document(item, expect["name"])
+            assert_valid("document", item, expect["name"])
         else:
             assert Path(item["path"]).name == expect["name"]
             assert set(item) == set(FIXTURE["item_shapes"]["error"])

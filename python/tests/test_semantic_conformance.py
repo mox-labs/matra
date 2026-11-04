@@ -1,6 +1,6 @@
 """The FFI shape fixture (EP-0009 M5): the Python crust's vectors-in
-``semantic_clusters`` must produce exactly the serialized value in
-``spec/tests/semantic/clusters.json``.
+``semantic_clusters`` must produce exactly the clusters, edges and
+parameters in ``spec/tests/semantic/clusters.json``.
 
 No model is required. Score comparison happens in f32 space (both sides
 cast through ``struct.pack('f', ...)``), because the fixture's JSON
@@ -26,19 +26,19 @@ def as_f32(x: float) -> float:
 
 def test_semantic_clusters_matches_the_shape_fixture() -> None:
     fixture = json.loads(SPEC.read_text())
-    got = semantic_clusters(fixture["embeddings"], fixture["threshold"], fixture["identity"])
+    got = semantic_clusters(fixture["embeddings"], fixture["threshold"], fixture["embedder"])
     expect = fixture["expect"]
 
-    assert got["identity"] == expect["identity"]
-    assert as_f32(got["threshold"]) == as_f32(expect["threshold"])
-    assert len(got["clusters"]) == len(expect["clusters"])
-    for g, e in zip(got["clusters"], expect["clusters"], strict=True):
-        assert g["members"] == e["members"]
-        assert len(g["edges"]) == len(e["edges"])
-        for ge, ee in zip(g["edges"], e["edges"], strict=True):
-            assert ge["a"] == ee["a"]
-            assert ge["b"] == ee["b"]
-            assert as_f32(ge["score"]) == as_f32(ee["score"])
+    assert got["parameters"] == expect["parameters"]
+    assert got["clusters"] == expect["clusters"]
+    assert_same_edges(got["edges"], expect["edges"])
+
+
+def assert_same_edges(got: list[dict], expect: list[dict]) -> None:
+    assert len(got) == len(expect)
+    for g, e in zip(got, expect, strict=True):
+        assert (g["a"], g["b"]) == (e["a"], e["b"])
+        assert as_f32(g["score"]) == as_f32(e["score"])
 
 
 REF = SPEC.parent / "reference-model.json"
@@ -75,11 +75,6 @@ def test_reference_model_vectors_and_clusters_are_exact() -> None:
 
     for case in fixture["cases"]:
         got = semantic_clusters(vectors, case["threshold"], model.model_hash)
-        expect = case["clusters"]
-        assert len(got["clusters"]) == len(expect)
-        for g, e in zip(got["clusters"], expect, strict=True):
-            assert g["members"] == e["members"]
-            assert len(g["edges"]) == len(e["edges"])
-            for ge, ee in zip(g["edges"], e["edges"], strict=True):
-                assert (ge["a"], ge["b"]) == (ee["a"], ee["b"])
-                assert as_f32(ge["score"]) == as_f32(ee["score"])
+        assert got["parameters"]["embedder"] == model.model_hash
+        assert got["clusters"] == case["clusters"]
+        assert_same_edges(got["edges"], case["edges"])

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mox-labs.github.io/matra/schema/v2/clusters.schema.json",
+  "title": "matra Clusters, schema 2.x",
+  "description": "A document's sentences grouped by the similarity of their embeddings: the serde form of `matra::domain::Clusters`, from `matra::clusters`. Model opinion, not structure: the scores belong to the embedder `provenance.parameters.embedder` names. A cluster is a connected component of the graph of sentence pairs whose cosine similarity is at least the threshold, so co-membership is transitive and never pairwise similarity; a sentence in no cluster had no edge. Schema 2.x, read by the same rules as the document schema: ignore fields you do not recognize, treat every string set as open (`method` among them), and reject a major you do not know. Every key listed here is always present. Each method scores on its own scale, so a score compares only with another score from the same method.",
+  "type": "object",
+  "required": ["provenance", "clusters", "edges"],
+  "properties": {
+    "provenance": {
+      "description": "The document's provenance, with the method that ran and the parameters that shaped the result.",
+      "allOf": [
+        {
+          "$ref": "https://mox-labs.github.io/matra/schema/v2/document.schema.json#/$defs/Provenance"
+        },
+        {
+          "required": ["method", "parameters"],
+          "properties": { "parameters": { "required": ["threshold", "embedder"] } },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "clusters": {
+      "description": "The clusters, ordered by their smallest member.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/Cluster" }
+    },
+    "edges": {
+      "description": "Every sentence pair whose similarity cleared the threshold, ordered by `a`, then `b`.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/SimilarityEdge" }
+    }
+  },
+  "$defs": {
+    "Cluster": {
+      "description": "One connected component.",
+      "type": "object",
+      "required": ["members"],
+      "properties": {
+        "members": {
+          "description": "Sentence indices (positions among the document's sentences), ascending; at least two.",
+          "type": "array",
+          "minItems": 2,
+          "items": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "SimilarityEdge": {
+      "description": "A pair of sentences whose similarity cleared the threshold, `a < b`.",
+      "type": "object",
+      "required": ["a", "b", "score"],
+      "properties": {
+        "a": {
+          "description": "The lower sentence index.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "b": {
+          "description": "The higher sentence index.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "score": {
+          "description": "Their cosine similarity, in the embedder's geometry.",
+          "type": "number"
+        }
+      }
+    }
+  }
+}

@@ -32,7 +32,7 @@ const MAX_PARAGRAPH_BYTES: usize = 256 * 1024;
 /// Populate `ParagraphMetrics::compression_ratio` for every paragraph with
 /// more than 50 words that is not in a blockquote and is at or under
 /// the per-paragraph byte cap.
-pub fn compute(analysis: &mut Document) {
+pub(crate) fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
         if para.word_count() > 50
             && para.kind != crate::domain::ParagraphKind::Quote

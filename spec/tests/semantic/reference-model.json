@@ -17,21 +17,13 @@
   "cases": [
     {
       "threshold": 0.6,
-      "clusters": [
-        {
-          "members": [0, 1],
-          "edges": [{ "a": 0, "b": 1, "score": 0.88515013 }]
-        }
-      ]
+      "clusters": [{"members": [0, 1]}],
+      "edges": [{"a": 0, "b": 1, "score": 0.88515013}]
     },
     {
       "threshold": 0.85,
-      "clusters": [
-        {
-          "members": [0, 1],
-          "edges": [{ "a": 0, "b": 1, "score": 0.88515013 }]
-        }
-      ]
+      "clusters": [{"members": [0, 1]}],
+      "edges": [{"a": 0, "b": 1, "score": 0.88515013}]
     }
   ]
 }

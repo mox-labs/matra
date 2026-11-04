@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from document_schema import assert_valid_document
+from document_schema import assert_valid
 
 # The extension module is built by maturin. Without a built wheel there is
 # nothing to conform, so skip rather than fail collection.
@@ -107,7 +107,21 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
     else:
         pytest.fail(f"unknown format {fixture['format']}")
 
-    assert_valid_document(doc, fixture["name"])
+    assert_valid("document", doc, fixture["name"])
+    # Every outcome method's result matches its schema, with the method
+    # and the count it ran with recorded.
+    for method, name in (
+        (matra.tfidf_summarize, "tfidf"),
+        (matra.textrank_summarize, "textrank"),
+    ):
+        summary = method(text, 3)
+        assert_valid("summary", summary, f"{fixture['name']} {name}")
+        assert summary["provenance"]["method"] == name
+        assert summary["provenance"]["parameters"] == {"n": 3}
+    for method, name in ((matra.rake_keyphrases, "rake"), (matra.yake_keyphrases, "yake")):
+        found = method(text, 10)
+        assert_valid("keyphrases", found, f"{fixture['name']} {name}")
+        assert found["provenance"]["method"] == name
 
     # Provenance: this build's schema, the parser's own identity, and the
     # input as it was handed in.

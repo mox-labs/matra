@@ -8,7 +8,7 @@ use matra::domain::Format;
 use matra::{Engine, Input};
 
 fn main() -> matra::domain::Result<()> {
-    let engine = Engine::with_defaults()?;
+    let engine = Engine::new()?;
 
     let text = r#"
 ## The Problem
