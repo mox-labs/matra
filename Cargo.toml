@@ -73,7 +73,14 @@ thiserror = "2"
 brotli = "9"
 clap = { version = "4", features = ["derive"], optional = true }
 clap_complete = { version = "4", optional = true }
-serde_json = { version = "1", optional = true }
+# Required, not behind a feature: `Format::Blocks` is a JSON input format
+# (EPR-0006), read by the blocks reader in every build.
+serde_json = "1"
+# The markdown reader (EPR-0006). A CommonMark parser that reports the
+# source range of every event, which is what gives each block its span.
+# default-features = false drops the HTML renderer and the getopts
+# binary; only the pull parser is used.
+pulldown-cmark = { version = "0.13", default-features = false }
 toml = { version = "1", default-features = false, features = ["parse", "serde", "std"] }
 
 # The pinned-download client. Both provisioning adapters fetch through it
@@ -96,9 +103,9 @@ jsonschema = { version = "0.60.2", default-features = false }
 [features]
 default = ["udpipe"]
 udpipe = ["dep:udpipe-rs", "dep:ureq"]
-model2vec = ["dep:safetensors", "dep:tokenizers", "dep:serde_json", "dep:ureq"]
+model2vec = ["dep:safetensors", "dep:tokenizers", "dep:ureq"]
 python = ["dep:pyo3", "dep:pythonize", "cli"]
-cli = ["dep:clap", "dep:clap_complete", "dep:serde_json", "udpipe"]
+cli = ["dep:clap", "dep:clap_complete", "udpipe"]
 
 [lints.rust]
 missing_docs = "warn"

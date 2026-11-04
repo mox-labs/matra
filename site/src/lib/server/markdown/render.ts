@@ -179,7 +179,7 @@ export async function render(markdown: string, ctx: RenderContext): Promise<Rend
 
 /**
  * The self-measuring margin. matra measured this page's Markdown, paragraph
- * by paragraph (examples/docsite_figures.rs, through Ingest::text); here each
+ * by paragraph (examples/docsite_figures.rs, through Input::text); here each
  * prose paragraph of the rendered page is given a note of those measures,
  * set in the margin beside it.
  *

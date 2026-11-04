@@ -34,7 +34,10 @@ const MAX_PARAGRAPH_BYTES: usize = 256 * 1024;
 /// the per-paragraph byte cap.
 pub fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
-        if para.word_count() > 50 && !para.in_blockquote && para.text.len() <= MAX_PARAGRAPH_BYTES {
+        if para.word_count() > 50
+            && para.kind != crate::domain::ParagraphKind::Quote
+            && para.text.len() <= MAX_PARAGRAPH_BYTES
+        {
             para.metrics.compression_ratio = compression_ratio(&para.text);
         }
     }
@@ -57,11 +60,12 @@ fn compression_ratio(text: &str) -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{Paragraph, Section, Sentence, Token};
+    use crate::domain::{Paragraph, ParagraphKind, Section, Sentence, Span, Token};
 
     fn content_token(text: &str) -> Token {
         Token {
             id: 0,
+            span: Default::default(),
             text: text.to_string(),
             lemma: text.to_lowercase(),
             pos: "NOUN".to_string(),
@@ -95,9 +99,15 @@ mod tests {
         let sections = vec![Section {
             heading: None,
             level: 0,
-            paragraphs: vec![Paragraph::new(big_text, false)],
+            span: None,
+            paragraphs: vec![Paragraph::new(
+                big_text,
+                ParagraphKind::Paragraph,
+                Span::default(),
+            )],
         }];
-        let mut analysis = Document::new(crate::domain::Provenance::for_test(), sections);
+        let mut analysis =
+            Document::new(crate::domain::Provenance::for_test(), sections, Vec::new());
 
         // Attach enough content tokens so word_count clears the >50 threshold.
         for para in analysis.paragraphs_mut() {
@@ -133,12 +143,14 @@ mod tests {
         let sections = vec![Section {
             heading: None,
             level: 0,
+            span: None,
             paragraphs: vec![
-                Paragraph::new(text_50, false),
-                Paragraph::new(text_51, false),
+                Paragraph::new(text_50, ParagraphKind::Paragraph, Span::default()),
+                Paragraph::new(text_51, ParagraphKind::Paragraph, Span::default()),
             ],
         }];
-        let mut analysis = Document::new(crate::domain::Provenance::for_test(), sections);
+        let mut analysis =
+            Document::new(crate::domain::Provenance::for_test(), sections, Vec::new());
 
         // Attach enough content tokens so word_count clears the thresholds.
         for (i, para) in analysis.paragraphs_mut().enumerate() {

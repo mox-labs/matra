@@ -9,9 +9,11 @@ use clap::{CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
 // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
 use crate::config::{Config, ValueSource};
 // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
-use crate::domain::{self, Document, Format, MAX_INPUT_BYTES, RawDocument, Sentence};
+use crate::domain::{self, Document, Format, MAX_INPUT_BYTES, Sentence};
 // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
-use crate::{Engine, Ingest, extraction::tfidf_summarize};
+use crate::{Engine, Input, Inputs, extraction::tfidf_summarize};
+// ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
+use crate::Block;
 // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
 use crate::cli::render::Fallible;
 // ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super

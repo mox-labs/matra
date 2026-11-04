@@ -117,7 +117,8 @@ export interface MetricsParagraph {
 	index: number;
 	opening: string;
 	words: number;
-	in_blockquote: boolean;
+	/** `paragraph`, `quote` or `list_item`; a quote is never parsed. */
+	kind: string;
 	readability_grade: number | null;
 	lexical_density: number | null;
 	compression_ratio: number | null;
@@ -176,7 +177,8 @@ export type ClustersFigureFile = FigureFile<{
 export interface PipelineParagraph {
 	index: number;
 	opening: string;
-	in_blockquote: boolean;
+	/** `paragraph`, `quote` or `list_item`; a quote is never parsed. */
+	kind: string;
 	sentences: number;
 	tokens: number;
 	readability_grade: number | null;
@@ -294,7 +296,7 @@ export interface PageMeasures {
 	generator: FigureFile['generator'];
 	paragraphs: {
 		text: string;
-		in_blockquote: boolean;
+		kind: string;
 		sentences: number;
 		words: number;
 		readability_grade: number | null;

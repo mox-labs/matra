@@ -136,6 +136,7 @@ mod tests {
     fn tok(id: usize, text: &str, pos: &str) -> Token {
         Token {
             id,
+            span: Default::default(),
             text: text.to_string(),
             lemma: text.to_lowercase(),
             pos: pos.to_string(),

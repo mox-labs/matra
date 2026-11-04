@@ -11,13 +11,38 @@
       "nominalization_ratio": 0.111111,
       "passive_ratio": 0.0
     },
+    "sections": [
+      {
+        "heading": null,
+        "level": 0,
+        "span": null
+      }
+    ],
+    "paragraphs": [
+      {
+        "kind": "paragraph",
+        "span": {
+          "start": 0,
+          "end": 67
+        }
+      }
+    ],
+    "skipped": [],
     "sentences": [
       {
+        "span": {
+          "start": 0,
+          "end": 67
+        },
         "text": "Structural analysis reveals the grammatical skeleton of a sentence.",
         "token_count": 10,
         "tokens": [
           {
             "id": 1,
+            "span": {
+              "start": 0,
+              "end": 10
+            },
             "text": "Structural",
             "lemma": "Structural",
             "pos": "ADJ",
@@ -26,6 +51,10 @@
           },
           {
             "id": 2,
+            "span": {
+              "start": 11,
+              "end": 19
+            },
             "text": "analysis",
             "lemma": "analysis",
             "pos": "NOUN",
@@ -34,6 +63,10 @@
           },
           {
             "id": 3,
+            "span": {
+              "start": 20,
+              "end": 27
+            },
             "text": "reveals",
             "lemma": "reveal",
             "pos": "VERB",
@@ -42,6 +75,10 @@
           },
           {
             "id": 4,
+            "span": {
+              "start": 28,
+              "end": 31
+            },
             "text": "the",
             "lemma": "the",
             "pos": "DET",
@@ -50,6 +87,10 @@
           },
           {
             "id": 5,
+            "span": {
+              "start": 32,
+              "end": 43
+            },
             "text": "grammatical",
             "lemma": "grammatical",
             "pos": "ADJ",
@@ -58,6 +99,10 @@
           },
           {
             "id": 6,
+            "span": {
+              "start": 44,
+              "end": 52
+            },
             "text": "skeleton",
             "lemma": "skeleton",
             "pos": "NOUN",
@@ -66,6 +111,10 @@
           },
           {
             "id": 7,
+            "span": {
+              "start": 53,
+              "end": 55
+            },
             "text": "of",
             "lemma": "of",
             "pos": "ADP",
@@ -74,6 +123,10 @@
           },
           {
             "id": 8,
+            "span": {
+              "start": 56,
+              "end": 57
+            },
             "text": "a",
             "lemma": "a",
             "pos": "DET",
@@ -82,6 +135,10 @@
           },
           {
             "id": 9,
+            "span": {
+              "start": 58,
+              "end": 66
+            },
             "text": "sentence",
             "lemma": "sentence",
             "pos": "NOUN",
@@ -90,6 +147,10 @@
           },
           {
             "id": 10,
+            "span": {
+              "start": 66,
+              "end": 67
+            },
             "text": ".",
             "lemma": ".",
             "pos": "PUNCT",

@@ -10,9 +10,9 @@
 //! (downloads the UDPipe model into the configured model directory on
 //! first use; `matra config show` prints where that is)
 
-use matra::Engine;
-use matra::domain::{Format, RawDocument, Sentence};
+use matra::domain::{Format, Sentence};
 use matra::extraction::{rake_keyphrases, tfidf_summarize};
+use matra::{Engine, Input};
 
 fn main() -> matra::domain::Result<()> {
     let engine = Engine::with_defaults()?;
@@ -35,10 +35,8 @@ across FFI without dragging the adapters along. Pre-publish economics \
 mean the public surface locks at 0.1.0 and stays small.
 ";
 
-    // Annotate once: decompose, parse per paragraph, attach sentences.
-    let raw = RawDocument::new(text.to_string(), None, Format::Markdown);
-    let mut analysis = engine.annotate(&raw)?;
-    engine.compose(&mut analysis);
+    // Analyze once: read, parse per paragraph, attach sentences, measure.
+    let analysis = engine.analyze(Input::text(text, Format::Markdown))?;
 
     // Read the sentences back off the tree and hand them to multiple
     // consumers. Nothing is parsed twice.

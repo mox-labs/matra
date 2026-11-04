@@ -1,11 +1,11 @@
 <script lang="ts">
 	/**
-	 * One document through the pipeline (EP-0012, M5): ingested, annotated,
+	 * One document through the pipeline (EP-0012, M5): its input, annotated,
 	 * composed, each the output of the public call, stepped by the reader.
 	 *
-	 * Ingest hands the text over as a `RawDocument`. `Engine::annotate`
-	 * decomposes it into sections and paragraphs and parses each paragraph
-	 * that is not a quote. `Engine::compose` fills the measures. The stepper
+	 * `Input::text` hands the text over with its format. `Engine::annotate`
+	 * reads it into sections and paragraphs and parses each paragraph that
+	 * is not a quote. `Engine::compose` fills the measures. The stepper
 	 * moves between those three states; each change is the two-stage fade, and
 	 * under reduced motion it is immediate. Without scripts every stage is
 	 * shown, one after another. The twin table holds every paragraph at both
@@ -23,7 +23,7 @@
 	const region = scopedRegion();
 
 	const STAGES = [
-		{ key: 'raw', name: 'Ingest', call: 'Ingest::text', adds: 'the text and its format' },
+		{ key: 'raw', name: 'Input', call: 'Input::text', adds: 'the text and its format' },
 		{ key: 'annotated', name: 'Annotate', call: 'Engine::annotate', adds: 'sections, paragraphs, sentences, tokens' },
 		{ key: 'composed', name: 'Compose', call: 'Engine::compose', adds: 'the measures' }
 	] as const;
@@ -54,7 +54,7 @@
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 						<li
 							class="para"
-							class:quote={p.in_blockquote}
+							class:quote={p.kind === 'quote'}
 							class:lit={active === p.index}
 							{...link.on(p.index)}
 							data-paragraph={p.index}
@@ -67,7 +67,7 @@
 							<span class="label">¶{p.index}</span>
 							<span class="opening">{p.opening}…</span>
 							<span class="facts">
-								{#if p.in_blockquote}
+								{#if p.kind === 'quote'}
 									<span class="fact muted">quote, not parsed</span>
 								{:else}
 									<span class="fact">{p.sentences} sentences</span>
@@ -77,7 +77,7 @@
 									<span class="fact m">grade {fmt(p.readability_grade)}</span>
 									<span class="fact m">density {fmt(p.lexical_density)}</span>
 									<span class="fact m">compression {fmt(p.compression_ratio)}</span>
-								{:else if !p.in_blockquote}
+								{:else if p.kind !== 'quote'}
 									<span class="fact muted">measures not computed yet</span>
 								{/if}
 							</span>
@@ -103,7 +103,7 @@
 		</p>
 		{#if i === 0}
 			<p class="raw-meta">
-				<code>RawDocument</code>: format <strong>{data.raw.format}</strong>, {data.raw.bytes} bytes
+				<code>Input</code>: format <strong>{data.raw.format}</strong>, {data.raw.bytes} bytes
 			</p>
 			<!-- A region that scrolls must take focus (WCAG 2.1.1). -->
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -169,7 +169,7 @@
 							{...link.on(p.index)}
 						>
 							<td class="num">{p.index}</td>
-							<td>{p.in_blockquote ? 'yes' : ''}</td>
+							<td>{p.kind === 'quote' ? 'yes' : ''}</td>
 							<td>{p.sentences}</td>
 							<td>{p.tokens}</td>
 							<td>{fmt(c.readability_grade)}</td>

@@ -1,6 +1,6 @@
 {
   "name": "corpus-items",
-  "description": "The corpus item shapes (EP-0010 M5): what one document's result looks like when it crosses a binding, and the kind vocabulary a consumer branches on instead of reading a message. DocumentError has no serde form, because it wraps std::io::Error, so every binding materializes these fields by hand, which is the drift this fixture makes loud. The directory expectation needs no model: ingestion and its failure path both run before any parse.",
+  "description": "The corpus item shapes (EP-0010 M5): what one document's result looks like when it crosses a binding, and the kind vocabulary a consumer branches on instead of reading a message. A success item is the document itself, which names its own path in provenance.source.path; there is no wrapper around it. DocumentError has no serde form, because it wraps std::io::Error, so every binding materializes its fields by hand, which is the drift this fixture makes loud. The directory expectation needs no model: reading, detection and their failure path all run before any parse.",
   "error_kinds": [
     "model_not_found",
     "model_invalid",
@@ -11,9 +11,11 @@
     "io"
   ],
   "item_shapes": {
-    "entry": [
-      "path",
-      "analysis"
+    "document": [
+      "provenance",
+      "sections",
+      "metrics",
+      "skipped"
     ],
     "error": [
       "path",
@@ -25,7 +27,7 @@
     ]
   },
   "directory": {
-    "description": "One readable file and one whose bytes are not UTF-8, analyzed as a directory. Two items come back in path order: an entry for the file that read, an error item of kind io for the file that did not, so one unreadable file costs one item rather than the walk. A path is null only for a document that never came from disk, which a directory walk never produces.",
+    "description": "One readable file and one whose bytes are not UTF-8, analyzed as a directory. Two items come back in path order: the document for the file that read, naming its path in provenance.source.path, and an error item of kind unsupported_format for the file whose bytes are not text, so one unreadable file costs one item rather than the walk. Bytes that are not UTF-8 and carry no signature matra recognises are an unsupported format, not an I/O failure: nothing went wrong reading them. A path is null only for a document that never came from disk, which a directory walk never produces.",
     "files": [
       {
         "name": "a.txt",
@@ -52,12 +54,12 @@
     "expect": [
       {
         "name": "a.txt",
-        "shape": "entry"
+        "shape": "document"
       },
       {
         "name": "b.txt",
         "shape": "error",
-        "kind": "io"
+        "kind": "unsupported_format"
       }
     ]
   },

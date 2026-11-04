@@ -43,6 +43,45 @@ def load_fixtures() -> list[dict[str, Any]]:
     return fixtures
 
 
+def paragraphs_of(doc: dict[str, Any]) -> list[dict[str, Any]]:
+    return [paragraph for section in doc["sections"] for paragraph in section["paragraphs"]]
+
+
+def check_spans(source: bytes, doc: dict[str, Any]) -> None:
+    """Every token's span slices the input to its form; a sentence runs
+    from its first token to its last, inside its paragraph."""
+    for paragraph in paragraphs_of(doc):
+        outer = paragraph["span"]
+        for sentence in paragraph["sentences"]:
+            span = sentence["span"]
+            assert outer["start"] <= span["start"] <= span["end"] <= outer["end"]
+            if sentence["tokens"]:
+                assert span["start"] == sentence["tokens"][0]["span"]["start"]
+                assert span["end"] == sentence["tokens"][-1]["span"]["end"]
+            for token in sentence["tokens"]:
+                piece = source[token["span"]["start"] : token["span"]["end"]]
+                assert piece.decode() == token["text"], f"token {token['id']} span"
+
+
+def check_accounting(text: str, doc: dict[str, Any]) -> None:
+    """L9: every byte of the input that is not whitespace lies in exactly
+    one heading, paragraph or skipped span."""
+    source = text.encode()
+    owners = [0] * len(source)
+    spans = [s["span"] for s in doc["sections"] if s["span"] is not None]
+    spans += [p["span"] for p in paragraphs_of(doc)]
+    spans += [s["span"] for s in doc["skipped"]]
+    for span in spans:
+        for at in range(span["start"], span["end"]):
+            owners[at] += 1
+    at = 0
+    for char in text:
+        width = len(char.encode())
+        if not char.isspace():
+            assert owners[at] == 1, f"byte {at} ({char!r}) lies in {owners[at]} spans"
+        at += width
+
+
 def sentences_of(doc: dict[str, Any]) -> list[dict[str, Any]]:
     return [
         sentence
@@ -86,6 +125,20 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
     metrics = doc["metrics"]
     got_sentences = sentences_of(doc)
 
+    check_spans(text.encode(), doc)
+    check_accounting(text, doc)
+    if "sections" in expect:
+        got = [
+            {"heading": s["heading"], "level": s["level"], "span": s["span"]}
+            for s in doc["sections"]
+        ]
+        assert got == expect["sections"], "sections"
+    if "paragraphs" in expect:
+        got = [{"kind": p["kind"], "span": p["span"]} for p in paragraphs_of(doc)]
+        assert got == expect["paragraphs"], "paragraphs"
+    if "skipped" in expect:
+        assert doc["skipped"] == expect["skipped"], "skipped"
+
     assert metrics["total_sentences"] == expect["metrics"]["total_sentences"], "sentence count"
     assert len(got_sentences) == expect["metrics"]["total_sentences"], "sentences attached"
     assert metrics["total_words"] == expect["metrics"]["total_words"], "word count"
@@ -95,6 +148,8 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
 
     for i, (got, want) in enumerate(zip(got_sentences, expect["sentences"], strict=True)):
         assert got["text"] == want["text"], f"sentence {i} text"
+        if "span" in want:
+            assert got["span"] == want["span"], f"sentence {i} span"
         if "negations" in want:
             assert got["negations"] == want["negations"], f"sentence {i} negations"
         if "modals" in want:
@@ -115,6 +170,8 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
         for j, (token, wanted) in enumerate(zip(got["tokens"], want["tokens"], strict=True)):
             where = f"sentence {i} token {j}"
             assert token["id"] == wanted["id"], f"{where} id"
+            if "span" in wanted:
+                assert token["span"] == wanted["span"], f"{where} span"
             assert token["text"] == wanted["text"], f"{where} text"
             assert token["lemma"] == wanted["lemma"], f"{where} lemma"
             assert token["pos"] == wanted["pos"], f"{where} pos"

@@ -11,7 +11,7 @@ use udpipe_rs::Model;
 use crate::config::Config;
 use crate::digest::sha256_hex;
 use crate::domain::Error;
-use crate::domain::{Identity, ProvisionNotice, Sentence, Token};
+use crate::domain::{Identity, ProvisionNotice, Sentence, Span, Token};
 
 use super::NlpProvider;
 
@@ -764,10 +764,13 @@ impl NlpProvider for Udpipe {
         let mut ids: Vec<i32> = by_sentence.keys().copied().collect();
         ids.sort();
 
+        // The tokens follow the text in order across sentences, so one
+        // cursor walks the text once to give every token its span.
+        let mut cursor = 0;
         ids.into_iter()
             .map(|id| {
                 let sent_words = &by_sentence[&id];
-                let tokens: Vec<Token> = sent_words
+                let mut tokens: Vec<Token> = sent_words
                     .iter()
                     .map(|w| {
                         let id = usize::try_from(w.id).map_err(|_| {
@@ -784,6 +787,7 @@ impl NlpProvider for Udpipe {
                         })?;
                         Ok(Token {
                             id,
+                            span: Span::default(),
                             text: w.form.clone(),
                             lemma: w.lemma.clone(),
                             pos: w.upostag.clone(),
@@ -797,6 +801,19 @@ impl NlpProvider for Udpipe {
                         })
                     })
                     .collect::<crate::domain::Result<Vec<Token>>>()?;
+
+                for token in &mut tokens {
+                    let (start, end) = locate(text, cursor, &token.text).ok_or_else(|| {
+                        Error::ParseFailed(format!(
+                            "token {} ({:?}) of sentence {} is not in the parsed text at or after byte {cursor}, so it has no span",
+                            token.id,
+                            token.text,
+                            id + 1
+                        ))
+                    })?;
+                    token.span = Span::new(start, end);
+                    cursor = end;
+                }
 
                 // Reconstruct original text using SpaceAfter=No from misc field.
                 let text = {
@@ -820,9 +837,67 @@ impl NlpProvider for Udpipe {
     }
 }
 
+/// Where `form` lies in `text`, starting at the first character at or
+/// after `cursor` that is not whitespace, as `(start, end)` in bytes.
+///
+/// The form must match the text there exactly, except that a run of
+/// whitespace inside the form matches any run of whitespace in the text
+/// (a token the tokenizer read across a line break). `None` when it does
+/// not match: the caller reports that rather than guess a span. UDPipe's
+/// tokenizer copies forms from the text it was given, so `None` means a
+/// form the tokenizer rewrote, which the English model is not known to
+/// do.
+fn locate(text: &str, cursor: usize, form: &str) -> Option<(usize, usize)> {
+    let rest = text.get(cursor..)?;
+    let start = cursor + (rest.len() - rest.trim_start().len());
+    let mut at = start;
+    let mut wanted = form.chars().peekable();
+    while let Some(c) = wanted.next() {
+        if c.is_whitespace() {
+            while wanted.peek().is_some_and(|c| c.is_whitespace()) {
+                wanted.next();
+            }
+            let tail = text.get(at..)?;
+            let skipped = tail.len() - tail.trim_start().len();
+            if skipped == 0 {
+                return None;
+            }
+            at += skipped;
+        } else {
+            let found = text.get(at..)?.chars().next()?;
+            if found != c {
+                return None;
+            }
+            at += found.len_utf8();
+        }
+    }
+    Some((start, at))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn locate_skips_leading_whitespace_and_matches_exactly() {
+        let text = "  Hello, wörld.";
+        assert_eq!(locate(text, 0, "Hello"), Some((2, 7)));
+        assert_eq!(locate(text, 7, ","), Some((7, 8)));
+        assert_eq!(locate(text, 8, "wörld"), Some((9, 15)));
+        assert_eq!(locate(text, 8, "world"), None);
+    }
+
+    #[test]
+    fn locate_lets_whitespace_in_a_form_match_any_whitespace() {
+        let text = "e.\r\n g. done";
+        assert_eq!(locate(text, 0, "e. g."), Some((0, 7)));
+    }
+
+    #[test]
+    fn locate_is_none_past_the_end() {
+        assert_eq!(locate("abc", 3, "d"), None);
+        assert_eq!(locate("abc", 9, "a"), None);
+    }
 
     /// A model matra does not pin is named by its digest alone: the
     /// name and licence of the pinned model must not be claimed for it.

@@ -49,7 +49,7 @@ struct ProvisioningExpect {
 
 #[derive(serde::Deserialize)]
 struct ItemShapes {
-    entry: Vec<String>,
+    document: Vec<String>,
     error: Vec<String>,
     error_object: Vec<String>,
 }
@@ -111,7 +111,10 @@ fn error_kind_vocabulary_matches_the_fixture() {
             actual: 2,
             what: "input",
         },
-        Error::UnsupportedFormat(Format::Pdf),
+        Error::UnsupportedFormat {
+            format: Some(Format::Pdf),
+            feature: None,
+        },
         Error::InvalidInput("bad argument".to_string()),
         Error::Io(std::io::Error::from(std::io::ErrorKind::NotFound)),
     ];
@@ -136,27 +139,25 @@ fn error_kind_vocabulary_matches_the_fixture() {
 #[test]
 fn the_item_shapes_are_the_ones_the_fixture_names() {
     let fixture = fixture();
-    let entry = domain::CorpusEntry::new(
-        Some(PathBuf::from("a.txt")),
-        domain::Document::new(
-            domain::Provenance::new(
-                domain::Identity::new("empty", None, None, None),
-                Format::PlainText,
-                domain::ProvenanceSource::new(Some(PathBuf::from("a.txt")), 0, ""),
-            ),
-            Vec::new(),
+    let document = domain::Document::new(
+        domain::Provenance::new(
+            domain::Identity::new("empty", None, None, None),
+            Format::PlainText,
+            domain::ProvenanceSource::new(Some(PathBuf::from("a.txt")), 0, ""),
         ),
+        Vec::new(),
+        Vec::new(),
     );
 
-    let value = serde_json::to_value(&entry).expect("serialize entry");
+    let value = serde_json::to_value(&document).expect("serialize document");
     let mut keys: Vec<String> = value
         .as_object()
-        .expect("entry is an object")
+        .expect("a document is an object")
         .keys()
         .cloned()
         .collect();
     keys.sort();
-    let mut expected = fixture.item_shapes.entry.clone();
+    let mut expected = fixture.item_shapes.document.clone();
     expected.sort();
     assert_eq!(keys, expected);
 
@@ -184,22 +185,23 @@ fn a_directory_walk_yields_one_item_per_file() {
         }
     }
 
-    let engine = matra::Engine::new(Box::new(EmptyNlp), matra::standard_decomposers());
-    let ingest = matra::Ingest::path(dir.path()).expect("listing the directory");
-    let items: Vec<_> = engine.analyze(ingest).collect();
+    let engine = matra::Engine::new(Box::new(EmptyNlp));
+    let inputs = matra::Inputs::dir(dir.path()).expect("listing the directory");
+    let items: Vec<_> = engine.analyze_all(inputs).collect();
 
     assert_eq!(items.len(), fixture.directory.expect.len());
     for (item, expect) in items.iter().zip(&fixture.directory.expect) {
         match (item, expect.shape.as_str()) {
-            (Ok(entry), "entry") => {
-                let path = entry.path.as_ref().expect("a walked document has a path");
+            (Ok(document), "document") => {
+                let path = document
+                    .provenance
+                    .source
+                    .path
+                    .as_ref()
+                    .expect("a walked document has a path");
                 assert_eq!(path.file_name().unwrap(), expect.name.as_str());
-                assert_eq!(
-                    entry.analysis.provenance.source.path, entry.path,
-                    "the document's provenance names the path the entry does"
-                );
                 document_schema::assert_valid_document(
-                    &serde_json::to_value(&entry.analysis).expect("serialize"),
+                    &serde_json::to_value(document).expect("serialize"),
                     &expect.name,
                 );
             }
@@ -213,7 +215,7 @@ fn a_directory_walk_yields_one_item_per_file() {
                 "{} expected shape {shape}, got {}",
                 expect.name,
                 match got {
-                    Ok(_) => "entry",
+                    Ok(_) => "document",
                     Err(_) => "error",
                 }
             ),

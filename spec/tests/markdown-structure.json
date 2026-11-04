@@ -1,0 +1,280 @@
+{
+  "name": "markdown-structure",
+  "description": "A markdown document with every construct the reader recognises or skips: front matter, headings (a `## References` heading included, which once ended the document), inline markup the parser must not read, a block quote (never parsed), a list item, and a table. Pins the section tree, every paragraph's kind and span, what was skipped and where, and every sentence and token span, all in UTF-8 bytes of the input.",
+  "input": "---\ntitle: Field notes\n---\n\n# Field notes\n\nThe river **rose** overnight.\n\n> The water was cold.\n\n- Bring `boots` tomorrow.\n\n| day | level |\n|-----|-------|\n| 1   | 2     |\n\n## References\n\nSmith wrote the guide.\n",
+  "format": "markdown",
+  "expect": {
+    "metrics": {
+      "total_sentences": 3,
+      "total_words": 11,
+      "paragraph_count": 4,
+      "vocabulary_ttr": 0.909091,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.0
+    },
+    "sections": [
+      {
+        "heading": "Field notes",
+        "level": 1,
+        "span": {
+          "start": 28,
+          "end": 41
+        }
+      },
+      {
+        "heading": "References",
+        "level": 2,
+        "span": {
+          "start": 173,
+          "end": 186
+        }
+      }
+    ],
+    "paragraphs": [
+      {
+        "kind": "paragraph",
+        "span": {
+          "start": 43,
+          "end": 72
+        }
+      },
+      {
+        "kind": "quote",
+        "span": {
+          "start": 74,
+          "end": 95
+        }
+      },
+      {
+        "kind": "list_item",
+        "span": {
+          "start": 97,
+          "end": 122
+        }
+      },
+      {
+        "kind": "paragraph",
+        "span": {
+          "start": 188,
+          "end": 210
+        }
+      }
+    ],
+    "skipped": [
+      {
+        "kind": "front_matter",
+        "span": {
+          "start": 0,
+          "end": 26
+        }
+      },
+      {
+        "kind": "table",
+        "span": {
+          "start": 124,
+          "end": 171
+        }
+      }
+    ],
+    "sentences": [
+      {
+        "span": {
+          "start": 43,
+          "end": 72
+        },
+        "text": "The river rose overnight.",
+        "token_count": 5,
+        "tokens": [
+          {
+            "id": 1,
+            "span": {
+              "start": 43,
+              "end": 46
+            },
+            "text": "The",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 2,
+            "dep": "det"
+          },
+          {
+            "id": 2,
+            "span": {
+              "start": 47,
+              "end": 52
+            },
+            "text": "river",
+            "lemma": "river",
+            "pos": "NOUN",
+            "head": 3,
+            "dep": "nsubj"
+          },
+          {
+            "id": 3,
+            "span": {
+              "start": 55,
+              "end": 59
+            },
+            "text": "rose",
+            "lemma": "rise",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 4,
+            "span": {
+              "start": 62,
+              "end": 71
+            },
+            "text": "overnight",
+            "lemma": "overnight",
+            "pos": "ADV",
+            "head": 3,
+            "dep": "advmod"
+          },
+          {
+            "id": 5,
+            "span": {
+              "start": 71,
+              "end": 72
+            },
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 3,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "span": {
+          "start": 99,
+          "end": 122
+        },
+        "text": "Bring boots tomorrow.",
+        "token_count": 4,
+        "tokens": [
+          {
+            "id": 1,
+            "span": {
+              "start": 99,
+              "end": 104
+            },
+            "text": "Bring",
+            "lemma": "bring",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 2,
+            "span": {
+              "start": 106,
+              "end": 111
+            },
+            "text": "boots",
+            "lemma": "boot",
+            "pos": "NOUN",
+            "head": 1,
+            "dep": "obj"
+          },
+          {
+            "id": 3,
+            "span": {
+              "start": 113,
+              "end": 121
+            },
+            "text": "tomorrow",
+            "lemma": "tomorrow",
+            "pos": "NOUN",
+            "head": 1,
+            "dep": "obl:tmod"
+          },
+          {
+            "id": 4,
+            "span": {
+              "start": 121,
+              "end": 122
+            },
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 1,
+            "dep": "punct"
+          }
+        ]
+      },
+      {
+        "span": {
+          "start": 188,
+          "end": 210
+        },
+        "text": "Smith wrote the guide.",
+        "token_count": 5,
+        "tokens": [
+          {
+            "id": 1,
+            "span": {
+              "start": 188,
+              "end": 193
+            },
+            "text": "Smith",
+            "lemma": "Smith",
+            "pos": "PROPN",
+            "head": 2,
+            "dep": "nsubj"
+          },
+          {
+            "id": 2,
+            "span": {
+              "start": 194,
+              "end": 199
+            },
+            "text": "wrote",
+            "lemma": "write",
+            "pos": "VERB",
+            "head": 0,
+            "dep": "root"
+          },
+          {
+            "id": 3,
+            "span": {
+              "start": 200,
+              "end": 203
+            },
+            "text": "the",
+            "lemma": "the",
+            "pos": "DET",
+            "head": 4,
+            "dep": "det"
+          },
+          {
+            "id": 4,
+            "span": {
+              "start": 204,
+              "end": 209
+            },
+            "text": "guide",
+            "lemma": "guide",
+            "pos": "NOUN",
+            "head": 2,
+            "dep": "obj"
+          },
+          {
+            "id": 5,
+            "span": {
+              "start": 209,
+              "end": 210
+            },
+            "text": ".",
+            "lemma": ".",
+            "pos": "PUNCT",
+            "head": 2,
+            "dep": "punct"
+          }
+        ]
+      }
+    ]
+  }
+}

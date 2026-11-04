@@ -3,7 +3,8 @@
 #[cfg(feature = "cli")]
 pub mod cli;
 pub mod config;
-pub mod decompose;
+mod decompose;
+mod detect;
 mod digest;
 pub mod domain;
 pub mod embed;
@@ -11,27 +12,30 @@ pub mod extraction;
 pub mod hearst;
 pub mod metrics;
 pub mod nlp;
-pub mod source;
+mod source;
 mod stopwords;
+mod structure;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use decompose::Decomposer;
-use domain::{Document, MAX_INPUT_BYTES};
+pub use domain::Block;
+use domain::{Document, Format, MAX_INPUT_BYTES, ParagraphKind};
 use nlp::NlpProvider;
 use source::Source;
 
-/// Reject text whose byte length exceeds [`MAX_INPUT_BYTES`].
+/// Reject an input or an analysed text of `len` bytes over
+/// [`MAX_INPUT_BYTES`].
 ///
 /// Returns `Error::InputTooLarge { what: "input", .. }` so consumers can
 /// distinguish the bound check from per-extractor caps (which use distinct
 /// `what` labels). [`Engine::annotate`] runs this gate, and annotate is
 /// the only route from text to the parser.
-fn check_input_size(text: &str) -> domain::Result<()> {
-    if text.len() > MAX_INPUT_BYTES {
+fn check_input_size(len: usize) -> domain::Result<()> {
+    if len > MAX_INPUT_BYTES {
         return Err(domain::Error::InputTooLarge {
             limit: MAX_INPUT_BYTES,
-            actual: text.len(),
+            actual: len,
             what: "input",
         });
     }
@@ -39,140 +43,212 @@ fn check_input_size(text: &str) -> domain::Result<()> {
 }
 
 // ---------------------------------------------------------------------------
-// The pipeline surface: Ingest -> Engine
+// The input surface: Input, Inputs -> Engine
 // ---------------------------------------------------------------------------
 
-/// One item of ingested input: a raw document, or the failure that stood
-/// in its place.
+/// One document to analyze: text, bytes, a file, or blocks.
 ///
-/// The error side is per-document by construction. A failed read does
-/// not abort the stream; it travels through the pipeline as data and
-/// lands in [`domain::CorpusResult::errors`].
-pub type Ingested = std::result::Result<domain::RawDocument, domain::DocumentError>;
+/// Opaque and lazy. Constructing one reads nothing and cannot fail; the
+/// file is read, the format detected and the size cap applied when
+/// [`Engine::analyze`] or [`Engine::analyze_all`] reaches it, so a file
+/// that cannot be read is one failed item of a stream, not an abort.
+///
+/// How the format is decided, from strongest to weakest evidence: a PDF
+/// or DOCX signature in the bytes, the format the caller names, the file
+/// name's extension, and plain text. A recognised format no reader ships
+/// for fails with [`domain::Error::UnsupportedFormat`], and so do bytes
+/// that are not UTF-8 text.
+///
+/// Every constructor reaches the parser through [`Engine::annotate`], so
+/// the [`MAX_INPUT_BYTES`] cap holds for all of them.
+#[derive(Debug, Clone)]
+pub struct Input(InputKind);
 
-enum Pending {
-    /// Already in memory. Yielding it cannot fail.
-    Ready(domain::RawDocument),
-    /// A file to read when pulled.
-    File(std::path::PathBuf),
+#[derive(Debug, Clone)]
+enum InputKind {
+    Text {
+        text: String,
+        format: Format,
+    },
+    Bytes {
+        data: Vec<u8>,
+        format: Option<Format>,
+    },
+    File(PathBuf),
+    Blocks(Vec<Block>),
 }
 
-/// A stream of documents entering the pipeline.
-///
-/// One concrete type for every source shape: a string is a stream of
-/// one, a file is a stream of one, a directory is a stream of many.
-/// That makes "a single document is a collection of one" a fact about
-/// the types rather than a convention, and it is why [`Engine::analyze`]
-/// can be one function instead of six.
-///
-/// Reads are lazy. [`Ingest::path`] on a directory lists the entries up
-/// front (a listing failure is the constructor's `Err`) but reads no
-/// file until the iterator is pulled, so "the constructor returned `Ok`"
-/// does not mean "every file was read". Per-file failures surface as
-/// `Err` items carrying the path.
-pub struct Ingest {
-    items: std::vec::IntoIter<Pending>,
-}
+impl Input {
+    /// Text in a format the caller names. The text is the analysed text:
+    /// every span in the result points into it.
+    ///
+    /// ```
+    /// let input = matra::Input::text("# Notes\n\nThe river rose.", matra::domain::Format::Markdown);
+    /// ```
+    pub fn text(text: impl Into<String>, format: Format) -> Input {
+        Input(InputKind::Text {
+            text: text.into(),
+            format,
+        })
+    }
 
-impl Ingest {
-    /// A stream of one in-memory document. Never fails.
-    pub fn text(text: impl Into<String>, format: domain::Format) -> Self {
-        Self {
-            items: vec![Pending::Ready(domain::RawDocument::new(
-                text.into(),
-                None,
-                format,
-            ))]
-            .into_iter(),
+    /// Bytes from anywhere: a caller that fetches its own documents hands
+    /// them in here. With `format` `None` the format is detected from the
+    /// bytes (a PDF or DOCX signature) and is otherwise plain text; a
+    /// signature outranks a format the caller names.
+    pub fn bytes(data: impl Into<Vec<u8>>, format: Option<Format>) -> Input {
+        Input(InputKind::Bytes {
+            data: data.into(),
+            format,
+        })
+    }
+
+    /// The file at `path`, read when the input is analysed. Its format is
+    /// detected from its bytes, then its extension. A symlink is refused,
+    /// and a directory fails with [`domain::Error::InvalidInput`] naming
+    /// [`Inputs::dir`], which reads one. The path is recorded in the
+    /// result's `provenance.source.path`.
+    pub fn file(path: impl AsRef<Path>) -> Input {
+        Input(InputKind::File(path.as_ref().to_path_buf()))
+    }
+
+    /// Headings and paragraphs the caller supplies, for a format matra
+    /// has no reader for. The analysed text is the blocks' texts joined
+    /// by a blank line (`"\n\n"`), in order.
+    ///
+    /// ```
+    /// use matra::{Block, Input};
+    /// let input = Input::blocks([
+    ///     Block::heading(1, "Field notes"),
+    ///     Block::paragraph("The river rose overnight."),
+    /// ]);
+    /// ```
+    pub fn blocks(blocks: impl IntoIterator<Item = Block>) -> Input {
+        Input(InputKind::Blocks(blocks.into_iter().collect()))
+    }
+
+    /// The path a file input names, which a failed item carries.
+    fn path(&self) -> Option<&Path> {
+        match &self.0 {
+            InputKind::File(path) => Some(path),
+            InputKind::Text { .. } | InputKind::Bytes { .. } | InputKind::Blocks(_) => None,
         }
     }
+}
 
-    /// A stream from a path: one document for a file, zero or more for a
-    /// directory.
+/// The documents in a directory: an iterator of [`Input::file`], one per
+/// regular file, sorted by path. Not recursive; symlinks are skipped.
+///
+/// [`Inputs::dir`] lists the directory up front, and a listing failure is
+/// its `Err`; each file is read only when its `Input` is analysed, so a
+/// file that cannot be read is one failed item, not an aborted walk.
+///
+/// ```no_run
+/// # fn example(engine: &matra::Engine) -> matra::domain::Result<()> {
+/// for item in engine.analyze_all(matra::Inputs::dir("docs/")?) {
+///     match item {
+///         Ok(doc) => println!("{:?}: {} words", doc.provenance.source.path, doc.metrics.total_words),
+///         Err(e) => eprintln!("{e}"),
+///     }
+/// }
+/// # Ok(())
+/// # }
+/// ```
+#[derive(Debug)]
+pub struct Inputs {
+    paths: std::vec::IntoIter<PathBuf>,
+}
+
+impl Inputs {
+    /// The regular files in the directory at `path`.
     ///
-    /// The `Err` here is top-level only: the path does not exist, or the
-    /// directory cannot be listed. Everything per-file (unreadable,
-    /// oversized, a symlink) is deferred to iteration and yielded as an
-    /// `Err` item, so one bad file cannot abort a directory walk.
-    pub fn path(input: impl AsRef<Path>) -> domain::Result<Self> {
-        let input = input.as_ref();
-        let metadata = std::fs::symlink_metadata(input)?;
-        let pending = if metadata.file_type().is_dir() {
-            source::directory::DirectorySource
-                .candidate_paths(input)?
-                .into_iter()
-                .map(Pending::File)
-                .collect()
-        } else {
-            // A file, a symlink, or something stranger. FileSource's own
-            // guards (symlink refusal, size cap) run at pull time.
-            vec![Pending::File(input.to_path_buf())]
-        };
-        Ok(Self {
-            items: pending.into_iter(),
+    /// # Errors
+    ///
+    /// [`domain::Error::Io`] when the path does not exist, cannot be
+    /// listed, or is a symlink (refused, as a file symlink is);
+    /// [`domain::Error::InvalidInput`] naming [`Input::file`] when it is
+    /// not a directory.
+    pub fn dir(path: impl AsRef<Path>) -> domain::Result<Inputs> {
+        let path = path.as_ref();
+        let file_type = std::fs::symlink_metadata(path)?.file_type();
+        if file_type.is_symlink() {
+            return Err(domain::Error::Io(std::io::Error::new(
+                std::io::ErrorKind::Unsupported,
+                format!("refusing to read symlink: {}", path.display()),
+            )));
+        }
+        if !file_type.is_dir() {
+            return Err(domain::Error::InvalidInput(format!(
+                "{} is not a directory; read a file with Input::file",
+                path.display()
+            )));
+        }
+        let paths = source::directory::DirectorySource.candidate_paths(path)?;
+        Ok(Inputs {
+            paths: paths.into_iter(),
         })
     }
 }
 
-impl Iterator for Ingest {
-    type Item = Ingested;
+impl Iterator for Inputs {
+    type Item = Input;
 
-    fn next(&mut self) -> Option<Ingested> {
-        let item = self.items.next()?;
-        Some(match item {
-            Pending::Ready(doc) => Ok(doc),
-            Pending::File(path) => match source::file::FileSource.read(&path) {
-                Ok(docs) => docs.into_iter().next().ok_or_else(|| {
-                    domain::DocumentError::new(
-                        Some(path),
-                        domain::Error::Io(std::io::Error::new(
-                            std::io::ErrorKind::InvalidData,
-                            "source returned no documents",
-                        )),
-                    )
-                }),
-                Err(e) => Err(domain::DocumentError::new(Some(path), e)),
-            },
-        })
+    fn next(&mut self) -> Option<Input> {
+        self.paths.next().map(|path| Input(InputKind::File(path)))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.items.size_hint()
+        self.paths.size_hint()
     }
 }
 
-/// The assembled pipeline: an NLP provider plus a decomposer table.
+impl ExactSizeIterator for Inputs {}
+
+/// The assembled pipeline: a parser, plus the readers this build ships.
 ///
 /// Construction is the wiring step; after it, analysis is
-/// `ingest -> decompose -> compose` with no per-source or per-format
-/// entry points. Variation lives in the data ([`Ingest`]'s
-/// constructors, the [`decompose::Decomposers`] table), not in the
-/// function namespace.
+/// `fetch -> detect -> read -> structure -> parse -> measure`, each step
+/// a crate-private module hiding one decision. Variation lives in the
+/// data ([`Input`]'s constructors, the format), not in the function
+/// namespace.
 pub struct Engine {
     nlp: Box<dyn NlpProvider>,
-    decomposers: decompose::Decomposers,
+    readers: decompose::Decomposers,
 }
 
 impl Engine {
-    /// Wire an engine from a provider and a decomposer table.
-    ///
-    /// For the table this build ships, pass [`standard_decomposers()`].
-    pub fn new(nlp: Box<dyn NlpProvider>, decomposers: decompose::Decomposers) -> Self {
-        Self { nlp, decomposers }
+    /// Wire an engine around a parser, with the readers this build ships
+    /// (markdown, plain text and block input).
+    pub fn new(nlp: Box<dyn NlpProvider>) -> Self {
+        Self {
+            nlp,
+            readers: standard_readers(),
+        }
     }
 
-    /// Analyze a stream of documents.
+    /// Analyze one document: annotate, then compose.
     ///
-    /// Lazy: nothing is parsed until the returned iterator is pulled,
-    /// and each pull runs one document through [`Engine::analyze_one`]
-    /// to completion. An `Err` input item passes through unchanged
-    /// without touching the pipeline. Collect into
-    /// [`domain::CorpusResult`] to partition successes from failures:
+    /// # Errors
+    ///
+    /// Whatever [`Engine::annotate`] returns.
+    pub fn analyze(&self, input: Input) -> domain::Result<Document> {
+        let mut doc = self.annotate(input)?;
+        self.compose(&mut doc);
+        Ok(doc)
+    }
+
+    /// Analyze many documents, lazily and in order.
+    ///
+    /// Nothing is read or parsed until the returned iterator is pulled,
+    /// and each pull runs one input through [`Engine::analyze`]. A
+    /// failure is an `Err` item carrying the input's path when it has
+    /// one, and the stream goes on. Collect into [`domain::CorpusResult`]
+    /// to partition successes from failures:
     ///
     /// ```no_run
     /// # fn example(engine: &matra::Engine) -> matra::domain::Result<()> {
     /// let result: matra::domain::CorpusResult =
-    ///     engine.analyze(matra::Ingest::path("docs/")?).collect();
+    ///     engine.analyze_all(matra::Inputs::dir("docs/")?).collect();
     /// # Ok(())
     /// # }
     /// ```
@@ -180,44 +256,34 @@ impl Engine {
     /// The returned iterator borrows the engine and is not `Send`:
     /// [`NlpProvider`] is `Send` without `Sync`, so the stream cannot be
     /// shared across threads.
-    pub fn analyze<I>(
+    pub fn analyze_all<I>(
         &self,
-        input: I,
-    ) -> impl Iterator<Item = std::result::Result<domain::CorpusEntry, domain::DocumentError>>
+        inputs: I,
+    ) -> impl Iterator<Item = std::result::Result<Document, domain::DocumentError>>
     where
-        I: IntoIterator<Item = Ingested>,
+        I: IntoIterator<Item = Input>,
     {
-        input
-            .into_iter()
-            .map(|item| item.and_then(|raw| self.analyze_one(raw)))
+        inputs.into_iter().map(|input| {
+            let path = input.path().map(Path::to_path_buf);
+            self.analyze(input)
+                .map_err(|e| domain::DocumentError::new(path, e))
+        })
     }
 
-    /// Analyze one document: annotate, then compose.
-    ///
-    /// This is the singleton view of [`Engine::analyze`]; the laws
-    /// pinning their agreement live in the test suite.
-    pub fn analyze_one(
-        &self,
-        raw: domain::RawDocument,
-    ) -> std::result::Result<domain::CorpusEntry, domain::DocumentError> {
-        let path = raw.path.clone();
-        match self.annotate(&raw) {
-            Ok(mut doc) => {
-                self.compose(&mut doc);
-                Ok(domain::CorpusEntry::new(path, doc))
-            }
-            Err(e) => Err(domain::DocumentError::new(path, e)),
-        }
-    }
-
-    /// Decompose and parse one document into an unmeasured [`Document`]:
-    /// structure from the format's decomposer, sentences attached
-    /// per-paragraph, every metric slot still `None`.
+    /// Read and parse one document into an unmeasured [`Document`]:
+    /// fetch its bytes, detect its format, read it into blocks with their
+    /// spans, build the section tree, and parse each paragraph, every
+    /// metric slot still `None`.
     ///
     /// This is the only route from text to the parser, which is what
-    /// makes the input size cap a property of the pipeline rather than
-    /// of each entry point: no text over [`MAX_INPUT_BYTES`] reaches
-    /// [`NlpProvider::parse`].
+    /// makes the input size cap a property of the pipeline rather than of
+    /// each entry point: no input or analysed text over
+    /// [`MAX_INPUT_BYTES`] reaches [`NlpProvider::parse`].
+    ///
+    /// Each paragraph is parsed on its own (never a whole document joined
+    /// and matched back), and the token and sentence spans the parser
+    /// reports against the paragraph's text are mapped here, the one
+    /// place it is parsed, into the analysed text. A quote is not parsed.
     ///
     /// Structure materializes here (RFC-0008): derived facts whose
     /// detectors live outside the domain are filled onto each parsed
@@ -228,34 +294,96 @@ impl Engine {
     /// inside the provider.
     ///
     /// The provenance is recorded here too, once: the parser's
-    /// [`NlpProvider::identity`], the format, and the input's path,
-    /// length and SHA-256.
-    pub fn annotate(&self, raw: &domain::RawDocument) -> domain::Result<Document> {
-        check_input_size(&raw.text)?;
-        let decomposer = self
-            .decomposers
-            .get(&raw.format)
-            .ok_or_else(|| domain::Error::UnsupportedFormat(raw.format.clone()))?;
+    /// [`NlpProvider::identity`], the format, and the input's path and
+    /// the analysed text's length and SHA-256.
+    ///
+    /// # Errors
+    ///
+    /// [`domain::Error::InputTooLarge`] over the cap;
+    /// [`domain::Error::UnsupportedFormat`] for a format no reader ships
+    /// for, or bytes that are not UTF-8; [`domain::Error::InvalidInput`]
+    /// for a directory named as a file and for block input that does not
+    /// parse; [`domain::Error::Io`] when a file cannot be read; and
+    /// whatever the parser returns.
+    pub fn annotate(&self, input: Input) -> domain::Result<Document> {
+        let path = input.path().map(Path::to_path_buf);
+        let (format, input_text, read) = match input.0 {
+            InputKind::Text { text, format } => {
+                check_input_size(text.len())?;
+                let read = self.reader(&format)?.decompose(&text)?;
+                (format, text, read)
+            }
+            InputKind::Bytes { data, format } => self.read_bytes(data, format.as_ref(), None)?,
+            InputKind::File(path) => {
+                let fetched = source::file::FileSource
+                    .read(&path)?
+                    .into_iter()
+                    .next()
+                    .ok_or_else(|| {
+                        domain::Error::Io(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "source returned no documents",
+                        ))
+                    })?;
+                self.read_bytes(fetched.bytes, None, Some(&fetched.path))?
+            }
+            InputKind::Blocks(blocks) => (
+                Format::Blocks,
+                String::new(),
+                decompose::blocks::assemble(&blocks)?,
+            ),
+        };
+        let text = read.text.unwrap_or(input_text);
+        check_input_size(text.len())?;
+
         let provenance = domain::Provenance::new(
             self.nlp.identity(),
-            raw.format.clone(),
-            domain::ProvenanceSource::new(
-                raw.path.clone(),
-                raw.text.len(),
-                digest::sha256_hex(raw.text.as_bytes()),
-            ),
+            format,
+            domain::ProvenanceSource::new(path, text.len(), digest::sha256_hex(text.as_bytes())),
         );
-        let mut doc = Document::new(provenance, decomposer.decompose(&raw.text));
-        for para in doc.paragraphs_mut() {
-            if para.in_blockquote {
+        let (sections, maps) = structure::sections(read.blocks);
+        let mut doc = Document::new(provenance, sections, read.skipped);
+        for (para, map) in doc.paragraphs_mut().zip(&maps) {
+            if para.kind == ParagraphKind::Quote {
                 continue;
             }
-            para.sentences = self.nlp.parse(&para.text)?;
-            for sentence in &mut para.sentences {
+            let mut sentences = self.nlp.parse(&para.text)?;
+            for sentence in &mut sentences {
+                sentence.span = map.map(sentence.span);
+                for token in &mut sentence.tokens {
+                    token.span = map.map(token.span);
+                }
                 sentence.hearst_pairs = hearst::hypernymy_pairs(&sentence.tokens);
             }
+            para.sentences = sentences;
         }
         Ok(doc)
+    }
+
+    /// Detect the format of `bytes`, decode them, and read them: the
+    /// shared half of byte and file input.
+    fn read_bytes(
+        &self,
+        bytes: Vec<u8>,
+        declared: Option<&Format>,
+        name: Option<&Path>,
+    ) -> domain::Result<(Format, String, decompose::Read)> {
+        check_input_size(bytes.len())?;
+        let format = detect::format_of(&bytes, declared, name);
+        let reader = self.reader(&format)?;
+        let text = detect::decode(bytes)?;
+        let read = reader.decompose(&text)?;
+        Ok((format, text, read))
+    }
+
+    /// The reader for `format`, or the error naming what would read it.
+    fn reader(&self, format: &Format) -> domain::Result<&dyn Decomposer> {
+        self.readers
+            .get(format)
+            .ok_or_else(|| domain::Error::UnsupportedFormat {
+                format: Some(format.clone()),
+                feature: reader_feature(format),
+            })
     }
 
     /// Run the metric suite over an annotated document. Total: metrics
@@ -269,13 +397,13 @@ impl Engine {
 
 #[cfg(feature = "udpipe")]
 impl Engine {
-    /// Wire the standard pipeline from a resolved [`config::Config`]: the UDPipe
-    /// adapter over the configured model directory, plus
-    /// [`standard_decomposers()`].
+    /// Wire the standard pipeline from a resolved [`config::Config`]: the
+    /// UDPipe adapter over the configured model directory, plus the
+    /// readers this build ships.
     ///
-    /// Additive to [`Engine::new`], which still takes any provider and
-    /// any decomposer table. This is the wiring most callers want, named
-    /// once instead of rewritten per call site.
+    /// Additive to [`Engine::new`], which takes any provider. This is the
+    /// wiring most callers want, named once instead of rewritten per call
+    /// site.
     ///
     /// ```no_run
     /// let cfg = matra::config::Config::resolve()?;
@@ -290,7 +418,7 @@ impl Engine {
     /// is not writable.
     pub fn from_config(cfg: &config::Config) -> domain::Result<Engine> {
         let nlp = nlp::udpipe::Udpipe::from_config(cfg)?;
-        Ok(Engine::new(Box::new(nlp), standard_decomposers()))
+        Ok(Engine::new(Box::new(nlp)))
     }
 
     /// [`Engine::from_config`], with `notice` called once before each
@@ -317,7 +445,7 @@ impl Engine {
         notice: impl FnMut(&domain::ProvisionNotice),
     ) -> domain::Result<Engine> {
         let nlp = nlp::udpipe::Udpipe::from_config_with_notice(cfg, notice)?;
-        Ok(Engine::new(Box::new(nlp), standard_decomposers()))
+        Ok(Engine::new(Box::new(nlp)))
     }
 
     /// [`config::Config::resolve()`] then [`Engine::from_config`]: the no-setup
@@ -336,36 +464,46 @@ impl Engine {
     }
 }
 
-/// The decomposer this build ships for `format`, or `None` for formats
-/// that are reserved but unimplemented.
+/// The reader this build ships for `format`, or `None` for a format that
+/// is recognised but has no reader.
 ///
 /// The match is deliberately exhaustive with no wildcard: adding a
 /// `Format` variant fails compilation here, so a new format is a
 /// conscious registration decision rather than a silent
 /// `Error::UnsupportedFormat` at run time.
-fn default_decomposer(format: &domain::Format) -> Option<Box<dyn Decomposer>> {
+fn default_reader(format: &Format) -> Option<Box<dyn Decomposer>> {
     match format {
-        domain::Format::Markdown => Some(Box::new(decompose::markdown::MarkdownDecomposer)),
-        domain::Format::PlainText => Some(Box::new(decompose::plain::PlainTextDecomposer)),
-        domain::Format::Pdf | domain::Format::Docx => None,
+        Format::Markdown => Some(Box::new(decompose::markdown::MarkdownDecomposer)),
+        Format::PlainText => Some(Box::new(decompose::plain::PlainTextDecomposer)),
+        Format::Blocks => Some(Box::new(decompose::blocks::BlocksDecomposer)),
+        Format::Pdf | Format::Docx => None,
     }
 }
 
-/// The decomposer table this build ships: markdown and plain text.
-///
-/// Lives in the composition root because it is the only place that
-/// names every adapter (boundary rule 7). Callers who want a different
-/// table build their own with [`decompose::Decomposers::with`].
-pub fn standard_decomposers() -> decompose::Decomposers {
+/// The Cargo feature that would add a reader for `format`, for the
+/// `UnsupportedFormat` message. No feature of this version reads PDF or
+/// DOCX. Exhaustive for the same reason as [`default_reader`]: a reader
+/// behind a feature is a decision to record here.
+fn reader_feature(format: &Format) -> Option<&'static str> {
+    match format {
+        Format::Markdown | Format::PlainText | Format::Blocks | Format::Pdf | Format::Docx => None,
+    }
+}
+
+/// The reader table this build ships: markdown, plain text and block
+/// input. Lives in the composition root because it is the only place
+/// that names every adapter (boundary rule 7).
+fn standard_readers() -> decompose::Decomposers {
     let mut table = decompose::Decomposers::new();
     for format in [
-        domain::Format::Markdown,
-        domain::Format::PlainText,
-        domain::Format::Pdf,
-        domain::Format::Docx,
+        Format::Markdown,
+        Format::PlainText,
+        Format::Blocks,
+        Format::Pdf,
+        Format::Docx,
     ] {
-        if let Some(decomposer) = default_decomposer(&format) {
-            table = table.with(format, decomposer);
+        if let Some(reader) = default_reader(&format) {
+            table = table.with(format, reader);
         }
     }
     table
@@ -426,7 +564,7 @@ mod python {
     use crate::domain;
     use crate::nlp::NlpProvider;
 
-    use domain::{Format, RawDocument};
+    use domain::Format;
 
     /// Routes domain::Error variants to the appropriate Python exception
     /// class, preserving variant identity across the FFI boundary.
@@ -456,7 +594,7 @@ mod python {
             // compile error — exactly what we want for routing fidelity.
             match e.0 {
                 ModelNotFound(_) => PyFileNotFoundError::new_err(msg),
-                InputTooLarge { .. } | UnsupportedFormat(_) | InvalidInput(_) => {
+                InputTooLarge { .. } | UnsupportedFormat { .. } | InvalidInput(_) => {
                     PyValueError::new_err(msg)
                 }
                 Io(_) => PyOSError::new_err(msg),
@@ -482,17 +620,15 @@ mod python {
     impl Matra {
         fn from_nlp(nlp: Box<dyn NlpProvider>) -> Self {
             Self {
-                engine: crate::Engine::new(nlp, crate::standard_decomposers()),
+                engine: crate::Engine::new(nlp),
             }
         }
 
         /// One in-memory document through the whole pipeline.
         fn document(&self, text: &str, format: Format) -> Result<domain::Document, MatraError> {
-            let raw = RawDocument::new(text.to_string(), None, format);
             self.engine
-                .analyze_one(raw)
-                .map(|entry| entry.analysis)
-                .map_err(|e| MatraError(e.error))
+                .analyze(crate::Input::text(text, format))
+                .map_err(MatraError)
         }
 
         /// Annotated structure for one in-memory plain-text document.
@@ -500,8 +636,9 @@ mod python {
         /// Parse only: compose would fill a metric suite the callers of
         /// this helper immediately discard.
         fn annotated(&self, text: &str) -> Result<domain::Document, MatraError> {
-            let raw = RawDocument::new(text.to_string(), None, Format::PlainText);
-            self.engine.annotate(&raw).map_err(MatraError)
+            self.engine
+                .annotate(crate::Input::text(text, Format::PlainText))
+                .map_err(MatraError)
         }
 
         /// Pipeline-routed sentences for the extractors: same size gate,
@@ -654,32 +791,37 @@ mod python {
         /// Analyze every document a path names: one for a file, one per
         /// regular file for a directory.
         ///
-        /// Returns a list in ingestion order (sorted by path for a
-        /// directory). Each item is a `CorpusEntry` dict for a document
-        /// that analyzed, or a `DocumentError` dict for one that did
-        /// not, so one unreadable file is one error item rather than an
-        /// aborted walk. A failure listing the path itself is raised
-        /// instead: there is no per-document result to carry it.
+        /// Returns a list in path order (sorted for a directory). Each
+        /// item is the `Document` dict for a document that analyzed,
+        /// naming its path in `provenance.source.path`, or a
+        /// `DocumentError` dict for one that did not, so one unreadable
+        /// file is one error item rather than an aborted walk. A path
+        /// that does not exist, or a directory that cannot be listed, is
+        /// raised instead: there is no per-document result to carry it.
         ///
         /// `path` is anything Python calls a path: a `str`, or an
         /// `os.PathLike` such as a `pathlib.Path`.
         ///
-        /// Both item shapes are assembled here rather than serialized.
-        /// `CorpusEntry` is `Serialize`, but its `path` is a `PathBuf`,
-        /// and serde refuses a non-UTF-8 one: a single file with an
-        /// undecodable name would end the whole walk with a
-        /// `RuntimeError`, which is the failure this method exists to
-        /// prevent. Every path here goes through [`fs_path_str`]
-        /// instead, and only the `Document` is serialized.
+        /// A document's path goes through [`fs_path_str`] rather than
+        /// serde, which writes an undecodable name lossily; an error
+        /// item is assembled here, since `DocumentError` has no serde
+        /// form.
         fn analyze_path<'py>(&self, py: Python<'py>, path: PathBuf) -> PyResult<Bound<'py, PyAny>> {
-            let ingest = crate::Ingest::path(&path).map_err(MatraError)?;
+            let is_dir = std::fs::symlink_metadata(&path)
+                .map_err(|e| MatraError(domain::Error::Io(e)))?
+                .is_dir();
+            let inputs: Vec<crate::Input> = if is_dir {
+                crate::Inputs::dir(&path).map_err(MatraError)?.collect()
+            } else {
+                vec![crate::Input::file(&path)]
+            };
             let items = PyList::empty(py);
-            for item in self.engine.analyze(ingest) {
-                let entry = match item {
-                    Ok(entry) => corpus_entry_dict(py, &entry)?,
+            for item in self.engine.analyze_all(inputs) {
+                let item = match item {
+                    Ok(doc) => document_dict(py, &doc)?,
                     Err(err) => document_error_dict(py, &err)?,
                 };
-                items.append(entry)?;
+                items.append(item)?;
             }
             Ok(items.into_any())
         }
@@ -1023,8 +1165,8 @@ mod python {
         Ok(PyString::new(py, &path.to_string_lossy()))
     }
 
-    /// The `path` field of either corpus item: a `str` for a document
-    /// that came from disk, `None` for one that never did.
+    /// The `path` field of an error item: a `str` for a document that
+    /// came from disk, `None` for one that never did.
     fn fs_path_item<'py>(
         py: Python<'py>,
         path: Option<&Path>,
@@ -1032,31 +1174,21 @@ mod python {
         path.map(|p| fs_path_str(py, p)).transpose()
     }
 
-    /// Project a [`domain::CorpusEntry`] into a dict.
+    /// Project a [`domain::Document`] read from disk into a dict.
     ///
-    /// Assembled field by field rather than serialized whole, because
-    /// serde would refuse the `PathBuf` on a non-UTF-8 name and take the
-    /// analysis down with it. The `Document` still goes through serde:
-    /// it is the shape `analyze` returns, and there is one wire form of
-    /// it, not two. Its own `provenance.source.path` is serialized
-    /// lossily (a JSON string cannot carry undecodable bytes), so it is
-    /// replaced with the same [`fs_path_str`] value `path` carries, and
-    /// the two agree byte for byte.
-    fn corpus_entry_dict<'py>(
-        py: Python<'py>,
-        entry: &domain::CorpusEntry,
-    ) -> PyResult<Bound<'py, PyAny>> {
-        let analysis = to_dict(py, &entry.analysis)?;
-        if let Some(path) = entry.analysis.provenance.source.path.as_deref() {
-            analysis
-                .get_item("provenance")?
+    /// The document goes through serde, the shape `analyze` returns, so
+    /// there is one wire form of it, not two. Its `provenance.source.path`
+    /// is serialized lossily (a JSON string cannot carry undecodable
+    /// bytes), so it is replaced with the [`fs_path_str`] value, which a
+    /// caller can hand back to `open`.
+    fn document_dict<'py>(py: Python<'py>, doc: &domain::Document) -> PyResult<Bound<'py, PyAny>> {
+        let dict = to_dict(py, doc)?;
+        if let Some(path) = doc.provenance.source.path.as_deref() {
+            dict.get_item("provenance")?
                 .get_item("source")?
                 .set_item("path", fs_path_str(py, path)?)?;
         }
-        let item = PyDict::new(py);
-        item.set_item("path", fs_path_item(py, entry.path.as_deref())?)?;
-        item.set_item("analysis", analysis)?;
-        Ok(item.into_any())
+        Ok(dict)
     }
 
     /// Project a [`domain::DocumentError`] into a dict.
@@ -1096,7 +1228,7 @@ mod python {
 mod tests {
     use super::*;
     use crate::nlp::NlpProvider;
-    use domain::Section;
+    use domain::{Section, Span};
 
     /// Minimal NlpProvider that returns no sentences. Lets us test composition-root
     /// gates (input size, etc.) without requiring a real NLP backend.
@@ -1126,6 +1258,42 @@ mod tests {
         }
         fn identity(&self) -> domain::Identity {
             domain::Identity::new("dot-split", None, None, None)
+        }
+    }
+
+    /// One sentence per paragraph, one token per whitespace-separated
+    /// word, each token carrying its span in the text it was given, as
+    /// the provider contract asks. Lets the span tests observe the
+    /// engine mapping those spans into the analysed text.
+    struct WordNlp;
+    impl NlpProvider for WordNlp {
+        fn parse(&self, text: &str) -> domain::Result<Vec<domain::Sentence>> {
+            let mut tokens = Vec::new();
+            let mut at = 0;
+            for word in text.split_whitespace() {
+                let start = at + text[at..].find(word).unwrap_or(0);
+                let end = start + word.len();
+                tokens.push(
+                    domain::Token::builder(
+                        tokens.len() + 1,
+                        word.to_string(),
+                        word.to_lowercase(),
+                        "X".to_string(),
+                        0,
+                        "dep".to_string(),
+                    )
+                    .span(Span::new(start, end))
+                    .build(),
+                );
+                at = end;
+            }
+            if tokens.is_empty() {
+                return Ok(Vec::new());
+            }
+            Ok(vec![domain::Sentence::new(text.to_string(), tokens)])
+        }
+        fn identity(&self) -> domain::Identity {
+            domain::Identity::new("words", None, None, None)
         }
     }
 
@@ -1173,184 +1341,498 @@ mod tests {
     }
 
     fn law_engine() -> Engine {
-        Engine::new(Box::new(DotSplitNlp), standard_decomposers())
+        Engine::new(Box::new(DotSplitNlp))
     }
 
-    /// Structural fingerprint for law equality: serialized entries plus
+    /// Structural fingerprint for law equality: serialized documents plus
     /// stringified errors. `Document` has no `PartialEq`; serde is the
     /// comparison it does have.
     fn fingerprint(
-        results: Vec<std::result::Result<domain::CorpusEntry, domain::DocumentError>>,
+        results: Vec<std::result::Result<Document, domain::DocumentError>>,
     ) -> Vec<String> {
         results
             .into_iter()
             .map(|r| match r {
-                Ok(entry) => format!("ok:{}", serde_json::to_string(&entry).unwrap()),
+                Ok(doc) => format!("ok:{}", serde_json::to_string(&doc).unwrap()),
                 Err(e) => format!("err:{e}"),
             })
             .collect()
     }
 
-    fn raw_plain(text: &str) -> domain::RawDocument {
-        domain::RawDocument::new(text.to_string(), None, domain::Format::PlainText)
+    /// One way to build each `Input` constructor from the same text: the
+    /// laws below are stated once and run for every one of them. The
+    /// file lives in `dir`, which the caller keeps alive.
+    fn constructors(text: &str, dir: &Path) -> Vec<(&'static str, Input)> {
+        let file = dir.join(format!("{}.txt", text.len()));
+        std::fs::write(&file, text).unwrap();
+        vec![
+            ("text", Input::text(text, Format::PlainText)),
+            ("bytes", Input::bytes(text.as_bytes(), None)),
+            ("file", Input::file(&file)),
+            (
+                "blocks",
+                Input::blocks(text.split("\n\n").map(Block::paragraph)),
+            ),
+        ]
     }
 
     #[test]
-    fn law_l1_analyze_commutes_with_chain() {
+    fn law_l1_analyze_all_commutes_with_chain() {
         let engine = law_engine();
-        let a = || Ingest::text("First stream. Has two.", domain::Format::PlainText);
-        let b = || Ingest::text("Second stream here.", domain::Format::PlainText);
-
-        let chained: Vec<_> = engine.analyze(a().chain(b())).collect();
-        let separate: Vec<_> = engine.analyze(a()).chain(engine.analyze(b())).collect();
-        assert_eq!(fingerprint(chained), fingerprint(separate));
+        let dir = tempfile::tempdir().unwrap();
+        let firsts = constructors("First stream. Has two.", dir.path());
+        let seconds = constructors("Second stream here.", dir.path());
+        for ((name, a), (_, b)) in firsts.into_iter().zip(seconds) {
+            let chained: Vec<_> = engine
+                .analyze_all([a.clone()].into_iter().chain([b.clone()]))
+                .collect();
+            let separate: Vec<_> = engine
+                .analyze_all([a])
+                .chain(engine.analyze_all([b]))
+                .collect();
+            assert_eq!(fingerprint(chained), fingerprint(separate), "{name}");
+        }
     }
 
     #[test]
-    fn law_l2_analyze_of_empty_is_empty() {
+    fn law_l2_analyze_all_of_empty_is_empty() {
         let engine = law_engine();
-        assert_eq!(engine.analyze(std::iter::empty()).count(), 0);
+        assert_eq!(engine.analyze_all(std::iter::empty()).count(), 0);
     }
 
     #[test]
-    fn law_l3_analyze_commutes_with_singleton_injection() {
+    fn law_l3_analyze_all_of_one_is_analyze() {
         let engine = law_engine();
-        let raw = || raw_plain("One document. Two sentences.");
-
-        let streamed: Vec<_> = engine.analyze(std::iter::once(Ok(raw()))).collect();
-        let direct: Vec<_> = std::iter::once(engine.analyze_one(raw())).collect();
-        assert_eq!(fingerprint(streamed), fingerprint(direct));
+        let dir = tempfile::tempdir().unwrap();
+        for (name, input) in constructors("One document. Two sentences.", dir.path()) {
+            let path = input.path().map(Path::to_path_buf);
+            let streamed: Vec<_> = engine.analyze_all([input.clone()]).collect();
+            let direct = vec![
+                engine
+                    .analyze(input)
+                    .map_err(|e| domain::DocumentError::new(path, e)),
+            ];
+            assert_eq!(fingerprint(streamed), fingerprint(direct), "{name}");
+        }
     }
 
     #[test]
-    fn law_l4_analyze_one_is_annotate_then_compose() {
+    fn law_l4_analyze_is_annotate_then_compose() {
         let engine = law_engine();
-        let raw = raw_plain("Composed of parts. Checked by law.");
-
-        let via_analyze_one = engine.analyze_one(raw.clone()).unwrap().analysis;
-        let via_stages = {
-            let mut doc = engine.annotate(&raw).unwrap();
-            engine.compose(&mut doc);
-            doc
-        };
-        assert_eq!(
-            serde_json::to_string(&via_analyze_one).unwrap(),
-            serde_json::to_string(&via_stages).unwrap()
-        );
+        let dir = tempfile::tempdir().unwrap();
+        for (name, input) in constructors("Composed of parts. Checked by law.", dir.path()) {
+            let via_analyze = engine.analyze(input.clone()).unwrap();
+            let via_stages = {
+                let mut doc = engine.annotate(input).unwrap();
+                engine.compose(&mut doc);
+                doc
+            };
+            assert_eq!(
+                serde_json::to_string(&via_analyze).unwrap(),
+                serde_json::to_string(&via_stages).unwrap(),
+                "{name}"
+            );
+        }
     }
 
     #[test]
-    fn law_l5_partition_entries_plus_errors_equals_input() {
+    fn law_l5_partition_documents_plus_errors_equals_inputs() {
         let (nlp, _, _) = ObservableNlp::new();
-        let engine = Engine::new(Box::new(nlp), standard_decomposers());
-        let input: Vec<Ingested> = vec![
-            Ok(raw_plain("Good document one.")),
-            Ok(raw_plain("This one is POISON and fails.")),
-            Err(domain::DocumentError::new(
-                Some(std::path::PathBuf::from("lost.md")),
-                domain::Error::ParseFailed("upstream".to_string()),
-            )),
-            Ok(raw_plain("Good document two.")),
-        ];
-        let n = input.len();
-        let result: domain::CorpusResult = engine.analyze(input).collect();
-        assert_eq!(result.corpus.entries.len() + result.errors.len(), n);
-        assert_eq!(result.corpus.entries.len(), 2);
-        assert_eq!(result.errors.len(), 2);
+        let engine = Engine::new(Box::new(nlp));
+        let dir = tempfile::tempdir().unwrap();
+        let mut inputs: Vec<Input> = constructors("Good document one.", dir.path())
+            .into_iter()
+            .map(|(_, input)| input)
+            .collect();
+        inputs.extend(
+            constructors("This one is POISON and fails.", dir.path())
+                .into_iter()
+                .map(|(_, input)| input),
+        );
+        inputs.push(Input::file(dir.path().join("lost.md")));
+        let n = inputs.len();
+        let result: domain::CorpusResult = engine.analyze_all(inputs).collect();
+        assert_eq!(result.corpus.documents.len() + result.errors.len(), n);
+        assert_eq!(result.corpus.documents.len(), 4);
+        assert_eq!(result.errors.len(), 5);
     }
 
+    /// A failed read never reaches the parser, whatever the reason: a
+    /// missing file, a directory named as a file, bytes that are not
+    /// text, a signature no reader ships for. Each is an `Err` item, the
+    /// file's carrying its path.
     #[test]
-    fn law_l6_err_input_passes_through_untouched() {
+    fn law_l6_a_failed_read_never_reaches_the_parser() {
         let (nlp, calls, _) = ObservableNlp::new();
-        let engine = Engine::new(Box::new(nlp), standard_decomposers());
-        let input: Vec<Ingested> = vec![Err(domain::DocumentError::new(
-            Some(std::path::PathBuf::from("ghost.md")),
-            domain::Error::ParseFailed("upstream".to_string()),
-        ))];
-
-        let out: Vec<_> = engine.analyze(input).collect();
-        assert_eq!(out.len(), 1);
-        let err = out.into_iter().next().unwrap().unwrap_err();
-        assert_eq!(err.path, Some(std::path::PathBuf::from("ghost.md")));
-        assert_eq!(err.to_string(), "ghost.md: parse failed: upstream");
+        let engine = Engine::new(Box::new(nlp));
+        let dir = tempfile::tempdir().unwrap();
+        let ghost = dir.path().join("ghost.md");
+        let inputs = vec![
+            Input::file(&ghost),
+            Input::file(dir.path()),
+            Input::bytes(vec![0xff, 0xfe, b'x'], None),
+            Input::bytes(b"%PDF-1.7".to_vec(), Some(Format::PlainText)),
+            Input::text("[{\"kind\": \"table\"}]", Format::Blocks),
+        ];
+        let out: Vec<_> = engine.analyze_all(inputs).collect();
+        assert_eq!(out.len(), 5);
+        assert!(out.iter().all(Result::is_err));
+        let first = out[0].as_ref().unwrap_err();
+        assert_eq!(first.path.as_deref(), Some(ghost.as_path()));
         assert_eq!(
             calls.load(Ordering::SeqCst),
             0,
-            "an Err input item must not reach the parser"
+            "a failed read must not reach the parser"
         );
-    }
 
-    #[test]
-    fn law_l6_err_input_never_reaches_the_parser() {
-        // Same law, observed from the provider's side: an all-Err stream
-        // produces zero parse calls, and a control document afterwards
-        // proves the counter is live.
-        let (nlp, calls, _) = ObservableNlp::new();
-        let engine = Engine::new(Box::new(nlp), standard_decomposers());
-        let input: Vec<Ingested> = (0..3)
-            .map(|i| {
-                Err(domain::DocumentError::new(
-                    None,
-                    domain::Error::ParseFailed(format!("e{i}")),
-                ))
-            })
-            .collect();
-        let _ = engine.analyze(input).count();
-        assert_eq!(calls.load(Ordering::SeqCst), 0);
-
-        engine.annotate(&raw_plain("Control.")).unwrap();
+        engine
+            .annotate(Input::text("Control.", Format::PlainText))
+            .unwrap();
         assert_eq!(calls.load(Ordering::SeqCst), 1, "counter is live");
     }
 
+    /// The size cap holds for every constructor: on the bytes handed in,
+    /// on a file's size, and on the analysed text a reader produces.
     #[test]
-    fn law_l7_no_oversized_text_reaches_the_parser() {
+    fn law_l7_no_oversized_input_reaches_the_parser() {
         let (nlp, _, max_len) = ObservableNlp::new();
-        let engine = Engine::new(Box::new(nlp), standard_decomposers());
+        let engine = Engine::new(Box::new(nlp));
+        let dir = tempfile::tempdir().unwrap();
         let oversized = "a".repeat(MAX_INPUT_BYTES + 1);
-
-        // Through the stream.
-        let out: Vec<_> = engine
-            .analyze(Ingest::text(oversized.clone(), domain::Format::PlainText))
-            .collect();
+        for (name, input) in constructors(&oversized, dir.path()) {
+            let out: Vec<_> = engine.analyze_all([input.clone()]).collect();
+            assert!(
+                matches!(
+                    out[0].as_ref().unwrap_err().error,
+                    domain::Error::InputTooLarge { .. }
+                ),
+                "{name} through the stream"
+            );
+            assert!(
+                matches!(
+                    engine.annotate(input),
+                    Err(domain::Error::InputTooLarge { .. })
+                ),
+                "{name} through annotate"
+            );
+        }
+        // Blocks under the cap one by one that join to more than it.
+        let half = "b".repeat(MAX_INPUT_BYTES / 2 + 1);
+        let joined = Input::blocks([Block::paragraph(half.clone()), Block::paragraph(half)]);
         assert!(matches!(
-            out[0].as_ref().unwrap_err().error,
-            domain::Error::InputTooLarge { .. }
-        ));
-
-        // Through annotate directly.
-        let raw = raw_plain(&oversized);
-        assert!(matches!(
-            engine.annotate(&raw),
+            engine.annotate(joined),
             Err(domain::Error::InputTooLarge { .. })
         ));
-
         assert!(
             max_len.load(Ordering::SeqCst) <= MAX_INPUT_BYTES,
             "the parser never saw text over the cap"
         );
     }
 
+    // ------------------------------------------------------------------
+    // L9, the accounting law
+    // ------------------------------------------------------------------
+
+    /// L9: every byte of the analysed text that is not whitespace lies in
+    /// exactly one heading span, paragraph span or skipped span. `Err`
+    /// names the first byte that does not, with its count.
+    fn accounting(text: &str, doc: &Document) -> std::result::Result<(), String> {
+        let mut owners = vec![0u8; text.len()];
+        let spans = doc
+            .sections
+            .iter()
+            .filter_map(|s| s.span)
+            .chain(doc.paragraphs().map(|p| p.span))
+            .chain(doc.skipped.iter().map(|s| s.span));
+        for span in spans {
+            if span.start > span.end || span.end > text.len() {
+                return Err(format!("span {span:?} is outside the text"));
+            }
+            for owner in &mut owners[span.start..span.end] {
+                *owner = owner.saturating_add(1);
+            }
+        }
+        for (at, c) in text.char_indices() {
+            if !c.is_whitespace() && owners[at] != 1 {
+                let mut from = at.saturating_sub(20);
+                while !text.is_char_boundary(from) {
+                    from -= 1;
+                }
+                let mut to = (at + 20).min(text.len());
+                while !text.is_char_boundary(to) {
+                    to += 1;
+                }
+                return Err(format!(
+                    "byte {at} ({c:?}) lies in {} spans, near {:?}",
+                    owners[at],
+                    &text[from..to]
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    fn accounting_engine() -> Engine {
+        Engine::new(Box::new(EmptyNlp))
+    }
+
+    /// L9 over every conformance fixture, in the format it names.
+    #[test]
+    fn law_l9_holds_over_every_conformance_fixture() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("spec/tests");
+        let engine = accounting_engine();
+        let mut checked = 0;
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let fixture: serde_json::Value =
+                serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+            let input = fixture["input"].as_str().unwrap();
+            let format: Format = serde_json::from_value(fixture["format"].clone()).unwrap();
+            let doc = engine.annotate(Input::text(input, format)).unwrap();
+            accounting(input, &doc).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+            checked += 1;
+        }
+        assert!(checked > 0, "no fixtures in {}", dir.display());
+    }
+
+    /// A small deterministic generator (xorshift64), so the property test
+    /// needs no dependency and a failure names the seed that found it.
+    struct Rng(u64);
+    impl Rng {
+        fn next(&mut self) -> u64 {
+            self.0 ^= self.0 << 13;
+            self.0 ^= self.0 >> 7;
+            self.0 ^= self.0 << 17;
+            self.0
+        }
+        fn pick<'a>(&mut self, items: &[&'a str]) -> &'a str {
+            items[usize::try_from(self.next() % items.len() as u64).unwrap()]
+        }
+    }
+
+    const MARKDOWN_PIECES: &[&str] = &[
+        "# Heading",
+        "## References",
+        "### Deep heading ###",
+        "#hashtag opens this line",
+        "Plain prose with **bold**, *em* and `code`.",
+        "Text with [a link](https://x.test) and ![alt](i.png) &amp; \\* and <br> html.",
+        "> quoted line\n> more quote",
+        "> one\n>\n> two",
+        ">",
+        "> # quoted heading",
+        "> - quoted item",
+        "- item one\n- item two\n  continued",
+        "1. first\n\n2. second",
+        "1) paren item",
+        "+ plus item",
+        "  * star item",
+        "- [ ] open task\n- [x] done task",
+        "-",
+        "1.",
+        "- > quote in a list",
+        "- ```\n  code in a list\n  ```",
+        "| a | b |\n|---|---|\n| 1 | 2 |",
+        "```rust\nfn main() {}\n```",
+        "~~~\ntilde fence\n~~~",
+        "    indented code",
+        "<div>\nhtml block\n</div>",
+        "<!-- a comment -->",
+        "---",
+        "***",
+        "___",
+        "[x]: https://example.com \"title\"",
+        "> [y]: /quoted-def",
+        "Setext heading\n===",
+        "Another setext\n---",
+        "line one\r\nline two",
+        "café, naïve, 日本語 and an emoji 🙂",
+        "~~struck~~ through",
+        "trailing hard break  \nnext line",
+        "a line ending in a backslash\\\nnext",
+        "[^1] footnote-looking text",
+        "\t\ttabbed text",
+        "*",
+        "> > nested quote",
+    ];
+
+    const SEPARATORS: &[&str] = &["\n\n", "\n", "\r\n\r\n", "\n\n\n", "\n \n"];
+
+    fn generated_markdown(rng: &mut Rng) -> String {
+        let mut doc = String::new();
+        if rng.next().is_multiple_of(5) {
+            doc.push_str(rng.pick(&["---\ntitle: x\n---\n\n", "+++\ntitle = 1\n+++\n\n"]));
+        }
+        let pieces = 1 + rng.next() % 8;
+        for i in 0..pieces {
+            if i > 0 {
+                doc.push_str(rng.pick(SEPARATORS));
+            }
+            doc.push_str(rng.pick(MARKDOWN_PIECES));
+        }
+        if rng.next().is_multiple_of(2) {
+            doc.push('\n');
+        }
+        doc
+    }
+
+    /// Markup fragments with no structure imposed, so the generator also
+    /// reaches the malformed input a reader is total over.
+    const SOUP: &[&str] = &[
+        "#", "# ", "## ", ">", "> ", "-", "- ", "*", "* ", "+", "1.", "1)", "|", " | ", "`", "```",
+        "~~~", "[", "]", "(", ")", "![", "<", "</", "&", "&amp;", "\\", "_", "__", "=", "===",
+        "---", "+++", "***", ":", "\"", "[x]: ", "word", "text", "é", " ", "  ", "    ", "\t",
+        "\n", "\n", "\n\n", "\r\n",
+    ];
+
+    fn generated_soup(rng: &mut Rng) -> String {
+        let pieces = 1 + rng.next() % 40;
+        (0..pieces).map(|_| rng.pick(SOUP)).collect()
+    }
+
+    /// L9 as a property: thousands of generated markdown and plain text
+    /// documents, half built from constructs the readers recognise and
+    /// the edge cases they once got wrong, half from markup fragments in
+    /// any order.
+    #[test]
+    fn law_l9_holds_over_generated_documents() {
+        let engine = accounting_engine();
+        for seed in 1..=6000_u64 {
+            let mut rng = Rng(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15));
+            let markdown = if seed % 2 == 0 {
+                generated_markdown(&mut rng)
+            } else {
+                generated_soup(&mut rng)
+            };
+            let doc = engine
+                .annotate(Input::text(markdown.clone(), Format::Markdown))
+                .unwrap();
+            accounting(&markdown, &doc)
+                .unwrap_or_else(|e| panic!("seed {seed}, markdown {markdown:?}: {e}"));
+            let doc = engine
+                .annotate(Input::text(markdown.clone(), Format::PlainText))
+                .unwrap();
+            accounting(&markdown, &doc)
+                .unwrap_or_else(|e| panic!("seed {seed}, plain text {markdown:?}: {e}"));
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Spans
+    // ------------------------------------------------------------------
+
+    /// The parser reports spans against the paragraph's text; the engine
+    /// maps them into the analysed text, through the markup the reader
+    /// removed.
+    #[test]
+    fn token_and_sentence_spans_point_into_the_analysed_text() {
+        let engine = Engine::new(Box::new(WordNlp));
+        let md = "# Title\n\nSome **bold** and `code` here.\n\n- item text";
+        let doc = engine.analyze(Input::text(md, Format::Markdown)).unwrap();
+        let tokens: Vec<&str> = doc
+            .tokens()
+            .map(|t| &md[t.span.start..t.span.end])
+            .collect();
+        assert_eq!(
+            tokens,
+            ["Some", "bold", "and", "code", "here.", "item", "text"]
+        );
+        let sentence = doc.sentences().next().unwrap();
+        assert_eq!(
+            &md[sentence.span.start..sentence.span.end],
+            "Some **bold** and `code` here."
+        );
+    }
+
+    #[test]
+    fn spans_count_bytes_not_characters() {
+        let engine = Engine::new(Box::new(WordNlp));
+        let text = "Café naïve.\n\nÜber.";
+        let doc = engine
+            .analyze(Input::text(text, Format::PlainText))
+            .unwrap();
+        for token in doc.tokens() {
+            assert_eq!(&text[token.span.start..token.span.end], token.text);
+        }
+        let second = doc.paragraphs().nth(1).unwrap();
+        assert_eq!(second.span, Span::new(15, 21));
+    }
+
+    /// Block input's analysed text is the blocks joined by a blank line,
+    /// and every span and the provenance describe that text.
+    #[test]
+    fn block_input_spans_point_into_the_joined_text() {
+        let engine = Engine::new(Box::new(WordNlp));
+        let doc = engine
+            .analyze(Input::blocks([
+                Block::heading(1, "Field notes"),
+                Block::paragraph("The river rose overnight."),
+            ]))
+            .unwrap();
+        let joined = "Field notes\n\nThe river rose overnight.";
+        assert_eq!(doc.provenance.format, Format::Blocks);
+        assert_eq!(doc.provenance.source.bytes, joined.len());
+        assert_eq!(
+            doc.provenance.source.sha256,
+            digest::sha256_hex(joined.as_bytes())
+        );
+        assert_eq!(doc.sections[0].heading.as_deref(), Some("Field notes"));
+        assert_eq!(doc.sections[0].level, 1);
+        assert_eq!(doc.sections[0].span, Some(Span::new(0, 11)));
+        let token = doc.tokens().nth(1).unwrap();
+        assert_eq!(&joined[token.span.start..token.span.end], "river");
+    }
+
+    #[test]
+    fn a_quote_is_not_parsed() {
+        let (nlp, calls, _) = ObservableNlp::new();
+        let engine = Engine::new(Box::new(nlp));
+        let doc = engine
+            .analyze(Input::text("> Quoted words.", Format::Markdown))
+            .unwrap();
+        let para = doc.paragraphs().next().unwrap();
+        assert_eq!(para.kind, ParagraphKind::Quote);
+        assert!(para.sentences.is_empty());
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn what_the_reader_skipped_reaches_the_document() {
+        let doc = accounting_engine()
+            .analyze(Input::text(
+                "Text.\n\n```\ncode\n```\n\n| a |\n|---|\n| 1 |",
+                Format::Markdown,
+            ))
+            .unwrap();
+        let kinds: Vec<domain::SkippedKind> = doc.skipped.iter().map(|s| s.kind).collect();
+        assert_eq!(
+            kinds,
+            [domain::SkippedKind::Code, domain::SkippedKind::Table]
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // Detection and provenance
+    // ------------------------------------------------------------------
+
     /// The provenance is recorded once, at annotation: the parser's own
     /// identity, the format, and the input's path, length and digest.
     #[test]
     fn annotate_records_the_provenance() {
         let engine = law_engine();
-        let text = "abc";
-        let raw = domain::RawDocument::new(
-            text.to_string(),
-            Some(std::path::PathBuf::from("notes.md")),
-            domain::Format::Markdown,
-        );
-        let doc = engine.annotate(&raw).unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("notes.md");
+        std::fs::write(&file, "abc").unwrap();
+        let doc = engine.annotate(Input::file(&file)).unwrap();
         let p = &doc.provenance;
         assert_eq!(p.parser.name, "dot-split", "the parser names itself");
-        assert_eq!(p.format, domain::Format::Markdown);
+        assert_eq!(p.format, Format::Markdown);
         assert_eq!(p.schema, domain::SCHEMA_VERSION);
         assert_eq!(p.matra, env!("CARGO_PKG_VERSION"));
-        assert_eq!(
-            p.source.path.as_deref(),
-            Some(std::path::Path::new("notes.md"))
-        );
+        assert_eq!(p.source.path.as_deref(), Some(file.as_path()));
         assert_eq!(p.source.bytes, 3);
         // FIPS 180-2 SHA-256 of "abc".
         assert_eq!(
@@ -1360,20 +1842,191 @@ mod tests {
     }
 
     #[test]
-    fn annotate_rejects_unregistered_format() {
+    fn a_recognised_format_with_no_reader_is_unsupported() {
         let engine = law_engine();
-        let raw = domain::RawDocument::new("text".to_string(), None, domain::Format::Pdf);
+        for (input, format) in [
+            (Input::text("text", Format::Pdf), Format::Pdf),
+            (Input::bytes(b"%PDF-1.4 ...".to_vec(), None), Format::Pdf),
+            (
+                Input::bytes(b"PK\x03\x04..[Content_Types].xml..".to_vec(), None),
+                Format::Docx,
+            ),
+        ] {
+            match engine.annotate(input) {
+                Err(domain::Error::UnsupportedFormat {
+                    format: Some(got),
+                    feature: None,
+                }) => assert_eq!(got, format),
+                other => panic!("expected UnsupportedFormat, got {:?}", other.map(|_| ())),
+            }
+        }
+    }
+
+    #[test]
+    fn bytes_that_are_not_text_are_unsupported() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("binary.txt");
+        std::fs::write(&file, [0xff, 0xfe, 0x00, 0x01]).unwrap();
+        for input in [Input::file(&file), Input::bytes(vec![0xc3, 0x28], None)] {
+            assert!(matches!(
+                law_engine().annotate(input),
+                Err(domain::Error::UnsupportedFormat { format: None, .. })
+            ));
+        }
+    }
+
+    /// Decision 7: a UTF-8 file with an extension matra does not know
+    /// reads as plain text.
+    #[test]
+    fn an_unknown_extension_reads_as_plain_text() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("notes.log");
+        std::fs::write(&file, "# not a heading here").unwrap();
+        let doc = law_engine().analyze(Input::file(&file)).unwrap();
+        assert_eq!(doc.provenance.format, Format::PlainText);
+        assert!(doc.sections[0].heading.is_none());
+    }
+
+    #[test]
+    fn a_markdown_file_reads_as_markdown() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("notes.md");
+        std::fs::write(&file, "# Title\n\nBody.").unwrap();
+        let doc = law_engine().analyze(Input::file(&file)).unwrap();
+        assert_eq!(doc.provenance.format, Format::Markdown);
+        assert_eq!(doc.sections[0].heading.as_deref(), Some("Title"));
+    }
+
+    // ------------------------------------------------------------------
+    // Input and Inputs
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn input_file_on_a_directory_names_inputs_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        match law_engine().analyze(Input::file(dir.path())) {
+            Err(domain::Error::InvalidInput(message)) => {
+                assert!(message.contains("Inputs::dir"), "{message}");
+            }
+            other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
+        }
+    }
+
+    #[test]
+    fn inputs_dir_lists_sorted_files_and_reads_them_lazily() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("b.txt"), "B").unwrap();
+        std::fs::write(dir.path().join("a.md"), "# A").unwrap();
+        let inputs = Inputs::dir(dir.path()).unwrap();
+        assert_eq!(inputs.len(), 2);
+        let docs: Vec<Document> = law_engine()
+            .analyze_all(inputs)
+            .map(Result::unwrap)
+            .collect();
+        let paths: Vec<_> = docs
+            .iter()
+            .map(|d| d.provenance.source.path.clone().unwrap())
+            .collect();
+        assert!(paths[0].ends_with("a.md"));
+        assert!(paths[1].ends_with("b.txt"));
+        assert_eq!(docs[0].provenance.format, Format::Markdown);
+    }
+
+    #[test]
+    fn inputs_dir_on_a_missing_path_or_a_file_is_a_constructor_error() {
         assert!(matches!(
-            engine.annotate(&raw),
-            Err(domain::Error::UnsupportedFormat(domain::Format::Pdf))
+            Inputs::dir("/definitely/not/here"),
+            Err(domain::Error::Io(_))
         ));
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("one.txt");
+        std::fs::write(&file, "x").unwrap();
+        match Inputs::dir(&file) {
+            Err(domain::Error::InvalidInput(message)) => {
+                assert!(message.contains("Input::file"), "{message}");
+            }
+            other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_per_file_failure_is_an_err_item_not_an_abort() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("good.md"), "# Good").unwrap();
+        let bad = dir.path().join("bad.md");
+        std::fs::write(&bad, "# Bad").unwrap();
+        std::fs::set_permissions(&bad, std::fs::Permissions::from_mode(0o000)).unwrap();
+
+        let items: Vec<_> = law_engine()
+            .analyze_all(Inputs::dir(dir.path()).unwrap())
+            .collect();
+        let _ = std::fs::set_permissions(&bad, std::fs::Permissions::from_mode(0o644));
+
+        assert_eq!(items.len(), 2);
+        assert_eq!(items.iter().filter(|r| r.is_ok()).count(), 1);
+        let err = items.into_iter().find_map(|r| r.err()).unwrap();
+        assert!(err.path.unwrap().ends_with("bad.md"));
+    }
+
+    #[test]
+    fn standard_readers_cover_exactly_the_shipping_formats() {
+        let table = standard_readers();
+        assert!(table.get(&Format::Markdown).is_some());
+        assert!(table.get(&Format::PlainText).is_some());
+        assert!(table.get(&Format::Blocks).is_some());
+        assert!(
+            table.get(&Format::Pdf).is_none(),
+            "Pdf is recognised, not read"
+        );
+        assert!(
+            table.get(&Format::Docx).is_none(),
+            "Docx is recognised, not read"
+        );
+    }
+
+    #[test]
+    fn input_at_cap_is_accepted() {
+        // "a" repeated MAX_INPUT_BYTES times = exactly the cap.
+        let engine = Engine::new(Box::new(EmptyNlp));
+        assert!(
+            engine
+                .annotate(Input::text("a".repeat(MAX_INPUT_BYTES), Format::PlainText))
+                .is_ok(),
+            "input exactly at cap should be accepted"
+        );
+    }
+
+    #[test]
+    fn input_one_byte_over_cap_is_rejected() {
+        let engine = Engine::new(Box::new(EmptyNlp));
+        match engine.annotate(Input::text(
+            "a".repeat(MAX_INPUT_BYTES + 1),
+            Format::PlainText,
+        )) {
+            Err(domain::Error::InputTooLarge {
+                limit,
+                actual,
+                what,
+            }) => {
+                assert_eq!(limit, MAX_INPUT_BYTES);
+                assert_eq!(actual, MAX_INPUT_BYTES + 1);
+                assert_eq!(what, "input");
+            }
+            other => panic!("expected InputTooLarge, got {:?}", other.map(|_| ())),
+        }
     }
 
     #[test]
     fn annotate_leaves_metrics_none_and_compose_fills_them() {
         let engine = law_engine();
-        let raw = raw_plain("Annotate attaches structure. Compose measures it.");
-        let mut doc = engine.annotate(&raw).unwrap();
+        let mut doc = engine
+            .annotate(Input::text(
+                "Annotate attaches structure. Compose measures it.",
+                Format::PlainText,
+            ))
+            .unwrap();
         assert_eq!(
             doc.metrics,
             domain::DocumentMetrics::default(),
@@ -1431,118 +2084,16 @@ mod tests {
             }
         }
 
-        let engine = Engine::new(Box::new(SuchAsNlp), standard_decomposers());
-        let doc = engine.annotate(&raw_plain("any text")).unwrap();
+        let engine = Engine::new(Box::new(SuchAsNlp));
+        let doc = engine
+            .annotate(Input::text("any text", Format::PlainText))
+            .unwrap();
         let sentence = doc.sentences().next().expect("one sentence");
         assert_eq!(sentence.hearst_pairs.len(), 1, "annotate ran the detector");
         let pair = &sentence.hearst_pairs[0];
         assert_eq!(pair.pattern, domain::HearstPattern::SuchAs);
         assert_eq!(pair.hypernym.head_id, 1);
         assert_eq!(pair.hyponym.head_id, 4);
-    }
-
-    #[test]
-    fn ingest_text_is_a_stream_of_one() {
-        let items: Vec<_> = Ingest::text("hello", domain::Format::PlainText).collect();
-        assert_eq!(items.len(), 1);
-        let doc = items.into_iter().next().unwrap().unwrap();
-        assert_eq!(doc.text, "hello");
-        assert_eq!(doc.path, None);
-    }
-
-    #[test]
-    fn ingest_path_file_is_a_stream_of_one() {
-        let dir = tempfile::tempdir().unwrap();
-        let f = dir.path().join("one.md");
-        std::fs::write(&f, "# One").unwrap();
-        let items: Vec<_> = Ingest::path(&f).unwrap().collect();
-        assert_eq!(items.len(), 1);
-        let doc = items.into_iter().next().unwrap().unwrap();
-        assert_eq!(doc.path.as_deref(), Some(f.as_path()));
-        assert!(matches!(doc.format, domain::Format::Markdown));
-    }
-
-    #[test]
-    fn ingest_path_directory_streams_sorted_entries() {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("b.txt"), "B").unwrap();
-        std::fs::write(dir.path().join("a.md"), "# A").unwrap();
-        let items: Vec<_> = Ingest::path(dir.path()).unwrap().collect();
-        assert_eq!(items.len(), 2);
-        let paths: Vec<_> = items
-            .into_iter()
-            .map(|r| r.unwrap().path.unwrap())
-            .collect();
-        assert!(paths[0].ends_with("a.md"));
-        assert!(paths[1].ends_with("b.txt"));
-    }
-
-    #[test]
-    fn ingest_path_missing_is_a_constructor_error() {
-        assert!(Ingest::path("/definitely/not/here").is_err());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn ingest_per_file_failure_is_an_err_item_not_an_abort() {
-        use std::os::unix::fs::PermissionsExt;
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("good.md"), "# Good").unwrap();
-        let bad = dir.path().join("bad.md");
-        std::fs::write(&bad, "# Bad").unwrap();
-        std::fs::set_permissions(&bad, std::fs::Permissions::from_mode(0o000)).unwrap();
-
-        let items: Vec<_> = Ingest::path(dir.path()).unwrap().collect();
-        let _ = std::fs::set_permissions(&bad, std::fs::Permissions::from_mode(0o644));
-
-        assert_eq!(items.len(), 2);
-        assert_eq!(items.iter().filter(|r| r.is_ok()).count(), 1);
-        let err = items.into_iter().find_map(|r| r.err()).unwrap();
-        assert!(err.path.unwrap().ends_with("bad.md"));
-    }
-
-    #[test]
-    fn standard_decomposers_cover_exactly_the_shipping_formats() {
-        let table = standard_decomposers();
-        assert!(table.get(&domain::Format::Markdown).is_some());
-        assert!(table.get(&domain::Format::PlainText).is_some());
-        assert!(
-            table.get(&domain::Format::Pdf).is_none(),
-            "Pdf is reserved, not shipped"
-        );
-        assert!(
-            table.get(&domain::Format::Docx).is_none(),
-            "Docx is reserved, not shipped"
-        );
-    }
-
-    #[test]
-    fn input_at_cap_is_accepted() {
-        // "a" repeated MAX_INPUT_BYTES times = exactly the cap.
-        let engine = Engine::new(Box::new(EmptyNlp), standard_decomposers());
-        let raw = raw_plain(&"a".repeat(MAX_INPUT_BYTES));
-        assert!(
-            engine.annotate(&raw).is_ok(),
-            "input exactly at cap should be accepted"
-        );
-    }
-
-    #[test]
-    fn input_one_byte_over_cap_is_rejected() {
-        let engine = Engine::new(Box::new(EmptyNlp), standard_decomposers());
-        let raw = raw_plain(&"a".repeat(MAX_INPUT_BYTES + 1));
-        match engine.annotate(&raw) {
-            Err(domain::Error::InputTooLarge {
-                limit,
-                actual,
-                what,
-            }) => {
-                assert_eq!(limit, MAX_INPUT_BYTES);
-                assert_eq!(actual, MAX_INPUT_BYTES + 1);
-                assert_eq!(what, "input");
-            }
-            other => panic!("expected InputTooLarge, got {other:?}"),
-        }
     }
 
     #[test]
@@ -1554,7 +2105,9 @@ mod tests {
         // assignment unambiguous by construction.
         let text = "The system processes input now. Tail one.\n\n\
                     The system processes input now. Tail two.";
-        let analysis = law_engine().analyze_one(raw_plain(text)).unwrap().analysis;
+        let analysis = law_engine()
+            .analyze(Input::text(text, Format::PlainText))
+            .unwrap();
 
         let paras: Vec<_> = analysis.paragraphs().collect();
         assert_eq!(paras.len(), 2);
@@ -1576,7 +2129,9 @@ mod tests {
         // Per-paragraph parse makes the question moot.
         let text = "Outer talks about the special phrase processes input now. End A.\n\n\
                     The special phrase processes input now. End B.";
-        let analysis = law_engine().analyze_one(raw_plain(text)).unwrap().analysis;
+        let analysis = law_engine()
+            .analyze(Input::text(text, Format::PlainText))
+            .unwrap();
 
         let paras: Vec<_> = analysis.paragraphs().collect();
         assert_eq!(paras.len(), 2);
@@ -1591,29 +2146,37 @@ mod tests {
     fn empty_paragraph_followed_by_valid_paragraph() {
         // Trailing whitespace on an empty paragraph used to confuse the
         // prefix-match wiring; per-paragraph parse handles cleanly.
-        // PlainTextDecomposer collapses runs of blank lines, so this
-        // registers a custom decomposer that injects an empty paragraph,
-        // which also exercises a caller-built table end to end.
+        // The plain text reader never emits an empty paragraph, so this
+        // registers a custom reader that injects one, which also
+        // exercises a hand-built reader table end to end.
         struct InjectEmptyParagraph;
         impl Decomposer for InjectEmptyParagraph {
-            fn decompose(&self, text: &str) -> Vec<Section> {
-                let mut sections = decompose::plain::PlainTextDecomposer.decompose(text);
-                if let Some(section) = sections.first_mut() {
-                    section
-                        .paragraphs
-                        .insert(0, domain::Paragraph::new(String::new(), false));
-                }
-                sections
+            fn decompose(&self, text: &str) -> domain::Result<decompose::Read> {
+                let mut read = decompose::plain::PlainTextDecomposer.decompose(text)?;
+                read.blocks.insert(
+                    0,
+                    decompose::ReadBlock::Paragraph {
+                        kind: ParagraphKind::Paragraph,
+                        text: String::new(),
+                        span: Span::default(),
+                        map: decompose::TextMap::at(0),
+                    },
+                );
+                Ok(read)
             }
         }
 
-        let table = decompose::Decomposers::new()
-            .with(domain::Format::PlainText, Box::new(InjectEmptyParagraph));
-        let engine = Engine::new(Box::new(DotSplitNlp), table);
+        let engine = Engine {
+            nlp: Box::new(DotSplitNlp),
+            readers: decompose::Decomposers::new()
+                .with(Format::PlainText, Box::new(InjectEmptyParagraph)),
+        };
         let analysis = engine
-            .analyze_one(raw_plain("Real content sentence.\n\nAnother real one."))
-            .unwrap()
-            .analysis;
+            .analyze(Input::text(
+                "Real content sentence.\n\nAnother real one.",
+                Format::PlainText,
+            ))
+            .unwrap();
 
         let paras: Vec<_> = analysis.paragraphs().collect();
         assert_eq!(paras.len(), 3);
@@ -1624,6 +2187,7 @@ mod tests {
         );
         assert!(!paras[1].sentences.is_empty());
         assert!(!paras[2].sentences.is_empty());
+        let _: &[Section] = &analysis.sections;
     }
 
     // ------------------------------------------------------------------
@@ -1648,13 +2212,13 @@ mod tests {
     }
 
     fn two_sentence_doc() -> Document {
-        let engine = Engine::new(Box::new(DotSplitNlp), standard_decomposers());
-        let raw = domain::RawDocument::new(
-            "One sentence. Another sentence.".to_string(),
-            None,
-            domain::Format::PlainText,
-        );
-        engine.annotate(&raw).expect("annotate")
+        let engine = Engine::new(Box::new(DotSplitNlp));
+        engine
+            .annotate(Input::text(
+                "One sentence. Another sentence.",
+                Format::PlainText,
+            ))
+            .expect("annotate")
     }
 
     #[test]
@@ -1698,9 +2262,10 @@ mod tests {
             }
         }
         let many = "Word. ".repeat(extraction::MAX_SEMANTIC_SENTENCES + 1);
-        let engine = Engine::new(Box::new(DotSplitNlp), standard_decomposers());
-        let raw = domain::RawDocument::new(many, None, domain::Format::PlainText);
-        let doc = engine.annotate(&raw).expect("annotate");
+        let engine = Engine::new(Box::new(DotSplitNlp));
+        let doc = engine
+            .annotate(Input::text(many, Format::PlainText))
+            .expect("annotate");
         match embed_and_cluster(&doc, &MustNotEmbed, 0.9) {
             Err(domain::Error::InputTooLarge { what, .. }) => {
                 assert_eq!(what, "semantic_clusters");
