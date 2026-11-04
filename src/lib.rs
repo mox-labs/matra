@@ -88,7 +88,10 @@ enum InputKind {
         data: Vec<u8>,
         format: Option<Format>,
     },
-    File(PathBuf),
+    File {
+        path: PathBuf,
+        format: Option<Format>,
+    },
     Blocks(Vec<Block>),
 }
 
@@ -123,7 +126,33 @@ impl Input {
     /// [`Inputs::dir`], which reads one. The path is recorded in the
     /// result's `provenance.source.path`.
     pub fn file(path: impl AsRef<Path>) -> Input {
-        Input(InputKind::File(path.as_ref().to_path_buf()))
+        Input(InputKind::File {
+            path: path.as_ref().to_path_buf(),
+            format: None,
+        })
+    }
+
+    /// The file at `path`, read as `format` in place of the format its
+    /// extension implies: [`Input::file`], with the caller naming the
+    /// format. A JSON file of blocks is the case it exists for, since no
+    /// extension implies [`Format::Blocks`].
+    ///
+    /// A PDF or DOCX signature in the bytes still outranks the caller, as
+    /// it does for [`Input::bytes`]: a file's bytes do not lie about being
+    /// a PDF the way its name can. Everything else about the file is
+    /// [`Input::file`]'s: read when analysed, a symlink refused, the path
+    /// recorded in `provenance.source.path`.
+    ///
+    /// ```
+    /// use matra::Input;
+    /// use matra::domain::Format;
+    /// let input = Input::file_as("notes.json", Format::Blocks);
+    /// ```
+    pub fn file_as(path: impl AsRef<Path>, format: Format) -> Input {
+        Input(InputKind::File {
+            path: path.as_ref().to_path_buf(),
+            format: Some(format),
+        })
     }
 
     /// Headings and paragraphs the caller supplies, for a format matra
@@ -144,7 +173,7 @@ impl Input {
     /// The path a file input names, which a failed item carries.
     fn path(&self) -> Option<&Path> {
         match &self.0 {
-            InputKind::File(path) => Some(path),
+            InputKind::File { path, .. } => Some(path),
             InputKind::Text { .. } | InputKind::Bytes { .. } | InputKind::Blocks(_) => None,
         }
     }
@@ -211,7 +240,7 @@ impl Iterator for Inputs {
     type Item = Input;
 
     fn next(&mut self) -> Option<Input> {
-        self.paths.next().map(|path| Input(InputKind::File(path)))
+        self.paths.next().map(Input::file)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -355,7 +384,7 @@ impl Engine {
                 (format, text, read)
             }
             InputKind::Bytes { data, format } => self.read_bytes(data, format.as_ref(), None)?,
-            InputKind::File(path) => {
+            InputKind::File { path, format } => {
                 let fetched = source::file::FileSource
                     .read(&path)?
                     .into_iter()
@@ -366,7 +395,7 @@ impl Engine {
                             "source returned no documents",
                         ))
                     })?;
-                self.read_bytes(fetched.bytes, None, Some(&fetched.path))?
+                self.read_bytes(fetched.bytes, format.as_ref(), Some(&fetched.path))?
             }
             InputKind::Blocks(blocks) => (
                 Format::Blocks,
@@ -808,6 +837,7 @@ mod tests {
             ("text", Input::text(text, Format::PlainText)),
             ("bytes", Input::bytes(text.as_bytes(), None)),
             ("file", Input::file(&file)),
+            ("file_as", Input::file_as(&file, Format::PlainText)),
             (
                 "blocks",
                 Input::blocks(text.split("\n\n").map(Block::paragraph)),
@@ -883,6 +913,7 @@ mod tests {
             .into_iter()
             .map(|(_, input)| input)
             .collect();
+        let good = inputs.len();
         inputs.extend(
             constructors("This one is POISON and fails.", dir.path())
                 .into_iter()
@@ -893,8 +924,8 @@ mod tests {
         let (documents, errors): (Vec<_>, Vec<_>) =
             engine.analyze_all(inputs).partition(Result::is_ok);
         assert_eq!(documents.len() + errors.len(), n);
-        assert_eq!(documents.len(), 4);
-        assert_eq!(errors.len(), 5);
+        assert_eq!(documents.len(), good);
+        assert_eq!(errors.len(), good + 1);
     }
 
     /// A failed read never reaches the parser, whatever the reason: a
@@ -1325,6 +1356,57 @@ mod tests {
         let doc = law_engine().analyze(Input::file(&file)).unwrap();
         assert_eq!(doc.provenance.format, Format::PlainText);
         assert!(doc.sections[0].heading.is_none());
+    }
+
+    /// `Input::file_as` reads a file in the format the caller names, so
+    /// a JSON file of blocks is block input and a `.md` file can be read
+    /// as plain text. The path is recorded as it is for `Input::file`.
+    #[test]
+    fn a_file_reads_in_the_format_the_caller_names() {
+        let dir = tempfile::tempdir().unwrap();
+        let blocks = dir.path().join("notes.json");
+        std::fs::write(
+            &blocks,
+            r#"[{"kind": "heading", "level": 1, "text": "Field notes"},
+                {"kind": "paragraph", "text": "The river rose."}]"#,
+        )
+        .unwrap();
+        let doc = law_engine()
+            .analyze(Input::file_as(&blocks, Format::Blocks))
+            .unwrap();
+        assert_eq!(doc.provenance.format, Format::Blocks);
+        assert_eq!(doc.sections[0].heading.as_deref(), Some("Field notes"));
+        assert_eq!(
+            doc.provenance.source.path.as_deref(),
+            Some(blocks.as_path())
+        );
+
+        let markdown = dir.path().join("notes.md");
+        std::fs::write(&markdown, "# not a heading here").unwrap();
+        let doc = law_engine()
+            .analyze(Input::file_as(&markdown, Format::PlainText))
+            .unwrap();
+        assert_eq!(doc.provenance.format, Format::PlainText);
+        assert!(doc.sections[0].heading.is_none());
+    }
+
+    /// A signature in the bytes outranks the format the caller names, for
+    /// a file as for bytes.
+    #[test]
+    fn a_signature_outranks_the_format_a_file_is_read_as() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("scan.txt");
+        std::fs::write(&file, b"%PDF-1.7\n").unwrap();
+        match law_engine().analyze(Input::file_as(&file, Format::Markdown)) {
+            Err(domain::Error::UnsupportedFormat {
+                format: Some(Format::Pdf),
+                ..
+            }) => {}
+            other => panic!(
+                "expected UnsupportedFormat(pdf), got {:?}",
+                other.map(|_| ())
+            ),
+        }
     }
 
     #[test]
@@ -1814,11 +1896,11 @@ mod tests {
         .unwrap();
         assert_eq!(
             extraction::DEFAULT_SUMMARY_METHOD.name(),
-            cfg.summarize_algorithm()
+            cfg.summary_method()
         );
         assert_eq!(
             extraction::DEFAULT_KEYPHRASE_METHOD.name(),
-            cfg.keyphrases_algorithm()
+            cfg.keyphrases_method()
         );
     }
 

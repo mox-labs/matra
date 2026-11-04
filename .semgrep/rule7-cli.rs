@@ -35,8 +35,12 @@ use crate::nlp::udpipe::Udpipe;
 use crate::source::directory::DirectorySource;
 // ruleid: boundary-rule7-cli-imports
 pub(crate) use crate::decompose::Decomposer;
-// ruleid: boundary-rule7-cli-imports
+// ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
 use crate::{Engine, embed::model2vec::Model2Vec};
+// ok: boundary-rule7-cli-imports, boundary-rule7-cli-root-super
+use super::embed::Embedder;
+// ruleid: boundary-rule7-cli-imports
+use crate::{Engine, decompose::markdown::MarkdownDecomposer};
 // ruleid: boundary-rule7-cli-imports
 use crate::{
     config::Config,

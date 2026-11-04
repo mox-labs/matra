@@ -90,7 +90,7 @@ def test_an_oversized_input_is_input_too_large_with_its_gate(tmp_path: Path) -> 
 
 def test_a_broken_contract_is_invalid_input_with_its_reason(tmp_path: Path) -> None:
     path = tmp_path / "config.toml"
-    path.write_text('[summarize]\nalgorithm = "lsa"\n')
+    path.write_text('[summary]\nmethod = "lsa"\n')
     with pytest.raises(ValueError) as caught:
         matra.Engine.from_config(path)
 

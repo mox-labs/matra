@@ -179,17 +179,19 @@ class Engine:
         always text, never a path: name a file with `file=`.
 
         - `text` is read as `format`, plain text when none is given.
-        - `file` is read at the call, its format detected from its name
-          and bytes (`.md` as markdown, PDF and DOCX recognised and
-          refused, anything else that is UTF-8 as plain text).
+        - `file` is read at the call, as `format` when one is given, and
+          otherwise in the format its name and bytes imply (`.md` as
+          markdown, PDF and DOCX recognised and refused, anything else
+          that is UTF-8 as plain text). A JSON file of blocks is
+          `format="blocks"`, since no extension implies it.
         - `bytes` is read as `format`, or detected when none is given.
         - `blocks` is headings and paragraphs you supply (`BlockDict`).
 
-        `format` applies to `text` and `bytes` only.
+        `format` applies to `text`, `bytes` and `file`. A PDF or DOCX
+        signature in the bytes outranks it.
 
         Raises:
-            TypeError: not exactly one input, or `format` with `file` or
-                `blocks`.
+            TypeError: not exactly one input, or `format` with `blocks`.
             InputTooLargeError: the input exceeds the size cap (8 MiB).
             UnsupportedFormatError: a format no reader ships for, or
                 bytes that are not UTF-8.

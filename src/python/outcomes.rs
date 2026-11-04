@@ -17,7 +17,7 @@ use super::to_py;
 
 /// The `n` sentences that best represent `doc`, in document order:
 /// `summarize`, or `summarize_with` when a method is named. The default
-/// `n` is the command line's (`summarize.n` in `config/default.toml`).
+/// `n` is the command line's (`summary.n` in `config/default.toml`).
 #[pyfunction]
 #[pyo3(signature = (doc, n=3, *, method=None))]
 #[allow(unreachable_pub)] // pyo3 macro requirement, as for _core.

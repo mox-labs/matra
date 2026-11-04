@@ -118,6 +118,34 @@ pub(super) fn phrases(out: &mut dyn Write, found: &Keyphrases) -> Fallible<()> {
     Ok(())
 }
 
+/// One block per cluster: its number and size, then each member as its
+/// sentence index in the document and its text. A sentence in no cluster
+/// is not printed, as it is in no cluster of the JSON.
+#[cfg(feature = "model2vec")]
+pub(super) fn clusters(
+    out: &mut dyn Write,
+    doc: &Document,
+    found: &crate::domain::Clusters,
+) -> Fallible<()> {
+    let sentences: Vec<&str> = doc.sentences().map(|s| s.text.as_str()).collect();
+    for (number, cluster) in found.clusters.iter().enumerate() {
+        if number > 0 {
+            writeln!(out)?;
+        }
+        writeln!(
+            out,
+            "cluster {}  {} sentences",
+            number + 1,
+            cluster.members.len()
+        )?;
+        for &member in &cluster.members {
+            let text = sentences.get(member).copied().unwrap_or_default();
+            writeln!(out, "  {member:>4}  {text}")?;
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

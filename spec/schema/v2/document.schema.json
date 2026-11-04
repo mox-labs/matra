@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mox-labs.github.io/matra/schema/v2/document.schema.json",
   "title": "matra Document, schema 2.x",
-  "description": "One analysed document as matra emits it: the `result` of `matra analyze --json`, what Python's `Document.to_dict()` returns, and the serde form of `matra::domain::Document`. Schema 2.x: `provenance.schema` is \"2.minor\". A minor adds optional fields only, so a reader ignores fields it does not recognize and rejects a major it does not know. Every string set a reader receives is open (`format`, `kind`, `pos`, `dep`, `mood`, `pattern`, feature names): treat an unknown value as data, not as an error. Every key listed here is always present, except the two a provenance carries only on a derived result (`method`, `parameters`); a value that does not apply is null rather than absent. Every `span` counts UTF-8 bytes of the analysed text: for markdown and plain text the input itself, for block input the blocks' texts joined by a blank line. The text fields are normalized; a span is the authority on where a value came from.",
+  "description": "One analysed document as matra emits it: the `result` of `matra analyze --json`, what Python's `Document.to_dict()` returns, and the serde form of `matra::domain::Document`. Schema 2.x: `provenance.schema` is \"2.minor\". A minor adds optional fields only, so a reader ignores fields it does not recognize and rejects a major it does not know. Every string set a reader receives is open (`format`, `kind`, `pos`, `dep`, `mood`, `pattern`, feature names): treat an unknown value as data, not as an error. Every key listed here is always present, except the two a provenance carries only on a derived result (`method`, `parameters`), and the three `matra analyze --json --depth` removes below the level it is asked for: `sections` at `document`, each paragraph's `sentences` at `paragraph`, each sentence's `tokens` at `sentence`. Every library call, and Python, returns all three. A value that does not apply is null rather than absent. Every `span` counts UTF-8 bytes of the analysed text: for markdown and plain text the input itself, for block input the blocks' texts joined by a blank line. The text fields are normalized; a span is the authority on where a value came from.",
   "type": "object",
-  "required": ["provenance", "sections", "metrics", "skipped"],
+  "required": ["provenance", "metrics", "skipped"],
   "properties": {
     "provenance": { "$ref": "#/$defs/Provenance" },
-    "sections": { "type": "array", "items": { "$ref": "#/$defs/Section" } },
+    "sections": { "description": "Always present, except under `matra analyze --depth document`.", "type": "array", "items": { "$ref": "#/$defs/Section" } },
     "metrics": { "$ref": "#/$defs/DocumentMetrics" },
     "skipped": {
       "description": "What the reader saw and did not analyse, in document order. Never silently dropped.",
@@ -154,7 +154,7 @@
     },
     "Paragraph": {
       "type": "object",
-      "required": ["span", "text", "kind", "sentences", "metrics"],
+      "required": ["span", "text", "kind", "metrics"],
       "properties": {
         "span": { "$ref": "#/$defs/Span" },
         "text": { "type": "string" },
@@ -162,7 +162,7 @@
           "description": "The block the paragraph was read from: `paragraph`, `quote` (never parsed or measured) or `list_item` today. An open set.",
           "type": "string"
         },
-        "sentences": { "type": "array", "items": { "$ref": "#/$defs/Sentence" } },
+        "sentences": { "description": "Always present, except under `matra analyze --depth document` or `paragraph`.", "type": "array", "items": { "$ref": "#/$defs/Sentence" } },
         "metrics": { "$ref": "#/$defs/ParagraphMetrics" }
       }
     },
@@ -181,7 +181,6 @@
       "required": [
         "span",
         "text",
-        "tokens",
         "word_count",
         "tree_depth",
         "passive",
@@ -195,7 +194,7 @@
       "properties": {
         "span": { "$ref": "#/$defs/Span" },
         "text": { "type": "string" },
-        "tokens": { "type": "array", "items": { "$ref": "#/$defs/Token" } },
+        "tokens": { "description": "Always present, except under `matra analyze --depth` above `token`.", "type": "array", "items": { "$ref": "#/$defs/Token" } },
         "word_count": { "$ref": "#/$defs/count" },
         "tree_depth": {
           "description": "Longest path from a token to the root; null when the parse's head references loop.",

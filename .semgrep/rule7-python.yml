@@ -5,7 +5,7 @@
 # (the one port open to outside implementers, with the Model2Vec adapter it
 # publishes) and the command line's cli::run, and never another port module,
 # a reader or parser adapter, or a crate-private module (extraction, metrics,
-# hearst). It is rule7-cli.yml with embed and cli added to the allowlist.
+# hearst). It is rule7-cli.yml with cli added to the allowlist.
 #
 # This is an allowlist, not a list of forbidden modules, so a crate-root
 # re-export of an adapter (`crate::Udpipe`) is caught as well as

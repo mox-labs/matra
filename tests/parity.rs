@@ -126,7 +126,7 @@ fn default_n(command: &str) -> usize {
     )
     .unwrap();
     match command {
-        "summarize" => cfg.summarize_n(),
+        "summarize" => cfg.summary_n(),
         "keyphrases" => cfg.keyphrases_n(),
         other => panic!("no default n for {other}"),
     }
@@ -321,12 +321,19 @@ fn the_command_line_matches_the_fixture() {
         let (code, out, err) =
             matra_cli(&["analyze", path.to_str().unwrap(), "--json"], dir.path());
         assert_eq!(code, 2, "{}: a failure exits 2", case.file);
-        assert_eq!(out, "", "{}: nothing on stdout", case.file);
         assert_eq!(
             err,
             format!("matra: {}: {message}\n", path.display()),
             "{}: the message on stderr",
             case.file
         );
+        // The error crosses in the envelope: the same kind, message and
+        // details Rust returns and Python raises, beside a null result.
+        let envelope: Value = serde_json::from_str(&out)
+            .unwrap_or_else(|e| panic!("{}: stdout is not the envelope: {e}\n{out}", case.file));
+        assert_eq!(envelope["command"], "analyze", "{}", case.file);
+        assert_eq!(envelope["input"], path.to_str().unwrap(), "{}", case.file);
+        assert!(envelope["result"].is_null(), "{}: no result", case.file);
+        assert_eq!(&envelope["error"], expect, "{}: the error", case.file);
     }
 }

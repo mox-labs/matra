@@ -1,8 +1,9 @@
 //! `matra.Engine`: `analyze` one document, `analyze_all` of many.
 //!
 //! Each keyword is a Rust [`crate::Input`] constructor: `text` is
-//! `Input::text`, `file` is `Input::file`, `bytes` is `Input::bytes`,
-//! `blocks` is block input, `dir` is `Inputs::dir`. Which reader reads a
+//! `Input::text`, `file` is `Input::file` (`Input::file_as` with a
+//! `format`), `bytes` is `Input::bytes`, `blocks` is block input, `dir`
+//! is `Inputs::dir`. Which reader reads a
 //! file, how its format is detected and what one failed document costs a
 //! stream are the engine's, decided once in Rust.
 
@@ -84,18 +85,21 @@ impl PyEngine {
             crate::Input::text(text, format.unwrap_or(Format::PlainText))
         } else if let Some(bytes) = bytes {
             crate::Input::bytes(bytes.as_bytes().to_vec(), format)
+        } else if let Some(file) = file {
+            match format {
+                Some(format) => crate::Input::file_as(file, format),
+                None => crate::Input::file(file),
+            }
         } else {
             if format.is_some() {
                 return Err(PyTypeError::new_err(
-                    "format applies to text and bytes; a file's format is detected from \
-                     its name and bytes, and blocks are blocks",
+                    "format applies to text, bytes and file; blocks are blocks",
                 ));
             }
-            match (file, blocks) {
-                (Some(file), _) => crate::Input::file(file),
-                (None, Some(blocks)) => blocks_input(&blocks)?,
+            match blocks {
+                Some(blocks) => blocks_input(&blocks)?,
                 // Counted above, so not reached; refused rather than a panic.
-                (None, None) => {
+                None => {
                     return Err(PyTypeError::new_err(
                         "analyze() takes exactly one of text, file, bytes and blocks; got none",
                     ));

@@ -17,9 +17,18 @@
 //!
 //! A broken pipe is exit 0: the reader went away, which is what
 //! `matra analyze x | head` does on purpose.
+//!
+//! Every failure has a kind, the same `kind` Rust's `Error::kind` and
+//! Python's `MatraError.kind` name. Under `--json` a failure is still an
+//! envelope on stdout, with `"result": null` and the error in `error`,
+//! so a program reading stdout never has to parse prose from stderr. The
+//! command line's own refusals (a directory where one file is read, a
+//! missing `--skill`, an existing config file) use the kind whose remedy
+//! matches: `invalid_input` for a call to change.
 
 mod config_cmd;
 mod render;
+mod schema;
 mod skill;
 
 use std::ffi::OsString;
@@ -46,7 +55,82 @@ const EXIT_EMPTY: u8 = 1;
 /// An error occurred.
 const EXIT_ERROR: u8 = 2;
 
-type Fallible<T> = Result<T, Box<dyn std::error::Error>>;
+/// The subcommands, by the name each answers to. A usage failure under
+/// `--json` names the one its arguments asked for, read from this list
+/// because clap reports no subcommand for a command line it refused. A
+/// test holds it to the subcommands clap knows.
+const COMMANDS: [&str; 6] = [
+    "analyze",
+    "summarize",
+    "keyphrases",
+    "clusters",
+    "config",
+    "completions",
+];
+
+type Fallible<T> = Result<T, Failure>;
+
+/// Why a run failed.
+#[derive(Debug)]
+enum Failure {
+    /// A failure with a kind. `--json` writes it as the envelope's
+    /// `error`; stderr names `path` before the message when the failure
+    /// concerns a file.
+    Error {
+        error: domain::Error,
+        path: Option<PathBuf>,
+    },
+    /// Writing the output failed. There is nowhere left to write an
+    /// envelope, and a broken pipe is no failure at all.
+    Output(io::Error),
+}
+
+impl Failure {
+    /// A refusal of the call as given: the `invalid_input` kind, whose
+    /// remedy is to change the call.
+    fn refused(message: impl Into<String>) -> Failure {
+        Failure::Error {
+            error: domain::Error::InvalidInput(message.into()),
+            path: None,
+        }
+    }
+}
+
+impl std::fmt::Display for Failure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Failure::Error {
+                error,
+                path: Some(path),
+            } => write!(f, "{}: {error}", path.display()),
+            Failure::Error { error, path: None } => write!(f, "{error}"),
+            Failure::Output(e) => write!(f, "cannot write the output: {e}"),
+        }
+    }
+}
+
+impl From<domain::Error> for Failure {
+    fn from(error: domain::Error) -> Failure {
+        Failure::Error { error, path: None }
+    }
+}
+
+impl From<domain::DocumentError> for Failure {
+    fn from(e: domain::DocumentError) -> Failure {
+        Failure::Error {
+            error: e.error,
+            path: e.path,
+        }
+    }
+}
+
+/// Only the output is written with `?` on an `io::Error`. A read that
+/// fails is a [`domain::Error`] at its call site, never this.
+impl From<io::Error> for Failure {
+    fn from(e: io::Error) -> Failure {
+        Failure::Output(e)
+    }
+}
 
 /// Run the command line.
 ///
@@ -81,14 +165,26 @@ pub fn run(
     out: &mut dyn Write,
     err: &mut dyn Write,
 ) -> u8 {
-    let cli = match parse(args) {
+    let args: Vec<OsString> = args.into_iter().collect();
+    let cli = match parse(args.iter().cloned()) {
         Ok(cli) => cli,
         Err(early) => {
             // clap renders `--help` and `--version` as an "error" that is
             // not one. `use_stderr` is what separates them from a genuine
             // usage failure, and it decides both the stream and the code.
-            let sink: &mut dyn Write = if early.to_stderr { err } else { out };
+            let sink: &mut dyn Write = if early.to_stderr {
+                &mut *err
+            } else {
+                &mut *out
+            };
             let _ = write!(sink, "{}", early.text);
+            if early.to_stderr && asks_for_json(&args) {
+                // A usage failure is a failure, and `--json` promises an
+                // envelope for every failure. Its kind is the one whose
+                // remedy is to change the call.
+                let error = domain::Error::InvalidInput(early.summary);
+                let _ = write_failure(out, command_named(&args), None, &error, Layout::Pretty);
+            }
             return early.code;
         }
     };
@@ -96,11 +192,14 @@ pub fn run(
     match execute(&cli, out, err) {
         Ok(Outcome::Found) => EXIT_FOUND,
         Ok(Outcome::Empty) => EXIT_EMPTY,
-        Err(e) => {
-            if is_broken_pipe(e.as_ref()) {
-                return EXIT_FOUND;
+        Ok(Outcome::Failed) => EXIT_ERROR,
+        Err(Failure::Output(e)) if e.kind() == io::ErrorKind::BrokenPipe => EXIT_FOUND,
+        Err(failure) => {
+            let _ = writeln!(err, "matra: {failure}");
+            if let (true, Failure::Error { error, .. }) = (cli.json, &failure) {
+                let (command, input) = failure_context(&cli);
+                let _ = write_failure(out, Some(command), input.as_deref(), error, Layout::Pretty);
             }
-            let _ = writeln!(err, "matra: {e}");
             EXIT_ERROR
         }
     }
@@ -117,7 +216,9 @@ pub fn run(
                   It reports what is there; interpretation is yours."
 )]
 struct Cli {
-    /// Emit JSON instead of a human-readable table.
+    /// Emit JSON instead of a human-readable table. A failure is JSON
+    /// too: the same envelope, with `result` null and the error in
+    /// `error`.
     #[arg(long, global = true)]
     json: bool,
 
@@ -135,7 +236,8 @@ struct Cli {
     color: ColorWhen,
 
     /// Name to report for input read from stdin. Its extension selects
-    /// the decomposer, so `notes.md` is read as markdown.
+    /// the format when `--format` does not, so `notes.md` is read as
+    /// markdown.
     #[arg(long, global = true, value_name = "NAME", default_value = "<stdin>")]
     stdin_filename: String,
 
@@ -155,30 +257,56 @@ struct Cli {
     )]
     reference: Option<Option<String>>,
 
+    /// Print the JSON Schema of one output (`document`, `summary`,
+    /// `keyphrases`, `clusters`, `error`) or input (`blocks`), or list
+    /// them all when no name is given. Outranks a subcommand.
+    #[arg(
+        long,
+        global = true,
+        value_name = "NAME",
+        num_args = 0..=1,
+        conflicts_with = "skill",
+    )]
+    schema: Option<Option<String>>,
+
     #[command(subcommand)]
     command: Option<Command>,
 }
 
 #[derive(Subcommand)]
 enum Command {
-    /// Parse a document and report its metrics.
+    /// Parse a document, or every file in a directory, and report its
+    /// metrics.
     Analyze {
-        /// File to analyze, or `-` for stdin.
+        /// File or directory to analyze, or `-` for stdin. A directory
+        /// is read file by file, in name order, one result each.
         path: PathBuf,
         /// Also print a per-section breakdown.
         #[arg(long, short)]
         sections: bool,
+        /// Read the input as this format instead of detecting it.
+        #[arg(long, value_enum, value_name = "FORMAT")]
+        format: Option<FormatName>,
+        /// How much of the parse `--json` emits: `document` (provenance,
+        /// metrics, skipped), `paragraph` (and the sections with their
+        /// paragraphs), `sentence` (and the sentences), or `token` (and
+        /// the tokens, which is everything). Defaults to `token`.
+        #[arg(long, value_enum, value_name = "LEVEL", requires = "json")]
+        depth: Option<Depth>,
     },
     /// Extract the most representative sentences.
     Summarize {
         /// File to summarize, or `-` for stdin.
         path: PathBuf,
-        /// Number of sentences to return. Defaults to `summarize.n`.
+        /// Number of sentences to return. Defaults to `summary.n`.
         #[arg(short)]
         n: Option<usize>,
-        /// Ranking method. Defaults to `summarize.algorithm`.
+        /// Ranking method. Defaults to `summary.method`.
         #[arg(long, value_enum)]
         method: Option<SummaryMethod>,
+        /// Read the input as this format instead of detecting it.
+        #[arg(long, value_enum, value_name = "FORMAT")]
+        format: Option<FormatName>,
     },
     /// Extract keyphrases.
     Keyphrases {
@@ -187,9 +315,25 @@ enum Command {
         /// Maximum number of phrases to return. Defaults to `keyphrases.n`.
         #[arg(short)]
         n: Option<usize>,
-        /// Ranking method. Defaults to `keyphrases.algorithm`.
+        /// Ranking method. Defaults to `keyphrases.method`.
         #[arg(long, value_enum)]
         method: Option<KeyphraseMethod>,
+        /// Read the input as this format instead of detecting it.
+        #[arg(long, value_enum, value_name = "FORMAT")]
+        format: Option<FormatName>,
+    },
+    /// Group a document's sentences by the similarity of their
+    /// embeddings. Needs a build with the `model2vec` feature.
+    Clusters {
+        /// File to cluster, or `-` for stdin.
+        path: PathBuf,
+        /// The cosine similarity at which two sentences are joined.
+        /// Defaults to `clusters.threshold`.
+        #[arg(long, value_name = "SIMILARITY")]
+        threshold: Option<f64>,
+        /// Read the input as this format instead of detecting it.
+        #[arg(long, value_enum, value_name = "FORMAT")]
+        format: Option<FormatName>,
     },
     /// Inspect and create the configuration file.
     Config {
@@ -217,7 +361,7 @@ enum ConfigAction {
 }
 
 /// `--method` for `summarize`: the command line's spelling of
-/// [`crate::SummaryMethod`], which [`summary_method`] translates.
+/// [`crate::SummaryMethod`], which [`summary_method_of`] translates.
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 enum SummaryMethod {
     Tfidf,
@@ -225,11 +369,38 @@ enum SummaryMethod {
 }
 
 /// `--method` for `keyphrases`: the command line's spelling of
-/// [`crate::KeyphraseMethod`], which [`keyphrase_method`] translates.
+/// [`crate::KeyphraseMethod`], which [`keyphrase_method_of`] translates.
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 enum KeyphraseMethod {
     Rake,
     Yake,
+}
+
+/// `--format`: the formats a caller can name, spelled as the JSON and
+/// Python spell them, which [`format_of`] translates. PDF and DOCX are
+/// recognised from their bytes and read by no build, so naming one would
+/// only ever fail.
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+enum FormatName {
+    Markdown,
+    #[value(name = "plain_text")]
+    PlainText,
+    Blocks,
+}
+
+/// `--depth`: how far into the parse `analyze --json` goes. Every token
+/// shown costs a reader, an agent included, so a caller that needs only
+/// the measures asks for no more.
+#[derive(Copy, Clone, PartialEq, Eq, Debug, ValueEnum)]
+enum Depth {
+    /// Provenance, metrics and `skipped`: no `sections`.
+    Document,
+    /// And the sections with their paragraphs: no `sentences`.
+    Paragraph,
+    /// And the sentences with their record facts: no `tokens`.
+    Sentence,
+    /// And the tokens: the whole document.
+    Token,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
@@ -247,11 +418,13 @@ enum CompletionShell {
 }
 
 /// What clap produced when it declined to hand back a parsed command
-/// line: rendered text, the stream it belongs on, and the exit code.
+/// line: rendered text, the stream it belongs on, the exit code, and the
+/// one-line account a `--json` envelope carries.
 struct EarlyExit {
     text: String,
     to_stderr: bool,
     code: u8,
+    summary: String,
 }
 
 fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Cli, EarlyExit> {
@@ -271,22 +444,23 @@ fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Cli, EarlyExit> {
     let matches = command.try_get_matches_from_mut(args).map_err(early_exit)?;
     let cli = Cli::from_arg_matches(&matches).map_err(early_exit)?;
 
-    // The subcommand is optional in the derive because `--skill` is a
-    // whole invocation on its own. It is still required of every other
-    // run, and the refusal is the one clap gave when the field was not an
-    // `Option`: the short help on stderr, exit 2. Rebuilding it here
-    // rather than letting a `None` fall through keeps `matra` with no
-    // arguments printing what it has always printed.
+    // The subcommand is optional in the derive because `--skill` and
+    // `--schema` are whole invocations on their own. It is still required
+    // of every other run, and the refusal is the one clap gave when the
+    // field was not an `Option`: the short help on stderr, exit 2.
+    // Rebuilding it here rather than letting a `None` fall through keeps
+    // `matra` with no arguments printing what it has always printed.
     //
     // A bare `-r` is exempt so that it reaches the one message that says
     // what it is missing. Answering "you gave me no subcommand" to
     // someone who reached for the skill and forgot half the incantation
     // would be true and useless.
-    if cli.command.is_none() && !cli.skill && cli.reference.is_none() {
+    if cli.command.is_none() && !cli.skill && cli.schema.is_none() && cli.reference.is_none() {
         return Err(EarlyExit {
             text: command.render_help().to_string(),
             to_stderr: true,
             code: EXIT_ERROR,
+            summary: "no command given; run `matra --help` for the list".to_string(),
         });
     }
     Ok(cli)
@@ -294,13 +468,52 @@ fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Cli, EarlyExit> {
 
 fn early_exit(e: clap::Error) -> EarlyExit {
     let to_stderr = e.use_stderr();
+    let text = e.render().to_string();
+    // clap's first paragraph is the failure, sometimes over two lines
+    // ("required arguments were not provided:" then the argument); the
+    // rest is usage and a pointer to `--help`, which a program reading
+    // the envelope has no use for.
+    let summary = text
+        .lines()
+        .take_while(|line| !line.trim().is_empty())
+        .map(str::trim)
+        .collect::<Vec<_>>()
+        .join(" ")
+        .trim_start_matches("error: ")
+        .to_string();
     EarlyExit {
-        text: e.render().to_string(),
+        text,
         to_stderr,
         // clap reports usage failures as exit 2, which is also matra's
         // "an error occurred". Help and version are not failures.
         code: if to_stderr { EXIT_ERROR } else { EXIT_FOUND },
+        summary,
     }
+}
+
+/// Whether a raw argument vector asks for JSON: `--json` anywhere
+/// before a bare `--`. Read raw because this is asked of a command line
+/// clap refused, which has no parsed form.
+fn asks_for_json(args: &[OsString]) -> bool {
+    args.iter()
+        .skip(1)
+        .take_while(|arg| *arg != "--")
+        .any(|arg| arg == "--json")
+}
+
+/// The command a raw argument vector names, for the envelope of a usage
+/// failure: the first subcommand among the arguments, or `skill` or
+/// `schema` for those flags. `None` when it names none.
+fn command_named(args: &[OsString]) -> Option<&'static str> {
+    args.iter()
+        .skip(1)
+        .take_while(|arg| *arg != "--")
+        .filter_map(|arg| arg.to_str())
+        .find_map(|arg| match arg {
+            "--skill" | "-r" | "--reference" => Some("skill"),
+            _ if arg == "--schema" || arg.starts_with("--schema=") => Some("schema"),
+            _ => COMMANDS.iter().copied().find(|name| *name == arg),
+        })
 }
 
 /// `matra <version>`, then the features this build was compiled with.
@@ -339,6 +552,9 @@ fn version_line() -> &'static str {
 enum Outcome {
     Found,
     Empty,
+    /// At least one item of a walk failed, and each failure has already
+    /// been reported where it happened. The walk went on past it.
+    Failed,
 }
 
 fn outcome(empty: bool) -> Outcome {
@@ -349,59 +565,60 @@ fn outcome(empty: bool) -> Outcome {
     }
 }
 
-/// Where a subcommand's text comes from.
-enum InputArg {
-    Path(PathBuf),
-    Stdin,
-}
-
-impl InputArg {
-    fn of(path: &Path) -> InputArg {
-        if path.as_os_str() == "-" {
-            InputArg::Stdin
-        } else {
-            InputArg::Path(path.to_path_buf())
-        }
+/// The command and the input a failure envelope names: the input is the
+/// path the command was given, or the name given for stdin, and null for
+/// a command that reads no document.
+fn failure_context(cli: &Cli) -> (&'static str, Option<String>) {
+    if cli.skill || (cli.reference.is_some() && cli.schema.is_none()) {
+        return ("skill", None);
     }
-
-    /// The name this input answers to in the JSON envelope and in the
-    /// human header.
-    fn label<'a>(&'a self, stdin_filename: &'a str) -> std::borrow::Cow<'a, str> {
-        match self {
-            InputArg::Path(p) => p.display().to_string().into(),
-            InputArg::Stdin => stdin_filename.into(),
-        }
+    if cli.schema.is_some() {
+        return ("schema", None);
+    }
+    let label = |path: &Path| Some(Target::label(path, &cli.stdin_filename));
+    match &cli.command {
+        Some(Command::Analyze { path, .. }) => ("analyze", label(path)),
+        Some(Command::Summarize { path, .. }) => ("summarize", label(path)),
+        Some(Command::Keyphrases { path, .. }) => ("keyphrases", label(path)),
+        Some(Command::Clusters { path, .. }) => ("clusters", label(path)),
+        Some(Command::Config { .. }) => ("config", None),
+        Some(Command::Completions { .. }) => ("completions", None),
+        // `parse` refuses a run with no command and neither flag.
+        None => ("matra", None),
     }
 }
 
 fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outcome> {
-    // `--skill` is a property of the program rather than an action on a
-    // document, so it outranks a subcommand: `matra analyze x --skill`
-    // prints the skill and ignores the analysis. Dispatching it first is
-    // what makes that true, and it is also what lets the flag stand alone
-    // with no subcommand at all.
+    // `--skill` and `--schema` are properties of the program rather than
+    // actions on a document, so they outrank a subcommand: `matra analyze
+    // x --skill` prints the skill and ignores the analysis. Dispatching
+    // them first is what makes that true, and it is also what lets each
+    // flag stand alone with no subcommand at all.
     if cli.skill {
         return skill::run(cli, out);
     }
+    if let Some(name) = &cli.schema {
+        return schema::run(cli, name.as_deref(), out);
+    }
     if cli.reference.is_some() {
-        return Err(
+        return Err(Failure::refused(
             "--reference names a section of the agent skill; pass --skill with it, \
-             or run `matra --skill -r` to list the references"
-                .into(),
-        );
+             or run `matra --skill -r` to list the references",
+        ));
     }
 
-    // `parse` refuses a run with neither a subcommand nor `--skill`, so
-    // there is one by the time execution reaches here.
+    // `parse` refuses a run with no subcommand and neither flag, so there
+    // is one by the time execution reaches here.
     let Some(command) = &cli.command else {
-        return Err("no command given; run `matra --help` for the list".into());
+        return Err(Failure::refused(
+            "no command given; run `matra --help` for the list",
+        ));
     };
 
-    // The two config actions and the completion script touch neither the
-    // model nor any input, so they are dispatched before anything is
-    // loaded.
     match command {
-        Command::Config { action } => return config_cmd::run(cli, action, out, err),
+        // The two config actions and the completion script touch neither
+        // the model nor any input.
+        Command::Config { action } => config_cmd::run(cli, action, out),
         Command::Completions { shell } => {
             let shell = match shell {
                 CompletionShell::Bash => clap_complete::Shell::Bash,
@@ -410,52 +627,36 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
             };
             let mut command = Cli::command().name("matra").bin_name("matra");
             clap_complete::generate(shell, &mut command, "matra", out);
-            return Ok(Outcome::Found);
+            Ok(Outcome::Found)
         }
-        _ => {}
-    }
-
-    let path = match command {
-        Command::Analyze { path, .. }
-        | Command::Summarize { path, .. }
-        | Command::Keyphrases { path, .. } => path,
-        Command::Config { .. } | Command::Completions { .. } => unreachable!("dispatched above"),
-    };
-    let input = InputArg::of(path);
-
-    // Validate the input before touching the model. Downloading 16 MB to
-    // then report that the file does not exist is a poor trade for the
-    // reader.
-    if let InputArg::Path(p) = &input {
-        check_input(p)?;
-    }
-
-    let cfg = resolve_config(cli)?;
-    let engine = build_engine(cli, &cfg, err)?;
-    let doc = document_of(&input, &cli.stdin_filename, &engine)?;
-    let label = input.label(&cli.stdin_filename);
-    let style = render::Style::new(colorize(cli.color));
-
-    match command {
-        Command::Analyze { sections, .. } => {
-            if cli.json {
-                write_envelope(out, "analyze", Some(&label), &doc)?;
-            } else if !cli.quiet {
-                render::metrics(out, &label, &doc, style)?;
-                if *sections {
-                    render::sections(out, &doc)?;
-                }
-            }
-            Ok(outcome(doc.metrics.total_sentences == 0))
-        }
-        Command::Summarize { n, method, .. } => {
+        Command::Analyze {
+            path,
+            sections,
+            format,
+            depth,
+        } => analyze(
+            cli,
+            path,
+            *format,
+            *sections,
+            depth.unwrap_or(Depth::Token),
+            out,
+            err,
+        ),
+        Command::Summarize {
+            path,
+            n,
+            method,
+            format,
+        } => {
+            let (label, doc, cfg) = one_document(cli, "summarize", path, *format, err)?;
             // The configuration applies here, at the application tier:
             // the library's own default is `summarize(doc, n)`, and the
             // command line always names the method it was told to use.
-            let n = n.unwrap_or_else(|| cfg.summarize_n());
+            let n = n.unwrap_or_else(|| cfg.summary_n());
             let method = match method {
                 Some(m) => summary_method_of(*m),
-                None => summary_method(cfg.summarize_algorithm())?,
+                None => summary_method(cfg.summary_method())?,
             };
             let summary = crate::summarize_with(&doc, n, method)?;
             if cli.json {
@@ -465,11 +666,17 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
             }
             Ok(outcome(summary.sentences.is_empty()))
         }
-        Command::Keyphrases { n, method, .. } => {
+        Command::Keyphrases {
+            path,
+            n,
+            method,
+            format,
+        } => {
+            let (label, doc, cfg) = one_document(cli, "keyphrases", path, *format, err)?;
             let n = n.unwrap_or_else(|| cfg.keyphrases_n());
             let method = match method {
                 Some(m) => keyphrase_method_of(*m),
-                None => keyphrase_method(cfg.keyphrases_algorithm())?,
+                None => keyphrase_method(cfg.keyphrases_method())?,
             };
             let found = crate::keyphrases_with(&doc, n, method)?;
             if cli.json {
@@ -479,8 +686,205 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
             }
             Ok(outcome(found.phrases.is_empty()))
         }
-        Command::Config { .. } | Command::Completions { .. } => unreachable!("dispatched above"),
+        Command::Clusters {
+            path,
+            threshold,
+            format,
+        } => clusters(cli, path, *threshold, *format, out, err),
     }
+}
+
+/// `matra clusters`: the document's sentences grouped by an embedder the
+/// command line builds from the configuration. The library builds none
+/// inside an outcome call, because building the default one downloads a
+/// model; the application tier is where that choice belongs.
+#[cfg(feature = "model2vec")]
+fn clusters(
+    cli: &Cli,
+    path: &Path,
+    threshold: Option<f64>,
+    format: Option<FormatName>,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> Fallible<Outcome> {
+    let (label, doc, cfg) = one_document(cli, "clusters", path, format, err)?;
+    let threshold = threshold.unwrap_or_else(|| cfg.clusters_threshold());
+    let embedder = crate::embed::model2vec::Model2Vec::from_config(&cfg)?;
+    let found = crate::clusters(&doc, &embedder, threshold)?;
+    if cli.json {
+        write_envelope(out, "clusters", Some(&label), &found)?;
+    } else if !cli.quiet {
+        render::clusters(out, &doc, &found)?;
+    }
+    Ok(outcome(found.clusters.is_empty()))
+}
+
+/// Without `model2vec` this build ships no embedder, and the command says
+/// so before it reads anything or loads a model.
+#[cfg(not(feature = "model2vec"))]
+fn clusters(
+    _cli: &Cli,
+    _path: &Path,
+    _threshold: Option<f64>,
+    _format: Option<FormatName>,
+    _out: &mut dyn Write,
+    _err: &mut dyn Write,
+) -> Fallible<Outcome> {
+    Err(Failure::refused(
+        "clusters needs an embedder, and this build was compiled without the `model2vec` \
+         feature that ships one; install the Python wheel, or build with \
+         `--features cli,model2vec`",
+    ))
+}
+
+/// `matra analyze`: one document, or every file in a directory.
+fn analyze(
+    cli: &Cli,
+    path: &Path,
+    format: Option<FormatName>,
+    sections: bool,
+    depth: Depth,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> Fallible<Outcome> {
+    let style = render::Style::new(colorize(cli.color));
+    let inputs = match Target::of(path)? {
+        Target::Dir(inputs) => inputs,
+        one => {
+            let (label, doc, _) = analyzed(cli, one, path, format, err)?;
+            if cli.json {
+                write_document(out, Some(&label), &doc, depth, Layout::Pretty)?;
+            } else if !cli.quiet {
+                render::metrics(out, &label, &doc, style)?;
+                if sections {
+                    render::sections(out, &doc)?;
+                }
+            }
+            return Ok(outcome(doc.metrics.total_sentences == 0));
+        }
+    };
+
+    if format.is_some() {
+        return Err(Failure::refused(format!(
+            "--format reads one file or stdin as the format named; {} is a directory, \
+             and each of its files is read as its own name and bytes say",
+            path.display()
+        )));
+    }
+    let cfg = resolve_config(cli)?;
+    let engine = build_engine(cli, &cfg, err)?;
+
+    // One result per file, in name order, and a failed file is a result
+    // too: its line says what went wrong, and the walk goes on. The exit
+    // code says whether any file failed.
+    let mut found = false;
+    let mut failed = false;
+    let mut first = true;
+    for item in engine.analyze_all(inputs) {
+        match item {
+            Ok(doc) => {
+                let label = doc
+                    .provenance
+                    .source
+                    .path
+                    .as_deref()
+                    .map(|p| p.display().to_string());
+                found |= doc.metrics.total_sentences > 0;
+                if cli.json {
+                    write_document(out, label.as_deref(), &doc, depth, Layout::Line)?;
+                } else if !cli.quiet {
+                    if !first {
+                        writeln!(out)?;
+                    }
+                    render::metrics(out, label.as_deref().unwrap_or_default(), &doc, style)?;
+                    if sections {
+                        render::sections(out, &doc)?;
+                    }
+                }
+                first = false;
+            }
+            Err(e) => {
+                failed = true;
+                // A diagnostic that cannot be written is not worth
+                // stopping the walk over.
+                let _ = writeln!(err, "matra: {e}");
+                if cli.json {
+                    let label = e.path.as_deref().map(|p| p.display().to_string());
+                    write_failure(
+                        out,
+                        Some("analyze"),
+                        label.as_deref(),
+                        &e.error,
+                        Layout::Line,
+                    )?;
+                }
+            }
+        }
+    }
+    Ok(if failed {
+        Outcome::Failed
+    } else {
+        outcome(!found)
+    })
+}
+
+/// The one document `summarize`, `keyphrases` and `clusters` read, with
+/// its label and the configuration that resolved. A directory is refused
+/// before the engine is built: these commands report on one document.
+fn one_document(
+    cli: &Cli,
+    command: &str,
+    path: &Path,
+    format: Option<FormatName>,
+    err: &mut dyn Write,
+) -> Fallible<(String, Document, Config)> {
+    let target = Target::of(path)?;
+    if let Target::Dir(_) = target {
+        return Err(Failure::refused(format!(
+            "{} is a directory; {command} reads one document, and `matra analyze` reads a \
+             directory",
+            path.display()
+        )));
+    }
+    analyzed(cli, target, path, format, err)
+}
+
+/// One file or stdin, analysed: its label, the document, and the
+/// configuration the engine was built from.
+///
+/// Stdin is read before the engine is built, so an oversized stream
+/// costs no model load.
+fn analyzed(
+    cli: &Cli,
+    target: Target,
+    path: &Path,
+    format: Option<FormatName>,
+    err: &mut dyn Write,
+) -> Fallible<(String, Document, Config)> {
+    let format = format.map(format_of);
+    let (input, file) = match target {
+        Target::File(file) => {
+            let input = match &format {
+                Some(format) => crate::Input::file_as(&file, format.clone()),
+                None => crate::Input::file(&file),
+            };
+            (input, Some(file))
+        }
+        Target::Stdin => {
+            // The name given for stdin stands in for a file name: its
+            // extension decides the format when `--format` does not, and
+            // a PDF or DOCX signature in the bytes outranks both.
+            let format = format.unwrap_or_else(|| Format::from_path(&cli.stdin_filename));
+            (crate::Input::bytes(read_stdin()?, Some(format)), None)
+        }
+        Target::Dir(_) => unreachable!("a directory is walked, never analysed as one document"),
+    };
+    let cfg = resolve_config(cli)?;
+    let engine = build_engine(cli, &cfg, err)?;
+    let doc = engine
+        .analyze(input)
+        .map_err(|error| Failure::Error { error, path: file })?;
+    Ok((Target::label(path, &cli.stdin_filename), doc, cfg))
 }
 
 /// The standard pipeline, saying so on stderr before it downloads a
@@ -543,28 +947,6 @@ fn human_bytes(bytes: u64) -> String {
     }
 }
 
-/// What `analyze`, `summarize` and `keyphrases` can read from a path.
-///
-/// Both refusals happen before the engine is built, so neither costs a
-/// model load or a download.
-///
-/// A directory is refused here, before the engine is built, rather than
-/// by `Input::file` after it. These three commands report on a single
-/// document, and a refusal that costs no model load says so sooner.
-fn check_input(path: &Path) -> Fallible<()> {
-    if !path.exists() {
-        return Err(format!("no such file: {}", path.display()).into());
-    }
-    if path.is_dir() {
-        return Err(format!(
-            "{} is a directory; pass a file. Directory analysis is on the roadmap.",
-            path.display()
-        )
-        .into());
-    }
-    Ok(())
-}
-
 /// The resolved configuration, with `--model-dir` layered on top.
 ///
 /// An explicit directory is the [`crate::config::ValueSource::Argument`]
@@ -576,6 +958,15 @@ fn resolve_config(cli: &Cli) -> domain::Result<Config> {
         Some(dir) => cfg.with_model_dir(dir),
         None => cfg,
     })
+}
+
+/// The library's format for `--format`.
+fn format_of(name: FormatName) -> Format {
+    match name {
+        FormatName::Markdown => Format::Markdown,
+        FormatName::PlainText => Format::PlainText,
+        FormatName::Blocks => Format::Blocks,
+    }
 }
 
 /// The library's method for `--method`.
@@ -594,26 +985,26 @@ fn keyphrase_method_of(method: KeyphraseMethod) -> crate::KeyphraseMethod {
     }
 }
 
-/// The library's method for the configured `summarize.algorithm`. The
-/// names are the flag's, which `Config::resolve` already checked.
+/// The library's method for the configured `summary.method`. The names
+/// are the flag's, which `Config::resolve` already checked.
 fn summary_method(name: &str) -> Fallible<crate::SummaryMethod> {
     match name {
         "tfidf" => Ok(crate::SummaryMethod::TfIdf),
         "textrank" => Ok(crate::SummaryMethod::TextRank),
-        other => {
-            Err(format!("summarize.algorithm is `{other}`, which this build cannot run").into())
-        }
+        other => Err(Failure::refused(format!(
+            "summary.method is `{other}`, which this build cannot run"
+        ))),
     }
 }
 
-/// The library's method for the configured `keyphrases.algorithm`.
+/// The library's method for the configured `keyphrases.method`.
 fn keyphrase_method(name: &str) -> Fallible<crate::KeyphraseMethod> {
     match name {
         "rake" => Ok(crate::KeyphraseMethod::Rake),
         "yake" => Ok(crate::KeyphraseMethod::Yake),
-        other => {
-            Err(format!("keyphrases.algorithm is `{other}`, which this build cannot run").into())
-        }
+        other => Err(Failure::refused(format!(
+            "keyphrases.method is `{other}`, which this build cannot run"
+        ))),
     }
 }
 
@@ -621,29 +1012,45 @@ fn keyphrase_method(name: &str) -> Fallible<crate::KeyphraseMethod> {
 // Input
 // ---------------------------------------------------------------------------
 
-/// One analyzed document, through the pipeline.
-///
-/// Reading the file and parsing it directly would feed markdown headings
-/// and fenced code to the extractors as if they were prose, so
-/// `summarize` on a README would return its headings. Going through the
-/// pipeline applies the right decomposer for the extension and skips
-/// blockquotes.
-///
-/// The path is a file by the time this runs: [`check_input`] has
-/// already refused a missing one and a directory. A failure carries the
-/// path, so the message names the file it is about.
-fn document_of(
-    input: &InputArg,
-    stdin_filename: &str,
-    engine: &crate::Engine,
-) -> Fallible<Document> {
-    match input {
-        InputArg::Path(path) => engine
-            .analyze(crate::Input::file(path))
-            .map_err(|e| Box::new(domain::DocumentError::new(Some(path.clone()), e)).into()),
-        InputArg::Stdin => {
-            let text = read_stdin()?;
-            Ok(engine.analyze(crate::Input::text(text, Format::from_path(stdin_filename)))?)
+/// What a command's path argument names.
+enum Target {
+    /// `-`: the process's stdin.
+    Stdin,
+    /// A path that is not a directory. Whether it is a readable file is
+    /// the library's to say, when it is analysed.
+    File(PathBuf),
+    /// A directory, listed.
+    Dir(crate::Inputs),
+}
+
+impl Target {
+    /// What `path` names, decided before the engine is built.
+    ///
+    /// The question goes to [`crate::Inputs::dir`], which answers it for
+    /// the library: a directory is listed, and anything else is refused
+    /// with `invalid_input` naming `Input::file`, which is what reads a
+    /// file. A path that is missing, unreadable or a symlink fails there
+    /// with the error the library gives for it, path detail and all, and
+    /// it fails before a model is loaded: downloading 16 MB to then
+    /// report that the file does not exist is a poor trade.
+    fn of(path: &Path) -> Fallible<Target> {
+        if path.as_os_str() == "-" {
+            return Ok(Target::Stdin);
+        }
+        match crate::Inputs::dir(path) {
+            Ok(inputs) => Ok(Target::Dir(inputs)),
+            Err(domain::Error::InvalidInput(_)) => Ok(Target::File(path.to_path_buf())),
+            Err(error) => Err(Failure::Error { error, path: None }),
+        }
+    }
+
+    /// The name an input answers to in the JSON envelope and in the
+    /// human header: the path as given, or the name given for stdin.
+    fn label(path: &Path, stdin_filename: &str) -> String {
+        if path.as_os_str() == "-" {
+            stdin_filename.to_string()
+        } else {
+            path.display().to_string()
         }
     }
 }
@@ -653,7 +1060,7 @@ fn document_of(
 /// The process is read here and the decision is made in [`read_capped`],
 /// which takes the stream as an argument so the cap is testable without
 /// a subprocess.
-fn read_stdin() -> Fallible<String> {
+fn read_stdin() -> Fallible<Vec<u8>> {
     read_capped(&mut io::stdin().lock())
 }
 
@@ -663,25 +1070,24 @@ fn read_stdin() -> Fallible<String> {
 /// unbounded by construction, and reading one to the end would allocate
 /// without limit before any gate could fire.
 ///
-/// The bytes are counted before they are decoded, and that order is the
-/// whole point. Reading straight into a `String` truncates at the cap
-/// and then fails on the half character sitting at the cut, so an input
-/// that is merely too large is reported as one that is not valid UTF-8:
-/// a true statement about the truncated prefix and a misleading one
-/// about what the user piped in.
-fn read_capped(source: &mut dyn Read) -> Fallible<String> {
+/// The bytes are returned undecoded. Whether they are text, and which
+/// format, is the library's to decide, the same way it decides for a
+/// file: stdin is read as bytes and detected.
+fn read_capped(source: &mut dyn Read) -> Fallible<Vec<u8>> {
     let mut bytes: Vec<u8> = Vec::new();
     source
         .take(MAX_INPUT_BYTES as u64 + 1)
-        .read_to_end(&mut bytes)?;
+        .read_to_end(&mut bytes)
+        .map_err(domain::Error::Io)?;
     if bytes.len() > MAX_INPUT_BYTES {
-        return Err(Box::new(domain::Error::InputTooLarge {
+        return Err(domain::Error::InputTooLarge {
             limit: MAX_INPUT_BYTES,
             actual: bytes.len(),
             what: "input",
-        }));
+        }
+        .into());
     }
-    Ok(String::from_utf8(bytes)?)
+    Ok(bytes)
 }
 
 // ---------------------------------------------------------------------------
@@ -694,18 +1100,30 @@ fn read_capped(source: &mut dyn Read) -> Fallible<String> {
 /// that identifies the run sits beside it rather than inside it, so a
 /// consumer can dispatch on `command` without inspecting `result` first.
 ///
-/// `input` is null rather than absent for a command that reads no
-/// document, which `--skill` is. The four keys are the envelope, and a
-/// consumer that reads them positionally should not have to discover that
-/// one of them is sometimes missing.
+/// The five keys are always present, so a consumer that reads them never
+/// has to discover that one is sometimes missing. Exactly one of
+/// `result` and `error` is null: `result` on a failure, `error` on a
+/// success. `input` is null for a command that reads no document
+/// (`--skill`, `--schema`, `config show` with no config file). `command`
+/// is null only for a usage failure whose arguments name no command.
 #[derive(serde::Serialize)]
 struct Envelope<'a, T> {
     format_version: u32,
-    command: &'a str,
+    command: Option<&'a str>,
     input: Option<&'a str>,
-    result: T,
+    result: Option<T>,
+    error: Option<&'a domain::Error>,
 }
 
+/// How an envelope is laid out: indented, for a run that writes one, or
+/// on one line, for a directory walk that writes one per file.
+#[derive(Copy, Clone)]
+enum Layout {
+    Pretty,
+    Line,
+}
+
+/// A successful run's envelope.
 fn write_envelope<T: serde::Serialize>(
     out: &mut dyn Write,
     command: &str,
@@ -714,25 +1132,115 @@ fn write_envelope<T: serde::Serialize>(
 ) -> Fallible<()> {
     let envelope = Envelope {
         format_version: FORMAT_VERSION,
-        command,
+        command: Some(command),
         input,
-        result,
+        result: Some(result),
+        error: None,
     };
-    writeln!(out, "{}", serde_json::to_string_pretty(&envelope)?)?;
-    Ok(())
+    Ok(emit(out, &envelope, Layout::Pretty)?)
 }
 
-fn is_broken_pipe(e: &(dyn std::error::Error + 'static)) -> bool {
-    let mut source = Some(e);
-    while let Some(err) = source {
-        if let Some(io_err) = err.downcast_ref::<io::Error>()
-            && io_err.kind() == io::ErrorKind::BrokenPipe
-        {
-            return true;
+/// A failed run's envelope, or a failed file's in a walk.
+fn write_failure(
+    out: &mut dyn Write,
+    command: Option<&str>,
+    input: Option<&str>,
+    error: &domain::Error,
+    layout: Layout,
+) -> io::Result<()> {
+    let envelope: Envelope<'_, ()> = Envelope {
+        format_version: FORMAT_VERSION,
+        command,
+        input,
+        result: None,
+        error: Some(error),
+    };
+    emit(out, &envelope, layout)
+}
+
+/// An analysed document's envelope, cut to `depth`.
+fn write_document(
+    out: &mut dyn Write,
+    input: Option<&str>,
+    doc: &Document,
+    depth: Depth,
+    layout: Layout,
+) -> Fallible<()> {
+    fn envelope<'a, T>(input: Option<&'a str>, result: T) -> Envelope<'a, T> {
+        Envelope {
+            format_version: FORMAT_VERSION,
+            command: Some("analyze"),
+            input,
+            result: Some(result),
+            error: None,
         }
-        source = err.source();
     }
-    false
+    if depth == Depth::Token {
+        // The whole document, written straight from the domain value.
+        return Ok(emit(out, &envelope(input, doc), layout)?);
+    }
+    let cut = at_depth(doc, depth)?;
+    Ok(emit(out, &envelope(input, cut), layout)?)
+}
+
+/// The document's JSON with what lies below `depth` removed: the key, not
+/// an empty array in its place, because an empty `sentences` would say a
+/// paragraph has none. The document schema marks the three keys this can
+/// remove as absent only here.
+fn at_depth(doc: &Document, depth: Depth) -> io::Result<serde_json::Value> {
+    let mut value = serde_json::to_value(doc).map_err(io::Error::other)?;
+    let each = |value: &mut serde_json::Value, key: &str| -> Vec<serde_json::Value> {
+        value
+            .get_mut(key)
+            .and_then(serde_json::Value::as_array_mut)
+            .map(std::mem::take)
+            .unwrap_or_default()
+    };
+    match depth {
+        Depth::Token => {}
+        Depth::Document => {
+            if let Some(object) = value.as_object_mut() {
+                object.remove("sections");
+            }
+        }
+        Depth::Paragraph | Depth::Sentence => {
+            let mut sections = each(&mut value, "sections");
+            for section in &mut sections {
+                let mut paragraphs = each(section, "paragraphs");
+                for paragraph in &mut paragraphs {
+                    if depth == Depth::Paragraph {
+                        if let Some(object) = paragraph.as_object_mut() {
+                            object.remove("sentences");
+                        }
+                        continue;
+                    }
+                    let mut sentences = each(paragraph, "sentences");
+                    for sentence in &mut sentences {
+                        if let Some(object) = sentence.as_object_mut() {
+                            object.remove("tokens");
+                        }
+                    }
+                    paragraph["sentences"] = serde_json::Value::Array(sentences);
+                }
+                section["paragraphs"] = serde_json::Value::Array(paragraphs);
+            }
+            value["sections"] = serde_json::Value::Array(sections);
+        }
+    }
+    Ok(value)
+}
+
+fn emit<T: serde::Serialize>(
+    out: &mut dyn Write,
+    envelope: &Envelope<'_, T>,
+    layout: Layout,
+) -> io::Result<()> {
+    let text = match layout {
+        Layout::Pretty => serde_json::to_string_pretty(envelope),
+        Layout::Line => serde_json::to_string(envelope),
+    }
+    .map_err(io::Error::other)?;
+    writeln!(out, "{text}")
 }
 
 /// Whether ANSI styling belongs in this run's output.
@@ -777,72 +1285,90 @@ mod tests {
         assert!(line.contains("cli"));
     }
 
+    /// The list a usage failure reads its command from is the list clap
+    /// parses. A subcommand added to one and not the other fails here.
     #[test]
-    fn dash_is_stdin_and_anything_else_is_a_path() {
-        assert!(matches!(InputArg::of(Path::new("-")), InputArg::Stdin));
-        assert!(matches!(InputArg::of(Path::new("./-")), InputArg::Path(_)));
-        assert!(matches!(
-            InputArg::of(Path::new("notes.md")),
-            InputArg::Path(_)
-        ));
+    fn the_command_list_is_the_subcommands_clap_knows() {
+        let known: Vec<String> = Cli::command()
+            .get_subcommands()
+            .map(|c| c.get_name().to_string())
+            .collect();
+        assert_eq!(known, COMMANDS);
     }
 
-    /// The command line reads the extension table from `domain`, the
-    /// same function the file source reads. This pins the route, not the
-    /// table: the table's own cases are tested in `src/domain.rs`.
     #[test]
-    fn stdin_filename_selects_the_decomposer() {
-        assert_eq!(Format::from_path("notes.md"), Format::Markdown);
-        assert_eq!(Format::from_path("<stdin>"), Format::PlainText);
-    }
-
-    /// A missing path and a directory are both refused before the engine
-    /// is built, and each says which of the two it is.
-    #[test]
-    fn a_missing_path_and_a_directory_are_both_refused() {
+    fn dash_is_stdin_and_a_directory_is_listed() {
         let dir = tempfile::tempdir().expect("temp dir");
-
-        let missing = check_input(&dir.path().join("absent.txt")).expect_err("missing is refused");
-        assert!(missing.to_string().contains("no such file"), "{missing}");
-
-        let is_dir = check_input(dir.path()).expect_err("a directory is refused");
-        let message = is_dir.to_string();
-        assert!(message.contains("is a directory"), "{message}");
-        assert!(message.contains("pass a file"), "{message}");
-        assert!(
-            message.contains(&dir.path().display().to_string()),
-            "the message names the path: {message}"
-        );
-
-        let file = dir.path().join("notes.txt");
+        assert!(matches!(Target::of(Path::new("-")), Ok(Target::Stdin)));
+        assert!(matches!(Target::of(dir.path()), Ok(Target::Dir(_))));
+        let file = dir.path().join("notes.md");
         std::fs::write(&file, "text").expect("write");
-        check_input(&file).expect("a regular file is accepted");
+        assert!(matches!(Target::of(&file), Ok(Target::File(_))));
+        assert_eq!(Target::label(Path::new("-"), "notes.md"), "notes.md");
+        assert_eq!(Target::label(&file, "notes.md"), file.display().to_string());
+    }
+
+    /// A missing path fails before the engine is built, with the error the
+    /// library gives for it: the `io` kind, `not_found`, and the path as a
+    /// detail as well as in the message.
+    #[test]
+    fn a_missing_path_is_the_library_s_not_found() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let missing = dir.path().join("absent.txt");
+        let Err(Failure::Error { error, .. }) = Target::of(&missing) else {
+            panic!("a missing path is refused");
+        };
+        assert_eq!(error.kind(), "io");
+        let details = error.details();
+        assert_eq!(
+            details.get("io_kind"),
+            Some(&domain::DetailValue::Text("not_found".to_string()))
+        );
+        assert_eq!(
+            details.get("path"),
+            Some(&domain::DetailValue::Text(missing.display().to_string()))
+        );
+    }
+
+    #[test]
+    fn json_is_asked_for_before_a_bare_double_dash_only() {
+        let args = |list: &[&str]| -> Vec<OsString> { list.iter().map(OsString::from).collect() };
+        assert!(asks_for_json(&args(&["matra", "analyze", "--json"])));
+        assert!(!asks_for_json(&args(&["matra", "analyze", "--", "--json"])));
+        assert!(!asks_for_json(&args(&["--json"])), "argv[0] is the program");
+        assert_eq!(
+            command_named(&args(&["matra", "--json", "summarize", "x"])),
+            Some("summarize")
+        );
+        assert_eq!(
+            command_named(&args(&["matra", "--schema=x"])),
+            Some("schema")
+        );
+        assert_eq!(command_named(&args(&["matra", "--json", "--bogus"])), None);
     }
 
     /// Regression: an oversized input whose cap-sized prefix ends inside
     /// a multi-byte character used to be reported as invalid UTF-8,
-    /// because the read decoded before it counted. `é` is two bytes and
-    /// the read stops after an odd number of them, so the cut lands
-    /// mid-character every time. The size is what the user can act on.
+    /// because the read decoded before it counted. The bytes are now
+    /// counted and never decoded here, so the size is what is reported.
     #[test]
     fn oversized_input_is_too_large_not_invalid_utf8() {
         let text = "é".repeat(MAX_INPUT_BYTES / 2 + 1);
         assert!(text.len() > MAX_INPUT_BYTES);
 
-        let err = read_capped(&mut text.as_bytes()).expect_err("over the cap");
-        let too_large = err
-            .downcast_ref::<domain::Error>()
-            .expect("a domain error, not an io error");
+        let Err(Failure::Error { error, .. }) = read_capped(&mut text.as_bytes()) else {
+            panic!("over the cap");
+        };
         assert!(
             matches!(
-                too_large,
+                error,
                 domain::Error::InputTooLarge {
                     limit: MAX_INPUT_BYTES,
                     what: "input",
                     ..
                 }
             ),
-            "{too_large}"
+            "{error}"
         );
     }
 
@@ -855,13 +1381,36 @@ mod tests {
         assert_eq!(read.len(), MAX_INPUT_BYTES);
     }
 
-    /// Invalid UTF-8 under the cap is still a UTF-8 failure. The fix
-    /// reorders the two checks; it does not remove one.
+    /// Bytes that are not UTF-8 come back as they arrived: whether they
+    /// are text is the library's decision, which reports them as an
+    /// unsupported format, the same as for a file.
     #[test]
-    fn invalid_utf8_under_the_cap_still_reports_utf8() {
-        let err = read_capped(&mut &b"ok\xff\xfe"[..]).expect_err("not utf8");
-        assert!(err.downcast_ref::<domain::Error>().is_none());
-        assert!(err.to_string().contains("utf-8"), "{err}");
+    fn stdin_bytes_are_not_decoded_here() {
+        let read = read_capped(&mut &b"ok\xff\xfe"[..]).expect("under the cap");
+        assert_eq!(read, b"ok\xff\xfe");
+    }
+
+    /// `--depth` removes the levels below it as keys, never as empty
+    /// arrays: an empty `sentences` would claim a paragraph has none.
+    #[test]
+    fn depth_removes_the_levels_below_it() {
+        let doc = Document::new(
+            domain::Provenance::for_test(),
+            vec![domain::Section::new(
+                Some("Notes".to_string()),
+                1,
+                None,
+                Vec::new(),
+            )],
+            Vec::new(),
+        );
+        let document = at_depth(&doc, Depth::Document).expect("value");
+        assert!(document.get("sections").is_none());
+        assert!(document.get("metrics").is_some());
+        assert!(document.get("provenance").is_some());
+
+        let paragraph = at_depth(&doc, Depth::Paragraph).expect("value");
+        assert_eq!(paragraph["sections"][0]["heading"], "Notes");
     }
 
     /// Regression: the notice a first run prints names the artifact, a

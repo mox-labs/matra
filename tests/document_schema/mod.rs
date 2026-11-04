@@ -13,6 +13,12 @@
 //! every object definition that lists its properties is closed here
 //! (`additionalProperties: false`) before validating, and a field that
 //! is emitted but undocumented fails the test that emitted it.
+//!
+//! It is stricter in a second way. The schema lets three keys be absent
+//! (`sections`, a paragraph's `sentences`, a sentence's `tokens`), because
+//! `matra analyze --json --depth` removes them below the level asked for.
+//! Every other output carries all three, so [`assert_valid`] requires them
+//! again, and only [`assert_valid_at_depth`] reads the schema as published.
 
 use std::path::PathBuf;
 
@@ -24,7 +30,22 @@ use std::path::PathBuf;
 /// `$id`, so the document schema, closed the same way, is registered
 /// under that `$id` for every check.
 pub(crate) fn assert_valid(name: &str, value: &serde_json::Value, context: &str) {
-    let document = closed_schema("document");
+    validate(name, value, context, true);
+}
+
+/// Validate a document `matra analyze --json --depth` cut short against
+/// the document schema as published, where the levels below the depth
+/// may be absent.
+#[allow(dead_code)]
+pub(crate) fn assert_valid_at_depth(value: &serde_json::Value, context: &str) {
+    validate("document", value, context, false);
+}
+
+fn validate(name: &str, value: &serde_json::Value, context: &str, whole: bool) {
+    let mut document = closed_schema("document");
+    if whole {
+        require_every_level(&mut document);
+    }
     let id = document["$id"]
         .as_str()
         .expect("the document schema names its $id")
@@ -33,7 +54,10 @@ pub(crate) fn assert_valid(name: &str, value: &serde_json::Value, context: &str)
         .add(id, document)
         .and_then(|r| r.prepare())
         .unwrap_or_else(|e| panic!("the document schema does not register: {e}"));
-    let schema = closed_schema(name);
+    let mut schema = closed_schema(name);
+    if whole && name == "document" {
+        require_every_level(&mut schema);
+    }
     let validator = jsonschema::options()
         .with_registry(&registry)
         .build(&schema)
@@ -47,6 +71,25 @@ pub(crate) fn assert_valid(name: &str, value: &serde_json::Value, context: &str)
         "{context}: the {name} does not match schema 2:\n  {}",
         errors.join("\n  ")
     );
+}
+
+/// Require the three keys `--depth` may remove, for an output that is a
+/// whole document.
+fn require_every_level(document: &mut serde_json::Value) {
+    for (pointer, key) in [
+        ("", "sections"),
+        ("/$defs/Paragraph", "sentences"),
+        ("/$defs/Sentence", "tokens"),
+    ] {
+        let required = document
+            .pointer_mut(&format!("{pointer}/required"))
+            .and_then(serde_json::Value::as_array_mut)
+            .unwrap_or_else(|| panic!("the document schema has no required list at {pointer:?}"));
+        let key = serde_json::Value::String(key.to_string());
+        if !required.contains(&key) {
+            required.push(key);
+        }
+    }
 }
 
 /// `spec/schema/v2/{name}.schema.json`, with every object closed.
