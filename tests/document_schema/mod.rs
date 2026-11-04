@@ -19,7 +19,7 @@ use std::path::PathBuf;
 /// Validate `value` against `spec/schema/v2/{name}.schema.json`, closed as
 /// described above, and panic naming every violation.
 ///
-/// `name` is `document`, `summary`, `keyphrases` or `clusters`. The
+/// `name` is `document`, `summary`, `keyphrases`, `clusters` or `error`. The
 /// outcome schemas refer to the document schema's definitions by its
 /// `$id`, so the document schema, closed the same way, is registered
 /// under that `$id` for every check.

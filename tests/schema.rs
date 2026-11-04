@@ -54,3 +54,22 @@ fn every_outcome_schema_takes_its_provenance_from_the_document_schema() {
         assert_eq!(provenance, format!("{id}#/$defs/Provenance"), "{name}");
     }
 }
+
+/// The error schema lives beside the document schema, under the same
+/// major, and names the kind vocabulary's three keys as required.
+#[test]
+fn the_error_schema_sits_beside_the_document_schema() {
+    let id = schema("document")["$id"]
+        .as_str()
+        .expect("the document schema names its $id")
+        .to_string();
+    let error = schema("error");
+    assert_eq!(
+        error["$id"],
+        id.replace("document.schema.json", "error.schema.json")
+    );
+    assert_eq!(
+        error["required"],
+        serde_json::json!(["kind", "message", "details"])
+    );
+}

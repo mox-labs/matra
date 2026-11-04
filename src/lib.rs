@@ -185,8 +185,9 @@ impl Inputs {
         let path = path.as_ref();
         let file_type = std::fs::symlink_metadata(path)?.file_type();
         if file_type.is_symlink() {
-            return Err(domain::Error::Io(std::io::Error::new(
+            return Err(domain::Error::Io(domain::IoContext::at_path(
                 std::io::ErrorKind::Unsupported,
+                path,
                 format!("refusing to read symlink: {}", path.display()),
             )));
         }
@@ -657,15 +658,9 @@ mod python {
 
     use domain::Format;
 
-    /// Routes domain::Error variants to the appropriate Python exception
-    /// class, preserving variant identity across the FFI boundary.
-    ///
-    /// The mapping follows pyo3 conventions: a missing model file
-    /// (`ModelNotFound`) maps to PyFileNotFoundError so Python
-    /// `try ... except FileNotFoundError` works as expected; oversized or
-    /// unsupported inputs are PyValueError; every `Io` error is
-    /// PyOSError whatever its kind, so a missing input path is OSError,
-    /// not FileNotFoundError; everything else is PyRuntimeError.
+    /// A [`domain::Error`] on its way to Python, where it is raised as the
+    /// [`Class`] its variant names. The Rust-side carrier only: the Python
+    /// base class of the same name is built by [`error_classes`].
     struct MatraError(domain::Error);
 
     impl From<domain::Error> for MatraError {
@@ -674,24 +669,196 @@ mod python {
         }
     }
 
+    /// Raises the error as an instance of its [`Class`], carrying the
+    /// class's `kind` and the error's `details` as a dict, with the
+    /// `Display` text as its message.
+    ///
+    /// Should building the exception itself fail (the interpreter is out
+    /// of memory, say), that failure is raised instead: there is no
+    /// better exception to fall back to.
     impl From<MatraError> for PyErr {
         fn from(e: MatraError) -> PyErr {
+            Python::attach(|py| {
+                let raised = || -> PyResult<PyErr> {
+                    let class = error_classes(py)?.get(Class::of(&e.0)).bind(py);
+                    let instance = class.call1((e.0.to_string(),))?;
+                    instance.setattr("details", to_dict(py, &e.0.details())?)?;
+                    Ok(PyErr::from_value(instance))
+                };
+                raised().unwrap_or_else(|failure| failure)
+            })
+        }
+    }
+
+    /// The exception classes the module raises: one per kind, named as
+    /// the `domain::Error` variant is, each deriving from `MatraError`
+    /// and from the builtin class Python callers caught before 0.3.0, so
+    /// `except ValueError` still catches an `InputTooLarge`.
+    ///
+    /// `Io` is refined by the I/O failure's kind, since a missing file
+    /// and a refused permission each have a builtin of their own:
+    /// `IoNotFound` and `IoPermissionDenied` derive from `Io` and from
+    /// `FileNotFoundError` and `PermissionError`, so `except matra.Io`
+    /// catches all three.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    enum Class {
+        ModelNotFound,
+        ModelInvalid,
+        ParseFailed,
+        InputTooLarge,
+        UnsupportedFormat,
+        InvalidInput,
+        Io,
+        IoNotFound,
+        IoPermissionDenied,
+    }
+
+    impl Class {
+        /// Every class, in the order [`error_classes`] builds them: a
+        /// parent before the classes that derive from it.
+        const ALL: [Class; 9] = [
+            Class::ModelNotFound,
+            Class::ModelInvalid,
+            Class::ParseFailed,
+            Class::InputTooLarge,
+            Class::UnsupportedFormat,
+            Class::InvalidInput,
+            Class::Io,
+            Class::IoNotFound,
+            Class::IoPermissionDenied,
+        ];
+
+        /// The class an error raises as.
+        ///
+        /// `domain::Error` is `#[non_exhaustive]` from outside the crate,
+        /// but the compiler sees every variant in here, so this match is
+        /// exhaustive with no wildcard: a new variant fails to compile
+        /// until someone gives it a class, rather than falling through to
+        /// another variant's.
+        fn of(error: &domain::Error) -> Class {
             use domain::Error::*;
-            use pyo3::exceptions::*;
-            let msg = e.0.to_string();
-            // domain::Error is #[non_exhaustive] from outside the crate but
-            // the compiler sees the full variant set in here, so this match
-            // is exhaustive without a wildcard. A new variant will become a
-            // compile error — exactly what we want for routing fidelity.
-            match e.0 {
-                ModelNotFound(_) => PyFileNotFoundError::new_err(msg),
-                InputTooLarge { .. } | UnsupportedFormat { .. } | InvalidInput(_) => {
-                    PyValueError::new_err(msg)
-                }
-                Io(_) => PyOSError::new_err(msg),
-                ModelInvalid(_) | ParseFailed(_) => PyRuntimeError::new_err(msg),
+            match error {
+                ModelNotFound(_) => Class::ModelNotFound,
+                ModelInvalid(_) => Class::ModelInvalid,
+                ParseFailed(_) => Class::ParseFailed,
+                InputTooLarge { .. } => Class::InputTooLarge,
+                UnsupportedFormat { .. } => Class::UnsupportedFormat,
+                InvalidInput(_) => Class::InvalidInput,
+                Io(e) => match e.kind() {
+                    std::io::ErrorKind::NotFound => Class::IoNotFound,
+                    std::io::ErrorKind::PermissionDenied => Class::IoPermissionDenied,
+                    _ => Class::Io,
+                },
             }
         }
+
+        /// The class's name, the builtin it also derives from, and the
+        /// class inside matra it derives from (`MatraError` when `None`).
+        fn spec(self) -> (&'static str, &'static str, Option<Class>) {
+            match self {
+                Class::ModelNotFound => ("ModelNotFound", "FileNotFoundError", None),
+                Class::ModelInvalid => ("ModelInvalid", "RuntimeError", None),
+                Class::ParseFailed => ("ParseFailed", "RuntimeError", None),
+                Class::InputTooLarge => ("InputTooLarge", "ValueError", None),
+                Class::UnsupportedFormat => ("UnsupportedFormat", "ValueError", None),
+                Class::InvalidInput => ("InvalidInput", "ValueError", None),
+                Class::Io => ("Io", "OSError", None),
+                Class::IoNotFound => ("IoNotFound", "FileNotFoundError", Some(Class::Io)),
+                Class::IoPermissionDenied => {
+                    ("IoPermissionDenied", "PermissionError", Some(Class::Io))
+                }
+            }
+        }
+
+        /// The `kind` every instance carries: the class's variant's
+        /// [`domain::Error::kind`], which the refinements of `Io` share.
+        fn kind(self) -> &'static str {
+            match self {
+                Class::ModelNotFound => "model_not_found",
+                Class::ModelInvalid => "model_invalid",
+                Class::ParseFailed => "parse_failed",
+                Class::InputTooLarge => "input_too_large",
+                Class::UnsupportedFormat => "unsupported_format",
+                Class::InvalidInput => "invalid_input",
+                Class::Io | Class::IoNotFound | Class::IoPermissionDenied => "io",
+            }
+        }
+    }
+
+    /// `MatraError` and the classes in [`Class::ALL`], in that order
+    /// (`Class as usize` indexes the second).
+    struct ErrorClasses {
+        base: Py<pyo3::types::PyType>,
+        classes: Vec<Py<pyo3::types::PyType>>,
+    }
+
+    impl ErrorClasses {
+        fn get(&self, class: Class) -> &Py<pyo3::types::PyType> {
+            &self.classes[class as usize]
+        }
+    }
+
+    // `Class as usize` indexes `ErrorClasses::classes`, which is built in
+    // the order of `Class::ALL`, so the two orders must be one.
+    const _: () = {
+        let mut i = 0;
+        while i < Class::ALL.len() {
+            assert!(Class::ALL[i] as usize == i);
+            i += 1;
+        }
+    };
+
+    static ERROR_CLASSES: pyo3::sync::PyOnceLock<ErrorClasses> = pyo3::sync::PyOnceLock::new();
+
+    /// Build the classes once per interpreter, through `type` so a class
+    /// can derive from two bases, which a `#[pyclass]` cannot. Each
+    /// names `matra` as its module, where the package exports it, so a
+    /// traceback reads `matra.InputTooLarge` and an exception pickles.
+    fn error_classes(py: Python<'_>) -> PyResult<&ErrorClasses> {
+        ERROR_CLASSES.get_or_try_init(py, || {
+            let builtins = py.import("builtins")?;
+            let new_class = |name: &str,
+                             bases: Bound<'_, pyo3::types::PyTuple>,
+                             kind: Option<&str>,
+                             doc: String|
+             -> PyResult<Py<pyo3::types::PyType>> {
+                let namespace = PyDict::new(py);
+                namespace.set_item("__module__", "matra")?;
+                namespace.set_item("__doc__", doc)?;
+                if let Some(kind) = kind {
+                    namespace.set_item("kind", kind)?;
+                }
+                Ok(builtins
+                    .getattr("type")?
+                    .call1((name, bases, namespace))?
+                    .cast_into::<pyo3::types::PyType>()?
+                    .unbind())
+            };
+            let base = new_class(
+                "MatraError",
+                pyo3::types::PyTuple::new(py, [builtins.getattr("Exception")?])?,
+                None,
+                "Every failure matra raises. `kind` is the stable string to branch on; \
+                 `details` holds every dynamic value in the message, by name."
+                    .to_string(),
+            )?;
+            let mut classes: Vec<Py<pyo3::types::PyType>> = Vec::with_capacity(Class::ALL.len());
+            for class in Class::ALL {
+                let (name, builtin, parent) = class.spec();
+                let parent = match parent {
+                    Some(parent) => classes[parent as usize].bind(py).clone().into_any(),
+                    None => base.bind(py).clone().into_any(),
+                };
+                let bases = pyo3::types::PyTuple::new(py, [parent, builtins.getattr(builtin)?])?;
+                classes.push(new_class(
+                    name,
+                    bases,
+                    Some(class.kind()),
+                    format!("A failure of kind `{}`, also a `{builtin}`.", class.kind()),
+                )?);
+            }
+            Ok(ErrorClasses { base, classes })
+        })
     }
 
     fn to_dict<'py, T: serde::Serialize>(py: Python<'py>, val: &T) -> PyResult<Bound<'py, PyAny>> {
@@ -894,10 +1061,10 @@ mod python {
         /// `path` is anything Python calls a path: a `str`, or an
         /// `os.PathLike` such as a `pathlib.Path`.
         ///
-        /// A document's path goes through [`fs_path_str`] rather than
-        /// serde, which writes an undecodable name lossily; an error
-        /// item is assembled here, since `DocumentError` has no serde
-        /// form.
+        /// Both item shapes are serde's, the document's and the
+        /// `DocumentError`'s `{path, kind, message, details}`, with the
+        /// path put back through [`fs_path_str`], since serde writes an
+        /// undecodable name lossily.
         fn analyze_path<'py>(&self, py: Python<'py>, path: PathBuf) -> PyResult<Bound<'py, PyAny>> {
             let is_dir = std::fs::symlink_metadata(&path)
                 .map_err(|e| MatraError(domain::Error::Io(e)))?
@@ -1302,28 +1469,27 @@ mod python {
 
     /// Project a [`domain::DocumentError`] into a dict.
     ///
-    /// `DocumentError` is deliberately not `Serialize`: it wraps
-    /// `domain::Error`, which wraps `std::io::Error`, and no stable wire
-    /// shape exists for that. The two fields are materialized instead,
-    /// the error as the `kind` [`domain::Error::kind`] names plus the
-    /// `Display` text a human reads.
+    /// The error goes through serde, `{path, kind, message, details}`,
+    /// so there is one wire form of it, not a second one assembled here.
+    /// Its `path` is serialized lossily, so it is replaced with the
+    /// [`fs_path_str`] value, as [`document_dict`] does for a document.
     fn document_error_dict<'py>(
         py: Python<'py>,
         err: &domain::DocumentError,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let error = PyDict::new(py);
-        error.set_item("kind", err.error.kind())?;
-        error.set_item("message", err.error.to_string())?;
-
-        let item = PyDict::new(py);
-        item.set_item("path", fs_path_item(py, err.path.as_deref())?)?;
-        item.set_item("error", error)?;
-        Ok(item.into_any())
+        let dict = to_dict(py, err)?;
+        dict.set_item("path", fs_path_item(py, err.path.as_deref())?)?;
+        Ok(dict)
     }
 
     #[pymodule]
     #[allow(unreachable_pub)] // pyo3's #[pymodule] macro requires pub fn even when the module is private.
     pub fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
+        let errors = error_classes(m.py())?;
+        m.add("MatraError", errors.base.bind(m.py()))?;
+        for class in Class::ALL {
+            m.add(class.spec().0, errors.get(class).bind(m.py()))?;
+        }
         m.add_class::<Matra>()?;
         #[cfg(feature = "model2vec")]
         m.add_class::<Model2Vec>()?;
@@ -2709,6 +2875,51 @@ mod tests {
         document_schema::assert_valid("clusters", &value, "clusters");
     }
 
+    /// The I/O failures matra raises itself carry a path or a URL as
+    /// details, which only the crate can build; each matches the error
+    /// schema, closed, so a detail it does not list for `io` fails here.
+    /// `tests/corpus_conformance.rs` checks every variant's plain form.
+    #[test]
+    fn every_io_detail_matches_the_error_schema() {
+        let cases = [
+            domain::Error::Io(domain::IoContext::at_path(
+                std::io::ErrorKind::Unsupported,
+                Path::new("link.md"),
+                "refusing to read symlink: link.md",
+            )),
+            domain::Error::Io(domain::IoContext::download(
+                std::io::ErrorKind::TimedOut,
+                "https://models.example/m",
+                "download https://models.example/m: timeout",
+                true,
+            )),
+            match Inputs::dir(Path::new("/nonexistent/matra/dir")) {
+                Err(err) => err,
+                Ok(_) => panic!("a missing directory lists nothing"),
+            },
+        ];
+        for error in &cases {
+            let value = serde_json::to_value(error).unwrap();
+            assert_eq!(value["kind"], "io");
+            document_schema::assert_valid("error", &value, &error.to_string());
+        }
+    }
+
+    /// A detail the schema does not list for its kind fails the closed
+    /// check, the error schema's counterpart of the document's.
+    #[test]
+    #[should_panic(expected = "does not match schema 2")]
+    fn an_undocumented_detail_fails_the_check() {
+        let mut value = serde_json::to_value(domain::Error::InputTooLarge {
+            limit: 1,
+            actual: 2,
+            what: "input",
+        })
+        .unwrap();
+        value["details"]["undocumented"] = serde_json::json!(1);
+        document_schema::assert_valid("error", &value, "undocumented detail");
+    }
+
     // ------------------------------------------------------------------
     // The corpus lane's directory walk, with no model
     // ------------------------------------------------------------------
@@ -2726,6 +2937,11 @@ mod tests {
         #[derive(serde::Deserialize)]
         struct Fixture {
             directory: Directory,
+            item_shapes: ItemShapes,
+        }
+        #[derive(serde::Deserialize)]
+        struct ItemShapes {
+            error: Vec<String>,
         }
         #[derive(serde::Deserialize)]
         struct Directory {
@@ -2743,6 +2959,7 @@ mod tests {
             name: String,
             shape: String,
             kind: Option<String>,
+            details: Option<serde_json::Value>,
         }
 
         let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("spec/tests/corpus/items.json");
@@ -2782,6 +2999,14 @@ mod tests {
                     assert_eq!(path.file_name().unwrap(), expect.name.as_str());
                     assert_eq!(err.error.kind(), expect.kind.as_deref().unwrap());
                     assert!(!err.error.to_string().is_empty());
+                    let value = serde_json::to_value(err).unwrap();
+                    let mut keys: Vec<&String> = value.as_object().unwrap().keys().collect();
+                    keys.sort();
+                    let mut shape = fixture.item_shapes.error.iter().collect::<Vec<_>>();
+                    shape.sort();
+                    assert_eq!(keys, shape, "{}", expect.name);
+                    assert_eq!(Some(&value["details"]), expect.details.as_ref());
+                    document_schema::assert_valid("error", &value, &expect.name);
                 }
                 (got, shape) => panic!(
                     "{} expected shape {shape}, got {}",

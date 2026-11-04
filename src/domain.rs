@@ -137,6 +137,12 @@ impl std::fmt::Display for FormatSubject<'_> {
 }
 
 /// All errors matra can produce. Matchable, not opaque.
+///
+/// Every channel reads a failure the same way: a stable [`kind`](Error::kind)
+/// to branch on, a message for a person, and [`details`](Error::details),
+/// every dynamic value in the message as named data. The serde form is
+/// those three, `{kind, message, details}`, and is what the Python
+/// binding and the JSON carry, so no reader has to parse a message.
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
 pub enum Error {
@@ -198,10 +204,10 @@ impl Error {
     /// branches on instead of matching against a message.
     ///
     /// The vocabulary is part of the public contract. A binding that
-    /// cannot carry a Rust enum across (`DocumentError` has no serde
-    /// form, because it wraps `std::io::Error`) materializes this string
-    /// instead, so every language binding names a failure the same way.
-    /// `spec/tests/corpus/items.json` pins the list.
+    /// cannot carry a Rust enum across carries this string instead, in
+    /// the serde form and on the Python exception, so every language
+    /// names a failure the same way. `spec/tests/corpus/items.json` pins
+    /// the list.
     ///
     /// Exhaustive with no wildcard: a new variant fails to compile until
     /// someone names it here, which is what stops a new failure mode
@@ -217,10 +223,286 @@ impl Error {
             Error::Io(_) => "io",
         }
     }
+
+    /// Every dynamic value in this error's message, as named data, so a
+    /// caller acts on a failure without parsing its message.
+    ///
+    /// The keys per kind:
+    ///
+    /// | Kind | Keys |
+    /// |---|---|
+    /// | `model_not_found` | `path` |
+    /// | `model_invalid`, `parse_failed`, `invalid_input` | `reason` |
+    /// | `input_too_large` | `what`, `limit`, `actual` |
+    /// | `unsupported_format` | `format` when one was recognised, `feature` when one would read it |
+    /// | `io` | `io_kind` and `reason`; `path` when the failure concerns a path matra named; `url` and `retryable` when a download did not arrive |
+    ///
+    /// A key that does not apply is absent, never empty. A key, once a
+    /// kind carries it, keeps appearing in later versions. `reason` is the
+    /// variant's own text: the message a payload `String` holds, or the
+    /// operating system's account of an I/O failure. `io_kind` names the
+    /// I/O failure's class (`not_found`, `permission_denied`,
+    /// `timed_out`, ...; [`std::io::ErrorKind`] in Rust), a set a reader
+    /// treats as open. `retryable` is `true` when the same call can be made
+    /// again as it is and may succeed: a download that did not arrive
+    /// left nothing behind. Its absence makes no claim either way.
+    ///
+    /// ```
+    /// # use matra::domain::{DetailValue, Error};
+    /// let err = Error::InputTooLarge { limit: 8, actual: 9, what: "input" };
+    /// let details = err.details();
+    /// assert_eq!(details.get("limit"), Some(&DetailValue::Integer(8)));
+    /// assert_eq!(details.get("what"), Some(&DetailValue::Text("input".into())));
+    /// ```
+    pub fn details(&self) -> ErrorDetails {
+        let details = ErrorDetails::default();
+        match self {
+            Error::ModelNotFound(path) => details.text("path", path.to_string_lossy()),
+            Error::ModelInvalid(reason)
+            | Error::ParseFailed(reason)
+            | Error::InvalidInput(reason) => details.text("reason", reason.as_str()),
+            Error::InputTooLarge {
+                limit,
+                actual,
+                what,
+            } => details
+                .text("what", *what)
+                .integer("limit", *limit)
+                .integer("actual", *actual),
+            Error::UnsupportedFormat { format, feature } => {
+                let details = match format {
+                    Some(format) => details.text("format", format.wire_name()),
+                    None => details,
+                };
+                match feature {
+                    Some(feature) => details.text("feature", *feature),
+                    None => details,
+                }
+            }
+            Error::Io(error) => {
+                let details = details.text("io_kind", io_kind_name(error.kind()));
+                let context = error
+                    .get_ref()
+                    .and_then(|inner| inner.downcast_ref::<IoContext>());
+                let details = match context {
+                    Some(context) => context.add_to(details),
+                    None => details,
+                };
+                details.text("reason", error.to_string())
+            }
+        }
+    }
+}
+
+/// `{kind, message, details}`: the [`kind`](Error::kind), the `Display`
+/// text, and the [`details`](Error::details). There is no `Deserialize`:
+/// an error is reported, never read back into a value.
+impl Serialize for Error {
+    fn serialize<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error> {
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("Error", 3)?;
+        state.serialize_field("kind", self.kind())?;
+        state.serialize_field("message", &self.to_string())?;
+        state.serialize_field("details", &self.details())?;
+        state.end()
+    }
 }
 
 /// Result type for matra operations.
 pub type Result<T> = std::result::Result<T, Error>;
+
+/// Every dynamic value in an [`Error`]'s message, by name: what
+/// [`Error::details`] returns.
+///
+/// Serializes as an object, its keys in the order the error names them.
+/// The keys each kind carries are listed on [`Error::details`].
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ErrorDetails {
+    entries: Vec<(&'static str, DetailValue)>,
+}
+
+impl ErrorDetails {
+    /// The value named `key`, or `None` when this error carries no such
+    /// value.
+    pub fn get(&self, key: &str) -> Option<&DetailValue> {
+        self.entries
+            .iter()
+            .find(|(name, _)| *name == key)
+            .map(|(_, value)| value)
+    }
+
+    /// Every value with its name, in the order the error names them.
+    pub fn iter(&self) -> impl Iterator<Item = (&'static str, &DetailValue)> + '_ {
+        self.entries.iter().map(|(name, value)| (*name, value))
+    }
+
+    /// How many values there are.
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    /// Whether there are none.
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
+    fn text(mut self, key: &'static str, value: impl Into<String>) -> Self {
+        self.entries.push((key, DetailValue::Text(value.into())));
+        self
+    }
+
+    fn integer(mut self, key: &'static str, value: usize) -> Self {
+        // Lossless wherever Rust runs: no supported target has a `usize`
+        // wider than 64 bits.
+        let value = u64::try_from(value).unwrap_or(u64::MAX);
+        self.entries.push((key, DetailValue::Integer(value)));
+        self
+    }
+
+    fn flag(mut self, key: &'static str, value: bool) -> Self {
+        self.entries.push((key, DetailValue::Bool(value)));
+        self
+    }
+}
+
+impl Serialize for ErrorDetails {
+    fn serialize<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error> {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(Some(self.entries.len()))?;
+        for (key, value) in &self.entries {
+            map.serialize_entry(key, value)?;
+        }
+        map.end()
+    }
+}
+
+/// One value in an [`ErrorDetails`].
+///
+/// Serializes as the bare value: a string, a number or a boolean.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(untagged)]
+#[non_exhaustive]
+pub enum DetailValue {
+    /// Text: a path, a URL, a gate's label, a format's name, a reason.
+    Text(String),
+    /// A whole number, never negative: a size or a limit.
+    Integer(u64),
+    /// Yes or no: whether a retry may succeed.
+    Bool(bool),
+}
+
+/// What matra knows about an I/O failure it raised itself, beyond the
+/// operating system's kind: the path or the URL it concerns, and whether
+/// the same call may succeed when made again.
+///
+/// It travels inside the [`std::io::Error`] that [`Error::Io`] wraps,
+/// which keeps the variant's payload a plain `std::io::Error`, and
+/// [`Error::details`] finds it there. Its `Display` is the whole message.
+#[derive(Debug)]
+pub(crate) struct IoContext {
+    message: String,
+    path: Option<PathBuf>,
+    url: Option<String>,
+    retryable: bool,
+}
+
+impl IoContext {
+    /// A failure concerning `path`, whose message is `message`.
+    pub(crate) fn at_path(
+        kind: std::io::ErrorKind,
+        path: &Path,
+        message: impl Into<String>,
+    ) -> std::io::Error {
+        std::io::Error::new(
+            kind,
+            IoContext {
+                message: message.into(),
+                path: Some(path.to_path_buf()),
+                url: None,
+                retryable: false,
+            },
+        )
+    }
+
+    /// A download from `url` that did not arrive, whose message is
+    /// `message`. `retryable` says whether the same call may succeed when
+    /// made again: true for a failure in the transfer, false where the
+    /// message names a remedy that a retry cannot supply.
+    ///
+    /// Only the two provisioners download, so a build with neither has
+    /// no caller.
+    #[cfg_attr(not(any(feature = "udpipe", feature = "model2vec")), allow(dead_code))]
+    pub(crate) fn download(
+        kind: std::io::ErrorKind,
+        url: &str,
+        message: impl Into<String>,
+        retryable: bool,
+    ) -> std::io::Error {
+        std::io::Error::new(
+            kind,
+            IoContext {
+                message: message.into(),
+                path: None,
+                url: Some(url.to_string()),
+                retryable,
+            },
+        )
+    }
+
+    fn add_to(&self, details: ErrorDetails) -> ErrorDetails {
+        let details = match &self.path {
+            Some(path) => details.text("path", path.to_string_lossy()),
+            None => details,
+        };
+        match &self.url {
+            Some(url) => details
+                .text("url", url.as_str())
+                .flag("retryable", self.retryable),
+            None => details,
+        }
+    }
+}
+
+impl std::fmt::Display for IoContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for IoContext {}
+
+/// The `io_kind` detail: an I/O failure's class in snake case.
+///
+/// Written out rather than derived from `Debug`, which promises no
+/// stable text. A kind not named here is `other`; the operating system's
+/// account is in `reason` either way.
+fn io_kind_name(kind: std::io::ErrorKind) -> &'static str {
+    use std::io::ErrorKind;
+    match kind {
+        ErrorKind::NotFound => "not_found",
+        ErrorKind::PermissionDenied => "permission_denied",
+        ErrorKind::AlreadyExists => "already_exists",
+        ErrorKind::Unsupported => "unsupported",
+        ErrorKind::InvalidInput => "invalid_input",
+        ErrorKind::InvalidData => "invalid_data",
+        ErrorKind::TimedOut => "timed_out",
+        ErrorKind::NotConnected => "not_connected",
+        ErrorKind::ConnectionRefused => "connection_refused",
+        ErrorKind::ConnectionReset => "connection_reset",
+        ErrorKind::UnexpectedEof => "unexpected_eof",
+        ErrorKind::Interrupted => "interrupted",
+        ErrorKind::NotADirectory => "not_a_directory",
+        ErrorKind::IsADirectory => "is_a_directory",
+        ErrorKind::StorageFull => "storage_full",
+        _ => "other",
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Core linguistic types
@@ -1862,6 +2144,10 @@ impl Skipped {
 /// `path` is `Option` because in-memory text has no path. This closes a
 /// real hole: the previous corpus surface fabricated an empty `PathBuf`
 /// for a path-less document, which collided with a genuinely empty path.
+///
+/// Serializes as the error's own form plus the path:
+/// `{path, kind, message, details}`, with `path` null for an input that
+/// never came from disk, and written lossily where it is not UTF-8.
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct DocumentError {
@@ -1890,6 +2176,33 @@ impl std::fmt::Display for DocumentError {
 impl std::error::Error for DocumentError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         Some(&self.error)
+    }
+}
+
+impl Serialize for DocumentError {
+    fn serialize<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error> {
+        use serde::ser::SerializeStruct;
+
+        /// The path through the lossy form [`ProvenanceSource`] uses.
+        struct LossyPath<'a>(&'a Option<PathBuf>);
+        impl Serialize for LossyPath<'_> {
+            fn serialize<S: serde::Serializer>(
+                &self,
+                serializer: S,
+            ) -> std::result::Result<S::Ok, S::Error> {
+                serialize_path_lossy(self.0, serializer)
+            }
+        }
+
+        let mut state = serializer.serialize_struct("DocumentError", 4)?;
+        state.serialize_field("path", &LossyPath(&self.path))?;
+        state.serialize_field("kind", self.error.kind())?;
+        state.serialize_field("message", &self.error.to_string())?;
+        state.serialize_field("details", &self.error.details())?;
+        state.end()
     }
 }
 
@@ -3349,6 +3662,186 @@ mod tests {
             assert_eq!(error.kind(), *expected, "{error}");
             assert!(!seen.contains(expected), "duplicate kind {expected}");
             seen.push(expected);
+        }
+    }
+
+    /// The details of `error` as a JSON object, for comparing whole.
+    fn details_json(error: &Error) -> serde_json::Value {
+        serde_json::to_value(error.details()).expect("details serialize")
+    }
+
+    /// Every dynamic value in a message is also a detail, so a reader
+    /// never parses the message (EPR-0006). One case per variant, and per
+    /// shape a variant takes, each built with values distinct enough
+    /// that a detail cannot match by accident.
+    #[test]
+    fn every_dynamic_value_in_a_message_is_a_detail() {
+        use serde_json::json;
+        let cases: Vec<(Error, serde_json::Value)> = vec![
+            (
+                Error::ModelNotFound(PathBuf::from("models/m.udpipe")),
+                json!({ "path": "models/m.udpipe" }),
+            ),
+            (
+                Error::ModelInvalid("truncated at byte 7".to_string()),
+                json!({ "reason": "truncated at byte 7" }),
+            ),
+            (
+                Error::ParseFailed("udpipe panicked: boom".to_string()),
+                json!({ "reason": "udpipe panicked: boom" }),
+            ),
+            (
+                Error::InputTooLarge {
+                    limit: 2000,
+                    actual: 2001,
+                    what: "tfidf",
+                },
+                json!({ "what": "tfidf", "limit": 2000, "actual": 2001 }),
+            ),
+            (
+                Error::UnsupportedFormat {
+                    format: Some(Format::Pdf),
+                    feature: None,
+                },
+                json!({ "format": "pdf" }),
+            ),
+            (
+                Error::UnsupportedFormat {
+                    format: Some(Format::Docx),
+                    feature: Some("docx"),
+                },
+                json!({ "format": "docx", "feature": "docx" }),
+            ),
+            (
+                Error::UnsupportedFormat {
+                    format: None,
+                    feature: None,
+                },
+                json!({}),
+            ),
+            (
+                Error::InvalidInput("threshold must be finite".to_string()),
+                json!({ "reason": "threshold must be finite" }),
+            ),
+            (
+                Error::Io(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "denied",
+                )),
+                json!({ "io_kind": "permission_denied", "reason": "denied" }),
+            ),
+            (
+                Error::Io(IoContext::at_path(
+                    std::io::ErrorKind::NotFound,
+                    Path::new("/models/x"),
+                    "cannot read /models/x: gone",
+                )),
+                json!({
+                    "io_kind": "not_found",
+                    "path": "/models/x",
+                    "reason": "cannot read /models/x: gone",
+                }),
+            ),
+            (
+                Error::Io(IoContext::download(
+                    std::io::ErrorKind::TimedOut,
+                    "https://models.example/m",
+                    "download https://models.example/m: timeout",
+                    true,
+                )),
+                json!({
+                    "io_kind": "timed_out",
+                    "url": "https://models.example/m",
+                    "retryable": true,
+                    "reason": "download https://models.example/m: timeout",
+                }),
+            ),
+        ];
+        for (error, expected) in &cases {
+            assert_eq!(details_json(error), *expected, "{error}");
+        }
+    }
+
+    /// The I/O payload carries what the message says without changing
+    /// the message: an `Io` built with a context reads exactly as one
+    /// built from the text alone.
+    #[test]
+    fn an_io_context_does_not_change_the_message() {
+        let plain = Error::Io(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "cannot read /m: gone",
+        ));
+        let with_context = Error::Io(IoContext::at_path(
+            std::io::ErrorKind::NotFound,
+            Path::new("/m"),
+            "cannot read /m: gone",
+        ));
+        assert_eq!(plain.to_string(), with_context.to_string());
+        assert_eq!(plain.kind(), with_context.kind());
+    }
+
+    /// The serde form is `{kind, message, details}`, and a
+    /// `DocumentError`'s adds `path`, null for input never on disk.
+    #[test]
+    fn errors_serialize_as_kind_message_and_details() {
+        let error = Error::InputTooLarge {
+            limit: 8,
+            actual: 9,
+            what: "input",
+        };
+        assert_eq!(
+            serde_json::to_value(&error).unwrap(),
+            serde_json::json!({
+                "kind": "input_too_large",
+                "message": "input too large: 9 > limit 8",
+                "details": { "what": "input", "limit": 8, "actual": 9 },
+            })
+        );
+
+        let on_disk = DocumentError::new(
+            Some(PathBuf::from("essay.md")),
+            Error::ParseFailed("boom".to_string()),
+        );
+        assert_eq!(
+            serde_json::to_value(&on_disk).unwrap(),
+            serde_json::json!({
+                "path": "essay.md",
+                "kind": "parse_failed",
+                "message": "parse failed: boom",
+                "details": { "reason": "boom" },
+            })
+        );
+        let in_memory = DocumentError::new(None, Error::ParseFailed("boom".to_string()));
+        assert!(serde_json::to_value(&in_memory).unwrap()["path"].is_null());
+    }
+
+    /// A path that is not UTF-8 serializes lossily, as a document's
+    /// source path does, rather than failing the error over its name.
+    #[cfg(unix)]
+    #[test]
+    fn a_non_utf8_document_error_path_serializes_lossily() {
+        use std::os::unix::ffi::OsStrExt;
+        let path = PathBuf::from(std::ffi::OsStr::from_bytes(b"bad\xffname.md"));
+        let err = DocumentError::new(Some(path), Error::ParseFailed("boom".to_string()));
+        let json = serde_json::to_value(&err).expect("serializes");
+        assert_eq!(json["path"], "bad\u{fffd}name.md");
+    }
+
+    /// The `io_kind` names are written out, so they cannot drift with
+    /// `ErrorKind`'s `Debug` text, and a kind not named is `other`.
+    #[test]
+    fn io_kinds_are_named_in_snake_case() {
+        use std::io::ErrorKind;
+        for (kind, name) in [
+            (ErrorKind::NotFound, "not_found"),
+            (ErrorKind::PermissionDenied, "permission_denied"),
+            (ErrorKind::TimedOut, "timed_out"),
+            (ErrorKind::NotConnected, "not_connected"),
+            (ErrorKind::NotADirectory, "not_a_directory"),
+            (ErrorKind::Other, "other"),
+            (ErrorKind::WouldBlock, "other"),
+        ] {
+            assert_eq!(io_kind_name(kind), name, "{kind:?}");
         }
     }
 }

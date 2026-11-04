@@ -12,7 +12,9 @@
 use std::fs;
 use std::path::PathBuf;
 
-use matra::domain::{self, Error, Format};
+use matra::domain::{self, DocumentError, Error, Format};
+
+mod document_schema;
 
 #[derive(serde::Deserialize)]
 struct Fixture {
@@ -43,6 +45,7 @@ struct UnwritableModelDir {
 struct ProvisioningExpect {
     kind: String,
     message_contains: Vec<String>,
+    detail_keys: Vec<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -60,14 +63,10 @@ fn fixture() -> Fixture {
         .unwrap_or_else(|e| panic!("malformed fixture {}: {e}", path.display()))
 }
 
-/// Every variant's `kind()`, in the fixture's order. Constructing each
-/// one is the point: a variant added to `domain::Error` without a kind
-/// fails to compile inside the crate, and a variant whose kind drifts
-/// from the published vocabulary fails here.
-#[test]
-fn error_kind_vocabulary_matches_the_fixture() {
-    let fixture = fixture();
-    let variants = [
+/// One value of every variant, in the order `domain::Error` declares
+/// them, which is the fixture's order.
+fn every_variant() -> [Error; 7] {
+    [
         Error::ModelNotFound(PathBuf::from("english.udpipe")),
         Error::ModelInvalid("truncated".to_string()),
         Error::ParseFailed("no parse".to_string()),
@@ -82,7 +81,17 @@ fn error_kind_vocabulary_matches_the_fixture() {
         },
         Error::InvalidInput("bad argument".to_string()),
         Error::Io(std::io::Error::from(std::io::ErrorKind::NotFound)),
-    ];
+    ]
+}
+
+/// Every variant's `kind()`, in the fixture's order. Constructing each
+/// one is the point: a variant added to `domain::Error` without a kind
+/// fails to compile inside the crate, and a variant whose kind drifts
+/// from the published vocabulary fails here.
+#[test]
+fn error_kind_vocabulary_matches_the_fixture() {
+    let fixture = fixture();
+    let variants = every_variant();
 
     assert_eq!(
         variants.len(),
@@ -97,10 +106,9 @@ fn error_kind_vocabulary_matches_the_fixture() {
     }
 }
 
-/// The success item's keys are serde's, so they can be read off the
-/// wire form directly. The failure item has no wire form (a
-/// `DocumentError` wraps `std::io::Error`), so what this asserts is that
-/// the fixture names the two facts a binding has to project by hand.
+/// Both item shapes are serde's, so they are read off the wire forms
+/// directly: the document's, the `DocumentError`'s, and the error object
+/// a Python exception carries.
 #[test]
 fn the_item_shapes_are_the_ones_the_fixture_names() {
     let fixture = fixture();
@@ -113,21 +121,59 @@ fn the_item_shapes_are_the_ones_the_fixture_names() {
         Vec::new(),
         Vec::new(),
     );
+    let failed = DocumentError::new(
+        Some(PathBuf::from("b.txt")),
+        Error::ParseFailed("boom".to_string()),
+    );
 
-    let value = serde_json::to_value(&document).expect("serialize document");
-    let mut keys: Vec<String> = value
-        .as_object()
-        .expect("a document is an object")
-        .keys()
-        .cloned()
-        .collect();
-    keys.sort();
-    let mut expected = fixture.item_shapes.document.clone();
-    expected.sort();
-    assert_eq!(keys, expected);
+    for (value, shape) in [
+        (
+            serde_json::to_value(&document).expect("serialize document"),
+            &fixture.item_shapes.document,
+        ),
+        (
+            serde_json::to_value(&failed).expect("serialize document error"),
+            &fixture.item_shapes.error,
+        ),
+        (
+            serde_json::to_value(&failed.error).expect("serialize error"),
+            &fixture.item_shapes.error_object,
+        ),
+    ] {
+        let mut keys: Vec<String> = value
+            .as_object()
+            .expect("an item is an object")
+            .keys()
+            .cloned()
+            .collect();
+        keys.sort();
+        let mut expected = shape.clone();
+        expected.sort();
+        assert_eq!(keys, expected);
+    }
+}
 
-    assert_eq!(fixture.item_shapes.error, ["path", "error"]);
-    assert_eq!(fixture.item_shapes.error_object, ["kind", "message"]);
+/// Every variant's serde form, and a `DocumentError` with and without a
+/// path, is what `spec/schema/v2/error.schema.json` describes, closed so
+/// that a detail the schema does not list for its kind fails here.
+#[test]
+fn every_error_matches_the_error_schema() {
+    for error in every_variant() {
+        let context = error.kind();
+        document_schema::assert_valid(
+            "error",
+            &serde_json::to_value(&error).expect("serialize"),
+            context,
+        );
+        for path in [None, Some(PathBuf::from("a.txt"))] {
+            let item = DocumentError::new(path, Error::InvalidInput(error.to_string()));
+            document_schema::assert_valid(
+                "error",
+                &serde_json::to_value(&item).expect("serialize"),
+                context,
+            );
+        }
+    }
 }
 
 /// The provisioning classification RFC-0015 records, on the one failure
@@ -181,6 +227,22 @@ fn a_model_directory_that_cannot_be_created_is_an_io_failure() {
     assert!(
         message.contains(&blocked.display().to_string()),
         "the message names the path: {message}"
+    );
+
+    let details = err.details();
+    let keys: Vec<&str> = details.iter().map(|(key, _)| key).collect();
+    assert_eq!(keys, expect.detail_keys, "{err}");
+    assert_eq!(
+        details.get("path"),
+        Some(&domain::DetailValue::Text(
+            blocked.join("models").display().to_string()
+        )),
+        "the path is data as well as words"
+    );
+    document_schema::assert_valid(
+        "error",
+        &serde_json::to_value(&err).expect("serialize"),
+        "unwritable model directory",
     );
 }
 

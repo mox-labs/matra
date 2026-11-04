@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use crate::domain::{self, Error, MAX_INPUT_BYTES};
+use crate::domain::{self, Error, IoContext, MAX_INPUT_BYTES};
 
 use super::{Fetched, Source};
 
@@ -37,16 +37,18 @@ impl Source for FileSource {
         }
 
         if file_type.is_symlink() {
-            return Err(Error::Io(std::io::Error::new(
+            return Err(Error::Io(IoContext::at_path(
                 std::io::ErrorKind::Unsupported,
+                input,
                 format!("refusing to read symlink: {}", input.display()),
             )));
         }
 
         // Files only — directories and other non-regular entries are not our concern.
         if !file_type.is_file() {
-            return Err(Error::Io(std::io::Error::new(
+            return Err(Error::Io(IoContext::at_path(
                 std::io::ErrorKind::InvalidInput,
+                input,
                 format!("not a regular file: {}", input.display()),
             )));
         }
