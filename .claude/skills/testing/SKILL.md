@@ -25,7 +25,7 @@ Test strategy for matra. This skill codifies what kinds of tests matra has, what
 
 In-file, per-module. Test the immediate API of the module they live in. Examples:
 
-- `src/domain.rs` tests: `content_tokens_excludes_punct`, `is_passive_detects_passive`, `tree_depth_25_chain_returns_24`, `tree_depth_1000_chain_returns_999_in_bounded_time`, `tree_depth_returns_max_on_cycle`.
+- `src/domain.rs` tests: `content_tokens_excludes_punct`, `passive_detects_passive`, `tree_depth_25_chain_returns_24`, `tree_depth_1000_chain_returns_999_in_bounded_time`, `tree_depth_is_none_on_a_cycle`, `tree_depth_is_none_when_a_chain_leads_into_a_cycle`.
 - `src/source/file.rs` tests: `reads_file_and_detects_markdown`, `rejects_symlink`, `rejects_oversized_file`, `accepts_file_at_size_cap`.
 - `src/nlp/udpipe.rs` tests: `catch_parse_panic_converts_str_panic_to_parse_failed`, `read_and_verify_returns_bytes_on_match`, `read_and_verify_returned_bytes_are_what_was_hashed`.
 

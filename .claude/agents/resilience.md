@@ -62,7 +62,7 @@ When adding a new C/C++/FFI boundary, wrap the call in the same idiom.
 
 ### Cycle-safety in graph walks
 
-`Sentence::tree_depth` uses a HashMap+visited-set DFS with memoization. Cycles surface as `usize::MAX` for tokens transitively rooted in the cycle, making malformed parses loud rather than silently truncated. `Sentence::subtree` uses a HashSet visited set.
+`Sentence.tree_depth` is computed by a HashMap+visited-set DFS with memoization. A cycle makes it `None`, making malformed parses loud rather than silently truncated. `Sentence::subtree` uses a HashSet visited set.
 
 The previous magic `< 20` ceiling on tree depth was a covered-up bug; do not reintroduce magic numbers in place of cycle detection.
 
@@ -76,7 +76,7 @@ From the resilience-floor work before 0.1.0 and the antifragility lens:
 
 1. **Single Points of Failure are bugs.** The UDPipe C boundary was an SPOF (one bad parse = one dead process); `catch_unwind` removed it.
 2. **Bounded inputs everywhere.** Unbounded input = unbounded resource use. The cap is a feature, not a limitation.
-3. **Fail loud, not silent.** Cycles return `usize::MAX`, not a truncated value. Mismatched hashes refuse to load, not load-anyway.
+3. **Fail loud, not silent.** Cycles yield `None`, not a truncated value. Mismatched hashes refuse to load, not load-anyway.
 4. **Atomic over racy.** If two processes can race, the answer is atomic operations (rename, CAS), not "hope it works."
 5. **Trust anchors are pinned, not configurable.** Hashes in source; not env vars; not CLI flags.
 

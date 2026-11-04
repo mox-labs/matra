@@ -144,18 +144,18 @@ Without this wrapper, a panic inside `Model::parse` would abort the host process
 
 ### 6. Cycle-safety in graph walks
 
-`Sentence::tree_depth` uses a HashMap+visited-set walk with memoization:
+`Sentence.tree_depth` is computed at construction by a HashMap+visited-set walk with memoization:
 
 ```rust
-pub fn tree_depth(&self) -> usize {
+fn tree_depth_of(tokens: &[Token]) -> Option<usize> {
     // For each token, walk to root via head chain.
     // Cycle detection: visited set inside each walk.
-    // On cycle, every token in the cycle gets usize::MAX.
+    // On a cycle, the sentence's depth is None.
     // ...
 }
 ```
 
-Cycles return `usize::MAX` for tokens transitively in the cycle. The malformed parse surfaces loudly rather than silently truncating.
+A cycle makes the depth `None`. The malformed parse surfaces as a value a reader must handle rather than silently truncating.
 
 `Sentence::subtree` uses a HashSet visited set to prevent infinite loops in cyclic graphs.
 
@@ -167,7 +167,7 @@ From the antifragility lens:
 
 1. **Single Points of Failure are bugs.** Find and fix; the UDPipe C boundary was an SPOF that the `catch_unwind` boundary fixed.
 2. **Bounded inputs.** Unbounded input = unbounded resource use. The cap is a feature, not a limitation.
-3. **Fail loud, not silent.** Cycles return `usize::MAX`; mismatched hashes refuse to load; oversized inputs error at the gate. Never silently truncate, downgrade, or proceed.
+3. **Fail loud, not silent.** Cycles yield `None`; mismatched hashes refuse to load; oversized inputs error at the gate. Never silently truncate, downgrade, or proceed.
 4. **Atomic over racy.** If two processes can race, use atomic operations (rename, CAS).
 5. **Trust anchors are pinned, not configurable.** `ENGLISH_MODEL_SHA256` is a `const` in source, not an env var.
 
