@@ -18,13 +18,13 @@
       "words": 66
     },
     {
-      "compression_ratio": 0.5739,
+      "compression_ratio": 0.5568,
       "in_blockquote": false,
-      "lexical_density": 0.7778,
-      "readability_grade": 12.3958,
-      "sentences": 7,
-      "text": "- **Structure.** Sections, paragraphs, sentences, and full CoNLL-U tokens, plus the structural primitives read off each dependency tree: negations, modals, bare assertion, reportings, root adverbials, Hearst pairs.\n- **Measures.** Readability, lexical density, and compression ratio per paragraph; vocabulary TTR, nominalization ratio, and passive ratio per document.\n- **Extraction.** Two extractive summarizers (TF-IDF, TextRank) and two keyphrase extractors (RAKE, YAKE).\n- **Semantic clusters.** Sentence embeddings grouped by cosine similarity, behind the `model2vec` feature, carrying the identity of the model that produced them.",
-      "words": 80
+      "lexical_density": 0.7196,
+      "readability_grade": 11.3233,
+      "sentences": 8,
+      "text": "- **Structure.** Sections, paragraphs, sentences, and full CoNLL-U tokens, plus the structural primitives read off each dependency tree: negations, modals, clausal complements, root adverbials, Hearst pairs, and the root clause's mood.\n- **Measures.** Readability, lexical density, and compression ratio per paragraph; counts, sentence length, vocabulary TTR, nominalization ratio, and passive ratio per document. Every document also records where it came from: the parser and its model, and a digest of the input.\n- **Extraction.** Two extractive summarizers (TF-IDF, TextRank) and two keyphrase extractors (RAKE, YAKE).\n- **Semantic clusters.** Sentence embeddings grouped by cosine similarity, behind the `model2vec` feature, carrying the identity of the model that produced them.",
+      "words": 106
     },
     {
       "compression_ratio": null,

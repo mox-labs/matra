@@ -116,7 +116,7 @@ Those three are pages of this book, run from a checkout of the repository, so th
 
 The separation is decisive, and the sentence-level starting point does not carry over: the same vectors at `0.85` produce zero clusters, so the near-duplicate pair would have been reported as unrelated. This is what "the threshold does not travel" costs when it is taken on faith. Calibrate on scores you have read.
 
-Two things this route does not change. Attribution still travels: the vectors do not carry the model identity, you hand `model.model_hash` to `semantic_clusters` and it comes back on the result, so a cross-document score is as attributable as a sentence one. And a zero-magnitude vector, which is what an empty document embeds to, still gets no edge at any threshold.
+Two things this route does not change. Attribution still travels: the vectors do not carry the model identity, you hand `model.model_hash` to `semantic_clusters` and it comes back on the result as `identity`, so a cross-document score is as attributable as a sentence one. And a zero-magnitude vector, which is what an empty document embeds to, still gets no edge at any threshold.
 
 
 On this route the 2,000-sentence cap counts documents, so one call compares at most 2,000 of them; [Bounds and failure](../reference/semantic-clusters.md#bounds-and-failure) has the cap and the errors.

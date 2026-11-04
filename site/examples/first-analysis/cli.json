@@ -1,8 +1,24 @@
 {
-  "format_version": 1,
+  "format_version": 2,
   "command": "analyze",
   "input": "minutes.txt",
   "result": {
+    "provenance": {
+      "matra": "0.2.1",
+      "schema": "2.0",
+      "parser": {
+        "name": "udpipe",
+        "model": "english-ewt-ud-2.5-191206",
+        "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957",
+        "license": "CC BY-NC-SA 4.0 (non-commercial)"
+      },
+      "format": "plain_text",
+      "source": {
+        "path": "minutes.txt",
+        "bytes": 204,
+        "sha256": "b4f55f24335ecfae3b641caec0db70fb9566f76143bba54401a99869e29185d2"
+      }
+    },
     "sections": [
       {
         "heading": null,
@@ -21,7 +37,10 @@
                     "lemma": "the",
                     "pos": "DET",
                     "xpos": "DT",
-                    "feats": "Definite=Def|PronType=Art",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
                     "head": 2,
                     "dep": "det",
                     "deps": "_",
@@ -34,7 +53,9 @@
                     "lemma": "committee",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 5,
                     "dep": "nsubj",
                     "deps": "_",
@@ -47,7 +68,11 @@
                     "lemma": "do",
                     "pos": "AUX",
                     "xpos": "VBD",
-                    "feats": "Mood=Ind|Tense=Past|VerbForm=Fin",
+                    "features": {
+                      "Mood": "Ind",
+                      "Tense": "Past",
+                      "VerbForm": "Fin"
+                    },
                     "head": 5,
                     "dep": "aux",
                     "deps": "_",
@@ -60,7 +85,7 @@
                     "lemma": "not",
                     "pos": "PART",
                     "xpos": "RB",
-                    "feats": "",
+                    "features": {},
                     "head": 5,
                     "dep": "advmod",
                     "deps": "_",
@@ -73,7 +98,9 @@
                     "lemma": "approve",
                     "pos": "VERB",
                     "xpos": "VB",
-                    "feats": "VerbForm=Inf",
+                    "features": {
+                      "VerbForm": "Inf"
+                    },
                     "head": 0,
                     "dep": "root",
                     "deps": "_",
@@ -86,7 +113,10 @@
                     "lemma": "the",
                     "pos": "DET",
                     "xpos": "DT",
-                    "feats": "Definite=Def|PronType=Art",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
                     "head": 7,
                     "dep": "det",
                     "deps": "_",
@@ -99,7 +129,9 @@
                     "lemma": "budget",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 5,
                     "dep": "obj",
                     "deps": "_",
@@ -112,7 +144,7 @@
                     "lemma": "on",
                     "pos": "ADP",
                     "xpos": "IN",
-                    "feats": "",
+                    "features": {},
                     "head": 9,
                     "dep": "case",
                     "deps": "_",
@@ -125,7 +157,9 @@
                     "lemma": "Tuesday",
                     "pos": "PROPN",
                     "xpos": "NNP",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 5,
                     "dep": "obl",
                     "deps": "_",
@@ -138,7 +172,7 @@
                     "lemma": ".",
                     "pos": "PUNCT",
                     "xpos": ".",
-                    "feats": "",
+                    "features": {},
                     "head": 5,
                     "dep": "punct",
                     "deps": "_",
@@ -146,6 +180,9 @@
                     "is_punct": true
                   }
                 ],
+                "word_count": 9,
+                "tree_depth": 2,
+                "passive": false,
                 "negations": [
                   {
                     "cue_id": 4,
@@ -154,15 +191,18 @@
                   }
                 ],
                 "modals": [],
-                "bare_assertion": true,
-                "reportings": [],
+                "clausal_complements": [],
                 "root_adverbials": [
                   {
                     "adv_id": 4,
                     "adv_lemma": "not"
                   }
                 ],
-                "hearst_pairs": []
+                "hearst_pairs": [],
+                "root_mood": {
+                  "root_id": 5,
+                  "mood": "Ind"
+                }
               },
               {
                 "text": "The chair said that a second vote may follow next week.",
@@ -173,7 +213,10 @@
                     "lemma": "the",
                     "pos": "DET",
                     "xpos": "DT",
-                    "feats": "Definite=Def|PronType=Art",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
                     "head": 2,
                     "dep": "det",
                     "deps": "_",
@@ -186,7 +229,9 @@
                     "lemma": "chair",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 3,
                     "dep": "nsubj",
                     "deps": "_",
@@ -199,7 +244,11 @@
                     "lemma": "say",
                     "pos": "VERB",
                     "xpos": "VBD",
-                    "feats": "Mood=Ind|Tense=Past|VerbForm=Fin",
+                    "features": {
+                      "Mood": "Ind",
+                      "Tense": "Past",
+                      "VerbForm": "Fin"
+                    },
                     "head": 0,
                     "dep": "root",
                     "deps": "_",
@@ -212,7 +261,7 @@
                     "lemma": "that",
                     "pos": "SCONJ",
                     "xpos": "IN",
-                    "feats": "",
+                    "features": {},
                     "head": 9,
                     "dep": "mark",
                     "deps": "_",
@@ -225,7 +274,10 @@
                     "lemma": "a",
                     "pos": "DET",
                     "xpos": "DT",
-                    "feats": "Definite=Ind|PronType=Art",
+                    "features": {
+                      "Definite": "Ind",
+                      "PronType": "Art"
+                    },
                     "head": 7,
                     "dep": "det",
                     "deps": "_",
@@ -238,7 +290,10 @@
                     "lemma": "second",
                     "pos": "ADJ",
                     "xpos": "JJ",
-                    "feats": "Degree=Pos|NumType=Ord",
+                    "features": {
+                      "Degree": "Pos",
+                      "NumType": "Ord"
+                    },
                     "head": 7,
                     "dep": "amod",
                     "deps": "_",
@@ -251,7 +306,9 @@
                     "lemma": "vote",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 9,
                     "dep": "nsubj",
                     "deps": "_",
@@ -264,7 +321,9 @@
                     "lemma": "may",
                     "pos": "AUX",
                     "xpos": "MD",
-                    "feats": "VerbForm=Fin",
+                    "features": {
+                      "VerbForm": "Fin"
+                    },
                     "head": 9,
                     "dep": "aux",
                     "deps": "_",
@@ -277,7 +336,9 @@
                     "lemma": "follow",
                     "pos": "VERB",
                     "xpos": "VB",
-                    "feats": "VerbForm=Inf",
+                    "features": {
+                      "VerbForm": "Inf"
+                    },
                     "head": 3,
                     "dep": "ccomp",
                     "deps": "_",
@@ -290,7 +351,9 @@
                     "lemma": "next",
                     "pos": "ADJ",
                     "xpos": "JJ",
-                    "feats": "Degree=Pos",
+                    "features": {
+                      "Degree": "Pos"
+                    },
                     "head": 11,
                     "dep": "amod",
                     "deps": "_",
@@ -303,7 +366,9 @@
                     "lemma": "week",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 9,
                     "dep": "obl:tmod",
                     "deps": "_",
@@ -316,7 +381,7 @@
                     "lemma": ".",
                     "pos": "PUNCT",
                     "xpos": ".",
-                    "feats": "",
+                    "features": {},
                     "head": 3,
                     "dep": "punct",
                     "deps": "_",
@@ -324,6 +389,9 @@
                     "is_punct": true
                   }
                 ],
+                "word_count": 11,
+                "tree_depth": 3,
+                "passive": false,
                 "negations": [],
                 "modals": [
                   {
@@ -332,8 +400,7 @@
                     "head_id": 9
                   }
                 ],
-                "bare_assertion": true,
-                "reportings": [
+                "clausal_complements": [
                   {
                     "verb_id": 3,
                     "verb_lemma": "say",
@@ -343,12 +410,18 @@
                   }
                 ],
                 "root_adverbials": [],
-                "hearst_pairs": []
+                "hearst_pairs": [],
+                "root_mood": {
+                  "root_id": 3,
+                  "mood": "Ind"
+                }
               }
             ],
-            "readability_grade": 3.650000000000002,
-            "lexical_density": 0.55,
-            "compression_ratio": null
+            "metrics": {
+              "readability_grade": 3.650000000000002,
+              "lexical_density": 0.55,
+              "compression_ratio": null
+            }
           },
           {
             "text": "Three amendments were submitted by the working group. Each one narrows the scope of the plan.",
@@ -363,7 +436,9 @@
                     "lemma": "three",
                     "pos": "NUM",
                     "xpos": "CD",
-                    "feats": "NumType=Card",
+                    "features": {
+                      "NumType": "Card"
+                    },
                     "head": 2,
                     "dep": "nummod",
                     "deps": "_",
@@ -376,7 +451,9 @@
                     "lemma": "amendment",
                     "pos": "NOUN",
                     "xpos": "NNS",
-                    "feats": "Number=Plur",
+                    "features": {
+                      "Number": "Plur"
+                    },
                     "head": 4,
                     "dep": "nsubj:pass",
                     "deps": "_",
@@ -389,7 +466,11 @@
                     "lemma": "be",
                     "pos": "AUX",
                     "xpos": "VBD",
-                    "feats": "Mood=Ind|Tense=Past|VerbForm=Fin",
+                    "features": {
+                      "Mood": "Ind",
+                      "Tense": "Past",
+                      "VerbForm": "Fin"
+                    },
                     "head": 4,
                     "dep": "aux:pass",
                     "deps": "_",
@@ -402,7 +483,11 @@
                     "lemma": "submit",
                     "pos": "VERB",
                     "xpos": "VBN",
-                    "feats": "Tense=Past|VerbForm=Part|Voice=Pass",
+                    "features": {
+                      "Tense": "Past",
+                      "VerbForm": "Part",
+                      "Voice": "Pass"
+                    },
                     "head": 0,
                     "dep": "root",
                     "deps": "_",
@@ -415,7 +500,7 @@
                     "lemma": "by",
                     "pos": "ADP",
                     "xpos": "IN",
-                    "feats": "",
+                    "features": {},
                     "head": 8,
                     "dep": "case",
                     "deps": "_",
@@ -428,7 +513,10 @@
                     "lemma": "the",
                     "pos": "DET",
                     "xpos": "DT",
-                    "feats": "Definite=Def|PronType=Art",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
                     "head": 8,
                     "dep": "det",
                     "deps": "_",
@@ -441,7 +529,9 @@
                     "lemma": "work",
                     "pos": "VERB",
                     "xpos": "VBG",
-                    "feats": "VerbForm=Ger",
+                    "features": {
+                      "VerbForm": "Ger"
+                    },
                     "head": 8,
                     "dep": "amod",
                     "deps": "_",
@@ -454,7 +544,9 @@
                     "lemma": "group",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 4,
                     "dep": "obl",
                     "deps": "_",
@@ -467,7 +559,7 @@
                     "lemma": ".",
                     "pos": "PUNCT",
                     "xpos": ".",
-                    "feats": "",
+                    "features": {},
                     "head": 4,
                     "dep": "punct",
                     "deps": "_",
@@ -475,12 +567,18 @@
                     "is_punct": true
                   }
                 ],
+                "word_count": 8,
+                "tree_depth": 2,
+                "passive": true,
                 "negations": [],
                 "modals": [],
-                "bare_assertion": true,
-                "reportings": [],
+                "clausal_complements": [],
                 "root_adverbials": [],
-                "hearst_pairs": []
+                "hearst_pairs": [],
+                "root_mood": {
+                  "root_id": 4,
+                  "mood": "Ind"
+                }
               },
               {
                 "text": "Each one narrows the scope of the plan.",
@@ -491,7 +589,7 @@
                     "lemma": "each",
                     "pos": "DET",
                     "xpos": "DT",
-                    "feats": "",
+                    "features": {},
                     "head": 2,
                     "dep": "det",
                     "deps": "_",
@@ -504,7 +602,9 @@
                     "lemma": "one",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 3,
                     "dep": "nsubj",
                     "deps": "_",
@@ -517,7 +617,13 @@
                     "lemma": "narrow",
                     "pos": "VERB",
                     "xpos": "VBZ",
-                    "feats": "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin",
+                    "features": {
+                      "Mood": "Ind",
+                      "Number": "Sing",
+                      "Person": "3",
+                      "Tense": "Pres",
+                      "VerbForm": "Fin"
+                    },
                     "head": 0,
                     "dep": "root",
                     "deps": "_",
@@ -530,7 +636,10 @@
                     "lemma": "the",
                     "pos": "DET",
                     "xpos": "DT",
-                    "feats": "Definite=Def|PronType=Art",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
                     "head": 5,
                     "dep": "det",
                     "deps": "_",
@@ -543,7 +652,9 @@
                     "lemma": "scope",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 3,
                     "dep": "obj",
                     "deps": "_",
@@ -556,7 +667,7 @@
                     "lemma": "of",
                     "pos": "ADP",
                     "xpos": "IN",
-                    "feats": "",
+                    "features": {},
                     "head": 8,
                     "dep": "case",
                     "deps": "_",
@@ -569,7 +680,10 @@
                     "lemma": "the",
                     "pos": "DET",
                     "xpos": "DT",
-                    "feats": "Definite=Def|PronType=Art",
+                    "features": {
+                      "Definite": "Def",
+                      "PronType": "Art"
+                    },
                     "head": 8,
                     "dep": "det",
                     "deps": "_",
@@ -582,7 +696,9 @@
                     "lemma": "plan",
                     "pos": "NOUN",
                     "xpos": "NN",
-                    "feats": "Number=Sing",
+                    "features": {
+                      "Number": "Sing"
+                    },
                     "head": 5,
                     "dep": "nmod",
                     "deps": "_",
@@ -595,7 +711,7 @@
                     "lemma": ".",
                     "pos": "PUNCT",
                     "xpos": ".",
-                    "feats": "",
+                    "features": {},
                     "head": 3,
                     "dep": "punct",
                     "deps": "_",
@@ -603,23 +719,38 @@
                     "is_punct": true
                   }
                 ],
+                "word_count": 8,
+                "tree_depth": 3,
+                "passive": false,
                 "negations": [],
                 "modals": [],
-                "bare_assertion": true,
-                "reportings": [],
+                "clausal_complements": [],
                 "root_adverbials": [],
-                "hearst_pairs": []
+                "hearst_pairs": [],
+                "root_mood": {
+                  "root_id": 3,
+                  "mood": "Ind"
+                }
               }
             ],
-            "readability_grade": 3.7550000000000026,
-            "lexical_density": 0.5625,
-            "compression_ratio": null
+            "metrics": {
+              "readability_grade": 3.7550000000000026,
+              "lexical_density": 0.5625,
+              "compression_ratio": null
+            }
           }
         ]
       }
     ],
-    "vocabulary_ttr": 0.8611111111111112,
-    "nominalization_ratio": 0.0,
-    "passive_ratio": 0.25
+    "metrics": {
+      "total_words": 36,
+      "total_sentences": 4,
+      "paragraph_count": 2,
+      "mean_sentence_length": 9.0,
+      "sentence_length_std": 1.4142135623730951,
+      "vocabulary_ttr": 0.8611111111111112,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.25
+    }
   }
 }

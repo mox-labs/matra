@@ -39,25 +39,23 @@ Seven types nest, each owning the next. Nothing is owned twice.
 <text class="mem" x="462" y="55">total_words · passive_ratio ·</text>
 <text class="mem" x="462" y="67">mean_readability</text>
 <text class="mem" x="206" y="109">path · analysis</text>
-<text class="mem" x="206" y="153">sections · vocabulary_ttr ·</text>
-<text class="mem" x="206" y="165">nominalization_ratio · passive_ratio</text>
-<text class="mem" x="462" y="153">paragraph_count · total_sentences ·</text>
-<text class="mem" x="462" y="165">total_words · passive_ratio ·</text>
-<text class="mem" x="462" y="177">mean_sentence_length · sentence_length_std</text>
+<text class="mem" x="206" y="153">provenance · sections ·</text>
+<text class="mem" x="206" y="165">metrics (DocumentMetrics)</text>
 <text class="mem" x="206" y="221">heading · level · paragraphs</text>
 <text class="mem" x="206" y="265">text · in_blockquote · sentences ·</text>
-<text class="mem" x="206" y="277">three metric slots</text>
+<text class="mem" x="206" y="277">metrics (ParagraphMetrics)</text>
 <text class="mem" x="462" y="265">word_count · sentence_count</text>
-<text class="mem" x="206" y="319">text · tokens</text>
+<text class="mem" x="206" y="319">text · tokens · word_count ·</text>
+<text class="mem" x="206" y="331">tree_depth · passive ·</text>
+<text class="mem" x="206" y="343">six structural fields</text>
 <text class="mem" x="462" y="319">root_token · head_of · children_of ·</text>
-<text class="mem" x="462" y="331">subtree · tree_depth · is_passive ·</text>
-<text class="mem" x="462" y="343">word_count · content_tokens</text>
+<text class="mem" x="462" y="331">subtree · content_tokens</text>
 <text class="mem" x="206" y="387">the ten CoNLL-U columns · is_punct</text>
 </svg>
 
-The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree, and the document-level numbers stored rather than derived are `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. `passive_ratio` is the one name in both columns: `Engine::compose` stores the method's result in the field, which is how the aggregate crosses the language boundary.
+The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree. Every number a reader needs from a document is stored, in `DocumentMetrics` and `ParagraphMetrics` and in a sentence's `word_count`, `tree_depth` and `passive`, because a field crosses the language boundary and a method does not.
 
-The derived structural types (`Negation`, `Modal`, `Reporting`, `RootAdverbial`, `HearstPair` with its `HearstSpan` and `HearstPattern`) sit inside the nest, owned by `Sentence`. The other types sit outside it:
+The derived structural types (`Negation`, `Modal`, `ClausalComplement`, `RootAdverbial`, `RootMood`, `HearstPair` with its `HearstSpan` and `HearstPattern`) sit inside the nest, owned by `Sentence`, and the metric records `DocumentMetrics` and `ParagraphMetrics` are owned by `Document` and `Paragraph`. `Provenance`, with its `Identity` and `ProvenanceSource`, is owned by `Document`. The other types sit outside it:
 
 | Type | Role |
 |---|---|
@@ -83,6 +81,8 @@ Where each of those enters and leaves the pipeline is drawn in [Architecture](..
 | `Paragraph` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Section` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Document` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
+| `DocumentMetrics`, `ParagraphMetrics` | `Debug`, `Clone`, `Default`, `PartialEq`, `Serialize`, `Deserialize` | yes |
+| `Provenance`, `Identity`, `ProvenanceSource` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `ScoredSentence` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Keyphrase` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Format` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
@@ -90,7 +90,8 @@ Where each of those enters and leaves the pipeline is drawn in [Architecture](..
 | `CorpusEntry` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Corpus` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Error` | `Debug`, `thiserror::Error` | yes |
-| `Negation`, `Modal`, `Reporting`, `RootAdverbial` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
+| `Negation`, `Modal`, `ClausalComplement`, `RootAdverbial` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
+| `RootMood` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `HearstPair`, `HearstSpan` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `HearstPattern` | `Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `DocumentError`, `CorpusResult` | `Debug` | yes |
@@ -100,7 +101,7 @@ Where each of those enters and leaves the pipeline is drawn in [Architecture](..
 
 `RawDocument` is the one structural type without serde derives. It is a transient value between the ingest and decompose stages and never appears in stored output.
 
-No type in the module derives `Hash`, and the parse tree derives no equality: two `Token`, `Sentence`, `Paragraph`, `Section` or `Document` values cannot be compared with `==`. `Format` derives `PartialEq` and `Eq`, which is what the decomposer table keys on, and the Hearst types, the semantic types, `Embedding` and `ProvisionNotice` derive `PartialEq`. `Error` has no `Clone`, no equality and no serde derives. `Embedding` is the one public type without `#[non_exhaustive]`: on a tuple struct the attribute would make the constructor private, and an `Embedder` implemented outside the crate has to build one.
+No type in the module derives `Hash`, and the parse tree derives no equality: two `Token`, `Sentence`, `Paragraph`, `Section` or `Document` values cannot be compared with `==`. `Format` derives `PartialEq` and `Eq`, which is what the decomposer table keys on, and the metric records, the provenance types, `RootMood`, the Hearst types, the semantic types, `Embedding` and `ProvisionNotice` derive `PartialEq`. `Error` has no `Clone`, no equality and no serde derives. `Embedding` is the one public type without `#[non_exhaustive]`: on a tuple struct the attribute would make the constructor private, and an `Embedder` implemented outside the crate has to build one.
 
 `#[non_exhaustive]` has two effects outside the crate. Struct literal syntax is unavailable, so you build values through the associated constructors listed below. Matches on `Format` and `Error` need a catch-all arm, because variants can be added in a minor release.
 
@@ -117,7 +118,7 @@ One parsed token carrying the full CoNLL-U annotation set plus one derived flag.
 | `lemma` | `String` | 3 | Dictionary form |
 | `pos` | `String` | 4 | Universal POS tag, for example `NOUN`, `VERB`, `ADJ` |
 | `xpos` | `String` | 5 | Language-specific POS tag |
-| `feats` | `String` | 6 | Morphological features, pipe-separated |
+| `features` | `BTreeMap<String, String>` | 6 | Morphological features as a map from feature name to value |
 | `head` | `usize` | 7 | Id of the governing token; `0` marks the root |
 | `dep` | `String` | 8 | Dependency relation to the head, for example `nsubj`, `obj`, `aux:pass` |
 | `deps` | `String` | 9 | Enhanced dependency graph |
@@ -128,7 +129,7 @@ Provider-specific notes for the UDPipe adapter, the one adapter that ships:
 
 - `is_punct` is set when the UPOS tag is `PUNCT`.
 - `deps` is always the string `_`, the CoNLL-U empty marker. The underlying `udpipe-rs` binding does not surface column 9.
-- `xpos`, `feats`, and `misc` carry whatever the model emits, and can be `_` or empty.
+- `xpos` and `misc` carry whatever the model emits, and can be `_` or empty. `features` is converted from the column: `Mood=Ind|Tense=Pres` becomes two entries, a multi-valued feature (`Case=Nom,Acc`) keeps its value unsplit, and `_` becomes an empty map.
 
 A token id or head that does not fit in `usize` is rejected at the adapter with `Error::ParseFailed` rather than being silently coerced.
 
@@ -149,17 +150,17 @@ let token = matra::domain::Token::builder(
     .build();
 ```
 
-`Token::builder(id, text, lemma, pos, head, dep) -> TokenBuilder` takes the six CoNLL-U essentials. `TokenBuilder` carries one setter per optional field (`xpos`, `feats`, `deps`, `misc`, each taking `String`; `is_punct` taking `bool`), each consuming and returning the builder. `build()` returns the `Token`. Unset string fields default to empty; `is_punct` defaults to `false`.
+`Token::builder(id, text, lemma, pos, head, dep) -> TokenBuilder` takes the six CoNLL-U essentials. `TokenBuilder` carries one setter per optional field (`xpos`, `deps`, `misc`, each taking `String`; `feats`, taking the CoNLL-U column 6 string and converting it into `features`; `is_punct` taking `bool`), each consuming and returning the builder. `build()` returns the `Token`. Unset string fields default to empty, `features` to an empty map, and `is_punct` to `false`.
 
 ### Methods
 
 | Signature | Returns | Behavior |
 |---|---|---|
-| `feat(&self, key: &str)` | `Option<&str>` | First exact-key match over the pipe-separated `feats` pairs. `None` when the key is absent |
+| `feat(&self, key: &str)` | `Option<&str>` | The value of one feature in `features`, by exact name. `None` when the feature is absent |
 
-`feat("Mood")` returns `Some("Ind")` when `feats` is `Mood=Ind|Tense=Pres`. The value is borrowed raw from `feats`, so multi-valued features (`Case=Nom,Acc`) come back unsplit: matra exposes what the provider emitted and does not normalise it. Both the empty string and the CoNLL-U placeholder `_` carry no `key=value` pair, so every lookup on them returns `None`.
+`feat("Mood")` returns `Some("Ind")` when the token carries `Mood=Ind`. The value is what the provider emitted, so a multi-valued feature (`Case=Nom,Acc`) comes back unsplit: matra does not normalise it. A token whose column 6 was `_` or empty has no features, so every lookup on it returns `None`.
 
-`feat` is Rust-only by design. `feats` already crosses FFI as a string, so a lookup over it adds no information to the wire; a Python or TypeScript caller splits the same string ([RFC-0009](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0009-feats-lookup-accessor.md)).
+`feat` is Rust-only by design. `features` crosses FFI as a map, so a lookup over it adds no information to the wire; a Python or TypeScript caller indexes the same map ([RFC-0009](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0009-feats-lookup-accessor.md)).
 
 ## Sentence
 
@@ -167,28 +168,33 @@ let token = matra::domain::Token::builder(
 |---|---|---|
 | `text` | `String` | Sentence text as the NLP provider reports it, not a slice of the input |
 | `tokens` | `Vec<Token>` | Tokens in ascending `id` order |
+| `word_count` | `usize` | Non-punctuation tokens, derived at construction |
+| `tree_depth` | `Option<usize>` | Longest path from any token to the root, the root at depth 0, derived at construction. `None` when the head references form a cycle |
+| `passive` | `bool` | Whether any token's `dep` is `nsubj:pass`, `nsubjpass`, or `aux:pass`, derived at construction |
 | `negations` | `Vec<Negation>` | Negation cues, derived at construction |
 | `modals` | `Vec<Modal>` | Modal auxiliaries, derived at construction |
-| `bare_assertion` | `bool` | Whether the root clause is finite indicative with no modal auxiliary governing it, derived at construction |
-| `reportings` | `Vec<Reporting>` | Reporting constructions (verb governing a `ccomp`, plus its subject), derived at construction |
+| `clausal_complements` | `Vec<ClausalComplement>` | Verbs governing a clausal complement (`ccomp`), each with its subject when the parse has one, derived at construction |
 | `root_adverbials` | `Vec<RootAdverbial>` | Adverbial modifiers attached to the root, derived at construction |
 | `hearst_pairs` | `Vec<HearstPair>` | Candidate hypernymy pairs from the six Hearst (1992) patterns, filled by the pipeline at the annotate stage |
+| `root_mood` | `Option<RootMood>` | The root clause's `Mood` feature with the root's token id, derived at construction. `None` when the root clause carries no mood |
 
 Invariants that downstream code relies on, and that a hand-built `Sentence` and every `NlpProvider` are expected to uphold: tokens are id-sorted; exactly one token has `head == 0`; every other `head` names a token in the same sentence; following `head` never loops. Nothing validates them, and the tree walks stay safe when the last one breaks (see `tree_depth` below).
+
+`tree_depth` is computed in time linear in token count with a visited set, and is `None` when the head references form a cycle, which reports a malformed parse as a value a reader must handle instead of truncating it or returning a number that reads as a very deep tree. An empty sentence has depth `Some(0)`. `word_count` counts tokens the NLP provider identified, minus punctuation. It is not a whitespace split, and the two counts differ on the same text.
 
 The UDPipe adapter builds `text` by joining token surface forms, inserting a space unless the preceding token carries `SpaceAfter=No` in `misc`. The string is a reconstruction, not a slice of the input, so whitespace can differ from the source text.
 
 ### Derived structural fields
 
-The fields after `tokens` are computed once from the dependency graph and serialized with the sentence, so every language binding and the CLI's JSON read one Rust detection as data ([RFC-0008](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0008-structural-primitives-are-fields.md)). Most are computed at `Sentence::new`; `hearst_pairs` is the exception, filled by the pipeline at the annotate stage because its detector lives in the `hearst` module outside the domain, so a hand-built `Sentence` carries an empty vector until the caller runs `hearst::hypernymy_pairs`. Each field reports structure only; the reading is the caller's. All of them default (to empty or `false`) when deserializing JSON produced before the field existed.
+The fields after `tokens` are computed once from the dependency graph and serialized with the sentence, so every language binding and the CLI's JSON read one Rust detection as data ([RFC-0008](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0008-structural-primitives-are-fields.md)). Most are computed at `Sentence::new`; `hearst_pairs` is the exception, filled by the pipeline at the annotate stage because its detector lives in the `hearst` module outside the domain, so a hand-built `Sentence` carries an empty vector until the caller runs `hearst::hypernymy_pairs`. Each field reports structure only; the reading is the caller's.
 
 `Negation` reports one cue by token id: `cue_id`, `cue_lemma` (`not`, `never`, `no`, `neither`, `nor`), and `head_id`, the token the cue attaches to. A cue fires only on its carrying relation (`advmod`, `det`, `cc`), so `nothing` as a subject does not fire and tokenizer-split `cannot` fires exactly once, on the `not` token. Whether the negation reverses the sentence's claim is not matra's call.
 
 `Modal` reports one modal auxiliary by token id: `aux_id`, `aux_lemma`, and `head_id`, the token the auxiliary attaches to (`0` when the modal is itself the root). The closed class is the ten lemmas the UD English treebank tags `MD`: `can`, `could`, `may`, `might`, `must`, `ought`, `shall`, `should`, `will`, `would`, matched by lemma on the `aux` relation or the `AUX` part of speech. The part-of-speech arm catches the shapes the model does not park on `aux`: VP ellipsis promotes the modal to root ("Yes, you should.") and coordinated auxiliaries parse as root plus `aux` or `conj` ("He can and will succeed."). Precision holds because the model's only other `AUX` lemmas (`be`, `have`, `do`, `get`) are outside the class. Contracted forms fire on their lemma (`wo` in `won't` lemmatizes to `will`), the noun `will` never fires because it never carries `aux` or `AUX`, and a multi-auxiliary chain (`might have been done`) reports its modal with `head_id` on the content verb. English modals are ambiguous across readings, and resolving `must` into obligation or inference takes context matra does not model, so no epistemic, deontic, or dynamic category is assigned: the auxiliary and its arc are reported, the reading is the caller's.
 
-`bare_assertion` is true when the root clause is finite indicative and no detected modal governs it: the bare assertoric surface form. `Mood=Ind` is read off the root token or off a `cop`, `aux`, or `aux:pass` child of the root, because the model parks finiteness on the auxiliary in copular ("The sky is blue."), do-support ("He did leave.") and passive clauses. A modalized clause fails because a modal attaches to the root or is itself the root, and an imperative fails on `Mood=Imp`. It reads the root clause only, so a modal in a subordinate clause is reported in `modals` without defeating it.
+`RootMood` reports the grammatical mood of the root clause: `root_id`, the root's token id, and `mood`, the `Mood` feature as the model emitted it (`Ind`, `Imp`, and an open set beyond). The feature is read off the root token or, when the root carries none, off its first `cop`, `aux`, or `aux:pass` child that does, because the model parks finiteness on the auxiliary in copular ("The sky is blue."), do-support ("He did leave.") and passive clauses. A modal carries `VerbForm=Fin` and no mood, so a clause whose root a modal governs ("You must complete the form.") usually has no root mood; whether a modal governs the root is the separate fact in `modals`. It reads the root clause only, so a mood in a subordinate clause does not reach it. The bare assertoric form, an indicative root no modal governs, is `mood == "Ind"` with no modal whose `head_id` is `root_id`.
 
-`Reporting` reports one reporting construction by token id: `verb_id` and `verb_lemma` for the verb governing a clausal complement, `ccomp_id` for the head of that complement, and `subject_id` plus `subject_lemma` for the verb's subject (`nsubj`, `nsubj:pass`) when the parse has one in the same sentence. The construction fires for every verb that fills it ("Smith reported that the effect vanished.", "These results suggest that the mechanism is shared.", "We show that the method works." all match), because reporting verbs are an open class and any list matra shipped would be incomplete while looking authoritative. Which verb lemmas count as evidential is the caller's lexicon, supplied as a parameter to `reportings_in` or applied to the field directly in any language. A `ccomp` under a non-verb head ("I am sure that it works." parses the complement under the adjective) is outside the construction by decision. The subject is optional by observed fact: UDPipe splits "Smith et al. reported that ..." into two sentences at the period in "et al.", stranding the attribution in the previous sentence while the reporting verb keeps its `ccomp`. That upstream segmentation defect is recorded here and in the test suite rather than papered over.
+`ClausalComplement` reports one verb governing a clausal complement by token id: `verb_id` and `verb_lemma` for the verb, `ccomp_id` for the head of the complement, and `subject_id` plus `subject_lemma` for the verb's subject (`nsubj`, `nsubj:pass`) when the parse has one in the same sentence. The construction fires for every verb that fills it ("Smith reported that the effect vanished.", "These results suggest that the mechanism is shared.", "We show that the method works." all match), because verbs taking a clausal complement are an open class and any list matra shipped would be incomplete while looking authoritative. Which verb lemmas count as reporting or evidential is the caller's lexicon, supplied as a parameter to `clausal_complements_in` or applied to the field directly in any language. A `ccomp` under a non-verb head ("I am sure that it works." parses the complement under the adjective) is outside the construction by decision. The subject is optional by observed fact: UDPipe splits "Smith et al. reported that ..." into two sentences at the period in "et al.", stranding the attribution in the previous sentence while the verb keeps its `ccomp`. That upstream segmentation defect is recorded here and in the test suite rather than papered over.
 
 `RootAdverbial` reports one adverbial modifier attached to the root by token id: `adv_id` and `adv_lemma`. The root-attached `advmod` arc is where sentence-scope adverbs land ("Reportedly, the deal closed."), but the dependency graph does not distinguish sentence scope from manner ("The team quickly shipped." puts `quickly` on the same arc), so every root-attached adverbial is reported and the caller's lexicon selects the evidential ones, via `root_adverbials_in` or a filter over the field. Negation particles on the same arc ("not" in "The plan is not ready.") appear in both `negations` and `root_adverbials`; both report arcs, neither assigns a reading, and the overlap is intentional.
 
@@ -202,19 +208,14 @@ Most methods below are walks over the `head` and `dep` columns; the two `_in` fi
 |---|---|---|
 | `new(text: String, tokens: Vec<Token>)` | `Sentence` | Constructor. Does not validate the invariants |
 | `content_tokens(&self)` | `Vec<&Token>` | Tokens where `is_punct` is false |
-| `word_count(&self)` | `usize` | Count of non-punctuation tokens |
-| `is_passive(&self)` | `bool` | True when any token's `dep` is `nsubj:pass`, `nsubjpass`, or `aux:pass` |
-| `tree_depth(&self)` | `usize` | Longest path from any token to the root. Root depth is 0 |
 | `root_token(&self)` | `Option<&Token>` | The token with `head == 0`, if there is one |
 | `children_of(&self, id: usize)` | `Vec<&Token>` | Tokens whose `head` equals `id`. Empty for an unknown id |
 | `head_of(&self, id: usize)` | `Option<&Token>` | The governing token. `None` for the root and for an unknown id |
 | `subtree(&self, id: usize)` | `Vec<&Token>` | The token and all its descendants, sorted by `id`. Empty for an unknown id |
-| `reportings_in(&self, lexicon: &[&str])` | `Vec<&Reporting>` | Reporting constructions whose `verb_lemma` is in the caller-supplied lexicon |
+| `clausal_complements_in(&self, lexicon: &[&str])` | `Vec<&ClausalComplement>` | Clausal complements whose `verb_lemma` is in the caller-supplied lexicon |
 | `root_adverbials_in(&self, lexicon: &[&str])` | `Vec<&RootAdverbial>` | Root adverbials whose `adv_lemma` is in the caller-supplied lexicon |
 
-`tree_depth` runs in time linear in token count and returns `usize::MAX` when the head references form a cycle, which reports a malformed parse instead of truncating it. An empty sentence returns 0. `subtree` carries a visited set, so it terminates on cyclic input.
-
-`word_count` counts tokens the NLP provider identified, minus punctuation. It is not a whitespace split, and the two counts differ on the same text.
+`subtree` carries a visited set, so it terminates on cyclic input.
 
 ## Paragraph
 
@@ -223,11 +224,17 @@ Most methods below are walks over the `head` and `dep` columns; the two `_in` fi
 | `text` | `String` | Paragraph text as the decomposer cut it: trimmed, for markdown with its lines rejoined by `\n` (so `\r\n` arrives as `\n`), and for a blockquote with the `>` markers removed |
 | `in_blockquote` | `bool` | Whether the paragraph came from a blockquote |
 | `sentences` | `Vec<Sentence>` | Sentences from parsing this paragraph |
-| `readability_grade` | `Option<f64>` | Flesch-Kincaid grade level |
-| `lexical_density` | `Option<f64>` | Content-word ratio, 0.0 to 1.0 |
-| `compression_ratio` | `Option<f64>` | Brotli compressed size over original size |
+| `metrics` | `ParagraphMetrics` | The paragraph's three measures |
 
-The three metric slots hold `None` until `Engine::compose` fills them, and stay `None` when the paragraph does not meet a metric's applicability condition.
+`ParagraphMetrics` holds the three:
+
+| Field | Type | Contents |
+|---|---|---|
+| `readability_grade` | `Option<f64>` | Flesch-Kincaid grade level, when the paragraph holds more than ten words |
+| `lexical_density` | `Option<f64>` | Content-word ratio, 0.0 to 1.0, when the paragraph holds a word |
+| `compression_ratio` | `Option<f64>` | Brotli compressed size over original size, when the paragraph holds more than fifty words |
+
+Each slot holds `None` until `Engine::compose` fills it, and stays `None` when the paragraph does not meet the metric's applicability condition; no outer `Option` wraps the record, because each slot gates on its own.
 
 `Engine::annotate` skips blockquote paragraphs when it parses, so a paragraph with `in_blockquote == true` reaches `compose` with no sentences and keeps all three slots at `None`.
 
@@ -235,7 +242,7 @@ The three metric slots hold `None` until `Engine::compose` fills them, and stay 
 
 | Signature | Returns | Behavior |
 |---|---|---|
-| `new(text: String, in_blockquote: bool)` | `Paragraph` | Constructor. Empty sentences, all metric slots `None` |
+| `new(text: String, in_blockquote: bool)` | `Paragraph` | Constructor. Empty sentences, every metric `None` |
 | `word_count(&self)` | `usize` | Non-punctuation tokens summed across this paragraph's sentences |
 | `sentence_count(&self)` | `usize` | Number of sentences |
 
@@ -257,26 +264,36 @@ The output of the pipeline.
 
 | Field | Type | Contents |
 |---|---|---|
+| `provenance` | `Provenance` | Where the document came from and what produced it, recorded by `Engine::annotate` |
 | `sections` | `Vec<Section>` | The section tree, which owns every paragraph, sentence, and token |
+| `metrics` | `DocumentMetrics` | The document's aggregates, filled by `Engine::compose` |
+
+`DocumentMetrics` holds what the command line's table prints and what a binding would otherwise rebuild:
+
+| Field | Type | Contents |
+|---|---|---|
+| `total_words` | `usize` | Non-punctuation tokens across every sentence |
+| `total_sentences` | `usize` | Sentences across every paragraph |
+| `paragraph_count` | `usize` | Paragraphs, blockquotes included |
+| `mean_sentence_length` | `Option<f64>` | `total_words` over `total_sentences`. `None` with no sentences |
+| `sentence_length_std` | `Option<f64>` | Sample standard deviation of sentence length in words. `None` with fewer than two sentences, where it is undefined |
 | `vocabulary_ttr` | `Option<f64>` | Type-token ratio over lemmas. Falls as text grows, so documents of different lengths are not comparable on it |
 | `nominalization_ratio` | `Option<f64>` | Share of nominalizing nouns |
-| `passive_ratio` | `Option<f64>` | Passive sentences over total sentences, stored by `Engine::compose` so it crosses the language boundary |
+| `passive_ratio` | `Option<f64>` | Passive sentences over total sentences. `None` with no sentences |
+
+Before `compose` runs every count is 0 and every ratio `None`; `None` after it means the document did not meet the metric's condition, never a computed zero.
+
+`Provenance` holds `matra`, the version that produced the document; `schema`, the schema version as `"major.minor"` (`SCHEMA_VERSION`, `"2.0"`), which appears nowhere else; `parser`, the parser's `Identity`; `format`, the `Format` the input was read as; and `source`, a `ProvenanceSource` with the input's `path` (`None` for in-memory text), its length in `bytes`, and the `sha256` of those bytes, computed once at annotation. There is no timestamp, so two analyses of the same input by the same build are identical. `Identity` names a model-backed component: `name` (`udpipe`), `model` (`english-ewt-ud-2.5-191206`), `sha256` of the model artifact, and `license`. The UDPipe adapter derives it from the bytes it loaded, so a model matra does not pin reports its digest with `model` and `license` set to `None`. `Provenance::new(parser, format, source)` fills `matra` and `schema` from the build.
 
 ### Methods
 
 | Signature | Returns | Behavior |
 |---|---|---|
-| `new(sections: Vec<Section>)` | `Document` | Constructor. All three metric slots `None` |
+| `new(provenance: Provenance, sections: Vec<Section>)` | `Document` | Constructor. An empty metric record |
 | `paragraphs(&self)` | `impl Iterator<Item = &Paragraph>` | Every paragraph, in document order |
 | `paragraphs_mut(&mut self)` | `impl Iterator<Item = &mut Paragraph>` | The mutable form, used by `annotate` and by the metric suite `compose` runs |
-| `paragraph_count(&self)` | `usize` | Number of paragraphs |
 | `sentences(&self)` | `impl Iterator<Item = &Sentence>` | Every sentence across every paragraph |
 | `tokens(&self)` | `impl Iterator<Item = &Token>` | Every token across every sentence |
-| `total_sentences(&self)` | `usize` | Number of sentences |
-| `total_words(&self)` | `usize` | Non-punctuation tokens across every sentence |
-| `passive_ratio(&self)` | `f64` | Passive sentences over total sentences. 0.0 with no sentences |
-| `mean_sentence_length(&self)` | `f64` | `total_words` over `total_sentences`. 0.0 with no sentences |
-| `sentence_length_std(&self)` | `f64` | Sample standard deviation of sentence length in words. 0.0 with fewer than two sentences |
 
 ## ScoredSentence
 
@@ -371,6 +388,7 @@ The partition of a per-document result stream: entries plus errors equals docume
 | Item | Definition | Role |
 |---|---|---|
 | `MAX_INPUT_BYTES` | `usize`, `8 * 1024 * 1024` (8,388,608) | Byte cap the pipeline applies to text input |
+| `SCHEMA_VERSION` | `&str`, `"2.0"` | The document schema version this build emits, as `"major.minor"`, written into `Provenance::schema`. The JSON Schema for each major is in `spec/schema/` |
 | `Result<T>` | `std::result::Result<T, Error>` | Return type of every fallible library function |
 | `Error` | enum, `#[non_exhaustive]` | Every failure the library returns. See [Errors](errors.md) |
 
@@ -402,43 +420,34 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 <text class="ty" x="466" y="64">Document</text>
 <text class="hd" x="30" y="86">stored fields</text>
 <text class="hd" x="466" y="86">dict keys</text>
-<text class="mem" x="30" y="104">sections</text>
-<text class="mem" x="30" y="122">vocabulary_ttr</text>
-<text class="mem" x="30" y="140">nominalization_ratio</text>
-<text class="mem" x="30" y="158">passive_ratio</text>
-<text class="mem" x="466" y="104">sections</text>
-<text class="mem" x="466" y="122">vocabulary_ttr</text>
-<text class="mem" x="466" y="140">nominalization_ratio</text>
-<text class="mem" x="466" y="158">passive_ratio</text>
+<text class="mem" x="30" y="104">provenance</text>
+<text class="mem" x="30" y="122">sections</text>
+<text class="mem" x="30" y="140">metrics</text>
+<text class="mem" x="466" y="104">provenance</text>
+<text class="mem" x="466" y="122">sections</text>
+<text class="mem" x="466" y="140">metrics</text>
 <text class="hd" x="30" y="190">methods</text>
-<text class="mem" x="30" y="208">paragraph_count()</text>
-<text class="mem" x="30" y="226">total_sentences()</text>
-<text class="mem" x="30" y="244">total_words()</text>
-<text class="mem" x="30" y="262">mean_sentence_length()</text>
-<text class="mem" x="30" y="280">sentence_length_std()</text>
+<text class="mem" x="30" y="208">paragraphs()</text>
+<text class="mem" x="30" y="226">sentences()</text>
+<text class="mem" x="30" y="244">tokens()</text>
 <line class="cross" x1="294" y1="100" x2="444" y2="100" marker-end="url(#mx-ffi-a)"/>
 <line class="cross" x1="294" y1="118" x2="444" y2="118" marker-end="url(#mx-ffi-a)"/>
 <line class="cross" x1="294" y1="136" x2="444" y2="136" marker-end="url(#mx-ffi-a)"/>
-<line class="cross" x1="294" y1="154" x2="444" y2="154" marker-end="url(#mx-ffi-a)"/>
 <line class="stop" x1="176" y1="204" x2="386" y2="204"/>
 <line class="stop" x1="176" y1="222" x2="386" y2="222"/>
 <line class="stop" x1="176" y1="240" x2="386" y2="240"/>
-<line class="stop" x1="176" y1="258" x2="386" y2="258"/>
-<line class="stop" x1="176" y1="276" x2="386" y2="276"/>
 <line class="bar" x1="388" y1="197" x2="388" y2="211"/>
 <line class="bar" x1="388" y1="215" x2="388" y2="229"/>
 <line class="bar" x1="388" y1="233" x2="388" y2="247"/>
-<line class="bar" x1="388" y1="251" x2="388" y2="265"/>
-<line class="bar" x1="388" y1="269" x2="388" y2="283"/>
 <text class="hd" x="401" y="14" text-anchor="middle">FFI boundary</text>
 <text class="hd" x="401" y="26" text-anchor="middle">pythonize + serde</text>
 <line class="wall" x1="398" y1="32" x2="398" y2="324"/>
 <line class="wall" x1="404" y1="32" x2="404" y2="324"/>
-<text class="nt" x="462" y="228">a Python caller computes these</text>
-<text class="nt" x="462" y="244">from the sections it already has</text>
+<text class="nt" x="462" y="228">a Python caller walks these</text>
+<text class="nt" x="462" y="244">in the sections it already has</text>
 </svg>
 
-`Token::feat`, `Document::mean_sentence_length`, `Corpus::total_words`, `Sentence::tree_depth`, and every other method in the tables above are available to Rust callers only. `passive_ratio` is the one aggregate that crosses: `Engine::compose` stores the method's result in the field of the same name.
+`Token::feat`, `Document::sentences`, `Sentence::subtree`, `Corpus::total_words`, and every other method in the tables above are available to Rust callers only. Nothing a reader needs is method-only: every aggregate is a field of `DocumentMetrics` or `ParagraphMetrics`, and a sentence carries its `word_count`, `tree_depth` and `passive`, so each crosses with the record that holds it.
 
 | Rust type | Python shape |
 |---|---|
@@ -447,6 +456,9 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 | `Paragraph` | `Paragraph` |
 | `Section` | `Section` |
 | `Document` | `Document` |
+| `DocumentMetrics`, `ParagraphMetrics` | `DocumentMetrics`, `ParagraphMetrics` |
+| `Provenance`, `Identity`, `ProvenanceSource` | `Provenance`, `Identity`, `ProvenanceSource` |
+| `ClausalComplement`, `RootMood` | `ClausalComplement`, `RootMood` |
 | `ScoredSentence` | `ScoredSentence` |
 | `Keyphrase` | `Keyphrase` |
 | `CorpusEntry` | `CorpusEntry` |

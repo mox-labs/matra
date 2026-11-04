@@ -10,7 +10,7 @@ Analysis returns one nested value. Each level owns the level below it and carrie
 | section | `Section` | `heading`, `level`, and its paragraphs in document order |
 | paragraph | `Paragraph` | its `text`, `in_blockquote`, its sentences, plus `readability_grade`, `lexical_density`, `compression_ratio` |
 | sentence | `Sentence` | its `text`, id-sorted tokens, and the structural primitive fields |
-| token | `Token` | the ten CoNLL-U columns (`text`, `lemma`, `pos`, `xpos`, `feats`, `head`, `dep`, `deps`, `misc`, plus `id`) and the derived `is_punct` |
+| token | `Token` | the ten CoNLL-U columns (`text`, `lemma`, `pos`, `xpos`, `features`, `head`, `dep`, `deps`, `misc`, plus `id`) and the derived `is_punct` |
 
 `Paragraph.text` is the paragraph as the decomposer cut it from the input, trimmed, with a blockquote's `>` markers removed. `Sentence.text` is rebuilt from the tokens, so its spacing can differ from the source. Each non-blockquote paragraph is parsed on its own, so a sentence always belongs to exactly one paragraph, rather than being matched back by text.
 
@@ -74,12 +74,12 @@ Inside a sentence, exactly one token has `head` equal to `0`: the root. Every ot
 <text class="m" x="444" y="266">5 ADP</text>
 <text class="m" x="530" y="266">6 DET</text>
 <text class="m" x="616" y="266">7 NOUN</text>
-<text class="nt" x="30" y="292">heavier lines are the arcs is_passive() matches</text>
+<text class="nt" x="30" y="292">heavier lines are the arcs that make passive true</text>
 </svg>
 
-Words keep their reading order left to right; height is depth in the tree. `built` is the root, everything else hangs off it directly or through one more hop, so `tree_depth()` returns 2.
+Words keep their reading order left to right; height is depth in the tree. `built` is the root, everything else hangs off it directly or through one more hop, so its `tree_depth` is 2.
 
-The same two columns, read from matra's output for five short sentences. The table is what a `Sentence` holds; the arcs below it draw each `head` and `dep`. The first sentence carries a negation, the second a modal, the third a reporting, the fourth a root adverbial, and the fifth two Hearst pairs: the structural primitives described further down.
+The same two columns, read from matra's output for five short sentences. The table is what a `Sentence` holds; the arcs below it draw each `head` and `dep`. The first sentence carries a negation, the second a modal, the third a clausal complement, the fourth a root adverbial, and the fifth two Hearst pairs: the structural primitives described further down.
 
 <figure-parse input="primitives" sentence="1" />
 
@@ -100,20 +100,20 @@ A structural primitive is a construction read off the dependency graph and repor
 |---|---|---|
 | `negations` | `not`, `never`, `no`, `neither`, `nor` on an `advmod`, `det`, or `cc` arc | `It was never reviewed.` gives one `Negation`: cue `never`, head `reviewed` |
 | `modals` | one of ten modal lemmas on an `aux` arc or with the `AUX` part of speech | `You must complete the form by Friday.` gives one `Modal`: `must` on `complete` |
-| `bare_assertion` | root clause finite indicative (`Mood=Ind` on the root or on its `cop`, `aux`, or `aux:pass` child) with no modal governing it | `The committee approved it.` is `true`; `It might have been done.` is `false` |
-| `reportings` | a verb governing a clausal complement (`ccomp`), with its subject when the parse has one | `Smith reported that the effect vanished.` gives one `Reporting`: verb `report`, complement head `vanished`, subject `Smith` |
+| `clausal_complements` | a verb governing a clausal complement (`ccomp`), with its subject when the parse has one | `Smith reported that the effect vanished.` gives one `ClausalComplement`: verb `report`, complement head `vanished`, subject `Smith` |
 | `root_adverbials` | every `advmod` arc into the root | `Reportedly, the deal closed.` gives one `RootAdverbial`: `reportedly` |
 | `hearst_pairs` | the six Hearst (1992) lexico-syntactic patterns, matched as dependency arcs | `Animals such as dogs and cats need daily care.` gives two `HearstPair` values, both tagged `such_as`, hypernym `animal`, hyponyms `dog` and `cat` |
+| `root_mood` | the `Mood` feature of the root clause, on the root or on its `cop`, `aux`, or `aux:pass` child, with the root's token id | `The committee approved it.` gives `Ind` on `approved`; `It might have been done.` gives none, because neither the participle root nor its auxiliaries carry a mood |
 
 Two consequences of reporting arcs rather than readings:
 
-**`bare_assertion` does not consult negation.** The detector reads the root, its finiteness carriers, and the modal list. Nothing else. `The sky is not blue` is a bare assertion that also carries a negation, and combining the two is your code's job.
+**`root_mood` consults neither negation nor modals.** The detector reads the root and its finiteness carriers. Nothing else. `The sky is not blue` reports `Ind` and also carries a negation; an indicative root that no modal governs is `Ind` with no modal whose `head_id` is the root's id. Combining the facts is your code's job.
 
 **Overlap is intentional.** `never` in the example above is both a `Negation` and a `RootAdverbial`, because it satisfies both arc shapes. Neither field is assigning it a meaning, so neither has to win.
 
-Passive voice is the seventh construction and the one exception to the field shape: `Sentence::is_passive` matches `nsubj:pass`, `nsubjpass`, or `aux:pass` on demand, and its document-level share is materialized as the `passive_ratio` field.
+Passive voice is the seventh construction, a flag rather than a list of arcs: `Sentence::passive` is true when a token carries `nsubj:pass`, `nsubjpass`, or `aux:pass`, and its document-level share is the `passive_ratio` field of `DocumentMetrics`.
 
-Reporting verbs and root adverbials are open word classes, so matra ships no lexicon for either. `Sentence::reportings_in` and `Sentence::root_adverbials_in` filter by a list you supply.
+Reporting verbs and root adverbials are open word classes, so matra ships no lexicon for either. `Sentence::clausal_complements_in` and `Sentence::root_adverbials_in` filter by a list you supply.
 
 ## Where to go next
 

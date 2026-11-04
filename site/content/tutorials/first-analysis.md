@@ -29,16 +29,16 @@ The tokens are shown above only as a count. Each one carries its `text`, its `le
 matra reads a few facts off each sentence's parse and stores them on the sentence.
 
 1. In the first sentence, `negations` holds one entry. Its `cue_lemma` is `not`, and its `head_id` is 5: `not` negates the fifth word, `approve`.
-2. In the second sentence, `modals` holds `may`, over word 9, `follow`. `reportings` holds `say`: the chair (`subject_lemma`) said something, and what was said is the clause headed by word 9.
-3. The third sentence is passive: the amendments were submitted. matra does not mark a passive sentence with a field; it counts passive sentences for the document, below.
+2. In the second sentence, `modals` holds `may`, over word 9, `follow`. `clausal_complements` holds `say`: the chair (`subject_lemma`) said something, and what was said is the clause headed by word 9.
+3. The third sentence is passive: the amendments were submitted, and its `passive` is `true`. Every sentence also carries its `word_count`, its `tree_depth`, and its `root_mood`: the grammatical mood of its main clause, `Ind` for a plain statement.
 
 ## Find the paragraph measures
 
-Each paragraph carries three measures. `readability_grade` is a grade level, and `lexical_density` is the share of content words. `compression_ratio` is `null` for both paragraphs: matra computes it only for a paragraph of more than 50 words, and these are shorter. A `null` means the measure declined to run, never that it came out as zero.
+Each paragraph carries three measures in its `metrics`. `readability_grade` is a grade level, and `lexical_density` is the share of content words. `compression_ratio` is `null` for both paragraphs: matra computes it only for a paragraph of more than 50 words, and these are shorter. A `null` means the measure declined to run, never that it came out as zero.
 
 ## Find the document measures
 
-Three measures describe the whole document. `passive_ratio` is 0.25: one sentence of the four is passive. `vocabulary_ttr` is the share of distinct lemmas among all of them. `nominalization_ratio` is the share of words that are nouns ending in a suffix such as `-tion` or `-ment`. It is 0 here: the one candidate, `amendments`, ends in an `s`, and the test reads the word as written ([Methodology](../reference/methodology.md#nominalization-ratio) has the rule).
+The document's own `metrics` describe the whole of it: the counts (`total_words`, `total_sentences`, `paragraph_count`), the mean and spread of sentence length, and three ratios. `passive_ratio` is 0.25: one sentence of the four is passive. `vocabulary_ttr` is the share of distinct lemmas among all of them. `nominalization_ratio` is the share of words that are nouns ending in a suffix such as `-tion` or `-ment`. It is 0 here: the one candidate, `amendments`, ends in an `s`, and the test reads the word as written ([Methodology](../reference/methodology.md#nominalization-ratio) has the rule).
 
 ## Where to go next
 

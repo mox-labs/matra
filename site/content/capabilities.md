@@ -17,7 +17,7 @@ The ten CoNLL-U columns plus one derived flag. All cross to Python.
 | `lemma` | dictionary form (`approved` becomes `approve`) |
 | `pos` | universal part of speech (`NOUN`, `VERB`, `ADJ`) |
 | `xpos` | treebank-specific tag, finer grained than `pos` |
-| `feats` | morphology (tense, number, person) |
+| `features` | morphology (tense, number, person), as a map from feature to value |
 | `head` | `id` of the token this one depends on, `0` for the root |
 | `dep` | the dependency relation to that head |
 | `deps` | secondary dependencies, always `_` from the UDPipe adapter, whose binding does not surface them |
@@ -32,14 +32,17 @@ The ten CoNLL-U columns plus one derived flag. All cross to Python.
 |---|---|
 | `text` | sentence text, rebuilt by the provider from its tokens |
 | `tokens` | `Vec<Token>`, id-sorted |
+| `word_count` | non-punctuation tokens |
+| `tree_depth` | nesting depth, `None` on a malformed cycle |
+| `passive` | whether the sentence carries `nsubj:pass`, `nsubjpass`, or `aux:pass` |
 | `negations` | `Vec<Negation>`: cue id, cue lemma, head id |
 | `modals` | `Vec<Modal>`: auxiliary id, lemma, head id |
-| `bare_assertion` | `bool`: finite indicative root with no modal governing it |
-| `reportings` | `Vec<Reporting>`: verb id and lemma, `ccomp` head id, subject when present |
+| `clausal_complements` | `Vec<ClausalComplement>`: verb id and lemma, `ccomp` head id, subject when present |
 | `root_adverbials` | `Vec<RootAdverbial>`: adverbial id and lemma |
 | `hearst_pairs` | `Vec<HearstPair>`: pattern tag plus hypernym and hyponym `HearstSpan` values |
+| `root_mood` | `Option<RootMood>`: the root clause's `Mood` feature and the root's id |
 
-All eight cross to Python. The methods below are Rust only.
+All eleven cross to Python. The methods below are Rust only.
 
 | Method | Returns |
 |---|---|
@@ -47,33 +50,34 @@ All eight cross to Python. The methods below are Rust only.
 | `head_of(id)` | the governor of a token |
 | `children_of(id)` | its direct dependents |
 | `subtree(id)` | the whole clause under it |
-| `tree_depth()` | nesting depth, `usize::MAX` on a malformed cycle |
-| `is_passive()` | whether the sentence carries `nsubj:pass`, `nsubjpass`, or `aux:pass` |
 | `content_tokens()` | non-punctuation tokens |
-| `word_count()` | count of those |
-| `reportings_in(lexicon)` | the reportings whose verb lemma is in a list you supply |
+| `clausal_complements_in(lexicon)` | the clausal complements whose verb lemma is in a list you supply |
 | `root_adverbials_in(lexicon)` | the root adverbials whose lemma is in a list you supply |
 
 ### `Paragraph`, `Section`, `Document`
 
 | Type | Fields (cross to Python) | Methods (Rust only) |
 |---|---|---|
-| `Paragraph` | `text`, `in_blockquote`, `sentences`, `readability_grade`, `lexical_density`, `compression_ratio` | `word_count()`, `sentence_count()` |
+| `Paragraph` | `text`, `in_blockquote`, `sentences`, `metrics` | `word_count()`, `sentence_count()` |
 | `Section` | `heading`, `level`, `paragraphs` | none |
-| `Document` | `sections`, `vocabulary_ttr`, `nominalization_ratio`, `passive_ratio` | `paragraphs()`, `sentences()`, `tokens()`, `paragraph_count()`, `total_sentences()`, `total_words()`, `passive_ratio()`, `mean_sentence_length()`, `sentence_length_std()` |
+| `Document` | `provenance`, `sections`, `metrics` | `paragraphs()`, `sentences()`, `tokens()` |
+
+`provenance` records the matra version, the schema version (`"2.0"`), the parser with its model, digest and licence, the format, and the input's path, length and SHA-256.
 
 ## 2. Metrics
 
-Produced by `Engine::compose`. Each is `Option<f64>`, and `None` means not computed, which is distinct from a computed zero. [Methodology](./reference/methodology.md) gives each formula and the exact condition for `None`.
+Produced by `Engine::compose`, into `ParagraphMetrics` on each paragraph and `DocumentMetrics` on the document. Every ratio is `Option<f64>`, and `None` means not computed, which is distinct from a computed zero. [Methodology](./reference/methodology.md) gives each formula and the exact condition for `None`.
 
 | Field | On | Measures |
 |---|---|---|
-| `readability_grade` | `Paragraph` | Flesch-Kincaid grade level, from sentence and syllable length |
-| `lexical_density` | `Paragraph` | content words as a share of all words |
-| `compression_ratio` | `Paragraph` | brotli compressed size over raw size, a repetition proxy |
-| `vocabulary_ttr` | `Document` | distinct lemmas over total words, and it falls as text grows, so documents of different lengths are not comparable on it |
-| `nominalization_ratio` | `Document` | nouns ending in a nominalizing suffix (`-tion`, `-ment`, `-ness`, `-ity`, `-ence`, `-ance`) over all words, a surface proxy for nouns formed from verbs (`decide` becoming `decision`) |
-| `passive_ratio` | `Document` | share of sentences carrying a passive construction |
+| `readability_grade` | `ParagraphMetrics` | Flesch-Kincaid grade level, from sentence and syllable length |
+| `lexical_density` | `ParagraphMetrics` | content words as a share of all words |
+| `compression_ratio` | `ParagraphMetrics` | brotli compressed size over raw size, a repetition proxy |
+| `total_words`, `total_sentences`, `paragraph_count` | `DocumentMetrics` | the counts, as integers |
+| `mean_sentence_length`, `sentence_length_std` | `DocumentMetrics` | words per sentence, and its sample standard deviation |
+| `vocabulary_ttr` | `DocumentMetrics` | distinct lemmas over total words, and it falls as text grows, so documents of different lengths are not comparable on it |
+| `nominalization_ratio` | `DocumentMetrics` | nouns ending in a nominalizing suffix (`-tion`, `-ment`, `-ness`, `-ity`, `-ence`, `-ance`) over all words, a surface proxy for nouns formed from verbs (`decide` becoming `decision`) |
+| `passive_ratio` | `DocumentMetrics` | share of sentences carrying a passive construction |
 
 `Corpus` adds three Rust-only aggregates across the documents of a directory: `total_words()`, `passive_ratio()`, `mean_readability()`.
 
@@ -116,8 +120,8 @@ Not a field on any type above. The port and the clustering functions are always 
 | `Embedder` | the port: `embed(&[&str])` returning one `Embedding` per text, plus `identity()` |
 | `Model2Vec` | the adapter, reading `model.safetensors`, `tokenizer.json`, and `config.json` from a directory. `from_dir(dir)` loads what is there; `potion_base_8m(dir)` and `from_config(cfg)` fetch the pinned reference model when it is absent |
 | `embed_and_cluster(doc, embedder, threshold)` | embeds a document's sentences, then clusters them |
-| `extraction::semantic_clusters(embeddings, threshold, model_hash)` | clusters vectors you already hold |
-| `SemanticClusters` | `model_hash`, `threshold`, and `clusters` |
+| `extraction::semantic_clusters(embeddings, threshold, identity)` | clusters vectors you already hold |
+| `SemanticClusters` | `identity`, `threshold`, and `clusters` |
 | `SemanticCluster` | `members` (sentence indices) plus the `SemanticEdge` values that cleared the threshold |
 
 Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `Model2Vec` (including `Model2Vec.potion_base_8m`), and the module-level `semantic_clusters`. `Matra.semantic_clusters` takes a `Model2Vec` or any object with `embed` and `identity`.

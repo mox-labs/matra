@@ -56,17 +56,17 @@ Every subcommand routes through the library pipeline, which rejects symlinks, re
 
 On a markdown file, decomposition drops YAML frontmatter, fenced code blocks, and table rows beginning with `|`, and it stops entirely at a line reading `## References` or `*References*`. Content after that heading is not analyzed and does not appear in the output.
 
-`--json` emits the full `Document` (`sections`, `vocabulary_ttr`, `nominalization_ratio`, `passive_ratio`) inside the envelope described below:
+`--json` emits the full `Document` (`provenance`, `sections`, and `metrics`, which carries the counts and ratios the table prints) inside the envelope described below:
 
 ```bash
-matra analyze essay.md --json | jq '.result.sections[0].paragraphs[0].readability_grade'
+matra analyze essay.md --json | jq '.result.sections[0].paragraphs[0].metrics.readability_grade'
 ```
 
 That query returns `null` more often than you might expect. Per-paragraph metrics have thresholds: `readability_grade` needs more than 10 words, `compression_ratio` needs more than 50, and blockquote paragraphs are skipped entirely. Filter for non-null before aggregating:
 
 ```bash
 matra analyze essay.md --json \
-  | jq '[.result.sections[].paragraphs[].readability_grade | select(. != null)] | add / length'
+  | jq '[.result.sections[].paragraphs[].metrics.readability_grade | select(. != null)] | add / length'
 ```
 
 ### `matra summarize`
@@ -186,7 +186,7 @@ Under `--json` the skill uses the same envelope every other command uses, with `
 
 ```json
 {
-  "format_version": 1,
+  "format_version": 2,
   "command": "skill",
   "input": null,
   "result": { "name": "SKILL", "body": "---\nname: matra\n..." }
@@ -197,7 +197,7 @@ Under `--json` the skill uses the same envelope every other command uses, with `
 
 ```json
 {
-  "format_version": 1,
+  "format_version": 2,
   "command": "skill",
   "input": null,
   "result": { "references": [{ "name": "json", "summary": "The JSON envelope every command emits, ..." }] }
@@ -238,16 +238,18 @@ features: udpipe model2vec python cli
 
 ```json
 {
-  "format_version": 1,
+  "format_version": 2,
   "command": "analyze",
   "input": "essay.md",
-  "result": { "sections": [], "vocabulary_ttr": null }
+  "result": { "provenance": {}, "sections": [], "metrics": {} }
 }
 ```
 
 `command` is `analyze`, `summarize`, `keyphrases`, `config`, or `skill`. `input` is the path that was read, or the name `--stdin-filename` gave it. For `config` it is the config file's path when that file exists and null when it does not, and for `skill`, which reads no document, it is always null. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`. For `config` it is an object keyed by setting, each carrying `value`, `source` and `origin`, and for `skill` the shapes shown above.
 
-Stability: `format_version` increments on any change to the envelope or to a field's meaning; the `result` value is the serde form of the documented domain types. That is the same promise cargo makes for `cargo metadata --format-version`, and it is the whole promise. Pin your consumer to a `format_version` you have tested against.
+Stability: `format_version` increments on any change to the envelope, and whenever the document schema's major version moves; the `result` value is the serde form of the documented domain types. That is the same promise cargo makes for `cargo metadata --format-version`. Pin your consumer to a `format_version` you have tested against.
+
+A `Document` also names its own schema version, in `result.provenance.schema` (`"2.0"`), and that is the only place it appears. A minor version adds optional fields only; anything else is a major. So ignore fields you do not recognize, treat every string set you receive as open (`format`, `pos`, `dep`, `mood`, `pattern`, the feature names), and reject a major you do not know. The JSON Schema for each major is published in the repository at `spec/schema/v2/document.schema.json`.
 
 ## Exit codes
 

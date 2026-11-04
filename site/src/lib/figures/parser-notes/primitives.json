@@ -2,14 +2,17 @@
   "data": {
     "sentences": [
       {
-        "bare_assertion": true,
+        "clausal_complements": [],
         "hearst_pairs": [],
         "modals": [],
         "negations": [],
         "paragraph": 1,
-        "reportings": [],
         "root_adverbials": [],
         "root_id": 3,
+        "root_mood": {
+          "mood": "Ind",
+          "root_id": 3
+        },
         "text": "The parser reads each paragraph on its own.",
         "tokens": [
           {
@@ -51,14 +54,17 @@
         ]
       },
       {
-        "bare_assertion": true,
+        "clausal_complements": [],
         "hearst_pairs": [],
         "modals": [],
         "negations": [],
         "paragraph": 1,
-        "reportings": [],
         "root_adverbials": [],
         "root_id": 2,
+        "root_mood": {
+          "mood": "Ind",
+          "root_id": 2
+        },
         "text": "It splits the text into sentences and gives every word a lemma, a part of speech and a head.",
         "tokens": [
           {
@@ -148,14 +154,17 @@
         ]
       },
       {
-        "bare_assertion": true,
+        "clausal_complements": [],
         "hearst_pairs": [],
         "modals": [],
         "negations": [],
         "paragraph": 2,
-        "reportings": [],
         "root_adverbials": [],
         "root_id": 7,
+        "root_mood": {
+          "mood": "Ind",
+          "root_id": 7
+        },
         "text": "A word's head is the word it depends on, and the label on that link names the relation.",
         "tokens": [
           {
@@ -245,14 +254,17 @@
         ]
       },
       {
-        "bare_assertion": true,
+        "clausal_complements": [],
         "hearst_pairs": [],
         "modals": [],
         "negations": [],
         "paragraph": 2,
-        "reportings": [],
         "root_adverbials": [],
         "root_id": 4,
+        "root_mood": {
+          "mood": "Ind",
+          "root_id": 4
+        },
         "text": "The model was trained on the English Web Treebank, so it is most reliable on edited English prose.",
         "tokens": [
           {

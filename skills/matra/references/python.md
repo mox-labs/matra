@@ -24,7 +24,7 @@ from matra import Matra
 
 engine = Matra.english()
 doc = engine.analyze_markdown(Path("notes.md").read_text(encoding="utf-8"))
-print(doc["passive_ratio"], len(doc["sections"]))
+print(doc["metrics"]["passive_ratio"], len(doc["sections"]))
 ```
 
 | Method | Signature | Returns |
@@ -58,7 +58,7 @@ for item in engine.analyze_path("docs/"):
     if "error" in item:
         print(item["path"], item["error"]["kind"], item["error"]["message"])
     else:
-        print(item["path"], item["analysis"]["passive_ratio"])
+        print(item["path"], item["analysis"]["metrics"]["passive_ratio"])
 ```
 
 A document that analyzed arrives as `{"path": str | None, "analysis": dict}`. One that did not arrives as `{"path": str | None, "error": {"kind": str, "message": str}}`. Test `"error" in item` to tell them apart; a type checker narrows the union on that test. One unreadable file costs one item rather than the whole walk. A failure listing the path itself raises instead of arriving as an item.

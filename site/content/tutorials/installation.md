@@ -101,7 +101,7 @@ v = Matra.english()
 
 result = v.analyze("The committee approved the proposal without debate.")
 print("sections:", len(result["sections"]))
-print("vocabulary_ttr:", result["vocabulary_ttr"])
+print("vocabulary_ttr:", result["metrics"]["vocabulary_ttr"])
 ```
 
 `Matra.english("/some/directory")` is the same call with the directory named explicitly. Pass a real path: the string goes straight to Rust's `create_dir_all`, which does not expand `~`.

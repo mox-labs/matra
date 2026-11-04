@@ -8,14 +8,14 @@ The value semantic clustering returns, the model it embeds with, and its bounds.
 
 ```text
 SemanticClusters
-  model_hash   identity of the model whose vector space produced the scores
+  identity     identity of the model whose vector space produced the scores
   threshold    the cutoff you supplied, narrowed to f32
   clusters     each: member sentence indices + the edges that cleared
 ```
 
 | Type | Field | Holds |
 |---|---|---|
-| `SemanticClusters` | `model_hash` | The identity the embedder reports: for `Model2Vec`, the SHA-256 over its three artifacts |
+| `SemanticClusters` | `identity` | The identity the embedder reports: for `Model2Vec`, the SHA-256 over its three artifacts, the value its `model_hash` returns |
 | | `threshold` | The cosine cutoff the call was given, as an `f32` |
 | | `clusters` | The connected components, ordered by smallest member index |
 | `SemanticCluster` | `members` | Sentence indices in document order, sorted |

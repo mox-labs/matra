@@ -210,9 +210,9 @@
       "compression_ratio": null,
       "in_blockquote": false,
       "lexical_density": 0.4634,
-      "readability_grade": 10.5367,
+      "readability_grade": 10.8245,
       "sentences": 2,
-      "text": "`identity` is read once, when the object is handed over, and travels into the result as `model_hash`. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.",
+      "text": "`identity` is read once, when the object is handed over, and travels into the result as `identity`. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.",
       "words": 42
     },
     {
@@ -252,13 +252,13 @@
       "words": 7
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6037,
       "in_blockquote": false,
-      "lexical_density": 0.6341,
-      "readability_grade": 7.6587,
+      "lexical_density": 0.6346,
+      "readability_grade": 7.0546,
       "sentences": 2,
-      "text": "A `Token` carries the ten CoNLL-U columns under these keys: `id`, `text`, `lemma`, `pos`, `xpos`, `feats`, `head`, `dep`, `deps`, `misc`, plus the derived `is_punct`. `head` is the `id` of the governing token in the same sentence, and `0` marks the root.",
-      "words": 43
+      "text": "A `Token` carries the ten CoNLL-U columns under these keys: `id`, `text`, `lemma`, `pos`, `xpos`, `features`, `head`, `dep`, `deps`, `misc`, plus the derived `is_punct`. `features` is a dict from feature name to value, `{\"Number\": \"Plur\"}`. `head` is the `id` of the governing token in the same sentence, and `0` marks the root.",
+      "words": 55
     },
     {
       "compression_ratio": null,
@@ -272,19 +272,19 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5,
-      "readability_grade": 11.68,
-      "sentences": 1,
-      "text": "Each metric declines to run below its own threshold, and a `None` records that decision rather than a failed computation.",
-      "words": 20
+      "lexical_density": 0.4848,
+      "readability_grade": 9.0814,
+      "sentences": 2,
+      "text": "Each metric declines to run below its own threshold, and a `None` records that decision rather than a failed computation. The first three are in each paragraph's `metrics`, the rest in the document's.",
+      "words": 35
     },
     {
       "compression_ratio": null,
       "in_blockquote": false,
       "lexical_density": 0.641,
-      "readability_grade": 10.4714,
+      "readability_grade": 11.0765,
       "sentences": 2,
-      "text": "\"Words\" means the count of tokens with `is_punct` false across the paragraph's sentences. Blockquote paragraphs are never parsed at all: their `sentences` list is empty, their three metric fields are `None`, and they contribute nothing to any document total.",
+      "text": "\"Words\" means the count of tokens with `is_punct` false across the paragraph's sentences. Blockquote paragraphs are never parsed at all: their `sentences` list is empty, their three paragraph metrics are `None`, and they contribute nothing to any document total.",
       "words": 40
     },
     {
@@ -299,47 +299,38 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.6316,
-      "readability_grade": 20.3884,
+      "lexical_density": 0.5556,
+      "readability_grade": 13.0633,
       "sentences": 2,
-      "text": "Three document-level aggregates arrive in the dict as fields: `vocabulary_ttr`, `nominalization_ratio`, and `passive_ratio`. Read them rather than recomputing them:",
-      "words": 22
-    },
-    {
-      "compression_ratio": 0.5928,
-      "in_blockquote": false,
-      "lexical_density": 0.5091,
-      "readability_grade": 13.5859,
-      "sentences": 2,
-      "text": "Rust's `Document` carries `passive_ratio` twice: as the method that computes the ratio, and as the field the metric suite fills with what that method returned. The field exists exactly so the aggregate crosses the boundary as data instead of being re-derived once per language binding (RFC-0008), which is why it is in the dict above.",
-      "words": 56
+      "text": "Every document-level aggregate arrives in the dict as a field of `metrics`. Read them rather than recomputing them:",
+      "words": 20
     },
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5135,
-      "readability_grade": 20.2076,
+      "lexical_density": 0.5938,
+      "readability_grade": 9.9575,
       "sentences": 2,
-      "text": "Methods do not cross the FFI boundary, only fields do, so the five aggregates that exist only as methods are absent: `paragraph_count()`, `total_sentences()`, `total_words()`, `mean_sentence_length()`, and `sentence_length_std()`. Those five you compute from the fields you already have:",
-      "words": 38
+      "text": "The counts are always integers. Each ratio is `None` when its condition was not met: `mean_sentence_length` and `passive_ratio` need a sentence, `sentence_length_std` (the sample standard deviation, as `statistics.stdev` computes it) needs two.",
+      "words": 33
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6094,
       "in_blockquote": false,
-      "lexical_density": 0.5,
-      "readability_grade": 8.7633,
-      "sentences": 1,
-      "text": "`statistics.stdev` is the sample standard deviation, which is the one `Document::sentence_length_std` computes; both return `0.0` below two sentences, the Rust method by definition and the line above by the guard.",
-      "words": 28
+      "lexical_density": 0.5294,
+      "readability_grade": 11.7079,
+      "sentences": 2,
+      "text": "Methods do not cross the FFI boundary, only fields do, which is why these are fields: the metric suite materializes them so the aggregates cross as data instead of being re-derived once per language binding (RFC-0008). The same holds per sentence: `word_count`, `tree_depth` and `passive` are keys on each sentence dict.",
+      "words": 52
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5487,
       "in_blockquote": false,
-      "lexical_density": 0.5135,
-      "readability_grade": 10.7601,
-      "sentences": 2,
-      "text": "There is no per-sentence passive flag either, because `Sentence::is_passive()` is a method too. Its definition is one test over the tokens you already have: a sentence is passive when any of them carries `nsubj:pass`, `nsubjpass`, or `aux:pass`.",
-      "words": 41
+      "lexical_density": 0.6167,
+      "readability_grade": 10.5,
+      "sentences": 3,
+      "text": "`result[\"provenance\"]` says where the document came from: `matra` (the version), `schema` (`\"2.0\"`, the schema version), `parser` (`name`, `model`, `sha256`, `license`), `format` (`markdown` or `plain_text`), and `source` (`path`, `bytes`, `sha256` of the input). Read `schema` before anything else when a result was stored by another process: ignore keys you do not recognize, and reject a major version you do not know.",
+      "words": 61
     },
     {
       "compression_ratio": null,

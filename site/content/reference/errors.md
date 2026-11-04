@@ -185,7 +185,7 @@ use matra::domain::{Error, Format, RawDocument};
 fn report(text: &str, engine: &Engine) {
     let raw = RawDocument::new(text.to_string(), None, Format::PlainText);
     match engine.analyze_one(raw) {
-        Ok(entry) => println!("{} sentences", entry.analysis.total_sentences()),
+        Ok(entry) => println!("{} sentences", entry.analysis.metrics.total_sentences),
         Err(doc_err) => match doc_err.error {
             Error::InputTooLarge {
                 what,

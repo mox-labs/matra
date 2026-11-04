@@ -90,31 +90,31 @@
       "words": 16
     },
     {
-      "compression_ratio": 0.5276,
+      "compression_ratio": 0.5261,
       "in_blockquote": false,
-      "lexical_density": 0.5181,
-      "readability_grade": 4.3561,
+      "lexical_density": 0.5376,
+      "readability_grade": 5.1884,
       "sentences": 8,
-      "text": "1. In the first sentence, `negations` holds one entry. Its `cue_lemma` is `not`, and its `head_id` is 5: `not` negates the fifth word, `approve`.\n2. In the second sentence, `modals` holds `may`, over word 9, `follow`. `reportings` holds `say`: the chair (`subject_lemma`) said something, and what was said is the clause headed by word 9.\n3. The third sentence is passive: the amendments were submitted. matra does not mark a passive sentence with a field; it counts passive sentences for the document, below.",
-      "words": 86
+      "text": "1. In the first sentence, `negations` holds one entry. Its `cue_lemma` is `not`, and its `head_id` is 5: `not` negates the fifth word, `approve`.\n2. In the second sentence, `modals` holds `may`, over word 9, `follow`. `clausal_complements` holds `say`: the chair (`subject_lemma`) said something, and what was said is the clause headed by word 9.\n3. The third sentence is passive: the amendments were submitted, and its `passive` is `true`. Every sentence also carries its `word_count`, its `tree_depth`, and its `root_mood`: the grammatical mood of its main clause, `Ind` for a plain statement.",
+      "words": 97
     },
     {
-      "compression_ratio": 0.5777,
+      "compression_ratio": 0.5866,
       "in_blockquote": false,
-      "lexical_density": 0.4909,
-      "readability_grade": 8.867,
+      "lexical_density": 0.4828,
+      "readability_grade": 8.9857,
       "sentences": 4,
-      "text": "Each paragraph carries three measures. `readability_grade` is a grade level, and `lexical_density` is the share of content words. `compression_ratio` is `null` for both paragraphs: matra computes it only for a paragraph of more than 50 words, and these are shorter. A `null` means the measure declined to run, never that it came out as zero.",
-      "words": 54
+      "text": "Each paragraph carries three measures in its `metrics`. `readability_grade` is a grade level, and `lexical_density` is the share of content words. `compression_ratio` is `null` for both paragraphs: matra computes it only for a paragraph of more than 50 words, and these are shorter. A `null` means the measure declined to run, never that it came out as zero.",
+      "words": 58
     },
     {
-      "compression_ratio": 0.5736,
+      "compression_ratio": 0.5544,
       "in_blockquote": false,
-      "lexical_density": 0.5072,
-      "readability_grade": 7.9217,
+      "lexical_density": 0.5057,
+      "readability_grade": 8.2536,
       "sentences": 5,
-      "text": "Three measures describe the whole document. `passive_ratio` is 0.25: one sentence of the four is passive. `vocabulary_ttr` is the share of distinct lemmas among all of them. `nominalization_ratio` is the share of words that are nouns ending in a suffix such as `-tion` or `-ment`. It is 0 here: the one candidate, `amendments`, ends in an `s`, and the test reads the word as written ([Methodology](../reference/methodology.md#nominalization-ratio) has the rule).",
-      "words": 70
+      "text": "The document's own `metrics` describe the whole of it: the counts (`total_words`, `total_sentences`, `paragraph_count`), the mean and spread of sentence length, and three ratios. `passive_ratio` is 0.25: one sentence of the four is passive. `vocabulary_ttr` is the share of distinct lemmas among all of them. `nominalization_ratio` is the share of words that are nouns ending in a suffix such as `-tion` or `-ment`. It is 0 here: the one candidate, `amendments`, ends in an `s`, and the test reads the word as written ([Methodology](../reference/methodology.md#nominalization-ratio) has the rule).",
+      "words": 90
     },
     {
       "compression_ratio": null,

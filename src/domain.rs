@@ -999,13 +999,6 @@ impl Sentence {
             .collect()
     }
 
-    /// The 0.2 name of [`Sentence::clausal_complements_in`], kept for
-    /// 0.3.x.
-    #[deprecated(since = "0.3.0", note = "use `Sentence::clausal_complements_in`")]
-    pub fn reportings_in(&self, lexicon: &[&str]) -> Vec<&ClausalComplement> {
-        self.clausal_complements_in(lexicon)
-    }
-
     /// The root-attached adverbials whose lemma is in the
     /// caller-supplied lexicon.
     ///

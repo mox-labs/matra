@@ -40,9 +40,9 @@ Files land in XDG locations: the config at `$XDG_CONFIG_HOME/matra/config.toml` 
 
 ## The commands
 
-`analyze`, `summarize` and `keyphrases` each read one file, or `-` for stdin with `--stdin-filename` naming it. A directory is refused, because a command that reports on one document cannot report on a directory of them. Under `--json` each emits the same envelope, and so do `config show` and `--skill`; `completions` prints a script and ignores `--json`. Four keys at the top level: `format_version` (the integer `1` today), `command`, `input` (the path or the stdin name; for `config show` the config file's path when it exists and null when not; null for `--skill`, which reads none), and `result`. Pin a consumer to a `format_version` you tested against. See `json` for the field by field shape.
+`analyze`, `summarize` and `keyphrases` each read one file, or `-` for stdin with `--stdin-filename` naming it. A directory is refused, because a command that reports on one document cannot report on a directory of them. Under `--json` each emits the same envelope, and so do `config show` and `--skill`; `completions` prints a script and ignores `--json`. Four keys at the top level: `format_version` (the integer `2` today), `command`, `input` (the path or the stdin name; for `config show` the config file's path when it exists and null when not; null for `--skill`, which reads none), and `result`. Pin a consumer to a `format_version` you tested against. See `json` for the field by field shape.
 
-`analyze` parses the document and fills its metric slots. `result` is a `Document`: `sections`, each with `heading`, `level` and `paragraphs`, each paragraph with `text`, `in_blockquote`, `sentences` and three metric slots, plus the document-level `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`. Add `--sections` for a per-section table of counts.
+`analyze` parses the document and measures it. `result` is a `Document`: `provenance` (the matra version, the schema version, the parser and its model, the format, and the input's digest), `sections`, each with `heading`, `level` and `paragraphs`, each paragraph with `text`, `in_blockquote`, `sentences` and its `metrics`, and the document's own `metrics`, the counts and ratios the table prints among them. The document's schema version is `provenance.schema`, `"2.0"` today: ignore fields you do not recognize, treat every string set as open, and reject a major you do not know. Add `--sections` for a per-section table of counts.
 
 <!-- needs: model -->
 
@@ -133,6 +133,6 @@ $ matra --skill -r json
 | `json` | The envelope and the `Document` JSON, field by field, including the six `Sentence` structural fields |
 | `structure` | Tokens, dependency arcs, the tree, and what each structural field reports |
 | `metrics` | Each measure's formula, its applicability condition, and its limitation |
-| `semantic` | Clusters, the threshold and why it does not travel, comparing whole documents, model provisioning, and what `model_hash` is for |
+| `semantic` | Clusters, the threshold and why it does not travel, comparing whole documents, model provisioning, and what the model's `identity` is for |
 | `python` | The Python API, the `Embedder` protocol, `Model2Vec.embed` for raw vectors, `analyze_path`, and exception mapping |
 | `errors` | Every failure kind, its Python exception, and what to do about it |

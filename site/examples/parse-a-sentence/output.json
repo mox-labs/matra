@@ -1,4 +1,20 @@
 {
+  "provenance": {
+    "matra": "0.2.1",
+    "schema": "2.0",
+    "parser": {
+      "name": "udpipe",
+      "model": "english-ewt-ud-2.5-191206",
+      "sha256": "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957",
+      "license": "CC BY-NC-SA 4.0 (non-commercial)"
+    },
+    "format": "plain_text",
+    "source": {
+      "path": "austen-first-sentence.txt",
+      "bytes": 117,
+      "sha256": "3cad24a80129246d96cae89342cff8e6ead9f064be35896a6eff1b2e1c4b64b2"
+    }
+  },
   "sections": [
     {
       "heading": null,
@@ -17,7 +33,13 @@
                   "lemma": "it",
                   "pos": "PRON",
                   "xpos": "PRP",
-                  "feats": "Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs",
+                  "features": {
+                    "Case": "Nom",
+                    "Gender": "Neut",
+                    "Number": "Sing",
+                    "Person": "3",
+                    "PronType": "Prs"
+                  },
                   "head": 4,
                   "dep": "nsubj",
                   "deps": "_",
@@ -30,7 +52,13 @@
                   "lemma": "be",
                   "pos": "AUX",
                   "xpos": "VBZ",
-                  "feats": "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin",
+                  "features": {
+                    "Mood": "Ind",
+                    "Number": "Sing",
+                    "Person": "3",
+                    "Tense": "Pres",
+                    "VerbForm": "Fin"
+                  },
                   "head": 4,
                   "dep": "cop",
                   "deps": "_",
@@ -43,7 +71,10 @@
                   "lemma": "a",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Ind|PronType=Art",
+                  "features": {
+                    "Definite": "Ind",
+                    "PronType": "Art"
+                  },
                   "head": 4,
                   "dep": "det",
                   "deps": "_",
@@ -56,7 +87,9 @@
                   "lemma": "truth",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 0,
                   "dep": "root",
                   "deps": "_",
@@ -69,7 +102,7 @@
                   "lemma": "universally",
                   "pos": "ADV",
                   "xpos": "RB",
-                  "feats": "",
+                  "features": {},
                   "head": 6,
                   "dep": "advmod",
                   "deps": "_",
@@ -82,7 +115,11 @@
                   "lemma": "acknowledge",
                   "pos": "VERB",
                   "xpos": "VBD",
-                  "feats": "Mood=Ind|Tense=Past|VerbForm=Fin",
+                  "features": {
+                    "Mood": "Ind",
+                    "Tense": "Past",
+                    "VerbForm": "Fin"
+                  },
                   "head": 4,
                   "dep": "conj",
                   "deps": "_",
@@ -95,7 +132,7 @@
                   "lemma": ",",
                   "pos": "PUNCT",
                   "xpos": ",",
-                  "feats": "",
+                  "features": {},
                   "head": 6,
                   "dep": "punct",
                   "deps": "_",
@@ -108,7 +145,10 @@
                   "lemma": "that",
                   "pos": "PRON",
                   "xpos": "DT",
-                  "feats": "Number=Sing|PronType=Dem",
+                  "features": {
+                    "Number": "Sing",
+                    "PronType": "Dem"
+                  },
                   "head": 21,
                   "dep": "obj",
                   "deps": "_",
@@ -121,7 +161,10 @@
                   "lemma": "a",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Ind|PronType=Art",
+                  "features": {
+                    "Definite": "Ind",
+                    "PronType": "Art"
+                  },
                   "head": 11,
                   "dep": "det",
                   "deps": "_",
@@ -134,7 +177,9 @@
                   "lemma": "single",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos",
+                  "features": {
+                    "Degree": "Pos"
+                  },
                   "head": 11,
                   "dep": "amod",
                   "deps": "_",
@@ -147,7 +192,9 @@
                   "lemma": "man",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 21,
                   "dep": "nsubj",
                   "deps": "_",
@@ -160,7 +207,7 @@
                   "lemma": "in",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 13,
                   "dep": "case",
                   "deps": "_",
@@ -173,7 +220,9 @@
                   "lemma": "possession",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 11,
                   "dep": "nmod",
                   "deps": "_",
@@ -186,7 +235,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 17,
                   "dep": "case",
                   "deps": "_",
@@ -199,7 +248,10 @@
                   "lemma": "a",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Ind|PronType=Art",
+                  "features": {
+                    "Definite": "Ind",
+                    "PronType": "Art"
+                  },
                   "head": 17,
                   "dep": "det",
                   "deps": "_",
@@ -212,7 +264,9 @@
                   "lemma": "good",
                   "pos": "ADJ",
                   "xpos": "JJ",
-                  "feats": "Degree=Pos",
+                  "features": {
+                    "Degree": "Pos"
+                  },
                   "head": 17,
                   "dep": "amod",
                   "deps": "_",
@@ -225,7 +279,9 @@
                   "lemma": "fortune",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 13,
                   "dep": "nmod",
                   "deps": "_",
@@ -238,7 +294,9 @@
                   "lemma": "must",
                   "pos": "AUX",
                   "xpos": "MD",
-                  "feats": "VerbForm=Fin",
+                  "features": {
+                    "VerbForm": "Fin"
+                  },
                   "head": 21,
                   "dep": "aux",
                   "deps": "_",
@@ -251,7 +309,9 @@
                   "lemma": "be",
                   "pos": "AUX",
                   "xpos": "VB",
-                  "feats": "VerbForm=Inf",
+                  "features": {
+                    "VerbForm": "Inf"
+                  },
                   "head": 21,
                   "dep": "cop",
                   "deps": "_",
@@ -264,7 +324,7 @@
                   "lemma": "in",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 21,
                   "dep": "case",
                   "deps": "_",
@@ -277,7 +337,9 @@
                   "lemma": "want",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 6,
                   "dep": "ccomp",
                   "deps": "_",
@@ -290,7 +352,7 @@
                   "lemma": "of",
                   "pos": "ADP",
                   "xpos": "IN",
-                  "feats": "",
+                  "features": {},
                   "head": 24,
                   "dep": "case",
                   "deps": "_",
@@ -303,7 +365,10 @@
                   "lemma": "a",
                   "pos": "DET",
                   "xpos": "DT",
-                  "feats": "Definite=Ind|PronType=Art",
+                  "features": {
+                    "Definite": "Ind",
+                    "PronType": "Art"
+                  },
                   "head": 24,
                   "dep": "det",
                   "deps": "_",
@@ -316,7 +381,9 @@
                   "lemma": "wife",
                   "pos": "NOUN",
                   "xpos": "NN",
-                  "feats": "Number=Sing",
+                  "features": {
+                    "Number": "Sing"
+                  },
                   "head": 21,
                   "dep": "nmod",
                   "deps": "_",
@@ -329,7 +396,7 @@
                   "lemma": ".",
                   "pos": "PUNCT",
                   "xpos": ".",
-                  "feats": "",
+                  "features": {},
                   "head": 4,
                   "dep": "punct",
                   "deps": "_",
@@ -337,6 +404,9 @@
                   "is_punct": true
                 }
               ],
+              "word_count": 23,
+              "tree_depth": 6,
+              "passive": false,
               "negations": [],
               "modals": [
                 {
@@ -345,8 +415,7 @@
                   "head_id": 21
                 }
               ],
-              "bare_assertion": true,
-              "reportings": [
+              "clausal_complements": [
                 {
                   "verb_id": 6,
                   "verb_lemma": "acknowledge",
@@ -356,17 +425,30 @@
                 }
               ],
               "root_adverbials": [],
-              "hearst_pairs": []
+              "hearst_pairs": [],
+              "root_mood": {
+                "root_id": 4,
+                "mood": "Ind"
+              }
             }
           ],
-          "readability_grade": 10.310434782608699,
-          "lexical_density": 0.4782608695652174,
-          "compression_ratio": null
+          "metrics": {
+            "readability_grade": 10.310434782608699,
+            "lexical_density": 0.4782608695652174,
+            "compression_ratio": null
+          }
         }
       ]
     }
   ],
-  "vocabulary_ttr": 0.7391304347826086,
-  "nominalization_ratio": 0.0,
-  "passive_ratio": 0.0
+  "metrics": {
+    "total_words": 23,
+    "total_sentences": 1,
+    "paragraph_count": 1,
+    "mean_sentence_length": 23.0,
+    "sentence_length_std": null,
+    "vocabulary_ttr": 0.7391304347826086,
+    "nominalization_ratio": 0.0,
+    "passive_ratio": 0.0
+  }
 }

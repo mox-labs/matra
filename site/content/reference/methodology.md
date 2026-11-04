@@ -71,7 +71,7 @@ grade = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
 
 The syllable estimate for one word: keep only alphabetic characters, lowercase them; if the result is three bytes or shorter, return 1; otherwise count runs of the letters `a`, `e`, `i`, `o`, `u`, `y`, where adjacent vowels count once; subtract 1 if the word ends in `e` and the count is above 1; return at least 1.
 
-**Applied to** paragraphs that are not in a blockquote and whose `word_count` is above 10. Stored in `Paragraph::readability_grade`. The value is unbounded and can be negative on short, simple text. `metrics::readability::flesch_kincaid_grade(text: &str) -> f64` computes it on any string, and returns 0.0 for a string with no whitespace-separated pieces.
+**Applied to** paragraphs that are not in a blockquote and whose `word_count` is above 10. Stored in `ParagraphMetrics::readability_grade`, the paragraph's `metrics.readability_grade`. The value is unbounded and can be negative on short, simple text. `metrics::readability::flesch_kincaid_grade(text: &str) -> f64` computes it on any string, and returns 0.0 for a string with no whitespace-separated pieces.
 
 **Citation.** Kincaid, J.P., Fishburne, R.P., Rogers, R.L., & Chisholm, B.S. (1975). *Derivation of New Readability Formulas for Navy Enlisted Personnel*. Research Branch Report 8-75, Naval Technical Training Command.
 
@@ -90,7 +90,7 @@ lexical_density = content_words / total_words
 
 A piece made only of punctuation counts in the denominator and never in the numerator.
 
-**Applied to** paragraphs that are not in a blockquote, whose `word_count` is not zero, and whose text yields at least one whitespace-separated piece. Stored in `Paragraph::lexical_density`. Range 0.0 to 1.0.
+**Applied to** paragraphs that are not in a blockquote, whose `word_count` is not zero, and whose text yields at least one whitespace-separated piece. Stored in `ParagraphMetrics::lexical_density`. Range 0.0 to 1.0.
 
 **Citation.** Ure, J. (1971). Lexical density and register differentiation. In G. Perren & J.L.M. Trim (Eds.), *Applications of Linguistics*. Cambridge University Press.
 
@@ -107,7 +107,7 @@ compression_ratio = compressed_bytes / original_bytes
 | `original_bytes` | UTF-8 byte length of the paragraph text |
 | `compressed_bytes` | Byte length of the brotli-compressed text at quality 6 with a window parameter of 18, which is a 256 KiB window |
 
-**Applied to** paragraphs that are not in a blockquote, whose `word_count` is above 50, and whose text is at most 262,144 bytes. Paragraphs above that byte ceiling are skipped and keep `None`, which bounds worst-case compression time. The slot also stays `None` if the encoder fails to consume the text. Stored in `Paragraph::compression_ratio`. A lower ratio means the text compressed further, which means more surface repetition.
+**Applied to** paragraphs that are not in a blockquote, whose `word_count` is above 50, and whose text is at most 262,144 bytes. Paragraphs above that byte ceiling are skipped and keep `None`, which bounds worst-case compression time. The slot also stays `None` if the encoder fails to consume the text. Stored in `ParagraphMetrics::compression_ratio`. A lower ratio means the text compressed further, which means more surface repetition.
 
 **Citation.** Alakuijala, J., & Szabadka, Z. (2016). *Brotli Compressed Data Format*. RFC 7932, Internet Engineering Task Force.
 
@@ -119,7 +119,7 @@ The three paragraph measures, computed for every paragraph of one longer text, T
 
 ## Document metrics
 
-The two stored document metrics and the derived document methods are computed over the sentences attached to the document's paragraphs, which excludes blockquote paragraphs. There is exactly one sentence set, and it is derivable from the tree in one way, so the numbers cannot disagree with the structure they describe.
+Every field of `DocumentMetrics` is computed over the sentences attached to the document's paragraphs, which excludes blockquote paragraphs. There is exactly one sentence set, and it is derivable from the tree in one way, so the numbers cannot disagree with the structure they describe.
 
 ### Vocabulary type-token ratio
 
@@ -132,7 +132,7 @@ vocabulary_ttr = distinct_lemmas / total_lemmas
 | `total_lemmas` | Count of non-punctuation tokens across the sentence slice |
 | `distinct_lemmas` | Count of distinct `lemma` strings in that same set, compared exactly, without case folding |
 
-**Applied to** the whole slice. Stored in `Document::vocabulary_ttr`, which stays `None` when the slice contains no non-punctuation token.
+**Applied to** the whole slice. Stored in `DocumentMetrics::vocabulary_ttr`, which stays `None` when the slice contains no non-punctuation token.
 
 **Citation.** Johnson, W. (1944). Studies in language behavior: A program of research. *Psychological Monographs*, 56(2), 1-15.
 
@@ -151,7 +151,7 @@ nominalization_ratio = nominalizing_nouns / total_lemmas
 
 The suffix test reads the surface form, not the lemma, so a plural nominalization such as `conditions` or `measurements` is missed: the plural `-s` falls after the suffix, so `"conditions".ends_with("tion")` is false even though the singular `condition` matches.
 
-**Applied to** the whole slice. Stored in `Document::nominalization_ratio`, which stays `None` when the slice contains no non-punctuation token.
+**Applied to** the whole slice. Stored in `DocumentMetrics::nominalization_ratio`, which stays `None` when the slice contains no non-punctuation token.
 
 **Limitations.** Six suffixes are a heuristic, not a morphological analysis. Words that end in those letters without being nominalizations count as false positives, and nominalizations formed otherwise, such as `growth` or `failure`, are missed. The test depends on the POS tagger having assigned `NOUN`, so tagging errors propagate. The denominator counts every running word rather than every noun, so the value is a share of the text, not a share of the nouns in it.
 
@@ -163,7 +163,7 @@ passive_ratio = passive_sentences / total_sentences
 
 A sentence counts as passive when any of its tokens carries a `dep` of `nsubj:pass`, `nsubjpass`, or `aux:pass`. The first two are the Universal Dependencies and older Stanford spellings of a passive subject; the third is a passive auxiliary.
 
-**Computed** by `Document::passive_ratio()` and `Corpus::passive_ratio()`, and per sentence by `Sentence::is_passive()`. `Engine::compose` stores the document-level value in the `passive_ratio` field, which is how it crosses to Python; the `Corpus` aggregate and `is_passive` stay methods, Rust only. The method returns 0.0 when there are no sentences; the field stays `None` then, and whenever `compose` has not run.
+**Stored** in `DocumentMetrics::passive_ratio` by `Engine::compose`, and per sentence in `Sentence::passive`, which `Sentence::new` sets; both cross to Python as fields. `Corpus::passive_ratio()` pools the same count across documents and stays a method, Rust only. The field is `None` when there are no sentences, and before `compose` has run.
 
 **Citation.** de Marneffe, M.-C., Manning, C.D., Nivre, J., & Zeman, D. (2021). Universal Dependencies. *Computational Linguistics*, 47(2), 255-308.
 
@@ -171,7 +171,7 @@ A sentence counts as passive when any of its tokens carries a `dep` of `nsubj:pa
 
 ### Sentence length statistics
 
-`Document::mean_sentence_length()` is `total_words / total_sentences`, where `total_words` counts non-punctuation tokens. `Document::sentence_length_std()` is the sample standard deviation of per-sentence non-punctuation token counts, with denominator n minus 1. Both return 0.0 when undefined: no sentences for the mean, fewer than two for the deviation. Both are computed on demand and are not stored.
+`DocumentMetrics::mean_sentence_length` is `total_words / total_sentences`, where `total_words` counts non-punctuation tokens. `DocumentMetrics::sentence_length_std` is the sample standard deviation of per-sentence non-punctuation token counts, with denominator n minus 1. Both are `None` when undefined: no sentences for the mean, fewer than two for the deviation. `Engine::compose` stores both, with the counts `total_words`, `total_sentences` and `paragraph_count`, so all of them cross to Python.
 
 ### Corpus aggregates
 

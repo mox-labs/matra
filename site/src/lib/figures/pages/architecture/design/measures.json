@@ -360,13 +360,13 @@
       "words": 62
     },
     {
-      "compression_ratio": 0.5917,
+      "compression_ratio": 0.5797,
       "in_blockquote": false,
-      "lexical_density": 0.5972,
-      "readability_grade": 11.5883,
+      "lexical_density": 0.5319,
+      "readability_grade": 12.0282,
       "sentences": 4,
-      "text": "Two guards live in the domain types rather than at an edge, because a parse arrives from outside and its shape is not guaranteed. `Sentence::tree_depth` walks head references with a visited set and returns `usize::MAX` when they form a cycle. `Sentence::subtree` carries the same visited set so it terminates. The sentinel is deliberate: an earlier version capped depth at a magic 20, which silently truncated malformed parses and legitimate deep ones alike.",
-      "words": 74
+      "text": "Two guards live in the domain types rather than at an edge, because a parse arrives from outside and its shape is not guaranteed. `Sentence::tree_depth` is computed by walking head references with a visited set, and is `None` when they form a cycle. `Sentence::subtree` carries the same visited set so it terminates. The `None` is deliberate: an earlier version capped depth at a magic 20, which silently truncated malformed parses and legitimate deep ones alike, and a sentinel number would read as a very deep tree to anyone who did not check for it.",
+      "words": 95
     },
     {
       "compression_ratio": 0.6145,
@@ -459,13 +459,13 @@
       "words": 54
     },
     {
-      "compression_ratio": 0.5403,
+      "compression_ratio": 0.5801,
       "in_blockquote": false,
-      "lexical_density": 0.557,
-      "readability_grade": 10.2384,
-      "sentences": 7,
-      "text": "Fields cross. Methods do not. `Document::mean_sentence_length()`, `total_words()`, and every other computed value is a Rust method with no serde representation, so it has nothing to cross with. A Python caller recomputes those from the `sections` data already in hand. `passive_ratio` is the one aggregate that does cross, because `compose` stores the method's result in the field of the same name (RFC-0008), so a Python caller reads it rather than recomputing it. [Domain types](../reference/domain-types.md#what-crosses-the-language-boundary) draws that boundary member by member.",
-      "words": 81
+      "lexical_density": 0.5882,
+      "readability_grade": 11.325,
+      "sentences": 5,
+      "text": "Fields cross. Methods do not. A Rust method has no serde representation, so it has nothing to cross with, which is why every aggregate a reader needs is stored: `compose` writes the counts, sentence-length statistics and ratios into `DocumentMetrics` and `ParagraphMetrics`, and `Sentence::new` sets each sentence's `word_count`, `tree_depth` and `passive` (RFC-0008). A Python caller reads them rather than recomputing them. [Domain types](../reference/domain-types.md#what-crosses-the-language-boundary) draws that boundary member by member.",
+      "words": 74
     },
     {
       "compression_ratio": null,

@@ -48,19 +48,28 @@
       "compression_ratio": null,
       "in_blockquote": false,
       "lexical_density": 0.4545,
-      "readability_grade": 2.6459,
+      "readability_grade": 4.7914,
       "sentences": 2,
-      "text": "All eight cross to Python. The methods below are Rust only.",
+      "text": "All eleven cross to Python. The methods below are Rust only.",
       "words": 11
     },
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5357,
-      "readability_grade": 11.8797,
+      "lexical_density": 0.5769,
+      "readability_grade": 6.7262,
+      "sentences": 1,
+      "text": "`provenance` records the matra version, the schema version (`\"2.0\"`), the parser with its model, digest and licence, the format, and the input's path, length and SHA-256.",
+      "words": 29
+    },
+    {
+      "compression_ratio": null,
+      "in_blockquote": false,
+      "lexical_density": 0.5385,
+      "readability_grade": 13.7751,
       "sentences": 3,
-      "text": "Produced by `Engine::compose`. Each is `Option<f64>`, and `None` means not computed, which is distinct from a computed zero. [Methodology](./reference/methodology.md) gives each formula and the exact condition for `None`.",
-      "words": 35
+      "text": "Produced by `Engine::compose`, into `ParagraphMetrics` on each paragraph and `DocumentMetrics` on the document. Every ratio is `Option<f64>`, and `None` means not computed, which is distinct from a computed zero. [Methodology](./reference/methodology.md) gives each formula and the exact condition for `None`.",
+      "words": 45
     },
     {
       "compression_ratio": null,

@@ -21,7 +21,7 @@ Feed a document and an embedding model, get connected components of sentences wh
 
 ```text
 SemanticClusters
-  model_hash   identity of the model whose vector space produced the scores
+  identity     identity of the model whose vector space produced the scores
   threshold    the cutoff you supplied, narrowed to f32
   clusters     each: member sentence indices, plus the edges that cleared
 ```
@@ -30,7 +30,7 @@ SemanticClusters
 
 | Type | Fields |
 |---|---|
-| `SemanticClusters` | `model_hash` (string), `threshold` (float), `clusters` (array) |
+| `SemanticClusters` | `identity` (string), `threshold` (float), `clusters` (array) |
 | `SemanticCluster` | `members` (sentence indices), `edges` |
 | `SemanticEdge` | `a`, `b` (indices, `a` < `b`), `score` (cosine similarity) |
 
@@ -62,9 +62,9 @@ Verification happens before anything is parsed, and the bytes that were verified
 
 Bringing your own model loads what you supply and never reaches the network, whatever the directory holds. For a hand-placed model the hash is identity rather than proof: it tells you which artifacts produced a score, not that they are the ones you meant to fetch.
 
-## `model_hash`
+## `identity`
 
-Whatever produced the vectors, its identity travels with every result derived from them. That is the field that makes a score attributable: two runs with different `model_hash` values are not comparable, and a cluster reported without it is a number with no provenance. When you write results down, write the hash down with them.
+Whatever produced the vectors, its identity travels with every result derived from them, in the `identity` field. That is the field that makes a score attributable: two runs with different `identity` values are not comparable, and a cluster reported without it is a number with no provenance. When you write results down, write the hash down with them.
 
 For a caller-supplied embedder, the identity is whatever that embedder's `identity()` returns. It is read once, when the object is handed over, so scores cannot be reattributed part way through a call. Two embedders that can disagree must not return the same string.
 
@@ -76,7 +76,7 @@ Contract violations are `invalid_input`, which means the call site is wrong and 
 
 ## Reaching it
 
-From Rust, `embed_and_cluster(document, embedder, threshold)` embeds a document's sentences and clusters them, and `extraction::semantic_clusters(embeddings, threshold, model_hash)` clusters vectors you already hold. The first needs no feature flag with your own `Embedder` implementation; only the shipped adapter sits behind the `model2vec` feature.
+From Rust, `embed_and_cluster(document, embedder, threshold)` embeds a document's sentences and clusters them, and `extraction::semantic_clusters(embeddings, threshold, identity)` clusters vectors you already hold. The first needs no feature flag with your own `Embedder` implementation; only the shipped adapter sits behind the `model2vec` feature.
 
 That feature is not in the default set and `cli` does not pull it in, so check before promising a user this works. A Rust caller needs `cargo add matra --features model2vec`, and a binary installed with `cargo install matra --features cli` reports `features: udpipe cli` with no embedding adapter compiled in. The published Python wheel is built with it, so from Python `Model2Vec` is always there. `--version` prints the feature list of the binary in front of you on its second line.
 
@@ -84,7 +84,7 @@ That feature is not in the default set and `cli` does not pull it in, so check b
 $ matra --version
 ```
 
-From Python, `Matra.semantic_clusters(text, threshold, model)` takes a `Model2Vec` or any object with `embed` and `identity`, and the module-level `semantic_clusters(embeddings, threshold, model_hash)` is the vectors-in twin. `Model2Vec.embed(texts)` is where the vectors for that twin come from: it returns one vector per text, in order, each of `model.dimensions` length. See `python` for the signatures.
+From Python, `Matra.semantic_clusters(text, threshold, model)` takes a `Model2Vec` or any object with `embed` and `identity`, and the module-level `semantic_clusters(embeddings, threshold, model_hash)` is the vectors-in twin: its third argument is the identity the result carries. `Model2Vec.embed(texts)` is where the vectors for that twin come from: it returns one vector per text, in order, each of `model.dimensions` length. See `python` for the signatures.
 
 ## Comparing whole documents
 
@@ -121,4 +121,4 @@ Three pages of matra's own book, run from a checkout: two covering the same grou
 0.6080  rust.md <-> roadmap.md
 ```
 
-The pair separates decisively, and the shipped 0.85 does not carry over: the same vectors at `0.85` yield zero clusters, so an agent that took the starting value on faith would have reported the near-duplicates as unrelated. Document vectors are means over far more tokens than sentence vectors, so the whole scale shifts: unrelated documents sit well above zero, and near-duplicates need not reach the sentence band. Report the raw edge scores and the `model_hash`, and say which granularity produced them.
+The pair separates decisively, and the shipped 0.85 does not carry over: the same vectors at `0.85` yield zero clusters, so an agent that took the starting value on faith would have reported the near-duplicates as unrelated. Document vectors are means over far more tokens than sentence vectors, so the whole scale shifts: unrelated documents sit well above zero, and near-duplicates need not reach the sentence band. Report the raw edge scores and the `identity`, and say which granularity produced them.

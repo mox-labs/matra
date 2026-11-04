@@ -27,30 +27,30 @@
 	let { id, file, dataUrl }: { id: string; file: PrimitivesFigureFile; dataUrl: string } = $props();
 	const region = scopedRegion();
 
-	type Kind = 'negation' | 'modal' | 'reporting' | 'root_adverbial' | 'hearst_pair' | 'bare_assertion';
+	type Kind = 'negation' | 'modal' | 'clausal_complement' | 'root_adverbial' | 'hearst_pair' | 'root_mood';
 	const LABEL: Record<Kind, string> = {
 		negation: 'negation',
 		modal: 'modal',
-		reporting: 'reporting',
+		clausal_complement: 'clausal complement',
 		root_adverbial: 'root adverbial',
 		hearst_pair: 'Hearst pair',
-		bare_assertion: 'bare assertion'
+		root_mood: 'root mood'
 	};
 	const GLYPH: Record<Kind, string> = {
 		negation: '¬',
 		modal: '◇',
-		reporting: '“',
+		clausal_complement: '“',
 		root_adverbial: '√',
 		hearst_pair: '⊂',
-		bare_assertion: '⊢'
+		root_mood: '⊢'
 	};
 	const FIELD: Record<Kind, string> = {
 		negation: 'negations',
 		modal: 'modals',
-		reporting: 'reportings',
+		clausal_complement: 'clausal_complements',
 		root_adverbial: 'root_adverbials',
 		hearst_pair: 'hearst_pairs',
-		bare_assertion: 'bare_assertion'
+		root_mood: 'root_mood'
 	};
 
 	/** One primitive value: the word it is read from, and the word it attaches to. */
@@ -66,12 +66,12 @@
 		const out: Item[] = [];
 		for (const n of s.negations) out.push({ kind: 'negation', cue: n.cue_id, head: n.head_id, detail: '' });
 		for (const m of s.modals) out.push({ kind: 'modal', cue: m.aux_id, head: m.head_id, detail: '' });
-		for (const r of s.reportings)
+		for (const r of s.clausal_complements)
 			out.push({
-				kind: 'reporting',
+				kind: 'clausal_complement',
 				cue: r.verb_id,
 				head: r.ccomp_id,
-				detail: r.subject_id === null ? 'no subject' : `source ${r.subject_id} ${word(r.subject_id)}`
+				detail: r.subject_id === null ? 'no subject' : `subject ${r.subject_id} ${word(r.subject_id)}`
 			});
 		for (const a of s.root_adverbials) out.push({ kind: 'root_adverbial', cue: a.adv_id, head: null, detail: '' });
 		for (const h of s.hearst_pairs)
@@ -81,8 +81,8 @@
 				head: h.hypernym.head_id,
 				detail: `${h.pattern}, hyponym span ${h.hyponym.first_id} to ${h.hyponym.last_id}`
 			});
-		if (s.bare_assertion && s.root_id !== null)
-			out.push({ kind: 'bare_assertion', cue: s.root_id, head: null, detail: 'root clause, no modal' });
+		if (s.root_mood !== null)
+			out.push({ kind: 'root_mood', cue: s.root_mood.root_id, head: null, detail: `mood ${s.root_mood.mood}` });
 		return out;
 	}
 
@@ -98,13 +98,18 @@
 				if (!had.some((r) => r.kind === kind && r.label === label)) roles.set(tok, [...had, { kind, cue, label }]);
 			};
 			for (const it of list) {
-				if (it.kind === 'bare_assertion') continue;
+				if (it.kind === 'root_mood') continue;
 				const [c, t] =
-					it.kind === 'hearst_pair' ? ['hyponym', 'hypernym'] : it.kind === 'reporting' ? ['reporting', 'reported'] : [LABEL[it.kind], it.kind === 'negation' ? 'negated' : 'governs'];
+					it.kind === 'hearst_pair'
+						? ['hyponym', 'hypernym']
+						: it.kind === 'clausal_complement'
+							? ['governs a clause', 'complement']
+							: [LABEL[it.kind], it.kind === 'negation' ? 'negated' : 'governs'];
 				add(it.cue, it.kind, true, c);
 				if (it.head !== null) add(it.head, it.kind, false, t);
 			}
-			for (const r of s.reportings) if (r.subject_id !== null) add(r.subject_id, 'reporting', false, 'source');
+			for (const r of s.clausal_complements)
+				if (r.subject_id !== null) add(r.subject_id, 'clausal_complement', false, 'subject');
 			return { n: i + 1, s, list, roles, spans: spans(s) };
 		})
 	);
@@ -153,7 +158,7 @@
 		i === null ? '' : (s.tokens.find((t) => t.id === i)?.text ?? '');
 	const prim = (list: Item[], tok: number) =>
 		list
-			.filter((it) => it.cue === tok && it.kind !== 'bare_assertion')
+			.filter((it) => it.cue === tok && it.kind !== 'root_mood')
 			.map((it) => `${it.kind} ${it.cue} ${it.head ?? '-'}`)
 			.join('|') || undefined;
 </script>
@@ -177,9 +182,9 @@
 								><rt>{r.map((q) => `${GLYPH[q.kind]} ${q.label}`).join(' · ')}</rt></ruby
 							>{:else}<span class="tok" data-id={p.id}>{p.text}</span>{/if}{/each}{x.spans.tail}
 				</p>
-				{#if x.s.bare_assertion && x.s.root_id !== null}
-					<span class="badge k-bare_assertion" data-prim="bare_assertion {x.s.root_id} -"
-						><span aria-hidden="true">{GLYPH.bare_assertion} </span>bare assertion</span
+				{#if x.s.root_mood !== null}
+					<span class="badge k-root_mood" data-prim="root_mood {x.s.root_mood.root_id} -"
+						><span aria-hidden="true">{GLYPH.root_mood} </span>root mood {x.s.root_mood.mood}</span
 					>
 				{/if}
 			</li>
@@ -232,9 +237,9 @@
 
 	{#snippet note()}
 		Each primitive is a field matra fills on <code>Sentence</code> from its dependency tree: the tinted
-		word is the one it is read from, the underlined word the one it attaches to. A bare assertion is a
-		flag on the whole sentence: a finite indicative root clause with no modal over it. What any of it
-		means for a text is the reader's call; matra reports the construction.
+		word is the one it is read from, the underlined word the one it attaches to. The root mood is read
+		off the whole root clause: the <code>Mood</code> feature on the root or its auxiliary. What any of
+		it means for a text is the reader's call; matra reports the construction.
 	{/snippet}
 </FigureFrame>
 

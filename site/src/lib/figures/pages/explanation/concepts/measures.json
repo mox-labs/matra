@@ -36,31 +36,31 @@
       "words": 41
     },
     {
-      "compression_ratio": 0.2632,
+      "compression_ratio": 0.2634,
       "in_blockquote": false,
-      "lexical_density": 0.9412,
-      "readability_grade": 8.8514,
+      "lexical_density": 0.9381,
+      "readability_grade": 8.7254,
       "sentences": 37,
-      "text": "<svg class=\"mx-dt\" role=\"img\" aria-label=\"Dependency tree for the sentence: The system was built by the team\" viewBox=\"0 0 720 305\" width=\"720\" height=\"305\" style=\"max-width:100%;height:auto;display:block;margin:1.7em auto\">\n<title>Dependency tree for: The system was built by the team</title>\n<style>\n.mx-dt text{fill:currentColor;font-family:inherit}\n.mx-dt .w{font-size:13px;text-anchor:middle}\n.mx-dt .m{font-size:9.5px;text-anchor:middle;opacity:.55;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}\n.mx-dt .rel{font-size:10px;text-anchor:middle;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;paint-order:stroke;stroke:var(--bg,transparent);stroke-width:3.5px;stroke-linejoin:round}\n.mx-dt .ax{font-size:10px;text-anchor:end;opacity:.55}\n.mx-dt .nt{font-size:9.5px;opacity:.55}\n.mx-dt .e{stroke:currentColor;fill:none;opacity:.5;stroke-width:1.1px}\n.mx-dt .p{opacity:1;stroke-width:2.4px}\n.mx-dt .s{stroke:currentColor;opacity:.2;stroke-width:1px}\n.mx-dt .d{fill:currentColor}\n</style>\n<text class=\"ax\" x=\"76\" y=\"64\">root</text>\n<text class=\"ax\" x=\"76\" y=\"134\">depth 1</text>\n<text class=\"ax\" x=\"76\" y=\"204\">depth 2</text>\n<line class=\"e p\" x1=\"358\" y1=\"60\" x2=\"186\" y2=\"130\"/>\n<line class=\"e p\" x1=\"358\" y1=\"60\" x2=\"272\" y2=\"130\"/>\n<line class=\"e\" x1=\"358\" y1=\"60\" x2=\"616\" y2=\"130\"/>\n<line class=\"e\" x1=\"186\" y1=\"130\" x2=\"100\" y2=\"200\"/>\n<line class=\"e\" x1=\"616\" y1=\"130\" x2=\"444\" y2=\"200\"/>\n<line class=\"e\" x1=\"616\" y1=\"130\" x2=\"530\" y2=\"200\"/>\n<line class=\"s\" x1=\"100\" y1=\"200\" x2=\"100\" y2=\"238\"/>\n<line class=\"s\" x1=\"186\" y1=\"130\" x2=\"186\" y2=\"238\"/>\n<line class=\"s\" x1=\"272\" y1=\"130\" x2=\"272\" y2=\"238\"/>\n<line class=\"s\" x1=\"358\" y1=\"60\" x2=\"358\" y2=\"238\"/>\n<line class=\"s\" x1=\"444\" y1=\"200\" x2=\"444\" y2=\"238\"/>\n<line class=\"s\" x1=\"530\" y1=\"200\" x2=\"530\" y2=\"238\"/>\n<line class=\"s\" x1=\"616\" y1=\"130\" x2=\"616\" y2=\"238\"/>\n<circle class=\"d\" cx=\"100\" cy=\"200\" r=\"3.2\"/>\n<circle class=\"d\" cx=\"186\" cy=\"130\" r=\"3.2\"/>\n<circle class=\"d\" cx=\"272\" cy=\"130\" r=\"3.2\"/>\n<circle class=\"d\" cx=\"358\" cy=\"60\" r=\"4.4\"/>\n<circle class=\"d\" cx=\"444\" cy=\"200\" r=\"3.2\"/>\n<circle class=\"d\" cx=\"530\" cy=\"200\" r=\"3.2\"/>\n<circle class=\"d\" cx=\"616\" cy=\"130\" r=\"3.2\"/>\n<text class=\"nt\" x=\"370\" y=\"50\">root, head = 0</text>\n<text class=\"rel\" x=\"238\" y=\"109\">nsubj:pass</text>\n<text class=\"rel\" x=\"328\" y=\"85\">aux:pass</text>\n<text class=\"rel\" x=\"487\" y=\"95\">obl</text>\n<text class=\"rel\" x=\"143\" y=\"165\">det</text>\n<text class=\"rel\" x=\"530\" y=\"165\">case</text>\n<text class=\"rel\" x=\"573\" y=\"165\">det</text>\n<text class=\"w\" x=\"100\" y=\"252\">The</text>\n<text class=\"w\" x=\"186\" y=\"252\">system</text>\n<text class=\"w\" x=\"272\" y=\"252\">was</text>\n<text class=\"w\" x=\"358\" y=\"252\">built</text>\n<text class=\"w\" x=\"444\" y=\"252\">by</text>\n<text class=\"w\" x=\"530\" y=\"252\">the</text>\n<text class=\"w\" x=\"616\" y=\"252\">team</text>\n<text class=\"m\" x=\"100\" y=\"266\">1 DET</text>\n<text class=\"m\" x=\"186\" y=\"266\">2 NOUN</text>\n<text class=\"m\" x=\"272\" y=\"266\">3 AUX</text>\n<text class=\"m\" x=\"358\" y=\"266\">4 VERB</text>\n<text class=\"m\" x=\"444\" y=\"266\">5 ADP</text>\n<text class=\"m\" x=\"530\" y=\"266\">6 DET</text>\n<text class=\"m\" x=\"616\" y=\"266\">7 NOUN</text>\n<text class=\"nt\" x=\"30\" y=\"292\">heavier lines are the arcs is_passive() matches</text>\n</svg>",
-      "words": 635
+      "text": "<svg class=\"mx-dt\" role=\"img\" aria-label=\"Dependency tree for the sentence: The system was built by the team\" viewBox=\"0 0 720 305\" width=\"720\" height=\"305\" style=\"max-width:100%;height:auto;display:block;margin:1.7em auto\">\n<title>Dependency tree for: The system was built by the team</title>\n<style>\n.mx-dt text{fill:currentColor;font-family:inherit}\n.mx-dt .w{font-size:13px;text-anchor:middle}\n.mx-dt .m{font-size:9.5px;text-anchor:middle;opacity:.55;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}\n.mx-dt .rel{font-size:10px;text-anchor:middle;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;paint-order:stroke;stroke:var(--bg,transparent);stroke-width:3.5px;stroke-linejoin:round}\n.mx-dt .ax{font-size:10px;text-anchor:end;opacity:.55}\n.mx-dt .nt{font-size:9.5px;opacity:.55}\n.mx-dt .e{stroke:currentColor;fill:none;opacity:.5;stroke-width:1.1px}\n.mx-dt .p{opacity:1;stroke-width:2.4px}\n.mx-dt .s{stroke:currentColor;opacity:.2;stroke-width:1px}\n.mx-dt .d{fill:currentColor}\n</style>\n<text class=\"ax\" x=\"76\" y=\"64\">root</text>\n<text class=\"ax\" x=\"76\" y=\"134\">depth 1</text>\n<text class=\"ax\" x=\"76\" y=\"204\">depth 2</text>\n<line class=\"e p\" x1=\"358\" y1=\"60\" x2=\"186\" y2=\"130\"/>\n<line class=\"e p\" x1=\"358\" y1=\"60\" x2=\"272\" y2=\"130\"/>\n<line class=\"e\" x1=\"358\" y1=\"60\" x2=\"616\" y2=\"130\"/>\n<line class=\"e\" x1=\"186\" y1=\"130\" x2=\"100\" y2=\"200\"/>\n<line class=\"e\" x1=\"616\" y1=\"130\" x2=\"444\" y2=\"200\"/>\n<line class=\"e\" x1=\"616\" y1=\"130\" x2=\"530\" y2=\"200\"/>\n<line class=\"s\" x1=\"100\" y1=\"200\" x2=\"100\" y2=\"238\"/>\n<line class=\"s\" x1=\"186\" y1=\"130\" x2=\"186\" y2=\"238\"/>\n<line class=\"s\" x1=\"272\" y1=\"130\" x2=\"272\" y2=\"238\"/>\n<line class=\"s\" x1=\"358\" y1=\"60\" x2=\"358\" y2=\"238\"/>\n<line class=\"s\" x1=\"444\" y1=\"200\" x2=\"444\" y2=\"238\"/>\n<line class=\"s\" x1=\"530\" y1=\"200\" x2=\"530\" y2=\"238\"/>\n<line class=\"s\" x1=\"616\" y1=\"130\" x2=\"616\" y2=\"238\"/>\n<circle class=\"d\" cx=\"100\" cy=\"200\" r=\"3.2\"/>\n<circle class=\"d\" cx=\"186\" cy=\"130\" r=\"3.2\"/>\n<circle class=\"d\" cx=\"272\" cy=\"130\" r=\"3.2\"/>\n<circle class=\"d\" cx=\"358\" cy=\"60\" r=\"4.4\"/>\n<circle class=\"d\" cx=\"444\" cy=\"200\" r=\"3.2\"/>\n<circle class=\"d\" cx=\"530\" cy=\"200\" r=\"3.2\"/>\n<circle class=\"d\" cx=\"616\" cy=\"130\" r=\"3.2\"/>\n<text class=\"nt\" x=\"370\" y=\"50\">root, head = 0</text>\n<text class=\"rel\" x=\"238\" y=\"109\">nsubj:pass</text>\n<text class=\"rel\" x=\"328\" y=\"85\">aux:pass</text>\n<text class=\"rel\" x=\"487\" y=\"95\">obl</text>\n<text class=\"rel\" x=\"143\" y=\"165\">det</text>\n<text class=\"rel\" x=\"530\" y=\"165\">case</text>\n<text class=\"rel\" x=\"573\" y=\"165\">det</text>\n<text class=\"w\" x=\"100\" y=\"252\">The</text>\n<text class=\"w\" x=\"186\" y=\"252\">system</text>\n<text class=\"w\" x=\"272\" y=\"252\">was</text>\n<text class=\"w\" x=\"358\" y=\"252\">built</text>\n<text class=\"w\" x=\"444\" y=\"252\">by</text>\n<text class=\"w\" x=\"530\" y=\"252\">the</text>\n<text class=\"w\" x=\"616\" y=\"252\">team</text>\n<text class=\"m\" x=\"100\" y=\"266\">1 DET</text>\n<text class=\"m\" x=\"186\" y=\"266\">2 NOUN</text>\n<text class=\"m\" x=\"272\" y=\"266\">3 AUX</text>\n<text class=\"m\" x=\"358\" y=\"266\">4 VERB</text>\n<text class=\"m\" x=\"444\" y=\"266\">5 ADP</text>\n<text class=\"m\" x=\"530\" y=\"266\">6 DET</text>\n<text class=\"m\" x=\"616\" y=\"266\">7 NOUN</text>\n<text class=\"nt\" x=\"30\" y=\"292\">heavier lines are the arcs that make passive true</text>\n</svg>",
+      "words": 637
     },
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5758,
-      "readability_grade": 5.5056,
+      "lexical_density": 0.5294,
+      "readability_grade": 5.2694,
       "sentences": 2,
-      "text": "Words keep their reading order left to right; height is depth in the tree. `built` is the root, everything else hangs off it directly or through one more hop, so `tree_depth()` returns 2.",
+      "text": "Words keep their reading order left to right; height is depth in the tree. `built` is the root, everything else hangs off it directly or through one more hop, so its `tree_depth` is 2.",
       "words": 34
     },
     {
-      "compression_ratio": 0.5817,
+      "compression_ratio": 0.5922,
       "in_blockquote": false,
-      "lexical_density": 0.5932,
-      "readability_grade": 8.88,
+      "lexical_density": 0.6,
+      "readability_grade": 9.1233,
       "sentences": 3,
-      "text": "The same two columns, read from matra's output for five short sentences. The table is what a `Sentence` holds; the arcs below it draw each `head` and `dep`. The first sentence carries a negation, the second a modal, the third a reporting, the fourth a root adverbial, and the fifth two Hearst pairs: the structural primitives described further down.",
-      "words": 61
+      "text": "The same two columns, read from matra's output for five short sentences. The table is what a `Sentence` holds; the arcs below it draw each `head` and `dep`. The first sentence carries a negation, the second a modal, the third a clausal complement, the fourth a root adverbial, and the fifth two Hearst pairs: the structural primitives described further down.",
+      "words": 62
     },
     {
       "compression_ratio": null,
@@ -108,13 +108,13 @@
       "words": 8
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6422,
       "in_blockquote": false,
-      "lexical_density": 0.561,
-      "readability_grade": 6.827,
-      "sentences": 4,
-      "text": "**`bare_assertion` does not consult negation.** The detector reads the root, its finiteness carriers, and the modal list. Nothing else. `The sky is not blue` is a bare assertion that also carries a negation, and combining the two is your code's job.",
-      "words": 42
+      "lexical_density": 0.6111,
+      "readability_grade": 6.5405,
+      "sentences": 5,
+      "text": "**`root_mood` consults neither negation nor modals.** The detector reads the root and its finiteness carriers. Nothing else. `The sky is not blue` reports `Ind` and also carries a negation; an indicative root that no modal governs is `Ind` with no modal whose `head_id` is the root's id. Combining the facts is your code's job.",
+      "words": 56
     },
     {
       "compression_ratio": null,
@@ -128,19 +128,19 @@
     {
       "compression_ratio": null,
       "in_blockquote": false,
-      "lexical_density": 0.5938,
-      "readability_grade": 18.6462,
-      "sentences": 1,
-      "text": "Passive voice is the seventh construction and the one exception to the field shape: `Sentence::is_passive` matches `nsubj:pass`, `nsubjpass`, or `aux:pass` on demand, and its document-level share is materialized as the `passive_ratio` field.",
-      "words": 36
+      "lexical_density": 0.5714,
+      "readability_grade": 18.6257,
+      "sentences": 2,
+      "text": "Passive voice is the seventh construction, a flag rather than a list of arcs: `Sentence::passive` is true when a token carries `nsubj:pass`, `nsubjpass`, or `aux:pass`, and its document-level share is the `passive_ratio` field of `DocumentMetrics`.",
+      "words": 40
     },
     {
       "compression_ratio": null,
       "in_blockquote": false,
       "lexical_density": 0.64,
-      "readability_grade": 12.885,
+      "readability_grade": 13.829,
       "sentences": 2,
-      "text": "Reporting verbs and root adverbials are open word classes, so matra ships no lexicon for either. `Sentence::reportings_in` and `Sentence::root_adverbials_in` filter by a list you supply.",
+      "text": "Reporting verbs and root adverbials are open word classes, so matra ships no lexicon for either. `Sentence::clausal_complements_in` and `Sentence::root_adverbials_in` filter by a list you supply.",
       "words": 25
     },
     {
