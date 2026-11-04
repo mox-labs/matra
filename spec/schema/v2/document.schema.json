@@ -2,15 +2,41 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mox-labs.github.io/matra/schema/v2/document.schema.json",
   "title": "matra Document, schema 2.x",
-  "description": "One analysed document as matra emits it: the `result` of `matra analyze --json`, the dict `Matra.analyze` returns, and the serde form of `matra::domain::Document`. Schema 2.x: `provenance.schema` is \"2.minor\". A minor adds optional fields only, so a reader ignores fields it does not recognize and rejects a major it does not know. Every string set a reader receives is open (`format`, `pos`, `dep`, `mood`, `pattern`, feature names): treat an unknown value as data, not as an error. Every key listed here is always present; a value that does not apply is null rather than absent.",
+  "description": "One analysed document as matra emits it: the `result` of `matra analyze --json`, the dict `Matra.analyze` returns, and the serde form of `matra::domain::Document`. Schema 2.x: `provenance.schema` is \"2.minor\". A minor adds optional fields only, so a reader ignores fields it does not recognize and rejects a major it does not know. Every string set a reader receives is open (`format`, `kind`, `pos`, `dep`, `mood`, `pattern`, feature names): treat an unknown value as data, not as an error. Every key listed here is always present; a value that does not apply is null rather than absent. Every `span` counts UTF-8 bytes of the analysed text: for markdown and plain text the input itself, for block input the blocks' texts joined by a blank line. The text fields are normalized; a span is the authority on where a value came from.",
   "type": "object",
-  "required": ["provenance", "sections", "metrics"],
+  "required": ["provenance", "sections", "metrics", "skipped"],
   "properties": {
     "provenance": { "$ref": "#/$defs/Provenance" },
     "sections": { "type": "array", "items": { "$ref": "#/$defs/Section" } },
-    "metrics": { "$ref": "#/$defs/DocumentMetrics" }
+    "metrics": { "$ref": "#/$defs/DocumentMetrics" },
+    "skipped": {
+      "description": "What the reader saw and did not analyse, in document order. Never silently dropped.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/Skipped" }
+    }
   },
   "$defs": {
+    "Span": {
+      "description": "A stretch of the analysed text in UTF-8 bytes, `start` inclusive and `end` exclusive.",
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "$ref": "#/$defs/count" },
+        "end": { "$ref": "#/$defs/count" }
+      }
+    },
+    "Skipped": {
+      "description": "A construct the reader saw and did not analyse, with where it lies.",
+      "type": "object",
+      "required": ["kind", "span"],
+      "properties": {
+        "kind": {
+          "description": "The construct: `table`, `code`, `front_matter`, `html`, `thematic_break` or `link_definition` today. An open set.",
+          "type": "string"
+        },
+        "span": { "$ref": "#/$defs/Span" }
+      }
+    },
     "count": { "type": "integer", "minimum": 0 },
     "ratio": {
       "description": "A measure, or null when its condition was not met.",
@@ -34,7 +60,7 @@
         },
         "parser": { "$ref": "#/$defs/Identity" },
         "format": {
-          "description": "The format the input was read as: `markdown` or `plain_text` today. An open set.",
+          "description": "The format the input was read as: `markdown`, `plain_text` or `blocks` today. An open set.",
           "type": "string"
         },
         "source": { "$ref": "#/$defs/ProvenanceSource" }
@@ -54,7 +80,7 @@
       }
     },
     "ProvenanceSource": {
-      "description": "The analysed input.",
+      "description": "The analysed input: its path, and the length and digest of the analysed text every span points into.",
       "type": "object",
       "required": ["path", "bytes", "sha256"],
       "properties": {
@@ -92,19 +118,27 @@
     },
     "Section": {
       "type": "object",
-      "required": ["heading", "level", "paragraphs"],
+      "required": ["heading", "level", "span", "paragraphs"],
       "properties": {
         "heading": { "type": ["string", "null"] },
         "level": { "$ref": "#/$defs/count" },
+        "span": {
+          "description": "The heading in the analysed text, markers included; null with no heading.",
+          "oneOf": [{ "$ref": "#/$defs/Span" }, { "type": "null" }]
+        },
         "paragraphs": { "type": "array", "items": { "$ref": "#/$defs/Paragraph" } }
       }
     },
     "Paragraph": {
       "type": "object",
-      "required": ["text", "in_blockquote", "sentences", "metrics"],
+      "required": ["span", "text", "kind", "sentences", "metrics"],
       "properties": {
+        "span": { "$ref": "#/$defs/Span" },
         "text": { "type": "string" },
-        "in_blockquote": { "type": "boolean" },
+        "kind": {
+          "description": "The block the paragraph was read from: `paragraph`, `quote` (never parsed or measured) or `list_item` today. An open set.",
+          "type": "string"
+        },
         "sentences": { "type": "array", "items": { "$ref": "#/$defs/Sentence" } },
         "metrics": { "$ref": "#/$defs/ParagraphMetrics" }
       }
@@ -122,6 +156,7 @@
     "Sentence": {
       "type": "object",
       "required": [
+        "span",
         "text",
         "tokens",
         "word_count",
@@ -135,6 +170,7 @@
         "root_mood"
       ],
       "properties": {
+        "span": { "$ref": "#/$defs/Span" },
         "text": { "type": "string" },
         "tokens": { "type": "array", "items": { "$ref": "#/$defs/Token" } },
         "word_count": { "$ref": "#/$defs/count" },
@@ -162,6 +198,7 @@
       "type": "object",
       "required": [
         "id",
+        "span",
         "text",
         "lemma",
         "pos",
@@ -175,6 +212,7 @@
       ],
       "properties": {
         "id": { "type": "integer", "minimum": 1 },
+        "span": { "$ref": "#/$defs/Span" },
         "text": { "type": "string" },
         "lemma": { "type": "string" },
         "pos": { "type": "string" },

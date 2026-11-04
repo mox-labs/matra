@@ -11,8 +11,29 @@
       "nominalization_ratio": 0.0,
       "passive_ratio": 0.0
     },
+    "sections": [
+      {
+        "heading": null,
+        "level": 0,
+        "span": null
+      }
+    ],
+    "paragraphs": [
+      {
+        "kind": "paragraph",
+        "span": {
+          "start": 0,
+          "end": 165
+        }
+      }
+    ],
+    "skipped": [],
     "sentences": [
       {
+        "span": {
+          "start": 0,
+          "end": 46
+        },
         "text": "Animals such as dogs and cats need daily care.",
         "token_count": 10,
         "hearst_pairs": [
@@ -50,6 +71,10 @@
         "tokens": [
           {
             "id": 1,
+            "span": {
+              "start": 0,
+              "end": 7
+            },
             "text": "Animals",
             "lemma": "animal",
             "pos": "NOUN",
@@ -58,6 +83,10 @@
           },
           {
             "id": 2,
+            "span": {
+              "start": 8,
+              "end": 12
+            },
             "text": "such",
             "lemma": "such",
             "pos": "ADJ",
@@ -66,6 +95,10 @@
           },
           {
             "id": 3,
+            "span": {
+              "start": 13,
+              "end": 15
+            },
             "text": "as",
             "lemma": "as",
             "pos": "ADP",
@@ -74,6 +107,10 @@
           },
           {
             "id": 4,
+            "span": {
+              "start": 16,
+              "end": 20
+            },
             "text": "dogs",
             "lemma": "dog",
             "pos": "NOUN",
@@ -82,6 +119,10 @@
           },
           {
             "id": 5,
+            "span": {
+              "start": 21,
+              "end": 24
+            },
             "text": "and",
             "lemma": "and",
             "pos": "CCONJ",
@@ -90,6 +131,10 @@
           },
           {
             "id": 6,
+            "span": {
+              "start": 25,
+              "end": 29
+            },
             "text": "cats",
             "lemma": "cat",
             "pos": "NOUN",
@@ -98,6 +143,10 @@
           },
           {
             "id": 7,
+            "span": {
+              "start": 30,
+              "end": 34
+            },
             "text": "need",
             "lemma": "need",
             "pos": "VERB",
@@ -106,6 +155,10 @@
           },
           {
             "id": 8,
+            "span": {
+              "start": 35,
+              "end": 40
+            },
             "text": "daily",
             "lemma": "daily",
             "pos": "ADJ",
@@ -114,6 +167,10 @@
           },
           {
             "id": 9,
+            "span": {
+              "start": 41,
+              "end": 45
+            },
             "text": "care",
             "lemma": "care",
             "pos": "NOUN",
@@ -122,6 +179,10 @@
           },
           {
             "id": 10,
+            "span": {
+              "start": 45,
+              "end": 46
+            },
             "text": ".",
             "lemma": ".",
             "pos": "PUNCT",
@@ -131,6 +192,10 @@
         ]
       },
       {
+        "span": {
+          "start": 47,
+          "end": 115
+        },
         "text": "They built temples, treasuries, and other important civic buildings.",
         "token_count": 12,
         "hearst_pairs": [
@@ -168,6 +233,10 @@
         "tokens": [
           {
             "id": 1,
+            "span": {
+              "start": 47,
+              "end": 51
+            },
             "text": "They",
             "lemma": "they",
             "pos": "PRON",
@@ -176,6 +245,10 @@
           },
           {
             "id": 2,
+            "span": {
+              "start": 52,
+              "end": 57
+            },
             "text": "built",
             "lemma": "build",
             "pos": "VERB",
@@ -184,6 +257,10 @@
           },
           {
             "id": 3,
+            "span": {
+              "start": 58,
+              "end": 65
+            },
             "text": "temples",
             "lemma": "temple",
             "pos": "NOUN",
@@ -192,6 +269,10 @@
           },
           {
             "id": 4,
+            "span": {
+              "start": 65,
+              "end": 66
+            },
             "text": ",",
             "lemma": ",",
             "pos": "PUNCT",
@@ -200,6 +281,10 @@
           },
           {
             "id": 5,
+            "span": {
+              "start": 67,
+              "end": 77
+            },
             "text": "treasuries",
             "lemma": "treasury",
             "pos": "NOUN",
@@ -208,6 +293,10 @@
           },
           {
             "id": 6,
+            "span": {
+              "start": 77,
+              "end": 78
+            },
             "text": ",",
             "lemma": ",",
             "pos": "PUNCT",
@@ -216,6 +305,10 @@
           },
           {
             "id": 7,
+            "span": {
+              "start": 79,
+              "end": 82
+            },
             "text": "and",
             "lemma": "and",
             "pos": "CCONJ",
@@ -224,6 +317,10 @@
           },
           {
             "id": 8,
+            "span": {
+              "start": 83,
+              "end": 88
+            },
             "text": "other",
             "lemma": "other",
             "pos": "ADJ",
@@ -232,6 +329,10 @@
           },
           {
             "id": 9,
+            "span": {
+              "start": 89,
+              "end": 98
+            },
             "text": "important",
             "lemma": "important",
             "pos": "ADJ",
@@ -240,6 +341,10 @@
           },
           {
             "id": 10,
+            "span": {
+              "start": 99,
+              "end": 104
+            },
             "text": "civic",
             "lemma": "civic",
             "pos": "ADJ",
@@ -248,6 +353,10 @@
           },
           {
             "id": 11,
+            "span": {
+              "start": 105,
+              "end": 114
+            },
             "text": "buildings",
             "lemma": "building",
             "pos": "NOUN",
@@ -256,6 +365,10 @@
           },
           {
             "id": 12,
+            "span": {
+              "start": 114,
+              "end": 115
+            },
             "text": ".",
             "lemma": ".",
             "pos": "PUNCT",
@@ -265,12 +378,20 @@
         ]
       },
       {
+        "span": {
+          "start": 116,
+          "end": 165
+        },
         "text": "She invited John, and other guests brought gifts.",
         "token_count": 10,
         "hearst_pairs": [],
         "tokens": [
           {
             "id": 1,
+            "span": {
+              "start": 116,
+              "end": 119
+            },
             "text": "She",
             "lemma": "she",
             "pos": "PRON",
@@ -279,6 +400,10 @@
           },
           {
             "id": 2,
+            "span": {
+              "start": 120,
+              "end": 127
+            },
             "text": "invited",
             "lemma": "invite",
             "pos": "VERB",
@@ -287,6 +412,10 @@
           },
           {
             "id": 3,
+            "span": {
+              "start": 128,
+              "end": 132
+            },
             "text": "John",
             "lemma": "John",
             "pos": "PROPN",
@@ -295,6 +424,10 @@
           },
           {
             "id": 4,
+            "span": {
+              "start": 132,
+              "end": 133
+            },
             "text": ",",
             "lemma": ",",
             "pos": "PUNCT",
@@ -303,6 +436,10 @@
           },
           {
             "id": 5,
+            "span": {
+              "start": 134,
+              "end": 137
+            },
             "text": "and",
             "lemma": "and",
             "pos": "CCONJ",
@@ -311,6 +448,10 @@
           },
           {
             "id": 6,
+            "span": {
+              "start": 138,
+              "end": 143
+            },
             "text": "other",
             "lemma": "other",
             "pos": "ADJ",
@@ -319,6 +460,10 @@
           },
           {
             "id": 7,
+            "span": {
+              "start": 144,
+              "end": 150
+            },
             "text": "guests",
             "lemma": "guest",
             "pos": "NOUN",
@@ -327,6 +472,10 @@
           },
           {
             "id": 8,
+            "span": {
+              "start": 151,
+              "end": 158
+            },
             "text": "brought",
             "lemma": "bring",
             "pos": "VERB",
@@ -335,6 +484,10 @@
           },
           {
             "id": 9,
+            "span": {
+              "start": 159,
+              "end": 164
+            },
             "text": "gifts",
             "lemma": "gift",
             "pos": "NOUN",
@@ -343,6 +496,10 @@
           },
           {
             "id": 10,
+            "span": {
+              "start": 164,
+              "end": 165
+            },
             "text": ".",
             "lemma": ".",
             "pos": "PUNCT",

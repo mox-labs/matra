@@ -11,8 +11,29 @@
       "nominalization_ratio": 0.0,
       "passive_ratio": 0.0
     },
+    "sections": [
+      {
+        "heading": null,
+        "level": 0,
+        "span": null
+      }
+    ],
+    "paragraphs": [
+      {
+        "kind": "paragraph",
+        "span": {
+          "start": 0,
+          "end": 58
+        }
+      }
+    ],
+    "skipped": [],
     "sentences": [
       {
+        "span": {
+          "start": 0,
+          "end": 16
+        },
         "text": "Yes, you should.",
         "token_count": 5,
         "negations": [],
@@ -27,6 +48,10 @@
         "tokens": [
           {
             "id": 1,
+            "span": {
+              "start": 0,
+              "end": 3
+            },
             "text": "Yes",
             "lemma": "yes",
             "pos": "INTJ",
@@ -35,6 +60,10 @@
           },
           {
             "id": 2,
+            "span": {
+              "start": 3,
+              "end": 4
+            },
             "text": ",",
             "lemma": ",",
             "pos": "PUNCT",
@@ -43,6 +72,10 @@
           },
           {
             "id": 3,
+            "span": {
+              "start": 5,
+              "end": 8
+            },
             "text": "you",
             "lemma": "you",
             "pos": "PRON",
@@ -51,6 +84,10 @@
           },
           {
             "id": 4,
+            "span": {
+              "start": 9,
+              "end": 15
+            },
             "text": "should",
             "lemma": "should",
             "pos": "AUX",
@@ -59,6 +96,10 @@
           },
           {
             "id": 5,
+            "span": {
+              "start": 15,
+              "end": 16
+            },
             "text": ".",
             "lemma": ".",
             "pos": "PUNCT",
@@ -68,6 +109,10 @@
         ]
       },
       {
+        "span": {
+          "start": 17,
+          "end": 41
+        },
         "text": "He can and will succeed.",
         "token_count": 6,
         "negations": [],
@@ -87,6 +132,10 @@
         "tokens": [
           {
             "id": 1,
+            "span": {
+              "start": 17,
+              "end": 19
+            },
             "text": "He",
             "lemma": "he",
             "pos": "PRON",
@@ -95,6 +144,10 @@
           },
           {
             "id": 2,
+            "span": {
+              "start": 20,
+              "end": 23
+            },
             "text": "can",
             "lemma": "can",
             "pos": "AUX",
@@ -103,6 +156,10 @@
           },
           {
             "id": 3,
+            "span": {
+              "start": 24,
+              "end": 27
+            },
             "text": "and",
             "lemma": "and",
             "pos": "CCONJ",
@@ -111,6 +168,10 @@
           },
           {
             "id": 4,
+            "span": {
+              "start": 28,
+              "end": 32
+            },
             "text": "will",
             "lemma": "will",
             "pos": "AUX",
@@ -119,6 +180,10 @@
           },
           {
             "id": 5,
+            "span": {
+              "start": 33,
+              "end": 40
+            },
             "text": "succeed",
             "lemma": "succeed",
             "pos": "VERB",
@@ -127,6 +192,10 @@
           },
           {
             "id": 6,
+            "span": {
+              "start": 40,
+              "end": 41
+            },
             "text": ".",
             "lemma": ".",
             "pos": "PUNCT",
@@ -136,6 +205,10 @@
         ]
       },
       {
+        "span": {
+          "start": 42,
+          "end": 58
+        },
         "text": "The sky is blue.",
         "token_count": 5,
         "negations": [],
@@ -147,6 +220,10 @@
         "tokens": [
           {
             "id": 1,
+            "span": {
+              "start": 42,
+              "end": 45
+            },
             "text": "The",
             "lemma": "the",
             "pos": "DET",
@@ -155,6 +232,10 @@
           },
           {
             "id": 2,
+            "span": {
+              "start": 46,
+              "end": 49
+            },
             "text": "sky",
             "lemma": "sky",
             "pos": "NOUN",
@@ -163,6 +244,10 @@
           },
           {
             "id": 3,
+            "span": {
+              "start": 50,
+              "end": 52
+            },
             "text": "is",
             "lemma": "be",
             "pos": "AUX",
@@ -171,6 +256,10 @@
           },
           {
             "id": 4,
+            "span": {
+              "start": 53,
+              "end": 57
+            },
             "text": "blue",
             "lemma": "blue",
             "pos": "ADJ",
@@ -179,6 +268,10 @@
           },
           {
             "id": 5,
+            "span": {
+              "start": 57,
+              "end": 58
+            },
             "text": ".",
             "lemma": ".",
             "pos": "PUNCT",

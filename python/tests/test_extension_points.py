@@ -16,10 +16,14 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
-matra = pytest.importorskip("matra", reason="matra wheel not built")
+if TYPE_CHECKING:
+    from matra import CorpusItem
+
+matra =pytest.importorskip("matra", reason="matra wheel not built")
 Matra = matra.Matra
 
 
@@ -167,10 +171,18 @@ def test_an_embedder_without_identity_is_refused_before_any_work(
 
 
 @pytest.mark.model
+def item_path(item: CorpusItem) -> str | None:
+    """The path an item names: a document's own provenance, or an error's."""
+    if "error" in item:
+        return item["path"]
+    return item["provenance"]["source"]["path"]
+
+
 def test_analyze_path_returns_one_item_per_file_in_order(engine: Matra, tmp_path: Path) -> None:
     """One unreadable file costs one item, not the walk. The bad file is
-    invalid UTF-8: a symlink or a subdirectory would not appear at all,
-    because the directory listing filters both out before reading."""
+    invalid UTF-8, which is an unsupported format: a symlink or a
+    subdirectory would not appear at all, because the directory listing
+    filters both out before reading."""
     (tmp_path / "a.txt").write_text("The committee approved the proposal.")
     (tmp_path / "b.txt").write_bytes(b"\xff\xfe not valid utf-8")
     (tmp_path / "c.txt").write_text("The report was filed without comment.")
@@ -178,17 +190,32 @@ def test_analyze_path_returns_one_item_per_file_in_order(engine: Matra, tmp_path
     items = engine.analyze_path(str(tmp_path))
 
     assert len(items) == 3
-    assert [Path(item["path"]).name for item in items] == ["a.txt", "b.txt", "c.txt"]
+    assert [Path(item_path(item) or "").name for item in items] == ["a.txt", "b.txt", "c.txt"]
 
-    assert "analysis" in items[0]
-    assert items[0]["analysis"]["sections"][0]["paragraphs"][0]["sentences"]
+    assert "provenance" in items[0]
+    assert items[0]["sections"][0]["paragraphs"][0]["sentences"]
 
     assert "error" in items[1]
-    assert items[1]["error"]["kind"] == "io"
+    assert items[1]["error"]["kind"] == "unsupported_format"
     assert items[1]["error"]["message"]
 
-    assert "analysis" in items[2]
-    assert items[2]["analysis"]["metrics"]["passive_ratio"] is not None
+    assert "provenance" in items[2]
+    assert items[2]["metrics"]["passive_ratio"] is not None
+
+
+@pytest.mark.model
+def test_analyze_path_reads_a_markdown_file_as_markdown(engine: Matra, tmp_path: Path) -> None:
+    """A `.md` file is read as markdown: its heading opens a section and
+    is not parsed as prose."""
+    path = tmp_path / "notes.md"
+    path.write_text("# Field notes\n\nThe river rose overnight.\n")
+
+    (doc,) = engine.analyze_path(path)
+
+    assert "provenance" in doc
+    assert doc["provenance"]["format"] == "markdown"
+    assert doc["sections"][0]["heading"] == "Field notes"
+    assert doc["metrics"]["total_sentences"] == 1
 
 
 @pytest.mark.model
@@ -199,7 +226,7 @@ def test_analyze_path_on_one_file_is_a_stream_of_one(engine: Matra, tmp_path: Pa
     items = engine.analyze_path(str(path))
 
     assert len(items) == 1
-    assert Path(items[0]["path"]) == path
+    assert Path(item_path(items[0]) or "") == path
 
 
 @pytest.mark.model
@@ -207,11 +234,10 @@ def test_analyze_path_on_one_file_is_a_stream_of_one(engine: Matra, tmp_path: Pa
 def test_a_file_whose_name_is_not_utf_8_is_analyzed_and_round_trips(
     engine: Matra, tmp_path: Path
 ) -> None:
-    """The success item is assembled rather than serialized, because
-    serde refuses a non-UTF-8 path and one such file would have taken the
-    whole walk down with a `RuntimeError`. The name crosses through
-    `os.fsdecode`, so `os.fsencode` hands back the bytes it came from and
-    a caller can open what the walk named.
+    """The document's path is replaced rather than left as serde wrote
+    it, because serde writes a non-UTF-8 path lossily. The name crosses
+    through `os.fsdecode`, so `os.fsencode` hands back the bytes it came
+    from and a caller can open what the walk named.
 
     Not every filesystem can hold such a name: APFS rejects a filename
     that is not valid UTF-8 outright, so this skips on macOS and runs on
@@ -227,12 +253,11 @@ def test_a_file_whose_name_is_not_utf_8_is_analyzed_and_round_trips(
     items = engine.analyze_path(tmp_path)
 
     assert len(items) == 1
-    assert "analysis" in items[0]
-    assert os.fsencode(items[0]["path"]).endswith(name)
-    assert items[0]["analysis"]["sections"][0]["paragraphs"][0]["sentences"]
+    assert "provenance" in items[0]
     # The document's own provenance names the same bytes, not the lossy
     # string serde writes for a path JSON cannot carry.
-    assert items[0]["analysis"]["provenance"]["source"]["path"] == items[0]["path"]
+    assert os.fsencode(item_path(items[0]) or "").endswith(name)
+    assert items[0]["sections"][0]["paragraphs"][0]["sentences"]
 
 
 @pytest.mark.model
@@ -246,8 +271,9 @@ def test_a_non_ascii_filename_round_trips(engine: Matra, tmp_path: Path) -> None
     items = engine.analyze_path(tmp_path)
 
     assert len(items) == 1
-    assert items[0]["path"].endswith(name)
-    assert os.fsencode(items[0]["path"]) == os.fsencode(str(tmp_path / name))
+    path = item_path(items[0]) or ""
+    assert path.endswith(name)
+    assert os.fsencode(path) == os.fsencode(str(tmp_path / name))
 
 
 @pytest.mark.model
@@ -260,7 +286,7 @@ def test_analyze_path_takes_a_pathlib_path(engine: Matra, tmp_path: Path) -> Non
     items = engine.analyze_path(tmp_path / "only.txt")
 
     assert len(items) == 1
-    assert Path(items[0]["path"]).name == "only.txt"
+    assert Path(item_path(items[0]) or "").name == "only.txt"
 
 
 def test_model2vec_takes_a_pathlib_path(tmp_path: Path) -> None:
@@ -291,10 +317,12 @@ def test_analyze_path_on_a_missing_directory_raises(engine: Matra, tmp_path: Pat
 def test_the_new_shapes_are_importable_from_the_package_root() -> None:
     """No model needed: the crust either exports these names or it does
     not, and a consumer's `from matra import ...` is the check."""
-    from matra import CorpusEntry, CorpusItem, DocumentError, Embedder, ErrorInfo
+    from matra import CorpusItem, Document, DocumentError, Embedder, ErrorInfo, Skipped, Span
 
     assert set(DocumentError.__annotations__) == {"path", "error"}
-    assert set(CorpusEntry.__annotations__) == {"path", "analysis"}
+    assert set(Document.__annotations__) == {"provenance", "sections", "metrics", "skipped"}
+    assert set(Span.__annotations__) == {"start", "end"}
+    assert set(Skipped.__annotations__) == {"kind", "span"}
     assert set(ErrorInfo.__annotations__) == {"kind", "message"}
     assert callable(Embedder.embed) and callable(Embedder.identity)
     assert CorpusItem is not None

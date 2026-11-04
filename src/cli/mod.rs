@@ -29,7 +29,7 @@ use std::path::{Path, PathBuf};
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
 
 use crate::config::Config;
-use crate::domain::{self, Document, Format, MAX_INPUT_BYTES, RawDocument, Sentence};
+use crate::domain::{self, Document, Format, MAX_INPUT_BYTES, Sentence};
 
 /// The envelope's version integer. It increments on any change to the
 /// envelope's own shape or to the meaning of a field inside `result`.
@@ -345,17 +345,17 @@ fn outcome(empty: bool) -> Outcome {
 }
 
 /// Where a subcommand's text comes from.
-enum Input {
+enum InputArg {
     Path(PathBuf),
     Stdin,
 }
 
-impl Input {
-    fn of(path: &Path) -> Input {
+impl InputArg {
+    fn of(path: &Path) -> InputArg {
         if path.as_os_str() == "-" {
-            Input::Stdin
+            InputArg::Stdin
         } else {
-            Input::Path(path.to_path_buf())
+            InputArg::Path(path.to_path_buf())
         }
     }
 
@@ -363,8 +363,8 @@ impl Input {
     /// human header.
     fn label<'a>(&'a self, stdin_filename: &'a str) -> std::borrow::Cow<'a, str> {
         match self {
-            Input::Path(p) => p.display().to_string().into(),
-            Input::Stdin => stdin_filename.into(),
+            InputArg::Path(p) => p.display().to_string().into(),
+            InputArg::Stdin => stdin_filename.into(),
         }
     }
 }
@@ -416,12 +416,12 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
         | Command::Keyphrases { path, .. } => path,
         Command::Config { .. } | Command::Completions { .. } => unreachable!("dispatched above"),
     };
-    let input = Input::of(path);
+    let input = InputArg::of(path);
 
     // Validate the input before touching the model. Downloading 16 MB to
     // then report that the file does not exist is a poor trade for the
     // reader.
-    if let Input::Path(p) = &input {
+    if let InputArg::Path(p) = &input {
         check_input(p)?;
     }
 
@@ -548,12 +548,9 @@ fn human_bytes(bytes: u64) -> String {
 /// Both refusals happen before the engine is built, so neither costs a
 /// model load or a download.
 ///
-/// A directory is refused rather than ingested. `Ingest::path` accepts
-/// one and yields every file in it, and these three commands report on a
-/// single document, so taking the first entry would analyze one
-/// arbitrary file and print the answer under the directory's name. That
-/// is a wrong answer wearing the shape of a right one. Refusing says the
-/// same thing out loud.
+/// A directory is refused here, before the engine is built, rather than
+/// by `Input::file` after it. These three commands report on a single
+/// document, and a refusal that costs no model load says so sooner.
 fn check_input(path: &Path) -> Fallible<()> {
     if !path.exists() {
         return Err(format!("no such file: {}", path.display()).into());
@@ -613,23 +610,21 @@ fn keyphrase_method(name: &str) -> Fallible<KeyphraseMethod> {
 /// pipeline applies the right decomposer for the extension and skips
 /// blockquotes.
 ///
-/// The path is a readable file by the time this runs: [`check_input`]
-/// has already refused a missing one and a directory, so the stream a
-/// path opens here is a stream of one.
-fn document_of(input: &Input, stdin_filename: &str, engine: &crate::Engine) -> Fallible<Document> {
+/// The path is a file by the time this runs: [`check_input`] has
+/// already refused a missing one and a directory. A failure carries the
+/// path, so the message names the file it is about.
+fn document_of(
+    input: &InputArg,
+    stdin_filename: &str,
+    engine: &crate::Engine,
+) -> Fallible<Document> {
     match input {
-        Input::Path(path) => {
-            let mut stream = engine.analyze(crate::Ingest::path(path)?);
-            match stream.next() {
-                Some(Ok(entry)) => Ok(entry.analysis),
-                Some(Err(e)) => Err(Box::new(e)),
-                None => Err(format!("no documents at {}", path.display()).into()),
-            }
-        }
-        Input::Stdin => {
+        InputArg::Path(path) => engine
+            .analyze(crate::Input::file(path))
+            .map_err(|e| Box::new(domain::DocumentError::new(Some(path.clone()), e)).into()),
+        InputArg::Stdin => {
             let text = read_stdin()?;
-            let raw = RawDocument::new(text, None, Format::from_path(stdin_filename));
-            Ok(engine.analyze_one(raw)?.analysis)
+            Ok(engine.analyze(crate::Input::text(text, Format::from_path(stdin_filename)))?)
         }
     }
 }
@@ -765,9 +760,12 @@ mod tests {
 
     #[test]
     fn dash_is_stdin_and_anything_else_is_a_path() {
-        assert!(matches!(Input::of(Path::new("-")), Input::Stdin));
-        assert!(matches!(Input::of(Path::new("./-")), Input::Path(_)));
-        assert!(matches!(Input::of(Path::new("notes.md")), Input::Path(_)));
+        assert!(matches!(InputArg::of(Path::new("-")), InputArg::Stdin));
+        assert!(matches!(InputArg::of(Path::new("./-")), InputArg::Path(_)));
+        assert!(matches!(
+            InputArg::of(Path::new("notes.md")),
+            InputArg::Path(_)
+        ));
     }
 
     /// The command line reads the extension table from `domain`, the

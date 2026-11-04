@@ -2,10 +2,10 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::domain::{self, RawDocument};
+use crate::domain;
 
-use super::Source;
 use super::file::FileSource;
+use super::{Fetched, Source};
 
 /// Reads all regular files in a directory (non-recursive, symlinks skipped).
 ///
@@ -16,10 +16,11 @@ use super::file::FileSource;
 /// - Files are yielded sorted by path (lexicographic, byte-wise on
 ///   `PathBuf`) — consumers may rely on this ordering.
 /// - [`Source::read`] (the trait method) returns only the successfully-read
-///   documents; per-file failures are silently dropped. Callers that care
-///   about which files failed should stream through `Ingest`, which
-///   yields each failure as an item carrying its path.
-pub struct DirectorySource;
+///   documents; per-file failures are silently dropped. The library does
+///   not read a directory through it: `Inputs::dir` lists the paths with
+///   [`DirectorySource::candidate_paths`] and reads each when its `Input`
+///   is analysed, so each failure is an item carrying its path.
+pub(crate) struct DirectorySource;
 
 impl DirectorySource {
     /// List candidate paths in the directory, sorted, after the symlink
@@ -48,9 +49,8 @@ impl DirectorySource {
 
 impl Source for DirectorySource {
     /// Reads all documents in the directory, dropping per-file failures
-    /// silently. Callers that care about which files failed should
-    /// stream through `Ingest` instead.
-    fn read(&self, input: &Path) -> domain::Result<Vec<RawDocument>> {
+    /// silently. `Inputs::dir` is the route that reports each failure.
+    fn read(&self, input: &Path) -> domain::Result<Vec<Fetched>> {
         let file_source = FileSource;
         let docs = self
             .candidate_paths(input)?
@@ -106,7 +106,7 @@ mod tests {
 
         let docs = DirectorySource.read(dir.path()).unwrap();
         assert_eq!(docs.len(), 1);
-        assert!(docs[0].path.as_ref().unwrap().ends_with("real.md"));
+        assert!(docs[0].path.ends_with("real.md"));
     }
 
     #[cfg(unix)]

@@ -15,9 +15,9 @@ mod document_schema;
 use std::fs;
 use std::path::PathBuf;
 
-use matra::Engine;
-use matra::domain::{Document, Format, RawDocument};
+use matra::domain::{Document, Format, Span};
 use matra::nlp::udpipe::Udpipe;
+use matra::{Engine, Input};
 use serde::{Deserialize, Deserializer};
 use sha2::{Digest, Sha256};
 
@@ -36,7 +36,33 @@ struct Fixture {
 #[derive(Deserialize)]
 struct Expect {
     metrics: ExpectedMetrics,
+    /// The section tree's headings, when the fixture pins them.
+    sections: Option<Vec<ExpectedSection>>,
+    /// Every paragraph's kind and span, when the fixture pins them.
+    paragraphs: Option<Vec<ExpectedParagraph>>,
+    /// What the reader skipped, when the fixture pins it; an empty list
+    /// pins "nothing".
+    skipped: Option<Vec<ExpectedSkipped>>,
     sentences: Vec<ExpectedSentence>,
+}
+
+#[derive(Deserialize)]
+struct ExpectedSection {
+    heading: Option<String>,
+    level: usize,
+    span: Option<Span>,
+}
+
+#[derive(Deserialize)]
+struct ExpectedParagraph {
+    kind: matra::domain::ParagraphKind,
+    span: Span,
+}
+
+#[derive(Deserialize)]
+struct ExpectedSkipped {
+    kind: matra::domain::SkippedKind,
+    span: Span,
 }
 
 #[derive(Deserialize)]
@@ -68,6 +94,8 @@ where
 
 #[derive(Deserialize)]
 struct ExpectedSentence {
+    /// Where the sentence lies in the input, when the fixture pins it.
+    span: Option<Span>,
     text: String,
     token_count: usize,
     /// Expected negation cues, when the fixture pins them. `None` means
@@ -139,6 +167,8 @@ struct ExpectedModal {
 #[derive(Deserialize)]
 struct ExpectedToken {
     id: usize,
+    /// Where the token lies in the input, when the fixture pins it.
+    span: Option<Span>,
     text: String,
     lemma: String,
     pos: String,
@@ -191,21 +221,69 @@ fn close(a: f64, b: f64) -> bool {
     (a - b).abs() < TOLERANCE
 }
 
+/// Every span names the text it claims: a token's span slices the
+/// input to the token's form, a sentence's runs from its first token to
+/// its last, and both lie inside their paragraph's span.
+fn check_spans(input: &str, doc: &Document, name: &str) {
+    for (p, paragraph) in doc.paragraphs().enumerate() {
+        let within =
+            |span: Span| span.start >= paragraph.span.start && span.end <= paragraph.span.end;
+        for (i, sentence) in paragraph.sentences.iter().enumerate() {
+            let at = format!("{name}: paragraph {p} sentence {i}");
+            assert!(within(sentence.span), "{at}: span outside its paragraph");
+            if let (Some(first), Some(last)) = (sentence.tokens.first(), sentence.tokens.last()) {
+                assert_eq!(
+                    sentence.span,
+                    Span::new(first.span.start, last.span.end),
+                    "{at}: span"
+                );
+            }
+            for token in &sentence.tokens {
+                assert_eq!(
+                    &input[token.span.start..token.span.end],
+                    token.text,
+                    "{at} token {}: span",
+                    token.id
+                );
+            }
+        }
+    }
+}
+
+/// L9, the accounting law: every byte of the input that is not
+/// whitespace lies in exactly one heading, paragraph or skipped span.
+fn accounting(input: &str, doc: &Document) -> Result<(), String> {
+    let mut owners = vec![0u32; input.len()];
+    let spans = doc
+        .sections
+        .iter()
+        .filter_map(|s| s.span)
+        .chain(doc.paragraphs().map(|p| p.span))
+        .chain(doc.skipped.iter().map(|s| s.span));
+    for span in spans {
+        for owner in &mut owners[span.start..span.end] {
+            *owner += 1;
+        }
+    }
+    match input
+        .char_indices()
+        .find(|&(at, c)| !c.is_whitespace() && owners[at] != 1)
+    {
+        Some((at, c)) => Err(format!("byte {at} ({c:?}) lies in {} spans", owners[at])),
+        None => Ok(()),
+    }
+}
+
 #[test]
 #[ignore = "requires the UDPipe model"]
 fn rust_crust_conforms_to_spec() {
     let nlp = Udpipe::english(model_dir()).expect("load english model");
-    let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
+    let engine = Engine::new(Box::new(nlp));
 
     for fixture in load_fixtures() {
         let doc: Document = engine
-            .analyze_one(RawDocument::new(
-                fixture.input.clone(),
-                None,
-                fixture.format.clone(),
-            ))
-            .unwrap_or_else(|e| panic!("{}: analyze failed: {e}", fixture.name))
-            .analysis;
+            .analyze(Input::text(fixture.input.clone(), fixture.format.clone()))
+            .unwrap_or_else(|e| panic!("{}: analyze failed: {e}", fixture.name));
 
         let e = &fixture.expect;
         let name = &fixture.name;
@@ -235,6 +313,31 @@ fn rust_crust_conforms_to_spec() {
             .collect();
         assert_eq!(p.source.sha256, digest, "{name}: input digest");
 
+        check_spans(&fixture.input, &doc, name);
+        accounting(&fixture.input, &doc).unwrap_or_else(|why| panic!("{name}: L9: {why}"));
+        if let Some(want) = &e.sections {
+            let got: Vec<_> = doc
+                .sections
+                .iter()
+                .map(|s| (s.heading.clone(), s.level, s.span))
+                .collect();
+            let want: Vec<_> = want
+                .iter()
+                .map(|s| (s.heading.clone(), s.level, s.span))
+                .collect();
+            assert_eq!(got, want, "{name}: sections");
+        }
+        if let Some(want) = &e.paragraphs {
+            let got: Vec<_> = doc.paragraphs().map(|p| (p.kind, p.span)).collect();
+            let want: Vec<_> = want.iter().map(|p| (p.kind, p.span)).collect();
+            assert_eq!(got, want, "{name}: paragraphs");
+        }
+        if let Some(want) = &e.skipped {
+            let got: Vec<_> = doc.skipped.iter().map(|s| (s.kind, s.span)).collect();
+            let want: Vec<_> = want.iter().map(|s| (s.kind, s.span)).collect();
+            assert_eq!(got, want, "{name}: skipped");
+        }
+
         let m = &doc.metrics;
         assert_eq!(
             m.total_sentences, e.metrics.total_sentences,
@@ -255,6 +358,9 @@ fn rust_crust_conforms_to_spec() {
 
         for (i, (got, want)) in sentences.iter().zip(&e.sentences).enumerate() {
             assert_eq!(got.text, want.text, "{name}: sentence {i} text");
+            if let Some(span) = want.span {
+                assert_eq!(got.span, span, "{name}: sentence {i} span");
+            }
             if let Some(want_negs) = &want.negations {
                 assert_eq!(
                     got.negations.len(),
@@ -354,6 +460,9 @@ fn rust_crust_conforms_to_spec() {
             for (j, (t, w)) in got.tokens.iter().zip(&want.tokens).enumerate() {
                 let at = format!("{name}: sentence {i} token {j}");
                 assert_eq!(t.id, w.id, "{at} id");
+                if let Some(span) = w.span {
+                    assert_eq!(t.span, span, "{at} span");
+                }
                 assert_eq!(t.text, w.text, "{at} text");
                 assert_eq!(t.lemma, w.lemma, "{at} lemma");
                 assert_eq!(t.pos, w.pos, "{at} pos");

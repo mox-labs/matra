@@ -31,14 +31,29 @@ the other fails the corpus conformance lane.
 """
 
 
+class Span(TypedDict):
+    """A stretch of the analysed text. Mirrors `matra::domain::Span`.
+
+    Counts UTF-8 bytes, ``start`` inclusive and ``end`` exclusive, not
+    characters: ``text.encode()[span["start"]:span["end"]].decode()`` is
+    the stretch. For markdown and plain text the analysed text is the
+    input; for block input it is the blocks' texts joined by a blank line.
+    """
+
+    start: int
+    end: int
+
+
 class Token(TypedDict):
     """One CoNLL-U token. Mirrors `matra::domain::Token`.
 
     ``features`` is CoNLL-U column 6 as a map, ``{"Mood": "Ind"}``; a
     multi-valued feature keeps its value unsplit (``"Nom,Acc"``).
+    ``span`` is where the token's form lies in the analysed text.
     """
 
     id: int
+    span: Span
     text: str
     lemma: str
     pos: str
@@ -172,8 +187,11 @@ class Sentence(TypedDict):
     """One parsed sentence. Mirrors `matra::domain::Sentence`.
 
     ``tree_depth`` is ``None`` when the parse's head references loop.
+    ``text`` is normalized; ``span`` locates the sentence in the analysed
+    text.
     """
 
+    span: Span
     text: str
     tokens: list[Token]
     word_count: int
@@ -199,20 +217,42 @@ class ParagraphMetrics(TypedDict):
 
 
 class Paragraph(TypedDict):
-    """One paragraph. Mirrors `matra::domain::Paragraph`."""
+    """One paragraph. Mirrors `matra::domain::Paragraph`.
 
+    ``kind`` is ``paragraph``, ``quote`` or ``list_item`` today, an open
+    set; a quote is never parsed or measured. ``text`` is normalized (a
+    markdown paragraph's inline markup removed); ``span`` locates the
+    paragraph in the analysed text.
+    """
+
+    span: Span
     text: str
-    in_blockquote: bool
+    kind: str
     sentences: list[Sentence]
     metrics: ParagraphMetrics
 
 
 class Section(TypedDict):
-    """One section (heading + paragraphs). Mirrors `matra::domain::Section`."""
+    """One section (heading + paragraphs). Mirrors `matra::domain::Section`.
+
+    ``span`` is the heading's, ``None`` with no heading.
+    """
 
     heading: str | None
     level: int
+    span: Span | None
     paragraphs: list[Paragraph]
+
+
+class Skipped(TypedDict):
+    """A construct the reader saw and did not analyse. Mirrors `matra::domain::Skipped`.
+
+    ``kind`` is ``table``, ``code``, ``front_matter``, ``html``,
+    ``thematic_break`` or ``link_definition`` today, an open set.
+    """
+
+    kind: str
+    span: Span
 
 
 class DocumentMetrics(TypedDict):
@@ -249,7 +289,11 @@ class Identity(TypedDict):
 
 
 class ProvenanceSource(TypedDict):
-    """The analysed input. Mirrors `matra::domain::ProvenanceSource`."""
+    """The analysed input. Mirrors `matra::domain::ProvenanceSource`.
+
+    ``bytes`` and ``sha256`` describe the analysed text every span points
+    into.
+    """
 
     path: str | None
     bytes: int
@@ -261,7 +305,7 @@ class Provenance(TypedDict):
 
     ``schema`` is the schema version, ``"major.minor"``, and the one
     place it appears; reject a major you do not know. ``format`` is one
-    of ``markdown`` and ``plain_text`` today, an open set.
+    of ``markdown``, ``plain_text`` and ``blocks`` today, an open set.
     """
 
     matra: str
@@ -276,11 +320,13 @@ class Document(TypedDict):
 
     The document's aggregates arrive in ``metrics``, materialized by the
     metric suite, because methods do not cross the FFI boundary.
+    ``skipped`` lists what the reader saw and did not analyse.
     """
 
     provenance: Provenance
     sections: list[Section]
     metrics: DocumentMetrics
+    skipped: list[Skipped]
 
 
 class ScoredSentence(TypedDict):
@@ -337,19 +383,6 @@ class SemanticClusters(TypedDict):
     clusters: list[SemanticCluster]
 
 
-class CorpusEntry(TypedDict):
-    """One analyzed document from a path. Mirrors ``matra::domain::CorpusEntry``.
-
-    ``path`` is the file the document was read from, or ``None`` for
-    text that never came from disk; ``analysis["provenance"]["source"]``
-    carries the same path. ``analysis`` is the same ``Document`` shape
-    ``analyze`` returns.
-    """
-
-    path: str | None
-    analysis: Document
-
-
 class ErrorInfo(TypedDict):
     """One failure, projected for consumers. Mirrors ``matra::domain::Error``.
 
@@ -375,13 +408,14 @@ class DocumentError(TypedDict):
     error: ErrorInfo
 
 
-type CorpusItem = CorpusEntry | DocumentError
+type CorpusItem = Document | DocumentError
 """One item from ``Matra.analyze_path``: a document that analyzed, or one
 that failed.
 
 The two are told apart by their keys, and a type checker narrows the
 union on that test: ``"error" in item`` selects the failure,
-``"analysis" in item`` the success.
+``"provenance" in item`` the success, whose path is
+``item["provenance"]["source"]["path"]``.
 """
 
 
@@ -414,7 +448,6 @@ class Embedder(Protocol):
 __all__ = [
     "ERROR_KINDS",
     "ClausalComplement",
-    "CorpusEntry",
     "CorpusItem",
     "Document",
     "DocumentError",
@@ -437,5 +470,7 @@ __all__ = [
     "SemanticClusters",
     "SemanticEdge",
     "Sentence",
+    "Skipped",
+    "Span",
     "Token",
 ]

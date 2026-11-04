@@ -3,10 +3,10 @@
 
 #[cfg(feature = "udpipe")]
 mod with_model {
-    use matra::Engine;
-    use matra::domain::{Document, Format, RawDocument};
+    use matra::domain::{Document, Format};
     use matra::nlp::NlpProvider;
     use matra::nlp::udpipe::Udpipe;
+    use matra::{Engine, Input};
 
     fn model() -> Udpipe {
         Udpipe::from_path("/tmp/matra-models/english-ewt-ud-2.5-191206.udpipe")
@@ -14,14 +14,11 @@ mod with_model {
     }
 
     fn engine() -> Engine {
-        Engine::new(Box::new(model()), matra::standard_decomposers())
+        Engine::new(Box::new(model()))
     }
 
     fn analyze(text: &str, format: Format) -> Document {
-        engine()
-            .analyze_one(RawDocument::new(text.to_string(), None, format))
-            .unwrap()
-            .analysis
+        engine().analyze(Input::text(text, format)).unwrap()
     }
 
     #[test]
@@ -49,7 +46,10 @@ mod with_model {
         );
 
         // Blockquote paragraph exists but is not enriched
-        let bq_count = analysis.paragraphs().filter(|p| p.in_blockquote).count();
+        let bq_count = analysis
+            .paragraphs()
+            .filter(|p| p.kind == matra::domain::ParagraphKind::Quote)
+            .count();
         assert_eq!(bq_count, 1);
     }
 

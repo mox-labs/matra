@@ -1,14 +1,16 @@
-//! File source adapter. Reads a single file into a RawDocument.
+//! File source adapter. Reads the bytes of a single file.
 
 use std::path::Path;
 
-use crate::domain::{self, Error, Format, MAX_INPUT_BYTES, RawDocument};
+use crate::domain::{self, Error, MAX_INPUT_BYTES};
 
-use super::Source;
+use super::{Fetched, Source};
 
 /// Reads a single file.
 ///
-/// Two pre-read guards before touching the file contents:
+/// A directory is refused with [`Error::InvalidInput`] naming
+/// `Inputs::dir`, the constructor that reads one. Two more pre-read guards
+/// run before touching the file contents:
 /// 1. **Symlinks are rejected.** The read uses `symlink_metadata` (which
 ///    does not traverse) and refuses any path whose file type is a symlink.
 ///    This matches `DirectorySource`'s behavior and prevents an attacker
@@ -17,12 +19,22 @@ use super::Source;
 /// 2. **Files larger than [`MAX_INPUT_BYTES`] are rejected.** The check
 ///    is on the metadata-reported size, before any read into memory, so
 ///    a 1 GB file does not OOM the host before the gate runs.
-pub struct FileSource;
+///
+/// The bytes are returned unread: which format they are is detection's
+/// decision, not the source's.
+pub(crate) struct FileSource;
 
 impl Source for FileSource {
-    fn read(&self, input: &Path) -> domain::Result<Vec<RawDocument>> {
+    fn read(&self, input: &Path) -> domain::Result<Vec<Fetched>> {
         let metadata = std::fs::symlink_metadata(input)?;
         let file_type = metadata.file_type();
+
+        if file_type.is_dir() {
+            return Err(Error::InvalidInput(format!(
+                "{} is a directory; read a directory with Inputs::dir",
+                input.display()
+            )));
+        }
 
         if file_type.is_symlink() {
             return Err(Error::Io(std::io::Error::new(
@@ -48,12 +60,10 @@ impl Source for FileSource {
             });
         }
 
-        let text = std::fs::read_to_string(input)?;
-        let format = Format::from_path(input);
-        Ok(vec![RawDocument {
-            text,
-            path: Some(input.to_path_buf()),
-            format,
+        let bytes = std::fs::read(input)?;
+        Ok(vec![Fetched {
+            bytes,
+            path: input.to_path_buf(),
         }])
     }
 
@@ -68,7 +78,7 @@ mod tests {
     use std::io::Write;
 
     #[test]
-    fn reads_file_and_detects_markdown() {
+    fn reads_the_files_bytes_and_path() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("test.md");
         let mut f = std::fs::File::create(&path).unwrap();
@@ -79,18 +89,29 @@ mod tests {
 
         let docs = source.read(&path).unwrap();
         assert_eq!(docs.len(), 1);
-        assert!(matches!(docs[0].format, Format::Markdown));
-        assert!(docs[0].text.contains("Hello"));
+        assert_eq!(docs[0].bytes, b"## Hello\n\nWorld.");
+        assert_eq!(docs[0].path, path);
+    }
+
+    /// Bytes that are not UTF-8 are read, not refused: whether they are
+    /// text is detection's decision.
+    #[test]
+    fn reads_bytes_that_are_not_utf8() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("binary.txt");
+        std::fs::write(&path, [0xff, 0xfe, 0x00]).unwrap();
+        assert_eq!(FileSource.read(&path).unwrap()[0].bytes, [0xff, 0xfe, 0x00]);
     }
 
     #[test]
-    fn detects_plain_text() {
+    fn a_directory_is_refused_naming_inputs_dir() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("test.txt");
-        std::fs::write(&path, "plain text").unwrap();
-
-        let docs = FileSource.read(&path).unwrap();
-        assert!(matches!(docs[0].format, Format::PlainText));
+        match FileSource.read(dir.path()) {
+            Err(Error::InvalidInput(message)) => {
+                assert!(message.contains("Inputs::dir"), "{message}");
+            }
+            other => panic!("expected InvalidInput, got {:?}", other.map(|v| v.len())),
+        }
     }
 
     #[cfg(unix)]
@@ -108,7 +129,7 @@ mod tests {
                 assert_eq!(e.kind(), std::io::ErrorKind::Unsupported);
                 assert!(e.to_string().contains("symlink"));
             }
-            other => panic!("expected Io(Unsupported), got {other:?}"),
+            other => panic!("expected Io(Unsupported), got {:?}", other.map(|v| v.len())),
         }
     }
 
@@ -133,7 +154,7 @@ mod tests {
                 assert_eq!(actual, MAX_INPUT_BYTES + 1);
                 assert_eq!(what, "file_source");
             }
-            other => panic!("expected InputTooLarge, got {other:?}"),
+            other => panic!("expected InputTooLarge, got {:?}", other.map(|v| v.len())),
         }
     }
 

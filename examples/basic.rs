@@ -5,7 +5,7 @@
 //! first use; `matra config show` prints where that is)
 
 use matra::domain::Format;
-use matra::{Engine, Ingest};
+use matra::{Engine, Input};
 
 fn main() -> matra::domain::Result<()> {
     let engine = Engine::with_defaults()?;
@@ -26,11 +26,8 @@ external contributors. Best-in-class had hundreds of external
 contributors solving problems before you knew you needed them solved.
 "#;
 
-    // A string is a stream of one document.
-    for item in engine.analyze(Ingest::text(text, Format::Markdown)) {
-        let analysis = item.map_err(|e| e.error)?.analysis;
-        report(&analysis);
-    }
+    let analysis = engine.analyze(Input::text(text, Format::Markdown))?;
+    report(&analysis);
     Ok(())
 }
 

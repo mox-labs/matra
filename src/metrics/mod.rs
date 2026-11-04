@@ -59,11 +59,12 @@ pub fn run_suite(analysis: &mut Document, suite: &[Metric]) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{Paragraph, Section, Sentence, Token};
+    use crate::domain::{Paragraph, ParagraphKind, Section, Sentence, Span, Token};
 
     fn make_token(text: &str, pos: &str, dep: &str, head: usize) -> Token {
         Token {
             id: 0,
+            span: Default::default(),
             text: text.to_string(),
             lemma: text.to_lowercase(),
             pos: pos.to_string(),
@@ -90,7 +91,7 @@ mod tests {
     fn analysis_from_paragraphs(paragraphs: Vec<(Paragraph, Vec<Sentence>)>) -> Document {
         let mut paras = Vec::new();
         for (mut para, sents) in paragraphs {
-            if !para.in_blockquote {
+            if para.kind != ParagraphKind::Quote {
                 para.sentences = sents;
             }
             paras.push(para);
@@ -98,9 +99,10 @@ mod tests {
         let sections = vec![Section {
             heading: None,
             level: 0,
+            span: None,
             paragraphs: paras,
         }];
-        Document::new(crate::domain::Provenance::for_test(), sections)
+        Document::new(crate::domain::Provenance::for_test(), sections, Vec::new())
     }
 
     #[test]
@@ -119,8 +121,14 @@ mod tests {
             ],
         )]);
 
-        let mut analysis =
-            analysis_from_paragraphs(vec![(Paragraph::new(para_text.to_string(), false), sents)]);
+        let mut analysis = analysis_from_paragraphs(vec![(
+            Paragraph::new(
+                para_text.to_string(),
+                ParagraphKind::Paragraph,
+                Span::default(),
+            ),
+            sents,
+        )]);
         let suite = default_suite();
         run_suite(&mut analysis, &suite);
 
@@ -136,7 +144,11 @@ mod tests {
         // Blockquote paragraphs are skipped by the composition root, so
         // they reach the suite with an empty sentences vec.
         let mut analysis = analysis_from_paragraphs(vec![(
-            Paragraph::new("Some text here".to_string(), true),
+            Paragraph::new(
+                "Some text here".to_string(),
+                ParagraphKind::Quote,
+                Span::default(),
+            ),
             vec![],
         )]);
         let suite = default_suite();
@@ -175,11 +187,19 @@ mod tests {
 
         let mut analysis = analysis_from_paragraphs(vec![
             (
-                Paragraph::new("The system was built".to_string(), false),
+                Paragraph::new(
+                    "The system was built".to_string(),
+                    ParagraphKind::Paragraph,
+                    Span::default(),
+                ),
                 s1,
             ),
             (
-                Paragraph::new("The team shipped the product".to_string(), false),
+                Paragraph::new(
+                    "The team shipped the product".to_string(),
+                    ParagraphKind::Paragraph,
+                    Span::default(),
+                ),
                 s2,
             ),
         ]);

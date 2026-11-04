@@ -152,8 +152,10 @@ mod tests {
             vec![crate::domain::Section::new(
                 Some("\u{e0b9}".repeat(60)),
                 1,
+                None,
                 Vec::new(),
             )],
+            Vec::new(),
         );
         let mut out = Vec::new();
         sections(&mut out, &doc).expect("render");

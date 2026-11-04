@@ -1,9 +1,10 @@
 //! Corpus analysis with per-document error collection.
 //!
-//! `Ingest::path` on a directory streams every readable file through the
-//! pipeline, and collecting into `CorpusResult` partitions the outcomes:
-//!   - a `Corpus` containing entries for every document that analyzed
-//!     successfully
+//! `Inputs::dir` lists every regular file in a directory, `analyze_all`
+//! streams them through the pipeline, and collecting into `CorpusResult`
+//! partitions the outcomes:
+//!   - a `Corpus` holding every document that analyzed successfully, each
+//!     naming its path in `provenance.source.path`
 //!   - a parallel `Vec<DocumentError>` recording per-document failures
 //!
 //! Per-file failures never abort the corpus walk. A symlink, an
@@ -15,7 +16,7 @@
 //! first use; `matra config show` prints where that is)
 
 use matra::domain::CorpusResult;
-use matra::{Engine, Ingest};
+use matra::{Engine, Inputs};
 use std::path::PathBuf;
 
 fn main() -> matra::domain::Result<()> {
@@ -25,11 +26,11 @@ fn main() -> matra::domain::Result<()> {
         .unwrap_or_else(|| PathBuf::from("./"));
 
     let engine = Engine::with_defaults()?;
-    let result: CorpusResult = engine.analyze(Ingest::path(&dir)?).collect();
+    let result: CorpusResult = engine.analyze_all(Inputs::dir(&dir)?).collect();
 
     println!(
         "Analyzed {} documents from {}\n",
-        result.corpus.entries.len(),
+        result.corpus.documents.len(),
         dir.display(),
     );
 

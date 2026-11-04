@@ -173,14 +173,17 @@ class Matra:
         """Analyze every document a path names.
 
         One item for a file; one per regular file for a directory, in
-        path order. On Unix a returned `path` is decoded with
+        path order. Each file is read as its bytes and extension say:
+        `.md` as markdown, PDF and DOCX refused, anything else that is
+        UTF-8 as plain text. On Unix a returned path is decoded with
         `os.fsdecode`, so `os.fsencode` on it names the same file even
         when the name is not valid UTF-8; elsewhere an undecodable name
         is decoded lossily. Symlinks and subdirectories are skipped, not
-        followed. Each item is a `CorpusEntry` (`path`, `analysis`) for a
-        document that analyzed or a `DocumentError` (`path`, `error`) for
-        one that did not, so one unreadable file costs one item rather
-        than the whole walk. Test `"error" in item` to tell them apart.
+        followed. Each item is the `Document` for a document that
+        analyzed, its path in `provenance.source.path`, or a
+        `DocumentError` (`path`, `error`) for one that did not, so one
+        unreadable file costs one item rather than the whole walk. Test
+        `"error" in item` to tell them apart.
 
         Raises:
             OSError: the path does not exist, or the directory could not

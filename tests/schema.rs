@@ -10,7 +10,7 @@
 mod document_schema;
 
 use matra::Engine;
-use matra::domain::{self, Format, RawDocument, Sentence, Token};
+use matra::domain::{self, Format, Sentence, Token};
 use matra::nlp::NlpProvider;
 
 /// One sentence for any input: "Smith never said that animals such as
@@ -69,11 +69,10 @@ impl NlpProvider for RecordParser {
 }
 
 fn analyzed(text: &str, format: Format) -> serde_json::Value {
-    let engine = Engine::new(Box::new(RecordParser), matra::standard_decomposers());
+    let engine = Engine::new(Box::new(RecordParser));
     let doc = engine
-        .analyze_one(RawDocument::new(text.to_string(), None, format))
-        .expect("analyze")
-        .analysis;
+        .analyze(matra::Input::text(text, format))
+        .expect("analyze");
     serde_json::to_value(&doc).expect("a document serializes")
 }
 
@@ -107,6 +106,62 @@ fn a_markdown_document_with_a_blockquote_matches_the_schema() {
     );
     assert_eq!(doc["provenance"]["format"], "markdown");
     document_schema::assert_valid_document(&doc, "markdown");
+}
+
+/// Lists, skipped constructs and their spans are in the schema too.
+#[test]
+fn a_markdown_document_with_skipped_constructs_matches_the_schema() {
+    let doc = analyzed(
+        "---\ntitle: x\n---\n\n# Title\n\n- an item\n- another\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n```\ncode\n```\n",
+        Format::Markdown,
+    );
+    let kinds: Vec<&str> = doc["skipped"]
+        .as_array()
+        .expect("skipped")
+        .iter()
+        .map(|s| s["kind"].as_str().expect("kind"))
+        .collect();
+    assert_eq!(kinds, ["front_matter", "table", "code"]);
+    assert_eq!(
+        doc["sections"][0]["paragraphs"][0]["kind"], "list_item",
+        "a list item is a paragraph of its own kind"
+    );
+    document_schema::assert_valid_document(&doc, "markdown with skipped constructs");
+}
+
+/// Block input, as JSON, validates against its own published schema,
+/// reads into a document that validates against the document schema, and
+/// a block the schema does not allow is refused by the reader too.
+#[test]
+fn block_input_matches_its_schema_and_reads_into_a_document() {
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("spec/schema/v2/blocks.schema.json");
+    let schema: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(path).expect("read")).expect("parse");
+    let validator = jsonschema::draft202012::new(&schema).expect("a valid JSON Schema");
+
+    let good = serde_json::json!([
+        {"kind": "heading", "level": 1, "text": "Field notes"},
+        {"kind": "paragraph", "text": "The river rose overnight."}
+    ]);
+    assert!(validator.is_valid(&good));
+    let doc = analyzed(&good.to_string(), Format::Blocks);
+    assert_eq!(doc["provenance"]["format"], "blocks");
+    assert_eq!(doc["sections"][0]["heading"], "Field notes");
+    document_schema::assert_valid_document(&doc, "block input");
+
+    let engine = Engine::new(Box::new(RecordParser));
+    for bad in [
+        serde_json::json!([{"kind": "table", "text": "x"}]),
+        serde_json::json!([{"kind": "heading", "level": 0, "text": "x"}]),
+        serde_json::json!([{"kind": "paragraph", "text": "x", "style": "bold"}]),
+    ] {
+        assert!(!validator.is_valid(&bad), "the schema refuses {bad}");
+        let err = engine
+            .analyze(matra::Input::text(bad.to_string(), Format::Blocks))
+            .expect_err("the reader refuses it too");
+        assert_eq!(err.kind(), "invalid_input", "{bad}: {err}");
+    }
 }
 
 /// A document with no sentences is where the ratios are null, and null

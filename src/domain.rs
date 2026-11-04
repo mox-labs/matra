@@ -20,11 +20,13 @@ use serde::{Deserialize, Serialize};
 /// ~1 GiB resident at this input size).
 ///
 /// `Engine::annotate`, the only route from text to the parser, enforces it
-/// and returns [`Error::InputTooLarge`] with `what = "input"` when it is
-/// exceeded, so every `Engine` method inherits it. `FileSource` applies the
-/// same limit to a file's size before reading it (`what = "file_source"`).
-/// A provider's own `NlpProvider::parse` has no limit: calling it directly
-/// bypasses this bound.
+/// on every `Input` (text, bytes, a file, blocks) and returns
+/// [`Error::InputTooLarge`] with `what = "input"` when it is exceeded, so
+/// every `Engine` method inherits it. It is checked on the bytes handed in
+/// and again on the analysed text a reader produces from them. Reading a
+/// file applies the same limit to the file's size before reading it
+/// (`what = "file_source"`). A provider's own `NlpProvider::parse` has no
+/// limit: calling it directly bypasses this bound.
 pub const MAX_INPUT_BYTES: usize = 8 * 1024 * 1024;
 
 // ---------------------------------------------------------------------------
@@ -163,6 +165,30 @@ impl std::fmt::Display for GateSubject<'_> {
     }
 }
 
+/// What an [`Error::UnsupportedFormat`] message says could not be read,
+/// and what would read it.
+struct FormatSubject<'a>(Option<&'a Format>, Option<&'static str>);
+
+impl std::fmt::Display for FormatSubject<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match (self.0, self.1) {
+            (Some(format), Some(feature)) => write!(
+                f,
+                "unsupported format: {}; enable the `{feature}` feature to read it",
+                format.wire_name()
+            ),
+            (Some(format), None) => write!(
+                f,
+                "unsupported format: {}; no feature of this matra version reads it",
+                format.wire_name()
+            ),
+            (None, _) => f.write_str(
+                "unsupported format: the input is not UTF-8 text and carries no signature matra recognises",
+            ),
+        }
+    }
+}
+
 /// All errors matra can produce. Matchable, not opaque.
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
@@ -195,10 +221,21 @@ pub enum Error {
         /// `"embedding_download"` and `"config_file"`.
         what: &'static str,
     },
-    /// The document format has no registered decomposer in this build.
-    /// Seen when analyzing a Pdf/Docx file without the relevant adapter.
-    #[error("unsupported format: {0:?}")]
-    UnsupportedFormat(Format),
+    /// The input is in a format this build cannot read: a format matra
+    /// recognises but has no reader for here (`pdf`, `docx`), or bytes
+    /// that are not UTF-8 text and carry no signature matra recognises.
+    /// A text file with an extension matra does not know is not this
+    /// error: it reads as plain text.
+    #[error("{}", FormatSubject(.format.as_ref(), *.feature))]
+    UnsupportedFormat {
+        /// The format recognised, or `None` when the bytes are neither
+        /// UTF-8 text nor a signature matra recognises.
+        format: Option<Format>,
+        /// The Cargo feature that would read `format`, when one exists.
+        /// No feature of this version reads `pdf` or `docx`, so it is
+        /// `None` for both today.
+        feature: Option<&'static str>,
+    },
     /// A caller violated a documented API contract (mismatched argument
     /// lengths, disagreeing dimensions, a non-finite parameter). Names
     /// the violation; fix the call site, not the input data.
@@ -228,7 +265,7 @@ impl Error {
             Error::ModelInvalid(_) => "model_invalid",
             Error::ParseFailed(_) => "parse_failed",
             Error::InputTooLarge { .. } => "input_too_large",
-            Error::UnsupportedFormat(_) => "unsupported_format",
+            Error::UnsupportedFormat { .. } => "unsupported_format",
             Error::InvalidInput(_) => "invalid_input",
             Error::Io(_) => "io",
         }
@@ -255,6 +292,14 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub struct Token {
     /// 1-based position within the sentence (CoNLL-U column 1).
     pub id: usize,
+    /// Where the token's surface form lies in the analysed text, in
+    /// UTF-8 bytes. The parser reports it against the paragraph text it
+    /// was given, and `Engine::annotate` maps it into the analysed text.
+    /// In a markdown paragraph whose text dropped inline markup, a span
+    /// can cover markup inside the token (`foo**bar**` is one token whose
+    /// span runs from the `f` to the last `r`), and a token read from an
+    /// escape or an entity (`&amp;`) covers all of it.
+    pub span: Span,
     /// Surface form (CoNLL-U column 2).
     pub text: String,
     /// Dictionary form (CoNLL-U column 3).
@@ -298,6 +343,7 @@ impl Token {
     ) -> TokenBuilder {
         TokenBuilder {
             id,
+            span: Span::default(),
             text,
             lemma,
             pos,
@@ -347,6 +393,7 @@ pub(crate) fn features_from_conllu(column: &str) -> std::collections::BTreeMap<S
 /// Optional fields default to empty strings; `is_punct` defaults to false.
 pub struct TokenBuilder {
     id: usize,
+    span: Span,
     text: String,
     lemma: String,
     pos: String,
@@ -360,6 +407,12 @@ pub struct TokenBuilder {
 }
 
 impl TokenBuilder {
+    /// Set where the token lies in the text it was parsed from, in UTF-8
+    /// bytes. Defaults to the empty span at `0`.
+    pub fn span(mut self, span: Span) -> Self {
+        self.span = span;
+        self
+    }
     /// Set the language-specific POS tag (CoNLL-U column 5).
     pub fn xpos(mut self, xpos: String) -> Self {
         self.xpos = xpos;
@@ -391,6 +444,7 @@ impl TokenBuilder {
     pub fn build(self) -> Token {
         Token {
             id: self.id,
+            span: self.span,
             text: self.text,
             lemma: self.lemma,
             pos: self.pos,
@@ -870,10 +924,15 @@ fn measure_tree_depth(tokens: &[Token]) -> Option<usize> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Sentence {
-    /// Sentence text as the NLP provider reports it. The UDPipe adapter
-    /// rebuilds it from the token forms, joined by a space unless a token
-    /// carries `SpaceAfter=No` in `misc`, so its whitespace can differ
-    /// from the source.
+    /// Where the sentence lies in the analysed text, in UTF-8 bytes:
+    /// from the start of its first token to the end of its last, derived
+    /// at construction from the token spans. The authority on where the
+    /// sentence came from; `text` is normalized.
+    pub span: Span,
+    /// Sentence text as the NLP provider reports it, normalized. The
+    /// UDPipe adapter rebuilds it from the token forms, joined by a space
+    /// unless a token carries `SpaceAfter=No` in `misc`, so its
+    /// whitespace can differ from the source; `span` locates the source.
     pub text: String,
     /// CoNLL-U tokens in id-sorted order.
     pub tokens: Vec<Token>,
@@ -949,7 +1008,7 @@ impl Sentence {
     ///
     /// The caller is responsible for upholding the invariants documented
     /// on [`Sentence`]; this constructor does not validate them. Derived
-    /// fields (`word_count`, `tree_depth`, `passive`, `negations`,
+    /// fields (`span`, `word_count`, `tree_depth`, `passive`, `negations`,
     /// `modals`, `clausal_complements`, `root_adverbials`, `root_mood`)
     /// are computed here and reflect `tokens` as passed in; mutating
     /// `tokens` afterwards does not recompute them, and keeping them
@@ -958,6 +1017,10 @@ impl Sentence {
     /// by the pipeline, because its detector lives outside the domain
     /// (see the field's documentation).
     pub fn new(text: String, tokens: Vec<Token>) -> Self {
+        let span = match (tokens.first(), tokens.last()) {
+            (Some(first), Some(last)) => Span::new(first.span.start, last.span.end),
+            _ => Span::default(),
+        };
         let word_count = tokens.iter().filter(|t| !t.is_punct).count();
         let tree_depth = measure_tree_depth(&tokens);
         let passive = detect_passive(&tokens);
@@ -967,6 +1030,7 @@ impl Sentence {
         let root_adverbials = detect_root_adverbials(&tokens);
         let root_mood = detect_root_mood(&tokens);
         Self {
+            span,
             text,
             tokens,
             word_count,
@@ -1088,23 +1152,50 @@ pub struct ParagraphMetrics {
     pub compression_ratio: Option<f64>,
 }
 
+/// What kind of block a [`Paragraph`] was read from.
+///
+/// Serialized as `paragraph`, `quote` and `list_item`. A reader treats
+/// the set as open: a later reader can add a kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum ParagraphKind {
+    /// An ordinary paragraph, and every paragraph of plain text and of
+    /// block input.
+    Paragraph,
+    /// A paragraph inside a block quote, at any depth, a list item
+    /// inside a quote included. Quoted text is not the author's own, so
+    /// a quote is never parsed and never measured: it keeps no sentences
+    /// and its metric slots stay `None`.
+    Quote,
+    /// The text of a list item outside any block quote.
+    ListItem,
+}
+
 /// One paragraph of prose. `Engine::annotate` attaches its sentences and
 /// `Engine::compose`, which runs the metric suite, fills its
 /// [`ParagraphMetrics`].
 ///
-/// `in_blockquote = true` paragraphs are skipped by both stages: they keep
-/// no sentences, and their metric slots stay `None`.
+/// A [`ParagraphKind::Quote`] paragraph is skipped by both stages: it
+/// keeps no sentences, and its metric slots stay `None`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Paragraph {
-    /// Paragraph text as the decomposer cut it from the input: trimmed at
-    /// both ends, for markdown with its lines rejoined by `\n` (so `\r\n`
-    /// line endings arrive as `\n`), and for a blockquote with the `>`
-    /// markers removed. Not a slice of the input.
+    /// Where the paragraph lies in the analysed text, in UTF-8 bytes,
+    /// with trailing whitespace excluded. For markdown it covers the
+    /// block quote and list markers on the paragraph's lines, so every
+    /// byte of the input that is not whitespace lies in exactly one
+    /// heading, paragraph or skipped span.
+    pub span: Span,
+    /// The paragraph's text, normalized: for markdown, the inline text
+    /// the parser reads, with the markup removed (emphasis markers, link
+    /// and image syntax, the backticks of a code span, block quote and
+    /// list markers), soft line breaks as `\n`, escapes and entities
+    /// decoded; for plain text and block input, a verbatim slice. `span`
+    /// is the authority on where it came from.
     pub text: String,
-    /// Whether the paragraph is inside a blockquote (never parsed, never
-    /// measured).
-    pub in_blockquote: bool,
+    /// The kind of block the paragraph was read from.
+    pub kind: ParagraphKind,
     /// Sentences produced by parsing this paragraph (attached by
     /// `Engine::annotate`).
     pub sentences: Vec<Sentence>,
@@ -1116,10 +1207,11 @@ impl Paragraph {
     /// Construct a new `Paragraph` with empty sentences and an empty
     /// metric record. `Engine::annotate` attaches the sentences and
     /// `Engine::compose` fills the record.
-    pub fn new(text: String, in_blockquote: bool) -> Self {
+    pub fn new(text: String, kind: ParagraphKind, span: Span) -> Self {
         Self {
+            span,
             text,
-            in_blockquote,
+            kind,
             sentences: Vec::new(),
             metrics: ParagraphMetrics::default(),
         }
@@ -1140,22 +1232,34 @@ impl Paragraph {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Section {
-    /// Section heading, if any. `None` for the intro section of a
-    /// markdown document with no leading heading, and for plain-text
-    /// decomposition (which produces one heading-less section).
+    /// Section heading, if any, its text normalized as a paragraph's is.
+    /// `None` for the section holding what precedes the first heading,
+    /// and for plain text (which produces one heading-less section).
     pub heading: Option<String>,
-    /// Heading depth (0 for plain text, 1+ for markdown `#`/`##`/etc.).
+    /// Heading depth (0 with no heading, 1+ for a heading: markdown `#`
+    /// is 1, `##` is 2, and a block input heading keeps its level).
     pub level: usize,
+    /// Where the heading lies in the analysed text, in UTF-8 bytes,
+    /// markers included (`## Title` from the first `#`); `None` with no
+    /// heading.
+    pub span: Option<Span>,
     /// Paragraphs in document order.
     pub paragraphs: Vec<Paragraph>,
 }
 
 impl Section {
-    /// Construct a new section with the given heading, level, and paragraphs.
-    pub fn new(heading: Option<String>, level: usize, paragraphs: Vec<Paragraph>) -> Self {
+    /// Construct a new section with the given heading, level, heading
+    /// span and paragraphs.
+    pub fn new(
+        heading: Option<String>,
+        level: usize,
+        span: Option<Span>,
+        paragraphs: Vec<Paragraph>,
+    ) -> Self {
         Self {
             heading,
             level,
+            span,
             paragraphs,
         }
     }
@@ -1342,8 +1446,9 @@ impl Provenance {
 }
 
 /// The full analysis output. `Engine::annotate` builds the section tree,
-/// attaches each paragraph's parsed sentences and records the
-/// provenance; `Engine::compose` fills the metric records.
+/// attaches each paragraph's parsed sentences, records what the reader
+/// skipped and records the provenance; `Engine::compose` fills the metric
+/// records.
 ///
 /// Paragraphs live in sections (single source of truth). The document's
 /// aggregates are a record, [`DocumentMetrics`], rather than methods, so
@@ -1357,16 +1462,21 @@ pub struct Document {
     pub sections: Vec<Section>,
     /// The document's metrics, filled by `Engine::compose`.
     pub metrics: DocumentMetrics,
+    /// What the reader saw and did not analyse (a table, a code block,
+    /// front matter), in document order. Never silently dropped.
+    pub skipped: Vec<Skipped>,
 }
 
 impl Document {
-    /// Construct a new `Document` from its provenance and a section tree,
-    /// with an empty metric record; `Engine::compose` fills it in.
-    pub fn new(provenance: Provenance, sections: Vec<Section>) -> Self {
+    /// Construct a new `Document` from its provenance, a section tree and
+    /// what the reader skipped, with an empty metric record;
+    /// `Engine::compose` fills it in.
+    pub fn new(provenance: Provenance, sections: Vec<Section>, skipped: Vec<Skipped>) -> Self {
         Self {
             provenance,
             sections,
             metrics: DocumentMetrics::default(),
+            skipped,
         }
     }
 
@@ -1455,29 +1565,45 @@ impl Keyphrase {
 // Source / corpus types
 // ---------------------------------------------------------------------------
 
-/// Document format, detected from file extension.
+/// A document's format: how its bytes are read.
 ///
-/// `Pdf` and `Docx` are reserved variants; the library returns
-/// [`Error::UnsupportedFormat`] for those today.
+/// `Pdf` and `Docx` are recognised, by extension and by their bytes, but
+/// no reader for either ships, so analysing one returns
+/// [`Error::UnsupportedFormat`].
 ///
 /// Serialized in the format vocabulary every surface shares:
-/// `markdown`, `plain_text`, `pdf`, `docx`. A reader treats the set as
-/// open.
+/// `markdown`, `plain_text`, `blocks`, `pdf`, `docx`. A reader treats the
+/// set as open.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum Format {
-    /// Markdown source.
+    /// Markdown (CommonMark, with tables, strikethrough, task lists and
+    /// front matter).
     Markdown,
-    /// Plain text.
+    /// Plain text: paragraphs separated by blank lines.
     PlainText,
-    /// PDF (reserved; no decomposer ships today).
+    /// Headings and paragraphs the caller supplies: the JSON array whose
+    /// schema is `spec/schema/v2/blocks.schema.json`, or [`Block`]s.
+    Blocks,
+    /// PDF (recognised; no reader ships).
     Pdf,
-    /// DOCX (reserved; no decomposer ships today).
+    /// DOCX (recognised; no reader ships).
     Docx,
 }
 
 impl Format {
+    /// The format's name in the shared vocabulary, as it serializes.
+    pub(crate) fn wire_name(&self) -> &'static str {
+        match self {
+            Format::Markdown => "markdown",
+            Format::PlainText => "plain_text",
+            Format::Blocks => "blocks",
+            Format::Pdf => "pdf",
+            Format::Docx => "docx",
+        }
+    }
+
     /// The format a path's extension implies.
     ///
     /// The mapping lives here, on the type it produces, because two
@@ -1488,8 +1614,10 @@ impl Format {
     /// route and plain text on the other.
     ///
     /// An extension this build does not know, and a path carrying no
-    /// extension at all, are [`Format::PlainText`]. The format selects a
-    /// decomposer, and plain text is the decomposer that reads anything.
+    /// extension at all, are [`Format::PlainText`]: the format selects a
+    /// reader, and plain text reads any UTF-8 text. No extension implies
+    /// [`Format::Blocks`]; a caller names it. When the bytes are read, a
+    /// PDF or DOCX signature outranks the extension.
     ///
     /// ```
     /// # use matra::domain::Format;
@@ -1506,81 +1634,160 @@ impl Format {
     }
 }
 
-/// A raw document before decomposition. Output of Source, input to Decomposer.
-#[derive(Debug, Clone)]
-#[non_exhaustive]
-pub struct RawDocument {
-    /// The document text.
-    pub text: String,
-    /// Source path, if the document came from disk. `None` for
-    /// in-memory text.
-    pub path: Option<PathBuf>,
-    /// Detected format.
-    pub format: Format,
+/// One heading or paragraph a caller supplies, for a document matra has
+/// no reader for: text extracted from a PDF, a CMS, a transcript.
+///
+/// Input only, and opaque: built by [`Block::heading`] and
+/// [`Block::paragraph`], handed to `Input::blocks`, and never returned.
+/// The analysed text of block input is the blocks' texts joined by a
+/// blank line (`"\n\n"`), in order, and every span in the result points
+/// into that text. The same blocks as JSON are [`Format::Blocks`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Block(pub(crate) BlockContent);
+
+/// What a [`Block`] holds. Crate-private, so the block vocabulary can
+/// grow without a breaking change.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum BlockContent {
+    /// A heading opening a section.
+    Heading {
+        /// Its level, 1 or more.
+        level: u8,
+        /// Its text.
+        text: String,
+    },
+    /// A paragraph of prose.
+    Paragraph {
+        /// Its text.
+        text: String,
+    },
 }
 
-impl RawDocument {
-    /// Construct a new `RawDocument`.
-    pub fn new(text: String, path: Option<PathBuf>, format: Format) -> Self {
-        Self { text, path, format }
+impl Block {
+    /// A heading at `level` opening a new section: 1 for a top-level
+    /// heading, 2 below it, and so on. A level of 0 is refused with
+    /// [`Error::InvalidInput`] when the input is analysed, since 0 is the
+    /// level of a section with no heading.
+    pub fn heading(level: u8, text: impl Into<String>) -> Block {
+        Block(BlockContent::Heading {
+            level,
+            text: text.into(),
+        })
+    }
+
+    /// A paragraph of prose, parsed into sentences.
+    pub fn paragraph(text: impl Into<String>) -> Block {
+        Block(BlockContent::Paragraph { text: text.into() })
     }
 }
 
-/// A single entry in a corpus: one analyzed document.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// A stretch of the analysed text, in UTF-8 bytes: `start` inclusive,
+/// `end` exclusive, so `&text[span.start..span.end]` is the stretch.
+///
+/// For markdown and plain text the analysed text is the input itself;
+/// for block input it is the blocks' texts joined by a blank line.
+/// Bytes, not characters: a caller in a language that indexes strings by
+/// character converts.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[non_exhaustive]
-pub struct CorpusEntry {
-    /// Source path, if the document came from disk.
-    pub path: Option<PathBuf>,
-    /// The document's analysis output.
-    pub analysis: Document,
+pub struct Span {
+    /// The first byte.
+    pub start: usize,
+    /// One past the last byte.
+    pub end: usize,
 }
 
-impl CorpusEntry {
-    /// Construct a new `CorpusEntry`.
-    pub fn new(path: Option<PathBuf>, analysis: Document) -> Self {
-        Self { path, analysis }
+impl Span {
+    /// The span from `start` (inclusive) to `end` (exclusive).
+    pub fn new(start: usize, end: usize) -> Self {
+        Self { start, end }
+    }
+}
+
+/// What kind of construct a reader saw and did not analyse.
+///
+/// Each names the construct, never a judgment about it. Serialized in
+/// snake case; a reader treats the set as open, since a later reader can
+/// add a kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum SkippedKind {
+    /// A table.
+    Table,
+    /// A fenced or indented code block.
+    Code,
+    /// A front matter block (YAML between `---` lines, or TOML between
+    /// `+++` lines) at the very start of the document.
+    FrontMatter,
+    /// An HTML block.
+    Html,
+    /// A thematic break (`---`, `***`, `___`).
+    ThematicBreak,
+    /// A link reference definition (`[label]: https://example.com`).
+    LinkDefinition,
+}
+
+/// One construct the reader saw and did not analyse, with where it lies.
+///
+/// Skipping is specified behaviour reported beside a correct result, not
+/// an error: a table is not prose, so it is not parsed, but the result
+/// says it was there.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Skipped {
+    /// What the construct is.
+    pub kind: SkippedKind,
+    /// Where it lies in the analysed text, in UTF-8 bytes, with trailing
+    /// whitespace excluded.
+    pub span: Span,
+}
+
+impl Skipped {
+    /// A construct of `kind` at `span`.
+    pub fn new(kind: SkippedKind, span: Span) -> Self {
+        Self { kind, span }
     }
 }
 
 /// A collection of analyzed documents.
+///
+/// Each document names its own path in `provenance.source.path`, so the
+/// collection holds documents and nothing beside them.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Corpus {
-    /// One entry per successfully analyzed document.
-    pub entries: Vec<CorpusEntry>,
+    /// One document per successful analysis, in input order.
+    pub documents: Vec<Document>,
 }
 
 impl Corpus {
-    /// Construct a new `Corpus` from a vector of entries.
-    pub fn new(entries: Vec<CorpusEntry>) -> Self {
-        Self { entries }
+    /// Construct a new `Corpus` from its documents.
+    pub fn new(documents: Vec<Document>) -> Self {
+        Self { documents }
     }
 
-    /// Total non-punctuation token count across every entry's analysis.
+    /// Total non-punctuation token count across every document.
     pub fn total_words(&self) -> usize {
-        self.entries
-            .iter()
-            .map(|e| e.analysis.metrics.total_words)
-            .sum()
+        self.documents.iter().map(|d| d.metrics.total_words).sum()
     }
 
-    /// Fraction of sentences across all entries containing a passive-
+    /// Fraction of sentences across all documents containing a passive-
     /// voice construction. Returns `0.0` when the corpus has no
     /// sentences.
     pub fn passive_ratio(&self) -> f64 {
         let total: usize = self
-            .entries
+            .documents
             .iter()
-            .map(|e| e.analysis.metrics.total_sentences)
+            .map(|d| d.metrics.total_sentences)
             .sum();
         if total == 0 {
             return 0.0;
         }
         let passive: usize = self
-            .entries
+            .documents
             .iter()
-            .map(|e| e.analysis.sentences().filter(|s| s.passive).count())
+            .map(|d| d.sentences().filter(|s| s.passive).count())
             .sum();
         passive as f64 / total as f64
     }
@@ -1590,9 +1797,9 @@ impl Corpus {
     /// been measured.
     pub fn mean_readability(&self) -> f64 {
         let grades: Vec<f64> = self
-            .entries
+            .documents
             .iter()
-            .flat_map(|e| e.analysis.paragraphs())
+            .flat_map(|d| d.paragraphs())
             .filter_map(|p| p.metrics.readability_grade)
             .collect();
         if grades.is_empty() {
@@ -1642,7 +1849,7 @@ impl std::error::Error for DocumentError {
 /// The outcome of analyzing a stream of documents: every success in a
 /// [`Corpus`], every per-document failure alongside it.
 ///
-/// The partition invariant: entries plus errors equals documents
+/// The partition invariant: documents plus errors equals inputs
 /// consumed. Nothing is silently dropped.
 ///
 /// Not `Serialize`: [`DocumentError`] wraps [`Error`], which wraps
@@ -1667,19 +1874,19 @@ impl CorpusResult {
 /// `collect()` is the corpus constructor: a stream of per-document
 /// results partitions into successes and failures, preserving order
 /// within each.
-impl FromIterator<std::result::Result<CorpusEntry, DocumentError>> for CorpusResult {
-    fn from_iter<I: IntoIterator<Item = std::result::Result<CorpusEntry, DocumentError>>>(
+impl FromIterator<std::result::Result<Document, DocumentError>> for CorpusResult {
+    fn from_iter<I: IntoIterator<Item = std::result::Result<Document, DocumentError>>>(
         iter: I,
     ) -> Self {
-        let mut entries = Vec::new();
+        let mut documents = Vec::new();
         let mut errors = Vec::new();
         for item in iter {
             match item {
-                Ok(entry) => entries.push(entry),
+                Ok(document) => documents.push(document),
                 Err(err) => errors.push(err),
             }
         }
-        CorpusResult::new(Corpus::new(entries), errors)
+        CorpusResult::new(Corpus::new(documents), errors)
     }
 }
 
@@ -1705,6 +1912,7 @@ mod tests {
     fn make_token(id: usize, text: &str, pos: &str, dep: &str, head: usize) -> Token {
         Token {
             id,
+            span: Default::default(),
             text: text.to_string(),
             lemma: text.to_lowercase(),
             pos: pos.to_string(),
@@ -2887,20 +3095,19 @@ mod tests {
 
     #[test]
     fn corpus_result_partition_holds() {
-        // |entries| + |errors| = items consumed, order preserved per side.
-        let items: Vec<std::result::Result<CorpusEntry, DocumentError>> = vec![
-            Ok(CorpusEntry::new(
-                Some(PathBuf::from("a.md")),
-                Document::new(Provenance::for_test(), Vec::new()),
-            )),
+        // |documents| + |errors| = items consumed, order preserved per side.
+        let from = |path: Option<&str>| {
+            let mut provenance = Provenance::for_test();
+            provenance.source.path = path.map(PathBuf::from);
+            Document::new(provenance, Vec::new(), Vec::new())
+        };
+        let items: Vec<std::result::Result<Document, DocumentError>> = vec![
+            Ok(from(Some("a.md"))),
             Err(DocumentError::new(
                 Some(PathBuf::from("b.md")),
                 Error::ParseFailed("bad".to_string()),
             )),
-            Ok(CorpusEntry::new(
-                None,
-                Document::new(Provenance::for_test(), Vec::new()),
-            )),
+            Ok(from(None)),
             Err(DocumentError::new(
                 None,
                 Error::ParseFailed("worse".to_string()),
@@ -2908,10 +3115,13 @@ mod tests {
         ];
         let consumed = items.len();
         let result: CorpusResult = items.into_iter().collect();
-        assert_eq!(result.corpus.entries.len() + result.errors.len(), consumed);
-        assert_eq!(result.corpus.entries.len(), 2);
         assert_eq!(
-            result.corpus.entries[0].path,
+            result.corpus.documents.len() + result.errors.len(),
+            consumed
+        );
+        assert_eq!(result.corpus.documents.len(), 2);
+        assert_eq!(
+            result.corpus.documents[0].provenance.source.path,
             Some(PathBuf::from("a.md")),
             "success order preserved"
         );
@@ -2926,7 +3136,7 @@ mod tests {
     #[test]
     fn corpus_result_from_empty_iterator() {
         let result: CorpusResult = std::iter::empty().collect();
-        assert!(result.corpus.entries.is_empty());
+        assert!(result.corpus.documents.is_empty());
         assert!(result.errors.is_empty());
     }
 
@@ -2947,6 +3157,75 @@ mod tests {
         use std::error::Error as _;
         let err = DocumentError::new(None, Error::ParseFailed("boom".to_string()));
         assert!(err.source().is_some());
+    }
+
+    /// The message says what could not be read and what would read it:
+    /// a feature when one exists, and plainly that none does otherwise.
+    #[test]
+    fn unsupported_format_names_the_format_and_the_remedy() {
+        let pdf = Error::UnsupportedFormat {
+            format: Some(Format::Pdf),
+            feature: None,
+        };
+        assert_eq!(
+            pdf.to_string(),
+            "unsupported format: pdf; no feature of this matra version reads it"
+        );
+        let with_feature = Error::UnsupportedFormat {
+            format: Some(Format::Docx),
+            feature: Some("docx"),
+        };
+        assert_eq!(
+            with_feature.to_string(),
+            "unsupported format: docx; enable the `docx` feature to read it"
+        );
+        let undecodable = Error::UnsupportedFormat {
+            format: None,
+            feature: None,
+        };
+        assert!(undecodable.to_string().contains("not UTF-8 text"));
+    }
+
+    /// The name a message uses is the name the format serializes as, so
+    /// the two vocabularies cannot drift.
+    #[test]
+    fn format_wire_name_is_its_serialized_name() {
+        for format in [
+            Format::Markdown,
+            Format::PlainText,
+            Format::Blocks,
+            Format::Pdf,
+            Format::Docx,
+        ] {
+            assert_eq!(
+                serde_json::to_value(&format).unwrap(),
+                serde_json::json!(format.wire_name())
+            );
+        }
+    }
+
+    /// A sentence's span runs from its first token's start to its last
+    /// token's end, and is empty at 0 with no tokens.
+    #[test]
+    fn sentence_span_is_derived_from_its_tokens() {
+        let tok = |id: usize, start: usize, end: usize| {
+            Token::builder(
+                id,
+                "w".to_string(),
+                "w".to_string(),
+                "X".to_string(),
+                0,
+                "root".to_string(),
+            )
+            .span(Span::new(start, end))
+            .build()
+        };
+        let sentence = Sentence::new("a b".to_string(), vec![tok(1, 4, 5), tok(2, 6, 9)]);
+        assert_eq!(sentence.span, Span::new(4, 9));
+        assert_eq!(
+            Sentence::new(String::new(), Vec::new()).span,
+            Span::default()
+        );
     }
 
     #[test]
@@ -3092,7 +3371,13 @@ mod tests {
                 },
                 "input_too_large",
             ),
-            (Error::UnsupportedFormat(Format::Pdf), "unsupported_format"),
+            (
+                Error::UnsupportedFormat {
+                    format: Some(Format::Pdf),
+                    feature: None,
+                },
+                "unsupported_format",
+            ),
             (
                 Error::InvalidInput("bad argument".to_string()),
                 "invalid_input",

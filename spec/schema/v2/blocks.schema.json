@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mox-labs.github.io/matra/schema/v2/blocks.schema.json",
+  "title": "matra block input, schema 2.x",
+  "description": "An input format, `blocks`: headings and paragraphs a caller supplies for a document matra has no reader for. Read by `Input::text(json, Format::Blocks)`, `Input::bytes(json, Some(Format::Blocks))`, and a file read as `blocks`. The same blocks in Rust are `Block::heading` and `Block::paragraph`. Unlike the document schema, this one is closed: matra refuses a block whose `kind` it does not know, and a field it does not know, naming it. The analysed text is the blocks' texts joined by a blank line (\"\\n\\n\"), in order, and every span in the resulting document points into it.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/Block" },
+  "$defs": {
+    "Block": {
+      "oneOf": [{ "$ref": "#/$defs/Heading" }, { "$ref": "#/$defs/Paragraph" }]
+    },
+    "Heading": {
+      "description": "A heading, which opens a section at its level.",
+      "type": "object",
+      "required": ["kind", "level", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "heading" },
+        "level": {
+          "description": "1 for a top-level heading, 2 below it, and so on. 0 is refused: it is the level of a section with no heading.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 255
+        },
+        "text": { "type": "string" }
+      }
+    },
+    "Paragraph": {
+      "description": "A paragraph of prose, parsed into sentences.",
+      "type": "object",
+      "required": ["kind", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "paragraph" },
+        "text": { "type": "string" }
+      }
+    }
+  }
+}

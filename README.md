@@ -54,22 +54,26 @@ The Python package's `matra` command is the Rust CLI reached through the extensi
 ## Usage (Rust)
 
 ```rust,ignore
-use matra::{Engine, Ingest};
+use matra::{Engine, Input, Inputs};
 
 let engine = Engine::with_defaults()?;
 
-// A file is a stream of one document, a directory a stream of many.
-for item in engine.analyze(Ingest::path("essay.md")?) {
-    let analysis = item.map_err(|e| e.error)?.analysis;
+// One document: a file, read as its extension and bytes say.
+let doc = engine.analyze(Input::file("essay.md"))?;
+println!("Sentences: {}", doc.metrics.total_sentences);
+println!("Mean length: {:?}", doc.metrics.mean_sentence_length);
+println!("Passive: {:?}", doc.metrics.passive_ratio);
 
-    let metrics = &analysis.metrics;
-    println!("Sentences: {}", metrics.total_sentences);
-    println!("Mean length: {:?}", metrics.mean_sentence_length);
-    println!("Passive: {:?}", metrics.passive_ratio);
+// Many documents, lazily and in order; a failure is one item, not an abort.
+for item in engine.analyze_all(Inputs::dir("docs/")?) {
+    match item {
+        Ok(doc) => println!("{:?}: {} words", doc.provenance.source.path, doc.metrics.total_words),
+        Err(e) => eprintln!("{e}"),
+    }
 }
 ```
 
-`Engine::new(Box::new(Udpipe::english(dir)?), standard_decomposers())` is the explicit form, and it is what you reach for with your own provider or decomposer table.
+`Input` also takes text in a named format (`Input::text`), bytes from anywhere (`Input::bytes`), and headings and paragraphs you supply for a format matra has no reader for (`Input::blocks`). Every heading, paragraph, sentence and token carries a `span` into the analysed text, in UTF-8 bytes, and `skipped` lists what the reader saw and did not analyse (a table, a code block, front matter). `Engine::new(Box::new(Udpipe::english(dir)?))` is the explicit form, and it is what you reach for with your own provider.
 
 ## Usage (Python)
 
@@ -82,7 +86,10 @@ v = Matra.english()
 result = v.analyze_markdown(Path("essay.md").read_text())
 
 for item in v.analyze_path("docs/"):        # a whole directory
-    print(item["path"])
+    if "error" in item:
+        print(item["path"], item["error"]["kind"])
+    else:
+        print(item["provenance"]["source"]["path"], item["metrics"]["total_words"])
 ```
 
 ## Usage (CLI)
@@ -104,7 +111,7 @@ matra config show              # every resolved value, with its origin
 
 ## Architecture
 
-Hex architecture. The pipeline depends on port traits (`Source`, `Decomposer`, `NlpProvider`), not on adapters directly. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
+Hex architecture. The pipeline depends on port traits (`Source`, `Decomposer`, `NlpProvider`), not on adapters directly. `Source` and `Decomposer`, with detection and the step that turns blocks into sections, are private to the crate: a caller hands in an `Input`. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
 
 The domain sits at the centre and depends on nothing. Four ports (`Source`, `Decomposer`, `NlpProvider`, `Embedder`) depend only on the domain. Adapters implement one port each, and `nlp/udpipe.rs` is the only file that imports the UDPipe bindings. Metrics and extractors are plain functions over the domain. `lib.rs` wires it together and is the only file that knows the whole shape.
 

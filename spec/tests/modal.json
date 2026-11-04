@@ -11,8 +11,29 @@
       "nominalization_ratio": 0.0,
       "passive_ratio": 0.3333333333333333
     },
+    "sections": [
+      {
+        "heading": null,
+        "level": 0,
+        "span": null
+      }
+    ],
+    "paragraphs": [
+      {
+        "kind": "paragraph",
+        "span": {
+          "start": 0,
+          "end": 89
+        }
+      }
+    ],
+    "skipped": [],
     "sentences": [
       {
+        "span": {
+          "start": 0,
+          "end": 24
+        },
         "text": "It might have been done.",
         "token_count": 6,
         "negations": [],
@@ -27,6 +48,10 @@
         "tokens": [
           {
             "id": 1,
+            "span": {
+              "start": 0,
+              "end": 2
+            },
             "text": "It",
             "lemma": "it",
             "pos": "PRON",
@@ -35,6 +60,10 @@
           },
           {
             "id": 2,
+            "span": {
+              "start": 3,
+              "end": 8
+            },
             "text": "might",
             "lemma": "might",
             "pos": "AUX",
@@ -43,6 +72,10 @@
           },
           {
             "id": 3,
+            "span": {
+              "start": 9,
+              "end": 13
+            },
             "text": "have",
             "lemma": "have",
             "pos": "AUX",
@@ -51,6 +84,10 @@
           },
           {
             "id": 4,
+            "span": {
+              "start": 14,
+              "end": 18
+            },
             "text": "been",
             "lemma": "be",
             "pos": "AUX",
@@ -59,6 +96,10 @@
           },
           {
             "id": 5,
+            "span": {
+              "start": 19,
+              "end": 23
+            },
             "text": "done",
             "lemma": "do",
             "pos": "VERB",
@@ -67,6 +108,10 @@
           },
           {
             "id": 6,
+            "span": {
+              "start": 23,
+              "end": 24
+            },
             "text": ".",
             "lemma": ".",
             "pos": "PUNCT",
@@ -76,6 +121,10 @@
         ]
       },
       {
+        "span": {
+          "start": 25,
+          "end": 62
+        },
         "text": "You must complete the form by Friday.",
         "token_count": 8,
         "negations": [],
@@ -90,6 +139,10 @@
         "tokens": [
           {
             "id": 1,
+            "span": {
+              "start": 25,
+              "end": 28
+            },
             "text": "You",
             "lemma": "you",
             "pos": "PRON",
@@ -98,6 +151,10 @@
           },
           {
             "id": 2,
+            "span": {
+              "start": 29,
+              "end": 33
+            },
             "text": "must",
             "lemma": "must",
             "pos": "AUX",
@@ -106,6 +163,10 @@
           },
           {
             "id": 3,
+            "span": {
+              "start": 34,
+              "end": 42
+            },
             "text": "complete",
             "lemma": "complete",
             "pos": "VERB",
@@ -114,6 +175,10 @@
           },
           {
             "id": 4,
+            "span": {
+              "start": 43,
+              "end": 46
+            },
             "text": "the",
             "lemma": "the",
             "pos": "DET",
@@ -122,6 +187,10 @@
           },
           {
             "id": 5,
+            "span": {
+              "start": 47,
+              "end": 51
+            },
             "text": "form",
             "lemma": "form",
             "pos": "NOUN",
@@ -130,6 +199,10 @@
           },
           {
             "id": 6,
+            "span": {
+              "start": 52,
+              "end": 54
+            },
             "text": "by",
             "lemma": "by",
             "pos": "ADP",
@@ -138,6 +211,10 @@
           },
           {
             "id": 7,
+            "span": {
+              "start": 55,
+              "end": 61
+            },
             "text": "Friday",
             "lemma": "Friday",
             "pos": "PROPN",
@@ -146,6 +223,10 @@
           },
           {
             "id": 8,
+            "span": {
+              "start": 61,
+              "end": 62
+            },
             "text": ".",
             "lemma": ".",
             "pos": "PUNCT",
@@ -155,6 +236,10 @@
         ]
       },
       {
+        "span": {
+          "start": 63,
+          "end": 89
+        },
         "text": "The committee approved it.",
         "token_count": 5,
         "negations": [],
@@ -166,6 +251,10 @@
         "tokens": [
           {
             "id": 1,
+            "span": {
+              "start": 63,
+              "end": 66
+            },
             "text": "The",
             "lemma": "the",
             "pos": "DET",
@@ -174,6 +263,10 @@
           },
           {
             "id": 2,
+            "span": {
+              "start": 67,
+              "end": 76
+            },
             "text": "committee",
             "lemma": "committee",
             "pos": "NOUN",
@@ -182,6 +275,10 @@
           },
           {
             "id": 3,
+            "span": {
+              "start": 77,
+              "end": 85
+            },
             "text": "approved",
             "lemma": "approve",
             "pos": "VERB",
@@ -190,6 +287,10 @@
           },
           {
             "id": 4,
+            "span": {
+              "start": 86,
+              "end": 88
+            },
             "text": "it",
             "lemma": "it",
             "pos": "PRON",
@@ -198,6 +299,10 @@
           },
           {
             "id": 5,
+            "span": {
+              "start": 88,
+              "end": 89
+            },
             "text": ".",
             "lemma": ".",
             "pos": "PUNCT",

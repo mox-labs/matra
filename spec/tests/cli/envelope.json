@@ -10,7 +10,8 @@
     "result_keys": [
       "metrics",
       "provenance",
-      "sections"
+      "sections",
+      "skipped"
     ],
     "schema": "2.0",
     "format": "plain_text",

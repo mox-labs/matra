@@ -1,7 +1,7 @@
 //! Generate the docsite's figure data (EP-0012).
 //!
 //! Runs the released pipeline, through the public surface only (`config`,
-//! `Engine`, `Ingest`, `extraction`, `embed_and_cluster`, and
+//! `Engine`, `Input`, `extraction`, `embed_and_cluster`, and
 //! `embed::model2vec::Model2Vec` for the embedder it takes), over every input in
 //! `site/inputs/` and writes one JSON file per figure:
 //! `site/src/lib/figures/<input>/<figure>.json`. The site reads those files at
@@ -26,11 +26,11 @@
 //!   textrank     every sentence's TextRank score, and the summary it picks
 //!   clusters     semantic clusters at each threshold of a fixed grid
 //!                (needs the `model2vec` feature and the embedding model)
-//!   pipeline     one document at each stage: ingested, annotated, composed
+//!   pipeline     one document at each stage: input, annotated, composed
 //!
 //! Beside the inputs, every page of the docsite measures itself: each page
 //! under `site/content/` goes through the same pipeline as Markdown
-//! (`Ingest::text`), and its paragraphs' measures are written to
+//! (`Input::text`), and its paragraphs' measures are written to
 //! `site/src/lib/figures/pages/<page>/measures.json`, with each paragraph's
 //! text so the site can check that it sets each number beside the paragraph
 //! it measures, rather than trust the order.
@@ -57,10 +57,10 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use matra::Engine;
 use matra::config::Config;
-use matra::domain::{Corpus, CorpusEntry, Document, Format, Keyphrase, Sentence};
+use matra::domain::{Corpus, Document, Format, Keyphrase, Sentence};
 use matra::extraction::{rake_keyphrases, textrank_summarize, yake_keyphrases};
-use matra::{Engine, Ingest};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -194,11 +194,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     for (name, sidecar) in names.iter().zip(&sidecars) {
         let text = fs::read_to_string(inputs.join(format!("{name}.txt")))?;
         let doc = engine
-            .analyze(Ingest::text(text.clone(), sidecar.format.clone()))
-            .next()
-            .ok_or("the pipeline returned no document")?
-            .map_err(|e| format!("{name}: {}", e.error))?
-            .analysis;
+            .analyze(matra::Input::text(text.clone(), sidecar.format.clone()))
+            .map_err(|e| format!("{name}: {e}"))?;
         let input = Input {
             text: &text,
             format: sidecar.format.clone(),
@@ -249,11 +246,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     for rel in pages {
         let source = fs::read_to_string(content.join(&rel))?;
         let doc = engine
-            .analyze(Ingest::text(source, Format::Markdown))
-            .next()
-            .ok_or("the pipeline returned no document")?
-            .map_err(|e| format!("site/content/{rel}: {}", e.error))?
-            .analysis;
+            .analyze(matra::Input::text(source, Format::Markdown))
+            .map_err(|e| format!("site/content/{rel}: {e}"))?;
         let value = json!({
             "page": rel,
             "generator": generator,
@@ -305,7 +299,7 @@ fn page_measures(doc: &Document) -> Vec<Value> {
         .map(|p| {
             json!({
                 "text": p.text,
-                "in_blockquote": p.in_blockquote,
+                "kind": p.kind,
                 "sentences": p.sentences.len(),
                 "words": p.word_count(),
                 "readability_grade": p.metrics.readability_grade.map(round4),
@@ -391,7 +385,7 @@ fn metrics_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
             "index": i + 1,
             "opening": opening.join(" "),
             "words": p.word_count(),
-            "in_blockquote": p.in_blockquote,
+            "kind": p.kind,
             "readability_grade": p.metrics.readability_grade.map(round4),
             "lexical_density": p.metrics.lexical_density.map(round4),
             "compression_ratio": p.metrics.compression_ratio.map(round4),
@@ -402,7 +396,7 @@ fn metrics_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
         .iter()
         .flat_map(|s| &s.paragraphs)
         .any(|p| p.metrics.readability_grade.is_some());
-    let corpus = Corpus::new(vec![CorpusEntry::new(None, doc.clone())]);
+    let corpus = Corpus::new(vec![doc.clone()]);
     Ok(json!({
         "paragraphs": paragraphs,
         "document": {
@@ -574,15 +568,13 @@ fn clusters_figure(_: &Input) -> Result<Value, Box<dyn Error>> {
 }
 
 /// One document through the pipeline's stages, each the public call: the
-/// `RawDocument` `Ingest::text` yields, then `Engine::annotate` (decompose and parse),
+/// `Input` `Input::text` builds, then `Engine::annotate` (read and parse),
 /// then `Engine::compose` (the measures).
 fn pipeline_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
-    // The figure names `Ingest::text` as the first stage, so that is the
-    // call: a stream of one, whose only item is the document.
-    let raw = Ingest::text(input.text.to_owned(), input.format.clone())
-        .next()
-        .ok_or("Ingest::text yielded no document")??;
-    let annotated = input.engine.annotate(&raw)?;
+    // The figure names `Input::text` as the first stage, so that is the
+    // call.
+    let raw = matra::Input::text(input.text.to_owned(), input.format.clone());
+    let annotated = input.engine.annotate(raw)?;
     let mut composed = annotated.clone();
     input.engine.compose(&mut composed);
     Ok(json!({
@@ -612,7 +604,7 @@ fn stage(doc: &Document) -> Value {
                     json!({
                         "index": index,
                         "opening": opening.join(" "),
-                        "in_blockquote": p.in_blockquote,
+                        "kind": p.kind,
                         "sentences": p.sentences.len(),
                         "tokens": p.sentences.iter().map(|x| x.tokens.len()).sum::<usize>(),
                         "readability_grade": p.metrics.readability_grade.map(round4),

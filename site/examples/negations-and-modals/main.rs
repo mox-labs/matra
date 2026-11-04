@@ -1,14 +1,10 @@
 // cargo add matra@0.2 serde_json
-use matra::{Engine, Ingest};
+use matra::{Engine, Input};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Loads the English model, downloading it on first use.
     let engine = Engine::with_defaults()?;
-    // A file is a stream of one document.
-    let entry = engine
-        .analyze(Ingest::path("constitution-article-one.txt")?)
-        .next()
-        .ok_or("no document")??;
-    println!("{}", serde_json::to_string_pretty(&entry.analysis)?);
+    let doc = engine.analyze(Input::file("constitution-article-one.txt"))?;
+    println!("{}", serde_json::to_string_pretty(&doc)?);
     Ok(())
 }

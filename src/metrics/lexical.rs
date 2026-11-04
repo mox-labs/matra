@@ -1,13 +1,13 @@
 //! Lexical density metric — content words over total words, per paragraph.
 
-use crate::domain::Document;
+use crate::domain::{Document, ParagraphKind};
 use crate::stopwords::is_stop_word;
 
 /// Populate `ParagraphMetrics::lexical_density` for every non-empty,
-/// non-blockquote paragraph.
+/// paragraph that is not a quote.
 pub fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
-        if para.word_count() == 0 || para.in_blockquote {
+        if para.word_count() == 0 || para.kind == ParagraphKind::Quote {
             continue;
         }
         let words: Vec<&str> = para.text.split_whitespace().collect();

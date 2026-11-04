@@ -14,7 +14,6 @@ except ImportError as _exc:  # pragma: no cover
     ) from _exc
 from matra.types import (
     ERROR_KINDS,
-    CorpusEntry,
     CorpusItem,
     Document,
     DocumentError,
@@ -28,12 +27,13 @@ from matra.types import (
     SemanticClusters,
     SemanticEdge,
     Sentence,
+    Skipped,
+    Span,
     Token,
 )
 
 __all__ = [
     "ERROR_KINDS",
-    "CorpusEntry",
     "CorpusItem",
     "Document",
     "DocumentError",
@@ -49,6 +49,8 @@ __all__ = [
     "SemanticClusters",
     "SemanticEdge",
     "Sentence",
+    "Skipped",
+    "Span",
     "Token",
     "semantic_clusters",
 ]

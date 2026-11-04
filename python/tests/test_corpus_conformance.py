@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 from document_schema import assert_valid_document
-from matra import ERROR_KINDS, CorpusEntry, DocumentError, ErrorInfo, Matra
+from matra import ERROR_KINDS, Document, DocumentError, ErrorInfo, Matra
 
 SPEC = Path(__file__).resolve().parents[2] / "spec" / "tests" / "corpus" / "items.json"
 FIXTURE = json.loads(SPEC.read_text())
@@ -46,7 +46,7 @@ def test_the_kind_vocabulary_is_the_one_the_fixture_pins() -> None:
 
 def test_the_declared_item_shapes_match_the_fixture() -> None:
     shapes = FIXTURE["item_shapes"]
-    assert set(CorpusEntry.__annotations__) == set(shapes["entry"])
+    assert set(Document.__annotations__) == set(shapes["document"])
     assert set(DocumentError.__annotations__) == set(shapes["error"])
     assert set(ErrorInfo.__annotations__) == set(shapes["error_object"])
 
@@ -67,13 +67,12 @@ def test_a_directory_walk_yields_the_items_the_fixture_expects(
 
     assert len(items) == len(directory["expect"])
     for item, expect in zip(items, directory["expect"], strict=True):
-        assert Path(item["path"]).name == expect["name"]
-        if expect["shape"] == "entry":
-            assert set(item) == set(FIXTURE["item_shapes"]["entry"])
-            assert "sections" in item["analysis"]
-            assert item["analysis"]["provenance"]["source"]["path"] == item["path"]
-            assert_valid_document(item["analysis"], expect["name"])
+        if expect["shape"] == "document":
+            assert set(item) == set(FIXTURE["item_shapes"]["document"])
+            assert Path(item["provenance"]["source"]["path"]).name == expect["name"]
+            assert_valid_document(item, expect["name"])
         else:
+            assert Path(item["path"]).name == expect["name"]
             assert set(item) == set(FIXTURE["item_shapes"]["error"])
             assert set(item["error"]) == set(FIXTURE["item_shapes"]["error_object"])
             assert item["error"]["kind"] == expect["kind"]
