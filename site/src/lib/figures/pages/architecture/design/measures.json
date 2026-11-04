@@ -414,13 +414,13 @@
       "words": 110
     },
     {
-      "compression_ratio": 0.5394,
+      "compression_ratio": 0.5112,
       "kind": "paragraph",
-      "lexical_density": 0.5313,
-      "readability_grade": 8.5958,
-      "sentences": 6,
-      "text": "The input side is private to the crate. Decomposer dispatch is a value inside it, a table mapping each Format to a boxed reader, so a new format is a reader file and a registration line in lib.rs and changes no published signature. Source stays static: Input::file and Inputs::dir name the file and directory adapters. To read from somewhere else, fetch the bytes yourself and hand them in with Input::bytes; to analyse a format matra has no reader for, hand in its headings and paragraphs with Input::blocks. The pipeline does not care where they came from.",
-      "words": 100
+      "lexical_density": 0.5152,
+      "readability_grade": 10.69,
+      "sentences": 7,
+      "text": "The input side is private to the crate. Decomposer dispatch is a value inside it, a table mapping each Format to a boxed reader, so a new format is a reader file and a registration line in lib.rs and changes no published signature. Source stays static, with one adapter: Input::file names FileSource, and Inputs::dir lists a directory with DirectorySource, which reads nothing, so each file is read through FileSource when its Input is analysed and a file that fails is one item of the stream rather than a gap in it. To read from somewhere else, fetch the bytes yourself and hand them in with Input::bytes; to analyse a format matra has no reader for, hand in its headings and paragraphs with Input::blocks. The pipeline does not care where they came from.",
+      "words": 137
     },
     {
       "compression_ratio": 0.5704,

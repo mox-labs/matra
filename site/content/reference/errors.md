@@ -157,7 +157,14 @@ The second line is there because the model is a separate file with its own licen
 
 Standard error, so `--json` output stays a single object on standard output. `--quiet` silences it. A library caller gets the same facts as a `domain::ProvisionNotice` from `Engine::from_config_with_notice`, and decides the wording itself.
 
-The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts with no notice form of its own, so a first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config` (in Python, `Model2Vec.potion_base_8m()`) is silent for the length of that download. `matra clusters` makes that call, so its first run waits on the download with nothing on either stream; `--quiet` changes nothing there, because there is nothing to silence.
+The first `matra clusters` says the same for the embedding model, whose three files are fetched as one set of 30.9 MB:
+
+```text
+matra: downloading potion-base-8M (30.9 MB) into /home/u/.local/share/matra/models/potion-base-8M
+matra: the model is licensed MIT, separately from matra: https://opensource.org/license/mit
+```
+
+A library caller gets those facts from `Model2Vec::from_config_with_notice`. The other constructors, `Model2Vec::potion_base_8m` and `Model2Vec::from_config`, and from Python `Model2Vec.potion_base_8m()`, `Engine()` and `Engine.from_config()`, take no notice and are silent for the length of their download.
 
 ## Per-document failures: `DocumentError`
 

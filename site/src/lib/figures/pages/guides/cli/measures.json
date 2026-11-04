@@ -117,13 +117,13 @@
       "words": 102
     },
     {
-      "compression_ratio": 0.4893,
+      "compression_ratio": 0.4845,
       "kind": "paragraph",
-      "lexical_density": 0.5313,
-      "readability_grade": 9.8438,
+      "lexical_density": 0.5446,
+      "readability_grade": 10.6353,
       "sentences": 5,
-      "text": "--depth decides how much of the parse --json writes. document writes the provenance, the metrics and skipped, and no sections; paragraph adds the sections and their paragraphs, with no sentences; sentence adds the sentences, with no tokens; and token, the default, writes everything. A level below the depth is absent as a key, never an empty array, because an empty sentences would say a paragraph has none. Tokens are most of a document's JSON, so a caller that reads only the measures pays for no more than it reads. --depth without --json is a usage error.",
-      "words": 97
+      "text": "--depth decides how much of the parse --json writes. document writes the provenance, the metrics and skipped, and no sections; paragraph adds the sections and their paragraphs, with no sentences; sentence adds the sentences, with no tokens; and token, the default, writes everything. A level below the depth is absent as a key, never an empty array, because an empty sentences would say a paragraph has none, and what remains keeps the whole document's key order, so the two diff line for line. Tokens are most of a document's JSON, so a caller that reads only the measures pays for no more than it reads. --depth without --json is a usage error.",
+      "words": 114
     },
     {
       "compression_ratio": null,
@@ -243,12 +243,12 @@
       "words": 141
     },
     {
-      "compression_ratio": 0.5533,
+      "compression_ratio": 0.5562,
       "kind": "paragraph",
       "lexical_density": 0.5333,
       "readability_grade": 5.315,
       "sentences": 5,
-      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.135 and scores the bare error at 1.468, while YAKE's first is move copy at 1977.345. What is low there is the score, not the position: 1.468 sits not far above 1.000, the floor any single word scores, and 230 of the 576 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 299th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
+      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.135 and scores the bare error at 1.468, while YAKE's first is move copy at 1966.368. What is low there is the score, not the position: 1.468 sits not far above 1.000, the floor any single word scores, and 232 of the 577 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 298th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
       "words": 125
     },
     {
@@ -261,13 +261,13 @@
       "words": 11
     },
     {
-      "compression_ratio": 0.5062,
+      "compression_ratio": 0.5007,
       "kind": "paragraph",
-      "lexical_density": 0.549,
-      "readability_grade": 10.4536,
+      "lexical_density": 0.5526,
+      "readability_grade": 9.7377,
       "sentences": 5,
-      "text": "Each sentence is embedded with potion-base-8M, the embedding model models.embedding names, downloaded into the model directory on first use (about 30 MB). Two sentences whose cosine similarity is at least the threshold are joined, and a cluster is a connected component of that graph, so co-membership is transitive and is not pairwise similarity. A sentence with no partner is in no cluster. The table prints each cluster with its members' sentence indices and text; --json writes the Clusters value, with edges, every pair that cleared the threshold and its score, and the embedder's identity in provenance.parameters. Finding no cluster is exit 1.",
-      "words": 107
+      "text": "Each sentence is embedded with potion-base-8M, the embedding model models.embedding names, downloaded into the model directory on first use (30.9 MB), with the same two lines on stderr the parsing model's first download prints. Two sentences whose cosine similarity is at least the threshold are joined, and a cluster is a connected component of that graph, so co-membership is transitive and is not pairwise similarity. A sentence with no partner is in no cluster. The table prints each cluster with its members' sentence indices and text; --json writes the Clusters value, with edges, every pair that cleared the threshold and its score, and the embedder's identity in provenance.parameters. Finding no cluster is exit 1.",
+      "words": 120
     },
     {
       "compression_ratio": null,

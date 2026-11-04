@@ -468,13 +468,22 @@
       "words": 34
     },
     {
-      "compression_ratio": 0.5249,
+      "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5588,
-      "readability_grade": 9.4964,
-      "sentences": 3,
-      "text": "The notice covers the UDPipe model only. Model2Vec::potion_base_8m fetches 30.2 MB across three artifacts with no notice form of its own, so a first call to Model2Vec::potion_base_8m or Model2Vec::from_config (in Python, Model2Vec.potion_base_8m()) is silent for the length of that download. matra clusters makes that call, so its first run waits on the download with nothing on either stream; --quiet changes nothing there, because there is nothing to silence.",
-      "words": 69
+      "lexical_density": 0.5909,
+      "readability_grade": 8.0082,
+      "sentences": 2,
+      "text": "The first matra clusters says the same for the embedding model, whose three files are fetched as one set of 30.9 MB:",
+      "words": 22
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5152,
+      "readability_grade": 14.0881,
+      "sentences": 2,
+      "text": "A library caller gets those facts from Model2Vec::from_config_with_notice. The other constructors, Model2Vec::potion_base_8m and Model2Vec::from_config, and from Python Model2Vec.potion_base_8m(), Engine() and Engine.from_config(), take no notice and are silent for the length of their download.",
+      "words": 36
     },
     {
       "compression_ratio": 0.5493,
