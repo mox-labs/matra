@@ -71,19 +71,38 @@ def test_an_unknown_reference_exits_two_and_names_the_known_ones(
 def test_a_missing_file_exits_two_on_stderr(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    assert cli_main(["analyze", str(tmp_path / "absent.txt")]) == 2
+    missing = str(tmp_path / "absent.txt")
+    assert cli_main(["analyze", missing]) == 2
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert "no such file" in captured.err
+    assert "cannot read" in captured.err
+    assert missing in captured.err
+
+
+def test_a_failure_under_json_is_the_envelope(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The same envelope the Rust launcher writes: `result` null and the
+    error's kind, message and details in `error`."""
+    missing = str(tmp_path / "absent.txt")
+    assert cli_main(["analyze", missing, "--json"]) == 2
+    captured = capsys.readouterr()
+    got = json.loads(captured.out)
+    assert sorted(got) == ["command", "error", "format_version", "input", "result"]
+    assert got["result"] is None
+    assert got["input"] == missing
+    assert got["error"]["kind"] == "io"
+    assert got["error"]["details"]["path"] == missing
+    assert_valid("error", got["error"], "the failure envelope")
 
 
 def test_a_directory_is_refused_by_name(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """The refusal reaches the launcher as an exit code, not an exception."""
-    assert cli_main(["analyze", str(tmp_path)]) == 2
+    assert cli_main(["summarize", str(tmp_path)]) == 2
     captured = capsys.readouterr()
     assert captured.out == ""
     assert "is a directory" in captured.err
-    assert "pass a file" in captured.err
+    assert "matra analyze" in captured.err
 
 
 def test_a_non_utf8_argument_survives_the_crossing(
@@ -102,7 +121,7 @@ def test_a_non_utf8_argument_survives_the_crossing(
     assert cli_main(["analyze", path]) == 2
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert "no such file" in captured.err
+    assert "cannot read" in captured.err
 
 
 def test_an_argument_that_is_not_a_path_is_a_type_error() -> None:

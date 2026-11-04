@@ -304,6 +304,32 @@ def test_the_defaults_are_recorded(doc: Any) -> None:
     assert found["provenance"]["parameters"] == {"n": 10}
 
 
+def test_the_defaults_are_the_command_line_s() -> None:
+    """Python's defaults are the ones `config/default.toml` gives the
+    command line, so `matra clusters` and `matra.clusters` agree when
+    neither is told a threshold. The parity lane holds `n` and `method`
+    the same way, through results."""
+    import inspect
+    import tomllib
+
+    shipped = tomllib.loads(
+        (Path(__file__).resolve().parents[2] / "config" / "default.toml").read_text()
+    )
+    defaults = {
+        name: inspect.signature(function).parameters[parameter].default
+        for name, function, parameter in [
+            ("summary.n", matra.summarize, "n"),
+            ("keyphrases.n", matra.keyphrases, "n"),
+            ("clusters.threshold", matra.clusters, "threshold"),
+        ]
+    }
+    assert defaults == {
+        "summary.n": shipped["summary"]["n"],
+        "keyphrases.n": shipped["keyphrases"]["n"],
+        "clusters.threshold": shipped["clusters"]["threshold"],
+    }
+
+
 @pytest.mark.model
 @pytest.mark.parametrize("method", ["tfidf", "textrank"])
 def test_a_summary_method_is_recorded_as_named(doc: Any, method: str) -> None:
