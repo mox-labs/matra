@@ -51,7 +51,7 @@ each is the check on the other.
 | ports, adapters, composition root | the pair above, plus `.claude/skills/architecture/SKILL.md` for the hex mechanics |
 | Rust design: errors, traits, deps, versions | `.claude/skills/rust-craft/SKILL.md` |
 | I/O, FFI, input handling, graph walks | `.claude/skills/resilience-floor/SKILL.md` |
-| `src/lib.rs` PyO3 layer, `python/`, pins | `.claude/skills/ffi-surface/SKILL.md` |
+| `src/python/`, `python/`, pins | `.claude/skills/ffi-surface/SKILL.md` |
 | tests | `.claude/skills/testing/SKILL.md` |
 | public surface, proposals, book pages | `.claude/skills/docs-lockstep/SKILL.md` |
 
