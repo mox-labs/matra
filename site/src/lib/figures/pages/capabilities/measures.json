@@ -92,11 +92,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.45,
-      "readability_grade": 7.66,
+      "lexical_density": 0.6667,
+      "readability_grade": 15.4667,
       "sentences": 1,
-      "text": "Both are on the Python surface as Matra.tfidf_summarize and Matra.textrank_summarize, which parse the text and summarize it in one call.",
-      "words": 22
+      "text": "Python spells them matra.summarize(doc, n=3) and matra.summarize(doc, n=3, method=\"textrank\"), over the Document an engine returned.",
+      "words": 18
     },
     {
       "compression_ratio": null,
@@ -119,10 +119,10 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.4,
-      "readability_grade": 12.85,
+      "lexical_density": 0.7778,
+      "readability_grade": 14.4244,
       "sentences": 1,
-      "text": "Both are on the Python surface as Matra.rake_keyphrases and Matra.yake_keyphrases.",
+      "text": "Python spells them matra.keyphrases(doc, n=10) and matra.keyphrases(doc, n=10, method=\"yake\").",
       "words": 12
     },
     {
@@ -146,11 +146,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6071,
-      "readability_grade": 15.73,
-      "sentences": 3,
-      "text": "Capped at 2,000 sentences. On the Python surface as Matra.semantic_clusters, Model2Vec (including Model2Vec.potion_base_8m), and the module-level semantic_clusters. Matra.semantic_clusters takes a Model2Vec or any object with embed and identity.",
-      "words": 32
+      "lexical_density": 0.68,
+      "readability_grade": 12.467,
+      "sentences": 2,
+      "text": "Capped at 2,000 sentences. Python spells them matra.clusters(doc, embedder, threshold=0.85) and Model2Vec (including Model2Vec.potion_base_8m); matra.clusters takes a Model2Vec or any object with embed and identity.",
+      "words": 28
     },
     {
       "compression_ratio": null,
@@ -164,11 +164,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5714,
-      "readability_grade": 9.5764,
+      "lexical_density": 0.6579,
+      "readability_grade": 10.7834,
       "sentences": 2,
-      "text": "engine.analyze_all(inputs) returns a lazy iterator of per-document results, one per input in order, and one bad file does not abort the stream. On the Python surface the same walk is Matra.analyze_path(path), which returns the items in order for the caller to partition.",
-      "words": 46
+      "text": "engine.analyze_all(inputs) returns a lazy iterator of per-document results, one per input in order, and one bad file does not abort the stream. Python's Engine.analyze_all(dir=path) is the same lazy walk, yielding a Document or a DocumentError dict per file.",
+      "words": 43
     },
     {
       "compression_ratio": 0.4809,

@@ -144,6 +144,11 @@ def test_blocks_are_the_blocks_format(engine: Any) -> None:
         ([{"kind": "paragraph", "text": "x", "style": "bold"}], "style"),
         ([{"kind": "heading", "level": 0, "text": "x"}], "level 0"),
         ({"kind": "paragraph", "text": "x"}, "block array"),
+        # pythonize's blind spots are refused, not widened: a key that is
+        # not a str, bytes, and a bytearray.
+        ([{1: "x", "kind": "paragraph", "text": "x"}], "block array"),
+        ([{"kind": "paragraph", "text": b"x"}], "block array"),
+        ([{"kind": "paragraph", "text": bytearray(b"x")}], "block array"),
     ],
 )
 def test_bad_blocks_are_refused_by_name(engine: Any, blocks: Any, named: str) -> None:

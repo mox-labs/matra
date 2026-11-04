@@ -1,9 +1,8 @@
 # pip install 'matra>=0.2'
 import json
 
-from matra import Matra
+import matra
 
-v = Matra.english()  # downloads the English model on first use
-# A file is a list of one item: its document, or the error in its place.
-(doc,) = v.analyze_path("austen-first-sentence.txt")
-print(json.dumps(doc, indent=2, ensure_ascii=False))
+engine = matra.Engine()  # downloads the English model on first use
+doc = engine.analyze(file="austen-first-sentence.txt")  # a str alone would be text, not a path
+print(json.dumps(doc.to_dict(), indent=2, ensure_ascii=False))

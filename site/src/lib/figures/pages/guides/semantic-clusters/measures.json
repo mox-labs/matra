@@ -83,11 +83,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6296,
-      "readability_grade": 10.202,
+      "lexical_density": 0.6,
+      "readability_grade": 6.305,
       "sentences": 3,
-      "text": "Already hold embeddings? The module-level function clusters raw vectors: semantic_clusters(vectors, 0.85, model.model_hash). And model.embed(texts) returns the raw vectors when you want to do something else with them.",
-      "words": 31
+      "text": "Already hold embeddings? Pass an object whose embed returns them, one per sentence, and whose identity names the model that made them, as in Rust. And model.embed(texts) returns the raw vectors when you want to do something else with them.",
+      "words": 41
     },
     {
       "compression_ratio": null,
@@ -101,10 +101,10 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5278,
-      "readability_grade": 8.2422,
+      "lexical_density": 0.5135,
+      "readability_grade": 7.1526,
       "sentences": 3,
-      "text": "Matra.semantic_clusters and clusters both work over the sentences of one document. There is no cross-document primitive. Build one out of the two pieces above: embed each document as a single text, then cluster the resulting vectors.",
+      "text": "clusters works over the sentences of one document, in every language. There is no cross-document primitive. Build one out of what you have: embed each document as a single text with model.embed, then compare the vectors yourself.",
       "words": 37
     },
     {
@@ -128,11 +128,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.4884,
-      "readability_grade": 9.2601,
+      "lexical_density": 0.5,
+      "readability_grade": 7.57,
       "sentences": 2,
-      "text": "Pass a threshold of -1.0 and every pair emits an edge, because a cosine is never below it. That turns the call into a way of reading the raw pairwise scores off edges, which is how you calibrate before choosing a real cutoff:",
-      "words": 43
+      "text": "Read every pairwise score before you choose a cutoff. That is how you calibrate:",
+      "words": 14
     },
     {
       "compression_ratio": null,
@@ -144,31 +144,22 @@
       "words": 39
     },
     {
-      "compression_ratio": 0.5591,
+      "compression_ratio": 0.5556,
       "kind": "paragraph",
       "lexical_density": 0.4231,
-      "readability_grade": 7.8608,
+      "readability_grade": 7.4069,
       "sentences": 3,
-      "text": "The separation is decisive, and the sentence-level starting point does not carry over: the same vectors at 0.85 produce zero clusters, so the near-duplicate pair would have been reported as unrelated. This is what \"the threshold does not travel\" costs when it is taken on faith. Calibrate on scores you have read.",
+      "text": "The separation is decisive, and the sentence-level starting point does not carry over: against a cutoff of 0.85 no pair clears, so the near-duplicate pair would have been reported as unrelated. This is what \"the threshold does not travel\" costs when it is taken on faith. Calibrate on scores you have read.",
       "words": 54
     },
     {
-      "compression_ratio": 0.5733,
+      "compression_ratio": 0.5682,
       "kind": "paragraph",
-      "lexical_density": 0.5323,
-      "readability_grade": 10.4389,
+      "lexical_density": 0.5077,
+      "readability_grade": 9.2677,
       "sentences": 4,
-      "text": "Two things this route does not change. Attribution still travels: the vectors do not carry the model identity, you hand model.model_hash to semantic_clusters and it comes back on the result as parameters[\"embedder\"], so a cross-document score is as attributable as a sentence one. And a zero-magnitude vector, which is what an empty document embeds to, still gets no edge at any threshold.",
-      "words": 65
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.4615,
-      "readability_grade": 9.0731,
-      "sentences": 1,
-      "text": "On this route the 2,000-sentence cap counts documents, so one call compares at most 2,000 of them; Bounds and failure has the cap and the errors.",
-      "words": 27
+      "text": "Two things carry over from clusters, and on this route they are yours to keep. Attribution: the vectors do not carry the model identity, so record model.model_hash beside every score you keep, as clusters records it in parameters[\"embedder\"]. And a zero-magnitude vector, which is what an empty document embeds to, makes no claim: the cosine above returns 0.0 for it rather than dividing by zero.",
+      "words": 68
     }
   ]
 }

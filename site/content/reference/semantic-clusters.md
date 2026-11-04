@@ -4,7 +4,7 @@ The value semantic clustering returns, the model it embeds with, and its bounds.
 
 ## The value
 
-`clusters(&doc, &embedder, threshold)` and Python's `Matra.semantic_clusters` return a `Clusters`, a standalone value and never a field on `Document`. Its JSON Schema is `spec/schema/v2/clusters.schema.json`.
+`clusters(&doc, &embedder, threshold)` and Python's `matra.clusters(doc, embedder, threshold)` return a `Clusters`, a standalone value and never a field on `Document`. Its JSON Schema is `spec/schema/v2/clusters.schema.json`.
 
 ```text
 Clusters
@@ -28,7 +28,7 @@ A sentence with no pair above the threshold is in no cluster. Two members of one
 
 The threshold is recorded exactly as it was passed. A score is computed in the vectors' own `f32` and widened to `f64`, so it carries more digits than the model resolved: compare scores with a tolerance, not for equality with a number you typed.
 
-Python's module-level `semantic_clusters(vectors, threshold, model_hash)` clusters vectors you already hold. It reads no document, so it returns `parameters`, `clusters` and `edges` with no provenance (`matra.VectorClusters`). From Rust, vectors you hold go through `clusters` with an `Embedder` that returns them.
+Vectors you already hold go through `clusters` with an `Embedder` that returns them, in Rust and in Python alike: the clustering always runs over a document's sentences, so its result always carries a provenance.
 
 ## The model
 
@@ -70,4 +70,4 @@ A static model is a lookup table: inference is a row gather, a mean, and a norma
 | Vectors that disagree on dimension, a non-finite value, a non-finite threshold | `InvalidInput` | `matra.InvalidInputError`, a `ValueError` |
 | An embedder returning the wrong number of vectors | `InvalidInput` | `matra.InvalidInputError`, a `ValueError` |
 
-The 2,000 cap counts whatever the vectors stand for, so clustering one vector per document caps the corpus at 2,000 documents. The contract violations mean the call site or the embedder is wrong, never the text. A zero-magnitude vector has no defined cosine with anything, so it gets no edge at any threshold and no cluster. [Errors](errors.md) has the full table, the provisioning failures included.
+The 2,000 cap counts the document's sentences. The contract violations mean the call site or the embedder is wrong, never the text. A zero-magnitude vector has no defined cosine with anything, so it gets no edge at any threshold and no cluster. [Errors](errors.md) has the full table, the provisioning failures included.

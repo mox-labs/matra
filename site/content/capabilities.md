@@ -90,7 +90,7 @@ Free functions over a `Document`, needing no engine and no parser. Both return a
 | `summarize(doc, n)`, `summarize_with(doc, n, SummaryMethod::TfIdf)` | mean TF-IDF of the sentence's lemmatized terms, each sentence its own document for IDF (`tfidf`, the default) |
 | `summarize_with(doc, n, SummaryMethod::TextRank)` | PageRank over a similarity graph of shared content lemmas normalized by log length (`textrank`) |
 
-Both are on the Python surface as `Matra.tfidf_summarize` and `Matra.textrank_summarize`, which parse the text and summarize it in one call.
+Python spells them `matra.summarize(doc, n=3)` and `matra.summarize(doc, n=3, method="textrank")`, over the `Document` an engine returned.
 
 TextRank's summary of The Federalist No. 10 at the default length, and every sentence's score it was chosen from:
 
@@ -105,7 +105,7 @@ Free functions over a `Document`. Both return a `Keyphrases`: the document's `pr
 | `keyphrases(doc, n)`, `keyphrases_with(doc, n, KeyphraseMethod::Rake)` | co-occurrence degree over frequency, on `NOUN`, `ADJ`, and `PROPN` runs between stop words (`rake`, the default) |
 | `keyphrases_with(doc, n, KeyphraseMethod::Yake)` | per-term position, frequency, and context diversity, assembled into 1-word to 3-word candidates, score inverted so higher is more relevant (`yake`) |
 
-Both are on the Python surface as `Matra.rake_keyphrases` and `Matra.yake_keyphrases`.
+Python spells them `matra.keyphrases(doc, n=10)` and `matra.keyphrases(doc, n=10, method="yake")`.
 
 The two rank by different properties of the text, and on The Federalist No. 10 their top twelve lists share no phrase:
 
@@ -123,7 +123,7 @@ Not a field on any type above. The port and `clusters` are always compiled; the 
 | `Clusters` | the document's `provenance` with the method (`cosine`), the `threshold` and the embedder's identity recorded, `clusters`, and `edges` |
 | `Cluster`, `SimilarityEdge` | a cluster's `members` (sentence indices), and a pair `a`, `b` whose `score` cleared the threshold |
 
-Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `Model2Vec` (including `Model2Vec.potion_base_8m`), and the module-level `semantic_clusters`. `Matra.semantic_clusters` takes a `Model2Vec` or any object with `embed` and `identity`.
+Capped at 2,000 sentences. Python spells them `matra.clusters(doc, embedder, threshold=0.85)` and `Model2Vec` (including `Model2Vec.potion_base_8m`); `matra.clusters` takes a `Model2Vec` or any object with `embed` and `identity`.
 
 ## The pipeline surface
 
@@ -132,11 +132,11 @@ Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `
 | `Input` | `text(string, format)`, `bytes(data, format)`, `file(path)`, `blocks(blocks)` | one document: text, bytes, a file, or headings and paragraphs you supply |
 | `Inputs` | `dir(path)` | the files in a directory, as an iterator of `Input` |
 | `Engine` | `new()`, `from_config(cfg)`, `from_config_with_notice(cfg, notice)` | `analyze` one input, `analyze_all` of many |
-| `Config` | `resolve()`, `from_sources(...)`, `with_model_dir(dir)` | where models live and what the defaults are, plus the `ValueSource` each value came from |
+| `Config` | `resolve()`, `from_file(path)`, `from_sources(...)`, `with_model_dir(dir)` | where models live and what the defaults are, plus the `ValueSource` each value came from |
 
 `Engine::new()` is the no-setup constructor: locate the model directory from the environment, then build the standard pipeline, fetching the pinned English model if it is not on disk. It reads no configuration file; `Engine::from_config(&Config::resolve()?)` reads one.
 
-`engine.analyze_all(inputs)` returns a lazy iterator of per-document results, one per input in order, and one bad file does not abort the stream. On the Python surface the same walk is `Matra.analyze_path(path)`, which returns the items in order for the caller to partition.
+`engine.analyze_all(inputs)` returns a lazy iterator of per-document results, one per input in order, and one bad file does not abort the stream. Python's `Engine.analyze_all(dir=path)` is the same lazy walk, yielding a `Document` or a `DocumentError` dict per file.
 
 ## Traceability
 

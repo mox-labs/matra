@@ -1,6 +1,6 @@
 {
   "name": "semantic-clusters-shape",
-  "description": "The FFI shape fixture (EP-0009 M5, RFC-0008 lockstep): clustering over hand-built vectors must serialize to exactly this value in every crust, through `matra::clusters` with an embedder that returns these vectors in Rust, and through the vectors-in `semantic_clusters` in Python. `expect` is a Clusters without its provenance, with the two parameters the provenance records. The embeddings are chosen so a~b and b~c clear the 0.92 threshold while a~c does not (the chained-restatement case), index 3 is a zero vector (no geometry, no claim), and index 4 is a singleton.",
+  "description": "The FFI shape fixture (EP-0009 M5, RFC-0008 lockstep): clustering over hand-built vectors must serialize to exactly this value in every crust, through `matra::clusters` with an embedder that returns these vectors in Rust, and through `matra.clusters` in Python, over a parsed document with one sentence per vector. `expect` is a Clusters without its provenance, with the two parameters the provenance records. The embeddings are chosen so a~b and b~c clear the 0.92 threshold while a~c does not (the chained-restatement case), index 3 is a zero vector (no geometry, no claim), and index 4 is a singleton.",
   "embeddings": [[1.0, 0.0], [0.9239, 0.3827], [0.70710678, 0.70710678], [0.0, 0.0], [-1.0, 0.0]],
   "threshold": 0.92,
   "embedder": "shape-fixture-hash",

@@ -70,7 +70,7 @@ matra 0.2.1
 features: udpipe model2vec python cli
 ```
 
-The verify step below doubles as the check: if `from matra import Matra` fails there, the package did not install correctly.
+The verify step below doubles as the check: if `import matra` fails there, the package did not install correctly.
 
 ---
 
@@ -78,7 +78,7 @@ The verify step below doubles as the check: if `from matra import Matra` fails t
 
 There is nothing to install. The library, the CLI and the Python package each download the English UDPipe model (about 16 MB) on first use, verify it against a pinned hash, and cache it in the model directory, by default `~/.local/share/matra/models`.
 
-To keep it somewhere else, set `MATRA_MODEL_DIR`, pass `--model-dir` to the CLI, or pass the directory through `Config::with_model_dir` in Rust or to `Matra.english` in Python. [The model directory](../reference/platforms.md#the-model-directory) gives the full resolution order, and [the model download](../reference/platforms.md#the-model-download) what happens when a download fails its check.
+To keep it somewhere else, set `MATRA_MODEL_DIR`, pass `--model-dir` to the CLI, or pass the directory through `Config::with_model_dir` in Rust. Python reads `MATRA_MODEL_DIR`. [The model directory](../reference/platforms.md#the-model-directory) gives the full resolution order, and [the model download](../reference/platforms.md#the-model-download) what happens when a download fails its check.
 
 ---
 
@@ -86,7 +86,7 @@ To keep it somewhere else, set `MATRA_MODEL_DIR`, pass `--model-dir` to the CLI,
 
 matra's code is MIT, and the two models it downloads are separate works with licenses of their own. The English parsing model comes from [LINDAT](https://hdl.handle.net/11234/1-3131) under CC BY-NC-SA 4.0, which does not permit commercial use; read it before you use matra commercially. The embedding model, potion-base-8M, comes from [Hugging Face](https://huggingface.co/minishlab/potion-base-8M) under MIT per its model card, and is used for semantic clusters only. [Model licenses](../reference/platforms.md#model-licenses) has both in a table, with links to the license texts.
 
-The command line and the config file always use this model. To parse with a different UDPipe model file, load it by path from Python with `Matra.from_path` ([Python](../guides/python.md#load-the-model-from-a-directory-you-choose)); the Rust surface loads the pinned model alone.
+The command line, the config file, Rust and Python always use this model. No surface loads a different UDPipe model file: the model is a pin.
 
 ---
 
@@ -95,16 +95,16 @@ The command line and the config file always use this model. To parse with a diff
 Run this once. No arguments and no environment: it resolves the model directory, downloads and caches the model on this first run, then parses a sentence through it and prints two results:
 
 ```python
-from matra import Matra
+import matra
 
-v = Matra.english()
+engine = matra.Engine()
 
-result = v.analyze("The committee approved the proposal without debate.")
-print("sections:", len(result["sections"]))
-print("vocabulary_ttr:", result["metrics"]["vocabulary_ttr"])
+doc = engine.analyze("The committee approved the proposal without debate.")
+print("sections:", len(doc["sections"]))
+print("vocabulary_ttr:", doc["metrics"]["vocabulary_ttr"])
 ```
 
-`Matra.english("/some/directory")` is the same call with the directory named explicitly. Pass a real path: the string goes straight to Rust's `create_dir_all`, which does not expand `~`.
+To name the directory, set `MATRA_MODEL_DIR` before the call. Use a real path: the value is used unchanged, so `~` is not expanded.
 
 Expected output:
 
@@ -115,7 +115,7 @@ vocabulary_ttr: 0.8571428571428571
 
 That first run fetches the model from a university server in Prague and prints nothing while it does. Cold starts measured on a fast connection ranged from 3 to 35 seconds; on a slow network it takes longer, and the command is waiting on the network rather than working. Every run after that loads the cached file and touches no network, in about a second.
 
-If `Matra.english()` raises `OSError` (a `matra.IoError`), either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path, as `details["url"]` or `details["path"]` do. Check your network connection first; then run `matra config show` to see which directory matra resolved and check the permissions on it. If it raises `RuntimeError` (a `matra.ModelInvalidError`), bytes did arrive and then failed the pinned hash check; run the snippet again.
+If `matra.Engine()` raises `OSError` (a `matra.IoError`), either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path, as `details["url"]` or `details["path"]` do. Check your network connection first; then run `matra config show` to see which directory matra resolved and check the permissions on it. If it raises `RuntimeError` (a `matra.ModelInvalidError`), bytes did arrive and then failed the pinned hash check; run the snippet again.
 
 ---
 
@@ -123,6 +123,6 @@ If `Matra.english()` raises `OSError` (a `matra.IoError`), either the download n
 
 - matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.2.x core.
 - The English UDPipe model cached in the resolved model directory, verified against a pinned hash.
-- A confirmed working call from `Matra.english()` through `analyze()` to a result.
+- A confirmed working call from `matra.Engine()` through `analyze()` to a result.
 
 Next: [Your first analysis](first-analysis.md) walks through what that result holds, or go to [Rust](../guides/rust.md), [Python](../guides/python.md) or [CLI](../guides/cli.md) for the surface you are calling from.

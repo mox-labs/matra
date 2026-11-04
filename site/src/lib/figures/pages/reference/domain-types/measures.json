@@ -576,13 +576,13 @@
       "words": 84
     },
     {
-      "compression_ratio": 0.4985,
+      "compression_ratio": 0.5015,
       "kind": "paragraph",
-      "lexical_density": 0.585,
-      "readability_grade": 9.2955,
+      "lexical_density": 0.5882,
+      "readability_grade": 9.3577,
       "sentences": 6,
-      "text": "Document and DocumentError are the two items Matra.analyze_path returns, and the Python package names their union matra.types.CorpusItem. A Document crosses through serde like every shape above it, with one field replaced: its provenance.source.path is decoded with the platform's filesystem decoding (os.fsdecode on Unix), so a name that is not valid UTF-8 crosses exactly instead of as serde's lossy string. A DocumentError crosses through serde too, as {\"path\", \"kind\", \"message\", \"details\"}, with its path decoded the same way. kind is Error::kind on the domain type, pinned across bindings by spec/tests/corpus/items.json and exported to Python as matra.ERROR_KINDS; message is the Rust error's own Display text; details is Error::details. An Error raised rather than returned crosses as a Python exception carrying the same three, kind, str(exc) and details: a method is computed into a value before it crosses, as an aggregate is. A future binding takes the same serde form.",
-      "words": 158
+      "text": "Document and DocumentError are the two items Python's Engine.analyze_all yields. A Document stays a Rust value behind a read-only handle, and every read of it crosses through serde like every shape above it, with one field replaced: its provenance.source.path is decoded with the platform's filesystem decoding (os.fsdecode on Unix), so a name that is not valid UTF-8 crosses exactly instead of as serde's lossy string. A DocumentError crosses through serde too, as {\"path\", \"kind\", \"message\", \"details\"}, with its path decoded the same way. kind is Error::kind on the domain type, pinned across bindings by spec/tests/corpus/items.json and exported to Python as matra.ERROR_KINDS; message is the Rust error's own Display text; details is Error::details. An Error raised rather than returned crosses as a Python exception carrying the same three, kind, str(exc) and details: a method is computed into a value before it crosses, as an aggregate is. A future binding takes the same serde form.",
+      "words": 166
     },
     {
       "compression_ratio": null,

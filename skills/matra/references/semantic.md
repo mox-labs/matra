@@ -86,20 +86,22 @@ That feature is not in the default set and `cli` does not pull it in, so check b
 $ matra --version
 ```
 
-From Python, `Matra.semantic_clusters(text, threshold, model)` takes a `Model2Vec` or any object with `embed` and `identity` and returns the `Clusters` dict, and the module-level `semantic_clusters(embeddings, threshold, model_hash)` is the vectors-in twin. It reads no document, so it returns `parameters`, `clusters` and `edges` with no provenance, its third argument recorded as `parameters["embedder"]`. `Model2Vec.embed(texts)` is where the vectors for that twin come from: it returns one vector per text, in order, each of `model.dimensions` length. See `python` for the signatures.
+From Python, `matra.clusters(doc, embedder, threshold=0.85)` takes the `Document` an engine returned and a `Model2Vec` or any object with `embed` and `identity`, and returns the `Clusters` dict. Vectors you already hold get in through an object whose `embed` returns them. `Model2Vec.embed(texts)` returns raw vectors, one per text, in order, each of `model.dimensions` length. See `python` for the signatures.
 
 ## Comparing whole documents
 
-**Every clustering call above is over the sentences of one document. There is no cross-document primitive, and matra has no per-document redundancy number at all.** Build the comparison out of the two pieces you already have: embed each document as one text with `Model2Vec.embed`, then cluster those vectors with the module-level `semantic_clusters`.
+**Every clustering call above is over the sentences of one document. There is no cross-document primitive, and matra has no per-document redundancy number at all.** Build the comparison yourself: embed each document as one text with `Model2Vec.embed`, then compute the cosine of each pair.
 
-**The embedder caps every text at 512 tokens, so a whole-document vector is a vector of roughly the document's first 512 tokens.** Truncation happens twice, on bytes before tokenizing and on the token ids after, and nothing past the cap reaches the mean. Tokens are not words, and the ratio depends on what the file holds, so name the basis with any figure. Swept over the 25 pages of matra's own book long enough to reach it, by the recipe below, which embeds the raw file text, 512 tokens ran out between 141 and 378 words. Diagrams, code fences and tables pull the low end down, and a route that reads files off disk gets the low end. Two long texts agreeing for as few as their first 141 words can already embed to byte-identical vectors, so documents with a shared boilerplate opening report as near-duplicates on the opening alone, and paraphrases that diverge early are never compared on the rest. Say which part of the document a cross-document score covers. When the tail is the content, chunk, and size chunks from a token count: a word count is not a safe proxy on raw markup, where a 54-word window inside an inline SVG block already filled the cap. The 2,000 cap also still applies, and on this route it counts documents rather than sentences.
+**The embedder caps every text at 512 tokens, so a whole-document vector is a vector of roughly the document's first 512 tokens.** Truncation happens twice, on bytes before tokenizing and on the token ids after, and nothing past the cap reaches the mean. Tokens are not words, and the ratio depends on what the file holds, so name the basis with any figure. Swept over the 25 pages of matra's own book long enough to reach it, by the recipe below, which embeds the raw file text, 512 tokens ran out between 141 and 378 words. Diagrams, code fences and tables pull the low end down, and a route that reads files off disk gets the low end. Two long texts agreeing for as few as their first 141 words can already embed to byte-identical vectors, so documents with a shared boilerplate opening report as near-duplicates on the opening alone, and paraphrases that diverge early are never compared on the rest. Say which part of the document a cross-document score covers. When the tail is the content, chunk, and size chunks from a token count: a word count is not a safe proxy on raw markup, where a 54-word window inside an inline SVG block already filled the cap.
 
-Pass a threshold of `-1.0` and every pair emits an edge, because a cosine is never below it. That is the sanctioned way to read raw pairwise scores, and it is what calibration looks like: read the scores first, choose the cutoff second.
+Read every pairwise score before choosing a cutoff. That is what calibration looks like: read the scores first, choose the cutoff second.
 
 ```python
+import math
+from itertools import combinations
 from pathlib import Path
 
-from matra import Model2Vec, semantic_clusters
+from matra import Model2Vec
 
 model = Model2Vec.potion_base_8m()
 docs = [
@@ -109,9 +111,14 @@ docs = [
 ]
 vectors = model.embed([p.read_text() for p in docs])
 
-pairs = semantic_clusters(vectors, -1.0, model.model_hash)
-for edge in pairs["edges"]:
-    print(f"{edge['score']:.4f}  {docs[edge['a']].name} <-> {docs[edge['b']].name}")
+
+def cosine(a: list[float], b: list[float]) -> float:
+    norm = math.hypot(*a) * math.hypot(*b)
+    return sum(x * y for x, y in zip(a, b)) / norm if norm else 0.0
+
+
+for a, b in combinations(range(len(docs)), 2):
+    print(f"{cosine(vectors[a], vectors[b]):.4f}  {docs[a].name} <-> {docs[b].name}")
 ```
 
 Three pages of matra's own book, run from a checkout: two covering the same ground for different surfaces, and one unrelated. Reproducible, unlike a corpus nobody else has.
@@ -122,4 +129,4 @@ Three pages of matra's own book, run from a checkout: two covering the same grou
 0.6138  rust.md <-> roadmap.md
 ```
 
-The pair separates decisively, and the shipped 0.85 does not carry over: the same vectors at `0.85` yield zero clusters, so an agent that took the starting value on faith would have reported the near-duplicates as unrelated. Document vectors are means over far more tokens than sentence vectors, so the whole scale shifts: unrelated documents sit well above zero, and near-duplicates need not reach the sentence band. Report the raw edge scores and the embedder's identity, and say which granularity produced them.
+The pair separates decisively, and the shipped 0.85 does not carry over: against `0.85` no pair clears, so an agent that took the starting value on faith would have reported the near-duplicates as unrelated. Document vectors are means over far more tokens than sentence vectors, so the whole scale shifts: unrelated documents sit well above zero, and near-duplicates need not reach the sentence band. Report the raw scores and the embedder's identity (`model.model_hash`), and say which granularity produced them.

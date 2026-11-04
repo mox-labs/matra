@@ -56,7 +56,7 @@ That is the CLI binary from `cargo install`. The Python package prints `features
 
 The library, the CLI and the Python package resolve the model directory the same way, first match wins:
 
-1. A directory passed explicitly: `--model-dir` on the command line, `Config::with_model_dir` in Rust, or the directory argument of `Matra.english` and the other constructors that take one.
+1. A directory passed explicitly: `--model-dir` on the command line, `Config::with_model_dir` in Rust, or the directory argument of the constructors that take one, such as `Model2Vec::potion_base_8m`.
 2. `MATRA_MODEL_DIR`.
 3. The `models` directory of the data root, which is `MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`.
 4. A pre-existing, non-empty `~/.matra/models` from an older install, when the location in 3 does not exist yet. matra never creates `~/.matra`; a selected legacy cache is used as the model directory, downloads included.
@@ -67,7 +67,7 @@ The library, the CLI and the Python package resolve the model directory the same
 
 | | Parsing model | Embedding model |
 |---|---|---|
-| Fetched by | `Engine::new`, `Engine::from_config`, `Matra.english` and the command line, on first use | `Model2Vec::potion_base_8m`, `Model2Vec::from_config` and their Python forms, on first use |
+| Fetched by | `Engine::new` and `Engine::from_config`, in Rust and in Python, and the command line, on first use | `Model2Vec::potion_base_8m`, `Model2Vec::from_config` and their Python forms, on first use |
 | Size | about 16 MB | about 30 MB, three files |
 | Verified against | a SHA-256 pinned in the source | a SHA-256 over the three files, pinned in the source |
 | Download cap | 64 MiB | 64 MiB per file |
@@ -87,4 +87,4 @@ matra's code is MIT. The models it downloads are separate files, published by ot
 
 The parsing model's license does not permit commercial use. The [UDPipe models page](https://ufal.mff.cuni.cz/udpipe/1/models) states that the UDPipe 1 models it publishes for Universal Dependencies are distributed under CC BY-NC-SA. This page reports what the licenses say and does not interpret them; read the license text for the terms.
 
-The command line and the config file always use this parsing model: `--model-dir`, `MATRA_MODEL_DIR` and the other settings change where it is stored, not which model it is. `models.udpipe`, which earlier releases wrote into the config file, is deprecated and selects nothing. A different UDPipe model file loads by path only from Python, through `Matra.from_path` ([Python](../guides/python.md#load-the-model-from-a-directory-you-choose)); the Rust surface loads the pinned model alone.
+The command line and the config file always use this parsing model: `--model-dir`, `MATRA_MODEL_DIR` and the other settings change where it is stored, not which model it is. `models.udpipe`, which earlier releases wrote into the config file, is deprecated and selects nothing. No surface loads a different UDPipe model file: the model is a pin.

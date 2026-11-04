@@ -18,13 +18,15 @@ spec/
   README.md          this file
   tests/*.json       one fixture per file (parse conformance)
   tests/semantic/    embedding-tier fixtures: the FFI shape fixture
-                     (modelless) and the pinned reference-model
+                     (modelless in Rust) and the pinned reference-model
                      conformance (potion-base-8M by artifact digest)
   tests/outcomes/    the outcome lane: a whole document the pinned parser
                      produced, and what summarize, keyphrases and
                      clusters return over it
   tests/corpus/      the corpus item shapes and the error kind vocabulary
   tests/cli/         the command line's JSON envelope
+  tests/parity/      the cross-surface lane: the same files through Rust,
+                     Python and the command line, one expectation
   schema/v2/         the JSON Schemas for schema 2.x documents, the
                      three outcomes (summary, keyphrases, clusters) and
                      errors, and the schema of the `blocks` input format
@@ -33,10 +35,10 @@ spec/
 Each crust has a runner that loads every fixture in `spec/tests/` and asserts
 the same expectations:
 
-| Crust | Parse runner | Semantic runner | Corpus runner | Outcome runner | CLI runner |
-|---|---|---|---|---|---|
-| Rust | `tests/conformance.rs` | `tests/semantic_conformance.rs` | `tests/corpus_conformance.rs` and `src/lib.rs` | `tests/outcome_conformance.rs` | `tests/cli.rs` |
-| Python | `python/tests/test_conformance.py` | `python/tests/test_semantic_conformance.py` | `python/tests/test_corpus_conformance.py` | none until Python takes a `Document` (EPR-0006 milestone 5) | `python/tests/test_cli.py` |
+| Crust | Parse runner | Semantic runner | Corpus runner | Outcome runner | CLI runner | Parity runner |
+|---|---|---|---|---|---|---|
+| Rust | `tests/conformance.rs` | `tests/semantic_conformance.rs` | `tests/corpus_conformance.rs` and `src/lib.rs` | `tests/outcome_conformance.rs` | `tests/cli.rs` | `tests/parity.rs`, for the library and the command line |
+| Python | `python/tests/test_conformance.py` | `python/tests/test_semantic_conformance.py` | `python/tests/test_corpus_conformance.py` | `python/tests/test_outcome_conformance.py` | `python/tests/test_cli.py` | `python/tests/test_parity.py` |
 
 Run them with `just conformance`. Both model lanes fetch on first use and
 load from disk after: the parse lane the UDPipe model, the semantic
@@ -44,8 +46,9 @@ reference lane potion-base-8M through `Model2Vec::potion_base_8m`, into
 the resolved model directory or into `MATRA_MODEL2VEC_DIR` when that is
 set. Each download is pinned by a digest in the source and verified
 before anything loads, so what a lane can obtain is exactly the artifact
-its fixture names. The semantic shape fixture runs everywhere with no
-model at all.
+its fixture names. The semantic shape fixture runs in Rust with no model
+at all. Python has no constructor for a `Document` from data, so its runner
+parses one sentence per fixture vector first, and needs the parsing model.
 
 ## Fixture format
 
@@ -90,7 +93,13 @@ The optional `expect.sections` (each heading's `heading`, `level` and `span`), `
 
 ## The outcome lane
 
-`tests/outcomes/outcomes.json` carries a whole `Document`, produced once by the pinned parser from the fixture's `input`, and cases for `summarize`, `keyphrases` and `clusters` over it: a summary's sentences by index, span and score, keyphrases by phrase, score and every occurrence, clusters by members and edges. `clusters` takes the fixture's own vectors, one per sentence, through an embedder that returns them, so the case pins the clustering rather than a model. The outcome functions need no parser, so `tests/outcome_conformance.rs` runs in a build without one (`cargo test --no-default-features`), and validates every result against its schema. Its one ignored test checks the committed document against the pinned parser, and with `MATRA_REGENERATE_OUTCOMES=1` rewrites the document and every expectation from the implementation; read what changed before committing it.
+`tests/outcomes/outcomes.json` carries a whole `Document`, produced once by the pinned parser from the fixture's `input`, and cases for `summarize`, `keyphrases` and `clusters` over it: a summary's sentences by index, span and score, keyphrases by phrase, score and every occurrence, clusters by members and edges. `clusters` takes the fixture's own vectors, one per sentence, through an embedder that returns them, so the case pins the clustering rather than a model. The outcome functions need no parser, so `tests/outcome_conformance.rs` runs in a build without one (`cargo test --no-default-features`), and validates every result against its schema. Its one ignored test checks the committed document against the pinned parser, and with `MATRA_REGENERATE_OUTCOMES=1` rewrites the document and every expectation from the implementation; read what changed before committing it. The Python runner, `python/tests/test_outcome_conformance.py`, parses the fixture's `input`, checks it gets the committed document, and runs every case over it, so it needs the model.
+
+## The parity lane
+
+`tests/parity/parity.json` holds the same files through three surfaces: the Rust library, Python, and the command line. Each runner writes a case's `input` to a file named by `file`, analyzes it through its own surface, and compares the whole `Document`, every summary and every keyphrase result to the fixture's `expect`, after setting `provenance.matra` to the fixture's and clearing `provenance.source.path` (checked first to be the path passed). A case with no `n` or `method` runs each surface's default, so the defaults are held together too: Python's keyword defaults, the library's default method, and the command line's configuration defaults, run with no configuration file. An error case pins the failure's `kind`, `message` and `details`; Python raises them, and the command line, until its `--json` errors carry a `kind`, prints `matra: FILE: MESSAGE` on stderr and exits 2.
+
+`tests/parity.rs` runs the library and the command line binary (`cargo test --features cli --test parity -- --ignored`), and `python/tests/test_parity.py` runs Python. A surface that drifts fails its own runner. All three need the model. With `MATRA_REGENERATE_PARITY=1` the Rust library test rewrites every expectation; read what changed before committing it.
 
 ## The CLI lane
 
@@ -133,7 +142,7 @@ parser with a provider that returns no sentences, so it needs no model; what it
 pins is the shape and the order, not the parse, which the parse fixtures
 already cover. The parser trait is private to the crate, so that walk runs
 inside it (`src/lib.rs`, `a_directory_walk_yields_one_item_per_file`), and
-`tests/corpus_conformance.rs` holds the rest of the lane. The Python runner reaches the walk through `analyze_path`, a
+`tests/corpus_conformance.rs` holds the rest of the lane. The Python runner reaches the walk through `Engine.analyze_all(dir=...)`, a
 method on a loaded engine, so its directory expectation carries the `model`
 marker while the vocabulary and shape assertions run everywhere.
 

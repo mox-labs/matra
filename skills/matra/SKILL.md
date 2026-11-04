@@ -134,5 +134,5 @@ $ matra --skill -r json
 | `structure` | Tokens, dependency arcs, the tree, and what each structural field reports |
 | `metrics` | Each measure's formula, its applicability condition, and its limitation |
 | `semantic` | Clusters, the threshold and why it does not travel, comparing whole documents, model provisioning, and what the embedder's identity is for |
-| `python` | The Python API, the `Embedder` protocol, `Model2Vec.embed` for raw vectors, `analyze_path`, and exception mapping |
+| `python` | The Python API: `Engine`, the read-only `Document`, the outcome functions, the `Embedder` protocol, and exception mapping |
 | `errors` | Every failure kind, its details, its Python exception, and what to do about it |

@@ -1,9 +1,11 @@
 # pip install 'matra>=0.2'
 import json
 
-from matra import Matra
+import matra
 
-v = Matra.english()
+engine = matra.Engine()
 with open("origin-struggle.txt", encoding="utf-8") as f:
-    phrases = v.rake_keyphrases(f.read(), 10)
+    doc = engine.analyze(f.read())  # read as plain text
+# Parse once; keyphrases are a function of the document.
+phrases = matra.keyphrases(doc, n=10, method="rake")
 print(json.dumps(phrases, indent=2, ensure_ascii=False))

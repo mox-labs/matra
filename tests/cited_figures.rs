@@ -38,7 +38,7 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
             "site/content/guides/cli.md",
-            "19548:ae7eb796747d0cda",
+            "19548:fb85706ac39d92da",
             "the 0.8215 pair score in site/content/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md, and the 0.5857 unrelated score",
         ),
@@ -49,18 +49,18 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/roadmap.md",
-            "29373:7b00b4207884d34a",
+            "29425:41428c4be75461b8",
             "the 0.5857 and 0.6138 unrelated scores, in the same two files",
         ),
         (
             "site/content/reference/errors.md",
-            "31137:fcce5bed8e68ffbe",
+            "31089:22494229ee7f6589",
             "the RAKE and YAKE figures in site/content/guides/cli.md: 544 phrases, \
-             the one first at 12.109, 1.442 (273rd), 225 at the floor, and YAKE's 1700.000",
+             the one first at 12.109, 1.442 (273rd), 223 at the floor, and YAKE's 1724.178",
         ),
         (
             "site/content/reference/domain-types.md",
-            "46250:858f5862ae13a650",
+            "46388:09966a79d1a008c9",
             "the 141-word saturation floor and the 54-word window in \
              site/content/guides/semantic-clusters.md and skills/matra/references/semantic.md",
         ),
@@ -72,9 +72,9 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/reference/methodology.md",
-            "25513:692570d336998062",
+            "25401:92704dbc2ee6fcf6",
             "the RAKE length example in site/content/guides/cli.md: `lexical density` \
-             at 5.667 over `model file name` at 5.114",
+             at 5.667 over `model file name` at 5.200",
         ),
     ]
 }

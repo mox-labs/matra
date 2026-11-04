@@ -317,11 +317,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6,
-      "readability_grade": 7.485,
+      "lexical_density": 0.5952,
+      "readability_grade": 7.6098,
       "sentences": 3,
-      "text": "Enforcement. For src/cli/, the checks described below. Everywhere else, review: read for any file other than lib.rs importing from two or more adapter modules, and for any helper outside the composition root that matches on Format to pick a reader.",
-      "words": 40
+      "text": "Enforcement. For src/cli/ and src/python/, the checks described below. Everywhere else, review: read for any file other than lib.rs importing from two or more adapter modules, and for any helper outside the composition root that matches on Format to pick a reader.",
+      "words": 43
     },
     {
       "compression_ratio": 0.5471,
@@ -349,6 +349,15 @@
       "sentences": 6,
       "text": "boundary-rule7-cli-imports reads both spellings of a violation, because the inline one is the one it would most likely take. The declared form is a use crate::... line in src/cli/; the inline form is a qualified path in a function body. The CLI already reaches Engine, Input and the outcome functions by inline path rather than by use, so the inline form is the ordinary idiom here and the one a violation would blend into. The check is an allowlist: any crate:: path in src/cli/ must start with Engine, Input, Inputs, Block, summarize, summarize_with, keyphrases, keyphrases_with, clusters, SummaryMethod, KeyphraseMethod, config, domain or cli, so a port, an adapter, a crate-private module, or a crate-root re-export of an adapter fails it. boundary-rule7-cli-root-super reads super:: in src/cli/mod.rs, where it is the crate root, the same way. Either spelling would put adapter selection in the command line, which is the composition root's job.",
       "words": 153
+    },
+    {
+      "compression_ratio": 0.5327,
+      "kind": "paragraph",
+      "lexical_density": 0.598,
+      "readability_grade": 8.9802,
+      "sentences": 5,
+      "text": "src/python/ is the Python binding, a driving adapter that translates and decides nothing, held to the same rule by boundary-rule7-python-imports and boundary-rule7-python-root-super in .semgrep/rule7-python.yml. Its allowlist is the command line's plus two names: embed, because a Python caller hands clusters an embedder (Model2Vec, or any object the binding wraps as an Embedder), and cli, because the console script runs cli::run. Its own tree is crate::python. Before 0.3.0 the binding lived inside src/lib.rs, out of this check's reach, and it decided things the command line decided differently: it read markdown as plain text before a summary. Held to the public surface, it cannot.",
+      "words": 114
     },
     {
       "compression_ratio": null,

@@ -67,13 +67,13 @@ The cached file is then checked against a size constant, 16,309,608 bytes, and a
 
 The verify step returns the bytes it hashed, and those exact bytes go to the loader. Nothing re-reads the disk in between. That ordering is the whole point: a hash-then-reopen sequence leaves a window in which an attacker with write access to the model directory can swap the file after the check and before the read.
 
-`Udpipe::from_path`, which only Python's `Matra.from_path` reaches, verifies nothing: it loads what you name, and traceability for that path belongs to the caller. A Rust caller loads the pinned model only.
+No surface loads a model file the caller names. The pinned model is the only one a parse can come from, so the identity on every result is proof as well as a name.
 
 **Load once, reuse.** After construction, the model is a live handle to a C++ object. Parsing does not reload it. The `Engine` owns the provider, so a service builds one engine and keeps it for its lifetime.
 
 **One engine per thread.** The underlying `Model` is `Send` and deliberately not `Sync`: its parse path mutates internal workspace caches. The `Engine` that owns it is `Send` and not `Sync` for the same reason: an engine moves to another thread, but sharing one between two is a compile error rather than a race. To parallelize you build an engine on each thread, paying another 16 MB load for each, or serialize calls behind a mutex.
 
-Python gets the same constraint through a different mechanism. `Matra` is declared `unsendable`, so PyO3 records the creating thread and refuses access from any other at runtime. A `ProcessPoolExecutor` is unaffected, because each process loads its own model.
+Python gets the same constraint through a different mechanism. Its `Engine` is declared `unsendable`, so PyO3 records the creating thread and refuses access from any other at runtime. A `ProcessPoolExecutor` is unaffected, because each process loads its own model.
 
 ## The unit of work is the paragraph
 
