@@ -1,6 +1,6 @@
 {
   "name": "parity",
-  "description": "The cross-surface parity lane (EPR-0006): the same files through Rust (`Engine::analyze(Input::file)` and the outcome functions), Python (`Engine.analyze(file=)` and `matra.summarize`, `matra.keyphrases`) and the command line (`matra analyze|summarize|keyphrases FILE --json`) must give the same `Document`, the same summary, the same keyphrases and the same error. Each runner writes a document's `input` to a file named `file`, and compares what its surface returns to `expect` whole, after setting `provenance.matra` to the fixture's and `provenance.source.path` to null (the path is asserted to be the one passed). A case with no `n` or `method` runs each surface's default, which is the configuration's default on the command line (run with no configuration file): so the defaults are held together too. An error case writes `bytes`, or `fill` repeated `count` times, and pins the error's `kind`, `message` and `details`; the command line reports the message on stderr as `matra: FILE: MESSAGE` and exits 2, and its `kind` crosses there with the `--json` error envelope (milestone 6). `expect` is written by the Rust runner with MATRA_REGENERATE_PARITY=1; read what changed before committing it.",
+  "description": "The cross-surface parity lane (EPR-0006): the same files through Rust (`Engine::analyze(Input::file)` and the outcome functions), Python (`Engine.analyze(file=)` and `matra.summarize`, `matra.keyphrases`) and the command line (`matra analyze|summarize|keyphrases FILE --json`) must give the same `Document`, the same summary, the same keyphrases and the same error. Each runner writes a document's `input` to a file named `file`, and compares what its surface returns to `expect` whole, after setting `provenance.matra` to the fixture's and `provenance.source.path` to null (the path is asserted to be the one passed). A case with no `n` or `method` runs each surface's default, which is the configuration's default on the command line (run with no configuration file): so the defaults are held together too. An error case writes `bytes`, or `fill` repeated `count` times, and pins the error's `kind`, `message` and `details`; the command line reports the message on stderr as `matra: FILE: MESSAGE`, writes the same `kind`, `message` and `details` as the `error` of its `--json` envelope beside a null `result`, and exits 2. `expect` is written by the Rust runner with MATRA_REGENERATE_PARITY=1; read what changed before committing it.",
   "documents": [
     {
       "file": "field-notes.md",
@@ -2473,6 +2473,20 @@
         },
         "kind": "unsupported_format",
         "message": "unsupported format: pdf; no feature of this matra version reads it"
+      }
+    },
+    {
+      "file": "binary.txt",
+      "bytes": [
+        255,
+        254,
+        0,
+        1
+      ],
+      "expect": {
+        "details": {},
+        "kind": "unsupported_format",
+        "message": "unsupported format: the input is not UTF-8 text and carries no signature matra recognises"
       }
     },
     {

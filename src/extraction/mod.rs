@@ -85,14 +85,14 @@ impl KeyphraseMethod {
 }
 
 /// The method [`summarize`] runs: TF-IDF, the default
-/// `config/default.toml` ships as `summarize.algorithm`. Written here as
+/// `config/default.toml` ships as `summary.method`. Written here as
 /// well, because the library reads no configuration; a test holds the two
 /// together. Changing it changes what `summarize` returns, which is a
 /// breaking change.
 pub(crate) const DEFAULT_SUMMARY_METHOD: SummaryMethod = SummaryMethod::TfIdf;
 
 /// The method [`keyphrases`] runs: RAKE, the default
-/// `config/default.toml` ships as `keyphrases.algorithm`, held to it by
+/// `config/default.toml` ships as `keyphrases.method`, held to it by
 /// the same test. Changing it is a breaking change.
 pub(crate) const DEFAULT_KEYPHRASE_METHOD: KeyphraseMethod = KeyphraseMethod::Rake;
 

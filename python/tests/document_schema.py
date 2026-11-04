@@ -1,11 +1,14 @@
 """The published schemas, as the Python runners check against them.
 
 The Python twin of ``tests/document_schema/mod.rs``, and stricter than the
-published schemas in the same one way: every object definition that lists
+published schemas in the same two ways. Every object definition that lists
 its properties is closed (``additionalProperties: false``) before
-validating. The published schemas leave objects open, because a minor
-version adds fields a reader of the older minor must accept; matra's own
-output must not carry a field the schema for its version does not list.
+validating: the published schemas leave objects open, because a minor
+version adds fields a reader of the older minor must accept, and matra's
+own output must not carry a field the schema for its version does not
+list. And the three keys the schema lets ``matra analyze --json --depth``
+remove (``sections``, a paragraph's ``sentences``, a sentence's
+``tokens``) are required again, because Python always returns all three.
 """
 
 from __future__ import annotations
@@ -31,9 +34,21 @@ def _close(node: Any) -> None:
             _close(value)
 
 
+def _require_every_level(document: Any) -> None:
+    for node, key in (
+        (document, "sections"),
+        (document["$defs"]["Paragraph"], "sentences"),
+        (document["$defs"]["Sentence"], "tokens"),
+    ):
+        if key not in node["required"]:
+            node["required"].append(key)
+
+
 def _closed(name: str) -> Any:
     schema = json.loads((SCHEMAS / f"{name}.schema.json").read_text())
     _close(schema)
+    if name == "document":
+        _require_every_level(schema)
     return schema
 
 

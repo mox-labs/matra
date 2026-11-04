@@ -3,10 +3,13 @@
 # Override with MATRA_MODEL_DIR, or MATRA_DATA_DIR for the whole data root.
 embedding = "potion-base-8M"
 
-[summarize]
+[summary]
 n = 3
-algorithm = "tfidf"
+method = "tfidf"
 
 [keyphrases]
 n = 10
-algorithm = "rake"
+method = "rake"
+
+[clusters]
+threshold = 0.85

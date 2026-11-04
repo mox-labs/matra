@@ -74,15 +74,32 @@ def test_texts_refuses_a_bare_str(engine: Any) -> None:
 
 
 @pytest.mark.model
-def test_format_applies_to_text_and_bytes_only(engine: Any, tmp_path: Path) -> None:
-    path = tmp_path / "notes.txt"
-    path.write_text(PROSE)
-    with pytest.raises(TypeError, match="format applies to text and bytes"):
-        engine.analyze(file=path, format="markdown")
-    with pytest.raises(TypeError, match="format applies to text and bytes"):
+def test_format_does_not_apply_to_blocks_or_a_directory(engine: Any, tmp_path: Path) -> None:
+    with pytest.raises(TypeError, match="format applies to text, bytes and file"):
         engine.analyze(blocks=[], format="blocks")
     with pytest.raises(TypeError, match="format applies to texts"):
         engine.analyze_all(dir=tmp_path, format="markdown")
+
+
+@pytest.mark.model
+def test_a_file_reads_as_the_format_named(engine: Any, tmp_path: Path) -> None:
+    """``Input::file_as``: a JSON file of blocks is block input, and a
+    ``.md`` file can be read as plain text."""
+    blocks = tmp_path / "notes.json"
+    blocks.write_text(
+        '[{"kind": "heading", "level": 1, "text": "Field notes"},'
+        ' {"kind": "paragraph", "text": "The river rose overnight."}]'
+    )
+    doc = engine.analyze(file=blocks, format="blocks")
+    assert doc["provenance"]["format"] == "blocks"
+    assert doc["provenance"]["source"]["path"] == str(blocks)
+    assert doc["sections"][0]["heading"] == "Field notes"
+
+    markdown = tmp_path / "notes.md"
+    markdown.write_text("# not a heading here\n")
+    doc = engine.analyze(file=markdown, format="plain_text")
+    assert doc["provenance"]["format"] == "plain_text"
+    assert doc["sections"][0]["heading"] is None
 
 
 @pytest.mark.model

@@ -10,21 +10,16 @@ use serde_json::{Value, json};
 
 use crate::config::{Config, ValueSource};
 
-use super::{Cli, ConfigAction, Fallible, Outcome, write_envelope};
+use super::{Cli, ConfigAction, Failure, Fallible, Outcome, write_envelope};
 
 /// The defaults, embedded a second time so `config init` can write the
 /// exact bytes the crate falls back to. It is the same file
 /// `config::DEFAULT_TOML` reads, so the two cannot disagree.
 const DEFAULT_TOML: &str = include_str!("../../config/default.toml");
 
-pub(super) fn run(
-    cli: &Cli,
-    action: &ConfigAction,
-    out: &mut dyn Write,
-    err: &mut dyn Write,
-) -> Fallible<Outcome> {
+pub(super) fn run(cli: &Cli, action: &ConfigAction, out: &mut dyn Write) -> Fallible<Outcome> {
     match action {
-        ConfigAction::Show => show(cli, out, err),
+        ConfigAction::Show => show(cli, out),
         ConfigAction::Init { force } => init(cli, *force, out),
     }
 }
@@ -33,17 +28,15 @@ pub(super) fn run(
 // show
 // ---------------------------------------------------------------------------
 
-fn show(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outcome> {
+fn show(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
     let cfg = super::resolve_config(cli)?;
-    if !cli.quiet {
-        write_deprecation_notes(&cfg, err);
-    }
-    // `input` names the document the command read. A config file that
-    // is not there was not read, and naming it anyway asserts a file
-    // this run never saw: `config show --json` reported
-    // `/root/.config/matra/config.toml` in a container where nothing had
-    // ever created it. The per-key origins already say which values came
-    // from a file, so a null here loses nothing and claims nothing.
+    // `input` names what the command read, and is null when it read
+    // nothing, as it is for `--skill`. A config file that is not there
+    // was not read, and naming it anyway asserts a file this run never
+    // saw: `config show --json` reported `/root/.config/matra/config.toml`
+    // in a container where nothing had ever created it. The per-key
+    // origins already say which values came from a file, so a null here
+    // loses nothing and claims nothing.
     let read_from = config_file_read(&cfg);
 
     if cli.json {
@@ -77,37 +70,6 @@ fn show(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outcome
         )?;
     }
     Ok(Outcome::Found)
-}
-
-/// One stderr line per deprecated key the config file set (RFC-0020).
-///
-/// The keys are accepted so an old file keeps loading, and that is the
-/// silence `deny_unknown_fields` exists to prevent: a setting the author
-/// believes is in force when nothing reads it. `config show` is where
-/// matra reports where its configuration came from, so it is where the
-/// file is named and the line called out. Stdout stays the settings in
-/// force, so `--json` is still one object. `--quiet` silences it, as it
-/// silences the download notice: it is human-readable output.
-fn write_deprecation_notes(cfg: &Config, err: &mut dyn Write) {
-    let file = cfg.config_file().map_or_else(
-        || "the config file".to_string(),
-        |p| p.display().to_string(),
-    );
-    for key in cfg.deprecated_keys() {
-        let why = match key {
-            "models.udpipe" => {
-                "the UDPipe model is pinned in matra, and another one loads by path from the library"
-            }
-            "semantic.threshold" => "every clustering call takes its threshold as an argument",
-            _ => "nothing reads it",
-        };
-        // A diagnostic that cannot be written is not worth failing the
-        // command over, and there is nowhere left to report it to.
-        let _ = writeln!(
-            err,
-            "matra: {file} sets `{key}`, which is deprecated and ignored; {why}. Remove the line."
-        );
-    }
 }
 
 /// The config file this run actually read, if it read one.
@@ -148,15 +110,15 @@ fn value_of(cfg: &Config, key: &str) -> Fallible<Value> {
         "data_dir" => json!(cfg.data_dir().display().to_string()),
         "model_dir" => json!(cfg.model_dir().display().to_string()),
         "models.embedding" => json!(cfg.embedding_model()),
-        "summarize.n" => json!(cfg.summarize_n()),
-        "summarize.algorithm" => json!(cfg.summarize_algorithm()),
+        "summary.n" => json!(cfg.summary_n()),
+        "summary.method" => json!(cfg.summary_method()),
         "keyphrases.n" => json!(cfg.keyphrases_n()),
-        "keyphrases.algorithm" => json!(cfg.keyphrases_algorithm()),
+        "keyphrases.method" => json!(cfg.keyphrases_method()),
+        "clusters.threshold" => json!(cfg.clusters_threshold()),
         other => {
-            return Err(format!(
+            return Err(Failure::refused(format!(
                 "config show cannot render `{other}`: the key is resolved but has no reader here"
-            )
-            .into());
+            )));
         }
     })
 }
@@ -197,8 +159,11 @@ fn origin_of(source: &ValueSource) -> Value {
 // ---------------------------------------------------------------------------
 
 fn init(cli: &Cli, force: bool, out: &mut dyn Write) -> Fallible<Outcome> {
-    let path = Config::config_file_path()
-        .ok_or("cannot locate a config file: set MATRA_CONFIG_FILE, XDG_CONFIG_HOME, or HOME")?;
+    let path = Config::config_file_path().ok_or_else(|| {
+        Failure::refused(
+            "cannot locate a config file: set MATRA_CONFIG_FILE, XDG_CONFIG_HOME, or HOME",
+        )
+    })?;
     write_defaults(&path, force)?;
 
     let shown = path.display().to_string();
@@ -225,11 +190,10 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
     // The early check exists for the message, not for the guarantee. The
     // guarantee is the link below.
     if !force && path.exists() {
-        return Err(format!(
+        return Err(Failure::refused(format!(
             "{} already exists; pass --force to overwrite it",
             path.display()
-        )
-        .into());
+        )));
     }
 
     let parent = path
@@ -259,7 +223,7 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
     drop(file);
     if let Err(e) = written {
         let _ = std::fs::remove_file(&temp);
-        return Err(Box::new(io_at("write the config to", &temp, &e)));
+        return Err(io_at("write the config to", &temp, &e).into());
     }
 
     let arrived = if force {
@@ -270,13 +234,12 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
     if let Err(e) = arrived {
         let _ = std::fs::remove_file(&temp);
         if e.kind() == std::io::ErrorKind::AlreadyExists {
-            return Err(format!(
+            return Err(Failure::refused(format!(
                 "{} already exists; pass --force to overwrite it",
                 path.display()
-            )
-            .into());
+            )));
         }
-        return Err(Box::new(io_at("move the config into place at", path, &e)));
+        return Err(io_at("move the config into place at", path, &e).into());
     }
 
     // `rename` consumed the temp; `hard_link` left it behind as a second
@@ -417,7 +380,7 @@ mod tests {
                 "HOME" => Some(dir.path().display().to_string()),
                 _ => None,
             },
-            Some("[summarize]\nn = 7\n"),
+            Some("[summary]\nn = 7\n"),
         )
         .expect("resolve with a file");
 

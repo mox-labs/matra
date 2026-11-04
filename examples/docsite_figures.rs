@@ -486,7 +486,7 @@ fn round4(x: f64) -> f64 {
 /// not written: drawing them here would be a second implementation.
 fn textrank_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
     let doc = input.doc;
-    let n = input.shipped.summarize_n();
+    let n = input.shipped.summary_n();
     let all =
         matra::summarize_with(doc, doc.sentences().count(), SummaryMethod::TextRank)?.sentences;
     let picked: Vec<usize> = matra::summarize_with(doc, n, SummaryMethod::TextRank)?

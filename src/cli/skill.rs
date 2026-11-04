@@ -21,7 +21,7 @@
 
 use std::io::Write;
 
-use super::{Cli, Fallible, Outcome, write_envelope};
+use super::{Cli, Failure, Fallible, Outcome, write_envelope};
 
 /// The top level, embedded. `--skill` writes these bytes and nothing
 /// else, so the output is byte-identical to the file on disk and to the
@@ -156,7 +156,10 @@ fn list(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
 fn lookup(name: &str) -> Fallible<&'static str> {
     match REFERENCES.iter().find(|(known, _)| *known == name) {
         Some((_, body)) => Ok(body),
-        None => Err(format!("no reference named `{name}`; known references: {}", names()).into()),
+        None => Err(Failure::refused(format!(
+            "no reference named `{name}`; known references: {}",
+            names()
+        ))),
     }
 }
 
@@ -178,7 +181,9 @@ fn names() -> String {
 fn summary_of<'a>(name: &str, body: &'a str) -> Fallible<&'a str> {
     let mut lines = body.lines();
     if lines.next() != Some("---") {
-        return Err(format!("reference `{name}` does not open with frontmatter").into());
+        return Err(Failure::refused(format!(
+            "reference `{name}` does not open with frontmatter"
+        )));
     }
     for line in lines {
         if line == "---" {
@@ -192,7 +197,9 @@ fn summary_of<'a>(name: &str, body: &'a str) -> Fallible<&'a str> {
             return Ok(summary);
         }
     }
-    Err(format!("reference `{name}` declares no summary in its frontmatter").into())
+    Err(Failure::refused(format!(
+        "reference `{name}` declares no summary in its frontmatter"
+    )))
 }
 
 #[cfg(test)]

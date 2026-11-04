@@ -34,6 +34,14 @@ use tempfile::NamedTempFile;
 const PROSE: &str = "The committee approved the proposal. Three amendments were submitted \
                      by the working group. The chair adjourned the meeting.";
 
+/// The commands that read a document, as this build can run them. Without
+/// `model2vec`, `clusters` refuses before it looks at its path, because
+/// the build ships no embedder; that refusal has its own test.
+#[cfg(feature = "model2vec")]
+const DOCUMENT_COMMANDS: &[&str] = &["analyze", "summarize", "keyphrases", "clusters"];
+#[cfg(not(feature = "model2vec"))]
+const DOCUMENT_COMMANDS: &[&str] = &["analyze", "summarize", "keyphrases"];
+
 /// Drive the CLI and collect everything it produced.
 fn run(args: &[&str]) -> (u8, String, String) {
     let argv = std::iter::once(OsString::from("matra")).chain(args.iter().map(OsString::from));
@@ -85,6 +93,7 @@ fn help_lists_every_command() {
         "analyze",
         "summarize",
         "keyphrases",
+        "clusters",
         "config",
         "completions",
     ] {
@@ -92,14 +101,15 @@ fn help_lists_every_command() {
     }
 }
 
-/// The two agent flags are on the help, because a flag nobody can find
-/// is a flag nobody runs.
+/// The agent flags are on the help, because a flag nobody can find is a
+/// flag nobody runs.
 #[test]
 fn help_lists_the_agent_flags() {
     let (code, out, _) = run(&["--help"]);
     assert_eq!(code, 0);
     assert!(out.contains("--skill"), "{out}");
     assert!(out.contains("--reference"), "{out}");
+    assert!(out.contains("--schema"), "{out}");
 }
 
 /// `--help` must read the same from either launcher, which is why the
@@ -149,34 +159,267 @@ fn missing_path_argument_is_rejected() {
 }
 
 /// A missing input must fail before the model is touched. Downloading 16 MB
-/// only to report that the file does not exist is the wrong order.
+/// only to report that the file does not exist is the wrong order. The
+/// failure is the one the library gives for the path, and every command
+/// that reads a document gives it.
 #[test]
 fn missing_input_file_exits_two_without_loading_the_model() {
-    let (code, _, err) = run(&["analyze", "/nonexistent/path/to/file.md"]);
-    assert_eq!(code, 2);
-    assert!(err.contains("no such file"), "{err}");
+    let missing = "/nonexistent/path/to/file.md";
+    for command in DOCUMENT_COMMANDS {
+        let (code, out, err) = run(&[command, missing]);
+        assert_eq!(code, 2, "{command}");
+        assert!(out.is_empty(), "{command} printed: {out}");
+        assert!(err.contains("cannot read"), "{command}: {err}");
+        assert!(err.contains(missing), "{command} names the path: {err}");
+    }
 }
 
-/// A directory used to be ingested and then silently reduced to whatever
-/// file the walk yielded first, printed under the directory's name.
-/// Three commands share the path argument, so all three are checked. The
-/// refusal happens before the engine is built, which is why this needs
-/// no model.
+/// `summarize`, `keyphrases` and `clusters` report on one document, so a
+/// directory is refused, before the engine is built, by name, and with
+/// the command that does read one. A directory used to be ingested and
+/// silently reduced to whatever file the walk yielded first.
 #[test]
-fn a_directory_is_refused_by_every_command_that_takes_a_path() {
+fn a_directory_is_refused_by_every_command_that_reads_one_document() {
     let dir = tempfile::tempdir().expect("temp dir");
     std::fs::write(dir.path().join("a.txt"), PROSE).expect("write");
     std::fs::write(dir.path().join("b.txt"), PROSE).expect("write");
     let path = dir.path().to_str().expect("utf8 path");
 
-    for command in ["analyze", "summarize", "keyphrases"] {
+    for command in DOCUMENT_COMMANDS.iter().filter(|c| **c != "analyze") {
         let (code, out, err) = run(&[command, path]);
         assert_eq!(code, 2, "{command}: {err}");
         assert!(out.is_empty(), "{command} printed: {out}");
         assert!(err.contains(path), "{command} names the path: {err}");
         assert!(err.contains("is a directory"), "{command}: {err}");
-        assert!(err.contains("pass a file"), "{command}: {err}");
+        assert!(err.contains("matra analyze"), "{command}: {err}");
     }
+}
+
+/// `--format` names the format of one file or of stdin. A directory's
+/// files are each read as their own name says, so the pair is refused,
+/// before the engine is built.
+#[test]
+fn format_with_a_directory_is_refused() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().to_str().expect("utf8 path");
+    let (code, out, err) = run(&["analyze", path, "--format", "markdown"]);
+    assert_eq!(code, 2, "{err}");
+    assert!(out.is_empty(), "{out}");
+    assert!(err.contains("--format"), "{err}");
+}
+
+/// `--depth` shapes the JSON, so asking for it without `--json` is a
+/// usage failure rather than a flag silently ignored.
+#[test]
+fn depth_needs_json() {
+    let (code, out, err) = run(&["analyze", "notes.md", "--depth", "sentence"]);
+    assert_eq!(code, 2);
+    assert!(out.is_empty(), "{out}");
+    assert!(err.contains("--json"), "{err}");
+}
+
+/// The format vocabulary is the one the JSON and Python use, `plain_text`
+/// included, and nothing else.
+#[test]
+fn format_takes_the_shared_vocabulary() {
+    let (code, _, err) = run(&["analyze", "x", "--format", "plain-text"]);
+    assert_eq!(code, 2, "the kebab spelling is not the vocabulary");
+    assert!(
+        err.contains("plain_text"),
+        "the refusal names the word: {err}"
+    );
+    for format in ["markdown", "plain_text", "blocks"] {
+        let (code, _, err) = run(&["analyze", "/nonexistent/x", "--format", format]);
+        assert_eq!(code, 2, "{format}");
+        assert!(
+            err.contains("cannot read"),
+            "{format} parsed, then the path failed: {err}"
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Failures under --json. None of these needs a model: each fails before
+// the engine is built.
+// ---------------------------------------------------------------------------
+
+/// The envelope of a failure: five keys, `result` null, and `error` the
+/// serde form every surface carries.
+fn failure_envelope(out: &str) -> serde_json::Value {
+    let parsed: serde_json::Value = serde_json::from_str(out).expect("stdout is one JSON object");
+    let mut keys: Vec<&str> = parsed
+        .as_object()
+        .expect("an object")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    keys.sort_unstable();
+    assert_eq!(
+        keys,
+        ["command", "error", "format_version", "input", "result"]
+    );
+    assert_eq!(parsed["format_version"], 2);
+    assert!(parsed["result"].is_null(), "a failure has no result");
+    document_schema::assert_valid("error", &parsed["error"], "the failure envelope");
+    parsed
+}
+
+/// Defect 5 of EPR-0006: a failure under `--json` wrote nothing to
+/// stdout, so an agent read prose. It writes the envelope, with the error
+/// in it, and still writes the message to stderr and exits 2.
+#[test]
+fn a_failure_under_json_is_an_envelope_on_stdout() {
+    let missing = "/nonexistent/path/to/file.md";
+    let (code, out, err) = run(&["analyze", missing, "--json"]);
+    assert_eq!(code, 2);
+    assert!(err.starts_with("matra: "), "{err}");
+    let envelope = failure_envelope(&out);
+    assert_eq!(envelope["command"], "analyze");
+    assert_eq!(envelope["input"], missing);
+    let error = &envelope["error"];
+    assert_eq!(error["kind"], "io");
+    assert_eq!(error["details"]["io_kind"], "not_found");
+    assert_eq!(error["details"]["path"], missing);
+    assert!(
+        err.contains(error["message"].as_str().expect("a message")),
+        "stderr carries the same message: {err}"
+    );
+}
+
+/// The command line's own refusals carry the kind whose remedy matches:
+/// each of these is a call to change, which is `invalid_input`.
+#[test]
+fn the_command_line_s_own_refusals_are_invalid_input() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().to_str().expect("utf8 path");
+    for (args, command) in [
+        (vec!["summarize", path, "--json"], "summarize"),
+        (
+            vec!["analyze", path, "--format", "blocks", "--json"],
+            "analyze",
+        ),
+        (vec!["-r", "json", "--json"], "skill"),
+        (vec!["--skill", "-r", "jsn", "--json"], "skill"),
+        (vec!["--schema", "documnet", "--json"], "schema"),
+    ] {
+        let (code, out, err) = run(&args);
+        assert_eq!(code, 2, "{args:?}: {err}");
+        let envelope = failure_envelope(&out);
+        assert_eq!(envelope["command"], command, "{args:?}");
+        assert_eq!(envelope["error"]["kind"], "invalid_input", "{args:?}");
+    }
+}
+
+/// A usage failure under `--json` is a failure like any other: clap's
+/// message on stderr, and the envelope on stdout naming the command its
+/// arguments asked for, or null when they named none.
+#[test]
+fn a_usage_failure_under_json_is_an_envelope() {
+    let (code, out, err) = run(&["analyze", "--json"]);
+    assert_eq!(code, 2);
+    assert!(err.contains("Usage:"), "clap's own text on stderr: {err}");
+    let envelope = failure_envelope(&out);
+    assert_eq!(envelope["command"], "analyze");
+    assert_eq!(envelope["error"]["kind"], "invalid_input");
+    assert!(
+        envelope["error"]["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("<PATH>")),
+        "{envelope}"
+    );
+
+    let (code, out, _) = run(&["--json", "--bogus"]);
+    assert_eq!(code, 2);
+    let envelope = failure_envelope(&out);
+    assert!(envelope["command"].is_null(), "{envelope}");
+
+    // Without `--json` a usage failure writes nothing to stdout, as it
+    // always has.
+    let (code, out, _) = run(&["--bogus"]);
+    assert_eq!(code, 2);
+    assert!(out.is_empty(), "{out}");
+}
+
+// ---------------------------------------------------------------------------
+// The schemas. `--schema` reads no document, so none of this needs a model.
+// ---------------------------------------------------------------------------
+
+fn schema_dir() -> std::path::PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("spec/schema/v2")
+}
+
+/// Every published schema prints byte for byte, by the name its file
+/// carries.
+#[test]
+fn every_schema_prints_its_file_verbatim() {
+    for name in [
+        "blocks",
+        "clusters",
+        "document",
+        "error",
+        "keyphrases",
+        "summary",
+    ] {
+        let on_disk = std::fs::read_to_string(schema_dir().join(format!("{name}.schema.json")))
+            .expect("read the schema");
+        let (code, out, err) = run(&["--schema", name]);
+        assert_eq!(code, 0, "{name}: {err}");
+        assert_eq!(out, on_disk, "{name}");
+    }
+}
+
+/// `--schema` alone lists every schema with its title; under `--json` the
+/// list and each schema come in the envelope.
+#[test]
+fn the_schema_list_and_the_schema_json() {
+    let (code, out, err) = run(&["--schema"]);
+    assert_eq!(code, 0, "{err}");
+    let names: Vec<&str> = out
+        .lines()
+        .map(|line| line.split_whitespace().next().expect("a name"))
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "blocks",
+            "clusters",
+            "document",
+            "error",
+            "keyphrases",
+            "summary"
+        ]
+    );
+
+    let (code, out, _) = run(&["--schema", "--json"]);
+    assert_eq!(code, 0);
+    let parsed: serde_json::Value = serde_json::from_str(&out).expect("JSON");
+    assert_eq!(parsed["command"], "schema");
+    assert!(parsed["error"].is_null());
+    assert_eq!(
+        parsed["result"]["schemas"].as_array().map(Vec::len),
+        Some(6)
+    );
+
+    let (code, out, _) = run(&["--schema", "document", "--json"]);
+    assert_eq!(code, 0);
+    let parsed: serde_json::Value = serde_json::from_str(&out).expect("JSON");
+    assert_eq!(parsed["result"]["name"], "document");
+    assert_eq!(
+        parsed["result"]["schema"]["title"],
+        "matra Document, schema 2.x"
+    );
+}
+
+/// `--schema` is a property of the program, like `--skill`, so it
+/// outranks a subcommand, and the two cannot be asked for at once.
+#[test]
+fn the_schema_outranks_a_subcommand_and_conflicts_with_the_skill() {
+    let (code, out, err) = run(&["analyze", "/nonexistent/x.md", "--schema", "error"]);
+    assert_eq!(code, 0, "{err}");
+    assert!(out.contains("matra error"), "{out}");
+
+    let (code, _, _) = run(&["--schema", "--skill"]);
+    assert_eq!(code, 2);
 }
 
 #[test]
@@ -303,7 +546,7 @@ fn the_skill_outranks_a_subcommand() {
 
 /// The three `--json` shapes, against the one envelope every command
 /// emits. `input` is null because the command reads no document, and the
-/// key is present rather than absent so a consumer reads four keys
+/// key is present rather than absent so a consumer reads five keys
 /// whatever it ran.
 #[test]
 fn the_skill_json_is_the_envelope() {
@@ -323,10 +566,14 @@ fn the_skill_json_is_the_envelope() {
             .map(String::as_str)
             .collect();
         keys.sort_unstable();
-        assert_eq!(keys, ["command", "format_version", "input", "result"]);
+        assert_eq!(
+            keys,
+            ["command", "error", "format_version", "input", "result"]
+        );
         assert_eq!(parsed["format_version"], 2);
         assert_eq!(parsed["command"], "skill");
         assert!(parsed["input"].is_null(), "{args:?}: input is not null");
+        assert!(parsed["error"].is_null(), "{args:?}: error is not null");
 
         let result = &parsed["result"];
         if expect_list {
@@ -508,6 +755,11 @@ fn both_keyphrase_methods_run() {
 // The JSON envelope
 // ---------------------------------------------------------------------------
 
+/// Every command that reads a document names it in `input`, a string, and
+/// carries `error: null` beside its result. `config show` is held to the
+/// same five keys in `config_show_names_the_file_it_read_or_null`, in a
+/// scrubbed environment, because what its `input` is depends on whether a
+/// config file exists (#166).
 #[test]
 #[ignore = "requires the UDPipe model"]
 fn every_command_emits_the_same_envelope() {
@@ -518,7 +770,6 @@ fn every_command_emits_the_same_envelope() {
         (vec!["analyze", &path, "--json"], "analyze"),
         (vec!["summarize", &path, "--json"], "summarize"),
         (vec!["keyphrases", &path, "--json"], "keyphrases"),
-        (vec!["config", "show", "--json"], "config"),
     ] {
         let (code, out, err) = run(&args);
         assert_eq!(code, 0, "{command}: {err}");
@@ -526,11 +777,167 @@ fn every_command_emits_the_same_envelope() {
         let object = parsed.as_object().expect("an object");
         let mut keys: Vec<&str> = object.keys().map(String::as_str).collect();
         keys.sort_unstable();
-        assert_eq!(keys, ["command", "format_version", "input", "result"]);
+        assert_eq!(
+            keys,
+            ["command", "error", "format_version", "input", "result"]
+        );
         assert_eq!(parsed["format_version"], 2);
         assert_eq!(parsed["command"], command);
-        assert!(parsed["input"].is_string());
+        assert_eq!(parsed["input"], path.as_str());
+        assert!(parsed["error"].is_null(), "{command}");
+        assert!(parsed["result"].is_object(), "{command}");
     }
+}
+
+/// `matra analyze DIR`: one result per file, in name order. Under
+/// `--json` that is one envelope per line; a file that fails is a line
+/// with its `error`, the walk goes on past it, and the exit code is 2
+/// because one failed.
+#[test]
+#[ignore = "requires the UDPipe model"]
+fn a_directory_is_one_envelope_per_line_and_a_failure_does_not_stop_it() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    std::fs::write(dir.path().join("a.md"), format!("# Notes\n\n{PROSE}\n")).expect("write");
+    std::fs::write(dir.path().join("b.bin"), [0xff, 0xfe, 0x00]).expect("write");
+    std::fs::write(dir.path().join("c.txt"), PROSE).expect("write");
+    let path = dir.path().to_str().expect("utf8 path");
+
+    let (code, out, err) = run(&["analyze", path, "--json"]);
+    assert_eq!(code, 2, "one file failed: {err}");
+    let lines: Vec<serde_json::Value> = out
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("each line is one envelope"))
+        .collect();
+    assert_eq!(lines.len(), 3, "{out}");
+    let inputs: Vec<&str> = lines
+        .iter()
+        .map(|l| l["input"].as_str().expect("each names its file"))
+        .collect();
+    for (input, name) in inputs.iter().zip(["a.md", "b.bin", "c.txt"]) {
+        assert!(input.ends_with(name), "{inputs:?}");
+    }
+    assert!(lines[0]["error"].is_null());
+    document_schema::assert_valid("document", &lines[0]["result"], "a.md");
+    assert!(lines[1]["result"].is_null());
+    assert_eq!(lines[1]["error"]["kind"], "unsupported_format");
+    assert!(
+        lines[2]["error"].is_null(),
+        "the walk went on past the failure"
+    );
+    assert!(err.contains("b.bin"), "stderr names the failed file: {err}");
+
+    // The table, one block per file, and the same exit code.
+    let (code, out, _) = run(&["analyze", path]);
+    assert_eq!(code, 2);
+    assert!(out.contains("a.md") && out.contains("c.txt"), "{out}");
+
+    // Every file read, nothing found: exit 1. Nothing failed: never 2.
+    let empty = tempfile::tempdir().expect("temp dir");
+    std::fs::write(empty.path().join("a.txt"), "").expect("write");
+    let (code, _, err) = run(&["analyze", empty.path().to_str().expect("utf8"), "--json"]);
+    assert_eq!(code, 1, "{err}");
+}
+
+/// `--depth` removes what lies below the level asked for, as keys, and
+/// what remains is valid against the published document schema.
+#[test]
+#[ignore = "requires the UDPipe model"]
+fn depth_cuts_the_document_at_the_level_asked_for() {
+    let f = fixture(&format!("# Notes\n\n{PROSE}\n"), ".md");
+    let result = |depth: &str| -> serde_json::Value {
+        let (code, out, err) = run(&["analyze", path_of(&f), "--json", "--depth", depth]);
+        assert_eq!(code, 0, "{depth}: {err}");
+        let parsed: serde_json::Value = serde_json::from_str(&out).expect("JSON");
+        document_schema::assert_valid_at_depth(&parsed["result"], depth);
+        parsed["result"].clone()
+    };
+
+    let document = result("document");
+    assert!(document.get("sections").is_none());
+    assert_eq!(document["metrics"]["total_sentences"], 3);
+
+    let paragraph = result("paragraph");
+    let para = &paragraph["sections"][0]["paragraphs"][0];
+    assert!(para["text"].is_string());
+    assert!(para.get("sentences").is_none());
+
+    let sentence = result("sentence");
+    let first = &sentence["sections"][0]["paragraphs"][0]["sentences"][0];
+    assert!(first["text"].is_string());
+    assert!(first.get("tokens").is_none());
+
+    let token = result("token");
+    let (_, whole, _) = run(&["analyze", path_of(&f), "--json"]);
+    let whole: serde_json::Value = serde_json::from_str(&whole).expect("JSON");
+    assert_eq!(
+        token, whole["result"],
+        "token is the default, and everything"
+    );
+}
+
+/// `--format blocks` reads a JSON file of blocks, which no extension
+/// implies: `Input::file_as` on the command line.
+#[test]
+#[ignore = "requires the UDPipe model"]
+fn format_reads_a_file_as_the_format_named() {
+    let f = fixture(
+        r#"[{"kind": "heading", "level": 1, "text": "Field notes"},
+            {"kind": "paragraph", "text": "The river rose overnight."}]"#,
+        ".json",
+    );
+    let (code, out, err) = run(&["analyze", path_of(&f), "--format", "blocks", "--json"]);
+    assert_eq!(code, 0, "{err}");
+    let parsed: serde_json::Value = serde_json::from_str(&out).expect("JSON");
+    assert_eq!(parsed["result"]["provenance"]["format"], "blocks");
+    assert_eq!(parsed["result"]["sections"][0]["heading"], "Field notes");
+
+    // Without the flag the same file is plain text.
+    let (_, out, _) = run(&["analyze", path_of(&f), "--json"]);
+    let parsed: serde_json::Value = serde_json::from_str(&out).expect("JSON");
+    assert_eq!(parsed["result"]["provenance"]["format"], "plain_text");
+}
+
+/// `matra clusters`, with the embedder the configuration names.
+#[cfg(feature = "model2vec")]
+#[test]
+#[ignore = "requires the UDPipe and potion-base-8M models"]
+fn clusters_groups_sentences_by_meaning() {
+    let f = fixture(
+        "The committee approved the proposal without debate. \
+         The weather turned cold by evening. \
+         The proposal was approved by the committee with no discussion.",
+        ".txt",
+    );
+    let (code, out, err) = run(&["clusters", path_of(&f), "--json"]);
+    assert_eq!(code, 0, "{err}");
+    let parsed: serde_json::Value = serde_json::from_str(&out).expect("JSON");
+    assert_eq!(parsed["command"], "clusters");
+    document_schema::assert_valid("clusters", &parsed["result"], "matra clusters");
+    assert_eq!(
+        parsed["result"]["clusters"][0]["members"],
+        serde_json::json!([0, 2])
+    );
+    assert_eq!(
+        parsed["result"]["provenance"]["parameters"]["threshold"],
+        0.85
+    );
+
+    // A threshold no pair clears finds nothing, which is exit 1.
+    let (code, _, err) = run(&["clusters", path_of(&f), "--threshold", "0.999"]);
+    assert_eq!(code, 1, "{err}");
+}
+
+/// Without `model2vec` the command exists, and says what it needs before
+/// it loads anything.
+#[cfg(not(feature = "model2vec"))]
+#[test]
+fn clusters_without_an_embedder_says_which_feature_ships_one() {
+    let f = fixture(PROSE, ".txt");
+    let (code, out, err) = run(&["clusters", path_of(&f), "--json"]);
+    assert_eq!(code, 2);
+    assert!(err.contains("model2vec"), "{err}");
+    let parsed: serde_json::Value = serde_json::from_str(&out).expect("JSON");
+    assert_eq!(parsed["error"]["kind"], "invalid_input");
 }
 
 /// The `result` value is the serde form of the domain type, unchanged.
@@ -640,16 +1047,13 @@ fn config_show_reports_where_every_value_came_from() {
         "data_dir",
         "model_dir",
         "models.embedding",
-        "summarize.n",
-        "summarize.algorithm",
+        "summary.n",
+        "summary.method",
         "keyphrases.n",
-        "keyphrases.algorithm",
+        "keyphrases.method",
+        "clusters.threshold",
     ] {
         assert!(out.contains(key), "missing `{key}` in:\n{out}");
-    }
-    // Deprecated keys nothing reads (RFC-0020) are not settings.
-    for key in ["models.udpipe", "semantic.threshold"] {
-        assert!(!out.contains(key), "`{key}` listed in:\n{out}");
     }
     // Every line carries its origin.
     for line in out.lines() {
@@ -670,6 +1074,50 @@ fn config_show_reports_where_every_value_came_from() {
     assert!(out.contains("MATRA_DATA_DIR"), "{out}");
 }
 
+/// #166: `config show --json` names in `input` the config file it read,
+/// and writes `input: null` when it read none, as `--skill` does for a
+/// command that reads no document. Naming a path that holds no file would
+/// assert a read that never happened; the per-key origins already say
+/// that every value is a default. The envelope's other four keys are the
+/// ones every command writes.
+#[test]
+fn config_show_names_the_file_it_read_or_null() {
+    let home = tempfile::tempdir().expect("temp dir");
+    let envelope = |home: &Path| -> serde_json::Value {
+        let out = scoped(home)
+            .args(["config", "show", "--json"])
+            .assert()
+            .code(0)
+            .get_output()
+            .stdout
+            .clone();
+        serde_json::from_slice(&out).expect("one JSON object")
+    };
+
+    let none = envelope(home.path());
+    let mut keys: Vec<&str> = none
+        .as_object()
+        .expect("an object")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    keys.sort_unstable();
+    assert_eq!(
+        keys,
+        ["command", "error", "format_version", "input", "result"]
+    );
+    assert_eq!(none["command"], "config");
+    assert!(none["input"].is_null(), "no config file was read: {none}");
+    assert!(none["error"].is_null());
+
+    let target = home.path().join("config").join("matra").join("config.toml");
+    std::fs::create_dir_all(target.parent().expect("a parent")).expect("config dir");
+    std::fs::write(&target, "[summary]\nn = 5\n").expect("write the file");
+    let read = envelope(home.path());
+    assert_eq!(read["input"], target.display().to_string());
+    assert_eq!(read["result"]["summary.n"]["value"], 5);
+}
+
 #[test]
 fn config_init_writes_once_and_refuses_without_force() {
     let home = tempfile::tempdir().expect("temp dir");
@@ -681,12 +1129,13 @@ fn config_init_writes_once_and_refuses_without_force() {
         .code(0)
         .stdout(predicate::str::contains("config.toml"));
     let written = std::fs::read_to_string(&target).expect("the file exists");
-    assert!(written.contains("[models]"), "{written}");
-    assert!(written.contains("[summarize]"), "{written}");
-    // RFC-0020: the keys nothing reads are no longer written.
-    assert!(!written.contains("udpipe"), "{written}");
-    assert!(!written.contains("[semantic]"), "{written}");
-    assert!(!written.contains("threshold"), "{written}");
+    for section in ["[models]", "[summary]", "[keyphrases]", "[clusters]"] {
+        assert!(written.contains(section), "{section} missing:\n{written}");
+    }
+    // 0.3.0's names only: none the file used to carry.
+    for old in ["udpipe", "[semantic]", "[summarize]", "algorithm"] {
+        assert!(!written.contains(old), "{old} written:\n{written}");
+    }
 
     scoped(home.path())
         .args(["config", "init"])
@@ -726,9 +1175,7 @@ fn a_written_config_becomes_the_source() {
     assert!(out.contains("config.toml"), "{out}");
 }
 
-/// The file `matra config init` wrote before RFC-0020 deprecated
-/// `models.udpipe` and `semantic.threshold`. Every user who ran it has
-/// this file, and the parser rejects unknown keys.
+/// The file `matra config init` wrote in 0.2, byte for byte.
 const CONFIG_FROM_0_2: &str = r#"[models]
 # Model directory defaults to $XDG_DATA_HOME/matra/models (~/.local/share/matra/models).
 # Override with MATRA_MODEL_DIR, or MATRA_DATA_DIR for the whole data root.
@@ -747,11 +1194,12 @@ n = 10
 algorithm = "rake"
 "#;
 
-/// Regression for RFC-0020: a config file carrying the deprecated keys
-/// still loads, `config show` keeps them out of what it prints, and names
-/// each on stderr with the file it came from.
+/// 0.3.0 keeps no old name (EPR-0006, decision 8), so a 0.2 config file
+/// fails every command that reads it. The failure names the file and
+/// what replaced each old key, on stderr and in the `--json` error, so it
+/// can be fixed from the message alone.
 #[test]
-fn an_old_config_file_still_loads_and_its_deprecated_keys_are_named() {
+fn a_config_file_from_0_2_fails_naming_the_new_keys() {
     let home = tempfile::tempdir().expect("temp dir");
     let target = home.path().join("config").join("matra").join("config.toml");
     std::fs::create_dir_all(target.parent().expect("a parent")).expect("config dir");
@@ -760,46 +1208,31 @@ fn an_old_config_file_still_loads_and_its_deprecated_keys_are_named() {
     let output = scoped(home.path())
         .args(["config", "show"])
         .assert()
-        .code(0)
+        .code(2)
         .get_output()
         .clone();
-    let out = String::from_utf8(output.stdout).expect("utf8");
     let err = String::from_utf8(output.stderr).expect("utf8");
-
-    assert!(out.contains("summarize.n"), "{out}");
-    for key in ["models.udpipe", "semantic.threshold"] {
-        assert!(!out.contains(key), "`{key}` listed on stdout:\n{out}");
-        assert!(
-            err.contains(&format!("`{key}`")) && err.contains("deprecated"),
-            "`{key}` not named on stderr:\n{err}"
-        );
+    assert!(output.stdout.is_empty(), "nothing on stdout without --json");
+    for named in [
+        target.display().to_string().as_str(),
+        "`[summary]`",
+        "`summary.method`",
+        "`keyphrases.method`",
+        "`clusters.threshold`",
+        "`models.udpipe`",
+    ] {
+        assert!(err.contains(named), "{named} not named:\n{err}");
     }
-    assert!(
-        err.contains(&target.display().to_string()),
-        "the note names the file:\n{err}"
-    );
 
-    // `--json` keeps stdout one object; the note stays on stderr.
     let output = scoped(home.path())
         .args(["config", "show", "--json"])
         .assert()
-        .code(0)
+        .code(2)
         .get_output()
         .clone();
     let json: serde_json::Value = serde_json::from_slice(&output.stdout).expect("one JSON object");
-    assert!(json["result"].get("semantic.threshold").is_none(), "{json}");
-    assert!(json["result"].get("models.udpipe").is_none(), "{json}");
-    assert!(
-        !output.stderr.is_empty(),
-        "the note is on stderr under --json"
-    );
-
-    // `--quiet` silences it, as it silences the download notice.
-    scoped(home.path())
-        .args(["config", "show", "--quiet"])
-        .assert()
-        .code(0)
-        .stderr(predicate::str::is_empty());
+    assert!(json["result"].is_null());
+    assert_eq!(json["error"]["kind"], "invalid_input");
 }
 
 #[test]
@@ -824,5 +1257,39 @@ fn stdin_is_read_from_dash_and_labelled_by_stdin_filename() {
     assert_eq!(parsed["input"], "notes.md");
     // `.md` selected the markdown decomposer, so the heading became a
     // section rather than a sentence.
+    assert_eq!(parsed["result"]["sections"][0]["heading"], "A Heading");
+}
+
+/// Stdin is read as bytes and its format detected, as a file's is. Bytes
+/// that are not text are the library's `unsupported_format`, under
+/// `--json` as an envelope, where the read used to fail as a UTF-8 error
+/// with no kind. `--format` names the format for stdin as for a file.
+#[test]
+#[ignore = "requires the UDPipe model"]
+fn stdin_is_bytes_detected_like_a_file() {
+    let output = Command::cargo_bin("matra")
+        .expect("binary built with --features cli")
+        .args(["analyze", "-", "--json"])
+        .write_stdin(vec![0xff, 0xfe, 0x00])
+        .assert()
+        .code(2)
+        .get_output()
+        .clone();
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("stdout is the JSON envelope");
+    assert_eq!(parsed["input"], "<stdin>");
+    assert_eq!(parsed["error"]["kind"], "unsupported_format");
+
+    let out = Command::cargo_bin("matra")
+        .expect("binary built with --features cli")
+        .args(["analyze", "-", "--format", "markdown", "--json"])
+        .write_stdin(format!("# A Heading\n\n{PROSE}\n"))
+        .assert()
+        .code(0)
+        .get_output()
+        .stdout
+        .clone();
+    let parsed: serde_json::Value = serde_json::from_slice(&out).expect("JSON");
+    assert_eq!(parsed["result"]["provenance"]["format"], "markdown");
     assert_eq!(parsed["result"]["sections"][0]["heading"], "A Heading");
 }
