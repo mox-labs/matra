@@ -150,6 +150,7 @@ Exception
 FileNotFoundError
 From
 Hash
+IOError
 Ignore
 ImportError
 Into
