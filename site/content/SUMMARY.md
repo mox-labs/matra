@@ -9,6 +9,7 @@
 # How-to guides
 
 - [Install matra](tutorials/installation.md)
+- [Migrate from 0.2 to 0.3](guides/migrate-to-0-3.md)
 - [How-to guides](examples/README.md)
   - [Parse a sentence into its dependency tree](examples/parse-a-sentence.md)
   - [Find negations and modals](examples/negations-and-modals.md)

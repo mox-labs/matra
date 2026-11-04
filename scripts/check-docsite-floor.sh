@@ -23,6 +23,9 @@
 #                            which is what makes it a proposal, a plan or a
 #                            record. The pages that describe what ships are held
 #                            to src/; the records are held to their status line.
+#                            The migration guide names what 0.3.0 removed, so
+#                            it alone may also name a type on the retired list
+#                            below; every other page naming one fails.
 #   4. Site build:          bun install --frozen-lockfile, svelte-check with
 #                            warnings as failures, the WCAG AA contrast check
 #                            of every text and mark pair in both themes
@@ -136,6 +139,7 @@ echo "=== Gate 3: type-name parity ==="
 # probably miscalibrated.
 external_allowlist=$(cat <<'EOF'
 Arc
+AttributeError
 BaseException
 Edit
 Bound
@@ -290,6 +294,26 @@ DocumentMetrics
 EOF
 )
 
+# Types 0.3.0 removed with no replacement of the same name. The migration
+# guide is the one page that must name them, to say what each became, so
+# these are admitted on that page only: a name here on any other page is a
+# page still describing 0.2, and fails like any other unknown name.
+migration_page="site/content/guides/migrate-to-0-3.md"
+retired_allowlist=$(cat <<'EOF'
+Corpus
+CorpusEntry
+CorpusItem
+CorpusResult
+Ingested
+Matra
+RawDocument
+ScoredSentence
+SemanticCluster
+SemanticClusters
+SemanticEdge
+EOF
+)
+
 # rg is required here. The names come from an rg search, and with rg absent
 # the loop below read zero names and printed a pass.
 unknown=()
@@ -307,16 +331,23 @@ else
     # proposed and retired types by design (see the header). Named here so the
     # exemption is a decision in the code, not an accident of the paths.
     gate3_exempt="blueprints/"
-    names=$(rg -oIN --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' \
-        --glob "!${gate3_exempt}**" site/content/ skills/) || rg_rc=$?
+    # Each line is `retired NAME` for a name on the migration guide and
+    # `current NAME` for a name anywhere else, so the retired list applies
+    # to that one page. Under pipefail the status is rg's when rg fails.
+    names=$(rg -oN --with-filename --pcre2 -e '`([A-Z][a-zA-Z0-9_]+)`' --replace '$1' \
+        --glob "!${gate3_exempt}**" site/content/ skills/ \
+        | awk -F: -v page="$migration_page" '{ print ($1 == page ? "retired" : "current"), $NF }') || rg_rc=$?
     if [ "$rg_rc" -gt 1 ]; then
         echo "FAIL (gate 3): rg exited $rg_rc extracting names from site/content/ and skills/"
         gate3_ok=0
     fi
 fi
-while IFS= read -r name; do
+while IFS=' ' read -r scope name; do
     [ -z "$name" ] && continue
     checked=$((checked + 1))
+    if [ "$scope" = retired ] && grep -Fxq -- "$name" <<<"$retired_allowlist"; then
+        continue
+    fi
     # On any allowlist? skip.
     if grep -Fxq -- "$name" <<<"$external_allowlist"; then
         continue
@@ -344,7 +375,7 @@ elif [ ${#unknown[@]} -eq 0 ]; then
     echo "PASS (gate 3): all $checked backtick-inline names resolve in src/ or an allowlist"
 else
     echo "FAIL (gate 3): backtick-inline identifiers in site/content/ or skills/ not found in src/:"
-    printf '  %s\n' "${unknown[@]}"
+    printf '  %s\n' "${unknown[@]}" | sort -u
     echo ""
     echo "        Fix one of: rename the doc reference, add the type to src/,"
     echo "        or extend the external_allowlist in scripts/check-docsite-floor.sh."
