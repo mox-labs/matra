@@ -545,9 +545,15 @@ impl IoContext {
     /// made again: true for a failure in the transfer, false where the
     /// message names a remedy that a retry cannot supply.
     ///
-    /// Only the two provisioners download, so a build with neither has
-    /// no caller.
-    #[cfg_attr(not(any(feature = "udpipe", feature = "model2vec")), allow(dead_code))]
+    /// Only the two provisioners download, and the embedder downloads
+    /// nothing on `wasm32`, so a build with neither has no caller.
+    #[cfg_attr(
+        not(any(
+            feature = "udpipe",
+            all(feature = "model2vec", not(target_arch = "wasm32"))
+        )),
+        allow(dead_code)
+    )]
     pub(crate) fn download(
         kind: std::io::ErrorKind,
         url: &str,
