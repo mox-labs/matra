@@ -303,7 +303,7 @@ process that work is tooling, and its rules live in this file and in
 | [EPR-0003](proposals/0003-distribution-and-provisioning.md) | Distribution and provisioning | proposed | none |
 | [EPR-0004](proposals/0004-command-line-and-configuration.md) | The command line, configuration and the agent skill | proposed | none |
 | [EPR-0005](proposals/0005-embeddings-and-semantic-clusters.md) | Embeddings and semantic clusters | proposed | none |
-| [EPR-0006](proposals/0006-the-0-3-0-surface.md) | The 0.3.0 surface | proposed | none yet |
+| [EPR-0006](proposals/0006-the-0-3-0-surface.md) | The 0.3.0 surface | proposed | [#161](https://github.com/mox-labs/matra/issues/161) |
 
 ## Plans
 

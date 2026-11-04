@@ -4,115 +4,115 @@
 - Start Date: 2026-10-04
 - Pinned at: `6e9d94b580d6cd442bf74f30a6c05ade5329ca0d` (every code citation below opens at this commit)
 - Proposal PR: [#134](https://github.com/mox-labs/matra/pull/134)
-- Tracking issue: (opened before the owner accepts)
+- Tracking issue: [#161](https://github.com/mox-labs/matra/issues/161)
 - Status: proposed
 
 ## Summary
 
-0.3.0 settles matra's public surface once, as one design, before a TypeScript surface copies it. One application port names what a caller can ask for (analyze, annotate, measure, summarize, keyphrases, clusters, and a feed for text that arrives over time); Rust, Python and the command line become syntaxes of that one port and translate without deciding. Names say what a thing does; the method that ran, and every parameter that shaped a result, are recorded on the result. The document schema becomes a governed interface: one version in one place, rules for consumers, and a published JSON Schema. Every result carries its provenance and points back to its source by span. Failures carry a kind on every channel. The parser and decomposer contracts change once, in this release, each with its implementation. Every break lands in 0.3.0, with a transition window for 0.3.x: deprecated aliases, renamed JSON fields emitted under both names, and the 0.2 output on request from the command line.
+0.3.0 settles matra's public surface once, as one design, before a TypeScript surface copies it. A caller asks for an outcome: `analyze` a document, `analyze_all` of many, then `summarize`, `keyphrases` or `clusters` of the result. Rust, Python and the command line spell those words the same way, and none of them decides anything the others do not. The method behind an outcome is optional, never in a name, and recorded on the result with every parameter that shaped it. Input is cut by decision, not by processing step: where bytes come from, which format they are, how that format is read, how blocks become sections, and how text is parsed are each one private module, so a new format or a new parser changes no published signature. A caller with a format matra does not read hands in headings and paragraphs directly. Every result carries its provenance, points back into the analysed text by byte span, and lists what was skipped rather than dropping it silently. The document schema becomes a governed interface with a published JSON Schema, and failures carry a kind on every channel. Every break lands in 0.3.0, at once.
 
-Four decisions remain open for the owner. The first goes against a position the owner has stated, and says so.
+The owner has answered every decision but two, recorded in each decision's ruling below. The two still open are [5](#decision-provider-traits), where Claude's recommendation changed after the owner's answer, and [8](#decision-transition-window), which is new.
 
 <pragmatics>
 
 <ask>
 
-Accept the 0.3.0 surface as one design, and settle the four decisions under [Unresolved questions](#unresolved-questions). Each can be answered on its own.
+Confirm decision 5 (the extension traits private in 0.3.0) and decision 8 (a smaller transition window), then accept the proposal by merging the pull request that changes its status to `accepted`.
 
 </ask>
 
 <will>
 
-- Open the tracking issue with the milestones under Reference-level explanation, before you decide.
-- Once you accept, land the milestones in order, one pull request each, starting with the schema, its JSON Schema and its fixtures, so a reader sees the contract before the code that meets it.
-- Fix the shipped defects listed in [Defects in what ships](#defects-in-what-ships) in a separate pull request, since none of them waits on this design.
-- Keep every renamed Rust item, Python method, CLI flag and JSON field for 0.3.x, as the transition window describes, and remove them in 0.4.0 only.
+- Keep the tracking issue, [#161](https://github.com/mox-labs/matra/issues/161), current with the milestones under [Milestones](#milestones).
+- Start the milestones on branches once the rulings are recorded, and merge none of them before you merge the acceptance.
+- Land them in order, one pull request each, with the documentation, the skill and the CHANGELOG in the same pull request as the code they describe.
+- Leave each milestone in a state a later session can pick up cold: the records current, no half-finished refactor, no second copy of a rule.
 
 </will>
 
 <needs>
 
-- An answer to each of the four decisions: accept, accept with a reservation, object or redirect.
-- For each assumption listed under Unresolved questions: confirm it or strike it.
-- A reading of the rationale with one caveat in mind. This text merges a design by Claude, an independent design by a second Claude agent working from the owner's software-design canon, and a canon review by a third. All three are Claude agents reading one corpus, so where they agree, that is one voice, not three.
+- An answer to decisions 5 and 8: accept, accept with a reservation, object or redirect.
+- Your merge of the acceptance pull request.
+- A reading of the rationale with one caveat in mind. This text merges a design by Claude, an independent design and a canon review by a second Claude agent, and an architect review by a third. All are Claude agents reading one corpus, so where they agree, that is one voice, not several.
 
 </needs>
 
 <wont>
 
-- Write code that relies on this proposal while it is `proposed`.
+- Merge code that relies on this proposal while it is `proposed`.
 - Change its status to `accepted`, or merge a pull request that does.
-- Remove a deprecated name before 0.4.0, or publish a release without your approval.
+- Publish a release without your approval.
 
 </wont>
 
 <silence>
 
-The proposal stays `proposed` and nothing is built on it. Claude lists the open decisions again at the start of the next session that touches the public surface.
+The proposal stays `proposed` and nothing built on it merges. Claude lists decisions 5 and 8 again at the start of the next session that touches the public surface.
 
 </silence>
 
 </pragmatics>
 
-<changed date="2026-10-06" since="the text of 2026-10-04">
+<changed date="2026-11-03" since="the text of 2026-10-06">
 
 <was>
 
-The schema carried a new `schema_version`, at the top level in one example and inside `Provenance` in another, bumped only on removal, rename or retype, and the shipped `format_version` went unmentioned.
+One application port named seven operations, including the stages `annotate` and `measure` and a `feed` for text arriving over time.
 
 </was>
 
 <now>
 
-One version, in `provenance` only, with rules for consumers; the shipped `format_version` keeps its promise and moves with the schema major. [json.md:23](../../skills/matra/references/json.md#L23 "It increments on any change to the envelope or to the meaning of a field inside")
+The public surface names outcomes only; the stages are internal, and the feed waits for 0.4.0 as an addition. The owner settled outcomes over stages in conversation on 2026-11-02, and the architect review found that a private reader contract makes a later feed non-breaking: [decision 2](#decision-streaming-timing).
 
 </now>
 
 <was>
 
-Algorithm choice left the surface, recommended without a stated case for the other side beyond one dissent.
+The input side was the existing `Ingest` stream, the `Decomposer` and `NlpProvider` traits were public and changed once, and a caller could hand in only text of a known format.
 
 </was>
 
 <now>
 
-The choice is open, with both cases grounded in the canon; the recommendation keeps an optional typed method and says plainly that this goes against the owner's stated position. [#145](https://github.com/mox-labs/matra/pull/145)
+Input is cut by decision into fetch, detect, read, structure and parse, all private; `Input` and `Inputs` replace `Ingest`; a caller hands in blocks for a format matra does not read; and the result lists what was skipped. The owner settled the cut and the caller's own section breaks on 2026-11-02, after a consumer had to disguise plain text as markdown to get sections. See [the input side](#the-input-side-cut-by-decision).
 
 </now>
 
 <was>
 
-The `Decomposer` contract changed in 0.3.0 and the streaming implementation followed in 0.4.0.
+A span counted code points and bytes, on the ground that the downstream consumer asked for character offsets.
 
 </was>
 
 <now>
 
-A provider contract changes only together with an implementation; streaming timing is an open decision between a narrow feed in 0.3.0 and a new trait in 0.4.0. [#145](https://github.com/mox-labs/matra/pull/145)
+A span counts bytes of the analysed text only. That consumer's own written requirements say spans into the bytes the caller passed are enough, so the ground was wrong: [decision 3](#decision-offset-unit).
 
 </now>
 
 <was>
 
-Source spans waited for 0.4.0, and JSON readers had no transition window.
+The record paired each document with its path in `CorpusEntry`, and the path also sat in `provenance.source.path`.
 
 </was>
 
 <now>
 
-Span postconditions join the parser and decomposer contracts in 0.3.0, since both contracts change here anyway; the offset unit is an open decision. Renamed JSON fields are emitted under both names for 0.3.x, and the command line can emit the 0.2 output. [#145](https://github.com/mox-labs/matra/pull/145)
+`CorpusEntry` goes; the path has one home, in provenance [parnas-process:c14]. See [the schema](#the-schema).
 
 </now>
 
 <was>
 
-Python took keyword defaults read from configuration.
+Every renamed name, flag and JSON field stayed for 0.3.x, the JSON emitted under both names, and the command line could emit the 0.2 output.
 
 </was>
 
 <now>
 
-Library defaults are written in the signatures; configuration applies at the command line and in the `from_config` constructors; every effective parameter is recorded on the result. [#145](https://github.com/mox-labs/matra/pull/145)
+Decision 8 proposes a smaller window: deprecated aliases for renamed Rust and Python functions only, and one clean break on the wire, which the schema's own version already announces: [decision 8](#decision-transition-window).
 
 </now>
 
@@ -122,11 +122,19 @@ Library defaults are written in the signatures; configuration applies at the com
 
 ### What the owner has settled
 
-These are settled, by the owner's answers of 2026-09-27 and 2026-10-05, and are inputs here rather than questions:
+These are inputs here, not questions. From the owner's answers of 2026-09-27 and 2026-10-05:
 
-- **English only, for now.** A second language is not a likely change, so the language may appear in names (`Engine.english()`) without a module to hide it. Interfaces carry what is unlikely to change [parnas-process:c20].
+- **English only, for now.** A second language is not a likely change, so the language may appear in names without a module to hide it. Interfaces carry what is unlikely to change [parnas-process:c20].
 - **Streaming happens**, in both senses: a stream of documents (which exists) and text arriving over time within one document (which does not).
 - **matra implements the x.uma extensions itself**, the way xDS extensions live with their implementers, once the x.uma crates are published. That waits for a later proposal.
+
+From the owner's answers in conversation on 2026-11-02:
+
+- **Outcome names, method optional.** Functions are named for what they produce (`summarize`, `keyphrases`). The method is optional: `summarize_with(.., SummaryMethod)` in Rust, `method=` in Python, `--method` on the command line. Every result records the method and its parameters, and changing a default method is a breaking change.
+- **The caller's own section breaks.** A caller can hand in plain text with section breaks of its own, without disguising it as markdown.
+- **Input split by decision, not by processing step.** Fetch (file, directory, stdin, text; later a URL), detect (from the name and from the bytes), read (one reader per format, emitting canonical blocks with spans), structure (blocks into sections), parse. OCR, when it comes, is an optional adapter the PDF reader calls. No HTML, DOCX, PDF or OCR in 0.3.0.
+- **The public surface names outcomes, not stages.** `annotate` and `compose` (or `measure`) leave it.
+- **What a default build reads.** Sources: file, directory, stdin, text. Readers: markdown and plain text. Parser: UDPipe. Embedder: none, `Model2Vec` staying behind its feature. A format the build cannot read fails with `UnsupportedFormat`, naming the feature to enable.
 
 ### The surface reports something it does not keep
 
@@ -137,7 +145,19 @@ The record does not say where its text came from, and the documentation says it 
 - <claim id="paragraph-text-rebuilt" basis="observed">Markdown paragraph text is split into lines, rejoined and trimmed, which drops a `\r` from `\r\n` input, and blockquote text loses its `>` markers [markdown.rs:15](../../src/decompose/markdown.rs#L15 "text.lines()") [markdown.rs:29](../../src/decompose/markdown.rs#L29 "trim().to_string()") [markdown.rs:78](../../src/decompose/markdown.rs#L78 "trim_start_matches('>')")</claim>.
 - <claim id="rfc0006-span" basis="observed">RFC-0006 reserved `SourceSpan` as the "Source span pointer", sketched in bytes, for exactly this job [RFC-0006:46](../legacy/rfcs/0006-abstract-tier-vocabulary-lock.md#L46 "byte_offset, byte_length")</claim>, and nothing in the domain carries an offset today.
 
-A downstream distillation tool needs character offsets into the source, a provenance stamp and a versioned schema, and an agent reading the roadmap would trust text the code does not promise. Each fact belongs in "one, and only one, place" [parnas-process:c14]; here the documentation and the code disagree about one.
+A downstream distillation tool re-located thousands of sentences in its source by search, which worked by luck of the text rather than by contract, and an agent reading the roadmap would trust text the code does not promise. Each fact belongs in "one, and only one, place" [parnas-process:c14]; here the documentation and the code disagree about one.
+
+### The input side drops what it cannot read
+
+The markdown reader is a line scanner, and what it does not recognise it drops without a word.
+
+- <claim id="tables-dropped" basis="observed">A line starting with `|` is skipped, so every table vanishes [markdown.rs:55](../../src/decompose/markdown.rs#L55 "stripped.starts_with('|')")</claim>.
+- <claim id="references-truncate" basis="observed">A `## References` line ends the document: everything after it is dropped, not only the references [markdown.rs:58-61](../../src/decompose/markdown.rs#L58-L61 "## References")</claim>.
+- <claim id="hashtag-heading" basis="observed">Any line starting with `#` is a heading, so a `#hashtag` opens a section [markdown.rs:62](../../src/decompose/markdown.rs#L62 "stripped.starts_with('#')")</claim>. Lists are not recognised, and inline markup stays in the text the parser reads.
+- <claim id="kind-planned" basis="observed">The domain already plans a `kind` to replace the blockquote flag [domain.rs:1023](../../src/domain.rs#L1023 "kind: ParagraphKind")</claim>, which the reader cannot fill while it knows no lists.
+- <claim id="binary-as-io" basis="observed">A binary file reaches `read_to_string` and fails as an I/O error, prose rather than a kind with a remedy [file.rs:51](../../src/source/file.rs#L51 "read_to_string")</claim>.
+
+A result that silently omits part of its input deceives the caller: a handler that returns normally after dropping something fools the caller "into believing that everything is going according to plan" [neighbours-contracts-simplicity:c14], and "don't fail silently" [api-design-practice:c10].
 
 ### The three surfaces have drifted apart
 
@@ -150,14 +170,13 @@ A downstream distillation tool needs character offsets into the source, a proven
 | Handle an oversized input | a typed variant with `limit`, `actual`, `what` | <claim basis="observed">a bare `ValueError` [lib.rs:444](../../src/lib.rs#L444 "PyValueError::new_err(msg)")</claim> | <claim id="json-failure-prose" basis="observed">prose on stderr, nothing on stdout, exit 2 [cli/mod.rs:102](../../src/cli/mod.rs#L102 "matra: {e}")</claim> |
 | How many results | <claim basis="observed">`n` or `max`, by function [textrank.rs:27](../../src/extraction/textrank.rs#L27 "n: usize") [yake.rs:30](../../src/extraction/yake.rs#L30 "max: usize")</claim> | `n` or `max_phrases` | `-n` |
 
-<claim id="no-driving-port" basis="inferred">The cause is architectural. matra named its driven ports (`Source`, `NlpProvider`, `Embedder`) and never named the driving one</claim>, so each driving adapter assembled its own version of the application, and application rules leaked into them: the command line decides that extraction goes through the pipeline, and Python decides the opposite. A design decision with two homes is the defect information hiding exists to prevent: each module should own one decision and hide it [parnas-modules:c23]. <claim id="python-in-root" basis="observed">The Python binding also lives inside the composition root [lib.rs:406](../../src/lib.rs#L406 "mod python {")</claim>, beyond the reach of the boundary rule that holds the command line to the public surface.
+<claim id="no-driving-port" basis="inferred">The cause is architectural. matra named its driven ports (`Source`, `NlpProvider`, `Embedder`) and never named what a caller can ask for</claim>, so each driving adapter assembled its own version of the application, and application rules leaked into them: the command line decides that extraction goes through the pipeline, and Python decides the opposite. A design decision with two homes is the defect information hiding exists to prevent: each module should own one decision and hide it [parnas-modules:c23]. <claim id="python-in-root" basis="observed">The Python binding also lives inside the composition root [lib.rs:406](../../src/lib.rs#L406 "mod python {")</claim>, beyond the reach of the boundary rule that holds the command line to the public surface.
 
 ### Names answer the wrong question
 
 - <claim id="algorithm-names-today" basis="observed">The algorithm is in the function names: `tfidf_summarize` and its siblings in Rust, and the same in Python [extraction/mod.rs:14](../../src/extraction/mod.rs#L14 "pub use tfidf::summarize as tfidf_summarize") [_core.pyi:103](../../python/matra/_core.pyi#L103 "def tfidf_summarize")</claim>, and the format is in one: <claim basis="observed">`analyze_markdown` [_core.pyi:94](../../python/matra/_core.pyi#L94 "def analyze_markdown")</claim>. The ranking algorithm is a decision likely to change, and a likely change should touch no interface [parnas-process:c22].
 - <claim id="compose-measures" basis="observed">The stage that runs the metric suite is called `compose` [lib.rs:250-251](../../src/lib.rs#L250-L251 "let suite = metrics::default_suite();")</claim>. A name should say what the thing does, and the same word should mean the same thing everywhere [api-design-practice:c8].
 - <claim id="reporting-any-ccomp" basis="observed">`Reporting` fires on any verb with a clausal complement, including "think" and "ensure" [domain.rs:572](../../src/domain.rs#L572 "ccomp")</claim>, which breaks <claim basis="observed">matra's own rule that a derived field names a construction, "never a category" [EPR-0002:87](0002-data-model.md#L87 "never a category such as")</claim>.
-- <claim id="parser-port-name" basis="observed">The parser port is named for a field and a supplier, `NlpProvider`; its only act is to parse [nlp/mod.rs:47](../../src/nlp/mod.rs#L47 "pub trait NlpProvider: Send")</claim>.
 
 ### Failure has no contract outside Rust
 
@@ -174,30 +193,97 @@ A downstream distillation tool needs character offsets into the source, a proven
 A caller asks for an outcome. The words are the same in every language.
 
 ```rust
-let engine = matra::Engine::with_defaults()?;
-let doc = engine.analyze_file("README.md")?;
+use matra::{Engine, Input};
+
+let engine = Engine::new()?;
+let doc = engine.analyze(Input::file("README.md"))?;
 let summary = matra::summarize(&doc, 3)?;
-let phrases = matra::keyphrases(&doc, 10)?;
+let phrases = matra::keyphrases_with(&doc, 10, matra::KeyphraseMethod::Yake)?;
 println!("{}", doc.metrics.total_words);
 ```
 
 ```python
-m = matra.Engine()
-doc = m.analyze(open("README.md").read(), format="markdown")
-summary = m.summarize(doc, n=3)
-phrases = m.keyphrases(doc, n=10)
+import matra
+
+engine = matra.Engine()
+doc = engine.analyze(file="README.md")
+summary = matra.summarize(doc, n=3)
+phrases = matra.keyphrases(doc, n=10, method="yake")
 print(doc["metrics"]["total_words"])
 ```
 
 ```console
 $ matra summarize README.md -n 3
-$ matra keyphrases README.md -n 10
+$ matra keyphrases README.md -n 10 --method yake
 $ matra analyze README.md --json | jq .result.metrics.total_words
 $ matra analyze docs/ --json          # one envelope per line, one line per document
 $ matra clusters notes.md --threshold 0.85
 ```
 
-How the method is chosen, if at all, is decision 1. Every result records the method that ran and the `n` or threshold it ran with, whatever decision 1 says.
+**The translation rule.** A Rust `Input` constructor is the Python keyword and the command line's input (`Input::file(p)` is `analyze(file=p)` is `matra analyze p`). A Rust `_with(.., Method)` is Python's `method=` and the command line's `--method`. Every word (`text`, `file`, `bytes`, `blocks`, `format`, `n`, `method`, `threshold`, `embedder`, and the method and format names) is spelled the same in all three. Rust has no default arguments, so Rust requires what Python defaults; the defaults are the command line's, and the effective values are recorded on every result.
+
+### Text with its own section breaks
+
+A caller whose text comes from somewhere matra does not read (a PDF it extracted, a CMS, a transcript) hands in headings and paragraphs, and needs no markdown:
+
+```rust
+let doc = engine.analyze(Input::blocks([
+    Block::heading(1, "Field notes"),
+    Block::paragraph("The river rose overnight."),
+]))?;
+```
+
+```python
+doc = engine.analyze(blocks=[{"kind": "heading", "level": 1, "text": "Field notes"},
+                             {"kind": "paragraph", "text": "The river rose overnight."}])
+```
+
+```console
+$ matra analyze notes.json --format blocks --json
+```
+
+### The record says where it came from, and what it skipped
+
+Every top-level result carries `provenance`; every heading, paragraph, sentence, token and extracted result carries a `span` into the analysed text; and `skipped` lists what matra saw and did not analyse:
+
+```json
+{
+  "provenance": {
+    "matra": "0.3.0",
+    "schema": "2.0",
+    "parser": { "name": "udpipe", "model": "english-ewt-ud-2.5-191206", "sha256": "…", "license": "CC BY-NC-SA 4.0" },
+    "format": "markdown",
+    "source": { "path": "notes.md", "bytes": 1832, "sha256": "…" }
+  },
+  "metrics": { "total_words": 412, "total_sentences": 19, "passive_ratio": 0.11 },
+  "sections": [ { "heading": "Field notes", "level": 1, "span": { "start": 0, "end": 13 }, "paragraphs": [] } ],
+  "skipped": [ { "kind": "table", "span": { "start": 640, "end": 812 } } ]
+}
+```
+
+A summary adds what shaped it: `"method": "textrank", "parameters": { "n": 3 }`. A span counts UTF-8 bytes of the analysed text: for markdown and plain text that is the input itself, and for block input it is the blocks' texts joined by a blank line, in order. The text fields keep their 0.2 meaning, now documented as normalized; the span, not the text, is the authority on where a value came from.
+
+### Errors carry a kind everywhere
+
+```python
+try:
+    engine.analyze(text=huge)
+except matra.InputTooLarge as e:     # still a ValueError, so old except clauses keep working
+    print(e.kind, e.details["limit"], e.details["actual"])
+```
+
+```json
+{ "format_version": 2, "command": "analyze", "input": "big.md", "result": null,
+  "error": { "kind": "input_too_large", "message": "…", "details": { "what": "input", "limit": 8388608, "actual": 9000000 } } }
+```
+
+### Migrating
+
+The migration guide lists every rename on one page. What stays callable under its old name for 0.3.x is decision 8.
+
+## Reference-level explanation
+
+### The public surface
 
 <sketch-figure id="hexagon" seed="6" title="The driving side and the driven ports, today and proposed">
 
@@ -226,17 +312,17 @@ edge clusters embedder
 edge engine source
 edge engine decomposer
 edge engine nlp
-state proposed proposed "one application port; adapters translate; TypeScript reads the schema"
+state proposed proposed "one surface of outcomes; adapters translate; only the embedder is open"
 box rust "Rust API" 2 8 114 28
 box py "Python module\nrule 7, own file" 2 46 114 34
 box cli "Command line" 2 90 114 28
 quiet box ts "TypeScript 0.4\ntypes, viewer" 2 140 114 34
-hex port "Application port\nanalyze annotate\nmeasure summarize\nkeyphrases\nclusters feed" 128 4 146 120
+hex port "Outcomes\nanalyze\nanalyze_all\nsummarize\nkeyphrases\nclusters" 128 4 146 120
 box schema "Schema 2.x\nJSON Schema" 146 140 110 34
-quiet box source "Source" 290 4 108 26
-box decomposer "Decomposer\nblocks, spans" 290 38 108 34
-box parser "Parser\nidentity, spans" 290 80 108 34
-quiet box embedder "Embedder" 290 122 108 26
+quiet box source "Fetch, detect\nprivate" 290 4 108 34
+box decomposer "Readers, private\nblocks, spans" 290 44 108 34
+box parser "Parser, private\nidentity, spans" 290 84 108 34
+box embedder "Embedder\npublic" 290 124 108 30
 edge rust port
 edge py port
 edge cli port
@@ -250,90 +336,108 @@ edge port embedder
 
 </sketch-figure>
 
-Today the Python box and the command-line box each carry an application rule, and the parser port hands CoNLL-U's string encodings straight into the domain. Proposed, those rules move into the port, the Python module leaves the composition root, and the two driven ports whose contracts change in this release are drawn at full weight.
+Today the Python box and the command-line box each carry an application rule. Proposed, those rules live behind the outcome functions, the Python module leaves the composition root, and of the driven ports only the embedder stays open to outside implementers.
 
-### The record says where it came from
-
-Every top-level result carries `provenance`, and every value that names text carries a `span` into the input:
-
-```json
-{
-  "provenance": {
-    "matra": "0.3.0",
-    "schema": "2.0",
-    "parser": { "name": "udpipe", "model": "english-ewt-ud-2.5-191206", "sha256": "…", "license": "CC BY-NC-SA 4.0" },
-    "format": "markdown",
-    "source": { "path": "notes.md", "bytes": 1832, "sha256": "…" }
-  },
-  "metrics": { "total_words": 412, "total_sentences": 19, "passive_ratio": 0.11 },
-  "sections": [ { "heading": "Field notes", "span": { "…": "…" }, "paragraphs": [] } ]
-}
-```
-
-A summary adds what shaped it: `"method": "textrank", "n": 3`. The text fields keep their 0.2 meaning, now documented as normalized; the span, not the text, is the authority on which source characters a value came from. Which unit a span counts in is decision 3.
-
-### Errors carry a kind everywhere
-
-```python
-try:
-    m.analyze(huge)
-except matra.InputTooLarge as e:     # still a ValueError, so old except clauses keep working
-    print(e.kind, e.details["limit"], e.details["actual"])
-```
-
-```json
-{ "format_version": 2, "command": "analyze", "input": "big.md", "result": null,
-  "error": { "kind": "input_too_large", "message": "…", "details": { "what": "input", "limit": 8388608, "actual": 9000000 } } }
-```
-
-### Migrating
-
-For 0.3.x, every renamed Rust item and Python method keeps its old name as a deprecated alias (`#[deprecated]` in Rust, a `DeprecationWarning` in Python that names the replacement call); every renamed JSON field is emitted under both its old and new names; renamed CLI flags stay as hidden aliases; and `matra ... --json --format-version 1` emits the 0.2 output. A reader detects which side it is on by `provenance.schema`, which is absent before 0.3.0. Removal happens in 0.4.0. The migration guide lists every rename on one page.
-
-## Reference-level explanation
-
-### The application port
-
-| Operation | Rust | Returns |
+| Outcome | Rust | Returns |
 |---|---|---|
-| analyze | `Engine::analyze(Ingest)`, `analyze_text(&str, Format)`, `analyze_file(path)` | a stream of `CorpusEntry`, or one `Document` |
-| annotate | `Engine::annotate(&RawDocument)` | a `Document` with structure and record facts |
-| measure | `Engine::measure(&mut Document)` (was `compose`) | fills `metrics` |
-| summarize | `summarize(&Document, n)` | `Summary` |
-| keyphrases | `keyphrases(&Document, n)` | `Keyphrases` |
+| analyze one | `Engine::analyze(Input)` | `Document` |
+| analyze many | `Engine::analyze_all(impl IntoIterator<Item = Input>)` | a lazy stream of `Result<Document, DocumentError>`, in input order |
+| summarize | `summarize(&Document, n)`, `summarize_with(&Document, n, SummaryMethod)` | `Summary` |
+| keyphrases | `keyphrases(&Document, n)`, `keyphrases_with(&Document, n, KeyphraseMethod)` | `Keyphrases` |
 | clusters | `clusters(&Document, &dyn Embedder, threshold: f64)` | `Clusters` |
-| feed | `Engine::feed(Format) -> Feed` (decision 2) | events, then the `Document` |
 
-Extractors take a `&Document`, not a cloned `&[Sentence]`, so a parse is reused and its provenance travels; the richer mechanism is built using the simpler one [parnas-modules:c33]. Routing extraction through the pipeline is the port's policy, owned there once. A mechanism-only layer is never wholly free of policy [card:levin-1975-policy-mechanism] (unverified reading), so the port names the policies it owns rather than claiming to have none.
+- **Construction.** `Engine::new()` builds the defaults (the pinned parser model, the markdown and plain-text readers), locating the model by the existing resolver and reading no behaviour from a configuration file; defaults are written explicitly [api-design-systems:c38]. `Engine::from_config(&Config)` and `from_config_with_notice` stay. There is no builder: it would need the reader and parser traits public, and no use case asks for it [api-design-practice:c6]. <claim id="engine-new-injects" basis="observed">Today's `new` takes the parser and the reader table [lib.rs:159](../../src/lib.rs#L159 "pub fn new(nlp: Box<dyn NlpProvider>")</claim>, so the new `new` is a remove and an add [api-design-systems:c24], caught at compile time, and the migration guide says so. <claim id="with-defaults-reads-config" basis="observed">`with_defaults` reads the configuration file [lib.rs:321](../../src/lib.rs#L321 "Config::resolve()")</claim>, and it keeps doing exactly that as an alias, so no old call changes behaviour.
+- **Input.** `Input` is one document, opaque and lazy: `Input::text(s, Format)`, `Input::bytes(data, Option<Format>)` (detected when `None`), `Input::file(path)` (read at `analyze`, so a failed read is an item of a stream, not an abort), `Input::blocks(iter)`. `Inputs::dir(path) -> Result<Inputs>` is an iterator of `Input`. `Input::file` on a directory fails with `InvalidInput` naming `Inputs::dir`. `Ingest`, `Ingested` and `RawDocument` leave the surface. An opaque `Input` hides its representation [parnas-modules:c23], so a URL source later is a new constructor, and `Input::bytes` is what lets fetching stay private: a caller whose bytes come from elsewhere fetches them and hands them in, the cheapest extension mechanism [api-design-practice:c35].
+- **Block.** `Block` is input only and opaque, with two constructors, `Block::heading(level, text)` and `Block::paragraph(text)`. Its JSON form is a published input format, `Format::Blocks`, with an input schema in `spec/schema/`; an unknown `kind` is refused, naming it. The richer vocabulary the readers emit (heading, paragraph, list item, table cell, code) is a separate, private type, so the likely change, more kinds, touches no interface [parnas-process:c22]. A shared format used as an interface becomes costly as a design evolves [parnas-modules:c25], which holds for a type callers receive or implement and not for one they only send.
+- **Outcomes are free functions over a `Document`.** They need no engine and no parser, so they run in a build without UDPipe, which the TypeScript surface will need. The richer mechanism is built using the simpler one [parnas-modules:c33]. The method is a secret behind the outcome's name: the selector is an enum the caller sends, which can gain values safely, and the method recorded on the result is a string the caller receives, which readers treat as an open set (this send-versus-receive distinction is the canon synthesis's own suggestion, not a source finding). `n` is the one word for "how many" everywhere.
+- **`clusters` takes an embedder in every language.** An implicit default would download a model inside an outcome call. Only the command line, the application tier, builds the default embedder from configuration.
+- **The stages are internal.** `annotate` and `compose` stay as the crate's own stages, and the property that annotation is the only route from text to the parser holds for every `Input` constructor, which a law tests. <claim id="python-annotated" basis="observed">Their one caller outside the engine is the Python binding's own helper [lib.rs:488](../../src/lib.rs#L488 "self.engine.annotate(&raw)")</claim>. A public parse-only call would publish a second shape of `Document`, every metric empty, under the same name; "a feature which is included before it is fully understood can never be removed later" [neighbours-hoare-brooks-lampson:c13].
+- **Adapters translate and decide nothing.** The Python binding moves out of `lib.rs` into its own module and is held to boundary rule 7, the public surface only, with a semgrep rule. The command line keeps no application rule. Henning's "an API is a user interface" [api-design-practice:c21] is the grounding, with the drift above as the evidence.
+- **A cross-surface parity test.** The same inputs through Rust, Python and the command line give the same `Document`, the same summary and the same error `kind`; testing finds what structure is meant to prevent [dijkstra-structure:c30].
 
-**Adapters translate and decide nothing.** The Python binding moves out of `lib.rs` into its own module and is held to boundary rule 7, the public surface only, with a semgrep rule. The command line keeps no application rule. `matra.Engine()` gains a constructor; `Matra` stays as an alias. Cockburn's ports are purposeful conversations, driving or driven, and adapters translate across them [card:cockburn-hexagonal-current] (unverified reading; Cockburn is in the canon-0010 cards, not in the verified claims). The verified grounding is the observed drift above and Henning's "an API is a user interface" [api-design-practice:c21].
+### The input side, cut by decision
 
-**A cross-surface parity test.** The same inputs through Rust, Python and the command line must give the same `Document`, the same summary and the same error `kind`. A promise that nothing leaks across a boundary holds only with "a mechanism to detect when a violation of that promise occurs" [card:cockburn-hexagonal-current] (unverified reading), and testing finds what structure is meant to prevent [dijkstra-structure:c30].
+<sketch-figure id="input" seed="8" title="The input side cut by decision: each box hides one, and every box is private">
+
+```text
+width 400
+state proposed proposed "callers enter by Input; every box below the surface is crate-private"
+box text "Input::text\nInput::file\nInput::bytes" 4 4 120 44
+box blocks "Input::blocks" 4 120 120 28
+box fetch "Fetch: file, dir,\nstdin; guards" 140 4 120 34
+box detect "Detect: name and\nbytes to a Format" 276 4 120 34
+box read "Read one format:\nblocks, skipped" 276 60 120 34
+box structure "Structure:\nblocks to sections" 140 120 120 34
+box parse "Parse: sentences,\ntokens, spans" 276 120 120 34
+box measure "Measure: metrics,\nrecord facts" 276 176 120 34
+box doc "Document:\nprovenance, skipped" 140 176 120 34
+edge text fetch
+edge fetch detect
+edge detect read
+edge read structure
+edge blocks structure
+edge structure parse
+edge parse measure
+edge measure doc
+```
+
+</sketch-figure>
+
+Each module hides one decision likely to change, and Parnas's procedure is exactly this: name the secrets, give each a module, and make the interfaces insensitive to the anticipated changes [parnas-modules:c35]. A cut by processing step, the flowchart, is "almost always incorrect" as a basis for decomposition [parnas-modules:c22] (corrected wording).
+
+| Module | The decision it hides | Visibility |
+|---|---|---|
+| fetch (`source/`) | where bytes come from, and the guards on reading them (symlinks, size) | private |
+| detect | how a name and bytes map to a `Format` | private; `Format::from_path` stays public |
+| read (`decompose/`) | one format's syntax | private, one reader per format |
+| structure | how blocks become a section tree | private |
+| parse (`nlp/`) | the parser, its model, tokenization, span alignment | private |
+| measure (`metrics/`, `hearst`) | detector rules and metric formulas | private |
+| outcomes (`extraction/`) | which method ranks sentences or phrases | outcome functions public; method modules private |
+| embed (`embed/`) | the embedding model | `Embedder` public; `Model2Vec` public behind its feature |
+| domain | none: it is the published data | public |
+
+- **Detection.** A binary signature wins over the extension (`%PDF`, a zip with `[Content_Types].xml`). Among text formats, the caller's `Format` or the extension decides. A recognised format this build cannot read fails with `UnsupportedFormat`, whose `details` name the feature to enable; bytes that are not UTF-8 and carry no known signature fail with `UnsupportedFormat` and no feature. A text file with an unknown extension reads as plain text (decision 7).
+- **The markdown reader** is rewritten on a CommonMark parser that reports source offsets, so it recognises lists, tables, code, block quotes and front matter, strips inline markup from the text the parser reads, and gives every block its span. A `## References` heading is a heading like any other. A construct it does not analyse (a table, a code block, front matter) is recorded in `skipped`, never dropped. Which parser is an implementation choice the canon does not address; pulldown-cmark is the candidate, chosen in the milestone's pull request.
+- **`Paragraph.kind`** (`paragraph`, `quote`, `list_item`) arrives, since the reader can now fill it, and an enum can grow where a boolean cannot [api-design-practice:c40]. `in_blockquote` is emitted beside it for 0.3.x if decision 8 keeps a wire window, and removed otherwise.
+- **The parser** reports its own identity and, for each token, its span within the text it was given; the engine shifts those spans to absolute offsets at the one place each paragraph is parsed. The UDPipe adapter takes token positions from UDPipe's own `ranges` tokenizer option, or aligns token forms against the paragraph text, and returns `ParseFailed` naming the token when alignment fails, never a guessed span: a handler that returns normally deceives the caller [neighbours-contracts-simplicity:c14]. <claim id="parser-unvalidated" basis="observed">The parser's contract is trusted unchecked today [nlp/mod.rs:30](../../src/nlp/mod.rs#L30 "nothing validates it on the")</claim>; keeping the trait private keeps that trust inside the crate.
+- **Shared contract tests.** Each port gets one test every adapter must pass, stating which subtyping rule it enforces; the everyday one (an adapter may weaken a precondition and strengthen a postcondition) is Meyer's subcontracting rule [neighbours-contracts-simplicity:c12].
+
+### The laws
+
+The seven equivalence laws in `src/lib.rs` restate over `Input` and are run for every constructor (text, bytes, file, blocks): a stream of one is one analysis, order is preserved, and a failed read never reaches the parser. The law that analysis is annotation then measurement stays as an internal test, since both stages leave the surface but the property still holds. One law is new:
+
+- **L9, the accounting law.** For text formats, every non-whitespace byte of the analysed text lies in exactly one of: a heading span, a paragraph span, a `skipped` span. A conformance test over every fixture checks it, which turns "never silently" into something a test can falsify.
 
 ### The schema
 
 ```text
-Document         { provenance, sections, metrics: DocumentMetrics }
+Document         { provenance, sections, metrics: DocumentMetrics, skipped: [Skipped] }
 DocumentMetrics  { total_words, total_sentences, paragraph_count, mean_sentence_length,
                    sentence_length_std, vocabulary_ttr, nominalization_ratio, passive_ratio }
 Section          { heading, level, span, paragraphs }
-Paragraph        { span, text, in_blockquote, sentences, metrics: ParagraphMetrics }
+Paragraph        { span, text, kind, sentences, metrics: ParagraphMetrics }
 ParagraphMetrics { readability_grade, lexical_density, compression_ratio }
 Sentence         { span, text, tokens, word_count, tree_depth: Option, passive,
                    negations, modals, clausal_complements, root_adverbials, hearst_pairs, root_mood }
 Token            { id, span, text, lemma, pos, xpos, features: map, head, dep, deps, misc }
-Provenance       { matra, schema, parser: Identity, format, source, method?, parameters? }
+Skipped          { kind, span }
+Span             { start, end }          UTF-8 bytes of the analysed text
+Provenance       { matra, schema, parser: Identity, format, source: { path?, bytes, sha256 }, method?, parameters? }
 Identity         { name, model, sha256, license }
 Summary          { provenance, sentences: [SummarySentence { index, span, text, score: f64 }] }
-Keyphrases       { provenance, phrases: [Keyphrase { phrase, score: f64, occurrences: [span] }] }
-CorpusEntry      { path, document }
+Keyphrases       { provenance, phrases: [Keyphrase { phrase, score: f64, occurrences: [Span] }] }
+Clusters         { provenance, clusters, edges }
+DocumentError    { path?, kind, message, details }
 ```
 
 - **Aggregates are fields.** What the command line prints and Python rebuilds becomes data: if data exists only in string form, the string becomes a de facto API [api-design-practice:c11]. `ParagraphMetrics` and `DocumentMetrics` are names RFC-0006 reserved, and no outer `Option` wraps either record, because each slot gates on its own.
-- **CoNLL-U is converted.** `features` is a map; the raw `feats` string is emitted beside it for 0.3.x and removed in 0.4.0, so the fact has one home after the window [parnas-process:c14].
-- **Sentinels become `Option`.** `tree_depth` is `None` on a cycle instead of `usize::MAX`; the visited-set walk is unchanged.
-- **Scalars cross as `f64`.**
-- **Record facts are named for what the detector finds.** `ClausalComplement` and `clausal_complements` replace `Reporting` and `reportings`; `root_mood` (the mood feature of the root, with the root's token id) replaces the `bare_assertion` flag. Name a thing by what it is [dijkstra-systems:c2]; what must stay static is "the semantics of the mapping" [api-design-systems:c42]. `root_mood` is a retype, and its values are an open set.
+- **One home for the path.** <claim id="corpus-entry-path" basis="observed">`CorpusEntry` pairs a path with a document [domain.rs:1351](../../src/domain.rs#L1351 "Self { path, analysis }")</claim>, and the path also belongs in `provenance.source.path`. `CorpusEntry` goes; there must be one, and only one, place for every fact [parnas-process:c14]. `Corpus`'s aggregate methods leave the surface too: methods do not cross into Python, and averaging across documents is the caller's decision (defect 12 below).
+- **Skipped kinds** name the construct (`table`, `code`, `front_matter`, later `page_image`), never a judgment, following matra's rule that a derived field names a construction (EPR-0002). `skipped` is not an error and carries no error code: skipping a construct is specified behaviour reported beside a correct result, so AIP-193's rule against partial errors [api-design-systems:c30] does not bind it.
+- **CoNLL-U is converted.** `features` is a map. **Sentinels become `Option`**: `tree_depth` is `None` on a cycle instead of `usize::MAX`, and the visited-set walk is unchanged. **Scalars cross as `f64`.**
+- **Record facts are named for what the detector finds.** `ClausalComplement` and `clausal_complements` replace `Reporting` and `reportings`; `root_mood` (the mood feature of the root, with the root's token id) replaces the `bare_assertion` flag. Name a thing by what it is [dijkstra-systems:c2]; `root_mood` is a retype, and its values are an open set.
+- **One format vocabulary**: `markdown`, `plain_text`, `blocks`, in the JSON, in Python and on the command line.
+- **Where spans sit**: section headings, paragraphs, `skipped` entries, sentences, tokens, summary sentences and keyphrase occurrences. Cluster members stay sentence indices, which already resolve through the document.
 
 ### Versioning and the consumer rules
 
@@ -341,138 +445,165 @@ CorpusEntry      { path, document }
 
 - **One schema version, in one place.** `provenance.schema` is `"major.minor"` and lives nowhere else [parnas-process:c14]. 0.2's implicit schema is 1; this release is `2.0`.
 - **What moves which number.** A minor adds optional fields only, invisible to old readers [machine-readable-contracts:c18]. A major is anything else: a field removed, renamed or retyped, or a field whose meaning changes, including a changed default, since defaults are behaviour [api-design-systems:c25] and semantic compatibility is compatibility [api-design-systems:c21].
-- **`format_version` keeps its rule** and moves whenever the envelope changes or the schema major changes. A minor changes no existing field's meaning, so it moves neither, as today.
-- **Rules for consumers.** Ignore fields you do not recognize; treat every string set you receive as open (`kind`, `method`, `root_mood`, `pos`, `dep`); reject a major you do not know. That is Terraform's stated policy for its JSON output [machine-readable-contracts:c35], and Kubernetes found that "adding a new enum value breaks backward compatibility" for enums clients receive [api-design-systems:c34]. Without these rules, "adding a field does not change the version" would hold for Rust callers (whose types are `#[non_exhaustive]`) and not for Python or JSON readers.
-- **A published schema.** `spec/schema/` holds a JSON Schema per major, validated against every conformance output in every binding, and printed by `matra --schema`. A contract published as a machine-readable artifact lets programs discover what a tool returns without its source [machine-readable-contracts:c36]. It is hand-written, or written by a dev-only test, because deriving it on the domain types would add a dependency to `domain.rs`, which boundary rule 1 forbids without an RFC.
+- **`format_version` keeps its rule** and moves whenever the envelope changes or the schema major changes. A minor changes no existing field's meaning, so it moves neither.
+- **Rules for consumers.** Ignore fields you do not recognize; treat every string set you receive as open (`kind`, `method`, `root_mood`, `pos`, `dep`, the `skipped` kinds); reject a major you do not know. That is Terraform's stated policy for its JSON output [machine-readable-contracts:c35], and Kubernetes found that "adding a new enum value breaks backward compatibility" for enums clients receive [api-design-systems:c34].
+- **A published schema.** `spec/schema/` holds a JSON Schema per major, validated against every conformance output in every binding, and printed by `matra --schema`. A contract published as a machine-readable artifact lets programs discover what a tool returns without its source [machine-readable-contracts:c36]. It is hand-written, or written by a dev-only test, because deriving it on the domain types would add a dependency to `domain.rs`, which boundary rule 1 forbids.
 - **Calibration.** Strict compatibility rules assume many callers whose upgrades you do not control; interfaces whose callers are co-owned "should set their own requirements" [machine-readable-contracts:c19]. These rules govern the wire from 2.0 on; the crate stays 0.x.
-
-<sketch-figure id="versioning" seed="7" title="One schema version, the envelope number that moves with it, and the consumer rules">
-
-```text
-width 400
-state today shipped "one integer on the CLI envelope; the Python dict and the result carry none"
-box env "CLI envelope\nformat_version 1" 4 10 120 34
-box result "result: Document\nno version" 150 10 120 34
-box py "Python dict\nno version" 150 64 120 34
-edge env result
-state proposed proposed "one version in provenance; the envelope moves with its major"
-box env "CLI envelope\nformat_version 2" 4 10 112 34
-box py "Python dict" 4 112 112 30
-box doc "Document\nprovenance.schema\n2.0" 140 54 120 44
-box js "JSON Schema\nper major" 280 6 118 34
-box minor "minor: optional\nfields added" 280 58 118 34
-box major "major: removed,\nrenamed, retyped,\nmeaning changed" 280 106 118 44
-box consumer "Consumer: ignore\nunknown fields, open\nsets, reject new major" 120 162 160 44
-edge env doc
-edge py doc
-edge doc js
-edge minor doc
-edge major doc
-edge major env
-edge doc consumer
-```
-
-</sketch-figure>
 
 ### Provenance
 
-`provenance` sits on `Document`, `Summary`, `Keyphrases` and `Clusters`. Derived results copy the document's provenance and add their own `method` and `parameters` (`n`, `threshold`, the embedder's identity). The parser reports its own identity, as the embedder already does: <claim id="embedder-identity" basis="observed">two embedders "that can disagree must not share an identity" [embed/mod.rs:41](../../src/embed/mod.rs#L41 "embedders that can disagree must not share an identity")</claim>. The model is the decision most likely to change (a permissively licensed model is planned), so a consumer must see which model produced a parse, rather than discover it as a shift in the numbers; an interface states "the meaning and limits of information exchanged" [parnas-process:c46]. The input digest is computed in `annotate` with `sha2`, which becomes a required dependency of the crate, not of `domain`. There is no timestamp (own judgment: matra's outputs are deterministic, conformance compares them, and a timestamp would make two identical analyses differ).
-
-### Ports and their contracts
-
-- **`Parser`** (was `NlpProvider`) gains `identity()`, keeps the contract `NlpProvider` states today, and adds two clauses: sentences in text order, and each token's span within the text it was given. The composition root shifts those spans to absolute offsets in `annotate`, the one choke point (<claim basis="observed">each paragraph is parsed there [lib.rs:239](../../src/lib.rs#L239 "para.sentences = self.nlp.parse(&para.text)?;")</claim>). The UDPipe adapter takes token positions from UDPipe's own `ranges` tokenizer option, which needs a one-line change in udpipe-rs; until then it aligns token forms against the paragraph text and returns `ParseFailed` naming the token when alignment fails, never a guessed span. A handler that returns normally deceives the caller [neighbours-contracts-simplicity:c14].
-- **`Decomposer`** returns blocks (headings and paragraphs) with their spans, and a settled offset: the point after which appending text cannot change a block. The composition root builds the section tree from the blocks and slices paragraph text from the source. When this lands depends on decision 2.
-- **Shared contract tests.** Each port gets one test that every adapter must pass. The test states which subtyping rule it enforces: the everyday one (an adapter may weaken a precondition and strengthen a postcondition) is Meyer's subcontracting rule [neighbours-contracts-simplicity:c12]; Liskov and Wing's strict extension-map rule requires equal preconditions [card:liskov-wing-1994-subtyping] (unverified reading).
-- **No migration path for outside implementors.** A blanket `impl<T: NlpProvider> Parser for T` would need a default `identity()`, and the embedder rule above makes any default dishonest. <claim id="no-outside-implementors" basis="assumed">No parser or decomposer is implemented outside matra.</claim> Provider interfaces cannot grow without breaking every implementor [api-design-practice:c32], which is why each changes once, here, together with its implementation, and not again in 0.4.0.
-- **Model acquisition** stays two copies, as RFC-0015 decided; copying a small component is "usually the right thing" [neighbours-hoare-brooks-lampson:c47]. The second pinned parser model is the moment to revisit it.
+`provenance` sits on `Document`, `Summary`, `Keyphrases` and `Clusters`. Derived results copy the document's provenance and add their own `method` and `parameters` (`n`, `threshold`, the embedder's identity). The parser reports its own identity, as the embedder already does: <claim id="embedder-identity" basis="observed">two embedders "that can disagree must not share an identity" [embed/mod.rs:41](../../src/embed/mod.rs#L41 "embedders that can disagree must not share an identity")</claim>. The model is the decision most likely to change (a permissively licensed model is planned), so a consumer must see which model produced a parse rather than discover it as a shift in the numbers; an interface states "the meaning and limits of information exchanged" [parnas-process:c46]. The input digest is computed once, at annotation, with `sha2`, which becomes a required dependency of the crate, not of `domain`. There is no timestamp: matra's outputs are deterministic, conformance compares them, and a timestamp would make two identical analyses differ (own judgment).
 
 ### Errors on every channel
 
-- **Rust.** `Error` keeps its seven variants and `kind()`, and gains `details()`, every dynamic value in the message as structured data, and a serde form `{kind, message, details}`. `DocumentError` serializes as that plus `path`, so the hand-built projection in the Python binding is deleted. Every dynamic value in an error message must also be present as metadata [machine-readable-contracts:c13].
+- **Rust.** `Error` keeps its variants and `kind()`, and gains `details()`, every dynamic value in the message as structured data, and a serde form `{kind, message, details}`. `DocumentError` serializes as that plus `path`, so the hand-built projection in the Python binding is deleted. Every dynamic value in an error message must also be present as metadata [machine-readable-contracts:c13]. `UnsupportedFormat`'s details name the feature that would read the format, when one exists.
 - **Python.** `matra.MatraError` with `.kind` and `.details`, and one subclass per kind that also inherits today's builtin class (`InputTooLarge(MatraError, ValueError)`), so every documented exception still catches [api-design-practice:c39]. `Io` routes on the kind it wraps: `FileNotFoundError`, `PermissionError`, else `OSError`.
-- **Command line.** Under `--json`, a failure writes the envelope with `"result": null` and an `error` object to stdout, writes `matra: <message>` to stderr, and exits 2. On success `"error": null`; both keys are always present. The command line's own refusals use the existing kind whose remedy matches: a bad flag and a contract violation are both "fix the call", so both are `invalid_input`. Error identity is defined by what the caller would do about it [api-design-systems:c28].
+- **Command line.** Under `--json`, a failure writes the envelope with `"result": null` and an `error` object to stdout, writes `matra: <message>` to stderr, and exits 2. On success `"error": null`; both keys are always present. The command line's own refusals use the existing kind whose remedy matches: error identity is defined by what the caller would do about it [api-design-systems:c28].
 - **Exit codes** stay 0 (found), 1 (nothing found), 2 (failed). In `analyze DIR --json`, each document is one envelope per line; a failed document is a line with its `error`, the walk continues, and the exit code is 2 if any document failed. Per-item failure in a bulk operation is the one sanctioned partial success [api-design-systems:c30].
 - **Retry.** Download failures carry `details.retryable: true`. Whether a retry is safe depends on both the operation and the failure [machine-readable-contracts:c16].
 
-### Limits
+### Limits and defaults
 
-The input cap, the sentence caps and the metric minimums move into one module as published constants. Raising a cap is left out of this release: the canon does not cover resilience bounds, and the resilience floor keeps safe defaults until its own reviewer rules.
+The input cap, the sentence caps and the metric minimums move into one module as published constants. Raising a cap is left out of this release: the canon does not cover resilience bounds, and the resilience floor keeps safe defaults until its own reviewer rules. Library defaults are written in the signatures; configuration applies at the command line and in the `from_config` constructors. Defaults "should be written explicitly", and changing one is breaking [api-design-systems:c38] [api-design-systems:c25]. The effective parameters are recorded in `provenance`.
 
-### Defaults
+### Signatures
 
-Library defaults are written in the signatures. Configuration applies at the command line and in the explicit `from_config` constructors. Defaults "should be written explicitly", and changing one is breaking [api-design-systems:c38] [api-design-systems:c25]; hidden state is a source of agent error [agent-computer-interfaces:c18]. The effective parameters are recorded in `provenance`.
+```rust
+impl Engine {
+    pub fn new() -> Result<Engine>;
+    pub fn from_config(cfg: &Config) -> Result<Engine>;
+    pub fn from_config_with_notice(cfg: &Config, notice: impl FnMut(&ProvisionNotice)) -> Result<Engine>;
+    pub fn analyze(&self, input: Input) -> Result<Document>;
+    pub fn analyze_all<I: IntoIterator<Item = Input>>(&self, inputs: I)
+        -> impl Iterator<Item = std::result::Result<Document, DocumentError>> + '_;
+}
+impl Input {
+    pub fn text(text: impl Into<String>, format: Format) -> Input;
+    pub fn bytes(data: impl Into<Vec<u8>>, format: Option<Format>) -> Input;
+    pub fn file(path: impl AsRef<Path>) -> Input;
+    pub fn blocks(blocks: impl IntoIterator<Item = Block>) -> Input;
+}
+impl Inputs { pub fn dir(path: impl AsRef<Path>) -> Result<Inputs>; }   // Iterator<Item = Input>
+impl Block {
+    pub fn heading(level: u8, text: impl Into<String>) -> Block;
+    pub fn paragraph(text: impl Into<String>) -> Block;
+}
+pub fn summarize(doc: &Document, n: usize) -> Result<Summary>;
+pub fn summarize_with(doc: &Document, n: usize, method: SummaryMethod) -> Result<Summary>;
+pub fn keyphrases(doc: &Document, n: usize) -> Result<Keyphrases>;
+pub fn keyphrases_with(doc: &Document, n: usize, method: KeyphraseMethod) -> Result<Keyphrases>;
+pub fn clusters(doc: &Document, embedder: &dyn Embedder, threshold: f64) -> Result<Clusters>;
+#[non_exhaustive] pub enum SummaryMethod { TfIdf, TextRank }
+#[non_exhaustive] pub enum KeyphraseMethod { Rake, Yake }
+#[non_exhaustive] pub enum Format { Markdown, PlainText, Blocks, Pdf, Docx }   // Pdf, Docx recognised, not read
+```
+
+```python
+class Engine:
+    def __init__(self) -> None: ...
+    @staticmethod
+    def from_config(config_file: os.PathLike | None = None) -> Engine: ...
+    def analyze(self, text: str | None = None, *, file: os.PathLike | None = None,
+                bytes: builtins.bytes | None = None, blocks: list[BlockDict] | None = None,
+                format: Literal["markdown", "plain_text", "blocks"] | None = None) -> Document: ...
+    def analyze_all(self, *, dir: os.PathLike | None = None, texts: Iterable[str] | None = None,
+                    format: Literal["markdown", "plain_text"] | None = None
+                    ) -> Iterator[Document | DocumentError]: ...
+
+def summarize(doc: Document, n: int = 3, *, method: Literal["tfidf", "textrank"] | None = None) -> Summary: ...
+def keyphrases(doc: Document, n: int = 10, *, method: Literal["rake", "yake"] | None = None) -> Keyphrases: ...
+def clusters(doc: Document, embedder: Embedder, threshold: float = 0.85) -> Clusters: ...
+
+class Document: ...   # read-only; doc["metrics"]["total_words"]; doc.to_dict()
+class MatraError(Exception): kind: str; details: dict
+```
+
+Exactly one of `text`, `file`, `bytes` and `blocks` (and of `dir` and `texts`) is accepted; any other count is a `TypeError` at the call. A `str` is always text, never a path.
+
+```
+matra analyze    PATH|DIR|-  [--format markdown|plain_text|blocks] [--json] [--depth document|paragraph|sentence|token]
+matra summarize  PATH|-      [-n 3]  [--method tfidf|textrank] [--json]
+matra keyphrases PATH|-      [-n 10] [--method rake|yake]      [--json]
+matra clusters   PATH|-      [--threshold 0.85]                [--json]
+matra config show | init [--force]        matra completions SHELL
+matra --schema [NAME]                     matra --skill [-r NAME]
+```
+
+`-` reads stdin as bytes and detects the format. `--depth` lets an agent choose how much of the parse it pays for, since every token shown costs the caller [agent-computer-interfaces:c2] (vendor guidance).
 
 ### Names
 
 | 0.2 | 0.3 | Kind |
 |---|---|---|
-| `NlpProvider` | `Parser` | trait |
-| `Engine::compose` | `Engine::measure` | method |
-| `tfidf_summarize`, `textrank_summarize` | `summarize` | function |
-| `rake_keyphrases`, `yake_keyphrases` | `keyphrases` | function |
+| `Engine::new(nlp, decomposers)` | `Engine::new()` | constructor (re-signed) |
+| `Engine::analyze(Ingest)`, `analyze_one` | `analyze(Input)`, `analyze_all(inputs)` | methods |
+| `Engine::annotate`, `Engine::compose` | internal | methods |
+| `Ingest`, `Ingested`, `RawDocument` | `Input`, `Inputs` | types |
+| `tfidf_summarize`, `textrank_summarize` | `summarize`, `summarize_with` | functions |
+| `rake_keyphrases`, `yake_keyphrases` | `keyphrases`, `keyphrases_with` | functions |
 | `embed_and_cluster`, `semantic_clusters` | `clusters` | function |
 | `Reporting`, `Sentence.reportings` | `ClausalComplement`, `clausal_complements` | type, field |
 | `Sentence.bare_assertion` | `Sentence.root_mood` | field (retyped) |
+| `Paragraph.in_blockquote` | `Paragraph.kind` | field (retyped) |
 | `SemanticClusters.model_hash` | `identity` | field |
-| `CorpusEntry.analysis` | `CorpusEntry.document` | field |
+| `CorpusEntry` | `provenance.source.path` | type removed |
 | `Paragraph.readability_grade` and siblings | `Paragraph.metrics.*` | fields (moved) |
 | `Document.vocabulary_ttr` and siblings | `Document.metrics.*` | fields (moved) |
+| `Source`, `Decomposer`, `NlpProvider`, `metrics`, `hearst` | crate-private (decisions 4 and 5) | traits, modules |
 | Python `Matra`, `analyze_markdown` | `Engine`, `analyze(format=)` | class, method |
 | config `[summarize]`, `semantic.*` | `[summary]`, `[clusters] threshold` | keys |
 
-A rename removes the old name and adds a new one [api-design-systems:c24], which is why each keeps its old name for 0.3.x. The renames of `Parser` and `measure` cost outside implementors nothing extra: the trait breaks in this release anyway, because it gains `identity()`. A Rust trait alias cannot be implemented, so the old trait name is kept as a deprecated re-export only.
+The private traits keep their names inside the crate; renaming them would move files the boundary checks scope by path, for no outside reader.
 
 ### Stability, by surface
 
 | Surface | Promise |
 |---|---|
-| Rust items | 0.x: breaking changes only in a minor bump, with deprecated aliases for one minor |
+| Rust items | 0.x: breaking changes only in a minor bump |
 | Python names and exception classes | the same as Rust |
-| CLI commands, flags, exit codes | the same; removed flags stay as hidden aliases for one minor |
+| CLI commands, flags, exit codes | the same |
 | JSON schema | the major and minor rule above |
 | CLI envelope | `format_version`, moving with the schema major |
-| Skill text (`matra --skill`) | versioned with the binary; a changed incantation is listed in the CHANGELOG, and the skill changes in the same pull request as the surface it describes |
+| Skill text (`matra --skill`) | versioned with the binary; it changes in the same pull request as the surface it describes, and a changed incantation is listed in the CHANGELOG |
 
-<claim id="semver-pr-only" basis="observed">`cargo-semver-checks` runs on pull requests only [ci.yml:318](../../.github/workflows/ci.yml#L318 "if: github.event_name == 'pull_request'")</claim>. Under this proposal it will be pinned and will also run on pushes to `main`, so the Rust promise above will have a mechanical check.
-
-### Agents
-
-The skill and its references change in the same pull request as each surface change. A model reproduces whatever surface it last read, and the printed skill is the current documentation at call time. Deprecation warnings name the replacement, since error text is an instruction to an agent [agent-computer-interfaces:c16]. `analyze --json` gains `--depth document|paragraph|sentence|token`, default `token` (today's output), because every token shown costs the caller [agent-computer-interfaces:c2] and the caller should choose the detail [agent-computer-interfaces:c11]. This rests on vendor guidance; no source measures CLI design for agents.
+<claim id="semver-pr-only" basis="observed">`cargo-semver-checks` runs on pull requests only [ci.yml:318](../../.github/workflows/ci.yml#L318 "if: github.event_name == 'pull_request'")</claim>. It will also run on pushes to `main`, so the Rust promise has a mechanical check.
 
 ### Release split
 
 | Release | Contents |
 |---|---|
-| 0.3.0 | Every break: the port, the names, the schema 2.0 and its JSON Schema, provenance, spans and the parser and decomposer contracts with their implementations, errors on every channel, the transition window, the parity test, the stability table, the semver gate; and, if decision 2 says so, the narrow feed |
-| 0.3.x | The transition window open |
-| 0.4.0 | The window closes; Python's feed; caller extensions (Predicates and Findings) or x.uma extensions in their own proposal; schema-typed TypeScript and a web component that renders a parse; the result of a UDPipe-in-WebAssembly spike; the permissive parser model as a pin chosen by id |
-
-Lehman reports that what a release can carry is limited by how fast people absorb its changes [card:lehman-1996-laws-revisited] (unverified reading). That is a caution on 0.3.0's size, and why the narrow feed is the first item to move if 0.3.0 grows.
+| 0.3.0 | Every break: the outcome surface, `Input` and `Block`, the private input side with the new markdown reader, spans, `skipped` and L9, schema 2.0 and its JSON Schema, provenance, errors on every channel, the Python `Document`, the parity test, the stability table and the semver gate |
+| 0.3.x | Fixes, and whatever window decision 8 keeps |
+| 0.4.0 | The feed for text arriving over time, in all three syntaxes at once; caller extensions (predicates and findings) or x.uma extensions in their own proposal; schema-typed TypeScript and a web component that renders a parse; the result of a UDPipe-in-WebAssembly spike; the permissive parser model as a pin chosen by id |
 
 ### Milestones
 
-1. The schema: JSON Schema, fixtures, metric records, names, both-name emission.
-2. The application port; adapters reduced to translation; Python out of `lib.rs`; the parity test.
-3. The parser contract, CoNLL-U conversion and spans; the decomposer contract with both decomposers.
-4. Errors on every channel; Python's `Engine` and exception classes.
-5. The command line: directories, `clusters`, `--json` errors, `--format-version 1`, `--depth`, config sections; the skill.
-6. If decision 2 says so, the feed and `--stream`.
-7. The migration guide, the docsite, the semver gate, and the 0.3.0 release.
+Each is one pull request, with its documentation, skill text and CHANGELOG entry in the same pull request, and each leaves `main` releasable.
+
+1. **The schema.** Span, `Skipped`, `Paragraph.kind`, the metric records, provenance with the parser's identity, the record-fact renames, `features` as a map, `tree_depth` as an `Option`, the format vocabulary; the JSON Schema in `spec/schema/` and its conformance fixtures.
+2. **The input side.** `Input`, `Inputs` and `Block`; detection; the CommonMark reader with spans and `skipped`; the plain-text reader with spans; structure from blocks; the parser's token spans and identity; L9 and the laws restated over every constructor.
+3. **The outcomes.** `Engine::new`, `analyze`, `analyze_all`; the outcome functions and their method enums with the method and parameters recorded; the traits, `metrics`, `hearst` and the method modules made private; `CorpusEntry` and the `Corpus` aggregate methods removed.
+4. **Errors on every channel.** `details()` and the serde form in Rust; the Python exception classes.
+5. **Python.** The module out of `lib.rs` under boundary rule 7, `Engine`, the read-only `Document`, the outcome functions, the stub file; the parity test.
+6. **The command line.** Directories, `clusters`, `--format`, `--json` errors, `--depth`, `--schema`, the configuration sections; the skill and its references.
+7. **The release.** The migration guide, the docsite and the roadmap, the semver gate on pushes, a newcomer pass, and the 0.3.0 release, which publishes only on the owner's approval.
 
 ## Drawbacks
 
-- Every caller migrates. The window softens it, but moving metrics into records has no both-name form in Python dicts: a reader of `paragraph["readability_grade"]` must read `paragraph["metrics"]["readability_grade"]` by 0.4.0.
+- Every caller migrates, and moving metrics into records has no both-name form in Python dicts: a reader of `paragraph["readability_grade"]` must read `paragraph["metrics"]["readability_grade"]`.
 - Spans and provenance make `analyze --json` larger; `--depth` mitigates it for agents.
-- `--format-version 1` is a compatibility projection maintained for one minor, the price of not breaking pinned agents [neighbours-hoare-brooks-lampson:c39].
-- One release carries a lot of change, so its review is long.
+- Closing the parser and reader traits makes a WebAssembly parser matra's own work rather than anyone's, and <claim id="roadmap-wasm-promise" basis="observed">the roadmap's promise that the parser trait needs no change for WebAssembly [ROADMAP.md:56](../../ROADMAP.md#L56 "requires no change to support a WASM implementation")</claim> must be rewritten with the code.
+- One release carries a lot of change, so its review is long. Lehman reports that what a release can carry is limited by how fast people absorb its changes [card:lehman-1996-laws-revisited] (unverified reading), which is why streaming moved out.
 
 ## Rationale and alternatives
 
-- **One proposal, not several.** An API is designed as a whole: the names, the port and the schema constrain each other.
-- **Keep algorithm-named functions.** Rejected by both sides of decision 1; the open question is whether the choice survives as a parameter.
+- **One proposal, not several.** An API is designed as a whole: the names, the input side and the schema constrain each other.
+- **Keep algorithm-named functions.** Rejected by both sides of decision 1.
+- **Keep `Ingest` as the one stream type**, a single document being a stream of one. Rejected: every driving adapter that wants one document avoids the stream, so the unification served the implementation, not the caller [api-design-practice:c21].
+- **A public `Normalizer` or `Block` shared by readers and callers.** Rejected: two readers are below the three a provider interface should wait for [api-design-practice:c4], and `Input::blocks` serves outside formats with no provider interface. "Normalize" also already means Unicode and case normalization in an NLP library [api-design-practice:c8].
+- **A builder for the engine.** Rejected: no use case, and it needs the private traits public.
 - **A second version number with a weaker rule.** Rejected: it weakens the promise already printed to agents.
-- **Change a provider contract now and implement it later.** Rejected: an abstraction should not ship before implementations have tested it [api-design-practice:c36], and "it would be rash to standardize before we have the models" [neighbours-systems-evolution:c27]. Parnas's A-7E team specified mechanisms ahead and implemented only what was needed [parnas-process:c50], which supports reserving names, as RFC-0006 does, not freezing a provider trait.
-- **A hard JSON break with no window.** Rejected: old and new should coexist for a transition period [machine-readable-contracts:c20].
+- **Change a provider contract now and implement it later.** Rejected: an abstraction should not ship before implementations have tested it [api-design-practice:c36], and "it would be rash to standardize before we have the models" [neighbours-systems-evolution:c27].
 - **Spread the renames across releases.** Each release would break again.
 - **Do nothing.** The drift is structural; a fourth surface would copy it.
 
@@ -481,10 +612,11 @@ Lehman reports that what a release can carry is limited by how fast people absor
 - The owner's software-design canon (462 verified claims; cited here as `[cluster:cN]`) and its canon-0010 reading cards (cited as `[card:...]`, unverified readings).
 - J. Bloch, "How to Design a Good API and Why it Matters", 2006; M. Henning, "API Design Matters", 2007; AIP-180 and AIP-193; the Kubernetes API conventions.
 - D. L. Parnas, "On the Criteria To Be Used in Decomposing Systems into Modules", 1972, and the 1985 module guide.
+- D. D. Woods, "The theory of graceful extensibility", 2018, outside the verified canon: brittleness is how fast performance falls near a unit's boundary, and neighbouring units extend it by monitoring its signals. `skipped` is that signal; the canon claims cited for it carry the decision alone.
 - A. Cockburn, "The Hexagonal (Ports and Adapters) Architecture", 2005.
 - Terraform's JSON output format and its `format_version`; `cargo metadata --format-version`.
 - The W3C Web Annotation Data Model, whose text position selector counts Unicode code points.
-- RFC 9413, "Maintaining Robust Protocols", 2023.
+- CommonMark, and pulldown-cmark's source-offset iterator.
 - Universal Dependencies and CoNLL-U: the vocabulary matra adopts, and the encoding it converts.
 - spaCy's `Doc` attributes as fields, and its `Language` object as one entry point.
 
@@ -494,7 +626,7 @@ Lehman reports that what a release can carry is limited by how fast people absor
 
 <choice key="a" title="No: outcomes only, the method recorded">
 
-`summarize(&doc, n)` and `keyphrases(&doc, n)` with no way to choose. matra picks the method; every result names the one that ran. `--method` and the `algorithm` config keys are removed (as hidden aliases for 0.3.x). A typed selector can be added later without breaking anyone.
+`summarize(&doc, n)` and `keyphrases(&doc, n)` with no way to choose. matra picks the method; every result names the one that ran. `--method` and the `algorithm` config keys are removed. A typed selector can be added later without breaking anyone.
 
 </choice>
 
@@ -506,123 +638,245 @@ The same outcome calls are the common form. An optional typed method selects exp
 
 <recommendation choice="b">
 
-**This goes against the owner's stated position.** The owner asked "why are the methods implementation specific? that breaks apis". On names, the canon agrees with the owner, and both choices take the names out: a likely change should touch no interface [parnas-process:c22]. On removing the choice, it does not. The canon card's fifth rule is to hide undesirable properties, not desirable ones: "desirable ones should not be hidden" [neighbours-hoare-brooks-lampson:c37]. Which method ran decides what a score means: <claim id="score-scales" basis="observed">the skill tells agents the RAKE and YAKE scales are unrelated [SKILL.md:105](../../skills/matra/SKILL.md#L105 "The two scales are unrelated")</claim>, so a caller comparing scores, or replicating a published result, needs to name the method. <claim id="cli-method-flag" basis="observed">The command line already offers `--method` [cli/mod.rs:180](../../src/cli/mod.rs#L180 "method: Option<SummaryMethod>")</claim>, so keeping a choice adds nothing; removing it is the break. A method the caller *sends* can gain values without breaking anyone, which is why the selector is an input and the recorded method is an open string (this send-versus-receive distinction is the canon synthesis's own suggestion, not a source finding). Choice (b) keeps the outcome call as the common form, so the owner's API is the one most callers write.
+On names, the canon agrees with the owner's question "why are the methods implementation specific? that breaks apis", and both choices take the names out: a likely change should touch no interface [parnas-process:c22]. On removing the choice, it does not. The canon card's fifth rule is to hide undesirable properties, not desirable ones: "desirable ones should not be hidden" [neighbours-hoare-brooks-lampson:c37]. Which method ran decides what a score means: <claim id="score-scales" basis="observed">the skill tells agents the RAKE and YAKE scales are unrelated [SKILL.md:105](../../skills/matra/SKILL.md#L105 "The two scales are unrelated")</claim>, so a caller comparing scores, or replicating a published result, needs to name the method. <claim id="cli-method-flag" basis="observed">The command line already offers `--method` [cli/mod.rs:180](../../src/cli/mod.rs#L180 "method: Option<SummaryMethod>")</claim>, so keeping a choice adds nothing; removing it is the break.
 
 </recommendation>
 
 <against>
 
-Leave it out when in doubt, because "you can always add, but you can never remove" [api-design-practice:c6], and a feature included before it is fully understood "can never be removed later" [neighbours-hoare-brooks-lampson:c13]. The ranking algorithm is a legitimate secret [card:cunningham-2019-modular-design-notes] (unverified reading, secondary via Cunningham). <claim id="use-cases-no-algorithm" basis="assumed">None of the 26 use cases in the API audit behind this proposal asks for an algorithm; they ask for a summary or for keyphrases.</claim> Under (a), changing the method behind the default is still a schema-major change, so a caller is told when results move: <claim id="default-method" basis="observed">today's default summary method is TF-IDF [default.toml:8](../../config/default.toml#L8 "algorithm")</claim>. Choice (a) is the smaller surface, and the canon's review of the earlier text found that the owner's position is the canon's majority reading on names.
+Leave it out when in doubt, because "you can always add, but you can never remove" [api-design-practice:c6]. The ranking algorithm is a legitimate secret [card:cunningham-2019-modular-design-notes] (unverified reading). <claim id="use-cases-no-algorithm" basis="assumed">None of the 26 use cases in the API audit behind this proposal asks for an algorithm; they ask for a summary or for keyphrases.</claim> Under (a), changing the method behind the default is still a schema-major change, so a caller is told when results move: <claim id="default-method" basis="observed">today's default summary method is TF-IDF [default.toml:8](../../config/default.toml#L8 "algorithm")</claim>.
 
 </against>
 
-</decision>
+<ruling response="accept" date="2026-11-02">
 
-<decision id="streaming-timing" title="2. When does text that arrives over time get its implementation?" reversible="costly" grounds="decomposer-today sync-load-bearing paragraph-unit">
+The owner chose (b) in conversation: outcome-named functions, the method optional and recorded with its parameters, and a change of default method treated as breaking.
 
-<choice key="a" title="0.3.0: the contract with a narrow feed">
-
-`Decomposer` returns blocks with spans and a settled offset, implemented for markdown and plain text. `Engine::feed(format)` returns a synchronous `Feed` whose `push(chunk)` returns the events for every block that became settled and whose `finish()` returns the rest and the whole `Document`. `matra analyze - --stream --json` writes one envelope per event line. A new law, L8, joins the seven in `src/lib.rs`: for any text and any split of it into chunks, the feed's `Document` equals `analyze_one` of the whole text. Python's feed follows in 0.4.0.
-
-</choice>
-
-<choice key="b" title="0.4.0: a new trait beside Decomposer">
-
-0.3.0 leaves streaming out entirely. In 0.4.0 a new `StreamingDecomposer` trait (or a settled-offset method on a new trait) arrives beside `Decomposer`, which is additive, with the feed in Rust, Python and the command line together.
-
-</choice>
-
-<recommendation choice="a">
-
-The owner settled that streaming happens and placed its contract in the 0.3.0 window. A contract without an implementation is the one outcome the canon rules out [api-design-practice:c36] [neighbours-systems-evolution:c27], so the contract arrives with one. <claim id="decomposer-today" basis="observed">Today `Decomposer` returns a tree of copied strings [decompose/mod.rs:17](../../src/decompose/mod.rs#L17 "fn decompose(&self, text: &str) -> Vec<Section>;")</claim>, and it must change in 0.3.0 for spans anyway; folding the settled offset into the same change breaks this provider interface once, not twice [api-design-practice:c32]. The feed stays synchronous: <claim id="sync-load-bearing" basis="observed">RFC-0007 records that staying synchronous is "load-bearing for this design" [RFC-0007:109](../legacy/rfcs/0007-one-pipeline.md#L109 "load-bearing for this design")</claim>, and a `push` that runs each settled paragraph to completion keeps that property. <claim id="paragraph-unit" basis="observed">The paragraph is already the unit the parser runs on [lib.rs:239](../../src/lib.rs#L239 "para.sentences = self.nlp.parse(&para.text)?;")</claim>, so it is the unit of finality: a sentence boundary can still move while its paragraph grows (own judgment, from how the adapter groups words by sentence id). Shipping only Rust and the command line keeps the frozen surface to the two places that cost least to change, since one consumer is not several [api-design-practice:c4]. If 0.3.0 grows too large, this is the first item to move, and it moves as choice (b).
-
-</recommendation>
-
-<against>
-
-No streaming consumer is named yet, and the canon would freeze an interface only after several implementations and consumers have used it [api-design-practice:c36]. A new trait in 0.4.0 is additive and leaves `Decomposer`'s 0.3.0 change to spans alone. Choice (b) also ships all three syntaxes of the feed at once, which is what "one API, three syntaxes" asks for, rather than two of three.
-
-</against>
+</ruling>
 
 </decision>
 
-<sketch-figure id="feed" seed="9" title="Text arriving over time: blocks emitted once settled, and the law that ties the feed to analyze_one">
+<decision id="streaming-timing" title="2. When does text that arrives over time get its implementation?" reversible="yes" depends="provider-traits" grounds="decomposer-today paragraph-unit">
 
-```text
-width 400
-state feed proposed "chunks in, settled paragraphs out, the whole document at finish (decision 2a)"
-box c1 "chunk 1" 4 4 90 26
-box c2 "chunk 2" 110 4 90 26
-box c3 "chunk 3" 216 4 90 26
-box buffer "Feed: text from the\nlast settled offset" 100 48 200 34
-box decomposer "Decomposer: blocks\nwith spans, settled" 4 104 180 34
-box parser "Parser: each settled\nparagraph, once" 216 104 180 34
-box events "Paragraph events\none NDJSON line each" 4 162 180 34
-box end "finish: Document\nL8: equals analyze_one" 216 162 180 34
-edge c1 buffer
-edge c2 buffer
-edge c3 buffer
-edge buffer decomposer
-edge decomposer parser
-edge parser events
-edge events end
-```
+<choice key="a" title="0.3.0: a narrow feed in Rust and the command line">
 
-</sketch-figure>
-
-The cumulative input of a feed is capped at the same 8 MiB as a document, with the same `what` label, and the unsettled tail is capped too, so a stream that never settles a block is refused rather than buffered without bound.
-
-<decision id="offset-unit" title="3. What unit does a span count in?" reversible="costly" grounds="rfc0006-span sentence-text-rebuilt radix-asks-characters">
-
-<choice key="a" title="UTF-8 bytes only">
-
-`span: { start, end }` in UTF-8 bytes of the input. Each binding offers a helper (`matra.span_text(source, span)` in Python, the same in TypeScript) to slice by it.
+The readers return blocks with a settled offset, the point after which appending text cannot change a block. `Engine::feed(format)` returns a synchronous `Feed` whose `push(chunk)` returns the events for every block that became settled and whose `finish()` returns the whole `Document`; `matra analyze - --stream --json` writes one line per event. Python's feed follows in 0.4.0.
 
 </choice>
 
-<choice key="b" title="Code points and bytes">
+<choice key="b" title="0.4.0: the feed in all three syntaxes, as an addition">
 
-`span: { start, end }` in Unicode code points, as the W3C Web Annotation Data Model's text position selector counts them, plus `byte_start` and `byte_end` in UTF-8 bytes. Both are computed once, in Rust, from one source.
+0.3.0 ships no feed. The 0.3.0 markdown reader already emits blocks in order with spans, the precondition a settled offset needs, and a test pins that without publishing it. In 0.4.0 the feed arrives in Rust, Python and the command line together, as new items beside the existing ones.
 
 </choice>
 
 <recommendation choice="b">
 
-<claim id="radix-asks-characters" basis="assumed">The distillation tool downstream of matra asked for character offsets.</claim> Python slices strings by code point, and the one standard for text selection counts code points; Rust slices, and digests verify, by byte. Under (a), every Python and TypeScript caller writes the same conversion, and Meyer's rule for that case is to widen the contract: if every client repeats the same handling, the supplier should take it on [neighbours-contracts-simplicity:c8]. Exposing code points also avoids calling byte offsets `start` and `end`, names the standard gives another meaning. Giving callers both is "programmatic access" to what they would otherwise compute themselves [api-design-practice:c11]. JavaScript indexes by UTF-16 unit, which neither choice serves; the TypeScript helper converts from code points.
+The reason for 0.3.0 was that the reader contract had to break once, not twice. That holds only for a published provider interface, which cannot grow [api-design-practice:c32]; with the reader trait private (decision 5), a settled offset added later breaks nobody, and what remains public is an addition, `Engine::feed` and a `Feed` type, in the client-facing space that can grow [api-design-practice:c31]. No consumer of text arriving within one document is named; the one written streaming request is for many documents, which `analyze_all` meets in 0.3.0. The canon freezes an interface only after implementations and consumers have used it [api-design-practice:c36]. Shipping two syntaxes of three would also break "one API, three syntaxes". <claim id="decomposer-today" basis="observed">Today the reader returns a tree of copied strings [decompose/mod.rs:17](../../src/decompose/mod.rs#L17 "fn decompose(&self, text: &str) -> Vec<Section>;")</claim>, and <claim id="paragraph-unit" basis="observed">the paragraph is already the unit the parser runs on [lib.rs:239](../../src/lib.rs#L239 "para.sentences = self.nlp.parse(&para.text)?;")</claim>, so the paragraph stays the unit of finality when the feed lands.
 
 </recommendation>
 
 <against>
 
-One unit is the smaller surface [api-design-practice:c6], and two encodings of one fact on every token cost every reader, agents included, for each token shown [agent-computer-interfaces:c2]. RFC-0006 sketched `SourceSpan` in bytes, and bytes are the one unit that is identical in every binding, cheap to check against the input's digest, and what the input cap already measures (own judgment; the canon is silent on offset units). A helper per binding is one line, and the conversion lives in matra either way.
+The owner settled that streaming happens, and an x.uma extension that feeds body chunks would be a consumer the moment it exists; another release cycle passes before any caller can stream within a document.
 
 </against>
 
+<ruling response="accept" date="2026-11-03">
+
+The owner accepted Claude's recommendations in conversation: streaming lands in 0.4.0, additively, in all three syntaxes.
+
+</ruling>
+
 </decision>
 
-<decision id="metric-suite" title="4. Does the public metric suite become crate-private?" reversible="costly" grounds="compose-ignores-suite metric-type">
+<decision id="offset-unit" title="3. What unit does a span count in?" reversible="costly" grounds="rfc0006-span sentence-text-rebuilt">
 
-<choice key="a" title="Yes, in 0.3.0">
+<choice key="a" title="UTF-8 bytes only">
 
-`metrics::Metric`, `default_suite` and `run_suite` become private to the crate. A caller who wants another measure writes a function over `&Document`. Caller extensions are designed in their own proposal (0.4.0).
+`span: { start, end }` in UTF-8 bytes of the analysed text. Each binding offers a helper (`matra.span_text(source, span)` in Python, the same in TypeScript) to slice by it.
 
 </choice>
 
-<choice key="b" title="No; leave them public">
+<choice key="b" title="Code points and bytes">
 
-The three items stay, documented as a suite the caller may run themselves.
+`span: { start, end }` in Unicode code points, as the W3C Web Annotation Data Model's text position selector counts them, plus `byte_start` and `byte_end` in UTF-8 bytes, both computed once in Rust.
 
 </choice>
 
 <recommendation choice="a">
 
-<claim id="compose-ignores-suite" basis="observed">`compose` always runs the default suite and takes none from the caller [lib.rs:251](../../src/lib.rs#L251 "let suite = metrics::default_suite();")</claim>, so the public suite extends nothing a caller could not do with a loop. <claim id="metric-type" basis="observed">A metric is a closure that may write any field of the document [metrics/mod.rs:31](../../src/metrics/mod.rs#L31 "pub type Metric = Box<dyn Fn(&mut Document)>;")</claim>: a provider interface with no stated contract about what it owns. What clients call and what providers implement should be kept apart [api-design-practice:c31]; the cheapest extension mechanism that meets the need is a plain function over published types [api-design-practice:c35]. Removing it inside the 0.3.0 window costs one migration; removing it later costs another.
+One unit is the smaller surface [api-design-practice:c6], and two encodings of one fact on every token cost every reader, agents included, for each token shown [agent-computer-interfaces:c2]. RFC-0006 sketched `SourceSpan` in bytes; bytes are the one unit identical in every binding, cheap to check against the input's digest, and what the input cap already measures (own judgment; the canon is silent on offset units). The earlier recommendation of (b) rested on the belief that the downstream consumer asked for character offsets; its own written requirements say spans into the bytes the caller passed are enough. A helper per binding is one line.
 
 </recommendation>
 
 <against>
 
-It is shipped public surface, and with enough users every observable behaviour is depended on [api-design-systems:c17]. No caller has been shown to use it, and none shown not to. matra's own ACES skill lists `default_suite` as part of its adaptable surface, and caller extensions are deferred to 0.4.0 anyway, where the suite could be redesigned with them.
+Python slices strings by code point and the one standard for text selection counts code points, so under (a) every Python and TypeScript caller converts; Meyer's rule for that case is to widen the contract when every client repeats the same handling [neighbours-contracts-simplicity:c8]. JavaScript indexes by UTF-16 unit, which neither choice serves.
+
+</against>
+
+<ruling response="accept" date="2026-11-03">
+
+The owner accepted Claude's recommendations in conversation: bytes only, with a slicing helper per binding.
+
+</ruling>
+
+</decision>
+
+<decision id="metric-suite" title="4. Does the public metric suite become crate-private?" reversible="costly" grounds="compose-ignores-suite metric-type">
+
+<choice key="a" title="Yes, in 0.3.0, with hearst and the method modules">
+
+`metrics` (including the text-taking readability helper), `hearst`, and the algorithm-named functions in `extraction` become private to the crate. The measures stay public as fields of the document. A caller who wants another measure writes a function over `&Document`. Caller extensions are designed in their own proposal.
+
+</choice>
+
+<choice key="b" title="No; leave them public">
+
+The items stay, documented as a suite the caller may run themselves.
+
+</choice>
+
+<recommendation choice="a">
+
+<claim id="compose-ignores-suite" basis="observed">`compose` always runs the default suite and takes none from the caller [lib.rs:251](../../src/lib.rs#L251 "let suite = metrics::default_suite();")</claim>, so the public suite extends nothing a caller could not do with a loop. <claim id="metric-type" basis="observed">A metric is a closure that may write any field of the document [metrics/mod.rs:31](../../src/metrics/mod.rs#L31 "pub type Metric = Box<dyn Fn(&mut Document)>;")</claim>: a provider interface with no stated contract about what it owns. "Make classes and members as private as possible" [api-design-practice:c7]; keep what clients call apart from what providers implement [api-design-practice:c31]; a plain function over published types is the cheapest extension mechanism [api-design-practice:c35].
+
+</recommendation>
+
+<against>
+
+It is shipped public surface, and with enough users every observable behaviour is depended on [api-design-systems:c17]. No caller has been shown to use it, and none shown not to.
+
+</against>
+
+<ruling response="accept" date="2026-11-03">
+
+The owner accepted Claude's recommendations in conversation, which included this one widened to `hearst` and the method modules.
+
+</ruling>
+
+</decision>
+
+<decision id="provider-traits" title="5. Are the parser, reader and source traits open to outside implementers in 0.3.0?" reversible="yes" grounds="parser-unvalidated roadmap-wasm-promise">
+
+<choice key="a" title="Private to the crate">
+
+`Source`, `Decomposer` and `NlpProvider` become `pub(crate)`, keeping their names and boundary rules inside the crate. Outside code extends matra through `Input::bytes` (its own fetching) and `Input::blocks` (its own formats). `Embedder` stays public and open.
+
+</choice>
+
+<choice key="b" title="Public behind an unstable feature">
+
+The traits stay reachable behind a Cargo feature named `unstable`, outside the semver promise, until a third implementation of each exists.
+
+</choice>
+
+<recommendation choice="a">
+
+The owner's stated reason for clean architecture is that later sessions, which extend matra from inside the crate, can change it safely. In-tree extension needs no public trait: a new reader is a file and a registration line. A public trait serves only outside implementers, and none is named. Privacy is also the reversible choice: a private trait can become public later as an addition, and a public one cannot go back. What clients call and what providers implement evolve under opposite rules [api-design-practice:c31]; a provider interface takes "no new method additions" once someone implements it [api-design-practice:c32], and these contracts change in this very release. The parser's contract is trusted unchecked, so publishing it would let outside code break invariants the tree walks rely on. An `unstable` feature still publishes the trait to anyone who enables it, and a feature that exists invites dependence on it [api-design-systems:c17].
+
+</recommendation>
+
+<against>
+
+The owner has asked for matra to be extensible by others, and a WebAssembly or transformer parser written outside matra would need a public parser trait. An `unstable` feature is the Rust community's usual way to offer that without a promise.
+
+</against>
+
+</decision>
+
+<decision id="python-document" title="6. What does Python's analyze return?" reversible="costly" grounds="python-annotated">
+
+<choice key="a" title="A read-only Document handle">
+
+`matra.Document` holds the Rust value, with mapping access that mirrors the JSON (`doc["metrics"]["total_words"]` keeps working) and `to_dict()`. The outcome functions accept only that type in 0.3.0.
+
+</choice>
+
+<choice key="b" title="A plain dict, as today">
+
+`analyze` returns a dict, and every outcome call rebuilds the Rust value from it.
+
+</choice>
+
+<recommendation choice="a">
+
+Under (b), every `matra.summarize(doc)` rebuilds the whole document from Python objects and must re-check the parser's invariants (ids, heads, acyclicity, spans), a second home for checks the parse already made [neighbours-contracts-simplicity:c5]. A hand-edited dict could also carry provenance into a summary that no matra run produced. Making the wrong argument unrepresentable fails at the first bad call [api-design-practice:c10]. Accepting a validated dict is additive later, and belongs with the TypeScript from-JSON entry, designed once.
+
+</recommendation>
+
+<against>
+
+Code that tests `isinstance(doc, dict)` or mutates the result breaks, and a dict is what Python callers expect from a JSON-shaped result.
+
+</against>
+
+<ruling response="accept" date="2026-11-03">
+
+The owner accepted Claude's recommendations in conversation: a read-only `Document` with `to_dict()`.
+
+</ruling>
+
+</decision>
+
+<decision id="unknown-extension" title="7. Does a text file with an unknown extension still read as plain text?" reversible="costly" grounds="plain-reads-anything binary-as-io">
+
+<choice key="a" title="Yes, when its bytes are UTF-8">
+
+An unknown extension, or none, reads as plain text, as today. Only a recognised format the build cannot read, or bytes that are not UTF-8 and carry no known signature, fail with `UnsupportedFormat`.
+
+</choice>
+
+<choice key="b" title="No: every unrecognised extension fails">
+
+`UnsupportedFormat` for anything without a known extension, unless the caller names a format.
+
+</choice>
+
+<recommendation choice="a">
+
+<claim id="plain-reads-anything" basis="observed">The documented rule is that plain text is "the decomposer that reads anything" [domain.rs:1301](../../src/domain.rs#L1301 "plain text is the decomposer that reads anything")</claim>, and changing a default is a behaviour change [api-design-systems:c25]. The owner's "unknown formats fail" is read as recognised-but-unread formats and undecodable bytes, which today fail as I/O prose and will fail as a kind with a remedy [api-design-systems:c28].
+
+</recommendation>
+
+<against>
+
+A log, a CSV or a source file then analyses as prose without complaint, and a caller learns nothing of it.
+
+</against>
+
+<ruling response="accept" date="2026-11-03">
+
+The owner accepted Claude's recommendations in conversation: unknown text reads as plain text when it is valid UTF-8.
+
+</ruling>
+
+</decision>
+
+<decision id="transition-window" title="8. What stays callable under its old name for 0.3.x?" reversible="costly" grounds="format-version-ships migrate-once">
+
+<choice key="a" title="Renamed functions only; one break on the wire">
+
+Renamed Rust functions and methods (`tfidf_summarize`, `Engine::with_defaults` and the like) and renamed Python methods stay as deprecated aliases that name their replacement. Types and modules made private go at once. The JSON carries schema 2.0 only, with `format_version: 2`, and no 0.2 projection.
+
+</choice>
+
+<choice key="b" title="The full window">
+
+Choice (a), plus every renamed JSON field emitted under both names for 0.3.x, renamed CLI flags kept as hidden aliases, and `--format-version 1` emitting the 0.2 output.
+
+</choice>
+
+<recommendation choice="a">
+
+The wire already tells a reader which side it is on: the envelope's `format_version` moves to 2 and every result carries `provenance.schema`, and the consumer rule is to reject a major you do not know. A both-name emitter and a 0.2 projection are a second implementation of the output, maintained for one minor and then removed, and every later session must read past them until then. A deprecated alias for a renamed function is one line that the compiler and the interpreter both announce, and a deprecation that names its replacement is an instruction an agent can follow [agent-computer-interfaces:c16]. The callers of 0.2.1 are few and named, so the full window buys little.
+
+</recommendation>
+
+<against>
+
+Old and new should coexist for a transition period [machine-readable-contracts:c20], and an agent pinned to `format_version: 1` fails at once rather than migrating on its own schedule; the price of not breaking pinned callers is a compatibility projection [neighbours-hoare-brooks-lampson:c39].
 
 </against>
 
@@ -634,29 +888,31 @@ What the owner should confirm or strike, collected from the claims above that st
 
 ## Future possibilities
 
-- **Caller extensions**: Predicates producing Findings, the names RFC-0006 reserved, in their own proposal, on this schema and port.
-- **x.uma extensions**, implemented in matra behind a feature named for the dependency, as a driving adapter over the public surface with typed configs per extension, once the x.uma crates are published. Typed extension configs are the mechanism the ACES synthesis names for letting contributors add capability without platform mediation [aces:aces-synthesis.md§10].
-- **TypeScript**, in three steps, each usable alone: types generated from the published schema and a web component that renders a parse from matra's JSON (no WebAssembly needed); then the pure-Rust core in WebAssembly; and a spike, with a go or no-go, on compiling UDPipe's C++ with exceptions to WebAssembly. Start from the minimal subset that performs a useful service [parnas-modules:c34].
-- **A permissively licensed default parser** trained on UD English EWT, as a second pinned model chosen by id, never by path or URL, visible in `provenance.parser`.
-- **Python's feed**, if decision 2 lands the feed in 0.3.0.
+- **The feed** for text arriving over time, in 0.4.0, in all three syntaxes (decision 2).
+- **Caller extensions**: predicates producing findings, the names RFC-0006 reserved, in their own proposal, on this schema. Freeze that provider interface only after three uses [api-design-practice:c4].
+- **x.uma extensions**, implemented in matra behind a feature named for the dependency, as a driving adapter over the public surface, once the x.uma crates are published.
+- **More formats**: HTML, DOCX and PDF, each a reader file and a registration line, with OCR as an optional adapter the PDF reader calls and `Document.text` (an optional field, a schema minor) carrying the analysed text when it is not the input.
+- **A URL source**, as `Input::url` behind a feature.
+- **TypeScript**, in three steps, each usable alone: types generated from the published schema and a web component that renders a parse from matra's JSON; then the pure-Rust core in WebAssembly; and a spike, with a go or no-go, on compiling UDPipe's C++ to WebAssembly.
+- **A permissively licensed default parser** trained on UD English EWT, as a second pinned model chosen by id, visible in `provenance.parser`.
 
 ## Defects in what ships
 
-Found while writing this proposal. Each stands apart from the design, and they are fixed in a separate pull request.
+Found while writing this proposal. Those the milestones remove are marked; the rest are fixed in a separate pull request.
 
 | # | Defect | Evidence |
 |---|---|---|
-| 1 | The roadmap says sentence and paragraph text are verbatim; the code rebuilds both | <claim basis="observed">[ROADMAP.md:193](../../ROADMAP.md#L193 "being verbatim by design") against [udpipe.rs:778](../../src/nlp/udpipe.rs#L778 "Reconstruct original text using SpaceAfter=No")</claim> |
-| 2 | Markdown paragraph text drops `\r` from `\r\n` input and strips `>` from blockquotes | <claim basis="observed">[markdown.rs:15](../../src/decompose/markdown.rs#L15 "text.lines()") [markdown.rs:78](../../src/decompose/markdown.rs#L78 "trim_start_matches('>')")</claim> |
-| 3 | Python's extractors read markdown as plain text, so a README's headings are summarized; the command line does not | <claim basis="observed">[lib.rs:487](../../src/lib.rs#L487 "Format::PlainText") against [cli/mod.rs:612](../../src/cli/mod.rs#L612 "on a README would return its headings")</claim> |
-| 4 | `total_words` and the other aggregates are printed in the table and absent from `--json` | <claim basis="observed">[render.rs:45](../../src/cli/render.rs#L45 "doc.total_words()")</claim> |
-| 5 | A failure under `--json` writes nothing to stdout | <claim basis="observed">[cli/mod.rs:102](../../src/cli/mod.rs#L102 "matra: {e}")</claim> |
+| 1 | The roadmap says sentence and paragraph text are verbatim; the code rebuilds both (milestone 2 documents the text as normalized and adds spans) | <claim basis="observed">[ROADMAP.md:193](../../ROADMAP.md#L193 "being verbatim by design") against [udpipe.rs:778](../../src/nlp/udpipe.rs#L778 "Reconstruct original text using SpaceAfter=No")</claim> |
+| 2 | Markdown paragraph text drops `\r` from `\r\n` input and strips `>` from blockquotes (milestone 2) | <claim basis="observed">[markdown.rs:15](../../src/decompose/markdown.rs#L15 "text.lines()") [markdown.rs:78](../../src/decompose/markdown.rs#L78 "trim_start_matches('>')")</claim> |
+| 3 | Python's extractors read markdown as plain text, so a README's headings are summarized; the command line does not (milestone 5) | <claim basis="observed">[lib.rs:487](../../src/lib.rs#L487 "Format::PlainText") against [cli/mod.rs:612](../../src/cli/mod.rs#L612 "on a README would return its headings")</claim> |
+| 4 | `total_words` and the other aggregates are printed in the table and absent from `--json` (milestone 1) | <claim basis="observed">[render.rs:45](../../src/cli/render.rs#L45 "doc.total_words()")</claim> |
+| 5 | A failure under `--json` writes nothing to stdout (milestone 6) | <claim basis="observed">[cli/mod.rs:102](../../src/cli/mod.rs#L102 "matra: {e}")</claim> |
 | 6 | `Document::passive_ratio()` returns `0.0` on a document with no sentences, while the field stays `None` | <claim basis="observed">[domain.rs:1185](../../src/domain.rs#L1185 "pub fn passive_ratio(&self) -> f64") [document.rs:19](../../src/metrics/document.rs#L19 "if analysis.total_sentences() > 0")</claim> |
-| 7 | `cargo-semver-checks` runs on pull requests only, though EPR-0003 says every push | <claim basis="observed">[ci.yml:318](../../.github/workflows/ci.yml#L318 "if: github.event_name == 'pull_request'")</claim> |
-| 8 | A missing file reaches Python as `OSError`, not `FileNotFoundError` | <claim basis="observed">[lib.rs:446](../../src/lib.rs#L446 "Io(_) => PyOSError::new_err(msg)")</claim> |
+| 7 | `cargo-semver-checks` runs on pull requests only, though EPR-0003 says every push (milestone 7) | <claim basis="observed">[ci.yml:318](../../.github/workflows/ci.yml#L318 "if: github.event_name == 'pull_request'")</claim> |
+| 8 | A missing file reaches Python as `OSError`, not `FileNotFoundError` (milestone 4) | <claim basis="observed">[lib.rs:446](../../src/lib.rs#L446 "Io(_) => PyOSError::new_err(msg)")</claim> |
 | 9 | The main size gate's message reads "input input too large" | <claim basis="observed">[domain.rs:166](../../src/domain.rs#L166 "input too large: {actual} > limit {limit}") [lib.rs:34](../../src/lib.rs#L34 "what: \"input\"")</claim> |
 | 10 | The roadmap names `analyze_directory`, which does not exist | <claim basis="observed">[ROADMAP.md:118](../../ROADMAP.md#L118 "analyze_directory")</claim> |
 | 11 | The embedding model's pin carries no licence, unlike the parsing model's, and its first download is silent | <claim basis="observed">[model2vec.rs:66](../../src/embed/model2vec.rs#L66 "const POTION_BASE_8M_URLS") against [udpipe.rs:40](../../src/nlp/udpipe.rs#L40 "CC BY-NC-SA 4.0 (non-commercial)")</claim> |
 | 12 | `vocabulary_ttr` is unsound across documents of different length, and nothing on the type says so | <claim basis="observed">[ROADMAP.md:118](../../ROADMAP.md#L118 "As a cross-document feature it is currently unsound")</claim> |
-| 13 | matra's ACES skill pairs the counter-forces with the decay forces differently from the ACES synthesis it comes from (Composable against drag here; Composability against opacity, and Extensibility against drag, in the synthesis's framework table) | <claim basis="observed">[aces SKILL.md:43](../../.claude/skills/aces/SKILL.md#L43 "Counters drag.")</claim> |
-| 14 | The previous text of this proposal placed `schema_version` in two places and left the shipped `format_version` out | <claim basis="observed">[0006 at 6e9d94b:244](0006-the-0-3-0-surface.md#L244 "schema_version") [0006 at 6e9d94b:301](0006-the-0-3-0-surface.md#L301 "Provenance")</claim> |
+| 13 | matra's ACES skill pairs the counter-forces with the decay forces differently from the ACES synthesis it comes from | <claim basis="observed">[aces SKILL.md:43](../../.claude/skills/aces/SKILL.md#L43 "Counters drag.")</claim> |
+| 14 | The markdown reader drops tables, ends the document at a `## References` line, and reads `#hashtag` as a heading (milestone 2) | <claim basis="observed">[markdown.rs:55](../../src/decompose/markdown.rs#L55 "if in_code_block") [markdown.rs:58](../../src/decompose/markdown.rs#L58 "## References") [markdown.rs:62](../../src/decompose/markdown.rs#L62 "stripped.starts_with('#')")</claim> |
