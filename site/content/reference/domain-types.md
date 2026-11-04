@@ -61,6 +61,7 @@ The derived structural types (`Negation`, `Modal`, `ClausalComplement`, `RootAdv
 | `Parameters` | what shaped an outcome, recorded in its `provenance` |
 | `Format` | which reader a document needs |
 | `Error` | every failure the library can return |
+| `ErrorDetails`, `DetailValue` | every dynamic value in an error's message, by name: what `Error::details` returns |
 | `DocumentError` | one document's failure, an `Err` item of `analyze_all`'s stream |
 | `Embedding` | one vector from an `Embedder`, the input to clustering |
 | `ProvisionNotice` | what a model fetch is about to download, handed to the `_with_notice` constructors' callback, described in [Errors](errors.md#the-first-run-says-so) |
@@ -87,18 +88,20 @@ Where each of those enters and leaves the pipeline is drawn in [Architecture](..
 | `Span` | `Debug`, `Clone`, `Copy`, `Default`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `Skipped`, `SkippedKind`, `ParagraphKind` | `Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `Block` | `Debug`, `Clone`, `PartialEq`, `Eq` | no |
-| `Error` | `Debug`, `thiserror::Error` | yes |
+| `Error` | `Debug`, `thiserror::Error`; `Serialize` by hand | yes |
+| `ErrorDetails` | `Debug`, `Clone`, `Default`, `PartialEq`, `Eq`; `Serialize` by hand | no |
+| `DetailValue` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize` | yes |
 | `Negation`, `Modal`, `ClausalComplement`, `RootAdverbial` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `RootMood` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `HearstPair`, `HearstSpan` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
 | `HearstPattern` | `Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
-| `DocumentError` | `Debug` | yes |
+| `DocumentError` | `Debug`; `Serialize` by hand | yes |
 | `Embedding` | `Debug`, `Clone`, `PartialEq`, `Serialize`, `Deserialize` | no |
 | `ProvisionNotice` | `Debug`, `Clone`, `PartialEq`, `Eq` | yes |
 
 `Block` is the one input type. It has no serde derives and no public fields, so it needs no `#[non_exhaustive]`: a caller builds one with `Block::heading` or `Block::paragraph` and only matra reads it. Its JSON form is the `blocks` format, whose schema is `spec/schema/v2/blocks.schema.json`.
 
-No type in the module derives `Hash`, and the parse tree derives no equality: two `Token`, `Sentence`, `Paragraph`, `Section` or `Document` values cannot be compared with `==`. `Format` derives `PartialEq` and `Eq`, which is what the reader table keys on, and the metric records, the provenance types, `Span`, `Skipped`, the kind enums, `Block`, `RootMood`, the Hearst types, the outcome types, `Embedding` and `ProvisionNotice` derive `PartialEq`. `Error` has no `Clone`, no equality and no serde derives. `Embedding` is the one public type without `#[non_exhaustive]`: on a tuple struct the attribute would make the constructor private, and an `Embedder` implemented outside the crate has to build one.
+No type in the module derives `Hash`, and the parse tree derives no equality: two `Token`, `Sentence`, `Paragraph`, `Section` or `Document` values cannot be compared with `==`. `Format` derives `PartialEq` and `Eq`, which is what the reader table keys on, and the metric records, the provenance types, `Span`, `Skipped`, the kind enums, `Block`, `RootMood`, the Hearst types, the outcome types, `Embedding`, `ProvisionNotice`, `ErrorDetails` and `DetailValue` derive `PartialEq`. `Error` has no `Clone`, no equality and no serde derives; its `Serialize` is written by hand, as `DocumentError`'s and `ErrorDetails`' are. `ErrorDetails` has no public fields, like `Block`, so it needs no `#[non_exhaustive]`. `Embedding` is the one public type with public fields and without `#[non_exhaustive]`: on a tuple struct the attribute would make the constructor private, and an `Embedder` implemented outside the crate has to build one.
 
 `#[non_exhaustive]` has two effects outside the crate. Struct literal syntax is unavailable, so you build values through the associated constructors listed below. The outcome types have no public constructor: matra produces them, and serde reads them back. Matches on `Format`, `ParagraphKind`, `SkippedKind` and `Error` need a catch-all arm, because variants can be added in a minor release.
 
@@ -391,7 +394,9 @@ Together with the heading and paragraph spans, `skipped` accounts for the input:
 | `path` | `Option<PathBuf>` | Where the failure occurred, `None` for input that is not a file |
 | `error` | `Error` | What went wrong |
 
-One per-document failure: the `Err` item `Engine::analyze_all` yields in the failed input's place, so documents plus errors equals inputs consumed. `Display` prints `path: error` when a path exists and the bare error otherwise; `source()` returns the wrapped `Error`. `DocumentError::new(path, error)` is the constructor. Not `Serialize` and not `Clone`, because `Error` wraps `std::io::Error`.
+One per-document failure: the `Err` item `Engine::analyze_all` yields in the failed input's place, so documents plus errors equals inputs consumed. `Display` prints `path: error` when a path exists and the bare error otherwise; `source()` returns the wrapped `Error`. `DocumentError::new(path, error)` is the constructor. Not `Clone`, because `Error` wraps `std::io::Error`.
+
+It serializes as its error's form plus the path, `{"path", "kind", "message", "details"}`, with `path` null for input that is not a file and written lossily where it is not UTF-8. The JSON Schema is `spec/schema/v2/error.schema.json`.
 
 matra collects nothing across documents: a stream is the collection, and how to combine documents is the caller's decision (a count sums; `vocabulary_ttr` does not).
 
@@ -403,6 +408,8 @@ matra collects nothing across documents: a stream is the collection, and how to 
 | `SCHEMA_VERSION` | `&str`, `"2.0"` | The document schema version this build emits, as `"major.minor"`, written into `Provenance::schema`. The JSON Schema for each major is in `spec/schema/` |
 | `Result<T>` | `std::result::Result<T, Error>` | Return type of every fallible library function |
 | `Error` | enum, `#[non_exhaustive]` | Every failure the library returns. See [Errors](errors.md) |
+| `ErrorDetails` | ordered names and values; `get(key)`, `iter()`, `len()`, `is_empty()` | What `Error::details` returns: every dynamic value in the message, by name. Serializes as an object. See [kinds and details](errors.md#kinds-and-details) |
+| `DetailValue` | enum, `#[non_exhaustive]`: `Text(String)`, `Integer(u64)`, `Bool(bool)` | One value in an `ErrorDetails`. Serializes as the bare value |
 
 ## What crosses the language boundary
 
@@ -462,7 +469,7 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 <text class="nt" x="462" y="244">in the sections it already has</text>
 </svg>
 
-`Token::feat`, `Document::sentences`, `Sentence::subtree`, and every other method in the tables above are available to Rust callers only. Nothing a reader needs is method-only: every aggregate is a field of `DocumentMetrics` or `ParagraphMetrics`, and a sentence carries its `word_count`, `tree_depth` and `passive`, so each crosses with the record that holds it.
+`Token::feat`, `Document::sentences`, `Sentence::subtree`, and every other method in the tables above are available to Rust callers only. The two methods on `Error`, `kind` and `details`, are different: their values are computed into the error's serde form and onto the Python exception, so they cross as fields. Nothing a reader needs is method-only: every aggregate is a field of `DocumentMetrics` or `ParagraphMetrics`, and a sentence carries its `word_count`, `tree_depth` and `passive`, so each crosses with the record that holds it.
 
 | Rust type | Python shape |
 |---|---|
@@ -480,9 +487,11 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 | `Keyphrases`, `Keyphrase` | `Keyphrases`, `Keyphrase` |
 | `Clusters`, `Cluster`, `SimilarityEdge` | `Clusters`, `Cluster`, `SimilarityEdge` |
 | `DocumentError` | `DocumentError` |
+| `Error` | `matra.ErrorInfo`, and the exception classes under `matra.MatraError` |
+| `ErrorDetails` | `ErrorDetails` |
 | `Format`, `Block` | no Python shape |
 
-`Document` and `DocumentError` are the two items `Matra.analyze_path` returns, and the Python package names their union `matra.types.CorpusItem`. A `Document` crosses through serde like every shape above it, with one field replaced: its `provenance.source.path` is decoded with the platform's filesystem decoding (`os.fsdecode` on Unix), so a name that is not valid UTF-8 crosses exactly instead of as serde's lossy string. A `DocumentError` is assembled field by field, its `path` decoded the same way, and its error, which wraps `std::io::Error` and has no stable wire shape, becomes `{"kind": str, "message": str}`. `kind` is `Error::kind` on the domain type, pinned across bindings by `spec/tests/corpus/items.json` and exported to Python as `matra.ERROR_KINDS`; `message` is the Rust error's own `Display` text. A future binding must take the same route rather than serializing the error whole.
+`Document` and `DocumentError` are the two items `Matra.analyze_path` returns, and the Python package names their union `matra.types.CorpusItem`. A `Document` crosses through serde like every shape above it, with one field replaced: its `provenance.source.path` is decoded with the platform's filesystem decoding (`os.fsdecode` on Unix), so a name that is not valid UTF-8 crosses exactly instead of as serde's lossy string. A `DocumentError` crosses through serde too, as `{"path", "kind", "message", "details"}`, with its `path` decoded the same way. `kind` is `Error::kind` on the domain type, pinned across bindings by `spec/tests/corpus/items.json` and exported to Python as `matra.ERROR_KINDS`; `message` is the Rust error's own `Display` text; `details` is `Error::details`. An `Error` raised rather than returned crosses as a Python exception carrying the same three, `kind`, `str(exc)` and `details`: a method is computed into a value before it crosses, as an aggregate is. A future binding takes the same serde form.
 
 The Python shapes are `TypedDict` declarations available at runtime. They are declared in `matra.types` and re-exported from the package root, so either import works:
 

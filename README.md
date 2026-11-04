@@ -93,8 +93,8 @@ v = Matra.english()
 result = v.analyze_markdown(Path("essay.md").read_text())
 
 for item in v.analyze_path("docs/"):        # a whole directory
-    if "error" in item:
-        print(item["path"], item["error"]["kind"])
+    if "kind" in item:                      # a failure: kind, message, details
+        print(item["path"], item["kind"])
     else:
         print(item["provenance"]["source"]["path"], item["metrics"]["total_words"])
 ```

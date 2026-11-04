@@ -45,13 +45,13 @@
       "words": 93
     },
     {
-      "compression_ratio": 0.5,
+      "compression_ratio": 0.4797,
       "kind": "paragraph",
-      "lexical_density": 0.5935,
-      "readability_grade": 11.0255,
-      "sentences": 5,
-      "text": "Matra.english downloads the English UDPipe model into that directory on first use, verifies it against a pinned SHA-256 hash, and loads from the cache on every call after that. The two ways that can fail raise different exceptions, and the split is the one the errors reference describes: a download that never arrived, or a directory that could not be written, raises OSError; bytes that arrived and then failed the hash raise RuntimeError. A bootstrap that wants to survive both catches both. Before 0.2.0 a failed download also raised RuntimeError, so an except RuntimeError written against an older version stops catching network failures. If you already have a model file, load it directly; a missing path raises FileNotFoundError, a corrupt file raises RuntimeError:",
-      "words": 124
+      "lexical_density": 0.5862,
+      "readability_grade": 9.6745,
+      "sentences": 10,
+      "text": "Matra.english downloads the English UDPipe model into that directory on first use, verifies it against a pinned SHA-256 hash, and loads from the cache on every call after that. The two ways that can fail raise different exceptions, and the split is the one the errors reference describes: a download that never arrived, or a directory that could not be written, raises matra.Io, an OSError; bytes that arrived and then failed the hash raise matra.ModelInvalid, a RuntimeError. A bootstrap that wants to survive both catches matra.MatraError. A download that did not arrive carries details[\"retryable\"], which says whether calling again may succeed. Before 0.2.0 a failed download also raised RuntimeError, so an except RuntimeError written against an older version stops catching network failures. If you already have a model file, load it directly; a missing path raises matra.ModelNotFound, a FileNotFoundError, and a corrupt file raises matra.ModelInvalid:",
+      "words": 147
     },
     {
       "compression_ratio": null,
@@ -144,13 +144,13 @@
       "words": 16
     },
     {
-      "compression_ratio": 0.5395,
+      "compression_ratio": 0.5243,
       "kind": "paragraph",
-      "lexical_density": 0.553,
-      "readability_grade": 9.5822,
+      "lexical_density": 0.54,
+      "readability_grade": 9.6907,
       "sentences": 6,
-      "text": "One unreadable file costs one item, not the walk. A document that analyzed arrives as the same Document shape analyze returns, naming its file in provenance.source.path; one that did not arrives as a DocumentError (path, error), holding the position the document would have had. Each file is read as its bytes and extension say: .md as markdown, anything else that is UTF-8 as plain text, and a PDF, a DOCX or bytes that are not text as an unsupported_format error. The error object carries a kind you can branch on and a message for a human to read. matra.ERROR_KINDS is the whole vocabulary, in the order the Rust enum declares it: model_not_found, model_invalid, parse_failed, input_too_large, unsupported_format, invalid_input, io. Testing \"error\" in item is also what narrows the union for a type checker.",
-      "words": 135
+      "text": "One unreadable file costs one item, not the walk. A document that analyzed arrives as the same Document shape analyze returns, naming its file in provenance.source.path; one that did not arrives as a DocumentError (path, kind, message, details), holding the position the document would have had. Each file is read as its bytes and extension say: .md as markdown, anything else that is UTF-8 as plain text, and a PDF, a DOCX or bytes that are not text as an unsupported_format error. It carries a kind you can branch on, a message for a human to read, and details, every value in the message by name, so nothing has to be parsed out of the message. matra.ERROR_KINDS is the whole vocabulary, in the order the Rust enum declares it: model_not_found, model_invalid, parse_failed, input_too_large, unsupported_format, invalid_input, io. Testing \"kind\" in item is also what narrows the union for a type checker.",
+      "words": 153
     },
     {
       "compression_ratio": 0.5785,
@@ -165,10 +165,10 @@
       "compression_ratio": null,
       "kind": "paragraph",
       "lexical_density": 0.5,
-      "readability_grade": 12.3147,
-      "sentences": 2,
-      "text": "The walk is not recursive, and symlinks and subdirectories are skipped rather than followed. Only a failure listing the path itself raises: a missing directory is OSError, because there is no per-document result for it to travel in.",
-      "words": 38
+      "readability_grade": 11.44,
+      "sentences": 3,
+      "text": "The walk is not recursive, and symlinks and subdirectories are skipped rather than followed. Only a failure listing the path itself raises: a missing directory is matra.IoNotFound, a FileNotFoundError, because there is no per-document result for it to travel in.",
+      "words": 40
     },
     {
       "compression_ratio": null,
@@ -198,13 +198,13 @@
       "words": 30
     },
     {
-      "compression_ratio": 0.5333,
+      "compression_ratio": 0.5249,
       "kind": "paragraph",
-      "lexical_density": 0.5588,
-      "readability_grade": 11.1235,
-      "sentences": 5,
-      "text": "The contract is the one the Rust port carries: exactly one vector per input text, in input order, every vector the same length. Break it and the call raises ValueError with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your embed arrives as ValueError too, with your exception's own text inside the message.",
-      "words": 69
+      "lexical_density": 0.5571,
+      "readability_grade": 8.9186,
+      "sentences": 6,
+      "text": "The contract is the one the Rust port carries: exactly one vector per input text, in input order, every vector the same length. Break it and the call raises matra.InvalidInput, a ValueError, with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your embed arrives as matra.InvalidInput too, with your exception's own text inside the message.",
+      "words": 71
     },
     {
       "compression_ratio": null,
@@ -218,20 +218,20 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5143,
-      "readability_grade": 8.4293,
-      "sentences": 2,
-      "text": "Every method that takes text rejects text over 8 MiB with ValueError. The gate lives in the pipeline stage every method routes through, not in each method, so there is no method that skips it.",
-      "words": 35
+      "lexical_density": 0.5556,
+      "readability_grade": 8.6156,
+      "sentences": 3,
+      "text": "Every method that takes text rejects text over 8 MiB with matra.InputTooLarge, a ValueError, whose details carry what (\"input\"), limit and actual. The gate lives in the pipeline stage every method routes through, not in each method, so there is no method that skips it.",
+      "words": 45
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5625,
-      "readability_grade": 21.5963,
-      "sentences": 2,
-      "text": "The per-method caps apply on top: 2000 sentences for tfidf_summarize, textrank_summarize and semantic_clusters (the method and the module-level function alike), and 200000 tokens for rake_keyphrases and yake_keyphrases, each raising ValueError when exceeded.",
-      "words": 33
+      "lexical_density": 0.5405,
+      "readability_grade": 16.1818,
+      "sentences": 3,
+      "text": "The per-method caps apply on top: 2000 sentences for tfidf_summarize, textrank_summarize and semantic_clusters (the method and the module-level function alike), and 200000 tokens for rake_keyphrases and yake_keyphrases, each raising matra.InputTooLarge when exceeded, with the method in details[\"what\"].",
+      "words": 39
     },
     {
       "compression_ratio": null,
@@ -344,11 +344,20 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.7059,
-      "readability_grade": 14.64,
-      "sentences": 1,
-      "text": "Every domain::Error variant crosses the FFI boundary as a specific Python exception class, not a generic error:",
-      "words": 18
+      "lexical_density": 0.5,
+      "readability_grade": 7.2045,
+      "sentences": 3,
+      "text": "Every domain::Error variant crosses the FFI boundary as a class of its own, named as the variant is. Each derives from matra.MatraError and from a builtin class, the one matra raised before 0.3.0, so an except ValueError written then still catches what it caught:",
+      "words": 45
+    },
+    {
+      "compression_ratio": 0.5969,
+      "kind": "paragraph",
+      "lexical_density": 0.6032,
+      "readability_grade": 8.8034,
+      "sentences": 4,
+      "text": "IoNotFound and IoPermissionDenied derive from Io, so except matra.Io catches every I/O failure. Every exception carries kind, the stable string from matra.ERROR_KINDS, and details, a dict of every value in its message: what, limit and actual on an InputTooLarge, path on a missing model, url and retryable on a download that did not arrive. The errors reference lists the keys for every kind.",
+      "words": 65
     },
     {
       "compression_ratio": null,
@@ -360,22 +369,22 @@
       "words": 14
     },
     {
-      "compression_ratio": 0.5776,
+      "compression_ratio": 0.578,
       "kind": "paragraph",
-      "lexical_density": 0.5909,
-      "readability_grade": 13.0142,
-      "sentences": 3,
-      "text": "The message on each exception is the Rust error's own Display output, so an InputTooLarge message names the gate that fired. The text methods raise input, tfidf, textrank, rake, yake and clusters; the constructors that resolve or download a model raise config_file, udpipe_download and embedding_download. analyze_path raises none of them: an oversized file there is an item whose kind is input_too_large, with file_source in its message.",
-      "words": 68
+      "lexical_density": 0.5679,
+      "readability_grade": 9.6663,
+      "sentences": 5,
+      "text": "The message on each exception is the Rust error's own Display output, for a person to read. Branch on the class or on kind, and read values from details. An InputTooLarge names its gate in details[\"what\"]. The text methods raise input, tfidf, textrank, rake, yake and clusters; the constructors that resolve or download a model raise config_file, udpipe_download and embedding_download. analyze_path raises none of them: an oversized file there is an item whose kind is input_too_large, with file_source in its details.",
+      "words": 84
     },
     {
-      "compression_ratio": 0.6217,
+      "compression_ratio": 0.6246,
       "kind": "paragraph",
-      "lexical_density": 0.5962,
-      "readability_grade": 9.3238,
+      "lexical_density": 0.5849,
+      "readability_grade": 8.4434,
       "sentences": 3,
-      "text": "The mapping is exhaustive and enforced at compile time on the Rust side. The match that builds the Python exception has no wildcard arm, so adding a new domain::Error variant without also wiring it to a Python exception class fails to build. A new variant cannot fall through to RuntimeError by accident.",
-      "words": 54
+      "text": "The mapping is exhaustive and enforced at compile time on the Rust side. The match that picks the class has no wildcard arm over the variants, so adding a new domain::Error variant without also giving it a class fails to build. A new variant cannot fall through to another variant's class by accident.",
+      "words": 56
     },
     {
       "compression_ratio": null,

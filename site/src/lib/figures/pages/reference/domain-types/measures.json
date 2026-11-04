@@ -72,13 +72,13 @@
       "words": 47
     },
     {
-      "compression_ratio": 0.5318,
+      "compression_ratio": 0.5029,
       "kind": "paragraph",
-      "lexical_density": 0.619,
-      "readability_grade": 14.0894,
-      "sentences": 3,
-      "text": "No type in the module derives Hash, and the parse tree derives no equality: two Token, Sentence, Paragraph, Section or Document values cannot be compared with ==. Format derives PartialEq and Eq, which is what the reader table keys on, and the metric records, the provenance types, Span, Skipped, the kind enums, Block, RootMood, the Hearst types, the outcome types, Embedding and ProvisionNotice derive PartialEq. Error has no Clone, no equality and no serde derives. Embedding is the one public type without #[non_exhaustive]: on a tuple struct the attribute would make the constructor private, and an Embedder implemented outside the crate has to build one.",
-      "words": 107
+      "lexical_density": 0.6045,
+      "readability_grade": 14.6754,
+      "sentences": 4,
+      "text": "No type in the module derives Hash, and the parse tree derives no equality: two Token, Sentence, Paragraph, Section or Document values cannot be compared with ==. Format derives PartialEq and Eq, which is what the reader table keys on, and the metric records, the provenance types, Span, Skipped, the kind enums, Block, RootMood, the Hearst types, the outcome types, Embedding, ProvisionNotice, ErrorDetails and DetailValue derive PartialEq. Error has no Clone, no equality and no serde derives; its Serialize is written by hand, as DocumentError's and ErrorDetails' are. ErrorDetails has no public fields, like Block, so it needs no #[non_exhaustive]. Embedding is the one public type with public fields and without #[non_exhaustive]: on a tuple struct the attribute would make the constructor private, and an Embedder implemented outside the crate has to build one.",
+      "words": 138
     },
     {
       "compression_ratio": 0.6178,
@@ -513,13 +513,22 @@
       "words": 34
     },
     {
-      "compression_ratio": 0.5941,
+      "compression_ratio": 0.596,
       "kind": "paragraph",
-      "lexical_density": 0.7308,
-      "readability_grade": 10.8108,
+      "lexical_density": 0.7551,
+      "readability_grade": 10.6202,
       "sentences": 4,
-      "text": "One per-document failure: the Err item Engine::analyze_all yields in the failed input's place, so documents plus errors equals inputs consumed. Display prints path: error when a path exists and the bare error otherwise; source() returns the wrapped Error. DocumentError::new(path, error) is the constructor. Not Serialize and not Clone, because Error wraps std::io::Error.",
-      "words": 57
+      "text": "One per-document failure: the Err item Engine::analyze_all yields in the failed input's place, so documents plus errors equals inputs consumed. Display prints path: error when a path exists and the bare error otherwise; source() returns the wrapped Error. DocumentError::new(path, error) is the constructor. Not Clone, because Error wraps std::io::Error.",
+      "words": 54
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5278,
+      "readability_grade": 5.62,
+      "sentences": 2,
+      "text": "It serializes as its error's form plus the path, {\"path\", \"kind\", \"message\", \"details\"}, with path null for input that is not a file and written lossily where it is not UTF-8. The JSON Schema is spec/schema/v2/error.schema.json.",
+      "words": 38
     },
     {
       "compression_ratio": null,
@@ -540,22 +549,22 @@
       "words": 30
     },
     {
-      "compression_ratio": 0.5706,
+      "compression_ratio": 0.5465,
       "kind": "paragraph",
-      "lexical_density": 0.52,
-      "readability_grade": 16.344,
-      "sentences": 2,
-      "text": "Token::feat, Document::sentences, Sentence::subtree, and every other method in the tables above are available to Rust callers only. Nothing a reader needs is method-only: every aggregate is a field of DocumentMetrics or ParagraphMetrics, and a sentence carries its word_count, tree_depth and passive, so each crosses with the record that holds it.",
-      "words": 54
+      "lexical_density": 0.5316,
+      "readability_grade": 15.1433,
+      "sentences": 3,
+      "text": "Token::feat, Document::sentences, Sentence::subtree, and every other method in the tables above are available to Rust callers only. The two methods on Error, kind and details, are different: their values are computed into the error's serde form and onto the Python exception, so they cross as fields. Nothing a reader needs is method-only: every aggregate is a field of DocumentMetrics or ParagraphMetrics, and a sentence carries its word_count, tree_depth and passive, so each crosses with the record that holds it.",
+      "words": 84
     },
     {
-      "compression_ratio": 0.5364,
+      "compression_ratio": 0.4985,
       "kind": "paragraph",
-      "lexical_density": 0.6124,
-      "readability_grade": 8.9529,
-      "sentences": 4,
-      "text": "Document and DocumentError are the two items Matra.analyze_path returns, and the Python package names their union matra.types.CorpusItem. A Document crosses through serde like every shape above it, with one field replaced: its provenance.source.path is decoded with the platform's filesystem decoding (os.fsdecode on Unix), so a name that is not valid UTF-8 crosses exactly instead of as serde's lossy string. A DocumentError is assembled field by field, its path decoded the same way, and its error, which wraps std::io::Error and has no stable wire shape, becomes {\"kind\": str, \"message\": str}. kind is Error::kind on the domain type, pinned across bindings by spec/tests/corpus/items.json and exported to Python as matra.ERROR_KINDS; message is the Rust error's own Display text. A future binding must take the same route rather than serializing the error whole.",
-      "words": 140
+      "lexical_density": 0.585,
+      "readability_grade": 9.2955,
+      "sentences": 6,
+      "text": "Document and DocumentError are the two items Matra.analyze_path returns, and the Python package names their union matra.types.CorpusItem. A Document crosses through serde like every shape above it, with one field replaced: its provenance.source.path is decoded with the platform's filesystem decoding (os.fsdecode on Unix), so a name that is not valid UTF-8 crosses exactly instead of as serde's lossy string. A DocumentError crosses through serde too, as {\"path\", \"kind\", \"message\", \"details\"}, with its path decoded the same way. kind is Error::kind on the domain type, pinned across bindings by spec/tests/corpus/items.json and exported to Python as matra.ERROR_KINDS; message is the Rust error's own Display text; details is Error::details. An Error raised rather than returned crosses as a Python exception carrying the same three, kind, str(exc) and details: a method is computed into a value before it crosses, as an aggregate is. A future binding takes the same serde form.",
+      "words": 158
     },
     {
       "compression_ratio": null,

@@ -351,6 +351,15 @@
       "words": 72
     },
     {
+      "compression_ratio": 0.5277,
+      "kind": "paragraph",
+      "lexical_density": 0.6029,
+      "readability_grade": 7.139,
+      "sentences": 5,
+      "text": "To pass an error on to another program, use what every channel carries rather than the message. e.kind() is a stable string such as \"input_too_large\". e.details() holds every dynamic value in the message by name, so e.details().get(\"limit\") reads a cap without matching the variant. serde_json::to_value(&e) is {\"kind\", \"message\", \"details\"}, and a DocumentError serializes the same way with its path beside them. Errors lists the keys for every kind.",
+      "words": 73
+    },
+    {
       "compression_ratio": 0.6,
       "kind": "paragraph",
       "lexical_density": 0.52,

@@ -189,6 +189,8 @@ for outcome in engine.analyze_all(matra::Inputs::dir("notes/")?) {
 
 `Error::ParseFailed` also carries panics that crossed the UDPipe FFI boundary. The adapter wraps the C-side call in `catch_unwind` and converts a panic into `ParseFailed` with the payload message, so a bug inside UDPipe surfaces as a matchable error instead of aborting your process. It is also what the parser returns when it cannot place a token in the text it was given, rather than reporting a span it guessed.
 
+To pass an error on to another program, use what every channel carries rather than the message. `e.kind()` is a stable string such as `"input_too_large"`. `e.details()` holds every dynamic value in the message by name, so `e.details().get("limit")` reads a cap without matching the variant. `serde_json::to_value(&e)` is `{"kind", "message", "details"}`, and a `DocumentError` serializes the same way with its `path` beside them. [Errors](../reference/errors.md#kinds-and-details) lists the keys for every kind.
+
 `domain::Error` is `#[non_exhaustive]`, so a trailing `_ =>` (or a named catch-all binding, as above) is required even once you have named every variant that exists today. A future variant becomes a compile requirement for code that matches without a wildcard, and a routed catch-all for code that has one.
 
 The domain structs carry `#[non_exhaustive]` for the same reason. From outside the crate you cannot write `Token { .. }` or `Sentence { .. }` as struct literals. Use the constructors, which matters most when you are building fixtures for tests:

@@ -29,11 +29,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5556,
-      "readability_grade": 5.1056,
-      "sentences": 2,
-      "text": "In Python the same failure is an OSError from Matra.english(). Errors lists every way a download can fail.",
-      "words": 18
+      "lexical_density": 0.5588,
+      "readability_grade": 5.7721,
+      "sentences": 3,
+      "text": "In Python the same failure is a matra.Io, an OSError, from Matra.english(), with the URL in details[\"url\"] and details[\"retryable\"] false, since retrying meets the same proxy. Errors lists every way a download can fail.",
+      "words": 36
     },
     {
       "compression_ratio": 0.5333,

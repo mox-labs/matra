@@ -25,9 +25,9 @@ spec/
                      clusters return over it
   tests/corpus/      the corpus item shapes and the error kind vocabulary
   tests/cli/         the command line's JSON envelope
-  schema/v2/         the JSON Schemas for schema 2.x documents and the
-                     three outcomes (summary, keyphrases, clusters), and
-                     the schema of the `blocks` input format
+  schema/v2/         the JSON Schemas for schema 2.x documents, the
+                     three outcomes (summary, keyphrases, clusters) and
+                     errors, and the schema of the `blocks` input format
 ```
 
 Each crust has a runner that loads every fixture in `spec/tests/` and asserts
@@ -84,6 +84,8 @@ The optional `expect.sections` (each heading's `heading`, `level` and `span`), `
 
 `schema/v2/document.schema.json` is the published JSON Schema for a document whose `provenance.schema` is `2.x`, and `summary.schema.json`, `keyphrases.schema.json` and `clusters.schema.json` are the schemas of the three outcomes, which take the provenance and span definitions from the document schema by its `$id`. On a document the provenance has no `method` or `parameters`; on an outcome it has both. A minor version adds optional fields only, so the schema leaves objects open: a reader of `2.0` accepts a `2.1` document. Every runner that produces a document or an outcome validates it against its schema with every object closed, so a field matra emits but the schema does not list fails the run that emitted it: `tests/document_schema/mod.rs` for the Rust lanes and `python/tests/document_schema.py` for the Python ones. The crate's own tests in `src/lib.rs` do the same with a stand-in parser and no model, so the check runs in every `cargo test`.
 
+`schema/v2/error.schema.json` is the schema of a failure: the serde form of `matra::domain::Error`, `{kind, message, details}`, and of `DocumentError`, which adds `path`, with the details each kind carries. The corpus lanes validate every error item and every raised error they produce against it, closed, and the crate's own lanes do so for the I/O failures only the crate can build, so a detail matra emits but the schema does not list fails the run.
+
 `schema/v2/blocks.schema.json` is the schema of an input, not an output: the JSON array of headings and paragraphs the `blocks` format reads. It is closed, since matra refuses a `kind` or a field it does not know; the crate's schema lane in `src/lib.rs` holds the reader and the schema to the same refusals.
 
 ## The outcome lane
@@ -117,16 +119,16 @@ Floating-point expectations compare within `1e-6`.
 
 `tests/corpus/items.json` pins what one document's result looks like when it
 crosses a binding: the two item shapes a walk yields (the document itself, or
-an error with its path), and the kind vocabulary a consumer branches on instead
-of reading a message. `DocumentError` has no serde
-form, because it wraps `std::io::Error`, so every binding materializes those
-fields by hand, and hand-written projections are exactly where a key gets
-renamed on one side only.
+`DocumentError`'s serde form, `{path, kind, message, details}`), and the kind
+vocabulary a consumer branches on instead of reading a message. Both shapes
+come from serde, and a binding still puts the path back through its own
+filesystem decoding, which is where a key could be renamed or a detail lost on
+one side only.
 
 Each runner asserts the vocabulary against its own surface, `Error::kind` in
 Rust and `matra.ERROR_KINDS` in Python, and then walks a directory holding one
 readable file and one whose bytes are not UTF-8, which is an
-`unsupported_format` item. The Rust walk stubs the
+`unsupported_format` item with no details, validated against the error schema. The Rust walk stubs the
 parser with a provider that returns no sentences, so it needs no model; what it
 pins is the shape and the order, not the parse, which the parse fixtures
 already cover. The parser trait is private to the crate, so that walk runs

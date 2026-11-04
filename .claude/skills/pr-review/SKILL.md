@@ -129,7 +129,7 @@ embedded lists that look authoritative.
 
 - `domain::Result<T>` everywhere; no `Result<T, String>`; no panics in
   library code.
-- New `Error` variants must be wired into the PyO3 `MatraError` match
+- New `Error` variants must be given a Python class in `Class::of` and `Class::spec` (the PyO3 module), and their keys in `Error::details` and `spec/schema/v2/error.schema.json`
   (it has no wildcard by design; do not let one appear).
 - New I/O: size caps before reading, symlink rejection, atomic writes,
   no read between hash-verify and use. New FFI: `catch_unwind` at the

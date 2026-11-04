@@ -2,7 +2,9 @@
 
 Every fallible function in matra returns `domain::Result<T>`, which is `std::result::Result<T, domain::Error>`. No function in the library returns `Result<T, String>`. matra signals failure by returning `Error`, not by unwinding: a panic raised inside the UDPipe C++ boundary is caught at the adapter and converted into `Error::ParseFailed`.
 
-`Error` is `#[non_exhaustive]`. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. `Error` derives neither `Clone` nor serde; it is moved, not copied. The stream surface wraps it in `DocumentError`, which adds the path the failure occurred at, and yields it as that input's `Err` item.
+`Error` is `#[non_exhaustive]`. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. `Error` does not derive `Clone`; it is moved, not copied. The stream surface wraps it in `DocumentError`, which adds the path the failure occurred at, and yields it as that input's `Err` item.
+
+Every error reads the same way on every channel. It has a kind, a stable string to branch on. It has a message, for a person. And it has details: every dynamic value in the message, as named data. In Rust these are `Error::kind`, `Display` and `Error::details`. The serde form is the three together, and Python exceptions carry the same three. See [kinds and details](#kinds-and-details).
 
 ## The variants
 
@@ -95,13 +97,13 @@ A UTF-8 file with an extension matra does not know is not this error: it reads a
 
 Wraps `std::io::Error`, produced by:
 
-- Reading a file rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`; `Inputs::dir` refuses a symlinked directory the same way.
-- Reading a file rejecting a path that is neither a regular file nor a directory, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`. A directory is `InvalidInput` instead, naming `Inputs::dir`.
+- Reading a file rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`; `Inputs::dir` refuses a symlinked directory the same way. The path is also `details.path`.
+- Reading a file rejecting a path that is neither a regular file nor a directory, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`, and the path in `details.path`. A directory is `InvalidInput` instead, naming `Inputs::dir`.
 - Any read, directory listing, directory creation, write, or rename that fails.
-- The UDPipe provisioner when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise.
-- The UDPipe provisioner when the model directory cannot be created, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads `cannot write the model to <path>: No space left on device (os error 28)` rather than `Permission denied (os error 13)` with nothing to act on.
-- `Model2Vec::potion_base_8m` when a download fails at the transport or answers with a non-2xx status. The message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise. Bytes that arrived and then failed the digest are `ModelInvalid` instead; this variant is for the ones that never arrived.
-- `Model2Vec::potion_base_8m` when the model directory cannot be created, when an artifact cannot be read, or when a verified artifact cannot be written or renamed into place. The message names the operation and the path, exactly as the UDPipe path's does. `Model2Vec::from_dir` reports an unreadable artifact the same way.
+- The UDPipe provisioner when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise. The URL is also `details.url`, and `details.retryable` is `true`, except for a rejected certificate.
+- The UDPipe provisioner when the model directory cannot be created, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads `cannot write the model to <path>: No space left on device (os error 28)` rather than `Permission denied (os error 13)` with nothing to act on. The path is also `details.path`.
+- `Model2Vec::potion_base_8m` when a download fails at the transport or answers with a non-2xx status. The message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise. The URL and `retryable` are details, as on the UDPipe path. Bytes that arrived and then failed the digest are `ModelInvalid` instead; this variant is for the ones that never arrived.
+- `Model2Vec::potion_base_8m` when the model directory cannot be created, when an artifact cannot be read, or when a verified artifact cannot be written or renamed into place. The message names the operation and the path, exactly as the UDPipe path's does, and the path is `details.path`. `Model2Vec::from_dir` reports an unreadable artifact the same way.
 - `Model2Vec::potion_base_8m` when the temporary file an artifact lands through cannot be created, with the kind the open reported (`AlreadyExists` when something is already sitting at that path). The temporary is opened exclusively, so a path already there, symlink or not, fails the open rather than being written through.
 - `Engine::analyze` when reading a file yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
 
@@ -109,21 +111,23 @@ Wraps `std::io::Error`, produced by:
 
 The UDPipe provisioner (behind `Engine::new`, `Engine::from_config` and `Matra.english`) and `Model2Vec::potion_base_8m` obtain a pinned artifact over the network. Both fetch through matra's own client, under the same bounds, and both classify a failure the same way.
 
-| Condition | Variant | Kind | What the message carries |
-|---|---|---|---|
-| DNS failure, unreachable host, refused connection | `Io`, `ErrorKind::NotConnected` | `io` | The URL |
-| Connect budget exceeded (30 seconds) | `Io`, `ErrorKind::TimedOut` | `io` | The URL |
-| Fetch budget exceeded (300 seconds, lookup through last byte) | `Io`, `ErrorKind::TimedOut` | `io` | The URL |
-| TLS certificate rejected | `Io` | `io` | The host, why matra cannot be made to trust it, the way out, then the underlying failure |
-| Non-2xx status | `Io` | `io` | The URL and the status |
-| Response past 64 MiB | `InputTooLarge` | `input_too_large` | `what` is `"udpipe_download"` or `"embedding_download"` |
-| Directory, write or rename failed | `Io` | `io` | The operation and the path |
-| Bytes arrived and failed the pinned digest, twice | `ModelInvalid` | `model_invalid` | The URL, or the directory and the expected digest |
-| Bytes arrived, passed the digest, and did not load | `ModelInvalid` | `model_invalid` | The loader's message |
+| Condition | Variant | Kind | What the message carries | Details |
+|---|---|---|---|---|
+| DNS failure, unreachable host, refused connection | `Io`, `ErrorKind::NotConnected` | `io` | The URL | `url`, `retryable: true` |
+| Connect budget exceeded (30 seconds) | `Io`, `ErrorKind::TimedOut` | `io` | The URL | `url`, `retryable: true` |
+| Fetch budget exceeded (300 seconds, lookup through last byte) | `Io`, `ErrorKind::TimedOut` | `io` | The URL | `url`, `retryable: true` |
+| TLS certificate rejected | `Io` | `io` | The host, why matra cannot be made to trust it, the way out, then the underlying failure | `url`, `retryable: false` |
+| Non-2xx status | `Io` | `io` | The URL and the status | `url`, `retryable: true` |
+| Response past 64 MiB | `InputTooLarge` | `input_too_large` | `what` is `"udpipe_download"` or `"embedding_download"` | `what`, `limit`, `actual` |
+| Directory, write or rename failed | `Io` | `io` | The operation and the path | `path` |
+| Bytes arrived and failed the pinned digest, twice | `ModelInvalid` | `model_invalid` | The URL, or the directory and the expected digest | `reason` |
+| Bytes arrived, passed the digest, and did not load | `ModelInvalid` | `model_invalid` | The loader's message | `reason` |
 
 The rule behind the table: `model_invalid` is about bytes that arrived. Anything that stopped a fetch from arriving, or a filesystem from accepting it, is `io` ([RFC-0015](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0015-provisioning-failures.md)).
 
-The rule has a consequence in Python that is easy to miss, because it changes which `except` clause fires rather than only which string a message carries. `Io` routes to `OSError` and `ModelInvalid` routes to `RuntimeError`, so from 0.2.0 a DNS failure, a rejected certificate, a timeout or a non-2xx status raises `OSError` from `Matra.english()` where it used to raise `RuntimeError`. A caller that wrapped a bootstrap in `except RuntimeError` catches nothing now and the `OSError` propagates past it. Catch both, or catch `Exception` and branch on the message.
+`retryable` is `true` when the same call can be made again as it is and may succeed. A failed fetch writes nothing, so a retry starts from where the first call did. A rejected certificate is `false`: a retry meets the same proxy, and the message names the way out instead.
+
+The rule has a consequence in Python that is easy to miss, because it changes which `except` clause fires rather than only which string a message carries. `Io` is an `OSError` and `ModelInvalid` is a `RuntimeError`, so from 0.2.0 a DNS failure, a rejected certificate, a timeout or a non-2xx status raises an `OSError` from `Matra.english()` where it used to raise `RuntimeError`. A caller that wrapped a bootstrap in `except RuntimeError` catches nothing now and the `OSError` propagates past it. Catch `matra.MatraError`, which both derive from, and branch on `kind`.
 
 Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. A failed run removes nothing either. A cached file that is already there and fails verification is not loaded and not deleted: the UDPipe provisioner downloads again, at most twice, and replaces the file only with bytes that verified, through the same atomic rename every install lands through. A run whose downloads fail, at the network or at the digest, leaves that file byte-identical. `Model2Vec::potion_base_8m` replaces nothing and refuses a directory whose artifacts fail verification, because its three filenames belong to the artifact format rather than to this one model and so may be a caller's own ([RFC-0015](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0015-provisioning-failures.md)). A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. The UDPipe provisioner leaves a temporary directory and `Model2Vec::potion_base_8m` three temporary files, and each reclaims its own by the same rule.
 
@@ -164,7 +168,36 @@ The stream yields one item per input, in order: the `Document`, or the `Document
 
 Two kinds of entry never appear on either side. The directory listing skips symlinks, so a symlink produces no document and no error. It also skips anything that is not a regular file, and the walk is one level deep, so a subdirectory is skipped the same way.
 
-`DocumentError` is not `Serialize`, because `Error` wraps `std::io::Error`. Crossing a language boundary therefore needs a projection rather than serde. `Matra.analyze_path` has one: each failed document arrives as `{"path": str | None, "error": {"kind": str, "message": str}}`, where `kind` is the stable string `Error::kind` names for the variant, and the table below carries all seven. `Error::kind` is a match with no wildcard arm, so a new `Error` variant fails to compile until someone names it, and `spec/tests/corpus/items.json` pins the vocabulary with a runner per crust, so every crust spells a failure the same way. A success item is the document itself; an error item is assembled field by field. Either's path (`provenance.source.path` on a document, `path` on an error) is decoded with `os.fsdecode`, so `os.fsencode` on it names the file the walk read even when that name is not valid UTF-8. The Python call returns the items in order and the caller partitions them, testing `"error" in item`.
+`DocumentError` serializes as its error's form plus the path: `{"path", "kind", "message", "details"}`, with `path` null for input that never came from disk. `Matra.analyze_path` returns that form for each failed document. `kind` is the stable string `Error::kind` names for the variant, and the table below carries all seven. `Error::kind` is a match with no wildcard arm, so a new `Error` variant fails to compile until someone names it, and `spec/tests/corpus/items.json` pins the vocabulary with a runner per crust, so every crust spells a failure the same way. Both item shapes come from serde. Either's path (`provenance.source.path` on a document, `path` on an error) is decoded with `os.fsdecode`, so `os.fsencode` on it names the file the walk read even when that name is not valid UTF-8. The Python call returns the items in order and the caller partitions them, testing `"kind" in item`.
+
+## Kinds and details
+
+`Error::details` returns an `ErrorDetails`: every dynamic value in the message, by name. Each value is a `DetailValue`, which is text, a whole number or a boolean. A caller reads a value instead of parsing the message.
+
+| Kind | Details |
+|---|---|
+| `model_not_found` | `path` |
+| `model_invalid` | `reason` |
+| `parse_failed` | `reason` |
+| `input_too_large` | `what`, `limit`, `actual` |
+| `unsupported_format` | `format` when one was recognised; `feature` when a Cargo feature would read it |
+| `invalid_input` | `reason` |
+| `io` | `io_kind` and `reason`; `path` when the failure concerns a path matra named; `url` and `retryable` when a download did not arrive |
+
+- `reason` is the variant's own text: the `String` the variant holds, or the operating system's account of an I/O failure. It is for a person, like the message.
+- `io_kind` is the I/O failure's class in snake case: `not_found`, `permission_denied`, `already_exists`, `unsupported`, `invalid_input`, `invalid_data`, `timed_out`, `not_connected`, `connection_refused`, `connection_reset`, `unexpected_eof`, `interrupted`, `not_a_directory`, `is_a_directory` or `storage_full`. Any other class is `other`. Treat the set as open.
+- `retryable` appears only on a download that did not arrive. Its absence makes no claim either way.
+
+A detail that does not apply is absent, never empty: an `unsupported_format` for bytes that are not text carries no details at all. A key a kind carries keeps appearing in later versions. A later version may add keys, so read the ones you know and ignore the rest.
+
+The serde form is `{"kind", "message", "details"}`:
+
+```json
+{ "kind": "input_too_large", "message": "input too large: 9000000 > limit 8388608",
+  "details": { "what": "input", "limit": 8388608, "actual": 9000000 } }
+```
+
+`spec/schema/v2/error.schema.json` is the published JSON Schema for this form and for `DocumentError`'s, with the keys each kind carries.
 
 ## Display strings and kinds
 
@@ -197,28 +230,54 @@ fn report(text: &str, engine: &Engine) {
             limit,
         }) => eprintln!("{what} gate: {actual} over limit {limit}"),
         Err(Error::UnsupportedFormat { format, .. }) => eprintln!("no reader for {format:?}"),
-        Err(other) => eprintln!("{other}"),
+        Err(other) => eprintln!("{}: {}", other.kind(), other),
+    }
+}
+```
+
+The details carry the same values without a match on the variant, which is what a caller forwarding an error to another program wants:
+
+```rust
+use matra::domain::{DetailValue, Error};
+
+fn limit_of(err: &Error) -> Option<u64> {
+    match err.details().get("limit") {
+        Some(DetailValue::Integer(limit)) => Some(*limit),
+        _ => None,
     }
 }
 ```
 
 ## Python exception mapping
 
-The PyO3 binding converts `Error` into a Python exception class. The conversion is a match with no wildcard arm, so adding a variant to `Error` without assigning it an exception class fails to compile.
+The PyO3 binding raises each `Error` as a class of its own, named as the variant is. Every class derives from `matra.MatraError` and from the builtin class matra raised before 0.3.0, so `except ValueError` still catches an `InputTooLarge`. The routing is a match with no wildcard arm over the variants, so adding a variant to `Error` without assigning it a class fails to compile.
 
-| Variant | Python exception |
-|---|---|
-| `ModelNotFound` | `FileNotFoundError` |
-| `InputTooLarge` | `ValueError` |
-| `UnsupportedFormat` | `ValueError` |
-| `InvalidInput` | `ValueError` |
-| `Io` | `OSError` |
-| `ModelInvalid` | `RuntimeError` |
-| `ParseFailed` | `RuntimeError` |
+| Variant | Python class | Also a |
+|---|---|---|
+| `ModelNotFound` | `ModelNotFound` | `FileNotFoundError` |
+| `ModelInvalid` | `ModelInvalid` | `RuntimeError` |
+| `ParseFailed` | `ParseFailed` | `RuntimeError` |
+| `InputTooLarge` | `InputTooLarge` | `ValueError` |
+| `UnsupportedFormat` | `UnsupportedFormat` | `ValueError` |
+| `InvalidInput` | `InvalidInput` | `ValueError` |
+| `Io`, any other kind | `Io` | `OSError` |
+| `Io`, kind `NotFound` | `IoNotFound` | `FileNotFoundError` |
+| `Io`, kind `PermissionDenied` | `IoPermissionDenied` | `PermissionError` |
 
-The table is unchanged from 0.1.0, but which row a provisioning failure lands on is not. Transport failures moved from `ModelInvalid` to `Io` in 0.2.0, so a failed download from `Matra.english()` or `Model2Vec.potion_base_8m()` now raises `OSError` rather than `RuntimeError`. See [provisioning failures](#provisioning-failures).
+`Io` routes on the I/O kind it wraps. A missing file is an `IoNotFound`, which is a `FileNotFoundError`; a refused permission is an `IoPermissionDenied`, which is a `PermissionError`. Both derive from `Io`, so `except matra.Io` catches all three.
 
-`ModelNotFound` maps to `FileNotFoundError` so that the conventional Python idiom works:
+Every exception carries the same three things as the serde form: `kind`, the string `Error::kind` names; `details`, a `dict` of the [details](#kinds-and-details); and the `Display` string as its message, which `str(exc)` returns. Branch on the class or on `kind`, and read values from `details`:
+
+```python
+import matra
+
+try:
+    engine.analyze(huge)
+except matra.InputTooLarge as exc:   # also a ValueError
+    print(exc.kind, exc.details["what"], exc.details["limit"], exc.details["actual"])
+```
+
+`ModelNotFound` is a `FileNotFoundError`, so the conventional Python idiom works:
 
 ```python
 from matra import Matra
@@ -229,7 +288,7 @@ except FileNotFoundError as exc:
     print(exc)  # model not found: models/english-ewt-ud-2.5-191206.udpipe
 ```
 
-The exception message is the `Display` string from the table above. Variant identity beyond the exception class is not carried across the boundary; a caller that needs to distinguish `InputTooLarge` from `UnsupportedFormat` inspects the message.
+The classes name `matra` as their module, so a traceback reads `matra.InputTooLarge`, and an exception survives `pickle` with its `kind` and `details`.
 
 Every Python method that takes text routes through the engine's reading stage, so the 8 MiB `"input"` gate applies uniformly: to `analyze` and `analyze_markdown`, and to the four summary and keyphrase methods, whose per-method caps apply on top.
 
@@ -249,4 +308,4 @@ On exit code 2 the command writes `matra: ` followed by the error's `Display` st
 
 The table is the whole contract, and no command narrows it. Two cases are worth naming because they are usage failures rather than failures of the text: `matra --skill -r <name>` with a name no reference answers to exits 2 and names the ones that exist, and `-r` without `--skill` exits 2 and says which flag is missing. `matra --skill` in any of its accepted forms exits 0; it reads no document, so it has nothing to find and never exits 1.
 
-The exception classes in the table above belong to the library surface, not to the command line. A `domain::Error` reaching the command line is rendered and turned into an exit code; it never surfaces as a Python exception, whichever launcher started it.
+The exception classes above belong to the library surface, not to the command line. A `domain::Error` reaching the command line is rendered and turned into an exit code; it never surfaces as a Python exception, whichever launcher started it.

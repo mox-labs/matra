@@ -33,6 +33,10 @@ those by hand.
 
 ### Added
 
+- Errors on every channel (EPR-0006, milestone 4). `Error::details()` returns an `ErrorDetails`: every dynamic value in the error's message, by name, each a `DetailValue` (text, a whole number or a boolean), so no caller parses a message. The keys per kind: `path` for `model_not_found`; `reason` for `model_invalid`, `parse_failed` and `invalid_input`; `what`, `limit` and `actual` for `input_too_large`; `format` and `feature` for `unsupported_format` when they apply; and for `io`, `io_kind` and `reason`, with `path` when the failure concerns a path matra named, and `url` and `retryable` when a download did not arrive. `retryable` is `true` for a transport failure and `false` for a rejected certificate, whose message names the way out. A key that does not apply is absent.
+- `Error` and `DocumentError` serialize: `{kind, message, details}`, and `DocumentError` adds `path`. The JSON Schema is `spec/schema/v2/error.schema.json`, with the keys each kind carries; the Rust and Python conformance lanes validate every error they produce against it, closed, so an undocumented detail fails the run.
+- Python exception classes, one per kind, each deriving from `matra.MatraError` and from the builtin class 0.2 raised: `ModelNotFound` (`FileNotFoundError`), `ModelInvalid` and `ParseFailed` (`RuntimeError`), `InputTooLarge`, `UnsupportedFormat` and `InvalidInput` (`ValueError`), and `Io` (`OSError`), refined by its I/O kind into `IoNotFound` (`FileNotFoundError`) and `IoPermissionDenied` (`PermissionError`). Every exception carries `kind` and `details`, its message is the `Display` text, and it pickles whole. A caller catching the builtin class still catches it. `matra.ErrorDetails` types the details dict.
+
 - The outcome functions (EPR-0006, milestone 3). A caller asks for an outcome of an analysed `Document`, with free functions at the crate root that need no engine and no parser, so they run in a build without UDPipe (`cargo check --no-default-features` covers them): `summarize(doc, n)` and `summarize_with(doc, n, SummaryMethod)`, `keyphrases(doc, n)` and `keyphrases_with(doc, n, KeyphraseMethod)`, and `clusters(doc, &dyn Embedder, threshold)`. `n` is the one word for "how many". The selectors `SummaryMethod { TfIdf, TextRank }` and `KeyphraseMethod { Rake, Yake }` are `#[non_exhaustive]`. The defaults are the ones `config/default.toml` ships, TF-IDF and RAKE, written in code because the library reads no configuration, and a test holds the two together; changing a default method is a breaking change.
 - Each outcome is a record carrying the document's provenance plus the `method` that ran (an open set: `tfidf`, `textrank`, `rake`, `yake`, `cosine`) and the `parameters` that shaped it (`n`, or `threshold` and `embedder`). `Summary { provenance, sentences }` holds `SummarySentence { index, span, text, score }`, pointing back at the document's sentence by index and span. `Keyphrases { provenance, phrases }` holds `Keyphrase { phrase, score, occurrences }`, every stretch of the analysed text the phrase was found in. `Clusters { provenance, clusters, edges }` holds `Cluster { members }` and every `SimilarityEdge { a, b, score }` that cleared the threshold. Scores and the threshold are `f64`.
 - `Provenance.method` and `Provenance.parameters` (`Parameters { n, threshold, embedder }`, each present only when the method takes it), absent from a document's JSON.
@@ -79,6 +83,12 @@ those by hand.
 - Issue templates for an API change proposal (`acp`) and an RFC's tracking issue (`tracking`).
 
 ### Changed
+
+- **Breaking: errors on every channel** (EPR-0006, milestone 4). No old name or shape is kept.
+  - Python: `Matra.analyze_path` returns a failed document as `DocumentError`'s serde form, `{"path", "kind", "message", "details"}`, rather than `{"path", "error": {"kind", "message"}}`; test `"kind" in item` where you tested `"error" in item`. `matra.ErrorInfo` gains `details`, and `matra.DocumentError` is `ErrorInfo` plus `path`.
+  - Python: every exception is a `matra.MatraError` subclass. Each still derives from the builtin class it was before, so `except ValueError` and `except OSError` still catch what they caught, except that an I/O failure whose kind is not found or permission denied is now also a `FileNotFoundError` or `PermissionError` (see Fixed).
+  - `spec/tests/corpus/items.json` pins the flat failure item and its details, and the provisioning row pins the path as a detail.
+  - The I/O failures matra raises itself (a refused symlink, a path that is not a regular file, a model directory or artifact that cannot be read or written, a download that did not arrive) carry their path or URL inside the `std::io::Error`, through a crate-private payload; `Error::Io` still wraps a plain `std::io::Error`, and every message is unchanged.
 
 - **Breaking: the outcomes** (EPR-0006, milestone 3). No old name is kept.
   - `Engine::new(nlp)` is `Engine::new()`, which builds the default parser itself; `Engine::with_defaults()` is removed, and `Engine::from_config(&Config::resolve()?)` says what it did: resolve the configuration file, then build. `Engine::from_config` and `from_config_with_notice` are unchanged.
@@ -156,6 +166,8 @@ those by hand.
 - The aggregate methods on `Document` (`paragraph_count`, `total_sentences`, `total_words`, `passive_ratio`, `mean_sentence_length`, `sentence_length_std`) and on `Sentence` (`word_count`, `is_passive`, `tree_depth`). Each is a field now, in `DocumentMetrics` or on the sentence, and a field is what crosses to Python and the JSON.
 
 ### Fixed
+
+- A missing file reached Python as a bare `OSError`, not `FileNotFoundError`, because every `Io` error routed to one class whatever its kind (EPR-0006, defect 8). `Io` now routes on the kind it wraps: not found is `matra.IoNotFound`, a `FileNotFoundError`; permission denied is `matra.IoPermissionDenied`, a `PermissionError`; anything else is `matra.Io`, an `OSError`.
 
 - The markdown reader dropped every table without a trace, by skipping any line that began with `|`. Tables are `skipped` entries with their spans.
 - A `## References` (or `*References*`) line ended the document: everything after it was dropped, not only the references. It is a heading like any other.

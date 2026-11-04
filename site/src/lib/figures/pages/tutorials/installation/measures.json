@@ -180,13 +180,13 @@
       "words": 65
     },
     {
-      "compression_ratio": 0.5388,
+      "compression_ratio": 0.5297,
       "kind": "paragraph",
-      "lexical_density": 0.5652,
-      "readability_grade": 9.7781,
-      "sentences": 3,
-      "text": "If Matra.english() raises OSError, either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path. Check your network connection first; then run matra config show to see which directory matra resolved and check the permissions on it. If it raises RuntimeError, bytes did arrive and then failed the pinned hash check; run the snippet again.",
-      "words": 69
+      "lexical_density": 0.5513,
+      "readability_grade": 8.9954,
+      "sentences": 4,
+      "text": "If Matra.english() raises OSError (a matra.Io), either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path, as details[\"url\"] or details[\"path\"] do. Check your network connection first; then run matra config show to see which directory matra resolved and check the permissions on it. If it raises RuntimeError (a matra.ModelInvalid), bytes did arrive and then failed the pinned hash check; run the snippet again.",
+      "words": 80
     },
     {
       "compression_ratio": null,

@@ -359,7 +359,7 @@ The Rust side runs the same pipeline, then hands the `Document` to `pythonize`, 
 
 Fields cross. Methods do not. A Rust method has no serde representation, so it has nothing to cross with, which is why every aggregate a reader needs is stored: `compose` writes the counts, sentence-length statistics and ratios into `DocumentMetrics` and `ParagraphMetrics`, and `Sentence::new` sets each sentence's `word_count`, `tree_depth` and `passive` (RFC-0008). A Python caller reads them rather than recomputing them. [Domain types](../reference/domain-types.md#what-crosses-the-language-boundary) draws that boundary member by member.
 
-Errors cross by type. The conversion is a match with no wildcard arm, so adding a variant to `domain::Error` fails to compile until someone decides which Python exception class it becomes. A wildcard would let new failure modes fall through to `RuntimeError` unnoticed.
+Errors cross by type and as data. Each variant is raised as a class of its own, named as the variant is and deriving from `matra.MatraError`, and the exception carries `kind` and `details`, the values `Error::kind` and `Error::details` compute, so a method's answer crosses as a field. The choice of class is a match with no wildcard arm, so adding a variant to `domain::Error` fails to compile until someone decides which class it becomes. A wildcard would let new failure modes fall through to another variant's class unnoticed.
 
 Every Python method that takes text routes through the same pipeline, so the 8 MiB text cap fires uniformly. The outcome methods add their per-method caps on top.
 

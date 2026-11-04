@@ -17,21 +17,21 @@ The Rust↔Python FFI surface for matra. This skill codifies the disciplines tha
 - Adding a method to the PyO3 `Matra` class.
 - Bumping pyo3, pythonize, or maturin.
 - Changing module-name, python-source, or any maturin config.
-- Adding a new error variant to `domain::Error` (requires PyErr routing update).
+- Adding a new error variant to `domain::Error` (requires a Python class in the routing).
 - Planning the WASM/TS crust.
 
 ## The PyO3 surface — what exists today
 
 The `_core` module in `src/lib.rs::python` (matched by pyproject.toml's `module-name = "matra._core"`) registers two classes and two functions. This section is the one place in `.claude/` that lists them; the `ffi-keeper` agent points here.
 
-- **`Matra`** (`src/lib.rs:616`), `#[pyclass(unsendable)]`: UDPipe is `!Send` due to internal C state, so cross-thread access panics at runtime.
+- **`Matra`** (`src/lib.rs:874`), `#[pyclass(unsendable)]`: UDPipe is `!Send` due to internal C state, so cross-thread access panics at runtime.
   - Constructors: `from_path(model_path)`, `english(model_dir=None)` (both gated on the `udpipe` feature).
   - Methods: `analyze`, `analyze_markdown`, `analyze_path`, `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`, `semantic_clusters`.
-- **`Model2Vec`** (`src/lib.rs:835`), `#[pyclass(frozen)]`, registered only under the `model2vec` feature: an immutable embedder.
+- **`Model2Vec`** (`src/lib.rs:1094`), `#[pyclass(frozen)]`, registered only under the `model2vec` feature: an immutable embedder.
   - Constructors: `from_dir(dir)`, `potion_base_8m(dir=None)`.
   - Getters `model_hash` and `dimensions`; methods `identity` and `embed`.
 - **Functions**: `semantic_clusters` (clusters vectors the caller already holds) and `cli_main` (the command line, which `python/matra/cli.py` launches).
-- Error routing: `MatraError` wrapper + `From<MatraError> for PyErr` with exhaustive variant match (below).
+- **Exception classes**: `MatraError` and one class per variant (`ModelNotFound`, `ModelInvalid`, `ParseFailed`, `InputTooLarge`, `UnsupportedFormat`, `InvalidInput`, `Io`), plus `IoNotFound` and `IoPermissionDenied` refining `Io`. Built once per interpreter with `type()` by `error_classes`, since a `#[pyclass]` cannot have two bases, and added to the module at init (below).
 
 ## The four PyO3 disciplines
 
@@ -68,30 +68,32 @@ Matra doesn't use either today (single-threaded composition), but if a future fe
 
 ## Error routing — the load-bearing detail
 
-`From<domain::Error> for PyErr` routes variants to the appropriate Python exception class. The match is exhaustive (no wildcard) so a new variant becomes a compile error — fix it at the routing site, don't paper over it.
+`From<MatraError> for PyErr` raises each `domain::Error` as a class of its own, named as the variant is. Every class derives from `matra.MatraError` and from the builtin class matra raised before 0.3.0, so `except ValueError` still catches an `InputTooLarge`. The exception carries `kind` (a class attribute) and `details` (a dict, set when raised from `Error::details`), with the `Display` text as its message: a method's answer crosses as a field. `Class::of` picks the class with a match that is exhaustive over the variants (no wildcard), so a new variant becomes a compile error: fix it at the routing site, don't paper over it. The match:
 
 ```rust
-match e.0 {
-    ModelNotFound(_) => PyFileNotFoundError::new_err(msg),
-    InputTooLarge { .. } | UnsupportedFormat { .. } | InvalidInput(_) => {
-        PyValueError::new_err(msg)
-    }
-    Io(_) => PyOSError::new_err(msg),
-    ModelInvalid(_) | ParseFailed(_) => PyRuntimeError::new_err(msg),
+match error {
+    ModelNotFound(_) => Class::ModelNotFound,
+    ...
+    Io(e) => match e.kind() {
+        std::io::ErrorKind::NotFound => Class::IoNotFound,
+        std::io::ErrorKind::PermissionDenied => Class::IoPermissionDenied,
+        _ => Class::Io,
+    },
 }
 ```
 
+`Class::spec` names each class, its builtin, and its parent inside matra. The classes set `__module__` to `matra`, where `python/matra/__init__.py` re-exports them, so a traceback reads `matra.InputTooLarge` and an exception pickles.
+
 When adding a `domain::Error` variant:
 
-1. Add it to the enum with `#[error("…")]`.
-2. The PyErr routing match will fail to compile until you add the new arm.
-3. Pick the right Python exception class:
-   - File-not-found → `PyFileNotFoundError`
-   - Bad input (caller's fault) → `PyValueError`
-   - I/O failure → `PyOSError`
-   - Internal error → `PyRuntimeError`
-   - Type error → `PyTypeError`
-4. Update tests for any Python-side handling.
+1. Add it to the enum with `#[error("…")]`, its kind in `Error::kind`, and its keys in `Error::details`.
+2. `Class::of` will fail to compile until you add the new arm; add a `Class` for it.
+3. In `Class::spec`, pick the builtin it also derives from:
+   - File-not-found → `FileNotFoundError`
+   - Bad input (caller's fault) → `ValueError`
+   - I/O failure → `OSError`
+   - Internal error → `RuntimeError`
+4. Declare the class in `python/matra/_core.pyi`, export it from `python/matra/__init__.py`, and list its details in `spec/schema/v2/error.schema.json`. `mypy.stubtest`, `python/tests/test_errors.py` and `tests/error_tables.rs` hold the stub, the module and the documented tables to it.
 
 ## maturin dual-manifest contract
 
