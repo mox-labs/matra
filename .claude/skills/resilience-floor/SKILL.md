@@ -63,7 +63,7 @@ When adding a new gate, pick a distinct `what` discriminator and put its cap in 
 
 ### 2. Symlink rejection
 
-`FileSource` and `DirectorySource` use `symlink_metadata` (non-traversing) and reject any path whose file type is a symlink. This prevents path-redirection attacks: an attacker who controls a path passed to matra cannot redirect to an arbitrary file via a symlink.
+`FileSource` and `DirectorySource` use `symlink_metadata` (non-traversing): `FileSource` rejects any path whose file type is a symlink, and `DirectorySource` leaves every symlink out of the listing it returns. This prevents path-redirection attacks: an attacker who controls a path passed to matra cannot redirect to an arbitrary file via a symlink.
 
 ```rust
 let metadata = std::fs::symlink_metadata(input)?;

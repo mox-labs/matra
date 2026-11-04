@@ -86,7 +86,7 @@ The pipeline depends on port traits, and adapters implement them. The domain dep
 
 | Port | Trait | Adapters this build ships | Feature |
 |---|---|---|---|
-| `source/` | `Source` (crate-private) | `FileSource`, `DirectorySource` | none |
+| `source/` | `Source` (crate-private) | `FileSource`; `DirectorySource` lists a directory for it and reads nothing | none |
 | `decompose/` | `Decomposer` (crate-private) | the markdown, plain-text and block-input readers | none |
 | `nlp/` | `NlpProvider` (crate-private) | `Udpipe` | `udpipe` (default) |
 | `embed/` | `Embedder` | `Model2Vec` | `model2vec` |
