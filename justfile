@@ -18,7 +18,7 @@ default:
 # on a pull request.
 # CI additionally runs cargo-deny, cargo-semver-checks, the wheel build and
 # mypy.
-check: fmt-check check-rust check-rust-no-default clippy clippy-no-default doc test test-cli test-no-default lint-py boundary test-sandbox docs-floor blueprint-refs claude-citations version-sync
+check: fmt-check check-rust check-rust-no-default check-wasm clippy clippy-no-default doc test test-cli test-no-default lint-py boundary test-sandbox docs-floor blueprint-refs claude-citations version-sync
     @echo ""
     @echo "all gates pass"
 
@@ -49,6 +49,19 @@ check-rust:
 # Type-check the workspace with no default features.
 check-rust-no-default:
     cargo check --all-targets --no-default-features
+
+# Type-check the wasm32 builds CI checks (the core, and the model2vec
+# adapter), warnings as errors. Skipped with a warning when the target is
+# not installed: `rustup target add wasm32-unknown-unknown`.
+check-wasm:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! rustup target list --installed 2>/dev/null | grep -qx wasm32-unknown-unknown; then
+        echo "check-wasm: wasm32-unknown-unknown not installed; skipped (CI still checks it)" >&2
+        exit 0
+    fi
+    RUSTFLAGS="-Dwarnings" cargo check --no-default-features --target wasm32-unknown-unknown
+    RUSTFLAGS="-Dwarnings" cargo check --no-default-features --features model2vec --target wasm32-unknown-unknown
 
 # Clippy under default features, warnings are errors.
 clippy:
