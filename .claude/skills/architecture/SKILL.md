@@ -114,7 +114,7 @@ Not applicable. Matra is a one-shot pipeline (annotate → compose → return), 
 
 Every type in `domain.rs` appears in Rust today, in Python via `pythonize`, and in TypeScript via `serde-wasm-bindgen` when the WASM crust lands. Architectural implications:
 
-- **Methods do not cross FFI. Only fields do.** Aggregate methods (e.g., `Document::passive_ratio()`) are not visible to Python consumers in serialized output. If you need them visible, materialize as a field on a derived summary type.
+- **Methods do not cross FFI. Only fields do.** Aggregate methods (e.g., `Corpus::passive_ratio()`) are not visible to Python consumers in serialized output. If you need them visible, materialize as a field on a derived summary type.
 - **Names cross.** Every public type/field/enum-variant name is a contract across at least two languages. When picking a name, ask: does it read clearly as a Python dict key? As a TypeScript interface field?
 - **`#[non_exhaustive]` on every public enum and every public struct with public fields.** Forward compatibility across all three languages — additive changes are minor-version, not major.
 
