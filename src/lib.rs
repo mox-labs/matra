@@ -231,9 +231,10 @@ impl ExactSizeIterator for Inputs {}
 /// built only in a build with the `udpipe` feature: [`Engine::new`],
 /// [`Engine::from_config`] and [`Engine::from_config_with_notice`].
 ///
-/// An `Engine` is neither `Send` nor `Sync`: the model holds C-side
-/// state its parse path mutates, and the readers are not `Send`. Build
-/// one on each thread that analyzes.
+/// An `Engine` is `Send` but not `Sync`: the model holds C-side state
+/// its parse path mutates, so an engine moves to another thread but is
+/// not shared between two. Build one on each worker thread, or serialize
+/// calls behind a `Mutex`.
 pub struct Engine {
     nlp: Box<dyn NlpProvider>,
     readers: decompose::Decomposers,
@@ -286,8 +287,8 @@ impl Engine {
     /// ```
     ///
     /// The returned iterator borrows the engine and is not `Send`: an
-    /// `Engine` is neither `Send` nor `Sync`, so the stream stays on the
-    /// thread that built the engine.
+    /// `Engine` is `Send` without `Sync`, so a borrow of it cannot cross
+    /// threads and the stream stays on the thread that holds the engine.
     pub fn analyze_all<I>(
         &self,
         inputs: I,
@@ -1337,6 +1338,15 @@ mod tests {
     use super::*;
     use crate::nlp::NlpProvider;
     use domain::{Section, Span};
+
+    /// An engine moves to a worker thread, so a server can build one per
+    /// worker or hold one behind a `Mutex`. A reader or parser that is
+    /// not `Send` fails this at compile time.
+    #[test]
+    fn an_engine_is_send() {
+        fn assert_send<T: Send>() {}
+        assert_send::<Engine>();
+    }
 
     /// Minimal NlpProvider that returns no sentences. Lets us test composition-root
     /// gates (input size, etc.) without requiring a real NLP backend.

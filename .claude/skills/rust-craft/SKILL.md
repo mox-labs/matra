@@ -85,7 +85,7 @@ Three principles:
 
 1. **Minimal contract.** The longest-lived ecosystem traits (tower::Service, tracing::Subscriber, futures::Stream) have one or two methods, not five. matra's four ports (`Source`, `Decomposer`, `NlpProvider`, `Embedder`) follow.
 2. **Object-safe.** Every port must be usable as `&dyn Trait`. The composition root needs runtime dispatch. No generic methods on Self.
-3. **`Send` if cross-thread is plausible.** `Source`, `NlpProvider` are `Send`. `Decomposer` is not (it operates on `&str` only). Don't add `Sync` unless you have a concrete cross-thread sharing case.
+3. **`Send` if cross-thread is plausible.** `Source`, `NlpProvider` and `Decomposer` are `Send`, because an `Engine` holds a parser and its readers and must move to a worker thread (`an_engine_is_send` in `src/lib.rs` tests). Don't add `Sync` unless you have a concrete cross-thread sharing case.
 
 ## `#[non_exhaustive]` discipline
 

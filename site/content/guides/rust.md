@@ -33,7 +33,7 @@ The parser is UDPipe with one pinned English model, `english-ewt-ud-2.5-191206`,
 
 The path is passed to `std::fs::create_dir_all` unchanged, and `~` in it is taken literally: neither Rust nor matra expands it, so `with_model_dir("~/models")` creates a directory literally named `~` under your current working directory. The same holds for `MATRA_MODEL_DIR` and the other variables when the shell has not already expanded them. Pass an absolute path, or expand the home directory yourself.
 
-Construction is the expensive step: it loads and validates the model once. Build one engine and reuse it for every document. An `Engine` is neither `Send` nor `Sync`, so an engine, and any stream borrowed from it, stays on the thread that built it. That is a compile error, not a runtime surprise. To parallelize, build one engine on each worker thread.
+Construction is the expensive step: it loads and validates the model once. Build one engine and reuse it for every document. An `Engine` is `Send` but not `Sync`: it moves to another thread, but it is not shared between two, and a stream borrowed from it stays on the thread that holds it. That is a compile error, not a runtime surprise. To parallelize, build one engine on each worker thread, or serialize calls behind a mutex.
 
 ## The pipeline
 

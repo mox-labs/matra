@@ -153,13 +153,13 @@
       "words": 38
     },
     {
-      "compression_ratio": 0.5844,
+      "compression_ratio": 0.5718,
       "kind": "paragraph",
-      "lexical_density": 0.5915,
-      "readability_grade": 8.2846,
+      "lexical_density": 0.5733,
+      "readability_grade": 9.0292,
       "sentences": 4,
-      "text": "One engine per thread. The underlying Model is Send and deliberately not Sync: its parse path mutates internal workspace caches. The Engine that owns it is neither Send nor Sync, since its readers are not Send either, so in Rust sharing or moving an engine across threads is a compile error rather than a race. To parallelize you build an engine on each thread, paying another 16 MB load for each.",
-      "words": 72
+      "text": "One engine per thread. The underlying Model is Send and deliberately not Sync: its parse path mutates internal workspace caches. The Engine that owns it is Send and not Sync for the same reason: an engine moves to another thread, but sharing one between two is a compile error rather than a race. To parallelize you build an engine on each thread, paying another 16 MB load for each, or serialize calls behind a mutex.",
+      "words": 76
     },
     {
       "compression_ratio": null,
