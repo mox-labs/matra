@@ -33,7 +33,7 @@ files or strings  ->  matra  ->  rule evaluation
                                  LLM prompt construction
 ```
 
-Two properties make it usable that far downstream. Every value is serde-serializable, so the parse crosses into Python as a plain dict and can be stored as JSON. And every value has a place in the tree: a token id is scoped to its sentence, a sentence belongs to the paragraph whose text was parsed to produce it, and a paragraph's text is the input as the decomposer cut it, so a value can be traced back to the paragraph it came from.
+Two properties make it usable that far downstream. Every value is serde-serializable, so the parse crosses into Python as a plain dict and can be stored as JSON. And every value has a place in the tree: a token id is scoped to its sentence, a sentence belongs to the paragraph whose text was parsed to produce it, and every heading, paragraph, sentence and token carries a span into the analysed text, so a value can be traced back to the bytes it came from.
 
 ## What it needs from the environment
 

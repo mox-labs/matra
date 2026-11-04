@@ -33,7 +33,7 @@ Their caps differ from the summarizers': both are bounded on total tokens rather
 | Is it repetitive in paraphrase? | none of the above: lexical measures cannot see restatement in different words. That is what `SemanticClusters` is for |
 | How nominal is the style? | `DocumentMetrics.nominalization_ratio` |
 
-Two cautions. `vocabulary_ttr` is a raw type-token ratio and falls as text grows, so two documents of different lengths are not comparable on it without normalizing first. And any of these slots can be `None`, which means the metric was not computed (too short, in a blockquote, or over a per-metric byte ceiling) and is distinct from a computed zero.
+Two cautions. `vocabulary_ttr` is a raw type-token ratio and falls as text grows, so two documents of different lengths are not comparable on it without normalizing first. And any of these slots can be `None`, which means the metric was not computed (too short, a quote, or over a per-metric byte ceiling) and is distinct from a computed zero.
 
 ## The semantic threshold
 

@@ -1688,7 +1688,7 @@ impl Block {
 /// for block input it is the blocks' texts joined by a blank line.
 /// Bytes, not characters: a caller in a language that indexes strings by
 /// character converts.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Span {
     /// The first byte.

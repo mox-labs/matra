@@ -9,8 +9,8 @@
     "paragraphs": [
       {
         "compression_ratio": 0.5994,
-        "in_blockquote": false,
         "index": 1,
+        "kind": "paragraph",
         "lexical_density": 0.5577,
         "opening": "We the People of the United States, in",
         "readability_grade": 26.2477,
@@ -18,8 +18,8 @@
       },
       {
         "compression_ratio": null,
-        "in_blockquote": false,
         "index": 2,
+        "kind": "paragraph",
         "lexical_density": 0.48,
         "opening": "All legislative Powers herein granted shall be vested",
         "readability_grade": 14.456,
@@ -27,8 +27,8 @@
       },
       {
         "compression_ratio": 0.502,
-        "in_blockquote": false,
         "index": 3,
+        "kind": "paragraph",
         "lexical_density": 0.4091,
         "opening": "The House of Representatives shall be composed of",
         "readability_grade": 20.0745,

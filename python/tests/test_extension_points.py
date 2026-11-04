@@ -23,7 +23,7 @@ import pytest
 if TYPE_CHECKING:
     from matra import CorpusItem
 
-matra =pytest.importorskip("matra", reason="matra wheel not built")
+matra = pytest.importorskip("matra", reason="matra wheel not built")
 Matra = matra.Matra
 
 

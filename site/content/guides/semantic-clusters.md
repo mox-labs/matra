@@ -49,8 +49,7 @@ let cfg = Config::resolve()?;
 let engine = Engine::from_config(&cfg)?;
 let model = Model2Vec::from_config(&cfg)?;
 
-let raw = matra::domain::RawDocument::new(text, None, matra::domain::Format::PlainText);
-let doc = engine.annotate(&raw)?;
+let doc = engine.annotate(matra::Input::text(text, matra::domain::Format::PlainText))?;
 let clusters = embed_and_cluster(&doc, &model, 0.85)?;
 
 for c in &clusters.clusters {
@@ -109,9 +108,9 @@ for cluster in pairs["clusters"]:
 Those three are pages of this book, run from a checkout of the repository, so the numbers below are yours to reproduce. Two of them cover the same ground for different surfaces, and the third is unrelated. It prints:
 
 ```text
-0.8399  cli.md <-> rust.md
+0.8363  cli.md <-> rust.md
 0.5857  cli.md <-> roadmap.md
-0.6080  rust.md <-> roadmap.md
+0.6036  rust.md <-> roadmap.md
 ```
 
 The separation is decisive, and the sentence-level starting point does not carry over: the same vectors at `0.85` produce zero clusters, so the near-duplicate pair would have been reported as unrelated. This is what "the threshold does not travel" costs when it is taken on faith. Calibrate on scores you have read.

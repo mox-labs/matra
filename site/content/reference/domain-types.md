@@ -6,7 +6,7 @@ It is not a copy of the generated item-level documentation. For that, run `cargo
 
 ## The type graph
 
-Seven types nest, each owning the next. Nothing is owned twice.
+Six types nest, each owning the next. Nothing is owned twice.
 
 <svg class="mx-own" role="img" aria-label="Nested containment from Corpus down to Token, with stored fields and computed methods for each type" viewBox="0 0 720 460" width="720" height="460" style="max-width:100%;height:auto;display:block;margin:1.7em auto">
 <title>Containment from Corpus to Token, stored fields against computed methods</title>
@@ -22,47 +22,47 @@ Seven types nest, each owning the next. Nothing is owned twice.
 <text class="hd" x="462" y="20">computed on call</text>
 <line class="rule" x1="452" y1="28" x2="452" y2="448"/>
 <rect class="box" x="8" y="36" width="182" height="408" rx="4"/>
-<rect class="box" x="20" y="90" width="167" height="348" rx="4"/>
 <rect class="box" x="32" y="134" width="152" height="298" rx="4"/>
 <rect class="box" x="44" y="202" width="137" height="224" rx="4"/>
 <rect class="box" x="56" y="246" width="122" height="174" rx="4"/>
 <rect class="box" x="68" y="300" width="107" height="114" rx="4"/>
 <rect class="box" x="80" y="368" width="92" height="40" rx="4"/>
 <text class="ty" x="17" y="55">Corpus</text>
-<text class="ty" x="29" y="109">CorpusEntry</text>
 <text class="ty" x="41" y="153">Document</text>
 <text class="ty" x="53" y="221">Section</text>
 <text class="ty" x="65" y="265">Paragraph</text>
 <text class="ty" x="77" y="319">Sentence</text>
 <text class="ty" x="89" y="387">Token</text>
-<text class="mem" x="206" y="55">entries</text>
+<text class="mem" x="206" y="55">documents</text>
 <text class="mem" x="462" y="55">total_words · passive_ratio ·</text>
 <text class="mem" x="462" y="67">mean_readability</text>
-<text class="mem" x="206" y="109">path · analysis</text>
 <text class="mem" x="206" y="153">provenance · sections ·</text>
-<text class="mem" x="206" y="165">metrics (DocumentMetrics)</text>
-<text class="mem" x="206" y="221">heading · level · paragraphs</text>
-<text class="mem" x="206" y="265">text · in_blockquote · sentences ·</text>
+<text class="mem" x="206" y="165">metrics (DocumentMetrics) ·</text>
+<text class="mem" x="206" y="177">skipped</text>
+<text class="mem" x="206" y="221">heading · level · span ·</text>
+<text class="mem" x="206" y="233">paragraphs</text>
+<text class="mem" x="206" y="265">span · text · kind · sentences ·</text>
 <text class="mem" x="206" y="277">metrics (ParagraphMetrics)</text>
 <text class="mem" x="462" y="265">word_count · sentence_count</text>
-<text class="mem" x="206" y="319">text · tokens · word_count ·</text>
+<text class="mem" x="206" y="319">span · text · tokens · word_count ·</text>
 <text class="mem" x="206" y="331">tree_depth · passive ·</text>
 <text class="mem" x="206" y="343">six structural fields</text>
 <text class="mem" x="462" y="319">root_token · head_of · children_of ·</text>
 <text class="mem" x="462" y="331">subtree · content_tokens</text>
-<text class="mem" x="206" y="387">the ten CoNLL-U columns · is_punct</text>
+<text class="mem" x="206" y="387">the ten CoNLL-U columns · span ·</text>
+<text class="mem" x="206" y="399">is_punct</text>
 </svg>
 
 The left column is what the pipeline writes into the struct. The right column is recomputed from the tree every time you ask, and an empty right column means the type only holds. So there is no second list of paragraphs anywhere in `Document`: the flat iterators walk the section tree. Every number a reader needs from a document is stored, in `DocumentMetrics` and `ParagraphMetrics` and in a sentence's `word_count`, `tree_depth` and `passive`, because a field crosses the language boundary and a method does not.
 
-The derived structural types (`Negation`, `Modal`, `ClausalComplement`, `RootAdverbial`, `RootMood`, `HearstPair` with its `HearstSpan` and `HearstPattern`) sit inside the nest, owned by `Sentence`, and the metric records `DocumentMetrics` and `ParagraphMetrics` are owned by `Document` and `Paragraph`. `Provenance`, with its `Identity` and `ProvenanceSource`, is owned by `Document`. The other types sit outside it:
+The derived structural types (`Negation`, `Modal`, `ClausalComplement`, `RootAdverbial`, `RootMood`, `HearstPair` with its `HearstSpan` and `HearstPattern`) sit inside the nest, owned by `Sentence`, and the metric records `DocumentMetrics` and `ParagraphMetrics` are owned by `Document` and `Paragraph`. `Provenance`, with its `Identity` and `ProvenanceSource`, is owned by `Document`, and so is `skipped`, a list of `Skipped` records, each a `SkippedKind` and a `Span`. Every heading, paragraph, sentence and token holds a `Span`, and a paragraph its `ParagraphKind`. The other types sit outside it:
 
 | Type | Role |
 |---|---|
-| `RawDocument` | output of the ingest stage, input to the decompose stage |
+| `Block` | a heading or paragraph a caller supplies, the input to `Input::blocks`; never returned |
 | `ScoredSentence` | output of `tfidf_summarize` and `textrank_summarize` |
 | `Keyphrase` | output of `rake_keyphrases` and `yake_keyphrases` |
-| `Format` | which decomposer a document needs |
+| `Format` | which reader a document needs |
 | `Error` | every failure the library can return |
 | `DocumentError`, `CorpusResult` | one document's failure, and the partition of a stream into successes and failures |
 | `Embedding` | one vector from an `Embedder`, the input to clustering |
@@ -86,8 +86,9 @@ Where each of those enters and leaves the pipeline is drawn in [Architecture](..
 | `ScoredSentence` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Keyphrase` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Format` | `Debug`, `Clone`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
-| `RawDocument` | `Debug`, `Clone` | yes |
-| `CorpusEntry` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
+| `Span` | `Debug`, `Clone`, `Copy`, `Default`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
+| `Skipped`, `SkippedKind`, `ParagraphKind` | `Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`, `Serialize`, `Deserialize` | yes |
+| `Block` | `Debug`, `Clone`, `PartialEq`, `Eq` | no |
 | `Corpus` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
 | `Error` | `Debug`, `thiserror::Error` | yes |
 | `Negation`, `Modal`, `ClausalComplement`, `RootAdverbial` | `Debug`, `Clone`, `Serialize`, `Deserialize` | yes |
@@ -99,13 +100,13 @@ Where each of those enters and leaves the pipeline is drawn in [Architecture](..
 | `SemanticClusters`, `SemanticCluster`, `SemanticEdge` | `Debug`, `Clone`, `PartialEq`, `Serialize`, `Deserialize` | yes |
 | `ProvisionNotice` | `Debug`, `Clone`, `PartialEq`, `Eq` | yes |
 
-`RawDocument` is the one structural type without serde derives. It is a transient value between the ingest and decompose stages and never appears in stored output.
+`Block` is the one input type. It has no serde derives and no public fields, so it needs no `#[non_exhaustive]`: a caller builds one with `Block::heading` or `Block::paragraph` and only matra reads it. Its JSON form is the `blocks` format, whose schema is `spec/schema/v2/blocks.schema.json`.
 
-No type in the module derives `Hash`, and the parse tree derives no equality: two `Token`, `Sentence`, `Paragraph`, `Section` or `Document` values cannot be compared with `==`. `Format` derives `PartialEq` and `Eq`, which is what the decomposer table keys on, and the metric records, the provenance types, `RootMood`, the Hearst types, the semantic types, `Embedding` and `ProvisionNotice` derive `PartialEq`. `Error` has no `Clone`, no equality and no serde derives. `Embedding` is the one public type without `#[non_exhaustive]`: on a tuple struct the attribute would make the constructor private, and an `Embedder` implemented outside the crate has to build one.
+No type in the module derives `Hash`, and the parse tree derives no equality: two `Token`, `Sentence`, `Paragraph`, `Section` or `Document` values cannot be compared with `==`. `Format` derives `PartialEq` and `Eq`, which is what the reader table keys on, and the metric records, the provenance types, `Span`, `Skipped`, the kind enums, `Block`, `RootMood`, the Hearst types, the semantic types, `Embedding` and `ProvisionNotice` derive `PartialEq`. `Error` has no `Clone`, no equality and no serde derives. `Embedding` is the one public type without `#[non_exhaustive]`: on a tuple struct the attribute would make the constructor private, and an `Embedder` implemented outside the crate has to build one.
 
-`#[non_exhaustive]` has two effects outside the crate. Struct literal syntax is unavailable, so you build values through the associated constructors listed below. Matches on `Format` and `Error` need a catch-all arm, because variants can be added in a minor release.
+`#[non_exhaustive]` has two effects outside the crate. Struct literal syntax is unavailable, so you build values through the associated constructors listed below. Matches on `Format`, `ParagraphKind`, `SkippedKind` and `Error` need a catch-all arm, because variants can be added in a minor release.
 
-Every field on these types is `pub` and readable. `TokenBuilder` is the exception: its fields are private and you reach them through its setters.
+Every field on these types is `pub` and readable. `TokenBuilder` and `Block` are the exceptions: their fields are private, and you reach them through the builder's setters and the block's constructors.
 
 ## Token
 
@@ -114,6 +115,7 @@ One parsed token carrying the full CoNLL-U annotation set plus one derived flag.
 | Field | Type | CoNLL-U column | Contents |
 |---|---|---|---|
 | `id` | `usize` | 1 | Position within the sentence, 1-based |
+| `span` | `Span` | none | Where the surface form lies in the analysed text, in UTF-8 bytes |
 | `text` | `String` | 2 | Surface form |
 | `lemma` | `String` | 3 | Dictionary form |
 | `pos` | `String` | 4 | Universal POS tag, for example `NOUN`, `VERB`, `ADJ` |
@@ -133,6 +135,8 @@ Provider-specific notes for the UDPipe adapter, the one adapter that ships:
 
 A token id or head that does not fit in `usize` is rejected at the adapter with `Error::ParseFailed` rather than being silently coerced.
 
+`span` comes from aligning each form with the paragraph text the parser was given, then mapping it into the analysed text. A form the adapter cannot find where the text says it should be is `Error::ParseFailed` naming the token, never a guessed span. In a markdown paragraph whose markup the reader removed, a token's span can cover markup inside it (`foo**bar**` is one token from the `f` to the last `r`), and a token read from an escape or an entity (`&amp;`) covers all of it.
+
 ### Construction
 
 ```rust
@@ -150,7 +154,7 @@ let token = matra::domain::Token::builder(
     .build();
 ```
 
-`Token::builder(id, text, lemma, pos, head, dep) -> TokenBuilder` takes the six CoNLL-U essentials. `TokenBuilder` carries one setter per optional field (`xpos`, `deps`, `misc`, each taking `String`; `feats`, taking the CoNLL-U column 6 string and converting it into `features`; `is_punct` taking `bool`), each consuming and returning the builder. `build()` returns the `Token`. Unset string fields default to empty, `features` to an empty map, and `is_punct` to `false`.
+`Token::builder(id, text, lemma, pos, head, dep) -> TokenBuilder` takes the six CoNLL-U essentials. `TokenBuilder` carries one setter per optional field (`xpos`, `deps`, `misc`, each taking `String`; `feats`, taking the CoNLL-U column 6 string and converting it into `features`; `is_punct` taking `bool`; `span` taking a `Span`), each consuming and returning the builder. `build()` returns the `Token`. Unset string fields default to empty, `features` to an empty map, `is_punct` to `false`, and `span` to the empty span at 0.
 
 ### Methods
 
@@ -166,7 +170,8 @@ let token = matra::domain::Token::builder(
 
 | Field | Type | Contents |
 |---|---|---|
-| `text` | `String` | Sentence text as the NLP provider reports it, not a slice of the input |
+| `span` | `Span` | Where the sentence lies in the analysed text: from its first token's start to its last token's end, derived at construction |
+| `text` | `String` | Sentence text as the NLP provider reports it, normalized, not a slice of the input |
 | `tokens` | `Vec<Token>` | Tokens in ascending `id` order |
 | `word_count` | `usize` | Non-punctuation tokens, derived at construction |
 | `tree_depth` | `Option<usize>` | Longest path from any token to the root, the root at depth 0, derived at construction. `None` when the head references form a cycle |
@@ -182,7 +187,7 @@ Invariants that downstream code relies on, and that a hand-built `Sentence` and 
 
 `tree_depth` is computed in time linear in token count with a visited set, and is `None` when the head references form a cycle, which reports a malformed parse as a value a reader must handle instead of truncating it or returning a number that reads as a very deep tree. An empty sentence has depth `Some(0)`. `word_count` counts tokens the NLP provider identified, minus punctuation. It is not a whitespace split, and the two counts differ on the same text.
 
-The UDPipe adapter builds `text` by joining token surface forms, inserting a space unless the preceding token carries `SpaceAfter=No` in `misc`. The string is a reconstruction, not a slice of the input, so whitespace can differ from the source text.
+The UDPipe adapter builds `text` by joining token surface forms, inserting a space unless the preceding token carries `SpaceAfter=No` in `misc`. The string is a reconstruction, not a slice of the input, so whitespace can differ from the source text; `span` is where the sentence came from.
 
 ### Derived structural fields
 
@@ -206,7 +211,7 @@ Most methods below are walks over the `head` and `dep` columns; the two `_in` fi
 
 | Signature | Returns | Behavior |
 |---|---|---|
-| `new(text: String, tokens: Vec<Token>)` | `Sentence` | Constructor. Does not validate the invariants |
+| `new(text: String, tokens: Vec<Token>)` | `Sentence` | Constructor. Derives `span` and the structural fields from `tokens`. Does not validate the invariants |
 | `content_tokens(&self)` | `Vec<&Token>` | Tokens where `is_punct` is false |
 | `root_token(&self)` | `Option<&Token>` | The token with `head == 0`, if there is one |
 | `children_of(&self, id: usize)` | `Vec<&Token>` | Tokens whose `head` equals `id`. Empty for an unknown id |
@@ -221,8 +226,9 @@ Most methods below are walks over the `head` and `dep` columns; the two `_in` fi
 
 | Field | Type | Contents |
 |---|---|---|
-| `text` | `String` | Paragraph text as the decomposer cut it: trimmed, for markdown with its lines rejoined by `\n` (so `\r\n` arrives as `\n`), and for a blockquote with the `>` markers removed |
-| `in_blockquote` | `bool` | Whether the paragraph came from a blockquote |
+| `span` | `Span` | Where the paragraph lies in the analysed text, trailing whitespace excluded. For markdown it covers the quote and list markers on its lines |
+| `text` | `String` | The text the parser reads, normalized: for markdown the inline text with the markup removed (emphasis, link and image syntax, code span backticks, quote and list markers), soft line breaks as `\n`, escapes and entities decoded; for plain text and block input a verbatim slice |
+| `kind` | `ParagraphKind` | `Paragraph`, `Quote` (inside a block quote at any depth) or `ListItem`; `paragraph`, `quote`, `list_item` on the wire |
 | `sentences` | `Vec<Sentence>` | Sentences from parsing this paragraph |
 | `metrics` | `ParagraphMetrics` | The paragraph's three measures |
 
@@ -236,13 +242,13 @@ Most methods below are walks over the `head` and `dep` columns; the two `_in` fi
 
 Each slot holds `None` until `Engine::compose` fills it, and stays `None` when the paragraph does not meet the metric's applicability condition; no outer `Option` wraps the record, because each slot gates on its own.
 
-`Engine::annotate` skips blockquote paragraphs when it parses, so a paragraph with `in_blockquote == true` reaches `compose` with no sentences and keeps all three slots at `None`.
+`Engine::annotate` skips quotes when it parses, so a paragraph whose `kind` is `ParagraphKind::Quote` reaches `compose` with no sentences and keeps all three slots at `None`.
 
 ### Methods
 
 | Signature | Returns | Behavior |
 |---|---|---|
-| `new(text: String, in_blockquote: bool)` | `Paragraph` | Constructor. Empty sentences, every metric `None` |
+| `new(text: String, kind: ParagraphKind, span: Span)` | `Paragraph` | Constructor. Empty sentences, every metric `None` |
 | `word_count(&self)` | `usize` | Non-punctuation tokens summed across this paragraph's sentences |
 | `sentence_count(&self)` | `usize` | Number of sentences |
 
@@ -250,13 +256,14 @@ Each slot holds `None` until `Engine::compose` fills it, and stays `None` when t
 
 | Field | Type | Contents |
 |---|---|---|
-| `heading` | `Option<String>` | Heading text |
+| `heading` | `Option<String>` | Heading text, its markup removed |
 | `level` | `usize` | Heading depth |
+| `span` | `Option<Span>` | Where the heading lies in the analysed text, markers included; `None` with no heading |
 | `paragraphs` | `Vec<Paragraph>` | Paragraphs in document order |
 
-`MarkdownDecomposer` sets `level` to the number of leading `#` characters and `heading` to the rest of the line. Content before the first heading becomes a section with `heading: None` and `level: 0`. `PlainTextDecomposer` produces at most one section, always with `heading: None` and `level: 0`.
+The markdown reader sets `level` to the heading's level (the number of `#` characters, or 1 and 2 for a setext heading) and `heading` to its text. Content before the first heading becomes a section with `heading: None` and `level: 0`. Plain text produces at most one section, always with `heading: None` and `level: 0`. Block input opens a section at each `Block::heading`, at the level it names.
 
-`Section::new(heading: Option<String>, level: usize, paragraphs: Vec<Paragraph>) -> Section` is the constructor. There are no other methods.
+`Section::new(heading: Option<String>, level: usize, span: Option<Span>, paragraphs: Vec<Paragraph>) -> Section` is the constructor. There are no other methods.
 
 ## Document
 
@@ -267,6 +274,7 @@ The output of the pipeline.
 | `provenance` | `Provenance` | Where the document came from and what produced it, recorded by `Engine::annotate` |
 | `sections` | `Vec<Section>` | The section tree, which owns every paragraph, sentence, and token |
 | `metrics` | `DocumentMetrics` | The document's aggregates, filled by `Engine::compose` |
+| `skipped` | `Vec<Skipped>` | What the reader saw and did not analyse, in document order |
 
 `DocumentMetrics` holds what the command line's table prints and what a binding would otherwise rebuild:
 
@@ -274,7 +282,7 @@ The output of the pipeline.
 |---|---|---|
 | `total_words` | `usize` | Non-punctuation tokens across every sentence |
 | `total_sentences` | `usize` | Sentences across every paragraph |
-| `paragraph_count` | `usize` | Paragraphs, blockquotes included |
+| `paragraph_count` | `usize` | Paragraphs, quotes included |
 | `mean_sentence_length` | `Option<f64>` | `total_words` over `total_sentences`. `None` with no sentences |
 | `sentence_length_std` | `Option<f64>` | Sample standard deviation of sentence length in words. `None` with fewer than two sentences, where it is undefined |
 | `vocabulary_ttr` | `Option<f64>` | Type-token ratio over lemmas. Falls as text grows, so documents of different lengths are not comparable on it |
@@ -283,13 +291,13 @@ The output of the pipeline.
 
 Before `compose` runs every count is 0 and every ratio `None`; `None` after it means the document did not meet the metric's condition, never a computed zero.
 
-`Provenance` holds `matra`, the version that produced the document; `schema`, the schema version as `"major.minor"` (`SCHEMA_VERSION`, `"2.0"`), which appears nowhere else; `parser`, the parser's `Identity`; `format`, the `Format` the input was read as; and `source`, a `ProvenanceSource` with the input's `path` (`None` for in-memory text), its length in `bytes`, and the `sha256` of those bytes, computed once at annotation. There is no timestamp, so two analyses of the same input by the same build are identical. `Identity` names a model-backed component: `name` (`udpipe`), `model` (`english-ewt-ud-2.5-191206`), `sha256` of the model artifact, and `license`. The UDPipe adapter derives it from the bytes it loaded, so a model matra does not pin reports its digest with `model` and `license` set to `None`. `Provenance::new(parser, format, source)` fills `matra` and `schema` from the build.
+`Provenance` holds `matra`, the version that produced the document; `schema`, the schema version as `"major.minor"` (`SCHEMA_VERSION`, `"2.0"`), which appears nowhere else; `parser`, the parser's `Identity`; `format`, the `Format` the input was read as; and `source`, a `ProvenanceSource` with the input's `path` (`None` for anything but a file), and the length in `bytes` and the `sha256` of the analysed text every span points into, computed once at annotation. For markdown and plain text that is the input; for block input, the blocks joined. There is no timestamp, so two analyses of the same input by the same build are identical. `Identity` names a model-backed component: `name` (`udpipe`), `model` (`english-ewt-ud-2.5-191206`), `sha256` of the model artifact, and `license`. The UDPipe adapter derives it from the bytes it loaded, so a model matra does not pin reports its digest with `model` and `license` set to `None`. `Provenance::new(parser, format, source)` fills `matra` and `schema` from the build.
 
 ### Methods
 
 | Signature | Returns | Behavior |
 |---|---|---|
-| `new(provenance: Provenance, sections: Vec<Section>)` | `Document` | Constructor. An empty metric record |
+| `new(provenance: Provenance, sections: Vec<Section>, skipped: Vec<Skipped>)` | `Document` | Constructor. An empty metric record |
 | `paragraphs(&self)` | `impl Iterator<Item = &Paragraph>` | Every paragraph, in document order |
 | `paragraphs_mut(&mut self)` | `impl Iterator<Item = &mut Paragraph>` | The mutable form, used by `annotate` and by the metric suite `compose` runs |
 | `sentences(&self)` | `impl Iterator<Item = &Sentence>` | Every sentence across every paragraph |
@@ -316,43 +324,51 @@ Both extractors return phrases in descending score order. `Keyphrase::new(phrase
 
 ## Format
 
-Which decomposer a document needs.
+Which reader a document needs.
 
-| Variant | Assigned to |
-|---|---|
-| `Markdown` | Extension `.md` or `.markdown` |
-| `PlainText` | Every other extension, and a file with no extension |
-| `Pdf` | Extension `.pdf` |
-| `Docx` | Extension `.docx` |
+| Variant | Wire name | Assigned to |
+|---|---|---|
+| `Markdown` | `markdown` | Extension `.md` or `.markdown` |
+| `PlainText` | `plain_text` | Every other extension, and a file with no extension |
+| `Blocks` | `blocks` | No extension: a caller names it, and `Input::blocks` takes it |
+| `Pdf` | `pdf` | Extension `.pdf`, or bytes opening with `%PDF` |
+| `Docx` | `docx` | Extension `.docx`, or a zip archive holding `[Content_Types].xml` |
 
-`Format::from_path(path: impl AsRef<Path>) -> Format` is that table, and it is the only copy of it. `FileSource` reads it for a file on disk and the command line reads it for the name given to `--stdin-filename`, so a name means the same thing on both routes.
+`Format::from_path(path: impl AsRef<Path>) -> Format` is the extension column, and it is the only copy of it. Reading a file applies it, and the command line reads it for the name given to `--stdin-filename`, so a name means the same thing on both routes. When the bytes are read, a PDF or DOCX signature outranks both the extension and a format the caller names.
 
-`Pdf` and `Docx` have no entry in the standard decomposer table, so analyzing such a file returns `Error::UnsupportedFormat`. `Ingest::text` takes the format as an argument; `Ingest::path` assigns one from the extension. `Format` derives `PartialEq` and `Eq`, which is what the decomposer table keys on.
+`Pdf` and `Docx` have no reader, so analyzing such a document returns `Error::UnsupportedFormat` with that format. `Input::text` takes the format as an argument; `Input::bytes` takes one optionally; `Input::file` detects one. `Format` derives `PartialEq` and `Eq`, which is what the reader table keys on.
 
-## RawDocument
+## Block
+
+A heading or a paragraph a caller supplies, for a document matra has no reader for. Input only: built by `Block::heading(level: u8, text: impl Into<String>)` and `Block::paragraph(text: impl Into<String>)`, handed to `Input::blocks`, and never returned. It has no public fields.
+
+The analysed text of block input is the blocks' texts joined by a blank line (`"\n\n"`), in order, and every span in the result points into it. A heading opens a section at its level; a level of 0 is refused with `Error::InvalidInput` when the input is analysed. The same blocks as JSON are the `blocks` format: an array of `{"kind": "heading", "level": 1, "text": "..."}` and `{"kind": "paragraph", "text": "..."}` objects, with an unknown `kind` or field refused by name.
+
+## Span
 
 | Field | Type | Contents |
 |---|---|---|
-| `text` | `String` | Document text as read |
-| `path` | `Option<PathBuf>` | Source path, `None` for in-memory text |
-| `format` | `Format` | Detected format |
+| `start` | `usize` | The first byte |
+| `end` | `usize` | One past the last byte |
 
-`RawDocument::new(text: String, path: Option<PathBuf>, format: Format) -> RawDocument` is the constructor. This is the value a `Source` produces and a `Decomposer` consumes.
+A stretch of the analysed text in UTF-8 bytes, so `&text[span.start..span.end]` is the stretch. Bytes rather than characters: a caller in a language that indexes strings by character converts. `Span::new(start, end)` is the constructor.
 
-## CorpusEntry
+## Skipped
 
 | Field | Type | Contents |
 |---|---|---|
-| `path` | `Option<PathBuf>` | Source path of the analyzed document |
-| `analysis` | `Document` | The document's analysis output |
+| `kind` | `SkippedKind` | What the construct is |
+| `span` | `Span` | Where it lies in the analysed text, trailing whitespace excluded |
 
-`CorpusEntry::new(path: Option<PathBuf>, analysis: Document) -> CorpusEntry` is the constructor.
+One construct the reader saw and did not analyse. `SkippedKind` names it: `Table`, `Code`, `FrontMatter`, `Html`, `ThematicBreak`, `LinkDefinition` (`table`, `code`, `front_matter`, `html`, `thematic_break`, `link_definition` on the wire), a set a reader treats as open. Skipping is specified behaviour beside a correct result, not an error. `Skipped::new(kind, span)` is the constructor.
+
+Together with the heading and paragraph spans, `skipped` accounts for the input: every byte of a markdown or plain-text input that is not whitespace lies in exactly one heading, paragraph or skipped span.
 
 ## Corpus
 
 | Field | Type | Contents |
 |---|---|---|
-| `entries` | `Vec<CorpusEntry>` | One entry per successfully analyzed document |
+| `documents` | `Vec<Document>` | One document per successful analysis, in input order, each naming its path in `provenance.source.path` |
 
 Documents that failed do not appear here. They travel as `DocumentError` values and land in `CorpusResult::errors` beside the corpus.
 
@@ -360,16 +376,16 @@ Documents that failed do not appear here. They travel as `DocumentError` values 
 
 | Signature | Returns | Behavior |
 |---|---|---|
-| `new(entries: Vec<CorpusEntry>)` | `Corpus` | Constructor |
-| `total_words(&self)` | `usize` | Non-punctuation tokens across every entry |
-| `passive_ratio(&self)` | `f64` | Passive sentences over total sentences across every entry. 0.0 with no sentences |
-| `mean_readability(&self)` | `f64` | Mean of the paragraphs that carry a `readability_grade`, across every entry. 0.0 when none do |
+| `new(documents: Vec<Document>)` | `Corpus` | Constructor |
+| `total_words(&self)` | `usize` | Non-punctuation tokens across every document |
+| `passive_ratio(&self)` | `f64` | Passive sentences over total sentences across every document. 0.0 with no sentences |
+| `mean_readability(&self)` | `f64` | Mean of the paragraphs that carry a `readability_grade`, across every document. 0.0 when none do |
 
 ## DocumentError
 
 | Field | Type | Contents |
 |---|---|---|
-| `path` | `Option<PathBuf>` | Where the failure occurred, `None` for in-memory text |
+| `path` | `Option<PathBuf>` | Where the failure occurred, `None` for input that is not a file |
 | `error` | `Error` | What went wrong |
 
 One per-document failure. `Display` prints `path: error` when a path exists and the bare error otherwise; `source()` returns the wrapped `Error`. `DocumentError::new(path, error)` is the constructor. Not `Serialize` and not `Clone`, because `Error` wraps `std::io::Error`.
@@ -381,7 +397,7 @@ One per-document failure. `Display` prints `path: error` when a path exists and 
 | `corpus` | `Corpus` | Every successfully analyzed document |
 | `errors` | `Vec<DocumentError>` | Every per-document failure, in consumption order |
 
-The partition of a per-document result stream: entries plus errors equals documents consumed. `collect()` is its constructor, via `FromIterator<Result<CorpusEntry, DocumentError>>`, which is how a stream from `Engine::analyze` becomes one value. Inherits `DocumentError`'s serialization gap, so it does not cross the language boundary today.
+The partition of a per-document result stream: documents plus errors equals inputs consumed. `collect()` is its constructor, via `FromIterator<Result<Document, DocumentError>>`, which is how a stream from `Engine::analyze_all` becomes one value. Inherits `DocumentError`'s serialization gap, so it does not cross the language boundary today.
 
 ## Constants, aliases, and the error type
 
@@ -423,9 +439,11 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 <text class="mem" x="30" y="104">provenance</text>
 <text class="mem" x="30" y="122">sections</text>
 <text class="mem" x="30" y="140">metrics</text>
+<text class="mem" x="30" y="158">skipped</text>
 <text class="mem" x="466" y="104">provenance</text>
 <text class="mem" x="466" y="122">sections</text>
 <text class="mem" x="466" y="140">metrics</text>
+<text class="mem" x="466" y="158">skipped</text>
 <text class="hd" x="30" y="190">methods</text>
 <text class="mem" x="30" y="208">paragraphs()</text>
 <text class="mem" x="30" y="226">sentences()</text>
@@ -433,6 +451,7 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 <line class="cross" x1="294" y1="100" x2="444" y2="100" marker-end="url(#mx-ffi-a)"/>
 <line class="cross" x1="294" y1="118" x2="444" y2="118" marker-end="url(#mx-ffi-a)"/>
 <line class="cross" x1="294" y1="136" x2="444" y2="136" marker-end="url(#mx-ffi-a)"/>
+<line class="cross" x1="294" y1="154" x2="444" y2="154" marker-end="url(#mx-ffi-a)"/>
 <line class="stop" x1="176" y1="204" x2="386" y2="204"/>
 <line class="stop" x1="176" y1="222" x2="386" y2="222"/>
 <line class="stop" x1="176" y1="240" x2="386" y2="240"/>
@@ -459,13 +478,13 @@ The Python surface serializes values with pythonize. Fields have a serde represe
 | `DocumentMetrics`, `ParagraphMetrics` | `DocumentMetrics`, `ParagraphMetrics` |
 | `Provenance`, `Identity`, `ProvenanceSource` | `Provenance`, `Identity`, `ProvenanceSource` |
 | `ClausalComplement`, `RootMood` | `ClausalComplement`, `RootMood` |
+| `Span`, `Skipped` | `Span`, `Skipped` |
 | `ScoredSentence` | `ScoredSentence` |
 | `Keyphrase` | `Keyphrase` |
-| `CorpusEntry` | `CorpusEntry` |
 | `DocumentError` | `DocumentError` |
-| `Format`, `RawDocument`, `Corpus`, `CorpusResult` | no Python shape |
+| `Format`, `Block`, `Corpus`, `CorpusResult` | no Python shape |
 
-`CorpusEntry` and `DocumentError` are the two items `Matra.analyze_path` returns, and the Python package names their union `matra.types.CorpusItem`. Neither crosses through serde as a whole. The binding assembles both items field by field: `analysis` crosses through serde like every shape above it, while `path` is decoded with the platform's filesystem decoding (`os.fsdecode` on Unix) so a name that is not valid UTF-8 still crosses instead of aborting the walk, and `DocumentError`'s error, which wraps `std::io::Error` and has no stable wire shape, becomes `{"kind": str, "message": str}`. `kind` is `Error::kind` on the domain type, pinned across bindings by `spec/tests/corpus/items.json` and exported to Python as `matra.ERROR_KINDS`; `message` is the Rust error's own `Display` text. A future binding must take the same field-by-field route rather than serializing the entry whole.
+`Document` and `DocumentError` are the two items `Matra.analyze_path` returns, and the Python package names their union `matra.types.CorpusItem`. A `Document` crosses through serde like every shape above it, with one field replaced: its `provenance.source.path` is decoded with the platform's filesystem decoding (`os.fsdecode` on Unix), so a name that is not valid UTF-8 crosses exactly instead of as serde's lossy string. A `DocumentError` is assembled field by field, its `path` decoded the same way, and its error, which wraps `std::io::Error` and has no stable wire shape, becomes `{"kind": str, "message": str}`. `kind` is `Error::kind` on the domain type, pinned across bindings by `spec/tests/corpus/items.json` and exported to Python as `matra.ERROR_KINDS`; `message` is the Rust error's own `Display` text. A future binding must take the same route rather than serializing the error whole.
 
 The Python shapes are `TypedDict` declarations available at runtime. They are declared in `matra.types` and re-exported from the package root, so either import works:
 

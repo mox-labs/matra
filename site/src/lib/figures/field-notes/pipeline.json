@@ -13,8 +13,8 @@
           "paragraphs": [
             {
               "compression_ratio": null,
-              "in_blockquote": false,
               "index": 1,
+              "kind": "paragraph",
               "lexical_density": null,
               "opening": "The survey team reached the northern ridge on",
               "readability_grade": null,
@@ -23,8 +23,8 @@
             },
             {
               "compression_ratio": null,
-              "in_blockquote": true,
               "index": 2,
+              "kind": "quote",
               "lexical_density": null,
               "opening": "Radio contact was lost for six hours.",
               "readability_grade": null,
@@ -39,8 +39,8 @@
           "paragraphs": [
             {
               "compression_ratio": null,
-              "in_blockquote": false,
               "index": 3,
+              "kind": "paragraph",
               "lexical_density": null,
               "opening": "Three of the five markers were intact and",
               "readability_grade": null,
@@ -64,8 +64,8 @@
           "paragraphs": [
             {
               "compression_ratio": null,
-              "in_blockquote": false,
               "index": 1,
+              "kind": "paragraph",
               "lexical_density": 0.6538,
               "opening": "The survey team reached the northern ridge on",
               "readability_grade": 4.9108,
@@ -74,8 +74,8 @@
             },
             {
               "compression_ratio": null,
-              "in_blockquote": true,
               "index": 2,
+              "kind": "quote",
               "lexical_density": null,
               "opening": "Radio contact was lost for six hours.",
               "readability_grade": null,
@@ -90,8 +90,8 @@
           "paragraphs": [
             {
               "compression_ratio": 0.5897,
-              "in_blockquote": false,
               "index": 3,
+              "kind": "paragraph",
               "lexical_density": 0.4844,
               "opening": "Three of the five markers were intact and",
               "readability_grade": 6.875,

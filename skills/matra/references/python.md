@@ -31,8 +31,8 @@ print(doc["metrics"]["passive_ratio"], len(doc["sections"]))
 |---|---|---|
 | `Matra.from_path` | `(model_path) -> Matra` | The engine, loading a UDPipe model file you name. Nothing is verified and nothing is fetched |
 | `Matra.english` | `(model_dir=None) -> Matra` | The engine, downloading the pinned English model if it is absent. With no argument the directory resolves the way every surface resolves it |
-| `analyze` | `(text: str) -> dict` | A document, decomposed as plain text |
-| `analyze_markdown` | `(text: str) -> dict` | A document, decomposed as markdown: sections from headings, frontmatter and fenced code dropped |
+| `analyze` | `(text: str) -> dict` | A document, read as plain text |
+| `analyze_markdown` | `(text: str) -> dict` | A document, read as markdown: sections from headings, front matter, code and tables listed in `skipped` |
 | `tfidf_summarize` | `(text: str, n: int) -> list[dict]` | Top-n scored sentences in document order |
 | `textrank_summarize` | `(text: str, n: int) -> list[dict]` | The same, ranked by graph centrality |
 | `rake_keyphrases` | `(text: str, max_phrases: int) -> list[dict]` | Ranked phrases, highest first |
@@ -48,7 +48,7 @@ Every method that takes text routes through the same entry point, so the 8 MiB i
 
 ## `analyze_path`
 
-One item for a file, one per regular file for a directory, in path order. Symlinks and subdirectories are skipped, not followed, and the walk is one level deep.
+One item for a file, one per regular file for a directory, in path order. Each file is read as its bytes and extension say: `.md` as markdown, any other UTF-8 file as plain text. Symlinks and subdirectories are skipped, not followed, and the walk is one level deep.
 
 ```python
 from matra import Matra
@@ -58,12 +58,12 @@ for item in engine.analyze_path("docs/"):
     if "error" in item:
         print(item["path"], item["error"]["kind"], item["error"]["message"])
     else:
-        print(item["path"], item["analysis"]["metrics"]["passive_ratio"])
+        print(item["provenance"]["source"]["path"], item["metrics"]["passive_ratio"])
 ```
 
-A document that analyzed arrives as `{"path": str | None, "analysis": dict}`. One that did not arrives as `{"path": str | None, "error": {"kind": str, "message": str}}`. Test `"error" in item` to tell them apart; a type checker narrows the union on that test. One unreadable file costs one item rather than the whole walk. A failure listing the path itself raises instead of arriving as an item.
+A document that analyzed arrives as the document itself, the dict `analyze` returns, naming its file in `provenance.source.path`. One that did not arrives as `{"path": str | None, "error": {"kind": str, "message": str}}`. Test `"error" in item` to tell them apart; a type checker narrows the union on that test. One unreadable file costs one item rather than the whole walk. A failure listing the path itself raises instead of arriving as an item.
 
-`path` is `None` only for a document that never came from disk, which a directory walk never produces. On Unix a returned path is decoded with `os.fsdecode`, so `os.fsencode` on it names the same file even when the name is not valid text.
+A path is `None` only for a document that never came from disk, which a directory walk never produces. On Unix a returned path is decoded with `os.fsdecode`, so `os.fsencode` on it names the same file even when the name is not valid text.
 
 `kind` is one of seven stable strings, exported as `matra.ERROR_KINDS`. Branch on it. The message is for a human to read and is not a contract.
 

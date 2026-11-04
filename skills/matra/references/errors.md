@@ -15,7 +15,7 @@ Seven kinds exist. The kind string is the stable key a consumer branches on; the
 | `model_invalid` | `invalid model: {s}` | `RuntimeError` | Bytes that arrived could not be verified against the pin, or could not be loaded |
 | `parse_failed` | `parse failed: {s}` | `RuntimeError` | The parser failed on the input, panicked, or produced an unusable token id |
 | `input_too_large` | `{what} input too large: {actual} > limit {limit}`, or `input too large: ...` for the main gate, whose `what` is `"input"` | `ValueError` | A size gate rejected the input. `what` names the gate |
-| `unsupported_format` | `unsupported format: {format}` | `ValueError` | The document's format has no decomposer in this build |
+| `unsupported_format` | `unsupported format: {format}; ...`, or `unsupported format: the input is not UTF-8 text ...` | `ValueError` | The input is a PDF or DOCX, which no reader in this build reads, or is not UTF-8 text |
 | `invalid_input` | `invalid input: {s}` | `ValueError` | A caller violated a documented contract |
 | `io` | `io error: {e}` | `OSError` | A filesystem or network operation failed |
 
@@ -48,11 +48,11 @@ A document from disk crosses two text gates in sequence, and `file_source` fires
 
 The four ranking extractors check their caps after their empty-result checks, so asking for zero results returns an empty list whatever the size of the slice.
 
-**`unsupported_format`.** PDF and DOCX are reserved names with no decomposer in this build. Convert to markdown or plain text first, or read the text yourself and pass it in.
+**`unsupported_format`.** PDF and DOCX are recognised, by extension and by their bytes, and no reader for either ships, so the message says no feature reads them. Bytes that are not UTF-8 text fail the same way. Convert to markdown or plain text first, or extract the text yourself and pass it in. A UTF-8 file with an extension matra does not know is not refused: it reads as plain text.
 
 **`invalid_input`.** This one means the call site is wrong, not the document. Nothing about the analyzed text produces it. It fires for embeddings that disagree on dimension, an embedding containing a non-finite value, a non-finite threshold, an embedder that broke its own length contract, and for a configuration that cannot be honored: a config file that does not parse, an unknown key, an algorithm name the build does not know, a config file that is not valid text, or an environment naming no home directory at all. Fix the call or the config. A config file that is simply absent is not an error; the built-in defaults stand.
 
-**`io`.** A read, listing, directory creation, write, or rename failed, or a download failed at the transport or answered with a non-2xx status. A filesystem failure names the operation and the path; a transport failure names the URL. It is also what a refused input looks like: a symlink is refused rather than followed, and a path that is not a regular file is refused. Bytes that arrived and then failed their digest are `model_invalid` instead; this kind is for the ones that never arrived.
+**`io`.** A read, listing, directory creation, write, or rename failed, or a download failed at the transport or answered with a non-2xx status. A filesystem failure names the operation and the path; a transport failure names the URL. It is also what a refused input looks like: a symlink is refused rather than followed, and a path that is not a regular file is refused. A file whose bytes are not text is `unsupported_format`, not `io`. Bytes that arrived and then failed their digest are `model_invalid` instead; this kind is for the ones that never arrived.
 
 In Python this kind is `OSError`. From 0.2.0 that includes every failed download, which raised `RuntimeError` before, so a caller catching `RuntimeError` around a first run needs `OSError` as well.
 

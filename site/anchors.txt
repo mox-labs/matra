@@ -48,7 +48,6 @@ explanation/pragmatics.html#the-semantic-threshold
 explanation/pragmatics.html#provisioning-models
 explanation/pragmatics.html#cost-and-limits
 explanation/programming-model.html#programming-model
-explanation/programming-model.html#two-values-ingest-into-engine
 explanation/programming-model.html#configuration
 explanation/programming-model.html#annotate-is-the-only-route-to-the-parser
 explanation/programming-model.html#ports-and-adapters
@@ -94,7 +93,6 @@ guides/rust.html#the-pipeline
 guides/rust.html#what-the-size-gates-reject
 guides/rust.html#parse-once-use-many
 guides/rust.html#why-a-metric-slot-is-none
-guides/rust.html#what-markdown-decomposition-drops
 guides/rust.html#handle-domainerror
 guides/rust.html#analyze-a-directory
 guides/rust.html#walk-a-document
@@ -142,8 +140,6 @@ reference/domain-types.html#methods-3
 reference/domain-types.html#scoredsentence
 reference/domain-types.html#keyphrase
 reference/domain-types.html#format
-reference/domain-types.html#rawdocument
-reference/domain-types.html#corpusentry
 reference/domain-types.html#corpus
 reference/domain-types.html#methods-4
 reference/domain-types.html#documenterror
@@ -212,7 +208,6 @@ roadmap.html#information-density
 roadmap.html#configuration-driven-invocation
 roadmap.html#agent-surface
 roadmap.html#terminal-ui-for-the-rust-cli
-roadmap.html#record-traceability-accessor
 tutorials/installation.html#installation
 tutorials/installation.html#requirements
 tutorials/installation.html#the-rust-library

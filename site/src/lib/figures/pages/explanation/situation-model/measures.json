@@ -10,7 +10,7 @@
   "paragraphs": [
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5238,
       "readability_grade": 7.0081,
       "sentences": 3,
@@ -19,7 +19,7 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.3529,
       "readability_grade": 5.0779,
       "sentences": 2,
@@ -28,16 +28,16 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4688,
       "readability_grade": 4.1238,
-      "sentences": 2,
-      "text": "matra reports `passive_ratio = 0.4`. Whether 0.4 is too passive for the document at hand is your call, and the answer differs between a statute, a lab report, and a landing page.",
-      "words": 31
+      "sentences": 1,
+      "text": "matra reports passive_ratio = 0.4. Whether 0.4 is too passive for the document at hand is your call, and the answer differs between a statute, a lab report, and a landing page.",
+      "words": 32
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6667,
       "readability_grade": null,
       "sentences": 1,
@@ -46,7 +46,7 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4333,
       "readability_grade": 4.8133,
       "sentences": 2,
@@ -55,7 +55,7 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6667,
       "readability_grade": null,
       "sentences": 1,
@@ -63,53 +63,53 @@
       "words": 6
     },
     {
-      "compression_ratio": 0.578,
-      "in_blockquote": false,
-      "lexical_density": 0.494,
-      "readability_grade": 11.9759,
+      "compression_ratio": 0.5677,
+      "kind": "paragraph",
+      "lexical_density": 0.5294,
+      "readability_grade": 12.8129,
       "sentences": 3,
-      "text": "Two properties make it usable that far downstream. Every value is serde-serializable, so the parse crosses into Python as a plain dict and can be stored as JSON. And every value has a place in the tree: a token id is scoped to its sentence, a sentence belongs to the paragraph whose text was parsed to produce it, and a paragraph's text is the input as the decomposer cut it, so a value can be traced back to the paragraph it came from.",
-      "words": 85
+      "text": "Two properties make it usable that far downstream. Every value is serde-serializable, so the parse crosses into Python as a plain dict and can be stored as JSON. And every value has a place in the tree: a token id is scoped to its sentence, a sentence belongs to the paragraph whose text was parsed to produce it, and every heading, paragraph, sentence and token carries a span into the analysed text, so a value can be traced back to the bytes it came from.",
+      "words": 86
     },
     {
-      "compression_ratio": 0.5522,
-      "in_blockquote": false,
+      "compression_ratio": 0.5618,
+      "kind": "paragraph",
       "lexical_density": 0.5816,
-      "readability_grade": 10.3301,
-      "sentences": 4,
-      "text": "**Nothing has to be set up first.** `Engine::with_defaults()` in Rust, `Matra.english()` in Python, and any `matra` command resolve where models live and fetch what is missing. The directory comes from an explicit argument if you pass one, else `MATRA_MODEL_DIR`, else the `models` subdirectory of the data root (`MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`), with a non-empty `~/.matra/models` from an older install used when the new location does not exist yet. The config file does not move the model directory, and it does not choose the parsing model, which is pinned in the source. [Programming model](programming-model.md#configuration) has the resolution order.",
-      "words": 106
+      "readability_grade": 9.6569,
+      "sentences": 5,
+      "text": "Nothing has to be set up first. Engine::with_defaults() in Rust, Matra.english() in Python, and any matra command resolve where models live and fetch what is missing. The directory comes from an explicit argument if you pass one, else MATRA_MODEL_DIR, else the models subdirectory of the data root (MATRA_DATA_DIR, else $XDG_DATA_HOME/matra, else ~/.local/share/matra), with a non-empty ~/.matra/models from an older install used when the new location does not exist yet. The config file does not move the model directory, and it does not choose the parsing model, which is pinned in the source. Programming model has the resolution order.",
+      "words": 102
     },
     {
-      "compression_ratio": 0.5283,
-      "in_blockquote": false,
+      "compression_ratio": 0.5273,
+      "kind": "paragraph",
       "lexical_density": 0.5934,
       "readability_grade": 10.9426,
-      "sentences": 5,
-      "text": "**Models are fetched, not bundled, and only against a pinned digest.** The UDPipe English model arrives on the first call to `Udpipe::english`, `Udpipe::from_config` or `Matra.english`; the reference embedding model arrives on the first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config`. Both fetch from URLs written in the source and load nothing whose SHA-256 does not equal a constant written beside them. A download that fails verification is fetched once more, in memory, and a second failed download raises without anything having been written. Exactly one artifact set can arrive this way for each.",
-      "words": 94
+      "sentences": 6,
+      "text": "Models are fetched, not bundled, and only against a pinned digest. The UDPipe English model arrives on the first call to Udpipe::english, Udpipe::from_config or Matra.english; the reference embedding model arrives on the first call to Model2Vec::potion_base_8m or Model2Vec::from_config. Both fetch from URLs written in the source and load nothing whose SHA-256 does not equal a constant written beside them. A download that fails verification is fetched once more, in memory, and a second failed download raises without anything having been written. Exactly one artifact set can arrive this way for each.",
+      "words": 95
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4792,
       "readability_grade": 9.0875,
       "sentences": 3,
-      "text": "**Bringing your own is a first-class path.** `Udpipe::from_path` and `Model2Vec::from_dir` load what you supply and touch no network, whatever the directory holds. For those, the digest is identity rather than proof: it says which artifacts produced a value, not that they are the ones you meant to fetch.",
-      "words": 50
+      "text": "Bringing your own is a first-class path. Udpipe::from_path and Model2Vec::from_dir load what you supply and touch no network, whatever the directory holds. For those, the digest is identity rather than proof: it says which artifacts produced a value, not that they are the ones you meant to fetch.",
+      "words": 49
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5556,
       "readability_grade": 5.8385,
       "sentences": 3,
-      "text": "**Verification and load share one read.** Bytes are hashed in memory and the model is loaded from those same bytes. Nothing re-reads the disk between the two.",
+      "text": "Verification and load share one read. Bytes are hashed in memory and the model is loaded from those same bytes. Nothing re-reads the disk between the two.",
       "words": 27
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5385,
       "readability_grade": 10.3569,
       "sentences": 1,
@@ -118,21 +118,12 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5263,
       "readability_grade": 8.2779,
       "sentences": 2,
       "text": "The primitive fields from the table above, as matra fills them for five short sentences written to carry one each. Every mark is a construction in the tree; whether it matters for a text stays with the reader.",
       "words": 38
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<figure-primitives input=\"primitives\" />",
-      "words": 5
     }
   ]
 }

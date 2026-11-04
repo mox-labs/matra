@@ -186,9 +186,11 @@ export async function render(markdown: string, ctx: RenderContext): Promise<Rend
  * Only top-level paragraphs are prose in the sense matra's Markdown reader
  * uses: list items, table rows, code and quotes are not. Each is matched to
  * the next measured paragraph with the same text, compared as letters and
- * digits only, so Markdown syntax on one side and rendering on the other do
- * not matter. Measured paragraphs with no rendered twin (a list, an HTML
- * block, a figure tag) are passed over. If any rendered paragraph finds no
+ * digits only. matra's reader has already removed the Markdown syntax from
+ * the text it measured, keeping link text, code span contents and an image's
+ * alt text, so the rendered side is read the same way: its text, with each
+ * image's alt in its place. Measured paragraphs with no rendered twin (a list
+ * item, a quote, a figure tag) are passed over. If any rendered paragraph finds no
  * match, the order cannot be trusted, and the page shows no notes at all:
  * no number is better than a number beside the wrong paragraph.
  */
@@ -197,33 +199,21 @@ function measureMargins(tree: Root, ctx: RenderContext): MeasuredLine | null {
 	if (!m) return null;
 	const dataUrl = `${ctx.base}/figures/pages/${ctx.file.replace(/\.md$/, '')}/measures.json`;
 	const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
-	// Links keep their text (which may be a code span); then code spans are
-	// text as written (`Box<dyn NlpProvider>` is not a tag), and outside them
-	// tags and entities go.
-	const fromMarkdown = (s: string) =>
-		norm(
-			s
-				.replace(/!?\[((?:[^\]`]|`[^`]*`)*)\]\([^)]*\)/g, '$1')
-				.split(/(`+)([\s\S]*?)\1/)
-				.map((part, i) =>
-					i % 3 === 2
-						? part
-						: i % 3 === 1
-							? ''
-							: part
-									.replace(/<(https?:[^>\s]+)>/g, '$1')
-									.replace(/<[^>]+>/g, ' ')
-									.replace(/&[a-z]+;|&#\d+;/g, ' ')
-				)
-				.join('')
-		);
-	const measuredTexts = m.paragraphs.map((p) => fromMarkdown(p.text));
+	// The rendered paragraph's text as matra's reader reads the same source:
+	// every text node, and an image's alt text where the image is.
+	const textOf = (n: RootContent | ElementContent): string => {
+		if (n.type === 'text') return n.value;
+		if (n.type !== 'element') return '';
+		if (n.tagName === 'img') return String(n.properties?.alt ?? '');
+		return n.children.map(textOf).join('');
+	};
+	const measuredTexts = m.paragraphs.map((p) => norm(p.text));
 
 	const pairs: { index: number; node: Element; at: number }[] = [];
 	let next = 0;
 	for (const [index, node] of tree.children.entries()) {
 		if (node.type !== 'element' || node.tagName !== 'p') continue;
-		const text = norm(toString(node));
+		const text = norm(textOf(node));
 		if (text === '') continue;
 		let found = -1;
 		for (let k = next; k < measuredTexts.length; k++) {

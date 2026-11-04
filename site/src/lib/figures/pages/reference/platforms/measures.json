@@ -10,70 +10,70 @@
   "paragraphs": [
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6552,
-      "readability_grade": 9.4238,
+      "readability_grade": 7.5616,
       "sentences": 2,
-      "text": "What each of matra's install routes needs and installs, and the models matra downloads. [Install matra](../tutorials/installation.md) has the steps; [One core, three install routes](../explanation/install-routes.md) explains the choices behind them.",
-      "words": 33
+      "text": "What each of matra's install routes needs and installs, and the models matra downloads. Install matra has the steps; One core, three install routes explains the choices behind them.",
+      "words": 30
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4643,
       "readability_grade": 13.4514,
       "sentences": 1,
-      "text": "The Python package installs the library and the `matra` command, which is the Rust CLI reached through the extension module, and has no runtime dependencies of its own.",
+      "text": "The Python package installs the library and the matra command, which is the Rust CLI reached through the extension module, and has no runtime dependencies of its own.",
       "words": 28
     },
     {
-      "compression_ratio": 0.5678,
-      "in_blockquote": false,
+      "compression_ratio": 0.569,
+      "kind": "paragraph",
       "lexical_density": 0.6429,
       "readability_grade": 4.6614,
-      "sentences": 3,
-      "text": "The wheels are built against the CPython stable ABI and tagged `abi3`, so one wheel per platform serves 3.12 and every later 3.x on GIL-enabled CPython. A free-threaded interpreter (`python3.14t`, for one) accepts a different tag, `abi3t`, so it gets no wheel on any platform and builds the sdist; pyo3 gains the free-threaded stable ABI at 3.15. Wherever no wheel fits, `pip` builds the sdist, which needs the toolchains above.",
+      "sentences": 4,
+      "text": "The wheels are built against the CPython stable ABI and tagged abi3, so one wheel per platform serves 3.12 and every later 3.x on GIL-enabled CPython. A free-threaded interpreter (python3.14t, for one) accepts a different tag, abi3t, so it gets no wheel on any platform and builds the sdist; pyo3 gains the free-threaded stable ABI at 3.15. Wherever no wheel fits, pip builds the sdist, which needs the toolchains above.",
       "words": 75
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5882,
-      "readability_grade": 19.7478,
-      "sentences": 2,
-      "text": "Every release file from 0.2.1 on carries a build provenance attestation; [Verifying a release](https://github.com/mox-labs/matra/blob/main/SECURITY.md#verifying-a-release) has the commands.",
-      "words": 19
+      "readability_grade": 6.7494,
+      "sentences": 1,
+      "text": "Every release file from 0.2.1 on carries a build provenance attestation; Verifying a release has the commands.",
+      "words": 17
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5263,
       "readability_grade": 6.9372,
       "sentences": 2,
-      "text": "An install line with no version takes the newest release on the registry. 0.1.0 is still published, and its `matra` command is a separate Python implementation with its own `--json` shape and a model directory fixed at `~/.matra/models`.",
-      "words": 40
+      "text": "An install line with no version takes the newest release on the registry. 0.1.0 is still published, and its matra command is a separate Python implementation with its own --json shape and a model directory fixed at ~/.matra/models.",
+      "words": 39
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5385,
       "readability_grade": 7.6338,
       "sentences": 1,
-      "text": "`matra --version` prints the version, then the features the build was compiled with:",
+      "text": "matra --version prints the version, then the features the build was compiled with:",
       "words": 13
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6538,
       "readability_grade": 8.6669,
       "sentences": 3,
-      "text": "That is the CLI binary from `cargo install`. The Python package prints `features: udpipe model2vec python cli`. Every analysis command behaves the same in both builds.",
-      "words": 27
+      "text": "That is the CLI binary from cargo install. The Python package prints features: udpipe model2vec python cli. Every analysis command behaves the same in both builds.",
+      "words": 26
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6111,
       "readability_grade": 9.13,
       "sentences": 1,
@@ -81,44 +81,71 @@
       "words": 18
     },
     {
-      "compression_ratio": 0.5751,
-      "in_blockquote": false,
-      "lexical_density": 0.5733,
-      "readability_grade": 9.316,
-      "sentences": 6,
-      "text": "1. A directory passed explicitly: `--model-dir` on the command line, or the directory argument of `Udpipe::english`, `Matra.english` and the other constructors that take one.\n2. `MATRA_MODEL_DIR`.\n3. The `models` directory of the data root, which is `MATRA_DATA_DIR`, else `$XDG_DATA_HOME/matra`, else `~/.local/share/matra`.\n4. A pre-existing, non-empty `~/.matra/models` from an older install, when the location in 3 does not exist yet. matra never creates `~/.matra`; a selected legacy cache is used as the model directory, downloads included.",
-      "words": 84
-    },
-    {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.625,
-      "readability_grade": 5.925,
-      "sentences": 1,
-      "text": "[Where matra keeps things](../guides/cli.md#where-matra-keeps-things) has the config file and data root beside it, and `matra config show` prints which rung each value came from.",
+      "kind": "list_item",
+      "lexical_density": 0.5652,
+      "readability_grade": 12.495,
+      "sentences": 2,
+      "text": "A directory passed explicitly: --model-dir on the command line, or the directory argument of Udpipe::english, Matra.english and the other constructors that take one.",
       "words": 25
     },
     {
-      "compression_ratio": 0.5101,
-      "in_blockquote": false,
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 1.0,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "MATRA_MODEL_DIR.",
+      "words": 1
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6429,
+      "readability_grade": 14.9543,
+      "sentences": 1,
+      "text": "The models directory of the data root, which is MATRA_DATA_DIR, else $XDG_DATA_HOME/matra, else ~/.local/share/matra.",
+      "words": 16
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.6061,
+      "readability_grade": 9.082,
+      "sentences": 2,
+      "text": "A pre-existing, non-empty ~/.matra/models from an older install, when the location in 3 does not exist yet. matra never creates ~/.matra; a selected legacy cache is used as the model directory, downloads included.",
+      "words": 35
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.625,
+      "readability_grade": 8.52,
+      "sentences": 1,
+      "text": "Where matra keeps things has the config file and data root beside it, and matra config show prints which rung each value came from.",
+      "words": 24
+    },
+    {
+      "compression_ratio": 0.4973,
+      "kind": "paragraph",
       "lexical_density": 0.5376,
-      "readability_grade": 12.4726,
+      "readability_grade": 13.1442,
       "sentences": 4,
-      "text": "The download is held in memory, checked against the pinned hash, and written only if it matches, so nothing unverified reaches the model directory and an interrupted transfer leaves nothing behind. A mismatch downloads once more; a second mismatch is an error, and nothing is loaded. A cached parsing model that fails the check is replaced only when new bytes verify, so a re-download that cannot reach the network leaves the file that was there. The embedding model is never written over files already in its directory; [Provisioning](semantic-clusters.md#provisioning) has what it does instead.",
-      "words": 96
+      "text": "The download is held in memory, checked against the pinned hash, and written only if it matches, so nothing unverified reaches the model directory and an interrupted transfer leaves nothing behind. A mismatch downloads once more; a second mismatch is an error, and nothing is loaded. A cached parsing model that fails the check is replaced only when new bytes verify, so a re-download that cannot reach the network leaves the file that was there. The embedding model is never written over files already in its directory; Provisioning has what it does instead.",
+      "words": 94
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5714,
-      "readability_grade": 8.4526,
+      "readability_grade": 7.289,
       "sentences": 3,
-      "text": "The library prints nothing while it downloads. The command line prints two lines on stderr before the parsing model's download, naming the artifact, its size, where it is going and the model's license; `--quiet` silences them. [Errors](errors.md#provisioning-failures) has what each failure returns.",
-      "words": 48
+      "text": "The library prints nothing while it downloads. The command line prints two lines on stderr before the parsing model's download, naming the artifact, its size, where it is going and the model's license; --quiet silences them. Errors has what each failure returns.",
+      "words": 45
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5,
       "readability_grade": 7.19,
       "sentences": 2,
@@ -126,22 +153,22 @@
       "words": 21
     },
     {
-      "compression_ratio": 0.6342,
-      "in_blockquote": false,
+      "compression_ratio": 0.6068,
+      "kind": "paragraph",
       "lexical_density": 0.5625,
-      "readability_grade": 8.9175,
-      "sentences": 4,
-      "text": "The parsing model's license does not permit commercial use. The [UDPipe models page](https://ufal.mff.cuni.cz/udpipe/1/models) states that the UDPipe 1 models it publishes for Universal Dependencies are distributed under CC BY-NC-SA. This page reports what the licenses say and does not interpret them; read the license text for the terms.",
-      "words": 52
+      "readability_grade": 9.5792,
+      "sentences": 3,
+      "text": "The parsing model's license does not permit commercial use. The UDPipe models page states that the UDPipe 1 models it publishes for Universal Dependencies are distributed under CC BY-NC-SA. This page reports what the licenses say and does not interpret them; read the license text for the terms.",
+      "words": 51
     },
     {
-      "compression_ratio": 0.5739,
-      "in_blockquote": false,
+      "compression_ratio": 0.5682,
+      "kind": "paragraph",
       "lexical_density": 0.5574,
-      "readability_grade": 11.1399,
+      "readability_grade": 9.0926,
       "sentences": 3,
-      "text": "The command line and the config file always use this parsing model: `--model-dir`, `MATRA_MODEL_DIR` and the other settings change where it is stored, not which model it is. `models.udpipe`, which earlier releases wrote into the config file, is deprecated and selects nothing. A different UDPipe model file loads by path from the library, through `Udpipe::from_path` in [Rust](../guides/rust.md#construct-a-provider) or `Matra.from_path` in [Python](../guides/python.md#load-the-model-from-a-directory-you-choose).",
-      "words": 67
+      "text": "The command line and the config file always use this parsing model: --model-dir, MATRA_MODEL_DIR and the other settings change where it is stored, not which model it is. models.udpipe, which earlier releases wrote into the config file, is deprecated and selects nothing. A different UDPipe model file loads by path from the library, through Udpipe::from_path in Rust or Matra.from_path in Python.",
+      "words": 64
     }
   ]
 }

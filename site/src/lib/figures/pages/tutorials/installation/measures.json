@@ -9,89 +9,62 @@
   "page": "tutorials/installation.md",
   "paragraphs": [
     {
-      "compression_ratio": 0.5906,
-      "in_blockquote": false,
+      "compression_ratio": 0.5976,
+      "kind": "paragraph",
       "lexical_density": 0.541,
-      "readability_grade": 5.4304,
-      "sentences": 4,
-      "text": "Install matra as a Rust library, a command-line binary or a Python package, then check that it works. Each route is one command; take the one for the language you call matra from, or more than one. [Platforms and models](../reference/platforms.md) lists what each route needs and installs, and [One core, three install routes](../explanation/install-routes.md) explains why the commands look as they do.",
-      "words": 64
+      "readability_grade": 8.0089,
+      "sentences": 3,
+      "text": "Install matra as a Rust library, a command-line binary or a Python package, then check that it works. Each route is one command; take the one for the language you call matra from, or more than one. Platforms and models lists what each route needs and installs, and One core, three install routes explains why the commands look as they do.",
+      "words": 62
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5294,
-      "readability_grade": 20.6318,
+      "readability_grade": 11.1694,
       "sentences": 1,
-      "text": "To check a release file before you install it, follow [Verifying a release](https://github.com/mox-labs/matra/blob/main/SECURITY.md#verifying-a-release) in the security policy.",
-      "words": 19
+      "text": "To check a release file before you install it, follow Verifying a release in the security policy.",
+      "words": 17
     },
     {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": null,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "---",
-      "words": 0
-    },
-    {
-      "compression_ratio": 0.6075,
-      "in_blockquote": false,
+      "compression_ratio": 0.6055,
+      "kind": "paragraph",
       "lexical_density": 0.5273,
       "readability_grade": 7.0073,
       "sentences": 2,
-      "text": "For the Rust library and the CLI, and for the Python package on a platform with no wheel, install Rust 1.88 or later (check with `rustc --version`) and a C++ compiler. A C compiler on its own is not enough: without C++ the build stops with `error occurred in cc-rs: failed to find tool \"c++\"`.",
-      "words": 60
+      "text": "For the Rust library and the CLI, and for the Python package on a platform with no wheel, install Rust 1.88 or later (check with rustc --version) and a C++ compiler. A C compiler on its own is not enough: without C++ the build stops with error occurred in cc-rs: failed to find tool \"c++\".",
+      "words": 59
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5682,
-      "readability_grade": 6.3109,
+      "readability_grade": 6.7573,
       "sentences": 2,
-      "text": "For the Python package, use Python 3.12 or later (check with `python --version`). [Python wheels](../reference/platforms.md#python-wheels) lists the platforms with a prebuilt wheel; on any other, and on a free-threaded interpreter, `pip` builds from source and needs the Rust toolchain and the C++ compiler above.",
-      "words": 47
+      "text": "For the Python package, use Python 3.12 or later (check with python --version). Python wheels lists the platforms with a prebuilt wheel; on any other, and on a free-threaded interpreter, pip builds from source and needs the Rust toolchain and the C++ compiler above.",
+      "words": 46
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": null,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "---",
-      "words": 0
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.6923,
       "readability_grade": 13.9877,
       "sentences": 1,
-      "text": "The default features include `udpipe`, so `matra::nlp::udpipe::Udpipe` is available without a feature flag.",
+      "text": "The default features include udpipe, so matra::nlp::udpipe::Udpipe is available without a feature flag.",
       "words": 16
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": null,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "---",
-      "words": 0
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5152,
       "readability_grade": 9.7965,
       "sentences": 3,
-      "text": "`--features cli` is required: the binary is gated behind it. This compiles from source and places the binary in your cargo bin directory, which can take a minute or more. Confirm it landed:",
+      "text": "--features cli is required: the binary is gated behind it. This compiles from source and places the binary in your cargo bin directory, which can take a minute or more. Confirm it landed:",
       "words": 33
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 1.0,
       "readability_grade": null,
       "sentences": 1,
@@ -100,7 +73,7 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5263,
       "readability_grade": 11.0726,
       "sentences": 1,
@@ -108,26 +81,17 @@
       "words": 20
     },
     {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": null,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "---",
-      "words": 0
-    },
-    {
-      "compression_ratio": 0.5814,
-      "in_blockquote": false,
+      "compression_ratio": 0.5844,
+      "kind": "paragraph",
       "lexical_density": 0.5091,
-      "readability_grade": 8.9288,
-      "sentences": 3,
-      "text": "This installs the library and the `matra` command together; the command is the same program as the CLI binary above, so `uvx 'matra>=0.2' analyze essay.md` and the installed binary do the same thing. Keep the version floor in the line: [why the install lines name a version](../explanation/install-routes.md#why-every-install-line-names-a-version) says what an unpinned one can give you.",
-      "words": 57
+      "readability_grade": 7.1507,
+      "sentences": 2,
+      "text": "This installs the library and the matra command together; the command is the same program as the CLI binary above, so uvx 'matra>=0.2' analyze essay.md and the installed binary do the same thing. Keep the version floor in the line: why the install lines name a version says what an unpinned one can give you.",
+      "words": 56
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5,
       "readability_grade": 5.8843,
       "sentences": 2,
@@ -136,79 +100,52 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5238,
       "readability_grade": 10.581,
       "sentences": 1,
-      "text": "The verify step below doubles as the check: if `from matra import Matra` fails there, the package did not install correctly.",
+      "text": "The verify step below doubles as the check: if from matra import Matra fails there, the package did not install correctly.",
       "words": 21
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": null,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "---",
-      "words": 0
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.561,
       "readability_grade": 9.0229,
       "sentences": 2,
-      "text": "There is nothing to install. The library, the CLI and the Python package each download the English UDPipe model (about 16 MB) on first use, verify it against a pinned hash, and cache it in the model directory, by default `~/.local/share/matra/models`.",
+      "text": "There is nothing to install. The library, the CLI and the Python package each download the English UDPipe model (about 16 MB) on first use, verify it against a pinned hash, and cache it in the model directory, by default ~/.local/share/matra/models.",
       "words": 41
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5909,
-      "readability_grade": 12.5985,
+      "readability_grade": 9.9755,
       "sentences": 2,
-      "text": "To keep it somewhere else, set `MATRA_MODEL_DIR`, pass `--model-dir` to the CLI, or pass the directory to `Udpipe::english` in Rust or `Matra.english` in Python. [The model directory](../reference/platforms.md#the-model-directory) gives the full resolution order, and [the model download](../reference/platforms.md#the-model-download) what happens when a download fails its check.",
-      "words": 50
+      "text": "To keep it somewhere else, set MATRA_MODEL_DIR, pass --model-dir to the CLI, or pass the directory to Udpipe::english in Rust or Matra.english in Python. The model directory gives the full resolution order, and the model download what happens when a download fails its check.",
+      "words": 46
     },
     {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": null,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "---",
-      "words": 0
-    },
-    {
-      "compression_ratio": 0.5835,
-      "in_blockquote": false,
+      "compression_ratio": 0.5817,
+      "kind": "paragraph",
       "lexical_density": 0.5526,
-      "readability_grade": 9.3072,
+      "readability_grade": 8.3485,
       "sentences": 4,
-      "text": "matra's code is MIT, and the two models it downloads are separate works with licenses of their own. The English parsing model comes from [LINDAT](https://hdl.handle.net/11234/1-3131) under CC BY-NC-SA 4.0, which does not permit commercial use; read it before you use matra commercially. The embedding model, potion-base-8M, comes from [Hugging Face](https://huggingface.co/minishlab/potion-base-8M) under MIT per its model card, and is used for semantic clusters only. [Model licenses](../reference/platforms.md#model-licenses) has both in a table, with links to the license texts.",
-      "words": 86
+      "text": "matra's code is MIT, and the two models it downloads are separate works with licenses of their own. The English parsing model comes from LINDAT under CC BY-NC-SA 4.0, which does not permit commercial use; read it before you use matra commercially. The embedding model, potion-base-8M, comes from Hugging Face under MIT per its model card, and is used for semantic clusters only. Model licenses has both in a table, with links to the license texts.",
+      "words": 82
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5758,
-      "readability_grade": 12.6582,
+      "readability_grade": 6.9364,
       "sentences": 2,
-      "text": "The command line and the config file always use this model. To parse with a different UDPipe model file, load it by path from the library: `Udpipe::from_path` in [Rust](../guides/rust.md#construct-a-provider) or `Matra.from_path` in [Python](../guides/python.md#load-the-model-from-a-directory-you-choose).",
-      "words": 37
+      "text": "The command line and the config file always use this model. To parse with a different UDPipe model file, load it by path from the library: Udpipe::from_path in Rust or Matra.from_path in Python.",
+      "words": 34
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": null,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "---",
-      "words": 0
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5,
       "readability_grade": 14.9588,
       "sentences": 2,
@@ -217,16 +154,16 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5385,
       "readability_grade": 7.7592,
       "sentences": 2,
-      "text": "`Matra.english(\"/some/directory\")` is the same call with the directory named explicitly. Pass a real path: the string goes straight to Rust's `create_dir_all`, which does not expand `~`.",
-      "words": 28
+      "text": "Matra.english(\"/some/directory\") is the same call with the directory named explicitly. Pass a real path: the string goes straight to Rust's create_dir_all, which does not expand ~.",
+      "words": 29
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 1.0,
       "readability_grade": null,
       "sentences": 1,
@@ -235,7 +172,7 @@
     },
     {
       "compression_ratio": 0.5787,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5231,
       "readability_grade": 9.7431,
       "sentences": 3,
@@ -243,40 +180,49 @@
       "words": 65
     },
     {
-      "compression_ratio": 0.5405,
-      "in_blockquote": false,
+      "compression_ratio": 0.5388,
+      "kind": "paragraph",
       "lexical_density": 0.5652,
       "readability_grade": 9.7781,
       "sentences": 3,
-      "text": "If `Matra.english()` raises `OSError`, either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path. Check your network connection first; then run `matra config show` to see which directory matra resolved and check the permissions on it. If it raises `RuntimeError`, bytes did arrive and then failed the pinned hash check; run the snippet again.",
-      "words": 70
+      "text": "If Matra.english() raises OSError, either the download never arrived or the model directory could not be written, and the message says which by naming the URL or the path. Check your network connection first; then run matra config show to see which directory matra resolved and check the permissions on it. If it raises RuntimeError, bytes did arrive and then failed the pinned hash check; run the snippet again.",
+      "words": 69
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": null,
-      "readability_grade": null,
+      "kind": "list_item",
+      "lexical_density": 0.5238,
+      "readability_grade": 4.559,
       "sentences": 1,
-      "text": "---",
-      "words": 0
+      "text": "matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.2.x core.",
+      "words": 22
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.56,
-      "readability_grade": 6.304,
-      "sentences": 2,
-      "text": "- matra installed as a Rust crate, a CLI binary, a Python package, or some combination, all from the same 0.2.x core.\n- The English UDPipe model cached in the resolved model directory, verified against a pinned hash.\n- A confirmed working call from `Matra.english()` through `analyze()` to a result.",
-      "words": 48
+      "kind": "list_item",
+      "lexical_density": 0.7333,
+      "readability_grade": 13.0733,
+      "sentences": 1,
+      "text": "The English UDPipe model cached in the resolved model directory, verified against a pinned hash.",
+      "words": 15
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "list_item",
+      "lexical_density": 0.5455,
+      "readability_grade": 6.9368,
+      "sentences": 1,
+      "text": "A confirmed working call from Matra.english() through analyze() to a result.",
+      "words": 11
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
       "lexical_density": 0.5,
-      "readability_grade": 7.8776,
+      "readability_grade": 9.0117,
       "sentences": 1,
-      "text": "Next: [Your first analysis](first-analysis.md) walks through what that result holds, or go to [Rust](../guides/rust.md), [Python](../guides/python.md) or [CLI](../guides/cli.md) for the surface you are calling from.",
-      "words": 30
+      "text": "Next: Your first analysis walks through what that result holds, or go to Rust, Python or CLI for the surface you are calling from.",
+      "words": 24
     }
   ]
 }

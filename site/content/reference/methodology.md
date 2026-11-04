@@ -35,9 +35,9 @@ One `Token` per token with all ten CoNLL-U columns, grouped into sentences. Two 
 
 The route through the library changes what gets segmented into sentences.
 
-Every pipeline route parses each non-blockquote paragraph separately. Blockquote paragraphs are not parsed, so they contribute nothing to any metric. Calling a provider's `parse` directly parses the whole string in one call with no decomposition, and its segmentation can differ from the pipeline's at paragraph boundaries.
+Every pipeline route parses each paragraph that is not a quote separately. Quotes are not parsed, so they contribute nothing to any metric. Calling a provider's `parse` directly parses the whole string in one call with no decomposition, and its segmentation can differ from the pipeline's at paragraph boundaries.
 
-`Ingest::path` picks the format from the file extension, so the same bytes segment differently under `.md` and under `.txt`; `Ingest::text` takes the format as an argument.
+`Input::file` picks the format from the file's bytes and then its extension, so the same text segments differently under `.md` and under `.txt`; `Input::text` takes the format as an argument.
 
 Paragraph-at-a-time parsing means a sentence can never be attributed to the wrong paragraph. It also means sentence segmentation cannot run across a paragraph boundary. Report which format your numbers were produced under.
 
@@ -71,7 +71,7 @@ grade = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
 
 The syllable estimate for one word: keep only alphabetic characters, lowercase them; if the result is three bytes or shorter, return 1; otherwise count runs of the letters `a`, `e`, `i`, `o`, `u`, `y`, where adjacent vowels count once; subtract 1 if the word ends in `e` and the count is above 1; return at least 1.
 
-**Applied to** paragraphs that are not in a blockquote and whose `word_count` is above 10. Stored in `ParagraphMetrics::readability_grade`, the paragraph's `metrics.readability_grade`. The value is unbounded and can be negative on short, simple text. `metrics::readability::flesch_kincaid_grade(text: &str) -> f64` computes it on any string, and returns 0.0 for a string with no whitespace-separated pieces.
+**Applied to** paragraphs that are not quotes and whose `word_count` is above 10. Stored in `ParagraphMetrics::readability_grade`, the paragraph's `metrics.readability_grade`. The value is unbounded and can be negative on short, simple text. `metrics::readability::flesch_kincaid_grade(text: &str) -> f64` computes it on any string, and returns 0.0 for a string with no whitespace-separated pieces.
 
 **Citation.** Kincaid, J.P., Fishburne, R.P., Rogers, R.L., & Chisholm, B.S. (1975). *Derivation of New Readability Formulas for Navy Enlisted Personnel*. Research Branch Report 8-75, Naval Technical Training Command.
 
@@ -90,7 +90,7 @@ lexical_density = content_words / total_words
 
 A piece made only of punctuation counts in the denominator and never in the numerator.
 
-**Applied to** paragraphs that are not in a blockquote, whose `word_count` is not zero, and whose text yields at least one whitespace-separated piece. Stored in `ParagraphMetrics::lexical_density`. Range 0.0 to 1.0.
+**Applied to** paragraphs that are not quotes, whose `word_count` is not zero, and whose text yields at least one whitespace-separated piece. Stored in `ParagraphMetrics::lexical_density`. Range 0.0 to 1.0.
 
 **Citation.** Ure, J. (1971). Lexical density and register differentiation. In G. Perren & J.L.M. Trim (Eds.), *Applications of Linguistics*. Cambridge University Press.
 
@@ -107,7 +107,7 @@ compression_ratio = compressed_bytes / original_bytes
 | `original_bytes` | UTF-8 byte length of the paragraph text |
 | `compressed_bytes` | Byte length of the brotli-compressed text at quality 6 with a window parameter of 18, which is a 256 KiB window |
 
-**Applied to** paragraphs that are not in a blockquote, whose `word_count` is above 50, and whose text is at most 262,144 bytes. Paragraphs above that byte ceiling are skipped and keep `None`, which bounds worst-case compression time. The slot also stays `None` if the encoder fails to consume the text. Stored in `ParagraphMetrics::compression_ratio`. A lower ratio means the text compressed further, which means more surface repetition.
+**Applied to** paragraphs that are not quotes, whose `word_count` is above 50, and whose text is at most 262,144 bytes. Paragraphs above that byte ceiling are skipped and keep `None`, which bounds worst-case compression time. The slot also stays `None` if the encoder fails to consume the text. Stored in `ParagraphMetrics::compression_ratio`. A lower ratio means the text compressed further, which means more surface repetition.
 
 **Citation.** Alakuijala, J., & Szabadka, Z. (2016). *Brotli Compressed Data Format*. RFC 7932, Internet Engineering Task Force.
 
@@ -119,7 +119,7 @@ The three paragraph measures, computed for every paragraph of one longer text, T
 
 ## Document metrics
 
-Every field of `DocumentMetrics` is computed over the sentences attached to the document's paragraphs, which excludes blockquote paragraphs. There is exactly one sentence set, and it is derivable from the tree in one way, so the numbers cannot disagree with the structure they describe.
+Every field of `DocumentMetrics` is computed over the sentences attached to the document's paragraphs, which excludes quotes. There is exactly one sentence set, and it is derivable from the tree in one way, so the numbers cannot disagree with the structure they describe.
 
 ### Vocabulary type-token ratio
 

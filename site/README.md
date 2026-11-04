@@ -339,7 +339,7 @@ twin lists the clusters and edges at every
 grid value; gate 9 compares the layer marked `data-current`.
 
 `figure-pipeline` answers "what does each stage add?": one Markdown
-document as `Ingest::text` yields it, after `Engine::annotate`, and after
+document as `Input::text` hands it over, after `Engine::annotate`, and after
 `Engine::compose`, stepped through with a rail. Without scripts all three
 stages render one after another.
 

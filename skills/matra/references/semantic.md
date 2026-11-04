@@ -116,9 +116,9 @@ for cluster in pairs["clusters"]:
 Three pages of matra's own book, run from a checkout: two covering the same ground for different surfaces, and one unrelated. Reproducible, unlike a corpus nobody else has.
 
 ```text
-0.8399  cli.md <-> rust.md
+0.8363  cli.md <-> rust.md
 0.5857  cli.md <-> roadmap.md
-0.6080  rust.md <-> roadmap.md
+0.6036  rust.md <-> roadmap.md
 ```
 
 The pair separates decisively, and the shipped 0.85 does not carry over: the same vectors at `0.85` yield zero clusters, so an agent that took the starting value on faith would have reported the near-duplicates as unrelated. Document vectors are means over far more tokens than sentence vectors, so the whole scale shifts: unrelated documents sit well above zero, and near-duplicates need not reach the sentence band. Report the raw edge scores and the `identity`, and say which granularity produced them.

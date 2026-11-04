@@ -59,11 +59,11 @@ The `NlpProvider` trait requires no change to support a WASM implementation. Any
 
 ## PDF and DOCX decomposers
 
-**What they are.** Adapter implementations of `Decomposer` for `.pdf` and `.docx` source files. The variants already exist in `domain::Format`; `FileSource` already detects `.pdf` and `.docx` extensions correctly. The composition root returns `Error::UnsupportedFormat` for those formats today; there is no decomposer to hand the bytes to.
+**What they are.** Readers (crate-private `Decomposer` implementations) for PDF and DOCX documents. The variants already exist in `domain::Format`, and detection already recognises both, by extension and by their bytes (`%PDF`, or a zip archive holding `[Content_Types].xml`). Analysing one returns `Error::UnsupportedFormat` today, whose `feature` is `None` because no feature adds a reader; there is no reader to hand the bytes to.
 
 **What is blocking them.** The Rust PDF extraction ecosystem. PDF text extraction requires handling layout ordering (columns, reading order), encoding diversity (Type1, CFF, CID fonts), and embedded-font subsetting. No current Rust crate handles all of these consistently and without correctness holes on real-world documents. DOCX extraction is more tractable but has not been required by any caller yet.
 
-**Trigger condition.** A documented caller requirement for PDF or DOCX analysis, paired with a Rust extraction crate that is stable (post-1.0, maintained, no known correctness holes on the document shapes the caller needs). When the adapter lands, no port trait changes; only the composition root grows a branch.
+**Trigger condition.** A documented caller requirement for PDF or DOCX analysis, paired with a Rust extraction crate that is stable (post-1.0, maintained, no known correctness holes on the document shapes the caller needs). When a reader lands, no published signature changes: it is a reader file and a registration line in the composition root, behind a feature that `UnsupportedFormat` then names, emitting the same headings and paragraphs with spans as the markdown reader.
 
 ## Recursive directory walk
 
@@ -75,11 +75,11 @@ The `NlpProvider` trait requires no change to support a WASM implementation. Any
 
 ## Streaming source
 
-**What it is.** A `Source` variant that yields documents one at a time rather than collecting all documents into a `Vec<RawDocument>` before returning. This enables processing document collections that exceed available memory, and supports push-semantics integrations where documents arrive from a queue rather than a filesystem.
+**What it is.** A `Source` variant that yields documents one at a time rather than collecting every document a path names into a `Vec` before returning. This enables processing document collections that exceed available memory, and supports push-semantics integrations where documents arrive from a queue rather than a filesystem.
 
-**What is blocking it.** The current `Source::read` signature returns `Vec<RawDocument>`. A streaming variant requires a different return type: an iterator, a channel, or a `Stream` in the async sense. The async reactor decision (deferred per RFC-0004) is a prerequisite for the most useful form of streaming: async document processing. Without an async reactor, a synchronous iterator-based streaming source is possible but limited in value.
+**What is blocking it.** The current `Source::read` signature returns a `Vec` of the documents read. `Inputs::dir` already lists paths up front and reads each file only when `analyze_all` reaches it, so this is about sources other than a directory. A streaming variant requires a different return type: an iterator, a channel, or a `Stream` in the async sense. The async reactor decision (deferred per RFC-0004) is a prerequisite for the most useful form of streaming: async document processing. Without an async reactor, a synchronous iterator-based streaming source is possible but limited in value.
 
-**Trigger condition.** A caller requiring processing of more documents than can be held in memory simultaneously, or a push-semantics integration (a message queue feeding documents into matra in real time) where the `Vec<RawDocument>` return type is genuinely blocking.
+**Trigger condition.** A caller requiring processing of more documents than can be held in memory simultaneously, or a push-semantics integration (a message queue feeding documents into matra in real time) where the `Vec` return type is genuinely blocking.
 
 ## Separate `matra-nlp-api` port crate
 
@@ -115,7 +115,7 @@ The pattern across all of these: capability waits for the caller that justifies 
 
 **Why these three specifically.** An internal note dated 2026-04-21 records a writing-assistant agent blocked on a calibration loop against a measured baseline: 26.6 word mean sentence length, 36.9 percent passive, 0 percent contractions, 7.7 percent nominalisation, 0.76 burstiness. Checked against what ships, three of those five are already `Document` methods or fields. Burstiness is derivable from `sentence_length_std` and the mean but is not exposed. Contractions are not counted at all. That note estimated the remaining work as a small configuration layer rather than a rewrite.
 
-**One of them is a defect, not an addition.** `vocabulary_ttr` is a raw type-token ratio and TTR falls mechanically as text grows. Measured on this repository: README scores 0.690 against `architecture/design.md` at 0.227, but README has 35 sentences and the other has 266, so most of that gap is length rather than voice. As a cross-document feature it is unsound, which matters most when a directory is analyzed (`Engine::analyze` over `Ingest::path`, or `analyze_path` in Python), because the result invites the comparison. The limitation is documented on the field; what remains is a length-normalized measure beside it (MTLD, MATTR, or standardized TTR).
+**One of them is a defect, not an addition.** `vocabulary_ttr` is a raw type-token ratio and TTR falls mechanically as text grows. Measured on this repository: README scores 0.690 against `architecture/design.md` at 0.227, but README has 35 sentences and the other has 266, so most of that gap is length rather than voice. As a cross-document feature it is unsound, which matters most when a directory is analyzed (`Engine::analyze_all` over `Inputs::dir`, or `analyze_path` in Python), because the result invites the comparison. The limitation is documented on the field; what remains is a length-normalized measure beside it (MTLD, MATTR, or standardized TTR).
 
 **Why this is the strongest candidate of anything on this page.** The four faces of voice all map onto shipping output with no hole: agentive onto `nsubj` and `nsubj:pass`, modal onto `aux` and `feats`, structural onto section hierarchy and sentence length, stylistic onto lexical density and compression. That is unlike claim atomization, which needs an LLM, and unlike deriving a text's situation model, for which no shipping output is a foundation at all.
 
@@ -184,12 +184,3 @@ That last question is the real one. matra's discipline is that the library retur
 **What it is.** An interactive terminal interface over the same `cli` module: browse a parsed document, its sections, sentences, and dependency trees, and the metrics beside them, without leaving the terminal.
 
 **Trigger condition. FIRED, 2026-09-06.** EP-0010 and the agent surface have both met their acceptance gates. The TUI is a renderer over a contract that has to be stable first; building it before that means re-doing it.
-
-
-## Record traceability accessor
-
-**What it is.** A single accessor returning the source path, the detected format, and a record of how the document was analyzed, as one value rather than as fields scattered across `CorpusEntry.path` and `RawDocument.format`.
-
-**Why it is worth doing.** The information is already present and already reconstructable; it is the assembly that is missing. Callers building a grounding chain need it as one thing. Neither `Sentence.text` nor `Paragraph.text` is verbatim. The UDPipe adapter rebuilds sentence text from the token forms, joined by a space unless a token carries `SpaceAfter=No`. Both decomposers trim each paragraph, and the markdown one also rejoins a paragraph's lines with `\n`, so `\r\n` arrives as `\n`, and strips a blockquote's `>` markers. A chain from token to source therefore needs offsets into the input, which matra does not report today; finding these strings in the source is not a substitute.
-
-**Trigger condition.** A caller that stores matra output and must later prove which bytes a value came from. Raised by the bidirectional research report as ask 4.

@@ -9,8 +9,8 @@
     "paragraphs": [
       {
         "compression_ratio": null,
-        "in_blockquote": false,
         "index": 1,
+        "kind": "paragraph",
         "lexical_density": 0.4783,
         "opening": "It is a truth universally acknowledged, that a",
         "readability_grade": 10.3104,
@@ -18,8 +18,8 @@
       },
       {
         "compression_ratio": null,
-        "in_blockquote": false,
         "index": 2,
+        "kind": "paragraph",
         "lexical_density": 0.4167,
         "opening": "However little known the feelings or views of",
         "readability_grade": 19.8467,
@@ -27,8 +27,8 @@
       },
       {
         "compression_ratio": null,
-        "in_blockquote": false,
         "index": 3,
+        "kind": "paragraph",
         "lexical_density": 0.5714,
         "opening": "“My dear Mr. Bennet,” said his lady to",
         "readability_grade": 2.5526,
@@ -36,8 +36,8 @@
       },
       {
         "compression_ratio": null,
-        "in_blockquote": false,
         "index": 4,
+        "kind": "paragraph",
         "lexical_density": 0.4286,
         "opening": "Mr. Bennet replied that he had not.",
         "readability_grade": null,

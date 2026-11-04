@@ -102,7 +102,7 @@ If a third-party `matra-stanza`, `matra-spacy`, etc. emerges, extract `matra-nlp
 
 ### Pattern 10 — orthogonal-dispatch axes
 
-Matra uses **one** runtime dispatch axis: `&dyn NlpProvider`. The Source and Decomposer choices are made statically at the composition root (format enum → MarkdownDecomposer vs PlainTextDecomposer; path vs directory → FileSource vs DirectorySource).
+Matra uses **one** runtime dispatch axis: `&dyn NlpProvider`. The Source and Decomposer choices are made statically at the composition root (detected format → the markdown, plain-text or block-input reader; `Input::file` vs `Inputs::dir` → FileSource vs DirectorySource).
 
 This is appropriate at matra's scale. The corpus shows N=4 axes only at search-engine scale (tantivy). Resist the temptation to runtime-dispatch the other ports until there's a concrete need.
 

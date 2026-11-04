@@ -19,16 +19,29 @@
     {
       "heading": null,
       "level": 0,
+      "span": null,
       "paragraphs": [
         {
+          "span": {
+            "start": 0,
+            "end": 327
+          },
           "text": "We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.",
-          "in_blockquote": false,
+          "kind": "paragraph",
           "sentences": [
             {
+              "span": {
+                "start": 0,
+                "end": 327
+              },
               "text": "We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 0,
+                    "end": 2
+                  },
                   "text": "We",
                   "lemma": "we",
                   "pos": "PRON",
@@ -47,6 +60,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 3,
+                    "end": 6
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -63,6 +80,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 7,
+                    "end": 13
+                  },
                   "text": "People",
                   "lemma": "People",
                   "pos": "NOUN",
@@ -78,6 +99,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 14,
+                    "end": 16
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -91,6 +116,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 17,
+                    "end": 20
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -107,6 +136,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 21,
+                    "end": 27
+                  },
                   "text": "United",
                   "lemma": "United",
                   "pos": "PROPN",
@@ -122,6 +155,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 28,
+                    "end": 34
+                  },
                   "text": "States",
                   "lemma": "States",
                   "pos": "PROPN",
@@ -137,6 +174,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 34,
+                    "end": 35
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -150,6 +191,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 36,
+                    "end": 38
+                  },
                   "text": "in",
                   "lemma": "in",
                   "pos": "ADP",
@@ -163,6 +208,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 39,
+                    "end": 44
+                  },
                   "text": "Order",
                   "lemma": "order",
                   "pos": "NOUN",
@@ -178,6 +227,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 45,
+                    "end": 47
+                  },
                   "text": "to",
                   "lemma": "to",
                   "pos": "PART",
@@ -191,6 +244,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 48,
+                    "end": 52
+                  },
                   "text": "form",
                   "lemma": "form",
                   "pos": "VERB",
@@ -206,6 +263,10 @@
                 },
                 {
                   "id": 13,
+                  "span": {
+                    "start": 53,
+                    "end": 54
+                  },
                   "text": "a",
                   "lemma": "a",
                   "pos": "DET",
@@ -222,6 +283,10 @@
                 },
                 {
                   "id": 14,
+                  "span": {
+                    "start": 55,
+                    "end": 59
+                  },
                   "text": "more",
                   "lemma": "more",
                   "pos": "ADV",
@@ -235,6 +300,10 @@
                 },
                 {
                   "id": 15,
+                  "span": {
+                    "start": 60,
+                    "end": 67
+                  },
                   "text": "perfect",
                   "lemma": "perfect",
                   "pos": "ADJ",
@@ -250,6 +319,10 @@
                 },
                 {
                   "id": 16,
+                  "span": {
+                    "start": 68,
+                    "end": 73
+                  },
                   "text": "Union",
                   "lemma": "Union",
                   "pos": "NOUN",
@@ -265,6 +338,10 @@
                 },
                 {
                   "id": 17,
+                  "span": {
+                    "start": 73,
+                    "end": 74
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -278,6 +355,10 @@
                 },
                 {
                   "id": 18,
+                  "span": {
+                    "start": 75,
+                    "end": 84
+                  },
                   "text": "establish",
                   "lemma": "establish",
                   "pos": "VERB",
@@ -293,6 +374,10 @@
                 },
                 {
                   "id": 19,
+                  "span": {
+                    "start": 85,
+                    "end": 92
+                  },
                   "text": "Justice",
                   "lemma": "justice",
                   "pos": "PROPN",
@@ -308,6 +393,10 @@
                 },
                 {
                   "id": 20,
+                  "span": {
+                    "start": 92,
+                    "end": 93
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -321,6 +410,10 @@
                 },
                 {
                   "id": 21,
+                  "span": {
+                    "start": 94,
+                    "end": 100
+                  },
                   "text": "insure",
                   "lemma": "insure",
                   "pos": "ADJ",
@@ -336,6 +429,10 @@
                 },
                 {
                   "id": 22,
+                  "span": {
+                    "start": 101,
+                    "end": 109
+                  },
                   "text": "domestic",
                   "lemma": "domestic",
                   "pos": "ADJ",
@@ -351,6 +448,10 @@
                 },
                 {
                   "id": 23,
+                  "span": {
+                    "start": 110,
+                    "end": 121
+                  },
                   "text": "Tranquility",
                   "lemma": "Tranquility",
                   "pos": "NOUN",
@@ -366,6 +467,10 @@
                 },
                 {
                   "id": 24,
+                  "span": {
+                    "start": 121,
+                    "end": 122
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -379,6 +484,10 @@
                 },
                 {
                   "id": 25,
+                  "span": {
+                    "start": 123,
+                    "end": 130
+                  },
                   "text": "provide",
                   "lemma": "provide",
                   "pos": "VERB",
@@ -394,6 +503,10 @@
                 },
                 {
                   "id": 26,
+                  "span": {
+                    "start": 131,
+                    "end": 134
+                  },
                   "text": "for",
                   "lemma": "for",
                   "pos": "ADP",
@@ -407,6 +520,10 @@
                 },
                 {
                   "id": 27,
+                  "span": {
+                    "start": 135,
+                    "end": 138
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -423,6 +540,10 @@
                 },
                 {
                   "id": 28,
+                  "span": {
+                    "start": 139,
+                    "end": 145
+                  },
                   "text": "common",
                   "lemma": "common",
                   "pos": "ADJ",
@@ -438,6 +559,10 @@
                 },
                 {
                   "id": 29,
+                  "span": {
+                    "start": 146,
+                    "end": 153
+                  },
                   "text": "defence",
                   "lemma": "defence",
                   "pos": "NOUN",
@@ -453,6 +578,10 @@
                 },
                 {
                   "id": 30,
+                  "span": {
+                    "start": 153,
+                    "end": 154
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -466,6 +595,10 @@
                 },
                 {
                   "id": 31,
+                  "span": {
+                    "start": 155,
+                    "end": 162
+                  },
                   "text": "promote",
                   "lemma": "promote",
                   "pos": "VERB",
@@ -481,6 +614,10 @@
                 },
                 {
                   "id": 32,
+                  "span": {
+                    "start": 163,
+                    "end": 166
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -497,6 +634,10 @@
                 },
                 {
                   "id": 33,
+                  "span": {
+                    "start": 167,
+                    "end": 174
+                  },
                   "text": "general",
                   "lemma": "general",
                   "pos": "ADJ",
@@ -512,6 +653,10 @@
                 },
                 {
                   "id": 34,
+                  "span": {
+                    "start": 175,
+                    "end": 182
+                  },
                   "text": "Welfare",
                   "lemma": "welfare",
                   "pos": "NOUN",
@@ -527,6 +672,10 @@
                 },
                 {
                   "id": 35,
+                  "span": {
+                    "start": 182,
+                    "end": 183
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -540,6 +689,10 @@
                 },
                 {
                   "id": 36,
+                  "span": {
+                    "start": 184,
+                    "end": 187
+                  },
                   "text": "and",
                   "lemma": "and",
                   "pos": "CCONJ",
@@ -553,6 +706,10 @@
                 },
                 {
                   "id": 37,
+                  "span": {
+                    "start": 188,
+                    "end": 194
+                  },
                   "text": "secure",
                   "lemma": "secure",
                   "pos": "VERB",
@@ -568,6 +725,10 @@
                 },
                 {
                   "id": 38,
+                  "span": {
+                    "start": 195,
+                    "end": 198
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -584,6 +745,10 @@
                 },
                 {
                   "id": 39,
+                  "span": {
+                    "start": 199,
+                    "end": 208
+                  },
                   "text": "Blessings",
                   "lemma": "blessing",
                   "pos": "NOUN",
@@ -599,6 +764,10 @@
                 },
                 {
                   "id": 40,
+                  "span": {
+                    "start": 209,
+                    "end": 211
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -612,6 +781,10 @@
                 },
                 {
                   "id": 41,
+                  "span": {
+                    "start": 212,
+                    "end": 219
+                  },
                   "text": "Liberty",
                   "lemma": "Liberty",
                   "pos": "PROPN",
@@ -627,6 +800,10 @@
                 },
                 {
                   "id": 42,
+                  "span": {
+                    "start": 220,
+                    "end": 222
+                  },
                   "text": "to",
                   "lemma": "to",
                   "pos": "ADP",
@@ -640,6 +817,10 @@
                 },
                 {
                   "id": 43,
+                  "span": {
+                    "start": 223,
+                    "end": 232
+                  },
                   "text": "ourselves",
                   "lemma": "ourselves",
                   "pos": "PRON",
@@ -659,6 +840,10 @@
                 },
                 {
                   "id": 44,
+                  "span": {
+                    "start": 233,
+                    "end": 236
+                  },
                   "text": "and",
                   "lemma": "and",
                   "pos": "CCONJ",
@@ -672,6 +857,10 @@
                 },
                 {
                   "id": 45,
+                  "span": {
+                    "start": 237,
+                    "end": 240
+                  },
                   "text": "our",
                   "lemma": "we",
                   "pos": "PRON",
@@ -690,6 +879,10 @@
                 },
                 {
                   "id": 46,
+                  "span": {
+                    "start": 241,
+                    "end": 250
+                  },
                   "text": "Posterity",
                   "lemma": "posterity",
                   "pos": "NOUN",
@@ -705,6 +898,10 @@
                 },
                 {
                   "id": 47,
+                  "span": {
+                    "start": 250,
+                    "end": 251
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -718,6 +915,10 @@
                 },
                 {
                   "id": 48,
+                  "span": {
+                    "start": 252,
+                    "end": 254
+                  },
                   "text": "do",
                   "lemma": "do",
                   "pos": "AUX",
@@ -734,6 +935,10 @@
                 },
                 {
                   "id": 49,
+                  "span": {
+                    "start": 255,
+                    "end": 261
+                  },
                   "text": "ordain",
                   "lemma": "ordain",
                   "pos": "VERB",
@@ -749,6 +954,10 @@
                 },
                 {
                   "id": 50,
+                  "span": {
+                    "start": 262,
+                    "end": 265
+                  },
                   "text": "and",
                   "lemma": "and",
                   "pos": "CCONJ",
@@ -762,6 +971,10 @@
                 },
                 {
                   "id": 51,
+                  "span": {
+                    "start": 266,
+                    "end": 275
+                  },
                   "text": "establish",
                   "lemma": "establish",
                   "pos": "VERB",
@@ -777,6 +990,10 @@
                 },
                 {
                   "id": 52,
+                  "span": {
+                    "start": 276,
+                    "end": 280
+                  },
                   "text": "this",
                   "lemma": "this",
                   "pos": "DET",
@@ -793,6 +1010,10 @@
                 },
                 {
                   "id": 53,
+                  "span": {
+                    "start": 281,
+                    "end": 293
+                  },
                   "text": "Constitution",
                   "lemma": "constitution",
                   "pos": "NOUN",
@@ -808,6 +1029,10 @@
                 },
                 {
                   "id": 54,
+                  "span": {
+                    "start": 294,
+                    "end": 297
+                  },
                   "text": "for",
                   "lemma": "for",
                   "pos": "ADP",
@@ -821,6 +1046,10 @@
                 },
                 {
                   "id": 55,
+                  "span": {
+                    "start": 298,
+                    "end": 301
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -837,6 +1066,10 @@
                 },
                 {
                   "id": 56,
+                  "span": {
+                    "start": 302,
+                    "end": 308
+                  },
                   "text": "United",
                   "lemma": "United",
                   "pos": "PROPN",
@@ -852,6 +1085,10 @@
                 },
                 {
                   "id": 57,
+                  "span": {
+                    "start": 309,
+                    "end": 315
+                  },
                   "text": "States",
                   "lemma": "States",
                   "pos": "PROPN",
@@ -867,6 +1104,10 @@
                 },
                 {
                   "id": 58,
+                  "span": {
+                    "start": 316,
+                    "end": 318
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -880,6 +1121,10 @@
                 },
                 {
                   "id": 59,
+                  "span": {
+                    "start": 319,
+                    "end": 326
+                  },
                   "text": "America",
                   "lemma": "America",
                   "pos": "PROPN",
@@ -895,6 +1140,10 @@
                 },
                 {
                   "id": 60,
+                  "span": {
+                    "start": 326,
+                    "end": 327
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -925,14 +1174,26 @@
           }
         },
         {
+          "span": {
+            "start": 329,
+            "end": 480
+          },
           "text": "All legislative Powers herein granted shall be vested in a Congress of the United States, which shall consist of a Senate and House of Representatives.",
-          "in_blockquote": false,
+          "kind": "paragraph",
           "sentences": [
             {
+              "span": {
+                "start": 329,
+                "end": 480
+              },
               "text": "All legislative Powers herein granted shall be vested in a Congress of the United States, which shall consist of a Senate and House of Representatives.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 329,
+                    "end": 332
+                  },
                   "text": "All",
                   "lemma": "all",
                   "pos": "DET",
@@ -946,6 +1207,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 333,
+                    "end": 344
+                  },
                   "text": "legislative",
                   "lemma": "legislative",
                   "pos": "ADJ",
@@ -961,6 +1226,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 345,
+                    "end": 351
+                  },
                   "text": "Powers",
                   "lemma": "power",
                   "pos": "NOUN",
@@ -976,6 +1245,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 352,
+                    "end": 358
+                  },
                   "text": "herein",
                   "lemma": "herein",
                   "pos": "ADV",
@@ -991,6 +1264,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 359,
+                    "end": 366
+                  },
                   "text": "granted",
                   "lemma": "grant",
                   "pos": "VERB",
@@ -1007,6 +1284,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 367,
+                    "end": 372
+                  },
                   "text": "shall",
                   "lemma": "shall",
                   "pos": "AUX",
@@ -1022,6 +1303,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 373,
+                    "end": 375
+                  },
                   "text": "be",
                   "lemma": "be",
                   "pos": "AUX",
@@ -1037,6 +1322,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 376,
+                    "end": 382
+                  },
                   "text": "vested",
                   "lemma": "vest",
                   "pos": "VERB",
@@ -1054,6 +1343,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 383,
+                    "end": 385
+                  },
                   "text": "in",
                   "lemma": "in",
                   "pos": "ADP",
@@ -1067,6 +1360,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 386,
+                    "end": 387
+                  },
                   "text": "a",
                   "lemma": "a",
                   "pos": "DET",
@@ -1083,6 +1380,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 388,
+                    "end": 396
+                  },
                   "text": "Congress",
                   "lemma": "Congress",
                   "pos": "PROPN",
@@ -1098,6 +1399,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 397,
+                    "end": 399
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -1111,6 +1416,10 @@
                 },
                 {
                   "id": 13,
+                  "span": {
+                    "start": 400,
+                    "end": 403
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1127,6 +1436,10 @@
                 },
                 {
                   "id": 14,
+                  "span": {
+                    "start": 404,
+                    "end": 410
+                  },
                   "text": "United",
                   "lemma": "United",
                   "pos": "PROPN",
@@ -1142,6 +1455,10 @@
                 },
                 {
                   "id": 15,
+                  "span": {
+                    "start": 411,
+                    "end": 417
+                  },
                   "text": "States",
                   "lemma": "States",
                   "pos": "PROPN",
@@ -1157,6 +1474,10 @@
                 },
                 {
                   "id": 16,
+                  "span": {
+                    "start": 417,
+                    "end": 418
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -1170,6 +1491,10 @@
                 },
                 {
                   "id": 17,
+                  "span": {
+                    "start": 419,
+                    "end": 424
+                  },
                   "text": "which",
                   "lemma": "which",
                   "pos": "PRON",
@@ -1185,6 +1510,10 @@
                 },
                 {
                   "id": 18,
+                  "span": {
+                    "start": 425,
+                    "end": 430
+                  },
                   "text": "shall",
                   "lemma": "shall",
                   "pos": "AUX",
@@ -1200,6 +1529,10 @@
                 },
                 {
                   "id": 19,
+                  "span": {
+                    "start": 431,
+                    "end": 438
+                  },
                   "text": "consist",
                   "lemma": "consist",
                   "pos": "VERB",
@@ -1215,6 +1548,10 @@
                 },
                 {
                   "id": 20,
+                  "span": {
+                    "start": 439,
+                    "end": 441
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -1228,6 +1565,10 @@
                 },
                 {
                   "id": 21,
+                  "span": {
+                    "start": 442,
+                    "end": 443
+                  },
                   "text": "a",
                   "lemma": "a",
                   "pos": "DET",
@@ -1244,6 +1585,10 @@
                 },
                 {
                   "id": 22,
+                  "span": {
+                    "start": 444,
+                    "end": 450
+                  },
                   "text": "Senate",
                   "lemma": "Senate",
                   "pos": "PROPN",
@@ -1259,6 +1604,10 @@
                 },
                 {
                   "id": 23,
+                  "span": {
+                    "start": 451,
+                    "end": 454
+                  },
                   "text": "and",
                   "lemma": "and",
                   "pos": "CCONJ",
@@ -1272,6 +1621,10 @@
                 },
                 {
                   "id": 24,
+                  "span": {
+                    "start": 455,
+                    "end": 460
+                  },
                   "text": "House",
                   "lemma": "House",
                   "pos": "PROPN",
@@ -1287,6 +1640,10 @@
                 },
                 {
                   "id": 25,
+                  "span": {
+                    "start": 461,
+                    "end": 463
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -1300,6 +1657,10 @@
                 },
                 {
                   "id": 26,
+                  "span": {
+                    "start": 464,
+                    "end": 479
+                  },
                   "text": "Representatives",
                   "lemma": "Representatives",
                   "pos": "PROPN",
@@ -1315,6 +1676,10 @@
                 },
                 {
                   "id": 27,
+                  "span": {
+                    "start": 479,
+                    "end": 480
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -1356,14 +1721,26 @@
           }
         },
         {
+          "span": {
+            "start": 482,
+            "end": 982
+          },
           "text": "The House of Representatives shall be composed of Members chosen every second Year by the People of the several States, and the Electors in each State shall have the Qualifications requisite for Electors of the most numerous Branch of the State Legislature. No Person shall be a Representative who shall not have attained to the Age of twenty five Years, and been seven Years a Citizen of the United States, and who shall not, when elected, be an Inhabitant of that State in which he shall be chosen.",
-          "in_blockquote": false,
+          "kind": "paragraph",
           "sentences": [
             {
+              "span": {
+                "start": 482,
+                "end": 739
+              },
               "text": "The House of Representatives shall be composed of Members chosen every second Year by the People of the several States, and the Electors in each State shall have the Qualifications requisite for Electors of the most numerous Branch of the State Legislature.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 482,
+                    "end": 485
+                  },
                   "text": "The",
                   "lemma": "the",
                   "pos": "DET",
@@ -1380,6 +1757,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 486,
+                    "end": 491
+                  },
                   "text": "House",
                   "lemma": "House",
                   "pos": "NOUN",
@@ -1395,6 +1776,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 492,
+                    "end": 494
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -1408,6 +1793,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 495,
+                    "end": 510
+                  },
                   "text": "Representatives",
                   "lemma": "Representatives",
                   "pos": "NOUN",
@@ -1423,6 +1812,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 511,
+                    "end": 516
+                  },
                   "text": "shall",
                   "lemma": "shall",
                   "pos": "AUX",
@@ -1438,6 +1831,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 517,
+                    "end": 519
+                  },
                   "text": "be",
                   "lemma": "be",
                   "pos": "AUX",
@@ -1453,6 +1850,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 520,
+                    "end": 528
+                  },
                   "text": "composed",
                   "lemma": "compose",
                   "pos": "VERB",
@@ -1470,6 +1871,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 529,
+                    "end": 531
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -1483,6 +1888,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 532,
+                    "end": 539
+                  },
                   "text": "Members",
                   "lemma": "member",
                   "pos": "PROPN",
@@ -1498,6 +1907,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 540,
+                    "end": 546
+                  },
                   "text": "chosen",
                   "lemma": "choose",
                   "pos": "VERB",
@@ -1515,6 +1928,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 547,
+                    "end": 552
+                  },
                   "text": "every",
                   "lemma": "every",
                   "pos": "DET",
@@ -1528,6 +1945,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 553,
+                    "end": 559
+                  },
                   "text": "second",
                   "lemma": "second",
                   "pos": "ADJ",
@@ -1544,6 +1965,10 @@
                 },
                 {
                   "id": 13,
+                  "span": {
+                    "start": 560,
+                    "end": 564
+                  },
                   "text": "Year",
                   "lemma": "year",
                   "pos": "NOUN",
@@ -1559,6 +1984,10 @@
                 },
                 {
                   "id": 14,
+                  "span": {
+                    "start": 565,
+                    "end": 567
+                  },
                   "text": "by",
                   "lemma": "by",
                   "pos": "ADP",
@@ -1572,6 +2001,10 @@
                 },
                 {
                   "id": 15,
+                  "span": {
+                    "start": 568,
+                    "end": 571
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1588,6 +2021,10 @@
                 },
                 {
                   "id": 16,
+                  "span": {
+                    "start": 572,
+                    "end": 578
+                  },
                   "text": "People",
                   "lemma": "People",
                   "pos": "NOUN",
@@ -1603,6 +2040,10 @@
                 },
                 {
                   "id": 17,
+                  "span": {
+                    "start": 579,
+                    "end": 581
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -1616,6 +2057,10 @@
                 },
                 {
                   "id": 18,
+                  "span": {
+                    "start": 582,
+                    "end": 585
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1632,6 +2077,10 @@
                 },
                 {
                   "id": 19,
+                  "span": {
+                    "start": 586,
+                    "end": 593
+                  },
                   "text": "several",
                   "lemma": "several",
                   "pos": "ADJ",
@@ -1647,6 +2096,10 @@
                 },
                 {
                   "id": 20,
+                  "span": {
+                    "start": 594,
+                    "end": 600
+                  },
                   "text": "States",
                   "lemma": "States",
                   "pos": "PROPN",
@@ -1662,6 +2115,10 @@
                 },
                 {
                   "id": 21,
+                  "span": {
+                    "start": 600,
+                    "end": 601
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -1675,6 +2132,10 @@
                 },
                 {
                   "id": 22,
+                  "span": {
+                    "start": 602,
+                    "end": 605
+                  },
                   "text": "and",
                   "lemma": "and",
                   "pos": "CCONJ",
@@ -1688,6 +2149,10 @@
                 },
                 {
                   "id": 23,
+                  "span": {
+                    "start": 606,
+                    "end": 609
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1704,6 +2169,10 @@
                 },
                 {
                   "id": 24,
+                  "span": {
+                    "start": 610,
+                    "end": 618
+                  },
                   "text": "Electors",
                   "lemma": "Elector",
                   "pos": "NOUN",
@@ -1719,6 +2188,10 @@
                 },
                 {
                   "id": 25,
+                  "span": {
+                    "start": 619,
+                    "end": 621
+                  },
                   "text": "in",
                   "lemma": "in",
                   "pos": "ADP",
@@ -1732,6 +2205,10 @@
                 },
                 {
                   "id": 26,
+                  "span": {
+                    "start": 622,
+                    "end": 626
+                  },
                   "text": "each",
                   "lemma": "each",
                   "pos": "DET",
@@ -1745,6 +2222,10 @@
                 },
                 {
                   "id": 27,
+                  "span": {
+                    "start": 627,
+                    "end": 632
+                  },
                   "text": "State",
                   "lemma": "State",
                   "pos": "NOUN",
@@ -1760,6 +2241,10 @@
                 },
                 {
                   "id": 28,
+                  "span": {
+                    "start": 633,
+                    "end": 638
+                  },
                   "text": "shall",
                   "lemma": "shall",
                   "pos": "AUX",
@@ -1775,6 +2260,10 @@
                 },
                 {
                   "id": 29,
+                  "span": {
+                    "start": 639,
+                    "end": 643
+                  },
                   "text": "have",
                   "lemma": "have",
                   "pos": "VERB",
@@ -1790,6 +2279,10 @@
                 },
                 {
                   "id": 30,
+                  "span": {
+                    "start": 644,
+                    "end": 647
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1806,6 +2299,10 @@
                 },
                 {
                   "id": 31,
+                  "span": {
+                    "start": 648,
+                    "end": 662
+                  },
                   "text": "Qualifications",
                   "lemma": "qualifications",
                   "pos": "NOUN",
@@ -1821,6 +2318,10 @@
                 },
                 {
                   "id": 32,
+                  "span": {
+                    "start": 663,
+                    "end": 672
+                  },
                   "text": "requisite",
                   "lemma": "requisite",
                   "pos": "NOUN",
@@ -1836,6 +2337,10 @@
                 },
                 {
                   "id": 33,
+                  "span": {
+                    "start": 673,
+                    "end": 676
+                  },
                   "text": "for",
                   "lemma": "for",
                   "pos": "ADP",
@@ -1849,6 +2354,10 @@
                 },
                 {
                   "id": 34,
+                  "span": {
+                    "start": 677,
+                    "end": 685
+                  },
                   "text": "Electors",
                   "lemma": "Elector",
                   "pos": "NOUN",
@@ -1864,6 +2373,10 @@
                 },
                 {
                   "id": 35,
+                  "span": {
+                    "start": 686,
+                    "end": 688
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -1877,6 +2390,10 @@
                 },
                 {
                   "id": 36,
+                  "span": {
+                    "start": 689,
+                    "end": 692
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1893,6 +2410,10 @@
                 },
                 {
                   "id": 37,
+                  "span": {
+                    "start": 693,
+                    "end": 697
+                  },
                   "text": "most",
                   "lemma": "most",
                   "pos": "ADV",
@@ -1906,6 +2427,10 @@
                 },
                 {
                   "id": 38,
+                  "span": {
+                    "start": 698,
+                    "end": 706
+                  },
                   "text": "numerous",
                   "lemma": "numerous",
                   "pos": "ADJ",
@@ -1921,6 +2446,10 @@
                 },
                 {
                   "id": 39,
+                  "span": {
+                    "start": 707,
+                    "end": 713
+                  },
                   "text": "Branch",
                   "lemma": "branch",
                   "pos": "NOUN",
@@ -1936,6 +2465,10 @@
                 },
                 {
                   "id": 40,
+                  "span": {
+                    "start": 714,
+                    "end": 716
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -1949,6 +2482,10 @@
                 },
                 {
                   "id": 41,
+                  "span": {
+                    "start": 717,
+                    "end": 720
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -1965,6 +2502,10 @@
                 },
                 {
                   "id": 42,
+                  "span": {
+                    "start": 721,
+                    "end": 726
+                  },
                   "text": "State",
                   "lemma": "state",
                   "pos": "PROPN",
@@ -1980,6 +2521,10 @@
                 },
                 {
                   "id": 43,
+                  "span": {
+                    "start": 727,
+                    "end": 738
+                  },
                   "text": "Legislature",
                   "lemma": "legislature",
                   "pos": "PROPN",
@@ -1995,6 +2540,10 @@
                 },
                 {
                   "id": 44,
+                  "span": {
+                    "start": 738,
+                    "end": 739
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -2029,10 +2578,18 @@
               "root_mood": null
             },
             {
+              "span": {
+                "start": 740,
+                "end": 982
+              },
               "text": "No Person shall be a Representative who shall not have attained to the Age of twenty five Years, and been seven Years a Citizen of the United States, and who shall not, when elected, be an Inhabitant of that State in which he shall be chosen.",
               "tokens": [
                 {
                   "id": 1,
+                  "span": {
+                    "start": 740,
+                    "end": 742
+                  },
                   "text": "No",
                   "lemma": "no",
                   "pos": "DET",
@@ -2046,6 +2603,10 @@
                 },
                 {
                   "id": 2,
+                  "span": {
+                    "start": 743,
+                    "end": 749
+                  },
                   "text": "Person",
                   "lemma": "person",
                   "pos": "NOUN",
@@ -2061,6 +2622,10 @@
                 },
                 {
                   "id": 3,
+                  "span": {
+                    "start": 750,
+                    "end": 755
+                  },
                   "text": "shall",
                   "lemma": "shall",
                   "pos": "AUX",
@@ -2076,6 +2641,10 @@
                 },
                 {
                   "id": 4,
+                  "span": {
+                    "start": 756,
+                    "end": 758
+                  },
                   "text": "be",
                   "lemma": "be",
                   "pos": "AUX",
@@ -2091,6 +2660,10 @@
                 },
                 {
                   "id": 5,
+                  "span": {
+                    "start": 759,
+                    "end": 760
+                  },
                   "text": "a",
                   "lemma": "a",
                   "pos": "DET",
@@ -2107,6 +2680,10 @@
                 },
                 {
                   "id": 6,
+                  "span": {
+                    "start": 761,
+                    "end": 775
+                  },
                   "text": "Representative",
                   "lemma": "Representative",
                   "pos": "NOUN",
@@ -2122,6 +2699,10 @@
                 },
                 {
                   "id": 7,
+                  "span": {
+                    "start": 776,
+                    "end": 779
+                  },
                   "text": "who",
                   "lemma": "who",
                   "pos": "PRON",
@@ -2137,6 +2718,10 @@
                 },
                 {
                   "id": 8,
+                  "span": {
+                    "start": 780,
+                    "end": 785
+                  },
                   "text": "shall",
                   "lemma": "shall",
                   "pos": "AUX",
@@ -2152,6 +2737,10 @@
                 },
                 {
                   "id": 9,
+                  "span": {
+                    "start": 786,
+                    "end": 789
+                  },
                   "text": "not",
                   "lemma": "not",
                   "pos": "PART",
@@ -2165,6 +2754,10 @@
                 },
                 {
                   "id": 10,
+                  "span": {
+                    "start": 790,
+                    "end": 794
+                  },
                   "text": "have",
                   "lemma": "have",
                   "pos": "AUX",
@@ -2180,6 +2773,10 @@
                 },
                 {
                   "id": 11,
+                  "span": {
+                    "start": 795,
+                    "end": 803
+                  },
                   "text": "attained",
                   "lemma": "attain",
                   "pos": "VERB",
@@ -2196,6 +2793,10 @@
                 },
                 {
                   "id": 12,
+                  "span": {
+                    "start": 804,
+                    "end": 806
+                  },
                   "text": "to",
                   "lemma": "to",
                   "pos": "ADP",
@@ -2209,6 +2810,10 @@
                 },
                 {
                   "id": 13,
+                  "span": {
+                    "start": 807,
+                    "end": 810
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -2225,6 +2830,10 @@
                 },
                 {
                   "id": 14,
+                  "span": {
+                    "start": 811,
+                    "end": 814
+                  },
                   "text": "Age",
                   "lemma": "age",
                   "pos": "PROPN",
@@ -2240,6 +2849,10 @@
                 },
                 {
                   "id": 15,
+                  "span": {
+                    "start": 815,
+                    "end": 817
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -2253,6 +2866,10 @@
                 },
                 {
                   "id": 16,
+                  "span": {
+                    "start": 818,
+                    "end": 824
+                  },
                   "text": "twenty",
                   "lemma": "twenty",
                   "pos": "NUM",
@@ -2268,6 +2885,10 @@
                 },
                 {
                   "id": 17,
+                  "span": {
+                    "start": 825,
+                    "end": 829
+                  },
                   "text": "five",
                   "lemma": "five",
                   "pos": "NUM",
@@ -2283,6 +2904,10 @@
                 },
                 {
                   "id": 18,
+                  "span": {
+                    "start": 830,
+                    "end": 835
+                  },
                   "text": "Years",
                   "lemma": "year",
                   "pos": "NOUN",
@@ -2298,6 +2923,10 @@
                 },
                 {
                   "id": 19,
+                  "span": {
+                    "start": 835,
+                    "end": 836
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -2311,6 +2940,10 @@
                 },
                 {
                   "id": 20,
+                  "span": {
+                    "start": 837,
+                    "end": 840
+                  },
                   "text": "and",
                   "lemma": "and",
                   "pos": "CCONJ",
@@ -2324,6 +2957,10 @@
                 },
                 {
                   "id": 21,
+                  "span": {
+                    "start": 841,
+                    "end": 845
+                  },
                   "text": "been",
                   "lemma": "be",
                   "pos": "AUX",
@@ -2340,6 +2977,10 @@
                 },
                 {
                   "id": 22,
+                  "span": {
+                    "start": 846,
+                    "end": 851
+                  },
                   "text": "seven",
                   "lemma": "seven",
                   "pos": "NUM",
@@ -2355,6 +2996,10 @@
                 },
                 {
                   "id": 23,
+                  "span": {
+                    "start": 852,
+                    "end": 857
+                  },
                   "text": "Years",
                   "lemma": "year",
                   "pos": "NOUN",
@@ -2370,6 +3015,10 @@
                 },
                 {
                   "id": 24,
+                  "span": {
+                    "start": 858,
+                    "end": 859
+                  },
                   "text": "a",
                   "lemma": "a",
                   "pos": "DET",
@@ -2386,6 +3035,10 @@
                 },
                 {
                   "id": 25,
+                  "span": {
+                    "start": 860,
+                    "end": 867
+                  },
                   "text": "Citizen",
                   "lemma": "citizen",
                   "pos": "NOUN",
@@ -2401,6 +3054,10 @@
                 },
                 {
                   "id": 26,
+                  "span": {
+                    "start": 868,
+                    "end": 870
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -2414,6 +3071,10 @@
                 },
                 {
                   "id": 27,
+                  "span": {
+                    "start": 871,
+                    "end": 874
+                  },
                   "text": "the",
                   "lemma": "the",
                   "pos": "DET",
@@ -2430,6 +3091,10 @@
                 },
                 {
                   "id": 28,
+                  "span": {
+                    "start": 875,
+                    "end": 881
+                  },
                   "text": "United",
                   "lemma": "United",
                   "pos": "PROPN",
@@ -2445,6 +3110,10 @@
                 },
                 {
                   "id": 29,
+                  "span": {
+                    "start": 882,
+                    "end": 888
+                  },
                   "text": "States",
                   "lemma": "States",
                   "pos": "PROPN",
@@ -2460,6 +3129,10 @@
                 },
                 {
                   "id": 30,
+                  "span": {
+                    "start": 888,
+                    "end": 889
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -2473,6 +3146,10 @@
                 },
                 {
                   "id": 31,
+                  "span": {
+                    "start": 890,
+                    "end": 893
+                  },
                   "text": "and",
                   "lemma": "and",
                   "pos": "CCONJ",
@@ -2486,6 +3163,10 @@
                 },
                 {
                   "id": 32,
+                  "span": {
+                    "start": 894,
+                    "end": 897
+                  },
                   "text": "who",
                   "lemma": "who",
                   "pos": "PRON",
@@ -2501,6 +3182,10 @@
                 },
                 {
                   "id": 33,
+                  "span": {
+                    "start": 898,
+                    "end": 903
+                  },
                   "text": "shall",
                   "lemma": "shall",
                   "pos": "AUX",
@@ -2516,6 +3201,10 @@
                 },
                 {
                   "id": 34,
+                  "span": {
+                    "start": 904,
+                    "end": 907
+                  },
                   "text": "not",
                   "lemma": "not",
                   "pos": "PART",
@@ -2529,6 +3218,10 @@
                 },
                 {
                   "id": 35,
+                  "span": {
+                    "start": 907,
+                    "end": 908
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -2542,6 +3235,10 @@
                 },
                 {
                   "id": 36,
+                  "span": {
+                    "start": 909,
+                    "end": 913
+                  },
                   "text": "when",
                   "lemma": "when",
                   "pos": "ADV",
@@ -2557,6 +3254,10 @@
                 },
                 {
                   "id": 37,
+                  "span": {
+                    "start": 914,
+                    "end": 921
+                  },
                   "text": "elected",
                   "lemma": "elect",
                   "pos": "VERB",
@@ -2573,6 +3274,10 @@
                 },
                 {
                   "id": 38,
+                  "span": {
+                    "start": 921,
+                    "end": 922
+                  },
                   "text": ",",
                   "lemma": ",",
                   "pos": "PUNCT",
@@ -2586,6 +3291,10 @@
                 },
                 {
                   "id": 39,
+                  "span": {
+                    "start": 923,
+                    "end": 925
+                  },
                   "text": "be",
                   "lemma": "be",
                   "pos": "AUX",
@@ -2601,6 +3310,10 @@
                 },
                 {
                   "id": 40,
+                  "span": {
+                    "start": 926,
+                    "end": 928
+                  },
                   "text": "an",
                   "lemma": "a",
                   "pos": "DET",
@@ -2617,6 +3330,10 @@
                 },
                 {
                   "id": 41,
+                  "span": {
+                    "start": 929,
+                    "end": 939
+                  },
                   "text": "Inhabitant",
                   "lemma": "Inhabitant",
                   "pos": "NOUN",
@@ -2632,6 +3349,10 @@
                 },
                 {
                   "id": 42,
+                  "span": {
+                    "start": 940,
+                    "end": 942
+                  },
                   "text": "of",
                   "lemma": "of",
                   "pos": "ADP",
@@ -2645,6 +3366,10 @@
                 },
                 {
                   "id": 43,
+                  "span": {
+                    "start": 943,
+                    "end": 947
+                  },
                   "text": "that",
                   "lemma": "that",
                   "pos": "DET",
@@ -2661,6 +3386,10 @@
                 },
                 {
                   "id": 44,
+                  "span": {
+                    "start": 948,
+                    "end": 953
+                  },
                   "text": "State",
                   "lemma": "state",
                   "pos": "NOUN",
@@ -2676,6 +3405,10 @@
                 },
                 {
                   "id": 45,
+                  "span": {
+                    "start": 954,
+                    "end": 956
+                  },
                   "text": "in",
                   "lemma": "in",
                   "pos": "ADP",
@@ -2689,6 +3422,10 @@
                 },
                 {
                   "id": 46,
+                  "span": {
+                    "start": 957,
+                    "end": 962
+                  },
                   "text": "which",
                   "lemma": "which",
                   "pos": "PRON",
@@ -2704,6 +3441,10 @@
                 },
                 {
                   "id": 47,
+                  "span": {
+                    "start": 963,
+                    "end": 965
+                  },
                   "text": "he",
                   "lemma": "he",
                   "pos": "PRON",
@@ -2723,6 +3464,10 @@
                 },
                 {
                   "id": 48,
+                  "span": {
+                    "start": 966,
+                    "end": 971
+                  },
                   "text": "shall",
                   "lemma": "shall",
                   "pos": "AUX",
@@ -2738,6 +3483,10 @@
                 },
                 {
                   "id": 49,
+                  "span": {
+                    "start": 972,
+                    "end": 974
+                  },
                   "text": "be",
                   "lemma": "be",
                   "pos": "AUX",
@@ -2753,6 +3502,10 @@
                 },
                 {
                   "id": 50,
+                  "span": {
+                    "start": 975,
+                    "end": 981
+                  },
                   "text": "chosen",
                   "lemma": "chosen",
                   "pos": "VERB",
@@ -2770,6 +3523,10 @@
                 },
                 {
                   "id": 51,
+                  "span": {
+                    "start": 981,
+                    "end": 982
+                  },
                   "text": ".",
                   "lemma": ".",
                   "pos": "PUNCT",
@@ -2848,5 +3605,6 @@
     "vocabulary_ttr": 0.5272727272727272,
     "nominalization_ratio": 0.024242424242424242,
     "passive_ratio": 0.75
-  }
+  },
+  "skipped": []
 }

@@ -10,7 +10,7 @@
   "paragraphs": [
     {
       "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.4286,
       "readability_grade": 5.3621,
       "sentences": 1,
@@ -19,34 +19,7 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<example-input name=\"readability-by-paragraph\" />",
-      "words": 7
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<example-call name=\"readability-by-paragraph\" />",
-      "words": 7
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<example-output name=\"readability-by-paragraph\" />",
-      "words": 6
-    },
-    {
-      "compression_ratio": null,
-      "in_blockquote": false,
+      "kind": "paragraph",
       "lexical_density": 0.5,
       "readability_grade": 6.01,
       "sentences": 1,
@@ -55,21 +28,30 @@
     },
     {
       "compression_ratio": null,
-      "in_blockquote": false,
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "<figure-metrics input=\"federalist-10\" />",
-      "words": 6
+      "kind": "list_item",
+      "lexical_density": 0.6296,
+      "readability_grade": 20.7046,
+      "sentences": 2,
+      "text": "Each paragraph carries readability_grade, lexical_density and compression_ratio in its metrics. The document's own metrics, beside its sections, carry the counts, the sentence-length statistics, vocabulary_ttr, nominalization_ratio and passive_ratio.",
+      "words": 29
     },
     {
-      "compression_ratio": 0.5276,
-      "in_blockquote": false,
-      "lexical_density": 0.531,
-      "readability_grade": 10.3215,
-      "sentences": 6,
-      "text": "- Each paragraph carries `readability_grade`, `lexical_density` and `compression_ratio` in its `metrics`. The document's own `metrics`, beside its `sections`, carry the counts, the sentence-length statistics, `vocabulary_ttr`, `nominalization_ratio` and `passive_ratio`.\n- The grade runs from 10.69 (paragraph 3) to 32.06 (paragraph 18). It is the Flesch-Kincaid formula over sentence length and syllables per word ([Methodology](../reference/methodology.md#flesch-kincaid-grade-level)), so an eighteenth-century paragraph of a few long sentences scores far above any school grade. Compare paragraphs with each other, not with a grade band.\n- `compression_ratio` is `null` for four paragraphs, the ones of 50 words or fewer. `null` means the measure declined to run, not that it measured zero; which measure needs what is in the [Rust guide](../guides/rust.md#why-a-metric-slot-is-none).",
-      "words": 120
+      "compression_ratio": 0.6537,
+      "kind": "list_item",
+      "lexical_density": 0.5102,
+      "readability_grade": 6.2932,
+      "sentences": 3,
+      "text": "The grade runs from 10.69 (paragraph 3) to 32.06 (paragraph 18). It is the Flesch-Kincaid formula over sentence length and syllables per word (Methodology), so an eighteenth-century paragraph of a few long sentences scores far above any school grade. Compare paragraphs with each other, not with a grade band.",
+      "words": 51
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5294,
+      "readability_grade": 7.6988,
+      "sentences": 2,
+      "text": "compression_ratio is null for four paragraphs, the ones of 50 words or fewer. null means the measure declined to run, not that it measured zero; which measure needs what is in the Rust guide.",
+      "words": 34
     }
   ]
 }

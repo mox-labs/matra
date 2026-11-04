@@ -24,10 +24,10 @@ The Rust↔Python FFI surface for matra. This skill codifies the disciplines tha
 
 The `_core` module in `src/lib.rs::python` (matched by pyproject.toml's `module-name = "matra._core"`) registers two classes and two functions. This section is the one place in `.claude/` that lists them; the `ffi-keeper` agent points here.
 
-- **`Matra`** (`src/lib.rs:461`), `#[pyclass(unsendable)]`: UDPipe is `!Send` due to internal C state, so cross-thread access panics at runtime.
+- **`Matra`** (`src/lib.rs:616`), `#[pyclass(unsendable)]`: UDPipe is `!Send` due to internal C state, so cross-thread access panics at runtime.
   - Constructors: `from_path(model_path)`, `english(model_dir=None)` (both gated on the `udpipe` feature).
   - Methods: `analyze`, `analyze_markdown`, `analyze_path`, `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`, `semantic_clusters`.
-- **`Model2Vec`** (`src/lib.rs:676`), `#[pyclass(frozen)]`, registered only under the `model2vec` feature: an immutable embedder.
+- **`Model2Vec`** (`src/lib.rs:835`), `#[pyclass(frozen)]`, registered only under the `model2vec` feature: an immutable embedder.
   - Constructors: `from_dir(dir)`, `potion_base_8m(dir=None)`.
   - Getters `model_hash` and `dimensions`; methods `identity` and `embed`.
 - **Functions**: `semantic_clusters` (clusters vectors the caller already holds) and `cli_main` (the command line, which `python/matra/cli.py` launches).
@@ -73,7 +73,7 @@ Matra doesn't use either today (single-threaded composition), but if a future fe
 ```rust
 match e.0 {
     ModelNotFound(_) => PyFileNotFoundError::new_err(msg),
-    InputTooLarge { .. } | UnsupportedFormat(_) | InvalidInput(_) => {
+    InputTooLarge { .. } | UnsupportedFormat { .. } | InvalidInput(_) => {
         PyValueError::new_err(msg)
     }
     Io(_) => PyOSError::new_err(msg),

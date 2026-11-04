@@ -29,18 +29,13 @@ The same analysis from Rust, and from the command line:
 
 ```rust
 use matra::domain::Format;
-use matra::{Engine, Ingest};
+use matra::{Engine, Input};
 
 let engine = Engine::with_defaults()?;
 
 let text = "The committee approved the proposal without debate. \
             Three amendments were submitted by the working group.";
-let doc = engine
-    .analyze(Ingest::text(text, Format::PlainText))
-    .next()
-    .expect("a stream of one")
-    .map_err(|e| e.error)?
-    .analysis;
+let doc = engine.analyze(Input::text(text, Format::PlainText))?;
 
 println!("{:?}", doc.metrics.passive_ratio);
 ```
@@ -61,7 +56,7 @@ All three return the same shape: a struct in Rust, a dict in Python, a table or 
 
 **Understand the model.** [Concepts](./explanation/concepts.md) covers the document tree, the four tiers, and what a structural primitive is. [Situation model](./explanation/situation-model.md) covers what the output is for and what it deliberately withholds.
 
-**Write against it.** [Programming model](./explanation/programming-model.md) is the surface: `Ingest`, `Engine`, ports, bounds, and what Python exposes. [Pragmatics](./explanation/pragmatics.md) answers the choices you have to make.
+**Write against it.** [Programming model](./explanation/programming-model.md) is the surface: `Input`, `Engine`, ports, bounds, and what Python exposes. [Pragmatics](./explanation/pragmatics.md) answers the choices you have to make.
 
 **Get it running.** [Installation](./tutorials/installation.md), then [Rust](./guides/rust.md), [Python](./guides/python.md), or [CLI](./guides/cli.md).
 

@@ -33,7 +33,7 @@ A `Document` carries its own schema version in `provenance.schema`, as `"major.m
 
 - A minor adds optional fields only. A major is anything else: a field removed, renamed or retyped, or a field whose meaning changes.
 - Ignore fields you do not recognize; a newer minor adds them.
-- Treat every string set you receive as open: `format`, `pos`, `dep`, `mood`, `pattern` and the feature names in `features`. An unknown value is data, not an error.
+- Treat every string set you receive as open: `format`, `kind` (on paragraphs and on `skipped`), `pos`, `dep`, `mood`, `pattern` and the feature names in `features`. An unknown value is data, not an error.
 - Reject a `provenance.schema` major you do not know.
 
 `format_version` moves with the schema's major, so a consumer of the envelope sees the same break.
@@ -46,13 +46,18 @@ $ matra analyze draft.txt --json
 
 ## `Document`
 
-Three keys: `{"provenance": {}, "sections": [], "metrics": {}}`.
+Four keys: `{"provenance": {}, "sections": [], "metrics": {}, "skipped": []}`.
 
 | Field | Type | Holds |
 |---|---|---|
 | `provenance` | object | Where the document came from and what produced it; see below |
 | `sections` | array | The section tree, the only place paragraphs live |
 | `metrics` | object | The document's aggregates |
+| `skipped` | array | What the reader saw and did not analyse, in document order: `{"kind": string, "span": Span}`, `kind` one of `table`, `code`, `front_matter`, `html`, `thematic_break`, `link_definition`. Nothing is dropped without an entry here |
+
+## `Span`
+
+`{"start": integer, "end": integer}`: where a value lies in the input, in UTF-8 bytes, `start` inclusive and `end` exclusive. Headings, paragraphs, `skipped` entries, sentences and tokens carry one. Bytes, not characters: slice the file's bytes (`head -c`, or `bytes[start:end]` in Python) rather than a decoded string. The text fields are normalized, a sentence's rebuilt from its tokens and a markdown paragraph's with its markup removed, so the span, not the text, is where a value came from. Every byte of the input that is not whitespace lies in exactly one heading, paragraph or skipped span.
 
 `metrics` holds:
 
@@ -60,7 +65,7 @@ Three keys: `{"provenance": {}, "sections": [], "metrics": {}}`.
 |---|---|---|
 | `total_words` | integer | Non-punctuation tokens across every sentence |
 | `total_sentences` | integer | Sentences across every paragraph |
-| `paragraph_count` | integer | Paragraphs, blockquotes included |
+| `paragraph_count` | integer | Paragraphs, quotes included |
 | `mean_sentence_length` | float or null | Words per sentence. Null with no sentence |
 | `sentence_length_std` | float or null | Sample standard deviation of words per sentence. Null with fewer than two sentences |
 | `vocabulary_ttr` | float or null | Distinct lemmas over total lemmas. Falls as text grows, so documents of different lengths are not comparable on it |
@@ -76,8 +81,8 @@ Null means the document did not meet the metric's condition; null is not zero.
 | `matra` | string | The matra version that produced the document |
 | `schema` | string | The schema version, `"major.minor"`, `"2.0"` today |
 | `parser` | object | `name`, `model`, `sha256`, `license`: `udpipe`, `english-ewt-ud-2.5-191206`, the model file's digest, `CC BY-NC-SA 4.0 (non-commercial)`. A model matra does not pin reports its digest and a null `model` and `license` |
-| `format` | string | The format the input was read as: `markdown` or `plain_text` |
-| `source` | object | `path` (null for stdin and in-memory text), `bytes`, and `sha256` of the input |
+| `format` | string | The format the input was read as: `markdown`, `plain_text` or `blocks` |
+| `source` | object | `path` (null for stdin and in-memory text), and the `bytes` and `sha256` of the analysed text the spans point into: the input itself for markdown and plain text |
 
 There is no timestamp: the same input through the same build gives the same document, byte for byte, which is what lets you diff two runs.
 
@@ -87,14 +92,16 @@ There is no timestamp: the same input through the same build gives the same docu
 |---|---|---|
 | `heading` | string or null | The heading text. Null for a plain-text document and for markdown before its first heading |
 | `level` | integer | `0` for plain text, `1` and up for markdown heading depth |
+| `span` | `Span` or null | The heading in the input, `#` marks included. Null with no heading |
 | `paragraphs` | array | Paragraphs in document order |
 
 ## `Paragraph`
 
 | Field | Type | Holds |
 |---|---|---|
-| `text` | string | The paragraph's text as cut from the source: trimmed, for markdown with its lines rejoined by `\n` (so `\r\n` arrives as `\n`), and with a blockquote's `>` markers removed |
-| `in_blockquote` | bool | True when the paragraph sits in a blockquote. Those are never parsed and never measured, so `sentences` is empty and every metric stays null |
+| `span` | `Span` | The paragraph in the input, trailing whitespace excluded; for markdown it covers the `>` and list markers on its lines |
+| `text` | string | The text the parser read: for markdown the inline text with the markup removed (emphasis, links, code span backticks, `>` and list markers), soft line breaks as `\n`; for plain text a verbatim slice |
+| `kind` | string | `paragraph`, `quote` or `list_item`. A quote, at any depth, is never parsed and never measured, so `sentences` is empty and every metric stays null |
 | `sentences` | array | Sentences parsed from this paragraph alone |
 | `metrics` | object | The paragraph's three measures, below |
 
@@ -110,10 +117,11 @@ Null appears in these slots far more often than a caller expects. Filter for non
 
 ## `Sentence`
 
-Eleven fields. `text` and `tokens` are the parse; the other nine are counts and structural detections computed once and carried in the JSON, so every language reads the same answer.
+Twelve fields. `span`, `text` and `tokens` are the parse; the other nine are counts and structural detections computed once and carried in the JSON, so every language reads the same answer.
 
 ```json
 {
+  "span": { "start": 0, "end": 127 },
   "text": "Reviewers should confirm that the rollback path still works, because the rollback path was never exercised on the new hardware.",
   "tokens": [],
   "word_count": 20,
@@ -121,15 +129,7 @@ Eleven fields. `text` and `tokens` are the parse; the other nine are counts and 
   "passive": true,
   "negations": [{ "cue_id": 16, "cue_lemma": "never", "head_id": 17 }],
   "modals": [{ "aux_id": 2, "aux_lemma": "should", "head_id": 3 }],
-  "clausal_complements": [
-    {
-      "verb_id": 3,
-      "verb_lemma": "confirm",
-      "ccomp_id": 9,
-      "subject_id": 1,
-      "subject_lemma": "reviewer"
-    }
-  ],
+  "clausal_complements": [{ "verb_id": 3, "verb_lemma": "confirm", "ccomp_id": 9, "subject_id": 1, "subject_lemma": "reviewer" }],
   "root_adverbials": [],
   "hearst_pairs": [],
   "root_mood": null
@@ -138,7 +138,8 @@ Eleven fields. `text` and `tokens` are the parse; the other nine are counts and 
 
 | Field | Shape |
 |---|---|
-| `text` | String. Reconstructed from token surface forms with spacing from `SpaceAfter=No`, so it is not a byte slice of your input |
+| `span` | `Span`. From the first token's start to the last token's end |
+| `text` | String. Reconstructed from token surface forms with spacing from `SpaceAfter=No`, so it is not a byte slice of your input; `span` is |
 | `tokens` | Array of `Token`, sorted by `id` |
 | `word_count` | Integer. Non-punctuation tokens |
 | `tree_depth` | Integer or null. The longest path from a token to the root, the root at depth 0. Null when the parse's head references loop, which a malformed parse can produce |
@@ -153,22 +154,19 @@ Eleven fields. `text` and `tokens` are the parse; the other nine are counts and 
 `pattern` is one of six strings: `such_as`, `such_np_as`, `including`, `especially`, `and_other`, `or_other`.
 
 ```json
-{
-  "pattern": "such_as",
-  "hypernym": { "head_id": 1, "head_lemma": "animal", "first_id": 1, "last_id": 1 },
-  "hyponym": { "head_id": 4, "head_lemma": "dog", "first_id": 4, "last_id": 4 }
-}
+{ "pattern": "such_as", "hypernym": { "head_id": 1, "head_lemma": "animal", "first_id": 1, "last_id": 1 }, "hyponym": { "head_id": 4, "head_lemma": "dog", "first_id": 4, "last_id": 4 } }
 ```
 
 Every id in these detections is a token `id` inside the same sentence, so a detection can always be resolved back to the tokens it came from. `head_id` is `0` when the cue or the auxiliary is itself the root.
 
 ## `Token`
 
-Ten CoNLL-U columns plus one derived flag, all present on every token.
+Ten CoNLL-U columns, the token's span and one derived flag, all present on every token.
 
 | Field | Type | Column |
 |---|---|---|
 | `id` | integer | 1, the 1-based position in the sentence |
+| `span` | `Span` | Not a CoNLL-U column: where the surface form lies in the input |
 | `text` | string | 2, the surface form |
 | `lemma` | string | 3, the dictionary form |
 | `pos` | string | 4, the universal part of speech |
