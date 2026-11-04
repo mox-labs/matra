@@ -2,12 +2,12 @@
 
 use crate::domain::Document;
 
-/// Populate `Paragraph::readability_grade` for every paragraph with
+/// Populate `ParagraphMetrics::readability_grade` for every paragraph with
 /// more than 10 whitespace-counted words that is not in a blockquote.
 pub fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
         if para.word_count() > 10 && !para.in_blockquote {
-            para.readability_grade = Some(flesch_kincaid_grade(&para.text));
+            para.metrics.readability_grade = Some(flesch_kincaid_grade(&para.text));
         }
     }
 }

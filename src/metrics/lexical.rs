@@ -3,7 +3,7 @@
 use crate::domain::Document;
 use crate::stopwords::is_stop_word;
 
-/// Populate `Paragraph::lexical_density` for every non-empty,
+/// Populate `ParagraphMetrics::lexical_density` for every non-empty,
 /// non-blockquote paragraph.
 pub fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
@@ -23,6 +23,6 @@ pub fn compute(analysis: &mut Document) {
                 !lower.is_empty() && !is_stop_word(&lower)
             })
             .count() as f64;
-        para.lexical_density = Some(content / total);
+        para.metrics.lexical_density = Some(content / total);
     }
 }

@@ -36,7 +36,7 @@ use crate::domain::{self, Document, Format, MAX_INPUT_BYTES, RawDocument, Senten
 ///
 /// cargo's precedent: `cargo metadata --format-version` is a versioned
 /// integer with a compatibility policy rather than a published schema.
-const FORMAT_VERSION: u32 = 1;
+const FORMAT_VERSION: u32 = 2;
 
 /// Success, and the command found something.
 const EXIT_FOUND: u8 = 0;
@@ -441,7 +441,7 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
                     render::sections(out, &doc)?;
                 }
             }
-            Ok(outcome(doc.total_sentences() == 0))
+            Ok(outcome(doc.metrics.total_sentences == 0))
         }
         Command::Summarize { n, method, .. } => {
             let sentences: Vec<Sentence> = doc.sentences().cloned().collect();

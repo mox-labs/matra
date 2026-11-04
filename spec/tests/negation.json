@@ -1,11 +1,16 @@
 {
   "name": "negation",
   "input": "It was never reviewed. The committee approved it.",
-  "format": "plain",
+  "format": "plain_text",
   "expect": {
-    "total_sentences": 2,
-    "total_words": 8,
-    "paragraph_count": 1,
+    "metrics": {
+      "total_sentences": 2,
+      "total_words": 8,
+      "paragraph_count": 1,
+      "vocabulary_ttr": 0.875,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.5
+    },
     "sentences": [
       {
         "text": "It was never reviewed.",
@@ -107,9 +112,6 @@
           }
         ]
       }
-    ],
-    "vocabulary_ttr": 0.875,
-    "nominalization_ratio": 0.0,
-    "passive_ratio": 0.5
+    ]
   }
 }

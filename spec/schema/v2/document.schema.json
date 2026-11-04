@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mox-labs.github.io/matra/schema/v2/document.schema.json",
+  "title": "matra Document, schema 2.x",
+  "description": "One analysed document as matra emits it: the `result` of `matra analyze --json`, the dict `Matra.analyze` returns, and the serde form of `matra::domain::Document`. Schema 2.x: `provenance.schema` is \"2.minor\". A minor adds optional fields only, so a reader ignores fields it does not recognize and rejects a major it does not know. Every string set a reader receives is open (`format`, `pos`, `dep`, `mood`, `pattern`, feature names): treat an unknown value as data, not as an error. Every key listed here is always present; a value that does not apply is null rather than absent.",
+  "type": "object",
+  "required": ["provenance", "sections", "metrics"],
+  "properties": {
+    "provenance": { "$ref": "#/$defs/Provenance" },
+    "sections": { "type": "array", "items": { "$ref": "#/$defs/Section" } },
+    "metrics": { "$ref": "#/$defs/DocumentMetrics" }
+  },
+  "$defs": {
+    "count": { "type": "integer", "minimum": 0 },
+    "ratio": {
+      "description": "A measure, or null when its condition was not met.",
+      "type": ["number", "null"]
+    },
+    "sha256": {
+      "description": "SHA-256, lowercase hex.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "Provenance": {
+      "description": "Where the document came from and what produced it. No timestamp: matra's outputs are deterministic.",
+      "type": "object",
+      "required": ["matra", "schema", "parser", "format", "source"],
+      "properties": {
+        "matra": { "description": "The matra version that produced the result.", "type": "string" },
+        "schema": {
+          "description": "The schema version, \"major.minor\". The one place a schema version appears.",
+          "type": "string",
+          "pattern": "^2\\.[0-9]+$"
+        },
+        "parser": { "$ref": "#/$defs/Identity" },
+        "format": {
+          "description": "The format the input was read as: `markdown` or `plain_text` today. An open set.",
+          "type": "string"
+        },
+        "source": { "$ref": "#/$defs/ProvenanceSource" }
+      }
+    },
+    "Identity": {
+      "description": "A model-backed component: its name, and the model it ran with that model's digest and licence where known. A model matra does not pin has a null `model` and `license`.",
+      "type": "object",
+      "required": ["name", "model", "sha256", "license"],
+      "properties": {
+        "name": { "type": "string" },
+        "model": { "type": ["string", "null"] },
+        "sha256": {
+          "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }]
+        },
+        "license": { "type": ["string", "null"] }
+      }
+    },
+    "ProvenanceSource": {
+      "description": "The analysed input.",
+      "type": "object",
+      "required": ["path", "bytes", "sha256"],
+      "properties": {
+        "path": {
+          "description": "The path the input was read from, null for in-memory text. Bytes of a path that are not UTF-8 arrive as U+FFFD.",
+          "type": ["string", "null"]
+        },
+        "bytes": { "$ref": "#/$defs/count" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "DocumentMetrics": {
+      "description": "The document's aggregates. The counts are always present; each ratio is null when its condition was not met.",
+      "type": "object",
+      "required": [
+        "total_words",
+        "total_sentences",
+        "paragraph_count",
+        "mean_sentence_length",
+        "sentence_length_std",
+        "vocabulary_ttr",
+        "nominalization_ratio",
+        "passive_ratio"
+      ],
+      "properties": {
+        "total_words": { "$ref": "#/$defs/count" },
+        "total_sentences": { "$ref": "#/$defs/count" },
+        "paragraph_count": { "$ref": "#/$defs/count" },
+        "mean_sentence_length": { "$ref": "#/$defs/ratio" },
+        "sentence_length_std": { "$ref": "#/$defs/ratio" },
+        "vocabulary_ttr": { "$ref": "#/$defs/ratio" },
+        "nominalization_ratio": { "$ref": "#/$defs/ratio" },
+        "passive_ratio": { "$ref": "#/$defs/ratio" }
+      }
+    },
+    "Section": {
+      "type": "object",
+      "required": ["heading", "level", "paragraphs"],
+      "properties": {
+        "heading": { "type": ["string", "null"] },
+        "level": { "$ref": "#/$defs/count" },
+        "paragraphs": { "type": "array", "items": { "$ref": "#/$defs/Paragraph" } }
+      }
+    },
+    "Paragraph": {
+      "type": "object",
+      "required": ["text", "in_blockquote", "sentences", "metrics"],
+      "properties": {
+        "text": { "type": "string" },
+        "in_blockquote": { "type": "boolean" },
+        "sentences": { "type": "array", "items": { "$ref": "#/$defs/Sentence" } },
+        "metrics": { "$ref": "#/$defs/ParagraphMetrics" }
+      }
+    },
+    "ParagraphMetrics": {
+      "description": "The paragraph's measures; each is null when its condition was not met.",
+      "type": "object",
+      "required": ["readability_grade", "lexical_density", "compression_ratio"],
+      "properties": {
+        "readability_grade": { "$ref": "#/$defs/ratio" },
+        "lexical_density": { "$ref": "#/$defs/ratio" },
+        "compression_ratio": { "$ref": "#/$defs/ratio" }
+      }
+    },
+    "Sentence": {
+      "type": "object",
+      "required": [
+        "text",
+        "tokens",
+        "word_count",
+        "tree_depth",
+        "passive",
+        "negations",
+        "modals",
+        "clausal_complements",
+        "root_adverbials",
+        "hearst_pairs",
+        "root_mood"
+      ],
+      "properties": {
+        "text": { "type": "string" },
+        "tokens": { "type": "array", "items": { "$ref": "#/$defs/Token" } },
+        "word_count": { "$ref": "#/$defs/count" },
+        "tree_depth": {
+          "description": "Longest path from a token to the root; null when the parse's head references loop.",
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "passive": { "type": "boolean" },
+        "negations": { "type": "array", "items": { "$ref": "#/$defs/Negation" } },
+        "modals": { "type": "array", "items": { "$ref": "#/$defs/Modal" } },
+        "clausal_complements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ClausalComplement" }
+        },
+        "root_adverbials": { "type": "array", "items": { "$ref": "#/$defs/RootAdverbial" } },
+        "hearst_pairs": { "type": "array", "items": { "$ref": "#/$defs/HearstPair" } },
+        "root_mood": {
+          "oneOf": [{ "$ref": "#/$defs/RootMood" }, { "type": "null" }]
+        }
+      }
+    },
+    "Token": {
+      "description": "One CoNLL-U token.",
+      "type": "object",
+      "required": [
+        "id",
+        "text",
+        "lemma",
+        "pos",
+        "xpos",
+        "features",
+        "head",
+        "dep",
+        "deps",
+        "misc",
+        "is_punct"
+      ],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "text": { "type": "string" },
+        "lemma": { "type": "string" },
+        "pos": { "type": "string" },
+        "xpos": { "type": "string" },
+        "features": {
+          "description": "CoNLL-U column 6 as a map from feature name to value; a multi-valued feature keeps its value unsplit (\"Nom,Acc\").",
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "head": { "$ref": "#/$defs/count" },
+        "dep": { "type": "string" },
+        "deps": { "type": "string" },
+        "misc": { "type": "string" },
+        "is_punct": { "type": "boolean" }
+      }
+    },
+    "Negation": {
+      "type": "object",
+      "required": ["cue_id", "cue_lemma", "head_id"],
+      "properties": {
+        "cue_id": { "$ref": "#/$defs/count" },
+        "cue_lemma": { "type": "string" },
+        "head_id": { "$ref": "#/$defs/count" }
+      }
+    },
+    "Modal": {
+      "type": "object",
+      "required": ["aux_id", "aux_lemma", "head_id"],
+      "properties": {
+        "aux_id": { "$ref": "#/$defs/count" },
+        "aux_lemma": { "type": "string" },
+        "head_id": { "$ref": "#/$defs/count" }
+      }
+    },
+    "ClausalComplement": {
+      "description": "A verb governing a clausal complement (`ccomp`), with its subject when the parse has one.",
+      "type": "object",
+      "required": ["verb_id", "verb_lemma", "ccomp_id", "subject_id", "subject_lemma"],
+      "properties": {
+        "verb_id": { "$ref": "#/$defs/count" },
+        "verb_lemma": { "type": "string" },
+        "ccomp_id": { "$ref": "#/$defs/count" },
+        "subject_id": { "type": ["integer", "null"], "minimum": 0 },
+        "subject_lemma": { "type": ["string", "null"] }
+      }
+    },
+    "RootAdverbial": {
+      "type": "object",
+      "required": ["adv_id", "adv_lemma"],
+      "properties": {
+        "adv_id": { "$ref": "#/$defs/count" },
+        "adv_lemma": { "type": "string" }
+      }
+    },
+    "RootMood": {
+      "description": "The root clause's `Mood` feature (an open set: `Ind`, `Imp`, ...) and the root's token id.",
+      "type": "object",
+      "required": ["root_id", "mood"],
+      "properties": {
+        "root_id": { "$ref": "#/$defs/count" },
+        "mood": { "type": "string" }
+      }
+    },
+    "HearstSpan": {
+      "type": "object",
+      "required": ["head_id", "head_lemma", "first_id", "last_id"],
+      "properties": {
+        "head_id": { "$ref": "#/$defs/count" },
+        "head_lemma": { "type": "string" },
+        "first_id": { "$ref": "#/$defs/count" },
+        "last_id": { "$ref": "#/$defs/count" }
+      }
+    },
+    "HearstPair": {
+      "type": "object",
+      "required": ["pattern", "hypernym", "hyponym"],
+      "properties": {
+        "pattern": {
+          "description": "The construction that matched: `such_as`, `such_np_as`, `including`, `especially`, `and_other`, `or_other` today. An open set.",
+          "type": "string"
+        },
+        "hypernym": { "$ref": "#/$defs/HearstSpan" },
+        "hyponym": { "$ref": "#/$defs/HearstSpan" }
+      }
+    }
+  }
+}

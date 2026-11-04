@@ -21,7 +21,7 @@ use super::textrank::MAX_SENTENCES;
 /// Clusters are connected components of the above-threshold graph, with
 /// the clearing edges reported alongside the members (see
 /// [`SemanticClusters`] for what co-membership does and does not mean).
-/// `model_hash` is the identity of the model that produced `embeddings`,
+/// `identity` is the identity of the model that produced `embeddings`,
 /// as the embed adapter reports it; it travels into the result so the
 /// scores stay attributable to a geometry.
 ///
@@ -38,7 +38,7 @@ use super::textrank::MAX_SENTENCES;
 pub fn semantic_clusters(
     embeddings: &[Embedding],
     threshold: f32,
-    model_hash: &str,
+    identity: &str,
 ) -> Result<SemanticClusters> {
     if !threshold.is_finite() {
         return Err(Error::InvalidInput(format!(
@@ -148,7 +148,7 @@ pub fn semantic_clusters(
     clusters.sort_unstable_by_key(|c| c.members[0]);
 
     Ok(SemanticClusters {
-        model_hash: model_hash.to_string(),
+        identity: identity.to_string(),
         threshold,
         clusters,
     })
@@ -232,7 +232,7 @@ mod tests {
     fn empty_input_yields_empty_clusters_not_an_error() {
         let out = semantic_clusters(&[], 0.8, "h").unwrap();
         assert!(out.clusters.is_empty());
-        assert_eq!(out.model_hash, "h");
+        assert_eq!(out.identity, "h");
     }
 
     #[test]

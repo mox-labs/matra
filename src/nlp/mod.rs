@@ -29,9 +29,9 @@ use crate::domain;
 ///
 /// The trait cannot enforce any of this and nothing validates it on the
 /// way in. A provider that breaks the cycle rule is reported rather than
-/// trusted where it matters most: [`domain::Sentence::tree_depth`]
-/// returns `usize::MAX` on a cycle, and [`domain::Sentence::subtree`]
-/// terminates on one.
+/// trusted where it matters most: [`domain::Sentence::tree_depth`] is
+/// `None` on a cycle, and [`domain::Sentence::subtree`] terminates on
+/// one.
 ///
 /// A failure is an `Err`, typically [`domain::Error::ParseFailed`], never
 /// a panic: a provider wrapping native code converts a panic at its own
@@ -48,4 +48,13 @@ pub trait NlpProvider: Send {
     /// Parse text into sentences with POS tags and dependency labels,
     /// satisfying the contract above.
     fn parse(&self, text: &str) -> domain::Result<Vec<domain::Sentence>>;
+
+    /// Who this provider is: its name, and the model it runs with that
+    /// model's digest and licence where it has one. `Engine::annotate`
+    /// records it in every document's `provenance.parser`, so a reader
+    /// sees which model produced a parse rather than discovering a
+    /// change of model as a shift in the numbers. Two providers that can
+    /// parse the same text differently must not report the same
+    /// identity.
+    fn identity(&self) -> domain::Identity;
 }

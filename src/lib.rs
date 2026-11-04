@@ -4,6 +4,7 @@
 pub mod cli;
 pub mod config;
 pub mod decompose;
+mod digest;
 pub mod domain;
 pub mod embed;
 pub mod extraction;
@@ -225,13 +226,26 @@ impl Engine {
     /// [`hearst::hypernymy_pairs`]; sentence-level facts whose
     /// detectors live in the domain are computed by `Sentence::new`
     /// inside the provider.
+    ///
+    /// The provenance is recorded here too, once: the parser's
+    /// [`NlpProvider::identity`], the format, and the input's path,
+    /// length and SHA-256.
     pub fn annotate(&self, raw: &domain::RawDocument) -> domain::Result<Document> {
         check_input_size(&raw.text)?;
         let decomposer = self
             .decomposers
             .get(&raw.format)
             .ok_or_else(|| domain::Error::UnsupportedFormat(raw.format.clone()))?;
-        let mut doc = Document::new(decomposer.decompose(&raw.text));
+        let provenance = domain::Provenance::new(
+            self.nlp.identity(),
+            raw.format.clone(),
+            domain::ProvenanceSource::new(
+                raw.path.clone(),
+                raw.text.len(),
+                digest::sha256_hex(raw.text.as_bytes()),
+            ),
+        );
+        let mut doc = Document::new(provenance, decomposer.decompose(&raw.text));
         for para in doc.paragraphs_mut() {
             if para.in_blockquote {
                 continue;
@@ -1024,14 +1038,24 @@ mod python {
     /// serde would refuse the `PathBuf` on a non-UTF-8 name and take the
     /// analysis down with it. The `Document` still goes through serde:
     /// it is the shape `analyze` returns, and there is one wire form of
-    /// it, not two.
+    /// it, not two. Its own `provenance.source.path` is serialized
+    /// lossily (a JSON string cannot carry undecodable bytes), so it is
+    /// replaced with the same [`fs_path_str`] value `path` carries, and
+    /// the two agree byte for byte.
     fn corpus_entry_dict<'py>(
         py: Python<'py>,
         entry: &domain::CorpusEntry,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let analysis = to_dict(py, &entry.analysis)?;
+        if let Some(path) = entry.analysis.provenance.source.path.as_deref() {
+            analysis
+                .get_item("provenance")?
+                .get_item("source")?
+                .set_item("path", fs_path_str(py, path)?)?;
+        }
         let item = PyDict::new(py);
         item.set_item("path", fs_path_item(py, entry.path.as_deref())?)?;
-        item.set_item("analysis", to_dict(py, &entry.analysis)?)?;
+        item.set_item("analysis", analysis)?;
         Ok(item.into_any())
     }
 
@@ -1081,6 +1105,9 @@ mod tests {
         fn parse(&self, _text: &str) -> domain::Result<Vec<domain::Sentence>> {
             Ok(Vec::new())
         }
+        fn identity(&self) -> domain::Identity {
+            domain::Identity::new("empty", None, None, None)
+        }
     }
 
     /// Splits the input on `.` and returns one [`Sentence`] per non-empty
@@ -1096,6 +1123,9 @@ mod tests {
                 .filter(|s| !s.is_empty())
                 .map(|s| domain::Sentence::new(s.to_string(), Vec::new()))
                 .collect())
+        }
+        fn identity(&self) -> domain::Identity {
+            domain::Identity::new("dot-split", None, None, None)
         }
     }
 
@@ -1136,6 +1166,9 @@ mod tests {
                 return Err(domain::Error::ParseFailed("poisoned".to_string()));
             }
             DotSplitNlp.parse(text)
+        }
+        fn identity(&self) -> domain::Identity {
+            domain::Identity::new("observable", None, None, None)
         }
     }
 
@@ -1297,6 +1330,35 @@ mod tests {
         );
     }
 
+    /// The provenance is recorded once, at annotation: the parser's own
+    /// identity, the format, and the input's path, length and digest.
+    #[test]
+    fn annotate_records_the_provenance() {
+        let engine = law_engine();
+        let text = "abc";
+        let raw = domain::RawDocument::new(
+            text.to_string(),
+            Some(std::path::PathBuf::from("notes.md")),
+            domain::Format::Markdown,
+        );
+        let doc = engine.annotate(&raw).unwrap();
+        let p = &doc.provenance;
+        assert_eq!(p.parser.name, "dot-split", "the parser names itself");
+        assert_eq!(p.format, domain::Format::Markdown);
+        assert_eq!(p.schema, domain::SCHEMA_VERSION);
+        assert_eq!(p.matra, env!("CARGO_PKG_VERSION"));
+        assert_eq!(
+            p.source.path.as_deref(),
+            Some(std::path::Path::new("notes.md"))
+        );
+        assert_eq!(p.source.bytes, 3);
+        // FIPS 180-2 SHA-256 of "abc".
+        assert_eq!(
+            p.source.sha256,
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+    }
+
     #[test]
     fn annotate_rejects_unregistered_format() {
         let engine = law_engine();
@@ -1312,17 +1374,22 @@ mod tests {
         let engine = law_engine();
         let raw = raw_plain("Annotate attaches structure. Compose measures it.");
         let mut doc = engine.annotate(&raw).unwrap();
-        assert!(doc.vocabulary_ttr.is_none(), "annotate does not measure");
-        assert!(doc.passive_ratio.is_none(), "annotate does not measure");
-        assert!(doc.total_sentences() > 0, "annotate does attach");
+        assert_eq!(
+            doc.metrics,
+            domain::DocumentMetrics::default(),
+            "annotate does not measure"
+        );
+        assert_eq!(doc.sentences().count(), 2, "annotate does attach");
         engine.compose(&mut doc);
+        assert_eq!(doc.metrics.total_sentences, 2, "compose counts");
+        assert_eq!(doc.metrics.paragraph_count, 1, "compose counts");
         // DotSplitNlp builds token-less sentences, so token-derived
         // document metrics stay None here; what compose guarantees is
         // totality, which is the absence of a failure path in its
         // signature. passive_ratio is sentence-derived, so it does
         // fill: no sentence here has a passive construction.
         assert_eq!(
-            doc.passive_ratio,
+            doc.metrics.passive_ratio,
             Some(0.0),
             "compose fills the sentence-derived aggregate"
         );
@@ -1357,6 +1424,10 @@ mod tests {
                         tok(5, "bark", "bark", "VERB", "root", 0),
                     ],
                 )])
+            }
+
+            fn identity(&self) -> domain::Identity {
+                domain::Identity::new("such-as", None, None, None)
             }
         }
 
@@ -1594,7 +1665,7 @@ mod tests {
             force_count: None,
         };
         let out = embed_and_cluster(&doc, &embedder, 0.9).expect("cluster");
-        assert_eq!(out.model_hash, "the-real-model");
+        assert_eq!(out.identity, "the-real-model");
         // Identical vectors cluster together, sanity of the plumbing.
         assert_eq!(out.clusters.len(), 1);
     }

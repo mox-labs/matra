@@ -10,13 +10,16 @@
 
 #![cfg(feature = "udpipe")]
 
+mod document_schema;
+
 use std::fs;
 use std::path::PathBuf;
 
 use matra::Engine;
 use matra::domain::{Document, Format, RawDocument};
 use matra::nlp::udpipe::Udpipe;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
+use sha2::{Digest, Sha256};
 
 const TOLERANCE: f64 = 1e-6;
 
@@ -24,19 +27,43 @@ const TOLERANCE: f64 = 1e-6;
 struct Fixture {
     name: String,
     input: String,
-    format: String,
+    /// In the format vocabulary every surface shares (`plain_text`,
+    /// `markdown`), so it deserializes straight into the domain type.
+    format: Format,
     expect: Expect,
 }
 
 #[derive(Deserialize)]
 struct Expect {
+    metrics: ExpectedMetrics,
+    sentences: Vec<ExpectedSentence>,
+}
+
+#[derive(Deserialize)]
+struct ExpectedMetrics {
     total_sentences: usize,
     total_words: usize,
     paragraph_count: usize,
-    sentences: Vec<ExpectedSentence>,
     vocabulary_ttr: Option<f64>,
     nominalization_ratio: Option<f64>,
     passive_ratio: Option<f64>,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+struct ExpectedRootMood {
+    root_id: usize,
+    mood: String,
+}
+
+/// A key that may be absent (the fixture does not pin it) or present
+/// and null (the fixture pins "none"): `Option<Option<T>>`, which serde
+/// alone collapses.
+fn pinned<'de, D, T>(d: D) -> Result<Option<Option<T>>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(d).map(Some)
 }
 
 #[derive(Deserialize)]
@@ -49,11 +76,13 @@ struct ExpectedSentence {
     /// Expected modal auxiliaries, when the fixture pins them. Same
     /// convention as `negations`.
     modals: Option<Vec<ExpectedModal>>,
-    /// Expected bare-assertion discriminator, when the fixture pins it.
-    bare_assertion: Option<bool>,
-    /// Expected reporting constructions, when the fixture pins them.
-    /// Same convention as `negations`.
-    reportings: Option<Vec<ExpectedReporting>>,
+    /// Expected root mood, when the fixture pins it; a pinned `null`
+    /// means the root clause carries no mood.
+    #[serde(default, deserialize_with = "pinned")]
+    root_mood: Option<Option<ExpectedRootMood>>,
+    /// Expected clausal complements, when the fixture pins them. Same
+    /// convention as `negations`.
+    clausal_complements: Option<Vec<ExpectedClausalComplement>>,
     /// Expected root-attached adverbials, when the fixture pins them.
     /// Same convention as `negations`.
     root_adverbials: Option<Vec<ExpectedRootAdverbial>>,
@@ -79,7 +108,7 @@ struct ExpectedHearstSpan {
 }
 
 #[derive(Deserialize)]
-struct ExpectedReporting {
+struct ExpectedClausalComplement {
     verb_id: usize,
     verb_lemma: String,
     ccomp_id: usize,
@@ -169,28 +198,51 @@ fn rust_crust_conforms_to_spec() {
     let engine = Engine::new(Box::new(nlp), matra::standard_decomposers());
 
     for fixture in load_fixtures() {
-        let format = match fixture.format.as_str() {
-            "markdown" => Format::Markdown,
-            "plain" => Format::PlainText,
-            other => panic!("{}: unknown format {other}", fixture.name),
-        };
         let doc: Document = engine
-            .analyze_one(RawDocument::new(fixture.input.clone(), None, format))
+            .analyze_one(RawDocument::new(
+                fixture.input.clone(),
+                None,
+                fixture.format.clone(),
+            ))
             .unwrap_or_else(|e| panic!("{}: analyze failed: {e}", fixture.name))
             .analysis;
 
         let e = &fixture.expect;
         let name = &fixture.name;
 
+        document_schema::assert_valid_document(
+            &serde_json::to_value(&doc).expect("serialize"),
+            name,
+        );
+
+        // Provenance: this build's schema, the parser's own identity,
+        // and the input as it was handed in.
+        let p = &doc.provenance;
+        assert_eq!(p.schema, matra::domain::SCHEMA_VERSION, "{name}: schema");
+        assert_eq!(p.format, fixture.format, "{name}: format");
+        assert_eq!(p.parser.name, "udpipe", "{name}: parser name");
         assert_eq!(
-            doc.total_sentences(),
-            e.total_sentences,
+            p.parser.model.as_deref(),
+            Some("english-ewt-ud-2.5-191206"),
+            "{name}: parser model"
+        );
+        assert!(p.parser.license.is_some(), "{name}: parser licence");
+        assert_eq!(p.source.path, None, "{name}: in-memory input");
+        assert_eq!(p.source.bytes, fixture.input.len(), "{name}: input bytes");
+        let digest: String = Sha256::digest(fixture.input.as_bytes())
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        assert_eq!(p.source.sha256, digest, "{name}: input digest");
+
+        let m = &doc.metrics;
+        assert_eq!(
+            m.total_sentences, e.metrics.total_sentences,
             "{name}: sentence count"
         );
-        assert_eq!(doc.total_words(), e.total_words, "{name}: word count");
+        assert_eq!(m.total_words, e.metrics.total_words, "{name}: word count");
         assert_eq!(
-            doc.paragraph_count(),
-            e.paragraph_count,
+            m.paragraph_count, e.metrics.paragraph_count,
             "{name}: paragraph count"
         );
 
@@ -229,20 +281,26 @@ fn rust_crust_conforms_to_spec() {
                     assert_eq!(m.head_id, w.head_id, "{at} head_id");
                 }
             }
-            if let Some(want_bare) = want.bare_assertion {
-                assert_eq!(
-                    got.bare_assertion, want_bare,
-                    "{name}: sentence {i} bare_assertion"
-                );
+            if let Some(want_mood) = &want.root_mood {
+                let got_mood = got.root_mood.as_ref().map(|m| ExpectedRootMood {
+                    root_id: m.root_id,
+                    mood: m.mood.clone(),
+                });
+                assert_eq!(&got_mood, want_mood, "{name}: sentence {i} root_mood");
             }
-            if let Some(want_reps) = &want.reportings {
+            if let Some(want_complements) = &want.clausal_complements {
                 assert_eq!(
-                    got.reportings.len(),
-                    want_reps.len(),
-                    "{name}: sentence {i} reporting count"
+                    got.clausal_complements.len(),
+                    want_complements.len(),
+                    "{name}: sentence {i} clausal complement count"
                 );
-                for (j, (r, w)) in got.reportings.iter().zip(want_reps).enumerate() {
-                    let at = format!("{name}: sentence {i} reporting {j}");
+                for (j, (r, w)) in got
+                    .clausal_complements
+                    .iter()
+                    .zip(want_complements)
+                    .enumerate()
+                {
+                    let at = format!("{name}: sentence {i} clausal complement {j}");
                     assert_eq!(r.verb_id, w.verb_id, "{at} verb_id");
                     assert_eq!(r.verb_lemma, w.verb_lemma, "{at} verb_lemma");
                     assert_eq!(r.ccomp_id, w.ccomp_id, "{at} ccomp_id");
@@ -304,16 +362,16 @@ fn rust_crust_conforms_to_spec() {
             }
         }
 
-        if let Some(want) = e.passive_ratio {
-            let got = doc.passive_ratio.expect("passive_ratio present");
+        if let Some(want) = e.metrics.passive_ratio {
+            let got = m.passive_ratio.expect("passive_ratio present");
             assert!(close(got, want), "{name}: passive_ratio {got} != {want}");
         }
-        if let Some(want) = e.vocabulary_ttr {
-            let got = doc.vocabulary_ttr.expect("vocabulary_ttr present");
+        if let Some(want) = e.metrics.vocabulary_ttr {
+            let got = m.vocabulary_ttr.expect("vocabulary_ttr present");
             assert!(close(got, want), "{name}: vocabulary_ttr {got} != {want}");
         }
-        if let Some(want) = e.nominalization_ratio {
-            let got = doc
+        if let Some(want) = e.metrics.nominalization_ratio {
+            let got = m
                 .nominalization_ratio
                 .expect("nominalization_ratio present");
             assert!(

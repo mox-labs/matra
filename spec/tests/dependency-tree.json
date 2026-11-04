@@ -1,11 +1,16 @@
 {
   "name": "dependency-tree",
   "input": "Structural analysis reveals the grammatical skeleton of a sentence.",
-  "format": "plain",
+  "format": "plain_text",
   "expect": {
-    "total_sentences": 1,
-    "total_words": 9,
-    "paragraph_count": 1,
+    "metrics": {
+      "total_sentences": 1,
+      "total_words": 9,
+      "paragraph_count": 1,
+      "vocabulary_ttr": 1.0,
+      "nominalization_ratio": 0.111111,
+      "passive_ratio": 0.0
+    },
     "sentences": [
       {
         "text": "Structural analysis reveals the grammatical skeleton of a sentence.",
@@ -93,9 +98,6 @@
           }
         ]
       }
-    ],
-    "vocabulary_ttr": 1.0,
-    "nominalization_ratio": 0.111111,
-    "passive_ratio": 0.0
+    ]
   }
 }

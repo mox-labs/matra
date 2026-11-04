@@ -1,11 +1,16 @@
 {
   "name": "multi-paragraph",
   "input": "First paragraph has one sentence.\n\nSecond paragraph has two sentences. This is the second.",
-  "format": "plain",
+  "format": "plain_text",
   "expect": {
-    "total_sentences": 3,
-    "total_words": 14,
-    "paragraph_count": 2,
+    "metrics": {
+      "total_sentences": 3,
+      "total_words": 14,
+      "paragraph_count": 2,
+      "vocabulary_ttr": 0.714286,
+      "nominalization_ratio": 0.071429,
+      "passive_ratio": 0.0
+    },
     "sentences": [
       {
         "text": "First paragraph has one sentence.",
@@ -161,9 +166,6 @@
           }
         ]
       }
-    ],
-    "vocabulary_ttr": 0.714286,
-    "nominalization_ratio": 0.071429,
-    "passive_ratio": 0.0
+    ]
   }
 }

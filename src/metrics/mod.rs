@@ -10,7 +10,7 @@
 //! - [`readability`]  — Flesch-Kincaid grade per paragraph
 //! - [`lexical`]      — lexical density per paragraph
 //! - [`compression`]  — brotli compression ratio per paragraph
-//! - [`document`]     — vocabulary TTR + nominalization ratio over the whole doc
+//! - [`document`]     — the document metric record: counts, sentence length, TTR, nominalization, passive ratio
 
 pub mod compression;
 pub mod document;
@@ -68,7 +68,7 @@ mod tests {
             lemma: text.to_lowercase(),
             pos: pos.to_string(),
             xpos: String::new(),
-            feats: String::new(),
+            features: std::collections::BTreeMap::new(),
             dep: dep.to_string(),
             head,
             deps: String::new(),
@@ -100,7 +100,7 @@ mod tests {
             level: 0,
             paragraphs: paras,
         }];
-        Document::new(sections)
+        Document::new(crate::domain::Provenance::for_test(), sections)
     }
 
     #[test]
@@ -124,9 +124,9 @@ mod tests {
         let suite = default_suite();
         run_suite(&mut analysis, &suite);
 
-        assert_eq!(analysis.total_sentences(), 1);
+        assert_eq!(analysis.metrics.total_sentences, 1);
         assert!(
-            analysis.sentences().next().unwrap().is_passive(),
+            analysis.sentences().next().unwrap().passive,
             "should detect passive voice"
         );
     }
@@ -143,10 +143,12 @@ mod tests {
         run_suite(&mut analysis, &suite);
 
         assert_eq!(
-            analysis.total_sentences(),
-            0,
+            analysis.metrics.total_sentences, 0,
             "blockquote paragraphs should have no sentences"
         );
+        assert_eq!(analysis.metrics.paragraph_count, 1);
+        assert_eq!(analysis.metrics.mean_sentence_length, None);
+        assert_eq!(analysis.metrics.passive_ratio, None);
     }
 
     #[test]
@@ -184,11 +186,14 @@ mod tests {
         let suite = default_suite();
         run_suite(&mut analysis, &suite);
 
-        assert_eq!(analysis.total_sentences(), 2);
+        assert_eq!(analysis.metrics.total_sentences, 2);
+        assert_eq!(analysis.metrics.total_words, 9);
+        assert_eq!(analysis.metrics.paragraph_count, 2);
+        assert_eq!(analysis.metrics.mean_sentence_length, Some(4.5));
+        let passive = analysis.metrics.passive_ratio.expect("two sentences");
         assert!(
-            (analysis.passive_ratio() - 0.5).abs() < 0.01,
-            "expected ~50% passive, got {}",
-            analysis.passive_ratio()
+            (passive - 0.5).abs() < 0.01,
+            "expected ~50% passive, got {passive}"
         );
     }
 }

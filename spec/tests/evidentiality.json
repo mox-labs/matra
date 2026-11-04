@@ -1,19 +1,27 @@
 {
   "name": "evidentiality",
   "input": "We show that the method works. Smith reported that the effect vanished. These results suggest that the mechanism is shared. Reportedly, the deal closed.",
-  "format": "plain",
+  "format": "plain_text",
   "expect": {
-    "total_sentences": 4,
-    "total_words": 24,
-    "paragraph_count": 1,
+    "metrics": {
+      "total_sentences": 4,
+      "total_words": 24,
+      "paragraph_count": 1,
+      "vocabulary_ttr": 0.7916666666666666,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.25
+    },
     "sentences": [
       {
         "text": "We show that the method works.",
         "token_count": 7,
         "negations": [],
         "modals": [],
-        "bare_assertion": true,
-        "reportings": [
+        "root_mood": {
+          "root_id": 2,
+          "mood": "Ind"
+        },
+        "clausal_complements": [
           {
             "verb_id": 2,
             "verb_lemma": "show",
@@ -87,8 +95,11 @@
         "token_count": 7,
         "negations": [],
         "modals": [],
-        "bare_assertion": true,
-        "reportings": [
+        "root_mood": {
+          "root_id": 2,
+          "mood": "Ind"
+        },
+        "clausal_complements": [
           {
             "verb_id": 2,
             "verb_lemma": "report",
@@ -162,8 +173,11 @@
         "token_count": 9,
         "negations": [],
         "modals": [],
-        "bare_assertion": true,
-        "reportings": [
+        "root_mood": {
+          "root_id": 3,
+          "mood": "Ind"
+        },
+        "clausal_complements": [
           {
             "verb_id": 3,
             "verb_lemma": "suggest",
@@ -253,8 +267,11 @@
         "token_count": 6,
         "negations": [],
         "modals": [],
-        "bare_assertion": true,
-        "reportings": [],
+        "root_mood": {
+          "root_id": 5,
+          "mood": "Ind"
+        },
+        "clausal_complements": [],
         "root_adverbials": [
           {
             "adv_id": 1,
@@ -312,9 +329,6 @@
           }
         ]
       }
-    ],
-    "vocabulary_ttr": 0.7916666666666666,
-    "nominalization_ratio": 0.0,
-    "passive_ratio": 0.25
+    ]
   }
 }
