@@ -28,7 +28,7 @@ use crate::domain;
 /// Callers should be aware that `embed` is blocking and may allocate
 /// proportionally to the batch. There is no built-in input size limit;
 /// text that has passed through the pipeline is already bounded by
-/// [`domain::MAX_INPUT_BYTES`], and applications embedding user-supplied
+/// [`domain::limits::MAX_INPUT_BYTES`], and applications embedding user-supplied
 /// text directly should validate size before calling.
 pub trait Embedder: Send {
     /// Embed each text into a dense vector.

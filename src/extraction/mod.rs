@@ -26,7 +26,6 @@ use crate::domain::{
 };
 
 pub(crate) use semantic::cluster;
-pub(crate) use textrank::MAX_SENTENCES as MAX_CLUSTER_SENTENCES;
 
 /// How [`summarize_with`] ranks a document's sentences.
 ///

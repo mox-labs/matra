@@ -70,14 +70,13 @@ const POTION_BASE_8M_URLS: [&str; 3] = [
     "https://huggingface.co/minishlab/potion-base-8M/resolve/bf8b056651a2c21b8d2565580b8569da283cab23/config.json",
 ];
 
-/// Ceiling on any one downloaded artifact. The largest of the three in
-/// the pinned release is `model.safetensors` at 30,236,760 bytes, so this
-/// is a shade over twice the real thing: headroom for a later revision,
-/// and small enough that a redirect to something enormous costs a bounded
-/// read rather than the machine's memory. Past it,
-/// [`Error::InputTooLarge`] with `what` set to `"embedding_download"`.
+/// Ceiling on any one downloaded artifact, past which
+/// [`Error::InputTooLarge`] has `what` set to `"embedding_download"`:
+/// [`limits::MAX_DOWNLOAD_BYTES`](crate::domain::limits::MAX_DOWNLOAD_BYTES).
+/// The largest of the three pinned artifacts, `model.safetensors`, is
+/// 30,236,760 bytes.
 #[cfg(not(target_arch = "wasm32"))]
-const MAX_ARTIFACT_BYTES: usize = 64 * 1024 * 1024;
+use crate::domain::limits::MAX_DOWNLOAD_BYTES as MAX_ARTIFACT_BYTES;
 
 /// Ceiling on one artifact fetch, DNS lookup through the last byte of
 /// the body. The largest artifact in the pinned release is about 30 MB,
@@ -678,15 +677,11 @@ fn not_the_pinned_model(dir: &Path, reason: &str, expected_digest: &str) -> Erro
 /// The counterpart of the function of the same name in `nlp/udpipe.rs`,
 /// and it exists for the same reason: `io error: No space left on device
 /// (os error 28)` was the whole message an embedding install produced,
-/// with the path sitting in a variable one line away. RFC-0015 says the
-/// two provisioners share a discipline rather than a module, so this is
-/// the discipline implemented twice, not a helper imported twice.
+/// with the path sitting in a variable one line away. The sentence is
+/// written once, in `IoContext::cannot` in the domain, which also carries
+/// the path as a detail; this wrapper only keeps the call sites short.
 fn io_at(operation: &str, path: &Path, error: &std::io::Error) -> Error {
-    Error::Io(crate::domain::IoContext::at_path(
-        error.kind(),
-        path,
-        format!("cannot {operation} {}: {error}", path.display()),
-    ))
+    Error::Io(crate::domain::IoContext::cannot(operation, path, error))
 }
 
 /// Remove the named paths, ignoring failures. A file that is already

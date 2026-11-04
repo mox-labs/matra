@@ -30,18 +30,18 @@ from matra.types import (
 )
 
 __all__ = [
-    "InputTooLarge",
-    "InvalidInput",
-    "Io",
-    "IoNotFound",
-    "IoPermissionDenied",
+    "InputTooLargeError",
+    "InvalidInputError",
+    "IoError",
+    "IoNotFoundError",
+    "IoPermissionError",
     "Matra",
     "MatraError",
     "Model2Vec",
-    "ModelInvalid",
-    "ModelNotFound",
-    "ParseFailed",
-    "UnsupportedFormat",
+    "ModelInvalidError",
+    "ModelNotFoundError",
+    "ParseFailedError",
+    "UnsupportedFormatError",
     "cli_main",
     "semantic_clusters",
 ]
@@ -55,47 +55,48 @@ class MatraError(Exception):
     kind), so nothing has to be parsed out of `str(exc)`.
 
     Each subclass also derives from the builtin class matra raised before
-    0.3.0, so `except ValueError` still catches an `InputTooLarge`.
+    0.3.0, so `except ValueError` still catches an `InputTooLargeError`.
     """
 
     kind: str
     details: ErrorDetails
 
-class ModelNotFound(MatraError, FileNotFoundError):
+class ModelNotFoundError(MatraError, FileNotFoundError):
     """A model file does not exist at the path given. `kind` is
     `model_not_found`; `details["path"]` is the path."""
 
-class ModelInvalid(MatraError, RuntimeError):
+class ModelInvalidError(MatraError, RuntimeError):
     """Bytes that arrived could not be verified against the pin, or could
     not be loaded. `kind` is `model_invalid`."""
 
-class ParseFailed(MatraError, RuntimeError):
+class ParseFailedError(MatraError, RuntimeError):
     """The parser failed on the input, or panicked. `kind` is
     `parse_failed`."""
 
-class InputTooLarge(MatraError, ValueError):
+class InputTooLargeError(MatraError, ValueError):
     """A size gate rejected the input. `kind` is `input_too_large`;
     `details` carries `what` (the gate), `limit` and `actual`."""
 
-class UnsupportedFormat(MatraError, ValueError):
+class UnsupportedFormatError(MatraError, ValueError):
     """The input is in a format this build cannot read, or is not UTF-8
     text. `kind` is `unsupported_format`; `details` carries `format` when
     one was recognised and `feature` when one would read it."""
 
-class InvalidInput(MatraError, ValueError):
+class InvalidInputError(MatraError, ValueError):
     """A caller broke a documented contract. `kind` is
     `invalid_input`."""
 
-class Io(MatraError, OSError):
+class IoError(MatraError, OSError):
     """A filesystem operation failed, or a download did not arrive. `kind`
     is `io`; `details` carries `io_kind` and `reason`, `path` when the
-    failure concerns one, and `url` and `retryable` for a download."""
+    failure concerns one, and `url` and `retryable` for a download. Not
+    the builtin `IOError`, which is another name for `OSError`."""
 
-class IoNotFound(Io, FileNotFoundError):
-    """An `Io` failure whose I/O kind is `not_found`."""
+class IoNotFoundError(IoError, FileNotFoundError):
+    """An `IoError` failure whose I/O kind is `not_found`."""
 
-class IoPermissionDenied(Io, PermissionError):
-    """An `Io` failure whose I/O kind is `permission_denied`."""
+class IoPermissionError(IoError, PermissionError):
+    """An `IoError` failure whose I/O kind is `permission_denied`."""
 
 @final
 class Matra:

@@ -93,7 +93,7 @@ def test_a_model_directory_that_cannot_be_created_is_an_os_error(tmp_path: Path)
     """The provisioning classification RFC-0015 records, on the one
     failure a runner can produce with no model and no network:
     ``create_dir_all`` fails first, and ``io`` crosses into Python as
-    ``matra.Io``, an ``OSError``, carrying the directory as a detail.
+    ``matra.IoError``, an ``OSError``, carrying the directory as a detail.
 
     Not itself the contract change. ``create_dir_all`` already converted
     through ``Error::Io`` and routed to ``OSError`` before RFC-0015; the
@@ -109,7 +109,7 @@ def test_a_model_directory_that_cannot_be_created_is_an_os_error(tmp_path: Path)
         Matra.english(str(blocked / "models"))
 
     error = caught.value
-    assert isinstance(error, matra.Io)
+    assert isinstance(error, matra.IoError)
     assert error.kind == expect["kind"]
     message = str(error)
     for fragment in expect["message_contains"]:

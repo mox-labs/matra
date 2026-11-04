@@ -9,16 +9,9 @@ use std::collections::HashMap;
 use crate::domain::{Error, Result, Sentence};
 use crate::stopwords::is_stop_word;
 
-/// TF-IDF builds a sentence × term matrix and scores each sentence in linear
-/// time. The dominant cost is the per-sentence HashMap of term frequencies,
-/// bounded by total content tokens. At 2000 sentences with mean ~30 content
-/// tokens each, the working set is ~60k HashMap entries (~2 MiB resident)
-/// and wall time is well under a second on commodity hardware. The cap
-/// shares the value with TextRank but is intentionally a separate constant
-/// (Chesterton fence: TextRank's 2000 is computed for its 32 MiB similarity
-/// matrix, a different cost model — coupling them would mean a future TextRank
-/// tuning silently changes TF-IDF behavior).
-const MAX_SENTENCES: usize = 2000;
+/// The cap, and why it is not TextRank's, is
+/// [`limits::MAX_TFIDF_SENTENCES`](crate::domain::limits::MAX_TFIDF_SENTENCES).
+use crate::domain::limits::MAX_TFIDF_SENTENCES as MAX_SENTENCES;
 
 /// The top `n` sentences by TF-IDF score, as `(index, score)` pairs in
 /// document order.

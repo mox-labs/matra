@@ -21,15 +21,15 @@ from document_schema import assert_valid
 # `src/lib.rs` (`Class::spec`) is the source; `tests/error_tables.rs` holds
 # the documentation to it, and this holds the built module to it.
 CLASSES: dict[str, tuple[str, type[BaseException]]] = {
-    "ModelNotFound": ("model_not_found", FileNotFoundError),
-    "ModelInvalid": ("model_invalid", RuntimeError),
-    "ParseFailed": ("parse_failed", RuntimeError),
-    "InputTooLarge": ("input_too_large", ValueError),
-    "UnsupportedFormat": ("unsupported_format", ValueError),
-    "InvalidInput": ("invalid_input", ValueError),
-    "Io": ("io", OSError),
-    "IoNotFound": ("io", FileNotFoundError),
-    "IoPermissionDenied": ("io", PermissionError),
+    "ModelNotFoundError": ("model_not_found", FileNotFoundError),
+    "ModelInvalidError": ("model_invalid", RuntimeError),
+    "ParseFailedError": ("parse_failed", RuntimeError),
+    "InputTooLargeError": ("input_too_large", ValueError),
+    "UnsupportedFormatError": ("unsupported_format", ValueError),
+    "InvalidInputError": ("invalid_input", ValueError),
+    "IoError": ("io", OSError),
+    "IoNotFoundError": ("io", FileNotFoundError),
+    "IoPermissionError": ("io", PermissionError),
 }
 
 
@@ -55,9 +55,9 @@ def test_the_classes_cover_every_kind() -> None:
 
 
 def test_the_io_refinements_are_io() -> None:
-    """``except matra.Io`` catches every I/O failure, refined or not."""
-    assert issubclass(matra.IoNotFound, matra.Io)
-    assert issubclass(matra.IoPermissionDenied, matra.Io)
+    """``except matra.IoError`` catches every I/O failure, refined or not."""
+    assert issubclass(matra.IoNotFoundError, matra.IoError)
+    assert issubclass(matra.IoPermissionError, matra.IoError)
 
 
 def test_an_oversized_input_is_input_too_large_with_its_gate() -> None:
@@ -65,7 +65,7 @@ def test_an_oversized_input_is_input_too_large_with_its_gate() -> None:
         matra.semantic_clusters([[1.0, 0.0]] * 2001, 0.5, "fixed")
 
     error = caught.value
-    assert isinstance(error, matra.InputTooLarge)
+    assert isinstance(error, matra.InputTooLargeError)
     assert error.kind == "input_too_large"
     assert error.details == {"what": "clusters", "limit": 2000, "actual": 2001}
     assert_valid("error", _as_data(error), "input_too_large")
@@ -76,7 +76,7 @@ def test_a_broken_contract_is_invalid_input_with_its_reason() -> None:
         matra.semantic_clusters([[1.0, 0.0], [1.0]], 0.5, "fixed")
 
     error = caught.value
-    assert isinstance(error, matra.InvalidInput)
+    assert isinstance(error, matra.InvalidInputError)
     assert error.details["reason"] in str(error)
     assert_valid("error", _as_data(error), "invalid_input")
 
@@ -87,7 +87,7 @@ def test_a_missing_model_is_model_not_found_with_its_path(tmp_path: Path) -> Non
         matra.Matra.from_path(missing)
 
     error = caught.value
-    assert isinstance(error, matra.ModelNotFound)
+    assert isinstance(error, matra.ModelNotFoundError)
     assert error.details == {"path": str(missing)}
     assert_valid("error", _as_data(error), "model_not_found")
 
@@ -96,7 +96,7 @@ def test_a_missing_model_is_model_not_found_with_its_path(tmp_path: Path) -> Non
     os.name != "posix" or os.geteuid() == 0, reason="needs a file this user may not read"
 )
 def test_an_unreadable_file_is_io_permission_denied(tmp_path: Path) -> None:
-    """Defect 8 of EPR-0006's other half: ``Io`` routes on the kind it
+    """Defect 8 of EPR-0006's other half: ``Error::Io`` routes on the kind it
     wraps, so a refused read is a ``PermissionError``, and the path it
     concerns is a detail."""
     for name in ("model.safetensors", "tokenizer.json", "config.json"):
@@ -111,7 +111,7 @@ def test_an_unreadable_file_is_io_permission_denied(tmp_path: Path) -> None:
             (tmp_path / name).chmod(0o600)
 
     error = caught.value
-    assert isinstance(error, matra.IoPermissionDenied)
+    assert isinstance(error, matra.IoPermissionError)
     assert error.kind == "io"
     assert error.details["io_kind"] == "permission_denied"
     assert Path(error.details["path"]).parent == tmp_path
@@ -121,11 +121,37 @@ def test_an_unreadable_file_is_io_permission_denied(tmp_path: Path) -> None:
 def test_an_exception_survives_pickling() -> None:
     """The classes name ``matra`` as their module and the package exports
     them, so an exception crosses a process boundary whole."""
-    with pytest.raises(matra.InputTooLarge) as caught:
+    with pytest.raises(matra.InputTooLargeError) as caught:
         matra.semantic_clusters([[1.0, 0.0]] * 2001, 0.5, "fixed")
 
     copy = pickle.loads(pickle.dumps(caught.value))
-    assert type(copy) is matra.InputTooLarge
+    assert type(copy) is matra.InputTooLargeError
     assert str(copy) == str(caught.value)
     assert copy.kind == caught.value.kind
     assert copy.details == caught.value.details
+
+
+def _model_dir() -> str:
+    return os.environ.get("MATRA_MODEL_DIR") or str(Path.home() / ".matra" / "models")
+
+
+@pytest.mark.model
+def test_a_missing_file_is_io_not_found_with_its_path(tmp_path: Path) -> None:
+    """Regression (EPR-0006 milestone 4): a missing input's message named
+    no path. It names it, and the path is a detail beside the I/O kind."""
+    try:
+        engine = matra.Matra.english(_model_dir())
+    except Exception as exc:
+        pytest.skip(f"UDPipe model unavailable: {exc}")
+    missing = tmp_path / "absent.md"
+
+    with pytest.raises(FileNotFoundError) as caught:
+        engine.analyze_path(missing)
+
+    error = caught.value
+    assert isinstance(error, matra.IoNotFoundError)
+    assert error.kind == "io"
+    assert error.details["io_kind"] == "not_found"
+    assert error.details["path"] == str(missing)
+    assert str(missing) in str(error)
+    assert_valid("error", _as_data(error), "io")

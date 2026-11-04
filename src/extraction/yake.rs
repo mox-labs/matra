@@ -10,14 +10,9 @@ use std::collections::HashMap;
 use crate::domain::{Error, Keyphrase, Result, Sentence, Span};
 use crate::stopwords::is_stop_word;
 
-/// YAKE accumulates per-term position vectors, context-word sets, and
-/// 1-/2-/3-gram candidates keyed by phrase strings. The dominant cost is
-/// the n-gram windowing over content tokens: at 200k tokens the n-gram
-/// candidate map holds <= ~600k entries (3-grams strictly bounded by token
-/// count) at ~64 bytes each = ~40 MiB resident; per-term context sets are
-/// bounded by mean window size (~5 surrounding words). Cap is on tokens
-/// (not sentences) per Knuth's correction — same reasoning as RAKE.
-const MAX_TOKENS: usize = 200_000;
+/// YAKE's cap, on tokens rather than sentences, and its cost model:
+/// [`limits::MAX_YAKE_TOKENS`](crate::domain::limits::MAX_YAKE_TOKENS).
+use crate::domain::limits::MAX_YAKE_TOKENS as MAX_TOKENS;
 
 /// At most `n` keyphrases ranked by YAKE, each with every place it
 /// occurs.

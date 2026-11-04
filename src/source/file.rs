@@ -2,7 +2,8 @@
 
 use std::path::Path;
 
-use crate::domain::{self, Error, IoContext, MAX_INPUT_BYTES};
+use crate::domain::limits::MAX_INPUT_BYTES;
+use crate::domain::{self, Error, IoContext};
 
 use super::{Fetched, Source};
 
@@ -26,7 +27,8 @@ pub(crate) struct FileSource;
 
 impl Source for FileSource {
     fn read(&self, input: &Path) -> domain::Result<Vec<Fetched>> {
-        let metadata = std::fs::symlink_metadata(input)?;
+        let metadata = std::fs::symlink_metadata(input)
+            .map_err(|e| Error::Io(IoContext::cannot("read", input, &e)))?;
         let file_type = metadata.file_type();
 
         if file_type.is_dir() {
@@ -62,7 +64,8 @@ impl Source for FileSource {
             });
         }
 
-        let bytes = std::fs::read(input)?;
+        let bytes =
+            std::fs::read(input).map_err(|e| Error::Io(IoContext::cannot("read", input, &e)))?;
         Ok(vec![Fetched {
             bytes,
             path: input.to_path_buf(),
@@ -78,6 +81,40 @@ impl Source for FileSource {
 mod tests {
     use super::*;
     use std::io::Write;
+
+    /// Regression (EPR-0006 milestone 4): a missing file's message was
+    /// `io error: No such file or directory (os error 2)`, naming no
+    /// path. It names the path, and the path is a detail beside the
+    /// I/O kind.
+    #[test]
+    fn a_missing_file_names_its_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let missing = dir.path().join("absent.md");
+
+        let err = match FileSource.read(&missing) {
+            Err(err) => err,
+            Ok(_) => panic!("the file is absent"),
+        };
+
+        assert_eq!(err.kind(), "io");
+        let details = err.details();
+        assert_eq!(
+            details.get("io_kind"),
+            Some(&domain::DetailValue::Text("not_found".to_string()))
+        );
+        assert_eq!(
+            details.get("path"),
+            Some(&domain::DetailValue::Text(missing.display().to_string()))
+        );
+        assert!(
+            err.to_string().contains(&missing.display().to_string()),
+            "{err}"
+        );
+        match err {
+            Error::Io(io) => assert_eq!(io.kind(), std::io::ErrorKind::NotFound),
+            other => panic!("expected Io, got {other:?}"),
+        }
+    }
 
     #[test]
     fn reads_the_files_bytes_and_path() {

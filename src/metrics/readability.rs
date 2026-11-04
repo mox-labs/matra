@@ -1,12 +1,14 @@
 //! Readability metric — Flesch-Kincaid grade level per paragraph.
 
+use crate::domain::limits::MIN_READABILITY_WORDS;
 use crate::domain::{Document, ParagraphKind};
 
 /// Populate `ParagraphMetrics::readability_grade` for every paragraph with
-/// more than 10 whitespace-counted words that is not a quote.
+/// at least [`MIN_READABILITY_WORDS`] whitespace-counted words that is
+/// not a quote.
 pub(crate) fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
-        if para.word_count() > 10 && para.kind != ParagraphKind::Quote {
+        if para.word_count() >= MIN_READABILITY_WORDS && para.kind != ParagraphKind::Quote {
             para.metrics.readability_grade = Some(flesch_kincaid_grade(&para.text));
         }
     }
