@@ -5,7 +5,7 @@
 - Pinned at: `6e9d94b580d6cd442bf74f30a6c05ade5329ca0d` (every code citation below opens at this commit)
 - Proposal PR: [#134](https://github.com/mox-labs/matra/pull/134)
 - Tracking issue: [#161](https://github.com/mox-labs/matra/issues/161)
-- Status: proposed
+- Status: accepted
 
 ## Summary
 
