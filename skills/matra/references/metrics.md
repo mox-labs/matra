@@ -99,7 +99,7 @@ A sentence counts as passive when any token carries a `dep` of `nsubj:pass`, `ns
 
 ## Summarization
 
-Both take a sentence slice and a count, score every sentence, keep the highest N, and return them in ascending position. Neither generates text: the output sentences are the input sentences. A term is a token lemma with punctuation and stop words removed.
+Both take a document and a count, score every sentence, keep the highest N, and return them in ascending position, each with its index among the document's sentences. Neither generates text: the output sentences are the input sentences. A term is a token lemma with punctuation and stop words removed.
 
 ### `tfidf`
 
@@ -169,7 +169,7 @@ Candidates are sliding windows of 1, 2 and 3 words over each sentence's term lis
 
 No random numbers, no seeds, no sampling, one thread on the analysis path, and the model pinned by SHA-256. Given the same model and input, the parse is the same, and every metric, every TextRank score, and every RAKE and YAKE score is reproducible bit for bit on one machine.
 
-Two things are not bit-stable. TF-IDF sentence scores carry hash map iteration order into a floating-point sum, so low bits can differ between runs, and RAKE and YAKE output order among exactly tied scores can differ, which can change which phrase survives truncation at the requested count. Sort keyphrase output before diffing it across runs.
+One thing is not bit-stable: TF-IDF sentence scores carry hash map iteration order into a floating-point sum, so low bits can differ between runs. RAKE and YAKE order exactly tied scores the same way on every run, by the order the phrases are first met, so which phrase survives truncation at the requested count is stable too, though a tie at the cut is still decided by that order and not by merit.
 
 Natural logarithms come from the platform math library, so cross-platform values can differ by an ulp; compare with a tolerance. The compression ratio depends on the brotli encoder version.
 

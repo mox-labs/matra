@@ -69,7 +69,7 @@ The recipe:
 5. **Translate external errors** to `domain::Error` variants. Never propagate external crate errors through the boundary.
 6. **Document contract overrides** inline. If your adapter's behavior differs from the port's documented postconditions (e.g., DirectorySource's sort order), document the override at the impl site.
 7. **Add unit tests** for the adapter's contract: what it accepts, what it rejects, what it returns under each input class.
-8. **Wire it into the composition root** if it should be available via the convenience API; otherwise leave it as a manually-composed building block.
+8. **Wire it into the composition root.** `Source`, `Decomposer` and `NlpProvider` are crate-private, so an adapter of theirs that `lib.rs` does not wire is unreachable; an `Embedder` adapter is the caller's to pass to `clusters`.
 
 ## Adding a new port
 
@@ -114,7 +114,7 @@ Not applicable. Matra is a one-shot pipeline (annotate → compose → return), 
 
 Every type in `domain.rs` appears in Rust today, in Python via `pythonize`, and in TypeScript via `serde-wasm-bindgen` when the WASM crust lands. Architectural implications:
 
-- **Methods do not cross FFI. Only fields do.** Aggregate methods (e.g., `Corpus::passive_ratio()`) are not visible to Python consumers in serialized output. If you need them visible, materialize as a field on a derived summary type.
+- **Methods do not cross FFI. Only fields do.** Methods (e.g., `Document::sentences()`) are not visible to Python consumers in serialized output. If you need them visible, materialize as a field on a derived summary type.
 - **Names cross.** Every public type/field/enum-variant name is a contract across at least two languages. When picking a name, ask: does it read clearly as a Python dict key? As a TypeScript interface field?
 - **`#[non_exhaustive]` on every public enum and every public struct with public fields.** Forward compatibility across all three languages — additive changes are minor-version, not major.
 

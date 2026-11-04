@@ -31,7 +31,7 @@ The same analysis from Rust, and from the command line:
 use matra::domain::Format;
 use matra::{Engine, Input};
 
-let engine = Engine::with_defaults()?;
+let engine = Engine::new()?;
 
 let text = "The committee approved the proposal without debate. \
             Three amendments were submitted by the working group.";

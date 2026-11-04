@@ -81,12 +81,12 @@
       "words": 29
     },
     {
-      "compression_ratio": 0.5833,
+      "compression_ratio": 0.5779,
       "kind": "paragraph",
       "lexical_density": 0.6182,
-      "readability_grade": 12.5855,
+      "readability_grade": 11.7273,
       "sentences": 3,
-      "text": "A directory changes the shape by streaming. Inputs::dir lists the entries up front but reads nothing until pulled, and each pull of analyze_all runs one document through the whole pipeline before the next file is read. One document's representations are resident at a time; only what you retain accumulates, and collecting into CorpusResult retains everything.",
+      "text": "A directory changes the shape by streaming. Inputs::dir lists the entries up front but reads nothing until pulled, and each pull of analyze_all runs one document through the whole pipeline before the next file is read. One document's representations are resident at a time; only what you retain accumulates, and collecting the stream retains everything.",
       "words": 57
     },
     {
@@ -108,13 +108,13 @@
       "words": 84
     },
     {
-      "compression_ratio": 0.5515,
+      "compression_ratio": 0.5098,
       "kind": "paragraph",
-      "lexical_density": 0.5079,
-      "readability_grade": 14.8889,
+      "lexical_density": 0.5063,
+      "readability_grade": 16.0395,
       "sentences": 3,
-      "text": "Udpipe::from_config(&cfg) is the same call with the directory resolved rather than named, and Engine::with_defaults() is Config::resolve() followed by that. Config is read once, at construction; nothing in the call path above consults it, which is why configuration cannot change what a call computes. Model2Vec::potion_base_8m(dir) and Model2Vec::from_config(&cfg) do the same for the reference embedding model, against a three-file digest rather than a single one.",
-      "words": 70
+      "text": "Udpipe::from_config(&cfg) is the same call with the directory resolved rather than named, and it is what the public constructors reach: Engine::new() with a Config resolved from the environment alone, Engine::from_config(&cfg) with the one you pass. Config is read once, at construction; nothing in the call path above consults it, which is why configuration cannot change what a call computes. Model2Vec::potion_base_8m(dir) and Model2Vec::from_config(&cfg) do the same for the reference embedding model, against a three-file digest rather than a single one.",
+      "words": 87
     },
     {
       "compression_ratio": 0.5574,
@@ -137,11 +137,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5789,
-      "readability_grade": 9.8589,
-      "sentences": 3,
-      "text": "Udpipe::from_path and Udpipe::from_bytes verify nothing. They load what you name. Traceability for those two paths belongs to the caller.",
-      "words": 20
+      "lexical_density": 0.5667,
+      "readability_grade": 9.1567,
+      "sentences": 2,
+      "text": "Udpipe::from_path, which only Python's Matra.from_path reaches, verifies nothing: it loads what you name, and traceability for that path belongs to the caller. A Rust caller loads the pinned model only.",
+      "words": 32
     },
     {
       "compression_ratio": null,
@@ -153,13 +153,13 @@
       "words": 38
     },
     {
-      "compression_ratio": 0.6215,
+      "compression_ratio": 0.5844,
       "kind": "paragraph",
-      "lexical_density": 0.6324,
-      "readability_grade": 8.74,
+      "lexical_density": 0.5915,
+      "readability_grade": 8.2846,
       "sentences": 4,
-      "text": "One model per thread, or a lock. The underlying Model is Send and deliberately not Sync: its parse path mutates internal workspace caches. In Rust this is a compile error rather than a race, because sharing &Udpipe across threads will not typecheck. To parallelize you either give each thread its own model, paying another 16 MB load, or put one behind a Mutex and serialize the parse calls.",
-      "words": 70
+      "text": "One engine per thread. The underlying Model is Send and deliberately not Sync: its parse path mutates internal workspace caches. The Engine that owns it is neither Send nor Sync, since its readers are not Send either, so in Rust sharing or moving an engine across threads is a compile error rather than a race. To parallelize you build an engine on each thread, paying another 16 MB load for each.",
+      "words": 72
     },
     {
       "compression_ratio": null,
@@ -299,11 +299,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5161,
-      "readability_grade": 9.1066,
+      "lexical_density": 0.4839,
+      "readability_grade": 10.2485,
       "sentences": 3,
-      "text": "Summarization and keyphrase extraction are not part of this. The pipeline never calls them. They take &[Sentence] and are invoked directly by the caller, on sentences read back off the tree:",
-      "words": 32
+      "text": "Summarization and keyphrase extraction are not part of this. The pipeline never calls them. They are free functions over the analysed Document, invoked by the caller, and they need no engine:",
+      "words": 31
     },
     {
       "compression_ratio": 0.606,
@@ -324,13 +324,13 @@
       "words": 13
     },
     {
-      "compression_ratio": 0.5563,
+      "compression_ratio": 0.5574,
       "kind": "paragraph",
-      "lexical_density": 0.5686,
-      "readability_grade": 8.1616,
+      "lexical_density": 0.5769,
+      "readability_grade": 7.7354,
       "sentences": 3,
-      "text": "Three separate lanes, because these are three separate call paths. Only the middle one runs during a pipeline call. The model check fires once when you construct the provider, and the extractor caps fire only when you call an extractor, which is why neither shows up in a pipeline stack trace.",
-      "words": 51
+      "text": "Three separate lanes, because these are three separate call paths. Only the middle one runs during a pipeline call. The model check fires once when you construct the engine, and the outcome caps fire only when you call an outcome function, which is why neither shows up in a pipeline stack trace.",
+      "words": 52
     },
     {
       "compression_ratio": null,
@@ -396,13 +396,13 @@
       "words": 62
     },
     {
-      "compression_ratio": 0.5258,
+      "compression_ratio": 0.5141,
       "kind": "paragraph",
-      "lexical_density": 0.5926,
-      "readability_grade": 11.2687,
+      "lexical_density": 0.566,
+      "readability_grade": 11.8252,
       "sentences": 5,
-      "text": "Two extension points are dispatched at runtime. NlpProvider has two methods, parse and identity, and the engine holds it as Box<dyn NlpProvider>. Implement it and nothing downstream changes, because nothing downstream of parse knows which provider ran. Embedder is the same shape one tier over: embed_and_cluster takes it as &dyn Embedder, and its identity travels into every result so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library.",
-      "words": 83
+      "text": "Two ports are dispatched at runtime. NlpProvider has two methods, parse and identity, and the engine holds it as Box<dyn NlpProvider>. It is private to the crate, so a second parser is a file and a registration line inside it, and nothing downstream changes, because nothing downstream of parse knows which parser ran. Embedder is the same shape one tier over, and the one port open to outside implementers: clusters takes it as &dyn Embedder, and its identity travels into every result's provenance so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library.",
+      "words": 110
     },
     {
       "compression_ratio": 0.5394,
@@ -414,13 +414,13 @@
       "words": 100
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5704,
       "kind": "paragraph",
-      "lexical_density": 0.5588,
-      "readability_grade": 6.8771,
+      "lexical_density": 0.4737,
+      "readability_grade": 8.1744,
       "sentences": 3,
-      "text": "The metric suite is data as well. Metric, run_suite, and Document::new are all public, so a caller can assemble a different suite and run it over a document. compose always runs the default four.",
-      "words": 35
+      "text": "The metric suite is data as well, inside the crate: a list of functions over &mut Document that compose runs. It is private, so a new measure is a function and a line in the list. A caller who wants another measure writes a function over the Document it was handed, which is all a metric is.",
+      "words": 58
     },
     {
       "compression_ratio": 0.5877,
@@ -462,9 +462,9 @@
       "compression_ratio": null,
       "kind": "paragraph",
       "lexical_density": 0.6429,
-      "readability_grade": 8.8343,
+      "readability_grade": 7.9914,
       "sentences": 2,
-      "text": "Every Python method that takes text routes through the same pipeline, so the 8 MiB text cap fires uniformly. The extraction methods add their per-extractor caps on top.",
+      "text": "Every Python method that takes text routes through the same pipeline, so the 8 MiB text cap fires uniformly. The outcome methods add their per-method caps on top.",
       "words": 28
     },
     {

@@ -173,6 +173,15 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
+      "lexical_density": 0.4324,
+      "readability_grade": 17.0184,
+      "sentences": 1,
+      "text": "Under --json the result is a summary: the document's provenance, with the method that ran and its parameters ({\"n\": 3}), and the sentences, each with its index among the document's sentences and its span in the input.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
       "lexical_density": 1.0,
       "readability_grade": null,
       "sentences": 1,
@@ -191,28 +200,28 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6364,
-      "readability_grade": 8.3662,
+      "lexical_density": 0.5714,
+      "readability_grade": 12.267,
       "sentences": 2,
-      "text": "Unlike summarize, keyphrases output stays in score order, highest first. Keyphrase has no position field to sort back into, because a phrase is not tied to one location the way a sentence is.",
-      "words": 33
+      "text": "Unlike summarize, keyphrases output stays in score order, highest first. A phrase is not tied to one location the way a sentence is, so under --json each carries occurrences, the span of every place in the input it was found, beside the result's provenance with its method and parameters.",
+      "words": 50
     },
     {
-      "compression_ratio": 0.5957,
+      "compression_ratio": 0.5929,
       "kind": "paragraph",
-      "lexical_density": 0.6071,
-      "readability_grade": 9.8114,
+      "lexical_density": 0.541,
+      "readability_grade": 10.3302,
       "sentences": 3,
-      "text": "Phrases are printed as lowercased lemmas, not as the surface text of the document. \"Dependency Parses\" appears as dependency parse. Phrases with equal scores can swap order between runs, and a tie at the -n boundary can change which phrase makes the list, so do not diff raw keyphrase output across runs without sorting it first.",
-      "words": 56
+      "text": "Phrases are printed as lowercased lemmas, not as the surface text of the document. \"Dependency Parses\" appears as dependency parse, and its occurrences point at the surface text. Phrases with equal scores come back in the same order on every run, the order they are first met, so a tie at the -n boundary is decided the same way each time.",
+      "words": 61
     },
     {
-      "compression_ratio": 0.5117,
+      "compression_ratio": 0.5091,
       "kind": "paragraph",
       "lexical_density": 0.5556,
       "readability_grade": 8.3853,
       "sentences": 6,
-      "text": "Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word lexical density scores 5.667 and the three-word model file name scores 5.067. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.",
+      "text": "Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word lexical density scores 5.667 and the three-word model file name scores 5.114. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.",
       "words": 141
     },
     {
@@ -221,7 +230,7 @@
       "lexical_density": 0.5333,
       "readability_grade": 5.4133,
       "sentences": 5,
-      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 11.905 and scores the bare error at 1.405, while YAKE's first is treat untrusted at 84.628. What is low there is the score, not the position: 1.405 sits not far above 1.000, the floor any single word scores, and 186 of the 489 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 268th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
+      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.117 and scores the bare error at 1.450, while YAKE's first is treat untrusted at 81.058. What is low there is the score, not the position: 1.450 sits not far above 1.000, the floor any single word scores, and 180 of the 483 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 264th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
       "words": 126
     },
     {
@@ -396,13 +405,13 @@
       "words": 7
     },
     {
-      "compression_ratio": 0.4692,
+      "compression_ratio": 0.4547,
       "kind": "paragraph",
-      "lexical_density": 0.5,
-      "readability_grade": 9.202,
-      "sentences": 6,
-      "text": "command is analyze, summarize, keyphrases, config, or skill. input is the path that was read, or the name --stdin-filename gave it. For config it is the config file's path when that file exists and null when it does not, and for skill, which reads no document, it is always null. result is the serde form of the domain value the command produced: a Document for analyze, a list of ScoredSentence for summarize, a list of Keyphrase for keyphrases. For config it is an object keyed by setting, each carrying value, source and origin, and for skill the shapes shown above.",
-      "words": 101
+      "lexical_density": 0.4912,
+      "readability_grade": 10.588,
+      "sentences": 5,
+      "text": "command is analyze, summarize, keyphrases, config, or skill. input is the path that was read, or the name --stdin-filename gave it. For config it is the config file's path when that file exists and null when it does not, and for skill, which reads no document, it is always null. result is the serde form of the domain value the command produced: a Document for analyze, a Summary for summarize and a Keyphrases for keyphrases, each of the last two carrying the document's provenance with the method that ran and its parameters. For config it is an object keyed by setting, each carrying value, source and origin, and for skill the shapes shown above.",
+      "words": 116
     },
     {
       "compression_ratio": 0.5627,

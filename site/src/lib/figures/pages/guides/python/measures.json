@@ -99,31 +99,31 @@
       "words": 24
     },
     {
-      "compression_ratio": 0.5362,
+      "compression_ratio": 0.5386,
       "kind": "paragraph",
-      "lexical_density": 0.4605,
-      "readability_grade": 8.5884,
+      "lexical_density": 0.4615,
+      "readability_grade": 8.8073,
       "sentences": 4,
-      "text": "There is no standalone parse method on the Python surface. Each of the four extraction methods runs the text it is given through the pipeline on its own, treating it as plain text. Calling analyze and then tfidf_summarize on the same string parses that string twice, and there is no parse-once-use-many path from Python today. If the second parse matters for your workload, do that work in Rust and expose the result through your own binding.",
-      "words": 79
+      "text": "There is no standalone parse method on the Python surface. Each of the four summary and keyphrase methods runs the text it is given through the pipeline on its own, treating it as plain text. Calling analyze and then tfidf_summarize on the same string parses that string twice, and there is no parse-once-use-many path from Python today. If the second parse matters for your workload, do that work in Rust and expose the result through your own binding.",
+      "words": 81
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5146,
       "kind": "paragraph",
-      "lexical_density": 0.625,
-      "readability_grade": 8.35,
+      "lexical_density": 0.5625,
+      "readability_grade": 13.3608,
       "sentences": 3,
-      "text": "The two summarizers return their selection in document order, not score order. Read position to see where a sentence sits in the source and score to see how it ranked. The two keyphrase methods return score order, highest first, because Keyphrase has no position to sort back into.",
-      "words": 48
+      "text": "Each result is a dict with a provenance, the parsed text's own with the method that ran (tfidf, textrank, rake, yake) and the parameters it ran with ({\"n\": 3}), beside the result itself. The two summarizers return their sentences in document order, not score order: read index to see where a sentence sits among the text's sentences, span for where it lies in the text, and score to see how it ranked. The two keyphrase methods return their phrases in score order, highest first, each with occurrences, the span of every place the phrase was found.",
+      "words": 98
     },
     {
-      "compression_ratio": 0.5769,
+      "compression_ratio": 0.5989,
       "kind": "paragraph",
-      "lexical_density": 0.6429,
-      "readability_grade": 11.1264,
-      "sentences": 4,
-      "text": "Keyphrases come back as lowercased lemmas joined with spaces, not as the surface text. A document about \"Dependency Parses\" yields the phrase dependency parse. Phrases with identical scores can also change relative order between runs, and a tie straddling the max_phrases cutoff can change which phrase is included, because the internal candidate map has no stable iteration order. Sort or filter on your side if you need a reproducible list.",
-      "words": 71
+      "lexical_density": 0.6271,
+      "readability_grade": 11.28,
+      "sentences": 3,
+      "text": "Keyphrases come back as lowercased lemmas joined with spaces, not as the surface text. A document about \"Dependency Parses\" yields the phrase dependency parse; its occurrences' spans point at the surface text. Phrases with identical scores come back in the same order on every run, so a tie straddling the max_phrases cutoff is decided the same way each time.",
+      "words": 60
     },
     {
       "compression_ratio": 0.4885,
@@ -209,11 +209,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.4634,
-      "readability_grade": 10.8245,
+      "lexical_density": 0.4762,
+      "readability_grade": 12.2667,
       "sentences": 2,
-      "text": "identity is read once, when the object is handed over, and travels into the result as identity. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.",
-      "words": 41
+      "text": "identity is read once, when the object is handed over, and travels into the result's provenance as parameters[\"embedder\"]. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.",
+      "words": 44
     },
     {
       "compression_ratio": null,
@@ -228,19 +228,19 @@
       "compression_ratio": null,
       "kind": "paragraph",
       "lexical_density": 0.5625,
-      "readability_grade": 21.965,
+      "readability_grade": 21.5963,
       "sentences": 2,
-      "text": "The per-algorithm caps apply on top: 2000 sentences for tfidf_summarize, textrank_summarize and semantic_clusters (the method and the module-level function alike), and 200000 tokens for rake_keyphrases and yake_keyphrases, each raising ValueError when exceeded.",
+      "text": "The per-method caps apply on top: 2000 sentences for tfidf_summarize, textrank_summarize and semantic_clusters (the method and the module-level function alike), and 200000 tokens for rake_keyphrases and yake_keyphrases, each raising ValueError when exceeded.",
       "words": 33
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6154,
-      "readability_grade": 12.8919,
-      "sentences": 2,
-      "text": "Every method returns a plain Python dict (or a list of them), not a custom object. Document, Section, Paragraph, Sentence, Token, ScoredSentence, and Keyphrase are TypedDict definitions in matra.types that describe the shape at both runtime and type-check time:",
-      "words": 40
+      "lexical_density": 0.625,
+      "readability_grade": 13.155,
+      "sentences": 3,
+      "text": "Every method returns a plain Python dict (or a list of them), not a custom object. Document, Section, Paragraph, Sentence, Token, Summary, Keyphrases and Clusters are TypedDict definitions in matra.types that describe the shape at both runtime and type-check time:",
+      "words": 41
     },
     {
       "compression_ratio": null,
@@ -270,13 +270,13 @@
       "words": 57
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.4682,
       "kind": "paragraph",
-      "lexical_density": 0.619,
-      "readability_grade": 12.105,
-      "sentences": 2,
-      "text": "ScoredSentence (text, score, position) is the shape for tfidf_summarize and textrank_summarize. Keyphrase (phrase, score) is the shape for rake_keyphrases and yake_keyphrases.",
-      "words": 21
+      "lexical_density": 0.5714,
+      "readability_grade": 14.5271,
+      "sentences": 3,
+      "text": "Summary (provenance, sentences, each a SummarySentence of index, span, text and score) is the shape for tfidf_summarize and textrank_summarize. Keyphrases (provenance, phrases, each a Keyphrase of phrase, score and occurrences) is the shape for rake_keyphrases and yake_keyphrases. Clusters (provenance, clusters, edges) is the shape for Matra.semantic_clusters; the module-level semantic_clusters reads no document, so it returns a VectorClusters, parameters in place of the provenance.",
+      "words": 65
     },
     {
       "compression_ratio": null,
@@ -360,12 +360,12 @@
       "words": 14
     },
     {
-      "compression_ratio": 0.5772,
+      "compression_ratio": 0.5776,
       "kind": "paragraph",
       "lexical_density": 0.5909,
-      "readability_grade": 13.5506,
+      "readability_grade": 13.0142,
       "sentences": 3,
-      "text": "The message on each exception is the Rust error's own Display output, so an InputTooLarge message names the gate that fired. The text methods raise input, tfidf, textrank, rake, yake and semantic_clusters; the constructors that resolve or download a model raise config_file, udpipe_download and embedding_download. analyze_path raises none of them: an oversized file there is an item whose kind is input_too_large, with file_source in its message.",
+      "text": "The message on each exception is the Rust error's own Display output, so an InputTooLarge message names the gate that fired. The text methods raise input, tfidf, textrank, rake, yake and clusters; the constructors that resolve or download a model raise config_file, udpipe_download and embedding_download. analyze_path raises none of them: an oversized file there is an item whose kind is input_too_large, with file_source in its message.",
       "words": 68
     },
     {

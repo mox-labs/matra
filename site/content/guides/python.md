@@ -70,10 +70,10 @@ Concurrent `Matra.english` calls against the same model directory are safe. Each
 |---|---|---|
 | `analyze(text)` | plain text | `Document` |
 | `analyze_markdown(text)` | markdown | `Document` |
-| `tfidf_summarize(text, n)` | text, sentence count | `list[ScoredSentence]` |
-| `textrank_summarize(text, n)` | text, sentence count | `list[ScoredSentence]` |
-| `rake_keyphrases(text, max_phrases)` | text, phrase count | `list[Keyphrase]` |
-| `yake_keyphrases(text, max_phrases)` | text, phrase count | `list[Keyphrase]` |
+| `tfidf_summarize(text, n)` | text, sentence count | `Summary` |
+| `textrank_summarize(text, n)` | text, sentence count | `Summary` |
+| `rake_keyphrases(text, max_phrases)` | text, phrase count | `Keyphrases` |
+| `yake_keyphrases(text, max_phrases)` | text, phrase count | `Keyphrases` |
 
 ```python
 result = v.analyze("The committee approved the proposal without debate.")
@@ -83,11 +83,11 @@ phrases = v.rake_keyphrases(text, 10)
 
 Two more methods take something other than a string: `analyze_path` takes a path, and `semantic_clusters` takes text plus an embedding model. Both are below.
 
-There is no standalone parse method on the Python surface. Each of the four extraction methods runs the text it is given through the pipeline on its own, treating it as plain text. Calling `analyze` and then `tfidf_summarize` on the same string parses that string twice, and there is no parse-once-use-many path from Python today. If the second parse matters for your workload, do that work in Rust and expose the result through your own binding.
+There is no standalone parse method on the Python surface. Each of the four summary and keyphrase methods runs the text it is given through the pipeline on its own, treating it as plain text. Calling `analyze` and then `tfidf_summarize` on the same string parses that string twice, and there is no parse-once-use-many path from Python today. If the second parse matters for your workload, do that work in Rust and expose the result through your own binding.
 
-The two summarizers return their selection in document order, not score order. Read `position` to see where a sentence sits in the source and `score` to see how it ranked. The two keyphrase methods return score order, highest first, because `Keyphrase` has no position to sort back into.
+Each result is a dict with a `provenance`, the parsed text's own with the `method` that ran (`tfidf`, `textrank`, `rake`, `yake`) and the `parameters` it ran with (`{"n": 3}`), beside the result itself. The two summarizers return their `sentences` in document order, not score order: read `index` to see where a sentence sits among the text's sentences, `span` for where it lies in the text, and `score` to see how it ranked. The two keyphrase methods return their `phrases` in score order, highest first, each with `occurrences`, the span of every place the phrase was found.
 
-Keyphrases come back as lowercased lemmas joined with spaces, not as the surface text. A document about "Dependency Parses" yields the phrase `dependency parse`. Phrases with identical scores can also change relative order between runs, and a tie straddling the `max_phrases` cutoff can change which phrase is included, because the internal candidate map has no stable iteration order. Sort or filter on your side if you need a reproducible list.
+Keyphrases come back as lowercased lemmas joined with spaces, not as the surface text. A document about "Dependency Parses" yields the phrase `dependency parse`; its occurrences' spans point at the surface text. Phrases with identical scores come back in the same order on every run, so a tie straddling the `max_phrases` cutoff is decided the same way each time.
 
 The `score` on a `Keyphrase` is an ordering key and nothing more. RAKE's is a sum of per-word ratios that are each at least 1, so a phrase of k words scores at least k, which is a floor per length and not an order across lengths; YAKE's is the reciprocal of a product of per-word scores, so it is unbounded above, carries no unit, and does not track phrase length in either direction. The two scales are unrelated to each other, and neither is comparable across documents or with another tool's. Do not surface either number to a reader as a strength without saying which method produced it. The [CLI guide](cli.md#reading-the-scores) works through what the ranking does and does not tell you, and [Methodology](../reference/methodology.md) carries the formulas.
 
@@ -123,7 +123,7 @@ class MyEmbedder:
 
 
 clusters = v.semantic_clusters(text, 0.85, MyEmbedder())
-assert clusters["identity"] == "my-service/v3"
+assert clusters["provenance"]["parameters"]["embedder"] == "my-service/v3"
 ```
 
 `Embedder` in `matra.types` is the protocol those two methods satisfy, and it is what `semantic_clusters` is annotated with. Importing it is optional and buys you a type checker's opinion, not a runtime check.
@@ -132,20 +132,20 @@ The object is asked for its identity before the text is parsed, so an embedder t
 
 The contract is the one the Rust port carries: exactly one vector per input text, in input order, every vector the same length. Break it and the call raises `ValueError` with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your `embed` arrives as `ValueError` too, with your exception's own text inside the message.
 
-`identity` is read once, when the object is handed over, and travels into the result as `identity`. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.
+`identity` is read once, when the object is handed over, and travels into the result's provenance as `parameters["embedder"]`. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.
 
 ## Size limits
 
 Every method that takes text rejects text over 8 MiB with `ValueError`. The gate lives in the pipeline stage every method routes through, not in each method, so there is no method that skips it.
 
-The per-algorithm caps apply on top: 2000 sentences for `tfidf_summarize`, `textrank_summarize` and `semantic_clusters` (the method and the module-level function alike), and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `ValueError` when exceeded.
+The per-method caps apply on top: 2000 sentences for `tfidf_summarize`, `textrank_summarize` and `semantic_clusters` (the method and the module-level function alike), and 200000 tokens for `rake_keyphrases` and `yake_keyphrases`, each raising `ValueError` when exceeded.
 
 ## The returned dicts and their shape
 
-Every method returns a plain Python dict (or a list of them), not a custom object. `Document`, `Section`, `Paragraph`, `Sentence`, `Token`, `ScoredSentence`, and `Keyphrase` are `TypedDict` definitions in `matra.types` that describe the shape at both runtime and type-check time:
+Every method returns a plain Python dict (or a list of them), not a custom object. `Document`, `Section`, `Paragraph`, `Sentence`, `Token`, `Summary`, `Keyphrases` and `Clusters` are `TypedDict` definitions in `matra.types` that describe the shape at both runtime and type-check time:
 
 ```python
-from matra import Document, Keyphrase, Paragraph, ScoredSentence, Section, Sentence, Token
+from matra import Clusters, Document, Keyphrases, Paragraph, Section, Sentence, Summary, Token
 ```
 
 `Document` nests down to the token level:
@@ -172,7 +172,7 @@ Every heading, paragraph, skipped construct, sentence and token has a `span`, `{
 
 A `Token` carries the ten CoNLL-U columns under these keys: `id`, `text`, `lemma`, `pos`, `xpos`, `features`, `head`, `dep`, `deps`, `misc`, plus its `span` and the derived `is_punct`. `features` is a dict from feature name to value, `{"Number": "Plur"}`. `head` is the `id` of the governing token in the same sentence, and `0` marks the root.
 
-`ScoredSentence` (`text`, `score`, `position`) is the shape for `tfidf_summarize` and `textrank_summarize`. `Keyphrase` (`phrase`, `score`) is the shape for `rake_keyphrases` and `yake_keyphrases`.
+`Summary` (`provenance`, `sentences`, each a `SummarySentence` of `index`, `span`, `text` and `score`) is the shape for `tfidf_summarize` and `textrank_summarize`. `Keyphrases` (`provenance`, `phrases`, each a `Keyphrase` of `phrase`, `score` and `occurrences`) is the shape for `rake_keyphrases` and `yake_keyphrases`. `Clusters` (`provenance`, `clusters`, `edges`) is the shape for `Matra.semantic_clusters`; the module-level `semantic_clusters` reads no document, so it returns a `VectorClusters`, `parameters` in place of the provenance.
 
 ## Why a metric field is `None`
 
@@ -255,7 +255,7 @@ except RuntimeError as e:
     print(f"parse failed: {e}")
 ```
 
-The message on each exception is the Rust error's own `Display` output, so an `InputTooLarge` message names the gate that fired. The text methods raise `input`, `tfidf`, `textrank`, `rake`, `yake` and `semantic_clusters`; the constructors that resolve or download a model raise `config_file`, `udpipe_download` and `embedding_download`. `analyze_path` raises none of them: an oversized file there is an item whose `kind` is `input_too_large`, with `file_source` in its message.
+The message on each exception is the Rust error's own `Display` output, so an `InputTooLarge` message names the gate that fired. The text methods raise `input`, `tfidf`, `textrank`, `rake`, `yake` and `clusters`; the constructors that resolve or download a model raise `config_file`, `udpipe_download` and `embedding_download`. `analyze_path` raises none of them: an oversized file there is an item whose `kind` is `input_too_large`, with `file_source` in its message.
 
 The mapping is exhaustive and enforced at compile time on the Rust side. The match that builds the Python exception has no wildcard arm, so adding a new `domain::Error` variant without also wiring it to a Python exception class fails to build. A new variant cannot fall through to `RuntimeError` by accident.
 

@@ -32,7 +32,7 @@
       "lexical_density": 0.7273,
       "readability_grade": 2.6459,
       "sentences": 2,
-      "text": "Six types nest, each owning the next. Nothing is owned twice.",
+      "text": "Five types nest, each owning the next. Nothing is owned twice.",
       "words": 11
     },
     {
@@ -72,22 +72,22 @@
       "words": 47
     },
     {
-      "compression_ratio": 0.5371,
+      "compression_ratio": 0.5318,
       "kind": "paragraph",
       "lexical_density": 0.619,
-      "readability_grade": 14.2018,
+      "readability_grade": 14.0894,
       "sentences": 3,
-      "text": "No type in the module derives Hash, and the parse tree derives no equality: two Token, Sentence, Paragraph, Section or Document values cannot be compared with ==. Format derives PartialEq and Eq, which is what the reader table keys on, and the metric records, the provenance types, Span, Skipped, the kind enums, Block, RootMood, the Hearst types, the semantic types, Embedding and ProvisionNotice derive PartialEq. Error has no Clone, no equality and no serde derives. Embedding is the one public type without #[non_exhaustive]: on a tuple struct the attribute would make the constructor private, and an Embedder implemented outside the crate has to build one.",
+      "text": "No type in the module derives Hash, and the parse tree derives no equality: two Token, Sentence, Paragraph, Section or Document values cannot be compared with ==. Format derives PartialEq and Eq, which is what the reader table keys on, and the metric records, the provenance types, Span, Skipped, the kind enums, Block, RootMood, the Hearst types, the outcome types, Embedding and ProvisionNotice derive PartialEq. Error has no Clone, no equality and no serde derives. Embedding is the one public type without #[non_exhaustive]: on a tuple struct the attribute would make the constructor private, and an Embedder implemented outside the crate has to build one.",
       "words": 107
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6178,
       "kind": "paragraph",
-      "lexical_density": 0.6429,
-      "readability_grade": 10.9414,
-      "sentences": 3,
-      "text": "#[non_exhaustive] has two effects outside the crate. Struct literal syntax is unavailable, so you build values through the associated constructors listed below. Matches on Format, ParagraphKind, SkippedKind and Error need a catch-all arm, because variants can be added in a minor release.",
-      "words": 44
+      "lexical_density": 0.6316,
+      "readability_grade": 10.2552,
+      "sentences": 4,
+      "text": "#[non_exhaustive] has two effects outside the crate. Struct literal syntax is unavailable, so you build values through the associated constructors listed below. The outcome types have no public constructor: matra produces them, and serde reads them back. Matches on Format, ParagraphKind, SkippedKind and Error need a catch-all arm, because variants can be added in a minor release.",
+      "words": 59
     },
     {
       "compression_ratio": null,
@@ -362,38 +362,83 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5926,
-      "readability_grade": 13.7326,
+      "lexical_density": 0.5455,
+      "readability_grade": 13.1036,
+      "sentences": 2,
+      "text": "Before the document is measured every count is 0 and every ratio None; None after it means the document did not meet the metric's condition, never a computed zero. Engine::analyze always measures, so this holds for a document you build by hand with Document::new.",
+      "words": 47
+    },
+    {
+      "compression_ratio": 0.4996,
+      "kind": "paragraph",
+      "lexical_density": 0.5495,
+      "readability_grade": 10.8289,
+      "sentences": 7,
+      "text": "Provenance holds matra, the version that produced the document; schema, the schema version as \"major.minor\" (SCHEMA_VERSION, \"2.0\"), which appears nowhere else; parser, the parser's Identity; format, the Format the input was read as; and source, a ProvenanceSource with the input's path (None for anything but a file), and the length in bytes and the sha256 of the analysed text every span points into, computed once at annotation. For markdown and plain text that is the input; for block input, the blocks joined. On a document, method and parameters are None and absent from the JSON; an outcome derived from the document carries a copy of its provenance with both set (see Summary). There is no timestamp, so two analyses of the same input by the same build are identical. Identity names a model-backed component: name (udpipe), model (english-ewt-ud-2.5-191206), sha256 of the model artifact, and license. The UDPipe adapter derives it from the bytes it loaded, so a model matra does not pin reports its digest with model and license set to None. Provenance::new(parser, format, source) fills matra and schema from the build.",
+      "words": 187
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5789,
+      "readability_grade": 12.3361,
+      "sentences": 2,
+      "text": "What summarize and summarize_with return. The selector is matra::SummaryMethod, at the crate root (TfIdf, the default, and TextRank, #[non_exhaustive]).",
+      "words": 21
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.7143,
+      "readability_grade": null,
       "sentences": 1,
-      "text": "Before compose runs every count is 0 and every ratio None; None after it means the document did not meet the metric's condition, never a computed zero.",
-      "words": 28
-    },
-    {
-      "compression_ratio": 0.5157,
-      "kind": "paragraph",
-      "lexical_density": 0.5592,
-      "readability_grade": 10.4046,
-      "sentences": 6,
-      "text": "Provenance holds matra, the version that produced the document; schema, the schema version as \"major.minor\" (SCHEMA_VERSION, \"2.0\"), which appears nowhere else; parser, the parser's Identity; format, the Format the input was read as; and source, a ProvenanceSource with the input's path (None for anything but a file), and the length in bytes and the sha256 of the analysed text every span points into, computed once at annotation. For markdown and plain text that is the input; for block input, the blocks joined. There is no timestamp, so two analyses of the same input by the same build are identical. Identity names a model-backed component: name (udpipe), model (english-ewt-ud-2.5-191206), sha256 of the model artifact, and license. The UDPipe adapter derives it from the bytes it loaded, so a model matra does not pin reports its digest with model and license set to None. Provenance::new(parser, format, source) fills matra and schema from the build.",
-      "words": 157
+      "text": "SummarySentence is one sentence a summary keeps:",
+      "words": 7
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6053,
-      "readability_grade": 12.3147,
+      "lexical_density": 0.5135,
+      "readability_grade": 9.8034,
+      "sentences": 2,
+      "text": "Both summarizers select the top n by score and then return them in ascending index, so the result reads in document order while score carries the ranking. A score compares only with another from the same method.",
+      "words": 37
+    },
+    {
+      "compression_ratio": 0.5928,
+      "kind": "paragraph",
+      "lexical_density": 0.5532,
+      "readability_grade": 14.1622,
       "sentences": 3,
-      "text": "Both summarizers select the top N by score and then return them in ascending position, so the result reads in document order while score carries the ranking. ScoredSentence::new(text: String, score: f64, position: usize) -> ScoredSentence is the constructor.",
-      "words": 40
+      "text": "Parameters records what shaped an outcome, each field present only when the method takes it: n (Option<usize>) for a summary and keyphrases, threshold (Option<f64>) and embedder (Option<String>, the embedder's identity) for clusters. In JSON an absent parameter is an absent key, so a summary's is {\"n\": 3}.",
+      "words": 52
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.7059,
-      "readability_grade": 8.5485,
+      "lexical_density": 0.6,
+      "readability_grade": 13.295,
       "sentences": 3,
-      "text": "Both extractors return phrases in descending score order. Keyphrase::new(phrase: String, score: f64) -> Keyphrase is the constructor.",
-      "words": 19
+      "text": "What keyphrases and keyphrases_with return. The selector is matra::KeyphraseMethod (Rake, the default, and Yake, #[non_exhaustive]).",
+      "words": 17
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.8,
+      "readability_grade": null,
+      "sentences": 1,
+      "text": "Keyphrase is one ranked phrase:",
+      "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5952,
+      "readability_grade": 14.2333,
+      "sentences": 2,
+      "text": "What clusters returns: provenance (the document's, with method cosine and parameters threshold and embedder), clusters (Vec<Cluster>, each members, sentence indices) and edges (Vec<SimilarityEdge>, each a, b and score: f64). Semantic clusters describes each field and what co-membership does and does not mean.",
+      "words": 45
     },
     {
       "compression_ratio": null,
@@ -468,31 +513,22 @@
       "words": 34
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5941,
       "kind": "paragraph",
-      "lexical_density": 0.5789,
-      "readability_grade": 10.4729,
-      "sentences": 2,
-      "text": "Documents that failed do not appear here. They travel as DocumentError values and land in CorpusResult::errors beside the corpus.",
-      "words": 20
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.7143,
-      "readability_grade": 8.7254,
+      "lexical_density": 0.7308,
+      "readability_grade": 10.8108,
       "sentences": 4,
-      "text": "One per-document failure. Display prints path: error when a path exists and the bare error otherwise; source() returns the wrapped Error. DocumentError::new(path, error) is the constructor. Not Serialize and not Clone, because Error wraps std::io::Error.",
-      "words": 38
+      "text": "One per-document failure: the Err item Engine::analyze_all yields in the failed input's place, so documents plus errors equals inputs consumed. Display prints path: error when a path exists and the bare error otherwise; source() returns the wrapped Error. DocumentError::new(path, error) is the constructor. Not Serialize and not Clone, because Error wraps std::io::Error.",
+      "words": 57
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6512,
-      "readability_grade": 15.5209,
-      "sentences": 3,
-      "text": "The partition of a per-document result stream: documents plus errors equals inputs consumed. collect() is its constructor, via FromIterator<Result<Document, DocumentError>>, which is how a stream from Engine::analyze_all becomes one value. Inherits DocumentError's serialization gap, so it does not cross the language boundary today.",
-      "words": 47
+      "lexical_density": 0.56,
+      "readability_grade": 14.456,
+      "sentences": 1,
+      "text": "matra collects nothing across documents: a stream is the collection, and how to combine documents is the caller's decision (a count sums; vocabulary_ttr does not).",
+      "words": 26
     },
     {
       "compression_ratio": null,
@@ -504,13 +540,13 @@
       "words": 30
     },
     {
-      "compression_ratio": 0.5679,
+      "compression_ratio": 0.5706,
       "kind": "paragraph",
-      "lexical_density": 0.5294,
-      "readability_grade": 17.2609,
+      "lexical_density": 0.52,
+      "readability_grade": 16.344,
       "sentences": 2,
-      "text": "Token::feat, Document::sentences, Sentence::subtree, Corpus::total_words, and every other method in the tables above are available to Rust callers only. Nothing a reader needs is method-only: every aggregate is a field of DocumentMetrics or ParagraphMetrics, and a sentence carries its word_count, tree_depth and passive, so each crosses with the record that holds it.",
-      "words": 56
+      "text": "Token::feat, Document::sentences, Sentence::subtree, and every other method in the tables above are available to Rust callers only. Nothing a reader needs is method-only: every aggregate is a field of DocumentMetrics or ParagraphMetrics, and a sentence carries its word_count, tree_depth and passive, so each crosses with the record that holds it.",
+      "words": 54
     },
     {
       "compression_ratio": 0.5364,

@@ -87,14 +87,14 @@ The same two columns, read from matra's output for five short sentences. The tab
 
 The pipeline produces them in this order, and each is a different kind of result.
 
-1. **Structure**, from `Engine::annotate`. Sections, paragraphs, sentences, tokens, and the structural primitive fields. Derived from the parse, checkable against the source bytes.
-2. **Measures**, from `Engine::compose`. Six `Option<f64>` slots filled by the metric suite: three per paragraph, two per document, plus the materialized `passive_ratio`. `None` means not computed, which is distinct from a computed zero.
-3. **Extraction**, from standalone functions over a sentence slice: `tfidf_summarize`, `textrank_summarize`, `rake_keyphrases`, `yake_keyphrases`. They return `ScoredSentence` and `Keyphrase` values, never fields on the tree.
-4. **Semantic**, behind the `model2vec` feature. `embed_and_cluster` returns a `SemanticClusters` value carrying the model hash and the threshold you supplied. This tier depends on the model, so by design it never becomes a field on `Document` or `Sentence`.
+1. **Structure**, read and parsed by `Engine::analyze`. Sections, paragraphs, sentences, tokens, and the structural primitive fields. Derived from the parse, checkable against the source bytes.
+2. **Measures**, filled by `Engine::analyze` as its last step. Six `Option<f64>` slots filled by the metric suite: three per paragraph, two per document, plus the materialized `passive_ratio`. `None` means not computed, which is distinct from a computed zero.
+3. **Outcomes**, from free functions over the `Document`: `summarize` and `keyphrases`, with `_with` forms that name the method. They return `Summary` and `Keyphrases` values, each carrying the document's provenance with the method and its parameters, never fields on the tree.
+4. **Semantic**, with the reference embedder behind the `model2vec` feature. `clusters` returns a `Clusters` value whose provenance carries the embedder's identity and the threshold you supplied. This tier depends on the model, so by design it never becomes a field on `Document` or `Sentence`.
 
 ## Structural primitives
 
-A structural primitive is a construction read off the dependency graph and reported as a field. Six of them are computed once and travel with the sentence into every language binding: five at `Sentence` construction, and `hearst_pairs` at `Engine::annotate`, because its detector lives outside the domain (a `Sentence` built by hand has an empty `hearst_pairs`). They name an arc shape. They never name a judgment.
+A structural primitive is a construction read off the dependency graph and reported as a field. Six of them are computed once and travel with the sentence into every language binding: five at `Sentence` construction, and `hearst_pairs` as the engine parses each paragraph, because its detector lives outside the domain (a `Sentence` built by hand has an empty `hearst_pairs`). They name an arc shape. They never name a judgment.
 
 | Field | The arc shape | Grounded example |
 |---|---|---|

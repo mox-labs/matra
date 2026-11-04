@@ -4,21 +4,21 @@ Which call to reach for, and how to read what it returns: the choices behind the
 
 ## Choosing a summarizer
 
-Both return the top N sentences in document order, as `ScoredSentence` values carrying the score and the original position.
+`summarize` returns the top N sentences in document order, as a `Summary` whose sentences carry the score and their index in the document, and whose provenance names the method. `summarize_with` chooses the method.
 
-**`tfidf_summarize`** scores each sentence by the mean TF-IDF of its lemmatized terms, treating every sentence as its own document for the IDF computation. It runs in linear time, and it favours sentences carrying vocabulary that is rare in the rest of the document.
+**TF-IDF** (`SummaryMethod::TfIdf`, the default) scores each sentence by the mean TF-IDF of its lemmatized terms, treating every sentence as its own document for the IDF computation. It runs in linear time, and it favours sentences carrying vocabulary that is rare in the rest of the document.
 
-**`textrank_summarize`** builds a similarity graph over the sentences (shared content lemmas divided by the log of the two lengths, so long sentences are not favoured) and runs iterative PageRank scoring over it. It favours sentences many others resemble. The dense similarity matrix is quadratic in sentence count, which is why the 2,000-sentence cap exists.
+**TextRank** (`SummaryMethod::TextRank`) builds a similarity graph over the sentences (shared content lemmas divided by the log of the two lengths, so long sentences are not favoured) and runs iterative PageRank scoring over it. It favours sentences many others resemble. The dense similarity matrix is quadratic in sentence count, which is why the 2,000-sentence cap exists.
 
 Rare-in-this-document against central-to-this-document is the whole difference. On a document with one repeated theme they tend to agree; where they diverge, TF-IDF has found the unusual sentence and TextRank has found the typical one.
 
 ## Choosing a keyphrase extractor
 
-Both return `Keyphrase` values, highest score first.
+`keyphrases` returns `Keyphrase` values, highest score first, each with every place it occurs, and the provenance names the method. `keyphrases_with` chooses it.
 
-**`rake_keyphrases`** splits at stop words and punctuation, keeps runs of `NOUN`, `ADJ`, and `PROPN` tokens as candidates, and scores each by the co-occurrence degree over frequency ratio. Multi-word phrases are what it is built to find, and it needs no corpus.
+**RAKE** (`KeyphraseMethod::Rake`, the default) splits at stop words and punctuation, keeps runs of `NOUN`, `ADJ`, and `PROPN` tokens as candidates, and scores each by the co-occurrence degree over frequency ratio. Multi-word phrases are what it is built to find, and it needs no corpus.
 
-**`yake_keyphrases`** scores individual terms on position, frequency, and context diversity, then assembles 1-word to 3-word candidates. YAKE's own score is lower-is-better, and matra inverts it so higher is more relevant in the returned values.
+**YAKE** (`KeyphraseMethod::Yake`) scores individual terms on position, frequency, and context diversity, then assembles 1-word to 3-word candidates. YAKE's own score is lower-is-better, and matra inverts it so higher is more relevant in the returned values.
 
 Their caps differ from the summarizers': both are bounded on total tokens rather than sentence count, because a corpus of many one-token sentences costs them nothing.
 
@@ -30,16 +30,16 @@ Their caps differ from the summarizers': both are bounded on total tokens rather
 | Is it dense? | `ParagraphMetrics.lexical_density` for the content-word share, alongside `readability_grade` |
 | Is it repetitive in wording? | `ParagraphMetrics.compression_ratio`, where a lower value means the text compressed further and so repeats more on the surface |
 | How varied is the vocabulary? | `DocumentMetrics.vocabulary_ttr`, but see the length caveat below |
-| Is it repetitive in paraphrase? | none of the above: lexical measures cannot see restatement in different words. That is what `SemanticClusters` is for |
+| Is it repetitive in paraphrase? | none of the above: lexical measures cannot see restatement in different words. That is what `Clusters` is for |
 | How nominal is the style? | `DocumentMetrics.nominalization_ratio` |
 
 Two cautions. `vocabulary_ttr` is a raw type-token ratio and falls as text grows, so two documents of different lengths are not comparable on it without normalizing first. And any of these slots can be `None`, which means the metric was not computed (too short, a quote, or over a per-metric byte ceiling) and is distinct from a computed zero.
 
 ## The semantic threshold
 
-`embed_and_cluster` takes the cosine threshold from you rather than choosing one. Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus, and the working value depends on the model, the domain, and sentence length.
+`clusters` takes the cosine threshold from you rather than choosing one, and records it in the result's provenance. Published cutoffs for paraphrase detection span 0.67 to 0.9 with no consensus, and the working value depends on the model, the domain, and sentence length.
 
-Raising the threshold admits fewer edges: clusters get smaller and more of them, and more sentences end up in none. Lowering it merges components through chains, because clusters are connected components rather than cliques. That transitivity is why the clearing edges travel inside each cluster: two sentences can share a cluster without a direct edge, and the edge list is where you check.
+Raising the threshold admits fewer edges: clusters get smaller and more of them, and more sentences end up in none. Lowering it merges components through chains, because clusters are connected components rather than cliques. That transitivity is why the clearing edges travel beside the clusters: two sentences can share a cluster without a direct edge, and the edge list is where you check.
 
 Start around 0.85 with the reference model and calibrate on your own corpus.
 
@@ -47,15 +47,15 @@ Start around 0.85 with the reference model and calibrate on your own corpus.
 
 Both models work the same way, and the constructor you reach for is what decides whether anything is fetched.
 
-**Ask for nothing and you get the pinned model in the resolved place.** `Engine::with_defaults()`, `Udpipe::from_config(cfg)` and `Model2Vec::from_config(cfg)` resolve the directory through [`Config`](programming-model.md) and fetch the pinned model when it is absent. In Python that is `Matra.english()` and `Model2Vec.potion_base_8m()` with no argument. This is the path to take unless you have a reason not to.
+**Ask for nothing and you get the pinned model in the resolved place.** `Engine::new()`, `Engine::from_config(cfg)` and `Model2Vec::from_config(cfg)` resolve the directory through [`Config`](programming-model.md) and fetch the pinned model when it is absent. In Python that is `Matra.english()` and `Model2Vec.potion_base_8m()` with no argument. This is the path to take unless you have a reason not to.
 
-**Naming the directory changes where, not what.** `Udpipe::english(dir)` and `Model2Vec::potion_base_8m(dir)` fetch the same pinned artifacts into the directory you name. Take them when the model belongs somewhere specific.
+**Naming the directory changes where, not what.** `Engine::from_config(&cfg.with_model_dir(dir))`, `Matra.english(dir)` and `Model2Vec::potion_base_8m(dir)` fetch the same pinned artifacts into the directory you name. Take them when the model belongs somewhere specific.
 
 **Downloading is pinned, or it does not happen.** Either form fetches from URLs written in the source and loads nothing whose digest does not equal a constant written in the source next to them. Verification happens before the bytes are parsed, and the bytes that were verified are the bytes that get parsed, with no second read of the disk in between. A download that fails the digest is fetched once more into memory, and a second failed download raises; nothing that failed the digest is written at any point, so a failed attempt leaves nothing behind for a later call to pick up. Exactly one artifact set can arrive this way, which is what makes "matra downloads a model" a bounded claim rather than an open one.
 
-**A provisioner never deletes what it did not write.** The embedding artifacts are named for their format (`model.safetensors`, `tokenizer.json`, `config.json`) rather than for one model, so a directory can already hold somebody else's. `Model2Vec::potion_base_8m(dir)` therefore downloads only into a directory holding none of the three. Finding all three with a digest that does not match, or finding only some of them, it raises and names the directory, having downloaded nothing and removed nothing. The UDPipe model file is named for its own release, so `Udpipe::english(dir)` has no such collision to guard against.
+**A provisioner never deletes what it did not write.** The embedding artifacts are named for their format (`model.safetensors`, `tokenizer.json`, `config.json`) rather than for one model, so a directory can already hold somebody else's. `Model2Vec::potion_base_8m(dir)` therefore downloads only into a directory holding none of the three. Finding all three with a digest that does not match, or finding only some of them, it raises and names the directory, having downloaded nothing and removed nothing. The UDPipe model file is named for its own release, so its provisioner has no such collision to guard against.
 
-**Bringing your own.** `Udpipe::from_path(path)` and `Model2Vec::from_dir(dir)` load what you supply and never reach the network, whatever the directory holds. That is the path for a model this build does not pin: a different UDPipe language, a different model2vec artifact. Nothing verifies it, so the `model_hash` on a result is identity rather than proof: it tells you which artifacts produced a score, not that they are the ones you meant to fetch.
+**Bringing your own.** Python's `Matra.from_path(path)` and `Model2Vec::from_dir(dir)` load what you supply and never reach the network, whatever the directory holds. That is the path for a model this build does not pin: a different UDPipe language from Python, a different model2vec artifact from either language. From Rust only the pinned parsing model loads. Nothing verifies it, so the `model_hash` on a result is identity rather than proof: it tells you which artifacts produced a score, not that they are the ones you meant to fetch.
 
 The pinned model is part of the contract in every case. A different model produces a different parse or a different vector space, and the conformance fixtures will fail, correctly. The [semantic clusters reference](../reference/semantic-clusters.md#the-reference-model) records the embedding digest the conformance suite pins.
 

@@ -25,7 +25,7 @@ summary: The JSON envelope the commands with JSON output emit, and the Document 
 | `input` | string or null | The path that was read, or the name `--stdin-filename` gave stdin. For `config show` it is the config file path when that file exists, and null when it does not. Null for `skill`, which reads no document |
 | `result` | varies | The serde form of the value the command produced |
 
-`result` is a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`, a map of resolved keys for `config show`, and for `skill` either `{"name", "body"}` or `{"references": [{"name", "summary"}]}`. Pin a consumer to a `format_version` it was tested against, the same promise cargo makes for `cargo metadata --format-version`.
+`result` is a `Document` for `analyze`, a `Summary` for `summarize`, a `Keyphrases` for `keyphrases`, a map of resolved keys for `config show`, and for `skill` either `{"name", "body"}` or `{"references": [{"name", "summary"}]}`. Pin a consumer to a `format_version` it was tested against, the same promise cargo makes for `cargo metadata --format-version`.
 
 ## Versions, and the rules for reading
 
@@ -178,13 +178,15 @@ Ten CoNLL-U columns, the token's span and one derived flag, all present on every
 | `misc` | string | 10, annotation such as `SpaceAfter=No` |
 | `is_punct` | bool | Derived, not a CoNLL-U column |
 
-## `ScoredSentence` and `Keyphrase`
+## `Summary` and `Keyphrases`
 
-`summarize` returns `{ "text": string, "score": float, "position": integer }` per sentence, in ascending `position`, which is document order and not score order.
+Each carries `provenance`: the document's, with two keys a document's lacks. `method` names what ranked the result (`tfidf`, `textrank`, `rake` or `yake`; treat the set as open) and `parameters` holds what it ran with, `{ "n": integer }`. Scores from different methods are on unrelated scales, so read `method` before comparing two results. The schemas are `spec/schema/v2/summary.schema.json` and `keyphrases.schema.json`.
 
-`keyphrases` returns `{ "phrase": string, "score": float }`, highest score first. There is no position, because a phrase is not tied to one place the way a sentence is.
+`summarize`'s `sentences` are `{ "index": integer, "span": { "start", "end" }, "text": string, "score": float }`, in ascending `index`, which is document order and not score order. `index` is the sentence's position among the document's sentences, and `span` is where it lies in the input.
 
-Phrases with equal scores can swap order between runs, and a tie at the `-n` boundary can change which phrase makes the list, so sort the array before diffing it across runs.
+`keyphrases`' `phrases` are `{ "phrase": string, "score": float, "occurrences": [{ "start", "end" }] }`, highest score first. Every occurrence is a span of the input, from the phrase's first word to its last, so a stop word the method passed over lies inside it.
+
+Equal scores come back in the same order on every run, so a diff across runs of the same input and version is stable; a tie at the `-n` boundary still decides which phrase makes the list by that order, not by merit.
 
 ## Useful jq filters
 

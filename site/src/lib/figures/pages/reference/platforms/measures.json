@@ -83,11 +83,11 @@
     {
       "compression_ratio": null,
       "kind": "list_item",
-      "lexical_density": 0.5652,
-      "readability_grade": 12.495,
+      "lexical_density": 0.56,
+      "readability_grade": 12.885,
       "sentences": 2,
-      "text": "A directory passed explicitly: --model-dir on the command line, or the directory argument of Udpipe::english, Matra.english and the other constructors that take one.",
-      "words": 25
+      "text": "A directory passed explicitly: --model-dir on the command line, Config::with_model_dir in Rust, or the directory argument of Matra.english and the other constructors that take one.",
+      "words": 27
     },
     {
       "compression_ratio": null,
@@ -162,13 +162,13 @@
       "words": 51
     },
     {
-      "compression_ratio": 0.5682,
+      "compression_ratio": 0.5763,
       "kind": "paragraph",
-      "lexical_density": 0.5574,
-      "readability_grade": 9.0926,
+      "lexical_density": 0.5938,
+      "readability_grade": 8.9458,
       "sentences": 3,
-      "text": "The command line and the config file always use this parsing model: --model-dir, MATRA_MODEL_DIR and the other settings change where it is stored, not which model it is. models.udpipe, which earlier releases wrote into the config file, is deprecated and selects nothing. A different UDPipe model file loads by path from the library, through Udpipe::from_path in Rust or Matra.from_path in Python.",
-      "words": 64
+      "text": "The command line and the config file always use this parsing model: --model-dir, MATRA_MODEL_DIR and the other settings change where it is stored, not which model it is. models.udpipe, which earlier releases wrote into the config file, is deprecated and selects nothing. A different UDPipe model file loads by path only from Python, through Matra.from_path (Python); the Rust surface loads the pinned model alone.",
+      "words": 66
     }
   ]
 }

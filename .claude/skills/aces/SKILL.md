@@ -33,7 +33,7 @@ Three disciplines, each countering one decay mode:
 
 Matra's adaptable surface:
 
-- `default_suite` in `metrics/mod.rs` configures the default metric set; consumers can compose a different suite.
+- `SummaryMethod` and `KeyphraseMethod` are `#[non_exhaustive]` selectors and every result records its method as an open string, so a new method is additive; the metric suite and the method modules are crate-private, so changing one moves no published name.
 - `Format` enum is `#[non_exhaustive]` so adding PDF/DOCX support later is additive.
 - Feature flags (`udpipe`, `python`) gate optional capabilities without changing the core.
 - Every public type carries `#[non_exhaustive]` for additive evolution.

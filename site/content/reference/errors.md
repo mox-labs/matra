@@ -2,7 +2,7 @@
 
 Every fallible function in matra returns `domain::Result<T>`, which is `std::result::Result<T, domain::Error>`. No function in the library returns `Result<T, String>`. matra signals failure by returning `Error`, not by unwinding: a panic raised inside the UDPipe C++ boundary is caught at the adapter and converted into `Error::ParseFailed`.
 
-`Error` is `#[non_exhaustive]`. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. `Error` derives neither `Clone` nor serde; it is moved, not copied. The stream surface wraps it in `DocumentError`, which adds the path the failure occurred at and moves the error into `CorpusResult::errors`.
+`Error` is `#[non_exhaustive]`. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. `Error` derives neither `Clone` nor serde; it is moved, not copied. The stream surface wraps it in `DocumentError`, which adds the path the failure occurred at, and yields it as that input's `Err` item.
 
 ## The variants
 
@@ -20,14 +20,14 @@ Every fallible function in matra returns `domain::Result<T>`, which is `std::res
 
 ### ModelNotFound
 
-Returned by `Udpipe::from_path` when the path does not exist, and by `Model2Vec::from_dir` when any of the three artifacts is absent. The payload is the path as given. Neither `Udpipe::english` nor `Model2Vec::potion_base_8m` returns this variant: both download the model when the file is absent.
+Returned by Python's `Matra.from_path` when the path does not exist, and by `Model2Vec::from_dir` when any of the three artifacts is absent. The payload is the path as given. Neither the UDPipe provisioner, behind `Engine::new`, `Engine::from_config` and `Matra.english`, nor `Model2Vec::potion_base_8m` returns this variant: both download the model when the file is absent.
 
 ### ModelInvalid
 
 Returned by:
 
-- `Udpipe::from_path` and `Udpipe::from_bytes` when the loader rejects the bytes. The payload is the loader's message.
-- `Udpipe::english` when the bytes it downloaded still fail SHA-256 verification after one refetch. The payload is `SHA-256 mismatch after re-download from <url>`. Nothing that failed verification is written, so the model directory is left as the call found it.
+- `Matra.from_path` when the loader rejects the file's bytes. The payload is the loader's message.
+- The UDPipe provisioner when the bytes it downloaded still fail SHA-256 verification after one refetch. The payload is `SHA-256 mismatch after re-download from <url>`. Nothing that failed verification is written, so the model directory is left as the call found it.
 - `Model2Vec::from_dir` when an artifact does not parse, uses an embedding dtype other than f32, or panics the loader.
 - `Model2Vec::potion_base_8m` when the directory already holds all three artifacts and their digest is not the pinned one, or holds only some of them. The payload names the directory and the ways out; nothing there is downloaded over or removed.
 - `Model2Vec::potion_base_8m` when the artifacts it downloaded still fail the digest after one re-download. Both attempts verify in memory, so neither writes anything, and the directory is left exactly as the call found it. The payload names the directory and the expected digest.
@@ -51,14 +51,14 @@ Ten gate labels produce this variant. The `what` field carries the label so a ca
 
 | `what` | Gate | Limit | Measured over |
 |---|---|---|---|
-| `"input"` | `Engine::annotate`, the only route from text to the parser, for every `Input` constructor, and the CLI's stdin read, which applies the same cap first | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | Byte length of the input handed in, and of the analysed text the reader produces (for block input, the blocks joined); the CLI counts the bytes as they arrive, before decoding them |
+| `"input"` | The engine's reading stage, the only route from text to the parser, for every `Input` constructor, and the CLI's stdin read, which applies the same cap first | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | Byte length of the input handed in, and of the analysed text the reader produces (for block input, the blocks joined); the CLI counts the bytes as they arrive, before decoding them |
 | `"file_source"` | Reading the file an `Input::file` names | 8,388,608 bytes | File size reported by the filesystem, checked before any read |
-| `"tfidf"` | `tfidf_summarize` | 2,000 | Number of sentences in the slice |
-| `"textrank"` | `textrank_summarize` | 2,000 | Number of sentences in the slice |
-| `"rake"` | `rake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
-| `"yake"` | `yake_keyphrases` | 200,000 | Total tokens across the slice, punctuation included |
-| `"semantic_clusters"` | `semantic_clusters` | 2,000 | Number of sentences in the slice |
-| `"udpipe_download"` | `Udpipe::english` | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
+| `"tfidf"` | `summarize`, and `summarize_with` with `SummaryMethod::TfIdf` | 2,000 | Number of sentences in the document |
+| `"textrank"` | `summarize_with` with `SummaryMethod::TextRank` | 2,000 | Number of sentences in the document |
+| `"rake"` | `keyphrases`, and `keyphrases_with` with `KeyphraseMethod::Rake` | 200,000 | Total tokens across the document's sentences, punctuation included |
+| `"yake"` | `keyphrases_with` with `KeyphraseMethod::Yake` | 200,000 | Total tokens across the document's sentences, punctuation included |
+| `"clusters"` | `clusters`, before anything is embedded, and Python's vectors-in `semantic_clusters` | 2,000 | Number of sentences in the document, or of vectors passed in |
+| `"udpipe_download"` | The UDPipe provisioner | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
 | `"embedding_download"` | `Model2Vec::potion_base_8m`, per artifact | 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
 | `"config_file"` | `Config::resolve`, reading the user's config file | 64 KiB (65,536) | File size reported by the filesystem, checked before any read |
 
@@ -66,25 +66,25 @@ Ten gate labels produce this variant. The `what` field carries the label so a ca
 
 The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens. The two download caps are the gates whose input is not the caller's: they bound what a redirected or misbehaving server can make the process hold, and the read stops at the bound rather than continuing, so `actual` reports the bound that was breached rather than the response's full length. Both are 64 MiB against pinned artifacts of 16.3 MB and 30.2 MB, which is headroom for a later version and still finite.
 
-A document from disk crosses both gates in sequence: `"file_source"` when the file is read, `"input"` inside `annotate`. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
+A document from disk crosses both gates in sequence: `"file_source"` when the file is read, `"input"` before it is parsed. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
-Calling a provider's `parse` directly bypasses the `"input"` gate. The gate belongs to `Engine::annotate`, not to the `NlpProvider` trait.
+The parser is private to the crate, so no caller reaches it except through the engine, and no text bypasses the `"input"` gate.
 
-The label has a second producer. The CLI reads stdin through `read_capped` in `src/cli/mod.rs`, which reads at most one byte past `MAX_INPUT_BYTES` and returns `InputTooLarge` with `what` set to `"input"` before the text ever reaches `annotate`. Same limit, same label, so a caller sees one gate however the text arrived. Two details differ and neither is visible in the value: the CLI counts bytes before decoding them, so an oversized pipe is reported as too large rather than as invalid UTF-8, and the CLI renders the error on stderr and turns it into an exit code rather than returning it.
+The label has a second producer. The CLI reads stdin through `read_capped` in `src/cli/mod.rs`, which reads at most one byte past `MAX_INPUT_BYTES` and returns `InputTooLarge` with `what` set to `"input"` before the text ever reaches the engine. Same limit, same label, so a caller sees one gate however the text arrived. Two details differ and neither is visible in the value: the CLI counts bytes before decoding them, so an oversized pipe is reported as too large rather than as invalid UTF-8, and the CLI renders the error on stderr and turns it into an exit code rather than returning it.
 
-The four ranking extractors check their caps after their empty-result checks. `tfidf_summarize(sentences, 0)`, `textrank_summarize(sentences, 0)`, `rake_keyphrases(sentences, 0)`, and `yake_keyphrases(sentences, 0)` return an empty vector without evaluating the cap, whatever the size of the slice. The same holds for an empty slice. `semantic_clusters` has no count parameter; its contract checks run first, then its cap, and an empty slice returns empty clusters.
+The four ranking methods check their caps after their empty-result checks. `summarize_with(&doc, 0, ..)` and `keyphrases_with(&doc, 0, ..)` return an empty result without evaluating the cap, whatever the size of the document. The same holds for a document with no sentences. `clusters` has no count parameter; its cap is checked first, before anything is embedded, then its contract, and a document with no sentences returns empty clusters.
 
 A metric has no gate of its own. The compression ratio skips any paragraph over 262,144 bytes and leaves its metric slot at `None` rather than returning an error.
 
 ### InvalidInput
 
-Returned by `semantic_clusters` when a caller breaks its documented contract (embeddings disagreeing on dimension, an embedding containing a non-finite value, a non-finite threshold), and by `embed_and_cluster` when an embedder violates its own length contract. The payload names the violation. This variant means a call site or a provider implementation is wrong, not the input data; nothing about the analyzed text produces it.
+Returned by `clusters` when a caller or an embedder breaks a documented contract (a non-finite threshold, an embedder returning the wrong number of vectors, embeddings disagreeing on dimension, an embedding containing a non-finite value), and by Python's vectors-in `semantic_clusters` for the same contract over the vectors it is handed. The payload names the violation. This variant means a call site or a provider implementation is wrong, not the input data; nothing about the analyzed text produces it.
 
 `Config::resolve` uses the same variant for a configuration that cannot be honored: a config file that does not parse, an unknown key, an algorithm name this build does not know, a config file that is not valid UTF-8, or an environment with none of `MATRA_DATA_DIR`, `XDG_DATA_HOME` or `HOME` set. The payload names the file and the offending key or line. A config file that is simply absent is not an error; the built-in defaults stand.
 
 ### UnsupportedFormat
 
-Returned by `Engine::annotate` in two cases:
+Returned by `Engine::analyze` in two cases:
 
 - The input's format has no reader in this build: `Pdf` or `Docx`, whether named by the caller, read off the extension, or recognised from the bytes (`%PDF`, or a zip archive holding `[Content_Types].xml`, which outranks the extension). `format` is that format, and `feature` names the Cargo feature that would read it; no feature of this version reads either, so `feature` is `None`. `Markdown`, `PlainText` and `Blocks` always have a reader.
 - The bytes are not UTF-8 text and carry no signature matra recognises. `format` and `feature` are both `None`. This used to be `Io` with kind `InvalidData`; nothing went wrong reading the bytes, so it is now a kind with a remedy.
@@ -98,16 +98,16 @@ Wraps `std::io::Error`, produced by:
 - Reading a file rejecting a symlink, with `ErrorKind::Unsupported` and the message `refusing to read symlink: <path>`; `Inputs::dir` refuses a symlinked directory the same way.
 - Reading a file rejecting a path that is neither a regular file nor a directory, with `ErrorKind::InvalidInput` and the message `not a regular file: <path>`. A directory is `InvalidInput` instead, naming `Inputs::dir`.
 - Any read, directory listing, directory creation, write, or rename that fails.
-- `Udpipe::english` when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise.
-- `Udpipe::english` when the model directory cannot be created, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads `cannot write the model to <path>: No space left on device (os error 28)` rather than `Permission denied (os error 13)` with nothing to act on.
+- The UDPipe provisioner when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise.
+- The UDPipe provisioner when the model directory cannot be created, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads `cannot write the model to <path>: No space left on device (os error 28)` rather than `Permission denied (os error 13)` with nothing to act on.
 - `Model2Vec::potion_base_8m` when a download fails at the transport or answers with a non-2xx status. The message names the URL, and the kind is `TimedOut` past the 300-second fetch budget or the 30-second connect budget, `NotConnected` for an unreachable host, and whatever the socket reported otherwise. Bytes that arrived and then failed the digest are `ModelInvalid` instead; this variant is for the ones that never arrived.
 - `Model2Vec::potion_base_8m` when the model directory cannot be created, when an artifact cannot be read, or when a verified artifact cannot be written or renamed into place. The message names the operation and the path, exactly as the UDPipe path's does. `Model2Vec::from_dir` reports an unreadable artifact the same way.
 - `Model2Vec::potion_base_8m` when the temporary file an artifact lands through cannot be created, with the kind the open reported (`AlreadyExists` when something is already sitting at that path). The temporary is opened exclusively, so a path already there, symlink or not, fails the open rather than being written through.
-- `Engine::annotate` when reading a file yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
+- `Engine::analyze` when reading a file yields no document, with `ErrorKind::InvalidData` and the message `source returned no documents`.
 
 ## Provisioning failures
 
-`Udpipe::english` and `Model2Vec::potion_base_8m` obtain a pinned artifact over the network. Both fetch through matra's own client, under the same bounds, and both classify a failure the same way.
+The UDPipe provisioner (behind `Engine::new`, `Engine::from_config` and `Matra.english`) and `Model2Vec::potion_base_8m` obtain a pinned artifact over the network. Both fetch through matra's own client, under the same bounds, and both classify a failure the same way.
 
 | Condition | Variant | Kind | What the message carries |
 |---|---|---|---|
@@ -125,7 +125,7 @@ The rule behind the table: `model_invalid` is about bytes that arrived. Anything
 
 The rule has a consequence in Python that is easy to miss, because it changes which `except` clause fires rather than only which string a message carries. `Io` routes to `OSError` and `ModelInvalid` routes to `RuntimeError`, so from 0.2.0 a DNS failure, a rejected certificate, a timeout or a non-2xx status raises `OSError` from `Matra.english()` where it used to raise `RuntimeError`. A caller that wrapped a bootstrap in `except RuntimeError` catches nothing now and the `OSError` propagates past it. Catch both, or catch `Exception` and branch on the message.
 
-Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. A failed run removes nothing either. A cached file that is already there and fails verification is not loaded and not deleted: `Udpipe::english` downloads again, at most twice, and replaces the file only with bytes that verified, through the same atomic rename every install lands through. A run whose downloads fail, at the network or at the digest, leaves that file byte-identical. `Model2Vec::potion_base_8m` replaces nothing and refuses a directory whose artifacts fail verification, because its three filenames belong to the artifact format rather than to this one model and so may be a caller's own ([RFC-0015](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0015-provisioning-failures.md)). A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. `Udpipe::english` leaves a temporary directory and `Model2Vec::potion_base_8m` three temporary files, and each reclaims its own by the same rule.
+Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. A failed run removes nothing either. A cached file that is already there and fails verification is not loaded and not deleted: the UDPipe provisioner downloads again, at most twice, and replaces the file only with bytes that verified, through the same atomic rename every install lands through. A run whose downloads fail, at the network or at the digest, leaves that file byte-identical. `Model2Vec::potion_base_8m` replaces nothing and refuses a directory whose artifacts fail verification, because its three filenames belong to the artifact format rather than to this one model and so may be a caller's own ([RFC-0015](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0015-provisioning-failures.md)). A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. The UDPipe provisioner leaves a temporary directory and `Model2Vec::potion_base_8m` three temporary files, and each reclaims its own by the same rule.
 
 ### Behind a TLS-intercepting proxy
 
@@ -152,19 +152,19 @@ matra: the model is licensed CC BY-NC-SA 4.0 (non-commercial), separately from m
 
 The second line is there because the model is a separate file with its own license, which is not matra's MIT; [model licenses](../tutorials/installation.md#model-licenses) has both models and their sources.
 
-Standard error, so `--json` output stays a single object on standard output. `--quiet` silences it. A library caller gets the same facts as a `domain::ProvisionNotice` from `Engine::from_config_with_notice`, `Udpipe::english_with_notice` or `Udpipe::from_config_with_notice`, and decides the wording itself.
+Standard error, so `--json` output stays a single object on standard output. `--quiet` silences it. A library caller gets the same facts as a `domain::ProvisionNotice` from `Engine::from_config_with_notice`, and decides the wording itself.
 
 The notice covers the UDPipe model only. `Model2Vec::potion_base_8m` fetches 30.2 MB across three artifacts with no notice form of its own, so a first call to `Model2Vec::potion_base_8m` or `Model2Vec::from_config` (in Python, `Model2Vec.potion_base_8m()`) is silent for the length of that download. There is no clustering command, so the command line never makes that call.
 
-## Per-document failures: `DocumentError` and `CorpusResult`
+## Per-document failures: `DocumentError`
 
 The stream surface never lets one bad document abort the rest. `Engine::analyze_all` yields `Result<Document, DocumentError>` per input, where `DocumentError` pairs the `Error` with the path it occurred at (`None` for an input that is not a file, so a path-less document is distinguishable from one at an empty path). Its `Display` prints `path: error` when a path exists and the bare error otherwise, and its `source()` is the wrapped `Error`.
 
-Collecting the stream into `CorpusResult` partitions it: every success into `corpus`, every failure into `errors`, in order, with documents plus errors equal to inputs consumed. `Inputs::dir` is `Err` only when the listing itself fails; both read failures and analysis failures travel as stream items.
+The stream yields one item per input, in order: the `Document`, or the `DocumentError` in its place, so documents plus errors equals inputs consumed, and partitioning them is the caller's. `Inputs::dir` is `Err` only when the listing itself fails; both read failures and analysis failures travel as stream items.
 
 Two kinds of entry never appear on either side. The directory listing skips symlinks, so a symlink produces no document and no error. It also skips anything that is not a regular file, and the walk is one level deep, so a subdirectory is skipped the same way.
 
-Neither `DocumentError` nor `CorpusResult` is `Serialize`, because `Error` wraps `std::io::Error`. Crossing a language boundary therefore needs a projection rather than serde. `Matra.analyze_path` has one: each failed document arrives as `{"path": str | None, "error": {"kind": str, "message": str}}`, where `kind` is the stable string `Error::kind` names for the variant, and the table below carries all seven. `Error::kind` is a match with no wildcard arm, so a new `Error` variant fails to compile until someone names it, and `spec/tests/corpus/items.json` pins the vocabulary with a runner per crust, so every crust spells a failure the same way. A success item is the document itself; an error item is assembled field by field. Either's path (`provenance.source.path` on a document, `path` on an error) is decoded with `os.fsdecode`, so `os.fsencode` on it names the file the walk read even when that name is not valid UTF-8. `CorpusResult` itself does not cross: the Python call returns the items in order and the caller partitions them, testing `"error" in item`.
+`DocumentError` is not `Serialize`, because `Error` wraps `std::io::Error`. Crossing a language boundary therefore needs a projection rather than serde. `Matra.analyze_path` has one: each failed document arrives as `{"path": str | None, "error": {"kind": str, "message": str}}`, where `kind` is the stable string `Error::kind` names for the variant, and the table below carries all seven. `Error::kind` is a match with no wildcard arm, so a new `Error` variant fails to compile until someone names it, and `spec/tests/corpus/items.json` pins the vocabulary with a runner per crust, so every crust spells a failure the same way. A success item is the document itself; an error item is assembled field by field. Either's path (`provenance.source.path` on a document, `path` on an error) is decoded with `os.fsdecode`, so `os.fsencode` on it names the file the walk read even when that name is not valid UTF-8. The Python call returns the items in order and the caller partitions them, testing `"error" in item`.
 
 ## Display strings and kinds
 
@@ -231,7 +231,7 @@ except FileNotFoundError as exc:
 
 The exception message is the `Display` string from the table above. Variant identity beyond the exception class is not carried across the boundary; a caller that needs to distinguish `InputTooLarge` from `UnsupportedFormat` inspects the message.
 
-Every Python method that takes text routes through `Engine::annotate`, so the 8 MiB `"input"` gate applies uniformly: to `analyze` and `analyze_markdown`, and to the four extraction methods, whose per-extractor caps apply on top.
+Every Python method that takes text routes through the engine's reading stage, so the 8 MiB `"input"` gate applies uniformly: to `analyze` and `analyze_markdown`, and to the four summary and keyphrase methods, whose per-method caps apply on top.
 
 One further failure has no `Error` variant behind it. The `Matra` class is `#[pyclass(unsendable)]`, because the loaded model holds C-side state that is not thread-safe. Accessing one instance from a thread other than the one that created it fails at runtime. Multi-process use is unaffected.
 

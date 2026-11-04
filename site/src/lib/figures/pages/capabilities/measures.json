@@ -20,11 +20,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6667,
-      "readability_grade": null,
+      "lexical_density": 0.5,
+      "readability_grade": 10.73,
       "sentences": 1,
-      "text": "Produced by Engine::annotate.",
-      "words": 4
+      "text": "Produced by Engine::analyze, as the document is read and parsed.",
+      "words": 11
     },
     {
       "compression_ratio": null,
@@ -65,38 +65,38 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5385,
-      "readability_grade": 13.08,
+      "lexical_density": 0.5349,
+      "readability_grade": 12.5023,
       "sentences": 3,
-      "text": "Produced by Engine::compose, into ParagraphMetrics on each paragraph and DocumentMetrics on the document. Every ratio is Option<f64>, and None means not computed, which is distinct from a computed zero. Methodology gives each formula and the exact condition for None.",
+      "text": "Produced by Engine::analyze, as its last step, into ParagraphMetrics on each paragraph and DocumentMetrics on the document. Every ratio is Option<f64>, and None means not computed, which is distinct from a computed zero. Methodology gives each formula and the exact condition for None.",
+      "words": 46
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.6316,
+      "readability_grade": 11.0939,
+      "sentences": 2,
+      "text": "Every measure is per document. Aggregating across documents is the caller's decision: the counts sum, and vocabulary_ttr does not.",
+      "words": 20
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.575,
+      "readability_grade": 12.565,
+      "sentences": 2,
+      "text": "Free functions over a Document, needing no engine and no parser. Both return a Summary: the document's provenance with the method and n recorded, and sentences, each a SummarySentence (index, span, text, score), in document order, capped at 2,000 sentences.",
       "words": 41
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.7857,
-      "readability_grade": 21.0557,
+      "lexical_density": 0.45,
+      "readability_grade": 7.66,
       "sentences": 1,
-      "text": "Corpus adds three Rust-only aggregates across the documents of a directory: total_words(), passive_ratio(), mean_readability().",
-      "words": 15
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.6842,
-      "readability_grade": 9.2308,
-      "sentences": 2,
-      "text": "Free functions over a sentence slice. Both return Vec<ScoredSentence> (text, score, position) in document order, capped at 2,000 sentences.",
-      "words": 19
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.4762,
-      "readability_grade": 7.3686,
-      "sentences": 1,
-      "text": "Both are on the Python surface as Matra.tfidf_summarize and Matra.textrank_summarize, which parse the text and run the extractor in one call.",
-      "words": 23
+      "text": "Both are on the Python surface as Matra.tfidf_summarize and Matra.textrank_summarize, which parse the text and summarize it in one call.",
+      "words": 22
     },
     {
       "compression_ratio": null,
@@ -110,11 +110,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.7222,
-      "readability_grade": 4.9644,
-      "sentences": 2,
-      "text": "Free functions over a sentence slice. Both return Vec<Keyphrase> (phrase, score), highest score first, capped at 200,000 tokens.",
-      "words": 18
+      "lexical_density": 0.5854,
+      "readability_grade": 10.8245,
+      "sentences": 3,
+      "text": "Free functions over a Document. Both return a Keyphrases: the document's provenance with the method and n recorded, and phrases, each a Keyphrase (phrase, score, occurrences, the span of every place it was found), highest score first, capped at 200,000 tokens.",
+      "words": 42
     },
     {
       "compression_ratio": null,
@@ -137,11 +137,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5417,
-      "readability_grade": 8.265,
+      "lexical_density": 0.5455,
+      "readability_grade": 7.4727,
       "sentences": 2,
-      "text": "Not a field on any type above. The port and the clustering functions are always compiled; the Model2Vec adapter is behind the model2vec feature.",
-      "words": 24
+      "text": "Not a field on any type above. The port and clusters are always compiled; the Model2Vec adapter is behind the model2vec feature.",
+      "words": 22
     },
     {
       "compression_ratio": null,
@@ -155,20 +155,20 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.4286,
-      "readability_grade": 11.4238,
-      "sentences": 2,
-      "text": "Engine::with_defaults() is the no-setup constructor: resolve a Config, then build the standard pipeline from it, fetching the pinned English model if it is not on disk. Engine::new is the explicit one, and it is what you reach for with your own provider.",
-      "words": 44
+      "lexical_density": 0.5833,
+      "readability_grade": 12.3622,
+      "sentences": 3,
+      "text": "Engine::new() is the no-setup constructor: locate the model directory from the environment, then build the standard pipeline, fetching the pinned English model if it is not on disk. It reads no configuration file; Engine::from_config(&Config::resolve()?) reads one.",
+      "words": 40
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5556,
-      "readability_grade": 10.9956,
-      "sentences": 3,
-      "text": "engine.analyze_all(inputs) returns a lazy iterator of per-document results. Collecting it into CorpusResult partitions successes from failures, and one bad file does not abort the stream. On the Python surface the same walk is Matra.analyze_path(path), which returns the items in order for the caller to partition.",
-      "words": 49
+      "lexical_density": 0.5714,
+      "readability_grade": 9.5764,
+      "sentences": 2,
+      "text": "engine.analyze_all(inputs) returns a lazy iterator of per-document results, one per input in order, and one bad file does not abort the stream. On the Python surface the same walk is Matra.analyze_path(path), which returns the items in order for the caller to partition.",
+      "words": 46
     },
     {
       "compression_ratio": 0.4809,

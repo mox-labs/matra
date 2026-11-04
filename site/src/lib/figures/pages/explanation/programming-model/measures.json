@@ -32,8 +32,26 @@
       "lexical_density": 0.6,
       "readability_grade": null,
       "sentences": 1,
-      "text": "Three ways to run it:",
+      "text": "Two ways to run it:",
       "words": 5
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.4,
+      "readability_grade": 8.14,
+      "sentences": 1,
+      "text": "And what to ask of the result, with free functions over the Document that need no engine and no parser:",
+      "words": 20
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5625,
+      "readability_grade": 15.6963,
+      "sentences": 1,
+      "text": "The method is optional and never in a function's name; every result records the method that ran and its parameters in its provenance, because which method ran decides what a score means.",
+      "words": 33
     },
     {
       "compression_ratio": 0.6011,
@@ -45,49 +63,49 @@
       "words": 65
     },
     {
-      "compression_ratio": 0.5884,
+      "compression_ratio": 0.5874,
       "kind": "paragraph",
       "lexical_density": 0.5882,
       "readability_grade": 16.0641,
       "sentences": 2,
-      "text": "Behind annotate, the input side is cut by decision, one crate-private module each: fetching the bytes (with the symlink and size guards), detecting the format (a PDF or DOCX signature, then the format you named, then the extension), reading one format into blocks with their spans, building the section tree from blocks, and parsing. A new format is a reader and a registration line; no published signature moves.",
+      "text": "Behind analyze, the input side is cut by decision, one crate-private module each: fetching the bytes (with the symlink and size guards), detecting the format (a PDF or DOCX signature, then the format you named, then the extension), reading one format into blocks with their spans, building the section tree from blocks, and parsing. A new format is a reader and a registration line; no published signature moves.",
       "words": 68
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5935,
       "kind": "paragraph",
-      "lexical_density": 0.3684,
-      "readability_grade": 3.0203,
-      "sentences": 2,
-      "text": "compose is total. It reads what is attached and skips what is not, so it has no failure path.",
-      "words": 19
+      "lexical_density": 0.5373,
+      "readability_grade": 12.4931,
+      "sentences": 4,
+      "text": "Inside the engine, analysis is two stages: reading and parsing (annotate), then measuring (compose). Both are crate-private, since a public parse-only call would publish a second shape of Document with every metric empty, and the library's tests pin that analysis is exactly the one followed by the other. Measuring is total: it reads what is attached and skips what is not, so it has no failure path.",
+      "words": 69
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5714,
-      "readability_grade": 7.57,
+      "lexical_density": 0.6364,
+      "readability_grade": 6.9364,
       "sentences": 1,
-      "text": "One short Markdown document at each of the three stages, as matra produces them:",
-      "words": 14
+      "text": "One short Markdown document at each stage, as matra produces them:",
+      "words": 11
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5556,
-      "readability_grade": 8.9046,
+      "lexical_density": 0.5217,
+      "readability_grade": 5.3124,
       "sentences": 2,
-      "text": "Engine::new takes a provider, which means the caller decides where the UDPipe model lives. Config answers that question once so no caller has to invent a path.",
-      "words": 28
+      "text": "The engine needs to know where the UDPipe model lives. Config answers that question once so no caller has to invent a path.",
+      "words": 23
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5417,
-      "readability_grade": 16.1317,
+      "lexical_density": 0.6296,
+      "readability_grade": 16.7644,
       "sentences": 3,
-      "text": "That is Config::resolve() followed by Engine::from_config(&cfg). Both are additive: Engine::new, Udpipe::english and Udpipe::from_path are unchanged, and an explicit path still wins over everything below.",
-      "words": 29
+      "text": "Engine::new() resolves the locations from the environment alone and reads no configuration file; Engine::from_config(&Config::resolve()?) reads the file as well. An explicit directory, Config::with_model_dir, wins over everything below.",
+      "words": 32
     },
     {
       "compression_ratio": 0.5162,
@@ -117,13 +135,13 @@
       "words": 10
     },
     {
-      "compression_ratio": 0.5519,
+      "compression_ratio": 0.5526,
       "kind": "paragraph",
-      "lexical_density": 0.5641,
-      "readability_grade": 10.3569,
+      "lexical_density": 0.5625,
+      "readability_grade": 10.26,
       "sentences": 4,
-      "text": "One exception to the model directory rule: if the data root has no models subdirectory yet, and ~/.matra/models exists and is not empty, that older location is used. matra never creates ~/.matra. When an existing, non-empty legacy cache is selected it is used as the model directory, downloads and re-downloads included, because the resolved directory is the one handed to Udpipe::english and that is where it writes. Create the new location, or set MATRA_MODEL_DIR, to move off it.",
-      "words": 81
+      "text": "One exception to the model directory rule: if the data root has no models subdirectory yet, and ~/.matra/models exists and is not empty, that older location is used. matra never creates ~/.matra. When an existing, non-empty legacy cache is selected it is used as the model directory, downloads and re-downloads included, because the resolved directory is the one handed to the UDPipe adapter and that is where it writes. Create the new location, or set MATRA_MODEL_DIR, to move off it.",
+      "words": 82
     },
     {
       "compression_ratio": null,
@@ -144,22 +162,22 @@
       "words": 63
     },
     {
-      "compression_ratio": 0.5563,
+      "compression_ratio": 0.5551,
       "kind": "paragraph",
-      "lexical_density": 0.5316,
-      "readability_grade": 13.3509,
+      "lexical_density": 0.5455,
+      "readability_grade": 14.2205,
       "sentences": 3,
-      "text": "Engine::annotate runs the size check on every Input, then hands each paragraph that is not a quote to NlpProvider::parse, and maps the token and sentence spans the provider reports against the paragraph's text into the analysed text. Nothing else in the library calls the parser. That is what makes the 8 MiB cap a property of the pipeline rather than of each entry point: no text over MAX_INPUT_BYTES can reach a provider, whichever call or constructor you started from.",
-      "words": 82
+      "text": "The engine's reading stage, annotate, runs the size check on every Input, then hands each paragraph that is not a quote to the parser (NlpProvider::parse, a crate-private trait), and maps the token and sentence spans the parser reports against the paragraph's text into the analysed text. Nothing else in the library calls the parser. That is what makes the 8 MiB cap a property of the pipeline rather than of each entry point: no text over MAX_INPUT_BYTES can reach the parser, whichever call or constructor you started from.",
+      "words": 91
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5161,
-      "readability_grade": 5.1884,
-      "sentences": 3,
-      "text": "It is also the cheap route when you want the extractors. Annotate once, read the sentences off the tree, and hand the same slice to every extractor. Nothing is parsed twice.",
-      "words": 31
+      "lexical_density": 0.5357,
+      "readability_grade": 6.5929,
+      "sentences": 4,
+      "text": "It is also why the outcomes are cheap. Analyze once, and hand the same document to every outcome function: none of them parses anything. Nothing is parsed twice.",
+      "words": 28
     },
     {
       "compression_ratio": null,
@@ -180,13 +198,13 @@
       "words": 47
     },
     {
-      "compression_ratio": 0.5962,
+      "compression_ratio": 0.5517,
       "kind": "paragraph",
-      "lexical_density": 0.5429,
-      "readability_grade": 11.8843,
+      "lexical_density": 0.5172,
+      "readability_grade": 13.2166,
       "sentences": 3,
-      "text": "Your own adapter is a trait implementation plus a change at the call site. Engine::new takes any Box<dyn NlpProvider>; embed_and_cluster takes any &dyn Embedder, and with your own implementation it needs no feature flag at all. The fetch and read ports are private to the crate: bytes you fetch yourself go in through Input::bytes, and a format matra has no reader for goes in as headings and paragraphs through Input::blocks.",
-      "words": 74
+      "text": "Embedder is the one port open to your own adapter: clusters takes any &dyn Embedder, and with your own implementation it needs no feature flag at all. The parser, fetch and read ports are private to the crate, so a new parser or reader is a file and a registration line inside it, and no published signature moves when one changes. From outside, bytes you fetch yourself go in through Input::bytes, and a format matra has no reader for goes in as headings and paragraphs through Input::blocks.",
+      "words": 89
     },
     {
       "compression_ratio": null,
@@ -227,11 +245,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.8438,
-      "readability_grade": 30.0775,
+      "lexical_density": 0.8077,
+      "readability_grade": 25.4115,
       "sentences": 1,
-      "text": "Rust-only, therefore: the Document iterators (paragraphs, sentences, tokens); every Corpus aggregate (total_words, passive_ratio, mean_readability); the Sentence tree walks and filters (root_token, head_of, children_of, subtree, content_tokens, clausal_complements_in, root_adverbials_in); Paragraph::word_count and sentence_count; and Token::feat.",
-      "words": 35
+      "text": "Rust-only, therefore: the Document iterators (paragraphs, sentences, tokens); the Sentence tree walks and filters (root_token, head_of, children_of, subtree, content_tokens, clausal_complements_in, root_adverbials_in); Paragraph::word_count and sentence_count; and Token::feat.",
+      "words": 29
     },
     {
       "compression_ratio": null,
@@ -261,13 +279,13 @@
       "words": 143
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6143,
       "kind": "paragraph",
-      "lexical_density": 0.6522,
-      "readability_grade": 13.3887,
+      "lexical_density": 0.6122,
+      "readability_grade": 12.7487,
       "sentences": 2,
-      "text": "Still not on the Python surface: the separate annotate and compose stages, the remaining corpus types (Corpus, CorpusResult), a custom NlpProvider, and a replaceable metric suite. Parsing is the one thing the caller cannot substitute, because the size cap and the panic boundary live behind it.",
-      "words": 47
+      "text": "Not on the Python surface: an outcome taken from a document you already analyzed, which Rust's free functions take; each Python outcome method parses its text again. Parsing is the one thing no caller substitutes, in either language, because the size cap and the panic boundary live behind it.",
+      "words": 51
     },
     {
       "compression_ratio": null,

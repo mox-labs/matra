@@ -3,7 +3,7 @@
 	 * Semantic clusters of one input's sentences over a grid of thresholds
 	 * (EP-0012, M5), scrubbed by the reader.
 	 *
-	 * The generator ran `embed_and_cluster` at every grid value; the browser
+	 * The generator ran `matra::clusters` at every grid value; the browser
 	 * never recomputes a cluster. Every grid state is drawn once, as a layer,
 	 * and the scrub sets each layer's opacity: at a grid value that state alone
 	 * shows, and between two values the two blend, so the reader sees an edge

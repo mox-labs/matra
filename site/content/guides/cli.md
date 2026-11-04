@@ -90,9 +90,13 @@ Both methods select their top-N sentences by score internally, then return that 
 The human table prints each score at three decimals. Two sentences whose scores differ in the fourth therefore print the same number, and a summary of three sentences can arrive looking as though the ranker scored them identically when it did not. `--json` carries the full float, so reach for it whenever the ordering has to be defended rather than read.
 
 ```bash
-matra summarize essay.md --json | jq '.result[0]'
-# {"text": "...", "score": 0.312, "position": 4}
+matra summarize essay.md --json | jq '.result.sentences[0]'
+# {"index": 4, "span": {"start": 812, "end": 951}, "text": "...", "score": 0.312}
+matra summarize essay.md --json | jq '.result.provenance.method'
+# "tfidf"
 ```
+
+Under `--json` the `result` is a summary: the document's `provenance`, with the `method` that ran and its `parameters` (`{"n": 3}`), and the `sentences`, each with its `index` among the document's sentences and its `span` in the input.
 
 ### `matra keyphrases`
 
@@ -110,15 +114,15 @@ matra keyphrases essay.md -n 20 --method yake
 
 RAKE splits on stop words and scores the remaining word runs by a co-occurrence degree-to-frequency ratio. It is rule-based and fast. YAKE scores individual terms by position, frequency, and how varied their surrounding context is, then builds one-word to three-word candidates from those scores. It tends to surface longer, more specific phrases and to notice terms that first appear later in a long document, at more computation than RAKE. Both reject input over 200000 tokens.
 
-Unlike `summarize`, `keyphrases` output stays in score order, highest first. `Keyphrase` has no position field to sort back into, because a phrase is not tied to one location the way a sentence is.
+Unlike `summarize`, `keyphrases` output stays in score order, highest first. A phrase is not tied to one location the way a sentence is, so under `--json` each carries `occurrences`, the span of every place in the input it was found, beside the result's `provenance` with its `method` and `parameters`.
 
-Phrases are printed as lowercased lemmas, not as the surface text of the document. "Dependency Parses" appears as `dependency parse`. Phrases with equal scores can swap order between runs, and a tie at the `-n` boundary can change which phrase makes the list, so do not diff raw keyphrase output across runs without sorting it first.
+Phrases are printed as lowercased lemmas, not as the surface text of the document. "Dependency Parses" appears as `dependency parse`, and its occurrences point at the surface text. Phrases with equal scores come back in the same order on every run, the order they are first met, so a tie at the `-n` boundary is decided the same way each time.
 
 #### Reading the scores
 
-Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word `lexical density` scores `5.667` and the three-word `model file name` scores `5.067`. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.
+Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word `lexical density` scores `5.667` and the three-word `model file name` scores `5.114`. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.
 
-Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE puts `error implement st ::error`, read off the code span `std::error::Error` and the words around it, first at `11.905` and scores the bare `error` at `1.405`, while YAKE's first is `treat untrusted` at `84.628`. What is low there is the score, not the position: `1.405` sits not far above `1.000`, the floor any single word scores, and 186 of the 489 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking, 268th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
+Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE puts `error implement st ::error`, read off the code span `std::error::Error` and the words around it, first at `12.117` and scores the bare `error` at `1.450`, while YAKE's first is `treat untrusted` at `81.058`. What is low there is the score, not the position: `1.450` sits not far above `1.000`, the floor any single word scores, and 180 of the 483 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking, 264th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
 
 ```bash
 matra keyphrases essay.md --json | jq -S '.result[0:3]'
@@ -245,7 +249,7 @@ features: udpipe model2vec python cli
 }
 ```
 
-`command` is `analyze`, `summarize`, `keyphrases`, `config`, or `skill`. `input` is the path that was read, or the name `--stdin-filename` gave it. For `config` it is the config file's path when that file exists and null when it does not, and for `skill`, which reads no document, it is always null. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a list of `ScoredSentence` for `summarize`, a list of `Keyphrase` for `keyphrases`. For `config` it is an object keyed by setting, each carrying `value`, `source` and `origin`, and for `skill` the shapes shown above.
+`command` is `analyze`, `summarize`, `keyphrases`, `config`, or `skill`. `input` is the path that was read, or the name `--stdin-filename` gave it. For `config` it is the config file's path when that file exists and null when it does not, and for `skill`, which reads no document, it is always null. `result` is the serde form of the domain value the command produced: a `Document` for `analyze`, a `Summary` for `summarize` and a `Keyphrases` for `keyphrases`, each of the last two carrying the document's provenance with the `method` that ran and its `parameters`. For `config` it is an object keyed by setting, each carrying `value`, `source` and `origin`, and for `skill` the shapes shown above.
 
 Stability: `format_version` increments on any change to the envelope, and whenever the document schema's major version moves; the `result` value is the serde form of the documented domain types. That is the same promise cargo makes for `cargo metadata --format-version`. Pin your consumer to a `format_version` you have tested against.
 

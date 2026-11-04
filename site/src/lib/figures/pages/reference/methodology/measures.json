@@ -36,22 +36,22 @@
       "words": 7
     },
     {
-      "compression_ratio": 0.5151,
+      "compression_ratio": 0.5096,
       "kind": "paragraph",
-      "lexical_density": 0.4842,
-      "readability_grade": 9.8305,
+      "lexical_density": 0.4904,
+      "readability_grade": 11.2432,
       "sentences": 5,
-      "text": "Udpipe::english(model_dir) downloads the file when it is absent, checks the size, computes the SHA-256, and loads the same bytes it hashed. There is no second read from disk between verification and load. A cached file that fails verification is not loaded: the model is downloaded, and a download that also fails the digest is retried once, so a call makes at most two downloads. The file is replaced only by bytes that verify. If both downloads fail the digest the call returns Error::ModelInvalid, nothing is loaded, and the file that was there is still there.",
-      "words": 98
+      "text": "The engine's constructors, Engine::new and Engine::from_config, download the file into the model directory when it is absent, checks the size, computes the SHA-256, and loads the same bytes it hashed. There is no second read from disk between verification and load. A cached file that fails verification is not loaded: the model is downloaded, and a download that also fails the digest is retried once, so a call makes at most two downloads. The file is replaced only by bytes that verify. If both downloads fail the digest the call returns Error::ModelInvalid, nothing is loaded, and the file that was there is still there.",
+      "words": 109
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5714,
-      "readability_grade": 13.1493,
+      "lexical_density": 0.561,
+      "readability_grade": 8.7351,
       "sentences": 2,
-      "text": "Verification belongs to that constructor alone. Udpipe::from_path and Udpipe::from_bytes load whatever you hand them without checking size or hash, so a result produced through either one is only as identifiable as the file you supplied.",
-      "words": 37
+      "text": "Verification belongs to that path alone. Python's Matra.from_path loads whatever file you hand it without checking size or hash, so a result produced through it is only as identifiable as the file you supplied; from Rust, only the pinned model loads.",
+      "words": 43
     },
     {
       "compression_ratio": null,
@@ -180,13 +180,13 @@
       "words": 57
     },
     {
-      "compression_ratio": 0.5674,
+      "compression_ratio": 0.5743,
       "kind": "paragraph",
       "lexical_density": 0.5,
-      "readability_grade": 11.26,
+      "readability_grade": 10.022,
       "sentences": 4,
-      "text": "Applied to paragraphs that are not quotes and whose word_count is above 10. Stored in ParagraphMetrics::readability_grade, the paragraph's metrics.readability_grade. The value is unbounded and can be negative on short, simple text. metrics::readability::flesch_kincaid_grade(text: &str) -> f64 computes it on any string, and returns 0.0 for a string with no whitespace-separated pieces.",
-      "words": 55
+      "text": "Applied to paragraphs that are not quotes and whose word_count is above 10. Stored in ParagraphMetrics::readability_grade, the paragraph's metrics.readability_grade. The value is unbounded and can be negative on short, simple text. The formula is computed inside the metric suite only; matra publishes no function that computes it on a string.",
+      "words": 53
     },
     {
       "compression_ratio": null,
@@ -353,11 +353,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5217,
-      "readability_grade": 11.9378,
-      "sentences": 3,
-      "text": "Stored in DocumentMetrics::passive_ratio by Engine::compose, and per sentence in Sentence::passive, which Sentence::new sets; both cross to Python as fields. Corpus::passive_ratio() pools the same count across documents and stays a method, Rust only. The field is None when there are no sentences, and before compose has run.",
-      "words": 50
+      "lexical_density": 0.4839,
+      "readability_grade": 11.7711,
+      "sentences": 2,
+      "text": "Stored in DocumentMetrics::passive_ratio when the document is measured, and per sentence in Sentence::passive, which Sentence::new sets; both cross to Python as fields. The field is None when there are no sentences.",
+      "words": 33
     },
     {
       "compression_ratio": null,
@@ -378,40 +378,31 @@
       "words": 39
     },
     {
-      "compression_ratio": 0.5041,
+      "compression_ratio": 0.4908,
       "kind": "paragraph",
-      "lexical_density": 0.5593,
-      "readability_grade": 14.7625,
+      "lexical_density": 0.5574,
+      "readability_grade": 14.5378,
       "sentences": 4,
-      "text": "DocumentMetrics::mean_sentence_length is total_words / total_sentences, where total_words counts non-punctuation tokens. DocumentMetrics::sentence_length_std is the sample standard deviation of per-sentence non-punctuation token counts, with denominator n minus 1. Both are None when undefined: no sentences for the mean, fewer than two for the deviation. Engine::compose stores both, with the counts total_words, total_sentences and paragraph_count, so all of them cross to Python.",
-      "words": 59
+      "text": "DocumentMetrics::mean_sentence_length is total_words / total_sentences, where total_words counts non-punctuation tokens. DocumentMetrics::sentence_length_std is the sample standard deviation of per-sentence non-punctuation token counts, with denominator n minus 1. Both are None when undefined: no sentences for the mean, fewer than two for the deviation. Measuring the document stores both, with the counts total_words, total_sentences and paragraph_count, so all of them cross to Python.",
+      "words": 60
+    },
+    {
+      "compression_ratio": 0.5015,
+      "kind": "paragraph",
+      "lexical_density": 0.5217,
+      "readability_grade": 11.5859,
+      "sentences": 6,
+      "text": "matra computes none. Every measure above is of one document, and how to combine documents is a decision about what the combination is for, so it is the caller's. The counts sum across documents. A ratio pools by summing its numerator and denominator rather than averaging the ratios, so the passive ratio of a set is its passive sentences over its sentences. vocabulary_ttr does not pool at all: it falls as text grows, so documents of different lengths are not comparable on it, alone or summed. A mean of paragraph readability grades averages paragraphs, not documents, so a long document contributes more terms than a short one; leave out the paragraphs whose slot is None.",
+      "words": 117
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6364,
-      "readability_grade": 10.1545,
-      "sentences": 1,
-      "text": "Corpus reports three figures over its entries, all computed on demand.",
-      "words": 11
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.5667,
-      "readability_grade": 11.1067,
+      "lexical_density": 0.6579,
+      "readability_grade": 13.5568,
       "sentences": 2,
-      "text": "mean_readability averages paragraphs, not documents, so a long document contributes more terms than a short one. Paragraphs whose slot is None are absent from both the numerator and the count.",
-      "words": 30
-    },
-    {
-      "compression_ratio": null,
-      "kind": "paragraph",
-      "lexical_density": 0.6667,
-      "readability_grade": 11.1067,
-      "sentences": 2,
-      "text": "Both summarizers take &[Sentence] and a count, score every sentence, keep the highest N, and return them in ascending position. Neither generates text: the output sentences are the input sentences.",
-      "words": 31
+      "text": "Both summarizers take a Document and a count, score every sentence, keep the highest N, and return them in ascending index, the sentence's position among the document's sentences. Neither generates text: the output sentences are the input sentences.",
+      "words": 40
     },
     {
       "compression_ratio": 0.5573,
@@ -639,13 +630,13 @@
       "words": 51
     },
     {
-      "compression_ratio": 0.5848,
+      "compression_ratio": 0.5761,
       "kind": "paragraph",
-      "lexical_density": 0.6885,
-      "readability_grade": 17.1968,
+      "lexical_density": 0.6818,
+      "readability_grade": 18.1982,
       "sentences": 2,
-      "text": "Given the same parse, these are reproducible bit for bit on one machine: every paragraph metric, every document metric, every derived method on Document and Corpus, TextRank scores and selection, RAKE word and phrase scores, and YAKE term and n-gram scores. TextRank in particular is order-stable because its shared-term counts are integer sums and its iteration walks sentence indices in order.",
-      "words": 64
+      "text": "Given the same parse, these are reproducible bit for bit on one machine: every paragraph metric, every document metric, every derived method on Document, TextRank scores and selection, RAKE word and phrase scores, YAKE term and n-gram scores, and the order of keyphrases with equal scores. TextRank in particular is order-stable because its shared-term counts are integer sums and its iteration walks sentence indices in order.",
+      "words": 69
     },
     {
       "compression_ratio": null,
@@ -653,7 +644,7 @@
       "lexical_density": 0.8,
       "readability_grade": null,
       "sentences": 1,
-      "text": "Two places carry hash map iteration order into the result.",
+      "text": "One place carries hash map iteration order into the result.",
       "words": 10
     },
     {
@@ -675,22 +666,13 @@
       "words": 13
     },
     {
-      "compression_ratio": null,
-      "kind": "list_item",
-      "lexical_density": 0.5952,
-      "readability_grade": 8.4129,
-      "sentences": 3,
-      "text": "RAKE and YAKE output order among ties. Candidates are collected out of a hash map into a vector and sorted by score with a stable sort. Phrases with exactly equal scores can therefore come out in a different relative order between runs.",
-      "words": 42
-    },
-    {
-      "compression_ratio": null,
-      "kind": "list_item",
-      "lexical_density": 0.5,
-      "readability_grade": 6.7271,
+      "compression_ratio": 0.6131,
+      "kind": "paragraph",
+      "lexical_density": 0.5192,
+      "readability_grade": 20.5746,
       "sentences": 1,
-      "text": "When such a tie straddles the truncation point, which phrase is returned can differ.",
-      "words": 14
+      "text": "RAKE and YAKE collect their candidates in the order each phrase is first met and sort them by score with a stable sort, so phrases with exactly equal scores come out in the same order on every run, and a tie straddling the truncation point is decided the same way each time.",
+      "words": 52
     },
     {
       "compression_ratio": null,
@@ -720,13 +702,13 @@
       "words": 21
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5707,
       "kind": "paragraph",
-      "lexical_density": 0.575,
-      "readability_grade": 19.185,
-      "sentences": 1,
-      "text": "To let someone reproduce a result, report: the matra version, the model file name and its SHA-256, which format the document was analyzed under, and the parameter values you passed, such as the requested sentence count or maximum phrase count.",
-      "words": 41
+      "lexical_density": 0.5806,
+      "readability_grade": 16.2935,
+      "sentences": 2,
+      "text": "To let someone reproduce a result, report: the matra version, the model file name and its SHA-256, which format the document was analyzed under, the method, and the parameter values it ran with, such as the requested sentence count or maximum phrase count. A summary, keyphrases or clusters carry every one of these in their provenance: matra, parser, format, method and parameters.",
+      "words": 63
     },
     {
       "compression_ratio": null,

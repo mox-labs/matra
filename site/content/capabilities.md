@@ -4,7 +4,7 @@ Every value the pipeline returns, by tier. The tables say which language surface
 
 ## 1. Structure
 
-Produced by `Engine::annotate`.
+Produced by `Engine::analyze`, as the document is read and parsed.
 
 ### `Token`
 
@@ -66,7 +66,7 @@ All eleven cross to Python. The methods below are Rust only.
 
 ## 2. Metrics
 
-Produced by `Engine::compose`, into `ParagraphMetrics` on each paragraph and `DocumentMetrics` on the document. Every ratio is `Option<f64>`, and `None` means not computed, which is distinct from a computed zero. [Methodology](./reference/methodology.md) gives each formula and the exact condition for `None`.
+Produced by `Engine::analyze`, as its last step, into `ParagraphMetrics` on each paragraph and `DocumentMetrics` on the document. Every ratio is `Option<f64>`, and `None` means not computed, which is distinct from a computed zero. [Methodology](./reference/methodology.md) gives each formula and the exact condition for `None`.
 
 | Field | On | Measures |
 |---|---|---|
@@ -79,18 +79,18 @@ Produced by `Engine::compose`, into `ParagraphMetrics` on each paragraph and `Do
 | `nominalization_ratio` | `DocumentMetrics` | nouns ending in a nominalizing suffix (`-tion`, `-ment`, `-ness`, `-ity`, `-ence`, `-ance`) over all words, a surface proxy for nouns formed from verbs (`decide` becoming `decision`) |
 | `passive_ratio` | `DocumentMetrics` | share of sentences carrying a passive construction |
 
-`Corpus` adds three Rust-only aggregates across the documents of a directory: `total_words()`, `passive_ratio()`, `mean_readability()`.
+Every measure is per document. Aggregating across documents is the caller's decision: the counts sum, and `vocabulary_ttr` does not.
 
 ## 3. Summarization
 
-Free functions over a sentence slice. Both return `Vec<ScoredSentence>` (`text`, `score`, `position`) in document order, capped at 2,000 sentences.
+Free functions over a `Document`, needing no engine and no parser. Both return a `Summary`: the document's `provenance` with the `method` and `n` recorded, and `sentences`, each a `SummarySentence` (`index`, `span`, `text`, `score`), in document order, capped at 2,000 sentences.
 
 | Function | Ranks by |
 |---|---|
-| `tfidf_summarize(sentences, n)` | mean TF-IDF of the sentence's lemmatized terms, each sentence its own document for IDF |
-| `textrank_summarize(sentences, n)` | PageRank over a similarity graph of shared content lemmas normalized by log length |
+| `summarize(doc, n)`, `summarize_with(doc, n, SummaryMethod::TfIdf)` | mean TF-IDF of the sentence's lemmatized terms, each sentence its own document for IDF (`tfidf`, the default) |
+| `summarize_with(doc, n, SummaryMethod::TextRank)` | PageRank over a similarity graph of shared content lemmas normalized by log length (`textrank`) |
 
-Both are on the Python surface as `Matra.tfidf_summarize` and `Matra.textrank_summarize`, which parse the text and run the extractor in one call.
+Both are on the Python surface as `Matra.tfidf_summarize` and `Matra.textrank_summarize`, which parse the text and summarize it in one call.
 
 TextRank's summary of The Federalist No. 10 at the default length, and every sentence's score it was chosen from:
 
@@ -98,12 +98,12 @@ TextRank's summary of The Federalist No. 10 at the default length, and every sen
 
 ## 4. Keyphrases
 
-Free functions over a sentence slice. Both return `Vec<Keyphrase>` (`phrase`, `score`), highest score first, capped at 200,000 tokens.
+Free functions over a `Document`. Both return a `Keyphrases`: the document's `provenance` with the `method` and `n` recorded, and `phrases`, each a `Keyphrase` (`phrase`, `score`, `occurrences`, the span of every place it was found), highest score first, capped at 200,000 tokens.
 
 | Function | Ranks by |
 |---|---|
-| `rake_keyphrases(sentences, max)` | co-occurrence degree over frequency, on `NOUN`, `ADJ`, and `PROPN` runs between stop words |
-| `yake_keyphrases(sentences, max)` | per-term position, frequency, and context diversity, assembled into 1-word to 3-word candidates, score inverted so higher is more relevant |
+| `keyphrases(doc, n)`, `keyphrases_with(doc, n, KeyphraseMethod::Rake)` | co-occurrence degree over frequency, on `NOUN`, `ADJ`, and `PROPN` runs between stop words (`rake`, the default) |
+| `keyphrases_with(doc, n, KeyphraseMethod::Yake)` | per-term position, frequency, and context diversity, assembled into 1-word to 3-word candidates, score inverted so higher is more relevant (`yake`) |
 
 Both are on the Python surface as `Matra.rake_keyphrases` and `Matra.yake_keyphrases`.
 
@@ -113,16 +113,15 @@ The two rank by different properties of the text, and on The Federalist No. 10 t
 
 ## 5. Semantic clusters
 
-Not a field on any type above. The port and the clustering functions are always compiled; the `Model2Vec` adapter is behind the `model2vec` feature.
+Not a field on any type above. The port and `clusters` are always compiled; the `Model2Vec` adapter is behind the `model2vec` feature.
 
 | Item | Is |
 |---|---|
 | `Embedder` | the port: `embed(&[&str])` returning one `Embedding` per text, plus `identity()` |
 | `Model2Vec` | the adapter, reading `model.safetensors`, `tokenizer.json`, and `config.json` from a directory. `from_dir(dir)` loads what is there; `potion_base_8m(dir)` and `from_config(cfg)` fetch the pinned reference model when it is absent |
-| `embed_and_cluster(doc, embedder, threshold)` | embeds a document's sentences, then clusters them |
-| `extraction::semantic_clusters(embeddings, threshold, identity)` | clusters vectors you already hold |
-| `SemanticClusters` | `identity`, `threshold`, and `clusters` |
-| `SemanticCluster` | `members` (sentence indices) plus the `SemanticEdge` values that cleared the threshold |
+| `clusters(doc, embedder, threshold)` | embeds a document's sentences with the embedder you pass, then clusters them; vectors you already hold arrive through an `Embedder` that returns them |
+| `Clusters` | the document's `provenance` with the method (`cosine`), the `threshold` and the embedder's identity recorded, `clusters`, and `edges` |
+| `Cluster`, `SimilarityEdge` | a cluster's `members` (sentence indices), and a pair `a`, `b` whose `score` cleared the threshold |
 
 Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `Model2Vec` (including `Model2Vec.potion_base_8m`), and the module-level `semantic_clusters`. `Matra.semantic_clusters` takes a `Model2Vec` or any object with `embed` and `identity`.
 
@@ -132,12 +131,12 @@ Capped at 2,000 sentences. On the Python surface as `Matra.semantic_clusters`, `
 |---|---|---|
 | `Input` | `text(string, format)`, `bytes(data, format)`, `file(path)`, `blocks(blocks)` | one document: text, bytes, a file, or headings and paragraphs you supply |
 | `Inputs` | `dir(path)` | the files in a directory, as an iterator of `Input` |
-| `Engine` | `with_defaults()`, `from_config(cfg)`, `new(provider)` | `analyze` one input, `analyze_all` of many, or the stages `annotate` and `compose` |
+| `Engine` | `new()`, `from_config(cfg)`, `from_config_with_notice(cfg, notice)` | `analyze` one input, `analyze_all` of many |
 | `Config` | `resolve()`, `from_sources(...)`, `with_model_dir(dir)` | where models live and what the defaults are, plus the `ValueSource` each value came from |
 
-`Engine::with_defaults()` is the no-setup constructor: resolve a `Config`, then build the standard pipeline from it, fetching the pinned English model if it is not on disk. `Engine::new` is the explicit one, and it is what you reach for with your own provider.
+`Engine::new()` is the no-setup constructor: locate the model directory from the environment, then build the standard pipeline, fetching the pinned English model if it is not on disk. It reads no configuration file; `Engine::from_config(&Config::resolve()?)` reads one.
 
-`engine.analyze_all(inputs)` returns a lazy iterator of per-document results. Collecting it into `CorpusResult` partitions successes from failures, and one bad file does not abort the stream. On the Python surface the same walk is `Matra.analyze_path(path)`, which returns the items in order for the caller to partition.
+`engine.analyze_all(inputs)` returns a lazy iterator of per-document results, one per input in order, and one bad file does not abort the stream. On the Python surface the same walk is `Matra.analyze_path(path)`, which returns the items in order for the caller to partition.
 
 ## Traceability
 

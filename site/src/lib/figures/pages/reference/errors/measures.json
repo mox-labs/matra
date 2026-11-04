@@ -18,13 +18,13 @@
       "words": 56
     },
     {
-      "compression_ratio": 0.6261,
+      "compression_ratio": 0.6471,
       "kind": "paragraph",
-      "lexical_density": 0.5455,
-      "readability_grade": 8.6525,
+      "lexical_density": 0.5439,
+      "readability_grade": 7.357,
       "sentences": 4,
-      "text": "Error is #[non_exhaustive]. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. Error derives neither Clone nor serde; it is moved, not copied. The stream surface wraps it in DocumentError, which adds the path the failure occurred at and moves the error into CorpusResult::errors.",
-      "words": 58
+      "text": "Error is #[non_exhaustive]. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. Error derives neither Clone nor serde; it is moved, not copied. The stream surface wraps it in DocumentError, which adds the path the failure occurred at, and yields it as that input's Err item.",
+      "words": 60
     },
     {
       "compression_ratio": null,
@@ -36,13 +36,13 @@
       "words": 20
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5746,
       "kind": "paragraph",
-      "lexical_density": 0.4884,
-      "readability_grade": 10.307,
+      "lexical_density": 0.5294,
+      "readability_grade": 10.137,
       "sentences": 3,
-      "text": "Returned by Udpipe::from_path when the path does not exist, and by Model2Vec::from_dir when any of the three artifacts is absent. The payload is the path as given. Neither Udpipe::english nor Model2Vec::potion_base_8m returns this variant: both download the model when the file is absent.",
-      "words": 45
+      "text": "Returned by Python's Matra.from_path when the path does not exist, and by Model2Vec::from_dir when any of the three artifacts is absent. The payload is the path as given. Neither the UDPipe provisioner, behind Engine::new, Engine::from_config and Matra.english, nor Model2Vec::potion_base_8m returns this variant: both download the model when the file is absent.",
+      "words": 56
     },
     {
       "compression_ratio": null,
@@ -56,20 +56,20 @@
     {
       "compression_ratio": null,
       "kind": "list_item",
-      "lexical_density": 0.5333,
-      "readability_grade": 10.935,
+      "lexical_density": 0.5714,
+      "readability_grade": 6.4586,
       "sentences": 2,
-      "text": "Udpipe::from_path and Udpipe::from_bytes when the loader rejects the bytes. The payload is the loader's message.",
+      "text": "Matra.from_path when the loader rejects the file's bytes. The payload is the loader's message.",
       "words": 17
     },
     {
       "compression_ratio": null,
       "kind": "list_item",
-      "lexical_density": 0.5897,
-      "readability_grade": 9.7518,
+      "lexical_density": 0.5854,
+      "readability_grade": 9.8863,
       "sentences": 3,
-      "text": "Udpipe::english when the bytes it downloaded still fail SHA-256 verification after one refetch. The payload is SHA-256 mismatch after re-download from <url>. Nothing that failed verification is written, so the model directory is left as the call found it.",
-      "words": 43
+      "text": "The UDPipe provisioner when the bytes it downloaded still fail SHA-256 verification after one refetch. The payload is SHA-256 mismatch after re-download from <url>. Nothing that failed verification is written, so the model directory is left as the call found it.",
+      "words": 44
     },
     {
       "compression_ratio": null,
@@ -191,38 +191,38 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.575,
-      "readability_grade": 9.32,
+      "lexical_density": 0.5238,
+      "readability_grade": 9.1762,
       "sentences": 2,
-      "text": "A document from disk crosses both gates in sequence: \"file_source\" when the file is read, \"input\" inside annotate. In practice \"file_source\" fires first, since both carry the same 8 MiB limit and the file size is checked before the read.",
-      "words": 40
+      "text": "A document from disk crosses both gates in sequence: \"file_source\" when the file is read, \"input\" before it is parsed. In practice \"file_source\" fires first, since both carry the same 8 MiB limit and the file size is checked before the read.",
+      "words": 42
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6316,
-      "readability_grade": 9.2308,
-      "sentences": 2,
-      "text": "Calling a provider's parse directly bypasses the \"input\" gate. The gate belongs to Engine::annotate, not to the NlpProvider trait.",
-      "words": 21
+      "lexical_density": 0.4783,
+      "readability_grade": 9.7974,
+      "sentences": 1,
+      "text": "The parser is private to the crate, so no caller reaches it except through the engine, and no text bypasses the \"input\" gate.",
+      "words": 23
     },
     {
-      "compression_ratio": 0.5682,
+      "compression_ratio": 0.5611,
       "kind": "paragraph",
-      "lexical_density": 0.56,
-      "readability_grade": 10.028,
+      "lexical_density": 0.5545,
+      "readability_grade": 9.9296,
       "sentences": 4,
-      "text": "The label has a second producer. The CLI reads stdin through read_capped in src/cli/mod.rs, which reads at most one byte past MAX_INPUT_BYTES and returns InputTooLarge with what set to \"input\" before the text ever reaches annotate. Same limit, same label, so a caller sees one gate however the text arrived. Two details differ and neither is visible in the value: the CLI counts bytes before decoding them, so an oversized pipe is reported as too large rather than as invalid UTF-8, and the CLI renders the error on stderr and turns it into an exit code rather than returning it.",
-      "words": 101
+      "text": "The label has a second producer. The CLI reads stdin through read_capped in src/cli/mod.rs, which reads at most one byte past MAX_INPUT_BYTES and returns InputTooLarge with what set to \"input\" before the text ever reaches the engine. Same limit, same label, so a caller sees one gate however the text arrived. Two details differ and neither is visible in the value: the CLI counts bytes before decoding them, so an oversized pipe is reported as too large rather than as invalid UTF-8, and the CLI renders the error on stderr and turns it into an exit code rather than returning it.",
+      "words": 102
     },
     {
-      "compression_ratio": 0.4791,
+      "compression_ratio": 0.4954,
       "kind": "paragraph",
-      "lexical_density": 0.5902,
-      "readability_grade": 12.6034,
+      "lexical_density": 0.5224,
+      "readability_grade": 7.2255,
       "sentences": 4,
-      "text": "The four ranking extractors check their caps after their empty-result checks. tfidf_summarize(sentences, 0), textrank_summarize(sentences, 0), rake_keyphrases(sentences, 0), and yake_keyphrases(sentences, 0) return an empty vector without evaluating the cap, whatever the size of the slice. The same holds for an empty slice. semantic_clusters has no count parameter; its contract checks run first, then its cap, and an empty slice returns empty clusters.",
-      "words": 66
+      "text": "The four ranking methods check their caps after their empty-result checks. summarize_with(&doc, 0, ..) and keyphrases_with(&doc, 0, ..) return an empty result without evaluating the cap, whatever the size of the document. The same holds for a document with no sentences. clusters has no count parameter; its cap is checked first, before anything is embedded, then its contract, and a document with no sentences returns empty clusters.",
+      "words": 68
     },
     {
       "compression_ratio": null,
@@ -234,13 +234,13 @@
       "words": 30
     },
     {
-      "compression_ratio": 0.5506,
+      "compression_ratio": 0.5398,
       "kind": "paragraph",
-      "lexical_density": 0.5968,
-      "readability_grade": 14.7377,
+      "lexical_density": 0.5714,
+      "readability_grade": 15.7213,
       "sentences": 3,
-      "text": "Returned by semantic_clusters when a caller breaks its documented contract (embeddings disagreeing on dimension, an embedding containing a non-finite value, a non-finite threshold), and by embed_and_cluster when an embedder violates its own length contract. The payload names the violation. This variant means a call site or a provider implementation is wrong, not the input data; nothing about the analyzed text produces it.",
-      "words": 62
+      "text": "Returned by clusters when a caller or an embedder breaks a documented contract (a non-finite threshold, an embedder returning the wrong number of vectors, embeddings disagreeing on dimension, an embedding containing a non-finite value), and by Python's vectors-in semantic_clusters for the same contract over the vectors it is handed. The payload names the violation. This variant means a call site or a provider implementation is wrong, not the input data; nothing about the analyzed text produces it.",
+      "words": 79
     },
     {
       "compression_ratio": 0.5315,
@@ -257,7 +257,7 @@
       "lexical_density": 0.6667,
       "readability_grade": null,
       "sentences": 1,
-      "text": "Returned by Engine::annotate in two cases:",
+      "text": "Returned by Engine::analyze in two cases:",
       "words": 7
     },
     {
@@ -324,22 +324,22 @@
       "words": 11
     },
     {
-      "compression_ratio": 0.5793,
+      "compression_ratio": 0.591,
       "kind": "list_item",
-      "lexical_density": 0.5577,
-      "readability_grade": 13.3846,
+      "lexical_density": 0.5556,
+      "readability_grade": 13.7326,
       "sentences": 2,
-      "text": "Udpipe::english when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is TimedOut past the 300-second fetch budget or the 30-second connect budget, NotConnected for an unreachable host, and whatever the socket reported otherwise.",
-      "words": 58
+      "text": "The UDPipe provisioner when a download fails at the transport or answers with a non-2xx status. Same shape as the embedding path below: the message names the URL, and the kind is TimedOut past the 300-second fetch budget or the 30-second connect budget, NotConnected for an unreachable host, and whatever the socket reported otherwise.",
+      "words": 59
     },
     {
-      "compression_ratio": 0.5449,
+      "compression_ratio": 0.5425,
       "kind": "list_item",
-      "lexical_density": 0.5763,
-      "readability_grade": 13.715,
+      "lexical_density": 0.5738,
+      "readability_grade": 14.1017,
       "sentences": 3,
-      "text": "Udpipe::english when the model directory cannot be created, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads cannot write the model to <path>: No space left on device (os error 28) rather than Permission denied (os error 13) with nothing to act on.",
-      "words": 65
+      "text": "The UDPipe provisioner when the model directory cannot be created, or when the verified bytes cannot be written or renamed into place. The message names the operation and the path, so a full disk reads cannot write the model to <path>: No space left on device (os error 28) rather than Permission denied (os error 13) with nothing to act on.",
+      "words": 66
     },
     {
       "compression_ratio": 0.5704,
@@ -374,17 +374,17 @@
       "lexical_density": 0.5882,
       "readability_grade": 16.0282,
       "sentences": 1,
-      "text": "Engine::annotate when reading a file yields no document, with ErrorKind::InvalidData and the message source returned no documents.",
+      "text": "Engine::analyze when reading a file yields no document, with ErrorKind::InvalidData and the message source returned no documents.",
       "words": 19
     },
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.4643,
-      "readability_grade": 10.0986,
+      "lexical_density": 0.5143,
+      "readability_grade": 11.5486,
       "sentences": 2,
-      "text": "Udpipe::english and Model2Vec::potion_base_8m obtain a pinned artifact over the network. Both fetch through matra's own client, under the same bounds, and both classify a failure the same way.",
-      "words": 31
+      "text": "The UDPipe provisioner (behind Engine::new, Engine::from_config and Matra.english) and Model2Vec::potion_base_8m obtain a pinned artifact over the network. Both fetch through matra's own client, under the same bounds, and both classify a failure the same way.",
+      "words": 39
     },
     {
       "compression_ratio": null,
@@ -405,13 +405,13 @@
       "words": 91
     },
     {
-      "compression_ratio": 0.4465,
+      "compression_ratio": 0.4446,
       "kind": "paragraph",
-      "lexical_density": 0.5469,
-      "readability_grade": 13.9283,
+      "lexical_density": 0.5459,
+      "readability_grade": 14.0732,
       "sentences": 8,
-      "text": "Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. A failed run removes nothing either. A cached file that is already there and fails verification is not loaded and not deleted: Udpipe::english downloads again, at most twice, and replaces the file only with bytes that verified, through the same atomic rename every install lands through. A run whose downloads fail, at the network or at the digest, leaves that file byte-identical. Model2Vec::potion_base_8m replaces nothing and refuses a directory whose artifacts fail verification, because its three filenames belong to the artifact format rather than to this one model and so may be a caller's own (RFC-0015). A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. Udpipe::english leaves a temporary directory and Model2Vec::potion_base_8m three temporary files, and each reclaims its own by the same rule.",
-      "words": 197
+      "text": "Nothing that failed the digest is ever written. Both provisioners fetch into memory, verify there, and write only what verified, so a download that fails adds nothing to the model directory and a run killed mid-transfer leaves nothing at all. A failed run removes nothing either. A cached file that is already there and fails verification is not loaded and not deleted: the UDPipe provisioner downloads again, at most twice, and replaces the file only with bytes that verified, through the same atomic rename every install lands through. A run whose downloads fail, at the network or at the digest, leaves that file byte-identical. Model2Vec::potion_base_8m replaces nothing and refuses a directory whose artifacts fail verification, because its three filenames belong to the artifact format rather than to this one model and so may be a caller's own (RFC-0015). A temporary left by a killed process is reclaimed by the next download that finds it older than ten minutes, which is twice the fetch budget and therefore older than any transfer that could still be running. The UDPipe provisioner leaves a temporary directory and Model2Vec::potion_base_8m three temporary files, and each reclaims its own by the same rule.",
+      "words": 198
     },
     {
       "compression_ratio": 0.5748,
@@ -452,11 +452,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6286,
-      "readability_grade": 15.2571,
+      "lexical_density": 0.625,
+      "readability_grade": 11.0638,
       "sentences": 3,
-      "text": "Standard error, so --json output stays a single object on standard output. --quiet silences it. A library caller gets the same facts as a domain::ProvisionNotice from Engine::from_config_with_notice, Udpipe::english_with_notice or Udpipe::from_config_with_notice, and decides the wording itself.",
-      "words": 37
+      "text": "Standard error, so --json output stays a single object on standard output. --quiet silences it. A library caller gets the same facts as a domain::ProvisionNotice from Engine::from_config_with_notice, and decides the wording itself.",
+      "words": 34
     },
     {
       "compression_ratio": 0.571,
@@ -477,13 +477,13 @@
       "words": 74
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5987,
       "kind": "paragraph",
-      "lexical_density": 0.6591,
-      "readability_grade": 15.5173,
+      "lexical_density": 0.6122,
+      "readability_grade": 13.9528,
       "sentences": 2,
-      "text": "Collecting the stream into CorpusResult partitions it: every success into corpus, every failure into errors, in order, with documents plus errors equal to inputs consumed. Inputs::dir is Err only when the listing itself fails; both read failures and analysis failures travel as stream items.",
-      "words": 45
+      "text": "The stream yields one item per input, in order: the Document, or the DocumentError in its place, so documents plus errors equals inputs consumed, and partitioning them is the caller's. Inputs::dir is Err only when the listing itself fails; both read failures and analysis failures travel as stream items.",
+      "words": 51
     },
     {
       "compression_ratio": null,
@@ -495,13 +495,13 @@
       "words": 48
     },
     {
-      "compression_ratio": 0.4961,
+      "compression_ratio": 0.5026,
       "kind": "paragraph",
-      "lexical_density": 0.6098,
-      "readability_grade": 8.6849,
+      "lexical_density": 0.6051,
+      "readability_grade": 8.2104,
       "sentences": 9,
-      "text": "Neither DocumentError nor CorpusResult is Serialize, because Error wraps std::io::Error. Crossing a language boundary therefore needs a projection rather than serde. Matra.analyze_path has one: each failed document arrives as {\"path\": str | None, \"error\": {\"kind\": str, \"message\": str}}, where kind is the stable string Error::kind names for the variant, and the table below carries all seven. Error::kind is a match with no wildcard arm, so a new Error variant fails to compile until someone names it, and spec/tests/corpus/items.json pins the vocabulary with a runner per crust, so every crust spells a failure the same way. A success item is the document itself; an error item is assembled field by field. Either's path (provenance.source.path on a document, path on an error) is decoded with os.fsdecode, so os.fsencode on it names the file the walk read even when that name is not valid UTF-8. CorpusResult itself does not cross: the Python call returns the items in order and the caller partitions them, testing \"error\" in item.",
-      "words": 172
+      "text": "DocumentError is not Serialize, because Error wraps std::io::Error. Crossing a language boundary therefore needs a projection rather than serde. Matra.analyze_path has one: each failed document arrives as {\"path\": str | None, \"error\": {\"kind\": str, \"message\": str}}, where kind is the stable string Error::kind names for the variant, and the table below carries all seven. Error::kind is a match with no wildcard arm, so a new Error variant fails to compile until someone names it, and spec/tests/corpus/items.json pins the vocabulary with a runner per crust, so every crust spells a failure the same way. A success item is the document itself; an error item is assembled field by field. Either's path (provenance.source.path on a document, path on an error) is decoded with os.fsdecode, so os.fsencode on it names the file the walk read even when that name is not valid UTF-8. The Python call returns the items in order and the caller partitions them, testing \"error\" in item.",
+      "words": 165
     },
     {
       "compression_ratio": null,
@@ -560,11 +560,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6667,
-      "readability_grade": 19.0921,
+      "lexical_density": 0.6579,
+      "readability_grade": 19.4142,
       "sentences": 1,
-      "text": "Every Python method that takes text routes through Engine::annotate, so the 8 MiB \"input\" gate applies uniformly: to analyze and analyze_markdown, and to the four extraction methods, whose per-extractor caps apply on top.",
-      "words": 34
+      "text": "Every Python method that takes text routes through the engine's reading stage, so the 8 MiB \"input\" gate applies uniformly: to analyze and analyze_markdown, and to the four summary and keyphrase methods, whose per-method caps apply on top.",
+      "words": 39
     },
     {
       "compression_ratio": null,

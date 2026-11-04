@@ -40,5 +40,23 @@ export const MOVED_ANCHORS: Readonly<Record<string, readonly { id: string; to?: 
 	'/explanation/pragmatics': [
 		{ id: 'for-an-agent', to: '/guides/agent' },
 		{ id: 'cost-and-limits', to: '/reference/errors#inputtoolarge' }
+	],
+	// EPR-0006 milestone 3: the parser trait is private, so the Rust guide
+	// constructs no provider; the outcome types replaced `ScoredSentence`
+	// and the bare `Keyphrase` list; `Corpus` and `CorpusResult` are gone,
+	// a stream of `Document` or `DocumentError` items in their place.
+	'/guides/rust': [{ id: 'construct-a-provider', to: '/guides/rust#where-the-model-lives' }],
+	'/reference/domain-types': [
+		{ id: 'scoredsentence', to: '/reference/domain-types#summary' },
+		{ id: 'keyphrase', to: '/reference/domain-types#keyphrases' },
+		{ id: 'corpus', to: '/reference/domain-types#documenterror' },
+		{ id: 'methods-4', to: '/reference/domain-types#documenterror' },
+		{ id: 'corpusresult', to: '/reference/domain-types#documenterror' }
+	],
+	'/reference/errors': [
+		{
+			id: 'per-document-failures-documenterror-and-corpusresult',
+			to: '/reference/errors#per-document-failures-documenterror'
+		}
 	]
 };

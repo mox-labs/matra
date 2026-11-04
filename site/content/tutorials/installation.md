@@ -78,7 +78,7 @@ The verify step below doubles as the check: if `from matra import Matra` fails t
 
 There is nothing to install. The library, the CLI and the Python package each download the English UDPipe model (about 16 MB) on first use, verify it against a pinned hash, and cache it in the model directory, by default `~/.local/share/matra/models`.
 
-To keep it somewhere else, set `MATRA_MODEL_DIR`, pass `--model-dir` to the CLI, or pass the directory to `Udpipe::english` in Rust or `Matra.english` in Python. [The model directory](../reference/platforms.md#the-model-directory) gives the full resolution order, and [the model download](../reference/platforms.md#the-model-download) what happens when a download fails its check.
+To keep it somewhere else, set `MATRA_MODEL_DIR`, pass `--model-dir` to the CLI, or pass the directory through `Config::with_model_dir` in Rust or to `Matra.english` in Python. [The model directory](../reference/platforms.md#the-model-directory) gives the full resolution order, and [the model download](../reference/platforms.md#the-model-download) what happens when a download fails its check.
 
 ---
 
@@ -86,7 +86,7 @@ To keep it somewhere else, set `MATRA_MODEL_DIR`, pass `--model-dir` to the CLI,
 
 matra's code is MIT, and the two models it downloads are separate works with licenses of their own. The English parsing model comes from [LINDAT](https://hdl.handle.net/11234/1-3131) under CC BY-NC-SA 4.0, which does not permit commercial use; read it before you use matra commercially. The embedding model, potion-base-8M, comes from [Hugging Face](https://huggingface.co/minishlab/potion-base-8M) under MIT per its model card, and is used for semantic clusters only. [Model licenses](../reference/platforms.md#model-licenses) has both in a table, with links to the license texts.
 
-The command line and the config file always use this model. To parse with a different UDPipe model file, load it by path from the library: `Udpipe::from_path` in [Rust](../guides/rust.md#construct-a-provider) or `Matra.from_path` in [Python](../guides/python.md#load-the-model-from-a-directory-you-choose).
+The command line and the config file always use this model. To parse with a different UDPipe model file, load it by path from Python with `Matra.from_path` ([Python](../guides/python.md#load-the-model-from-a-directory-you-choose)); the Rust surface loads the pinned model alone.
 
 ---
 

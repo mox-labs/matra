@@ -33,16 +33,16 @@ print(doc["metrics"]["passive_ratio"], len(doc["sections"]))
 | `Matra.english` | `(model_dir=None) -> Matra` | The engine, downloading the pinned English model if it is absent. With no argument the directory resolves the way every surface resolves it |
 | `analyze` | `(text: str) -> dict` | A document, read as plain text |
 | `analyze_markdown` | `(text: str) -> dict` | A document, read as markdown: sections from headings, front matter, code and tables listed in `skipped` |
-| `tfidf_summarize` | `(text: str, n: int) -> list[dict]` | Top-n scored sentences in document order |
-| `textrank_summarize` | `(text: str, n: int) -> list[dict]` | The same, ranked by graph centrality |
-| `rake_keyphrases` | `(text: str, max_phrases: int) -> list[dict]` | Ranked phrases, highest first |
-| `yake_keyphrases` | `(text: str, max_phrases: int) -> list[dict]` | The same, different ranking |
-| `semantic_clusters` | `(text: str, threshold: float, model) -> dict` | Clusters over the text's sentences. See `semantic` |
+| `tfidf_summarize` | `(text: str, n: int) -> dict` | A `Summary`: the top-n sentences in document order, each with its `index` and `span`, and the method and `n` in its `provenance` |
+| `textrank_summarize` | `(text: str, n: int) -> dict` | The same, ranked by graph centrality |
+| `rake_keyphrases` | `(text: str, max_phrases: int) -> dict` | A `Keyphrases`: ranked phrases, highest first, each with every `occurrences` span |
+| `yake_keyphrases` | `(text: str, max_phrases: int) -> dict` | The same, different ranking |
+| `semantic_clusters` | `(text: str, threshold: float, model) -> dict` | A `Clusters` over the text's sentences, the embedder's identity and the threshold in its `provenance`. See `semantic` |
 | `analyze_path` | `(path) -> list[dict]` | One item per document a path names |
 
 Every path argument takes a `str` or an `os.PathLike` such as a `pathlib.Path`, and every one that defaults to `None` resolves through the configuration when the argument is absent.
 
-Every method that takes text routes through the same entry point, so the 8 MiB input cap applies uniformly, with the per-extractor caps on top.
+Every method that takes text routes through the same entry point, so the 8 MiB input cap applies uniformly, with the per-method caps on top. The summary, keyphrase and cluster methods read their text as plain text, markdown included, and record no `path`.
 
 **Threading.** The class is unsendable: the loaded model holds C-side state that is not thread-safe, so touching one instance from a thread other than the one that created it fails at runtime. Multi-process is fine. Use `ProcessPoolExecutor`, not `ThreadPoolExecutor`.
 
@@ -113,7 +113,7 @@ from matra import semantic_clusters
 clusters = semantic_clusters(vectors, 0.85, "my-model-v1")
 ```
 
-For a caller who already holds embeddings. Indices in the result are positions in the list passed in, and the scores are attributed to the hash given. Raises `ValueError` when vectors disagree on dimension, contain a non-finite value, exceed the 2,000-vector cap, or the threshold is not finite.
+For a caller who already holds embeddings. It reads no document, so the result is `parameters` (`threshold`, and the hash given as `embedder`), `clusters` and `edges`, with no provenance. Indices in the result are positions in the list passed in. Raises `ValueError` when vectors disagree on dimension, contain a non-finite value, exceed the 2,000-vector cap, or the threshold is not finite.
 
 ## Exceptions
 

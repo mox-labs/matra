@@ -371,11 +371,9 @@ impl Config {
     /// Deprecated by RFC-0020: nothing in the library or the command line
     /// reads it. The UDPipe adapter's model file is pinned in the source
     /// beside its digest, so the key selects no model, and it no longer
-    /// ships in `config/default.toml`. To parse with another model file,
-    /// load it with `Udpipe::from_path`.
-    #[deprecated(
-        note = "selects nothing: the UDPipe model is pinned in the adapter; load another with `Udpipe::from_path` (RFC-0020)"
-    )]
+    /// ships in `config/default.toml`. The Rust surface loads the pinned
+    /// model only; Python's `Matra.from_path` loads another model file.
+    #[deprecated(note = "selects nothing: the UDPipe model is pinned in the adapter (RFC-0020)")]
     pub fn udpipe_model(&self) -> &str {
         &self.udpipe_model
     }
@@ -393,8 +391,7 @@ impl Config {
     ///
     /// Deprecated by RFC-0020: nothing in the library or the command line
     /// reads it, and it no longer ships in `config/default.toml`. Every
-    /// clustering call (`embed_and_cluster`,
-    /// `extraction::semantic_clusters`, and their Python forms) takes its
+    /// clustering call (`matra::clusters` and its Python forms) takes its
     /// threshold as an argument, and there is no clustering command.
     #[deprecated(note = "selects nothing: pass the threshold to the clustering call (RFC-0020)")]
     pub fn semantic_threshold(&self) -> f32 {
