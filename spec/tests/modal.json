@@ -1,11 +1,16 @@
 {
   "name": "modal",
   "input": "It might have been done. You must complete the form by Friday. The committee approved it.",
-  "format": "plain",
+  "format": "plain_text",
   "expect": {
-    "total_sentences": 3,
-    "total_words": 16,
-    "paragraph_count": 1,
+    "metrics": {
+      "total_sentences": 3,
+      "total_words": 16,
+      "paragraph_count": 1,
+      "vocabulary_ttr": 0.875,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.3333333333333333
+    },
     "sentences": [
       {
         "text": "It might have been done.",
@@ -18,7 +23,7 @@
             "head_id": 5
           }
         ],
-        "bare_assertion": false,
+        "root_mood": null,
         "tokens": [
           {
             "id": 1,
@@ -81,7 +86,7 @@
             "head_id": 3
           }
         ],
-        "bare_assertion": false,
+        "root_mood": null,
         "tokens": [
           {
             "id": 1,
@@ -154,7 +159,10 @@
         "token_count": 5,
         "negations": [],
         "modals": [],
-        "bare_assertion": true,
+        "root_mood": {
+          "root_id": 3,
+          "mood": "Ind"
+        },
         "tokens": [
           {
             "id": 1,
@@ -198,9 +206,6 @@
           }
         ]
       }
-    ],
-    "vocabulary_ttr": 0.875,
-    "nominalization_ratio": 0.0,
-    "passive_ratio": 0.3333333333333333
+    ]
   }
 }

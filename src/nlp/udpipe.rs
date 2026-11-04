@@ -6,12 +6,12 @@ use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime};
 
-use sha2::{Digest, Sha256};
 use udpipe_rs::Model;
 
 use crate::config::Config;
+use crate::digest::sha256_hex;
 use crate::domain::Error;
-use crate::domain::{ProvisionNotice, Sentence, Token};
+use crate::domain::{Identity, ProvisionNotice, Sentence, Token};
 
 use super::NlpProvider;
 
@@ -19,6 +19,10 @@ use super::NlpProvider;
 /// Refresh with `scripts/fetch-model-hash.sh` when updating the model version.
 const ENGLISH_MODEL_SHA256: &str =
     "784bd0fa85e3d831fd02a55290d0acfd05c953159dc38cc33d52e1b28add9957";
+
+/// The pinned model's name: the release's own, which the upstream
+/// distribution uses, and what `provenance.parser.model` reports.
+const ENGLISH_MODEL_NAME: &str = "english-ewt-ud-2.5-191206";
 
 /// Expected size in bytes, checked before hashing as a fast-fail guard.
 const ENGLISH_MODEL_SIZE: u64 = 16_309_608;
@@ -107,10 +111,15 @@ const STALE_TEMP_AGE: Duration = Duration::from_secs(600);
 /// writer does not use.
 const TEMP_DIR_PREFIX: &str = ".tmp.download.";
 
+/// The name every UDPipe-backed parse reports in its identity.
+const PARSER_NAME: &str = "udpipe";
+
 /// UDPipe adapter. Validated at construction: if the model is invalid,
 /// construction fails. After construction, parse calls are trusted.
 pub struct Udpipe {
     model: Model,
+    /// Derived once, from the loaded bytes, at construction.
+    identity: Identity,
 }
 
 impl std::fmt::Debug for Udpipe {
@@ -121,20 +130,30 @@ impl std::fmt::Debug for Udpipe {
 
 impl Udpipe {
     /// Load from a file path. Fails fast if the model is invalid.
+    ///
+    /// The file is read once and loaded from those bytes, so the digest
+    /// in [`NlpProvider::identity`] is of exactly what was loaded.
     pub fn from_path(path: impl AsRef<Path>) -> crate::domain::Result<Self> {
         let path = path.as_ref();
         if !path.exists() {
             return Err(Error::ModelNotFound(path.to_path_buf()));
         }
-        let model = Model::load(path).map_err(|e| Error::ModelInvalid(e.to_string()))?;
-        Ok(Self { model })
+        let bytes = std::fs::read(path).map_err(|e| io_at("read", path, &e))?;
+        Self::from_bytes(&bytes)
     }
 
     /// Load from bytes (e.g. embedded via include_bytes!).
+    ///
+    /// The identity is derived from the bytes: their SHA-256 always, and
+    /// the model's name and licence when the digest is the pinned
+    /// model's. A model matra does not pin reports `None` for both.
     pub fn from_bytes(data: &[u8]) -> crate::domain::Result<Self> {
         let model =
             Model::load_from_memory(data).map_err(|e| Error::ModelInvalid(e.to_string()))?;
-        Ok(Self { model })
+        Ok(Self {
+            model,
+            identity: identity_of(data),
+        })
     }
 
     /// Download and load the English model, verifying its SHA-256 against
@@ -563,9 +582,7 @@ fn verified(bytes: &[u8], expected_size: u64, expected_hash: &str) -> bool {
     if bytes.len() as u64 != expected_size {
         return false;
     }
-    let mut hasher = Sha256::new();
-    hasher.update(bytes);
-    hex_encode(&hasher.finalize()).eq_ignore_ascii_case(expected_hash)
+    sha256_hex(bytes).eq_ignore_ascii_case(expected_hash)
 }
 
 /// Run a closure with a temporary subdirectory inside `parent`, removing
@@ -693,12 +710,18 @@ fn read_and_verify(
     }
 }
 
-fn hex_encode(bytes: &[u8]) -> String {
-    let mut s = String::with_capacity(bytes.len() * 2);
-    for b in bytes {
-        s.push_str(&format!("{b:02x}"));
-    }
-    s
+/// The identity of a model loaded from `bytes`. Recognised by digest,
+/// not by how it was loaded, so the pinned model loaded from a path
+/// names itself exactly as the provisioned one does.
+fn identity_of(bytes: &[u8]) -> Identity {
+    let sha256 = sha256_hex(bytes);
+    let pinned = sha256.eq_ignore_ascii_case(ENGLISH_MODEL.sha256);
+    Identity::new(
+        PARSER_NAME,
+        pinned.then(|| ENGLISH_MODEL_NAME.to_string()),
+        Some(sha256),
+        pinned.then(|| ENGLISH_MODEL.license.to_string()),
+    )
 }
 
 /// Run a closure that may panic inside the `udpipe-rs` C/C++ boundary,
@@ -765,7 +788,7 @@ impl NlpProvider for Udpipe {
                             lemma: w.lemma.clone(),
                             pos: w.upostag.clone(),
                             xpos: w.xpostag.clone(),
-                            feats: w.feats.clone(),
+                            features: crate::domain::features_from_conllu(&w.feats),
                             dep: w.deprel.clone(),
                             head,
                             deps: String::from("_"),
@@ -791,11 +814,26 @@ impl NlpProvider for Udpipe {
             })
             .collect()
     }
+
+    fn identity(&self) -> Identity {
+        self.identity.clone()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A model matra does not pin is named by its digest alone: the
+    /// name and licence of the pinned model must not be claimed for it.
+    #[test]
+    fn an_unpinned_model_reports_its_digest_and_no_name() {
+        let id = identity_of(b"hello");
+        assert_eq!(id.name, "udpipe");
+        assert_eq!(id.sha256.as_deref(), Some(HELLO_HASH));
+        assert_eq!(id.model, None);
+        assert_eq!(id.license, None);
+    }
 
     /// Validates the catch_parse_panic technique against an arbitrary
     /// panicking closure. We can't easily make the real `Model::parse`

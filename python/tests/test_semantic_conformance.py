@@ -26,10 +26,10 @@ def as_f32(x: float) -> float:
 
 def test_semantic_clusters_matches_the_shape_fixture() -> None:
     fixture = json.loads(SPEC.read_text())
-    got = semantic_clusters(fixture["embeddings"], fixture["threshold"], fixture["model_hash"])
+    got = semantic_clusters(fixture["embeddings"], fixture["threshold"], fixture["identity"])
     expect = fixture["expect"]
 
-    assert got["model_hash"] == expect["model_hash"]
+    assert got["identity"] == expect["identity"]
     assert as_f32(got["threshold"]) == as_f32(expect["threshold"])
     assert len(got["clusters"]) == len(expect["clusters"])
     for g, e in zip(got["clusters"], expect["clusters"], strict=True):

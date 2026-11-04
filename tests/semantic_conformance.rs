@@ -15,7 +15,7 @@ struct Fixture {
     name: String,
     embeddings: Vec<Vec<f32>>,
     threshold: f32,
-    model_hash: String,
+    identity: String,
     expect: SemanticClusters,
 }
 
@@ -29,7 +29,7 @@ fn semantic_clusters_matches_the_shape_fixture() {
 
     let embeddings: Vec<Embedding> = fixture.embeddings.into_iter().map(Embedding).collect();
     let got =
-        matra::extraction::semantic_clusters(&embeddings, fixture.threshold, &fixture.model_hash)
+        matra::extraction::semantic_clusters(&embeddings, fixture.threshold, &fixture.identity)
             .unwrap();
     assert_eq!(got, fixture.expect, "fixture {}", fixture.name);
 }

@@ -40,17 +40,31 @@ pub(super) fn metrics(
     style: Style,
 ) -> Fallible<()> {
     let Style { bold, reset } = style;
+    let m = &doc.metrics;
     writeln!(out, "{bold}{label}{reset}")?;
-    writeln!(out, "  sentences          {}", doc.total_sentences())?;
-    writeln!(out, "  words              {}", doc.total_words())?;
+    writeln!(out, "  sentences          {}", m.total_sentences)?;
+    writeln!(out, "  words              {}", m.total_words)?;
     writeln!(
         out,
-        "  mean sentence len  {:.1}",
-        doc.mean_sentence_length()
+        "  mean sentence len  {}",
+        fixed(m.mean_sentence_length, 1)
     )?;
-    writeln!(out, "  sentence len sd    {:.1}", doc.sentence_length_std())?;
-    writeln!(out, "  passive ratio      {:.3}", doc.passive_ratio())?;
+    writeln!(
+        out,
+        "  sentence len sd    {}",
+        fixed(m.sentence_length_std, 1)
+    )?;
+    writeln!(out, "  passive ratio      {}", fixed(m.passive_ratio, 3))?;
     Ok(())
+}
+
+/// A metric to `places` decimals, or `-` when the metric's condition was
+/// not met (no sentence for a mean, fewer than two for a deviation).
+fn fixed(value: Option<f64>, places: usize) -> String {
+    match value {
+        Some(v) => format!("{v:.places$}"),
+        None => "-".to_string(),
+    }
 }
 
 /// The per-section breakdown, ported from the Python CLI's `--sections`:
@@ -75,7 +89,7 @@ pub(super) fn sections(out: &mut dyn Write, doc: &Document) -> Fallible<()> {
             .paragraphs
             .iter()
             .flat_map(|p| p.sentences.iter())
-            .map(|s| s.word_count())
+            .map(|s| s.word_count)
             .sum();
         writeln!(
             out,
@@ -109,6 +123,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn an_unmet_metric_renders_as_a_dash_not_a_zero() {
+        assert_eq!(fixed(None, 1), "-");
+        assert_eq!(fixed(Some(0.0), 3), "0.000");
+        assert_eq!(fixed(Some(9.46), 1), "9.5");
+    }
+
+    #[test]
     fn style_off_emits_no_escapes() {
         let style = Style::new(false);
         assert_eq!(style.bold, "");
@@ -126,11 +147,14 @@ mod tests {
     /// panic the renderer, which is why the truncation counts characters.
     #[test]
     fn a_multibyte_heading_truncates_without_panicking() {
-        let doc = Document::new(vec![crate::domain::Section::new(
-            Some("\u{e0b9}".repeat(60)),
-            1,
-            Vec::new(),
-        )]);
+        let doc = Document::new(
+            crate::domain::Provenance::for_test(),
+            vec![crate::domain::Section::new(
+                Some("\u{e0b9}".repeat(60)),
+                1,
+                Vec::new(),
+            )],
+        );
         let mut out = Vec::new();
         sections(&mut out, &doc).expect("render");
         assert!(String::from_utf8(out).expect("utf8").contains("h1"));

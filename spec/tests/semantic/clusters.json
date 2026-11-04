@@ -9,9 +9,9 @@
     [-1.0, 0.0]
   ],
   "threshold": 0.92,
-  "model_hash": "shape-fixture-hash",
+  "identity": "shape-fixture-hash",
   "expect": {
-    "model_hash": "shape-fixture-hash",
+    "identity": "shape-fixture-hash",
     "threshold": 0.92,
     "clusters": [
       {

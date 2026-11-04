@@ -140,7 +140,7 @@ mod tests {
             lemma: text.to_lowercase(),
             pos: pos.to_string(),
             xpos: String::new(),
-            feats: String::new(),
+            features: std::collections::BTreeMap::new(),
             dep: String::new(),
             head: 0,
             deps: String::new(),

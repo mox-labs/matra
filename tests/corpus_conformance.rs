@@ -7,6 +7,8 @@
 //! pins is the shape of the item and the order of the walk, not the
 //! parse inside it: the parse fixtures in `spec/tests/*.json` do that.
 
+mod document_schema;
+
 use std::fs;
 use std::path::PathBuf;
 
@@ -87,6 +89,10 @@ impl NlpProvider for EmptyNlp {
     fn parse(&self, _text: &str) -> domain::Result<Vec<domain::Sentence>> {
         Ok(Vec::new())
     }
+
+    fn identity(&self) -> domain::Identity {
+        domain::Identity::new("empty", None, None, None)
+    }
 }
 
 /// Every variant's `kind()`, in the fixture's order. Constructing each
@@ -132,7 +138,14 @@ fn the_item_shapes_are_the_ones_the_fixture_names() {
     let fixture = fixture();
     let entry = domain::CorpusEntry::new(
         Some(PathBuf::from("a.txt")),
-        domain::Document::new(Vec::new()),
+        domain::Document::new(
+            domain::Provenance::new(
+                domain::Identity::new("empty", None, None, None),
+                Format::PlainText,
+                domain::ProvenanceSource::new(Some(PathBuf::from("a.txt")), 0, ""),
+            ),
+            Vec::new(),
+        ),
     );
 
     let value = serde_json::to_value(&entry).expect("serialize entry");
@@ -181,6 +194,14 @@ fn a_directory_walk_yields_one_item_per_file() {
             (Ok(entry), "entry") => {
                 let path = entry.path.as_ref().expect("a walked document has a path");
                 assert_eq!(path.file_name().unwrap(), expect.name.as_str());
+                assert_eq!(
+                    entry.analysis.provenance.source.path, entry.path,
+                    "the document's provenance names the path the entry does"
+                );
+                document_schema::assert_valid_document(
+                    &serde_json::to_value(&entry.analysis).expect("serialize"),
+                    &expect.name,
+                );
             }
             (Err(err), "error") => {
                 let path = err.path.as_ref().expect("a walked document has a path");

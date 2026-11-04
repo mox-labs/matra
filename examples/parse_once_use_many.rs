@@ -49,9 +49,9 @@ mean the public surface locks at 0.1.0 and stays small.
     // Each consumer reads what it needs from the same parsed data.
     println!(
         "Document: {} sentences, {} words, passive ratio {:.1}%",
-        analysis.total_sentences(),
-        analysis.total_words(),
-        analysis.passive_ratio() * 100.0,
+        analysis.metrics.total_sentences,
+        analysis.metrics.total_words,
+        analysis.metrics.passive_ratio.unwrap_or(0.0) * 100.0,
     );
 
     println!("\nTop sentences (TF-IDF):");

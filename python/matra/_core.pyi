@@ -85,6 +85,11 @@ class Matra:
     def analyze(self, text: str) -> Document:
         """Analyze plain text.
 
+        The document's aggregates are in `doc["metrics"]`, each
+        paragraph's in `paragraph["metrics"]`, and the parser, format and
+        input digest in `doc["provenance"]`, whose `schema` is the schema
+        version (`"2.0"`).
+
         Raises:
             ValueError: input exceeds the size cap (8 MiB).
             RuntimeError: NLP parsing failed.
@@ -295,7 +300,8 @@ def semantic_clusters(
 
     The vectors-in twin of `Matra.semantic_clusters` for consumers who
     already hold embeddings; indices in the result are positions in
-    `embeddings`, and the scores are attributed to `model_hash`.
+    `embeddings`, and the scores are attributed to `model_hash`, which
+    the result carries as `identity`.
 
     Raises:
         ValueError: vectors disagree on dimension, contain a non-finite

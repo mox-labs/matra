@@ -81,7 +81,7 @@ pub struct ProvisionNotice {
 /// Model opinion, not verifiable structure: an embedding cannot be checked
 /// against the source bytes, so it never appears as a field on [`Document`]
 /// or any other type the deterministic pipeline returns (RFC-0010). Values
-/// derived from embeddings carry their provenance (model hash, parameters)
+/// derived from embeddings carry their provenance (model identity, parameters)
 /// in their own standalone types.
 ///
 /// Serde treats the newtype transparently, so the wire form is the bare
@@ -109,8 +109,9 @@ pub struct Embedding(pub Vec<f32>);
 #[non_exhaustive]
 pub struct SemanticClusters {
     /// Identity of the model whose geometry produced the scores, as the
-    /// embed adapter reports it (a digest over the model artifacts).
-    pub model_hash: String,
+    /// embedder reports it (`Embedder::identity`; for a file-loaded model,
+    /// a digest over its artifacts).
+    pub identity: String,
     /// The caller-supplied similarity cutoff the edges cleared. matra
     /// knows no universal threshold; the literature's published values
     /// span 0.67 to 0.9 with no consensus.
@@ -244,10 +245,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// A parsed token carrying the full CoNLL-U annotation set.
 ///
 /// One field per CoNLL-U column plus one derived convenience field.
-/// Each column holds what the NLP provider emitted for it, so
-/// downstream algorithms never need to re-parse to read an annotation.
-/// The UDPipe adapter cannot fill column 9 (`deps`), which its binding
-/// does not surface, and sets it to `_`.
+/// Each column holds what the NLP provider emitted for it, converted
+/// where the column has structure: column 6 (`features`) arrives as a
+/// map rather than the pipe-separated string, so no consumer in any
+/// language re-parses it. The UDPipe adapter cannot fill column 9
+/// (`deps`), which its binding does not surface, and sets it to `_`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Token {
@@ -261,8 +263,15 @@ pub struct Token {
     pub pos: String,
     /// Language-specific POS tag (CoNLL-U column 5).
     pub xpos: String,
-    /// Morphological features, pipe-separated (CoNLL-U column 6).
-    pub feats: String,
+    /// Morphological features (CoNLL-U column 6) as a map from feature
+    /// name to value: `Mood=Ind|Tense=Pres` arrives as
+    /// `{"Mood": "Ind", "Tense": "Pres"}`. A multi-valued feature keeps
+    /// its value unsplit (`Case=Nom,Acc` is `{"Case": "Nom,Acc"}`), so
+    /// matra exposes what the provider emitted without normalising it.
+    /// Empty when the provider emitted none (the CoNLL-U placeholder
+    /// `_`). Keys are an open set: a reader ignores a feature it does not
+    /// know.
+    pub features: std::collections::BTreeMap<String, String>,
     /// Head token id, 0 = root (CoNLL-U column 7).
     pub head: usize,
     /// Dependency relation to head (CoNLL-U column 8).
@@ -295,35 +304,41 @@ impl Token {
             head,
             dep,
             xpos: String::new(),
-            feats: String::new(),
+            features: std::collections::BTreeMap::new(),
             deps: String::new(),
             misc: String::new(),
             is_punct: false,
         }
     }
 
-    /// Look up one morphological feature by exact key in the CoNLL-U
-    /// `feats` string (column 6): `feat("Mood")` is `Some("Ind")` when
-    /// `feats` is `"Mood=Ind|Tense=Pres"`.
-    ///
-    /// A linear scan over the pipe-separated pairs, first exact-key
-    /// match, no allocation. The value is borrowed raw from `feats`,
-    /// so multi-valued features (`Case=Nom,Acc`) come back unsplit:
-    /// matra exposes what the provider emitted and does not normalise
-    /// it. Both the empty string and the CoNLL-U placeholder `"_"`
-    /// contain no `key=value` pair, so every lookup on them returns
-    /// `None` by construction.
-    ///
-    /// Rust-only by design: `feats` already crosses FFI as a string,
-    /// so this view adds no information to the wire (RFC-0009).
+    /// Look up one morphological feature by exact key:
+    /// `feat("Mood")` is `Some("Ind")` when `features` holds
+    /// `Mood=Ind`. A view over [`Token::features`], which crosses FFI as
+    /// a map, so it adds nothing to the wire (RFC-0009).
     pub fn feat(&self, key: &str) -> Option<&str> {
-        self.feats
-            .split('|')
-            .find_map(|pair| match pair.split_once('=') {
-                Some((k, v)) if k == key => Some(v),
-                _ => None,
-            })
+        self.features.get(key).map(String::as_str)
     }
+}
+
+/// Convert a CoNLL-U column 6 string into the [`Token::features`] map.
+///
+/// Splits on `|`, then each pair at its first `=`. A pair with no `=`
+/// or an empty name is not a feature and is dropped; when a name repeats,
+/// the first value wins. The empty string and the placeholder `_` carry
+/// no pair, so both give an empty map. Values are kept as written, a
+/// multi-valued `Nom,Acc` unsplit.
+pub(crate) fn features_from_conllu(column: &str) -> std::collections::BTreeMap<String, String> {
+    let mut features = std::collections::BTreeMap::new();
+    for pair in column.split('|') {
+        if let Some((name, value)) = pair.split_once('=')
+            && !name.is_empty()
+        {
+            features
+                .entry(name.to_string())
+                .or_insert_with(|| value.to_string());
+        }
+    }
+    features
 }
 
 /// Builder for [`Token`]. Created via [`Token::builder`].
@@ -338,7 +353,7 @@ pub struct TokenBuilder {
     head: usize,
     dep: String,
     xpos: String,
-    feats: String,
+    features: std::collections::BTreeMap<String, String>,
     deps: String,
     misc: String,
     is_punct: bool,
@@ -350,9 +365,11 @@ impl TokenBuilder {
         self.xpos = xpos;
         self
     }
-    /// Set the morphological features string (CoNLL-U column 6).
+    /// Set the morphological features from a CoNLL-U column 6 string
+    /// (`Mood=Ind|Tense=Pres`), converted into the [`Token::features`]
+    /// map.
     pub fn feats(mut self, feats: String) -> Self {
-        self.feats = feats;
+        self.features = features_from_conllu(&feats);
         self
     }
     /// Set the enhanced dependency graph string (CoNLL-U column 9).
@@ -378,7 +395,7 @@ impl TokenBuilder {
             lemma: self.lemma,
             pos: self.pos,
             xpos: self.xpos,
-            feats: self.feats,
+            features: self.features,
             head: self.head,
             dep: self.dep,
             deps: self.deps,
@@ -498,58 +515,80 @@ fn detect_modals(tokens: &[Token]) -> Vec<Modal> {
         .collect()
 }
 
-/// Bare-assertion discriminator over a sentence's tokens.
+/// The grammatical mood of a sentence's root clause, with the root's
+/// token id.
 ///
-/// True when the root clause is finite indicative and no modal
-/// auxiliary governs it: the bare assertoric surface form. `Mood=Ind`
-/// is read (via [`Token::feat`]) off the root token itself or off a
-/// `cop`, `aux`, or `aux:pass` child of the root, because the live
-/// model parks finiteness on the auxiliary rather than the root in
-/// copular ("The sky is blue.", root `ADJ`, `Mood=Ind` on the `cop`),
+/// Reports the `Mood` feature the parse assigns the root clause, read
+/// off the root token itself or, when the root carries none, off its
+/// first `cop`, `aux` or `aux:pass` child that does. The live model
+/// parks finiteness on the auxiliary rather than the root in copular
+/// ("The sky is blue.", root `ADJ`, `Mood=Ind` on the `cop`),
 /// do-support ("He did leave.", root infinitive, `Mood=Ind` on the
 /// `aux`) and passive ("The will was signed.", root participle,
-/// `Mood=Ind` on the `aux:pass`) clauses, all verified live. A
-/// modalized clause fails because a detected modal attaches to the
-/// root or is itself the root, an imperative fails on `Mood=Imp`, and
-/// a sentence with no root or no indicative finite element is not a
-/// bare assertion. The discriminator reads the root clause only: a
-/// modal in a subordinate clause is reported in [`Sentence::modals`]
-/// but does not defeat it.
-fn detect_bare_assertion(tokens: &[Token], modals: &[Modal]) -> bool {
+/// `Mood=Ind` on the `aux:pass`) clauses, all verified live.
+///
+/// `mood` is the value as the provider emitted it (`Ind`, `Imp`, and
+/// whatever else a model assigns), so a reader treats it as an open set.
+/// Whether the clause is modalized is a separate fact: the modals that
+/// attach to the root are in [`Sentence::modals`], each with its
+/// `head_id`. What the mood commits the speaker to is the consumer's
+/// reading, not matra's.
+///
+/// Derived at [`Sentence`] construction from the dependency graph (see
+/// [`Sentence::new`]) and serialized with the sentence, so every
+/// language binding reads the same detection (RFC-0008).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct RootMood {
+    /// Token id of the sentence root (the token with `head == 0`).
+    pub root_id: usize,
+    /// The root clause's `Mood` feature value, for example `Ind`.
+    pub mood: String,
+}
+
+/// Root-clause mood detection over a sentence's tokens.
+///
+/// The single Rust implementation behind [`Sentence::root_mood`]. `None`
+/// when the sentence has no root, or when neither the root nor any of
+/// its finite-carrier children (`cop`, `aux`, `aux:pass`) carries a
+/// `Mood` feature, as in a modalized clause whose modal carries only
+/// `VerbForm=Fin`. The read is of the root clause only: a mood in a
+/// subordinate clause does not reach it.
+fn detect_root_mood(tokens: &[Token]) -> Option<RootMood> {
     const FINITE_CARRIER_DEPS: [&str; 3] = ["cop", "aux", "aux:pass"];
-    tokens.iter().find(|t| t.head == 0).is_some_and(|root| {
-        let unmodalized = !modals
+    let root = tokens.iter().find(|t| t.head == 0)?;
+    let mood = root.feat("Mood").or_else(|| {
+        tokens
             .iter()
-            .any(|m| m.head_id == root.id || m.aux_id == root.id);
-        let indicative = root.feat("Mood") == Some("Ind")
-            || tokens.iter().any(|t| {
-                t.head == root.id
-                    && FINITE_CARRIER_DEPS.contains(&t.dep.as_str())
-                    && t.feat("Mood") == Some("Ind")
-            });
-        unmodalized && indicative
+            .filter(|t| t.head == root.id && FINITE_CARRIER_DEPS.contains(&t.dep.as_str()))
+            .find_map(|t| t.feat("Mood"))
+    })?;
+    Some(RootMood {
+        root_id: root.id,
+        mood: mood.to_string(),
     })
 }
 
-/// One reporting construction in a sentence, referenced by token id.
+/// One clausal complement in a sentence, referenced by token id: a verb
+/// governing a clause (`ccomp`).
 ///
-/// Reports structure only: a verb governing a clausal complement
-/// (`ccomp`), plus the verb's subject when the parse has one in the
-/// same sentence. The construction fires regardless of which verb
-/// fills it (`show`, `report`, `suggest`, `think`, `ensure` all
-/// parse identically), because reporting verbs are an open class: any
-/// list matra shipped would be incomplete while looking authoritative.
-/// Which verb lemmas count as evidential is the consumer's lexicon
-/// (see [`Sentence::reportings_in`]), and whether the source is
-/// credible or the claim attributed rather than asserted is the
-/// consumer's reading, not matra's.
+/// Reports structure only: the verb, the head of the complement clause,
+/// and the verb's subject when the parse has one in the same sentence.
+/// The construction fires regardless of which verb fills it (`show`,
+/// `report`, `suggest`, `think`, `ensure` all parse identically),
+/// because verbs taking a clausal complement are an open class: any list
+/// matra shipped would be incomplete while looking authoritative. Which
+/// verb lemmas count as reporting or evidential is the consumer's
+/// lexicon (see [`Sentence::clausal_complements_in`]), and whether the
+/// source is credible or the claim attributed rather than asserted is
+/// the consumer's reading, not matra's.
 ///
 /// Derived at [`Sentence`] construction from the dependency graph
 /// (see [`Sentence::new`]) and serialized with the sentence, so every
 /// language binding reads the same detection (RFC-0008).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
-pub struct Reporting {
+pub struct ClausalComplement {
     /// Token id of the verb governing the clausal complement.
     pub verb_id: usize,
     /// Lemma of that verb.
@@ -564,9 +603,9 @@ pub struct Reporting {
     pub subject_lemma: Option<String>,
 }
 
-/// Reporting-construction detection over a sentence's tokens.
+/// Clausal-complement detection over a sentence's tokens.
 ///
-/// The single Rust implementation behind [`Sentence::reportings`]
+/// The single Rust implementation behind [`Sentence::clausal_complements`]
 /// (RFC-0008). The shape was verified against live UDPipe parses
 /// (2026-08-21): in "Smith reported that the effect vanished." the
 /// complement head `vanished` attaches as `ccomp` to `reported`
@@ -581,9 +620,9 @@ pub struct Reporting {
 /// upstream segmentation defect this detector inherits and records
 /// rather than papers over. A `ccomp` under a non-verb head ("I am
 /// sure that it works.", `ccomp` on the adjective `sure`) is outside
-/// the construction by decision: the milestone detects the reporting
-/// construction, which the plan defines as verbal.
-fn detect_reportings(tokens: &[Token]) -> Vec<Reporting> {
+/// the construction by decision: the detector reports verbal
+/// complements only.
+fn detect_clausal_complements(tokens: &[Token]) -> Vec<ClausalComplement> {
     const SUBJECT_DEPS: [&str; 3] = ["nsubj", "nsubj:pass", "nsubjpass"];
     tokens
         .iter()
@@ -593,7 +632,7 @@ fn detect_reportings(tokens: &[Token]) -> Vec<Reporting> {
             let subject = tokens
                 .iter()
                 .find(|t| t.head == verb.id && SUBJECT_DEPS.contains(&t.dep.as_str()));
-            Some(Reporting {
+            Some(ClausalComplement {
                 verb_id: verb.id,
                 verb_lemma: verb.lemma.clone(),
                 ccomp_id: c.id,
@@ -721,6 +760,100 @@ pub struct HearstPair {
     pub hyponym: HearstSpan,
 }
 
+/// Passive-voice detection over a sentence's tokens: the single Rust
+/// implementation behind [`Sentence::passive`]. True when any token
+/// carries `nsubj:pass`, `nsubjpass` or `aux:pass`.
+fn detect_passive(tokens: &[Token]) -> bool {
+    tokens
+        .iter()
+        .any(|t| t.dep == "nsubj:pass" || t.dep == "nsubjpass" || t.dep == "aux:pass")
+}
+
+/// Dependency-tree depth over a sentence's tokens: the single Rust
+/// implementation behind [`Sentence::tree_depth`].
+///
+/// O(n) per sentence: builds a `HashMap<id, head>` once, then walks
+/// each token's ancestor chain with depth memoization in a second
+/// `HashMap<id, usize>`. Each token's depth is computed at most once;
+/// the visited set inside each walk detects a cycle, and a cycle
+/// anywhere makes the sentence's depth `None`, surfacing the malformed
+/// parse rather than silently truncating it. There is no depth ceiling.
+fn measure_tree_depth(tokens: &[Token]) -> Option<usize> {
+    use std::collections::{HashMap, HashSet};
+
+    // Build id -> head once. `0` head means root.
+    let head_by_id: HashMap<usize, usize> = tokens.iter().map(|t| (t.id, t.head)).collect();
+
+    // Memoize depth per token id. `None` marks a token on or rooted in
+    // a cycle.
+    let mut depth_by_id: HashMap<usize, Option<usize>> = HashMap::new();
+
+    // Compute depth for one token. Walks up the head chain, using a
+    // visited set to detect cycles in this single chain. On hit,
+    // memoizes via the cache to amortize across tokens that share
+    // ancestors.
+    fn depth_of(
+        id: usize,
+        head_by_id: &HashMap<usize, usize>,
+        depth_by_id: &mut HashMap<usize, Option<usize>>,
+    ) -> Option<usize> {
+        if let Some(&d) = depth_by_id.get(&id) {
+            return d;
+        }
+        let mut visited: HashSet<usize> = HashSet::new();
+        let mut chain: Vec<usize> = Vec::new();
+        let mut cur = id;
+
+        // Walk to root or to a memoized ancestor or to a cycle.
+        let base_depth = loop {
+            if !visited.insert(cur) {
+                // Cycle detected: every token in the chain is malformed.
+                for &cid in &chain {
+                    depth_by_id.insert(cid, None);
+                }
+                return None;
+            }
+            let head = head_by_id.get(&cur).copied().unwrap_or(0);
+            if head == 0 {
+                // cur is root or its head is missing: depth contribution from this point is 0.
+                chain.push(cur);
+                break 0usize;
+            }
+            if let Some(&d) = depth_by_id.get(&head) {
+                let Some(d) = d else {
+                    // The ancestor sits on a cycle, so this chain does too.
+                    chain.push(cur);
+                    for &cid in &chain {
+                        depth_by_id.insert(cid, None);
+                    }
+                    return None;
+                };
+                chain.push(cur);
+                break d.saturating_add(1);
+            }
+            chain.push(cur);
+            cur = head;
+        };
+
+        // Walk back down the chain, assigning depths in order.
+        // chain[last] is the closest-to-root token; chain[0] is the
+        // original `id`. Depth of chain[last] = base_depth; each step
+        // away from root adds 1.
+        let n = chain.len();
+        for (i, &cid) in chain.iter().enumerate() {
+            let d = base_depth.saturating_add(n - 1 - i);
+            depth_by_id.insert(cid, Some(d));
+        }
+        Some(base_depth.saturating_add(n - 1))
+    }
+
+    let mut deepest = 0usize;
+    for t in tokens {
+        deepest = deepest.max(depth_of(t.id, &head_by_id, &mut depth_by_id)?);
+    }
+    Some(deepest)
+}
+
 /// One parsed sentence: its text plus its ordered tokens.
 ///
 /// Invariants downstream code relies on:
@@ -732,9 +865,8 @@ pub struct HearstPair {
 ///
 /// Nothing validates these: [`Sentence::new`] trusts its caller, and the
 /// `NlpProvider` contract states them for providers. The tree walks stay
-/// safe on input that breaks the last one: [`Sentence::tree_depth`]
-/// returns `usize::MAX` on a cycle and [`Sentence::subtree`] carries a
-/// visited set.
+/// safe on input that breaks the last one: [`Sentence::tree_depth`] is
+/// `None` on a cycle and [`Sentence::subtree`] carries a visited set.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Sentence {
@@ -745,11 +877,30 @@ pub struct Sentence {
     pub text: String,
     /// CoNLL-U tokens in id-sorted order.
     pub tokens: Vec<Token>,
+    /// Count of non-punctuation tokens, derived at construction.
+    ///
+    /// Counts linguistic tokens as the NLP provider identified them, so
+    /// it can differ from a whitespace split of the same text.
+    /// Readability (Flesch-Kincaid) splits on whitespace, as the
+    /// formula's specification asks.
+    pub word_count: usize,
+    /// Maximum depth of the dependency tree, derived at construction:
+    /// the longest path from any token to the root, the root at depth 0.
+    ///
+    /// `None` when following `head` references from some token loops
+    /// (a malformed parse), so the failure is a value a reader must
+    /// handle rather than a number that reads as a very deep tree. The
+    /// walk carries a visited set and has no depth ceiling: a well-formed
+    /// tree of any depth reports its true depth. `Some(0)` for a sentence
+    /// with no tokens.
+    pub tree_depth: Option<usize>,
+    /// Whether the sentence contains a passive-voice construction (a
+    /// token carrying `nsubj:pass`, `nsubjpass` or `aux:pass`), derived
+    /// at construction.
+    pub passive: bool,
     /// Negation cues derived from the dependency graph at construction
     /// (see [`Sentence::new`]). Serialized with the sentence so the
-    /// detection crosses FFI as data (RFC-0008). Defaults to empty when
-    /// deserializing sentences serialized before this field existed.
-    #[serde(default)]
+    /// detection crosses FFI as data (RFC-0008).
     pub negations: Vec<Negation>,
     /// Modal auxiliaries derived from the dependency graph at
     /// construction (see [`Sentence::new`]): tokens from the closed
@@ -758,40 +909,22 @@ pub struct Sentence {
     /// `aux` relation or the `AUX` part of speech (the latter catches
     /// modals the model promotes to root or `conj` under VP ellipsis
     /// and coordination). Serialized with the sentence so the
-    /// detection crosses FFI as data (RFC-0008). Defaults to empty
-    /// when deserializing sentences serialized before this field
-    /// existed.
-    #[serde(default)]
+    /// detection crosses FFI as data (RFC-0008).
     pub modals: Vec<Modal>,
-    /// Bare-assertion discriminator, derived at construction: true
-    /// when the root clause is finite indicative (`Mood=Ind` on the
-    /// root token or on a `cop`, `aux`, or `aux:pass` child of it)
-    /// and no modal auxiliary governs it. Reports the surface form
-    /// only; what the assertion commits its speaker to is the
-    /// consumer's reading. Defaults to false when deserializing
-    /// sentences serialized before this field existed.
-    #[serde(default)]
-    pub bare_assertion: bool,
-    /// Reporting constructions derived from the dependency graph at
+    /// Clausal complements derived from the dependency graph at
     /// construction (see [`Sentence::new`]): each verb governing a
-    /// clausal complement (`ccomp`), with its subject when the parse
-    /// has one. The construction is reported for every verb that
-    /// fills it; which verbs count as evidential is the consumer's
-    /// lexicon ([`Sentence::reportings_in`]). Serialized with the
+    /// clause (`ccomp`), with its subject when the parse has one. The
+    /// construction is reported for every verb that fills it; which
+    /// verbs count as reporting or evidential is the consumer's lexicon
+    /// ([`Sentence::clausal_complements_in`]). Serialized with the
     /// sentence so the detection crosses FFI as data (RFC-0008).
-    /// Defaults to empty when deserializing sentences serialized
-    /// before this field existed.
-    #[serde(default)]
-    pub reportings: Vec<Reporting>,
+    pub clausal_complements: Vec<ClausalComplement>,
     /// Adverbial modifiers attached to the root, derived at
     /// construction (see [`Sentence::new`]): the arc sentence-scope
     /// adverbs land on. Every root-attached `advmod` is reported;
     /// which lemmas read as evidential is the consumer's lexicon
     /// ([`Sentence::root_adverbials_in`]). Serialized with the
     /// sentence so the detection crosses FFI as data (RFC-0008).
-    /// Defaults to empty when deserializing sentences serialized
-    /// before this field existed.
-    #[serde(default)]
     pub root_adverbials: Vec<RootAdverbial>,
     /// Candidate hypernymy pairs from the six Hearst (1992) patterns.
     ///
@@ -801,10 +934,14 @@ pub struct Sentence {
     /// fills the field at the annotate stage. A hand-built `Sentence`
     /// carries an empty vector until the caller runs the detector.
     /// Serialized with the sentence so the detection crosses FFI as
-    /// data (RFC-0008). Defaults to empty when deserializing
-    /// sentences serialized before this field existed.
-    #[serde(default)]
+    /// data (RFC-0008).
     pub hearst_pairs: Vec<HearstPair>,
+    /// The root clause's grammatical mood with the root's token id,
+    /// derived at construction (see [`RootMood`]). `None` when the
+    /// sentence has no root or its root clause carries no `Mood`
+    /// feature. Serialized with the sentence so the detection crosses
+    /// FFI as data (RFC-0008).
+    pub root_mood: Option<RootMood>,
 }
 
 impl Sentence {
@@ -812,55 +949,70 @@ impl Sentence {
     ///
     /// The caller is responsible for upholding the invariants documented
     /// on [`Sentence`]; this constructor does not validate them. Derived
-    /// fields (`negations`, `modals`, `bare_assertion`, `reportings`,
-    /// `root_adverbials`) are computed here and reflect `tokens` as
-    /// passed in; mutating `tokens` afterwards does not recompute them,
-    /// and keeping them consistent is part of the same caller contract.
+    /// fields (`word_count`, `tree_depth`, `passive`, `negations`,
+    /// `modals`, `clausal_complements`, `root_adverbials`, `root_mood`)
+    /// are computed here and reflect `tokens` as passed in; mutating
+    /// `tokens` afterwards does not recompute them, and keeping them
+    /// consistent is part of the same caller contract.
     /// `hearst_pairs` starts empty and is filled at the annotate stage
     /// by the pipeline, because its detector lives outside the domain
     /// (see the field's documentation).
     pub fn new(text: String, tokens: Vec<Token>) -> Self {
+        let word_count = tokens.iter().filter(|t| !t.is_punct).count();
+        let tree_depth = measure_tree_depth(&tokens);
+        let passive = detect_passive(&tokens);
         let negations = detect_negations(&tokens);
         let modals = detect_modals(&tokens);
-        let bare_assertion = detect_bare_assertion(&tokens, &modals);
-        let reportings = detect_reportings(&tokens);
+        let clausal_complements = detect_clausal_complements(&tokens);
         let root_adverbials = detect_root_adverbials(&tokens);
+        let root_mood = detect_root_mood(&tokens);
         Self {
             text,
             tokens,
+            word_count,
+            tree_depth,
+            passive,
             negations,
             modals,
-            bare_assertion,
-            reportings,
+            clausal_complements,
             root_adverbials,
             hearst_pairs: Vec::new(),
+            root_mood,
         }
     }
 
-    /// The reporting constructions whose verb lemma is in the
+    /// The clausal complements whose verb lemma is in the
     /// caller-supplied lexicon.
     ///
-    /// Reporting verbs are an open class, so matra ships no default
-    /// lexicon: an incomplete list that looks authoritative is worse
-    /// than none. The structural detection ([`Sentence::reportings`])
-    /// crosses FFI as data; this is a Rust-side convenience view over
-    /// it, per RFC-0008's criterion (derivations cross as fields,
-    /// views over crossing data stay methods). Non-Rust consumers
-    /// filter the field by `verb_lemma` the same way.
-    pub fn reportings_in(&self, lexicon: &[&str]) -> Vec<&Reporting> {
-        self.reportings
+    /// Verbs taking a clausal complement are an open class, so matra
+    /// ships no default lexicon: an incomplete list that looks
+    /// authoritative is worse than none. The structural detection
+    /// ([`Sentence::clausal_complements`]) crosses FFI as data; this is a
+    /// Rust-side convenience view over it, per RFC-0008's criterion
+    /// (derivations cross as fields, views over crossing data stay
+    /// methods). Non-Rust consumers filter the field by `verb_lemma` the
+    /// same way.
+    pub fn clausal_complements_in(&self, lexicon: &[&str]) -> Vec<&ClausalComplement> {
+        self.clausal_complements
             .iter()
             .filter(|r| lexicon.contains(&r.verb_lemma.as_str()))
             .collect()
+    }
+
+    /// The 0.2 name of [`Sentence::clausal_complements_in`], kept for
+    /// 0.3.x.
+    #[deprecated(since = "0.3.0", note = "use `Sentence::clausal_complements_in`")]
+    pub fn reportings_in(&self, lexicon: &[&str]) -> Vec<&ClausalComplement> {
+        self.clausal_complements_in(lexicon)
     }
 
     /// The root-attached adverbials whose lemma is in the
     /// caller-supplied lexicon.
     ///
     /// Evidential adverbs are an open class, so matra ships no default
-    /// lexicon; see [`Sentence::reportings_in`] for the reasoning and
-    /// the RFC-0008 classification. Non-Rust consumers filter
-    /// [`Sentence::root_adverbials`] by `adv_lemma` the same way.
+    /// lexicon; see [`Sentence::clausal_complements_in`] for the
+    /// reasoning and the RFC-0008 classification. Non-Rust consumers
+    /// filter [`Sentence::root_adverbials`] by `adv_lemma` the same way.
     pub fn root_adverbials_in(&self, lexicon: &[&str]) -> Vec<&RootAdverbial> {
         self.root_adverbials
             .iter()
@@ -871,106 +1023,6 @@ impl Sentence {
     /// Tokens excluding punctuation.
     pub fn content_tokens(&self) -> Vec<&Token> {
         self.tokens.iter().filter(|t| !t.is_punct).collect()
-    }
-
-    /// Count of non-punctuation tokens (NLP token-based).
-    ///
-    /// This counts linguistic tokens as identified by the NLP provider,
-    /// excluding punctuation. It may differ from a naive whitespace split
-    /// on the same text. Readability (Flesch-Kincaid) uses whitespace
-    /// splitting per the formula's specification.
-    pub fn word_count(&self) -> usize {
-        self.tokens.iter().filter(|t| !t.is_punct).count()
-    }
-
-    /// Whether this sentence contains passive voice constructions.
-    pub fn is_passive(&self) -> bool {
-        self.tokens
-            .iter()
-            .any(|t| t.dep == "nsubj:pass" || t.dep == "nsubjpass" || t.dep == "aux:pass")
-    }
-
-    /// Maximum depth of the dependency tree (longest path from any token
-    /// to root, where root is the token with `head = 0`).
-    ///
-    /// O(n) per sentence: builds a `HashMap<id, head>` once, then walks
-    /// each token's ancestor chain with depth memoization in a second
-    /// `HashMap<id, usize>`. Each token's depth is computed at most once;
-    /// the visited set inside each walk detects cycles and returns
-    /// `usize::MAX` for that token (and any token transitively rooted in
-    /// the cycle), surfacing the malformed parse loudly rather than
-    /// silently truncating.
-    ///
-    /// On a malformed parse where some tokens form a cycle, the depth
-    /// returned for the sentence is `usize::MAX` (the max over per-token
-    /// depths). On a well-formed tree of any depth (no artificial
-    /// ceiling), the depth is the true tree depth.
-    pub fn tree_depth(&self) -> usize {
-        use std::collections::{HashMap, HashSet};
-
-        // Build id → head once. `0` head means root.
-        let head_by_id: HashMap<usize, usize> =
-            self.tokens.iter().map(|t| (t.id, t.head)).collect();
-
-        // Memoize depth per token id. usize::MAX is the cycle sentinel.
-        let mut depth_by_id: HashMap<usize, usize> = HashMap::new();
-
-        // Compute depth for one token. Walks up the head chain, using
-        // a visited set to detect cycles in this single chain. On hit,
-        // memoizes via the cache to amortize across tokens that share
-        // ancestors.
-        fn depth_of(
-            id: usize,
-            head_by_id: &HashMap<usize, usize>,
-            depth_by_id: &mut HashMap<usize, usize>,
-        ) -> usize {
-            if let Some(&d) = depth_by_id.get(&id) {
-                return d;
-            }
-            let mut visited: HashSet<usize> = HashSet::new();
-            let mut chain: Vec<usize> = Vec::new();
-            let mut cur = id;
-
-            // Walk to root or to a memoized ancestor or to a cycle.
-            let base_depth = loop {
-                if !visited.insert(cur) {
-                    // Cycle detected — every token in the chain is malformed.
-                    for &cid in &chain {
-                        depth_by_id.insert(cid, usize::MAX);
-                    }
-                    return usize::MAX;
-                }
-                let head = head_by_id.get(&cur).copied().unwrap_or(0);
-                if head == 0 {
-                    // cur is root or its head is missing: depth contribution from this point is 0.
-                    chain.push(cur);
-                    break 0usize;
-                }
-                if let Some(&d) = depth_by_id.get(&head) {
-                    chain.push(cur);
-                    break d.saturating_add(1);
-                }
-                chain.push(cur);
-                cur = head;
-            };
-
-            // Walk back down the chain, assigning depths in order.
-            // chain[last] is the closest-to-root token; chain[0] is the
-            // original `id`. Depth of chain[last] = base_depth; each step
-            // away from root adds 1.
-            let n = chain.len();
-            for (i, &cid) in chain.iter().enumerate() {
-                let d = base_depth.saturating_add(n - 1 - i);
-                depth_by_id.insert(cid, d);
-            }
-            depth_by_id[&id]
-        }
-
-        self.tokens
-            .iter()
-            .map(|t| depth_of(t.id, &head_by_id, &mut depth_by_id))
-            .max()
-            .unwrap_or(0)
     }
 
     /// The root token (head = 0). Returns None if no root found.
@@ -1023,11 +1075,32 @@ impl Sentence {
 // Document output -- what the annotate and compose stages fill
 // ---------------------------------------------------------------------------
 
+/// The paragraph-level metric record: what `Engine::compose` measures
+/// over one paragraph.
+///
+/// Each slot gates on its own condition and is `None` when the
+/// paragraph did not meet it (or when the metric suite has not run), so
+/// no outer `Option` wraps the record.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct ParagraphMetrics {
+    /// Flesch-Kincaid grade level, when the paragraph holds more than
+    /// ten words.
+    pub readability_grade: Option<f64>,
+    /// Content-word ratio, when the paragraph holds a word.
+    pub lexical_density: Option<f64>,
+    /// Brotli compression ratio (a redundancy proxy), when the paragraph
+    /// holds more than fifty words and is within the compression size
+    /// bound.
+    pub compression_ratio: Option<f64>,
+}
+
 /// One paragraph of prose. `Engine::annotate` attaches its sentences and
-/// `Engine::compose`, which runs the metric suite, fills its metric slots.
+/// `Engine::compose`, which runs the metric suite, fills its
+/// [`ParagraphMetrics`].
 ///
 /// `in_blockquote = true` paragraphs are skipped by both stages: they keep
-/// no sentences, and their `Option<f64>` slots stay `None`.
+/// no sentences, and their metric slots stay `None`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Paragraph {
@@ -1038,47 +1111,30 @@ pub struct Paragraph {
     pub text: String,
     /// Whether the paragraph is inside a blockquote (never parsed, never
     /// measured).
-    ///
-    /// **Planned change:** this boolean may be replaced with
-    /// `kind: ParagraphKind` once the variant inventory (Body / Quote /
-    /// Code / List / Caption) is justified by real consumer semantics.
-    /// Nothing is deprecated today: the boolean stays while its job
-    /// (parse and measure the paragraph or not) is binary. See
-    /// [RFC-0006](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0006-abstract-tier-vocabulary-lock.md)
-    /// for the abstract-tier vocabulary lock.
     pub in_blockquote: bool,
     /// Sentences produced by parsing this paragraph (attached by
     /// `Engine::annotate`).
     pub sentences: Vec<Sentence>,
-    /// Flesch-Kincaid grade level, if `Engine::compose` ran and the
-    /// paragraph met the metric's condition.
-    pub readability_grade: Option<f64>,
-    /// Content-word ratio, if `Engine::compose` ran and the paragraph met
-    /// the metric's condition.
-    pub lexical_density: Option<f64>,
-    /// Brotli compression ratio (a redundancy proxy), if `Engine::compose`
-    /// ran and the paragraph met the metric's condition.
-    pub compression_ratio: Option<f64>,
+    /// The paragraph's metrics, filled by `Engine::compose`.
+    pub metrics: ParagraphMetrics,
 }
 
 impl Paragraph {
-    /// Construct a new `Paragraph` with empty sentences and `None`
-    /// metric slots. `Engine::annotate` attaches the sentences and
-    /// `Engine::compose` fills the slots.
+    /// Construct a new `Paragraph` with empty sentences and an empty
+    /// metric record. `Engine::annotate` attaches the sentences and
+    /// `Engine::compose` fills the record.
     pub fn new(text: String, in_blockquote: bool) -> Self {
         Self {
             text,
             in_blockquote,
             sentences: Vec::new(),
-            readability_grade: None,
-            lexical_density: None,
-            compression_ratio: None,
+            metrics: ParagraphMetrics::default(),
         }
     }
 
     /// Total word count across all sentences.
     pub fn word_count(&self) -> usize {
-        self.sentences.iter().map(|s| s.word_count()).sum()
+        self.sentences.iter().map(|s| s.word_count).sum()
     }
 
     /// Number of sentences.
@@ -1112,46 +1168,212 @@ impl Section {
     }
 }
 
-/// The full analysis output. `Engine::annotate` builds the section tree
-/// and attaches each paragraph's parsed sentences; `Engine::compose` fills
-/// the metric slots.
+/// The document-level metric record: what `Engine::compose` measures
+/// over the whole document.
 ///
-/// Paragraphs live in sections (single source of truth). Derived methods
-/// compute document-level metrics on the fly from the section tree.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// The counts are what the command line's table prints and what a
+/// binding would otherwise rebuild, materialized so they cross FFI as
+/// data (methods do not). The ratios gate on their own conditions and
+/// are `None` when unmet, so no outer `Option` wraps the record. Before
+/// the metric suite runs, every count is `0` and every ratio `None`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
-pub struct Document {
-    /// Section tree (the single source of truth for paragraph ownership).
-    pub sections: Vec<Section>,
-    /// Document-level vocabulary type-token ratio, if `Engine::compose`
-    /// ran and the document holds a non-punctuation token.
+pub struct DocumentMetrics {
+    /// Non-punctuation tokens across every sentence.
+    pub total_words: usize,
+    /// Sentences across every paragraph.
+    pub total_sentences: usize,
+    /// Paragraphs across every section, blockquotes included.
+    pub paragraph_count: usize,
+    /// Mean sentence length in words, when the document holds a
+    /// sentence.
+    pub mean_sentence_length: Option<f64>,
+    /// Sample standard deviation of sentence length in words, when the
+    /// document holds at least two sentences (the sample deviation of
+    /// one value is undefined).
+    pub sentence_length_std: Option<f64>,
+    /// Vocabulary type-token ratio over lemmas, when the document holds
+    /// a non-punctuation token.
     ///
     /// A raw ratio with no length correction: it falls as a document
     /// grows, because repetition accumulates, so two documents of
     /// different lengths are not comparable on it.
     pub vocabulary_ttr: Option<f64>,
-    /// Document-level nominalization ratio, if `Engine::compose` ran and
-    /// the document holds a non-punctuation token.
+    /// Share of non-punctuation tokens that are nouns ending in a
+    /// nominalizing suffix, when the document holds a non-punctuation
+    /// token.
     pub nominalization_ratio: Option<f64>,
     /// Fraction of sentences containing a passive-voice construction,
-    /// if `Engine::compose` ran and the document holds a sentence.
-    /// Materialized so the aggregate crosses FFI as data instead of
-    /// being re-derived per language binding (RFC-0008). Defaults
-    /// to `None` when deserializing documents serialized before this
-    /// field existed.
-    #[serde(default)]
+    /// when the document holds a sentence.
     pub passive_ratio: Option<f64>,
 }
 
-impl Document {
-    /// Construct a new `Document` from a section tree with `None` for
-    /// the document-level metric slots; `Engine::compose` fills them in.
-    pub fn new(sections: Vec<Section>) -> Self {
+/// The version of the document schema this build emits, as
+/// `"major.minor"`: the value of [`Provenance::schema`] and nowhere else.
+///
+/// A minor adds optional fields only, which a reader that ignores fields
+/// it does not recognize never notices. A major is anything else: a
+/// field removed, renamed or retyped, or a field whose meaning changes.
+/// A reader rejects a major it does not know. The published JSON Schema
+/// for each major is in `spec/schema/`.
+pub const SCHEMA_VERSION: &str = "2.0";
+
+/// Who produced a result: a model-backed component named by what it is,
+/// which model it ran and that model's digest and licence.
+///
+/// The parser reports its own, so a consumer sees which model produced a
+/// parse rather than discovering a change of model as a shift in the
+/// numbers. A component loaded from a model matra does not pin knows the
+/// model's digest but not its name or licence, and leaves those `None`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Identity {
+    /// The component, for example `udpipe`.
+    pub name: String,
+    /// The model's name, when the component runs a model matra pins,
+    /// for example `english-ewt-ud-2.5-191206`.
+    pub model: Option<String>,
+    /// SHA-256 of the model artifact, lowercase hex, when the component
+    /// runs a model.
+    pub sha256: Option<String>,
+    /// The model's licence, named for a reader, when it is known. A model
+    /// is a separate work from matra and carries its own terms.
+    pub license: Option<String>,
+}
+
+impl Identity {
+    /// Construct an identity from its four facts.
+    pub fn new(
+        name: impl Into<String>,
+        model: Option<String>,
+        sha256: Option<String>,
+        license: Option<String>,
+    ) -> Self {
         Self {
+            name: name.into(),
+            model,
+            sha256,
+            license,
+        }
+    }
+}
+
+/// The input a [`Document`] was analysed from: where it came from, how
+/// many bytes it held, and their digest.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct ProvenanceSource {
+    /// The path the input was read from, `None` for in-memory text.
+    ///
+    /// In JSON a path that is not valid UTF-8 has its undecodable bytes
+    /// replaced with U+FFFD, since a JSON string cannot carry them; the
+    /// Rust value keeps the path exact.
+    #[serde(serialize_with = "serialize_path_lossy")]
+    pub path: Option<PathBuf>,
+    /// The input's length in bytes.
+    pub bytes: usize,
+    /// SHA-256 of the input's bytes, lowercase hex, computed once when
+    /// the document is annotated.
+    pub sha256: String,
+}
+
+impl ProvenanceSource {
+    /// Construct the record of one input.
+    pub fn new(path: Option<PathBuf>, bytes: usize, sha256: impl Into<String>) -> Self {
+        Self {
+            path,
+            bytes,
+            sha256: sha256.into(),
+        }
+    }
+}
+
+/// A path as a JSON string, lossily where the path is not UTF-8. serde's
+/// own form refuses such a path, which would fail the whole document
+/// over a name.
+fn serialize_path_lossy<S: serde::Serializer>(
+    path: &Option<PathBuf>,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error> {
+    match path {
+        Some(p) => serializer.serialize_some(&p.to_string_lossy()),
+        None => serializer.serialize_none(),
+    }
+}
+
+/// Where a [`Document`] came from: the matra build and schema version
+/// that produced it, the parser that read it, the format it was read as,
+/// and the input itself.
+///
+/// No timestamp: matra's outputs are deterministic, and a timestamp would
+/// make two identical analyses differ.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Provenance {
+    /// The matra version that produced the result, for example `0.3.0`.
+    pub matra: String,
+    /// The schema version of the result, `"major.minor"`
+    /// ([`SCHEMA_VERSION`]). The one place a schema version appears.
+    pub schema: String,
+    /// The parser that produced the sentences and tokens.
+    pub parser: Identity,
+    /// The format the input was read as.
+    pub format: Format,
+    /// The input.
+    pub source: ProvenanceSource,
+}
+
+impl Provenance {
+    /// The provenance of a result this build produces: `matra` and
+    /// `schema` are this build's own, the rest is what the caller names.
+    pub fn new(parser: Identity, format: Format, source: ProvenanceSource) -> Self {
+        Self {
+            matra: env!("CARGO_PKG_VERSION").to_string(),
+            schema: SCHEMA_VERSION.to_string(),
+            parser,
+            format,
+            source,
+        }
+    }
+
+    /// The provenance of a hand-built document in a unit test: a parser
+    /// named `test`, plain text, an empty in-memory input.
+    #[cfg(test)]
+    pub(crate) fn for_test() -> Self {
+        Self::new(
+            Identity::new("test", None, None, None),
+            Format::PlainText,
+            ProvenanceSource::new(None, 0, ""),
+        )
+    }
+}
+
+/// The full analysis output. `Engine::annotate` builds the section tree,
+/// attaches each paragraph's parsed sentences and records the
+/// provenance; `Engine::compose` fills the metric records.
+///
+/// Paragraphs live in sections (single source of truth). The document's
+/// aggregates are a record, [`DocumentMetrics`], rather than methods, so
+/// they cross FFI as data.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Document {
+    /// Where the document came from and what produced it.
+    pub provenance: Provenance,
+    /// Section tree (the single source of truth for paragraph ownership).
+    pub sections: Vec<Section>,
+    /// The document's metrics, filled by `Engine::compose`.
+    pub metrics: DocumentMetrics,
+}
+
+impl Document {
+    /// Construct a new `Document` from its provenance and a section tree,
+    /// with an empty metric record; `Engine::compose` fills it in.
+    pub fn new(provenance: Provenance, sections: Vec<Section>) -> Self {
+        Self {
+            provenance,
             sections,
-            vocabulary_ttr: None,
-            nominalization_ratio: None,
-            passive_ratio: None,
+            metrics: DocumentMetrics::default(),
         }
     }
 
@@ -1165,11 +1387,6 @@ impl Document {
         self.sections
             .iter_mut()
             .flat_map(|s| s.paragraphs.iter_mut())
-    }
-
-    /// Count of all paragraphs.
-    pub fn paragraph_count(&self) -> usize {
-        self.sections.iter().map(|s| s.paragraphs.len()).sum()
     }
 
     /// Flat iterator over all sentences across all paragraphs.
@@ -1187,56 +1404,6 @@ impl Document {
             .flat_map(|s| s.paragraphs.iter())
             .flat_map(|p| p.sentences.iter())
             .flat_map(|s| s.tokens.iter())
-    }
-
-    /// Total sentence count across all paragraphs.
-    pub fn total_sentences(&self) -> usize {
-        self.paragraphs().map(|p| p.sentence_count()).sum()
-    }
-
-    /// Total non-punctuation token count across all sentences.
-    pub fn total_words(&self) -> usize {
-        self.sentences().map(|s| s.word_count()).sum()
-    }
-
-    /// Fraction of sentences containing a passive-voice construction.
-    /// Returns `0.0` when there are no sentences.
-    ///
-    /// This is the computation behind the [`Document::passive_ratio`]
-    /// field, which the metric suite fills so the value crosses FFI
-    /// (RFC-0008). The method stays for Rust callers who want the
-    /// ratio on an unmeasured document. The two disagree on a document
-    /// with no sentences: this returns `0.0` and the field stays
-    /// `None`, which means not computed rather than a computed zero.
-    pub fn passive_ratio(&self) -> f64 {
-        let total = self.total_sentences();
-        if total == 0 {
-            return 0.0;
-        }
-        self.sentences().filter(|s| s.is_passive()).count() as f64 / total as f64
-    }
-
-    /// Mean sentence length in words. Returns `0.0` when there are no
-    /// sentences.
-    pub fn mean_sentence_length(&self) -> f64 {
-        let total = self.total_sentences();
-        if total == 0 {
-            return 0.0;
-        }
-        self.total_words() as f64 / total as f64
-    }
-
-    /// Sample standard deviation of sentence length in words. Returns
-    /// `0.0` when there is fewer than two sentences (no variance defined).
-    pub fn sentence_length_std(&self) -> f64 {
-        let lengths: Vec<f64> = self.sentences().map(|s| s.word_count() as f64).collect();
-        if lengths.len() <= 1 {
-            return 0.0;
-        }
-        let mean = lengths.iter().sum::<f64>() / lengths.len() as f64;
-        let var =
-            lengths.iter().map(|l| (l - mean).powi(2)).sum::<f64>() / (lengths.len() - 1) as f64;
-        var.sqrt()
     }
 }
 
@@ -1299,7 +1466,12 @@ impl Keyphrase {
 ///
 /// `Pdf` and `Docx` are reserved variants; the library returns
 /// [`Error::UnsupportedFormat`] for those today.
+///
+/// Serialized in the format vocabulary every surface shares:
+/// `markdown`, `plain_text`, `pdf`, `docx`. A reader treats the set as
+/// open.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum Format {
     /// Markdown source.
@@ -1394,7 +1566,10 @@ impl Corpus {
 
     /// Total non-punctuation token count across every entry's analysis.
     pub fn total_words(&self) -> usize {
-        self.entries.iter().map(|e| e.analysis.total_words()).sum()
+        self.entries
+            .iter()
+            .map(|e| e.analysis.metrics.total_words)
+            .sum()
     }
 
     /// Fraction of sentences across all entries containing a passive-
@@ -1404,7 +1579,7 @@ impl Corpus {
         let total: usize = self
             .entries
             .iter()
-            .map(|e| e.analysis.total_sentences())
+            .map(|e| e.analysis.metrics.total_sentences)
             .sum();
         if total == 0 {
             return 0.0;
@@ -1412,7 +1587,7 @@ impl Corpus {
         let passive: usize = self
             .entries
             .iter()
-            .map(|e| e.analysis.sentences().filter(|s| s.is_passive()).count())
+            .map(|e| e.analysis.sentences().filter(|s| s.passive).count())
             .sum();
         passive as f64 / total as f64
     }
@@ -1425,7 +1600,7 @@ impl Corpus {
             .entries
             .iter()
             .flat_map(|e| e.analysis.paragraphs())
-            .filter_map(|p| p.readability_grade)
+            .filter_map(|p| p.metrics.readability_grade)
             .collect();
         if grades.is_empty() {
             return 0.0;
@@ -1541,7 +1716,7 @@ mod tests {
             lemma: text.to_lowercase(),
             pos: pos.to_string(),
             xpos: String::new(),
-            feats: String::new(),
+            features: std::collections::BTreeMap::new(),
             head,
             dep: dep.to_string(),
             deps: String::new(),
@@ -1563,7 +1738,7 @@ mod tests {
         feats: &str,
     ) -> Token {
         let mut tok = make_token(id, text, pos, dep, head);
-        tok.feats = feats.to_string();
+        tok.features = features_from_conllu(feats);
         tok
     }
 
@@ -1607,13 +1782,13 @@ mod tests {
             ],
         );
         assert_eq!(sent.content_tokens().len(), 2);
-        assert_eq!(sent.word_count(), 2);
+        assert_eq!(sent.word_count, 2);
     }
 
     #[test]
-    fn is_passive_detects_passive() {
-        assert!(passive_sentence().is_passive());
-        assert!(!active_sentence().is_passive());
+    fn passive_detects_passive() {
+        assert!(passive_sentence().passive);
+        assert!(!active_sentence().passive);
     }
 
     fn token_with_feats(feats: &str) -> Token {
@@ -1859,26 +2034,21 @@ mod tests {
     }
 
     #[test]
-    fn negations_serialize_and_default_on_old_json() {
-        // The field crosses the wire (RFC-0008) ...
+    fn negations_cross_the_wire() {
+        // The field crosses the wire as data (RFC-0008).
         let sent = Sentence::new(
             "It was never reviewed.".to_string(),
             vec![make_token(1, "never", "ADV", "advmod", 0)],
         );
         let json = serde_json::to_value(&sent).unwrap();
         assert_eq!(json["negations"][0]["cue_lemma"], "never");
-        // ... and JSON serialized before the field existed still
-        // deserializes, with an empty default.
-        let old = r#"{"text":"old","tokens":[]}"#;
-        let sent: Sentence = serde_json::from_str(old).unwrap();
-        assert!(sent.negations.is_empty());
     }
 
     // Modal fixtures mirror live UDPipe parses (verified 2026-08-21):
     // every member of the closed class is AUX/`aux` with xpos `MD` and
     // `VerbForm=Fin`; the verb it scopes is `VerbForm=Inf` (or a
-    // participle in a chain) and carries no `Mood`. Bare-assertion
-    // roots carry `Mood=Ind`; imperative roots carry `Mood=Imp`.
+    // participle in a chain) and carries no `Mood`. Indicative roots
+    // carry `Mood=Ind`; imperative roots carry `Mood=Imp`.
 
     /// A minimal modalized clause: `aux` with the given lemma
     /// attached to an infinitive root.
@@ -1904,7 +2074,10 @@ mod tests {
             assert_eq!(sent.modals[0].aux_id, 2, "lemma {lemma:?}");
             assert_eq!(sent.modals[0].aux_lemma, lemma);
             assert_eq!(sent.modals[0].head_id, 3, "lemma {lemma:?}");
-            assert!(!sent.bare_assertion, "modalized clause, lemma {lemma:?}");
+            assert_eq!(
+                sent.root_mood, None,
+                "the modal carries no Mood, lemma {lemma:?}"
+            );
         }
     }
 
@@ -1937,7 +2110,7 @@ mod tests {
         assert_eq!(sent.modals[0].aux_id, 2);
         assert_eq!(sent.modals[0].aux_lemma, "might");
         assert_eq!(sent.modals[0].head_id, 5);
-        assert!(!sent.bare_assertion, "participle root carries no Mood");
+        assert_eq!(sent.root_mood, None, "participle root carries no Mood");
     }
 
     #[test]
@@ -1986,7 +2159,7 @@ mod tests {
         assert_eq!(sent.modals.len(), 1);
         assert_eq!(sent.modals[0].aux_lemma, "should");
         assert_eq!(sent.modals[0].head_id, 0);
-        assert!(!sent.bare_assertion, "root modal means a modalized clause");
+        assert_eq!(sent.root_mood, None, "a root modal carries no Mood");
     }
 
     #[test]
@@ -2012,7 +2185,7 @@ mod tests {
             .map(|m| (m.aux_lemma.as_str(), m.head_id))
             .collect();
         assert_eq!(found, vec![("can", 0), ("will", 5)]);
-        assert!(!sent.bare_assertion);
+        assert_eq!(sent.root_mood, None);
     }
 
     #[test]
@@ -2041,14 +2214,14 @@ mod tests {
             .map(|m| (m.aux_lemma.as_str(), m.head_id))
             .collect();
         assert_eq!(found, vec![("can", 0), ("will", 2)]);
-        assert!(!sent.bare_assertion, "root modal means a modalized clause");
+        assert_eq!(sent.root_mood, None, "a root modal carries no Mood");
     }
 
     #[test]
-    fn copular_assertion_is_bare() {
+    fn root_mood_of_a_copular_clause_rides_the_cop() {
         // "The sky is blue." The live model roots the predicate ADJ
-        // and parks Mood=Ind on the `cop` child, so the discriminator
-        // reads finiteness off the copula, not the root.
+        // and parks Mood=Ind on the `cop` child, so the detector reads
+        // the mood off the copula, and reports the root's id.
         let sent = Sentence::new(
             "The sky is blue.".to_string(),
             vec![
@@ -2067,14 +2240,14 @@ mod tests {
             ],
         );
         assert!(sent.modals.is_empty(), "the copula be is outside the class");
-        assert!(sent.bare_assertion);
+        assert_eq!(mood_of(&sent), Some((4, "Ind")));
     }
 
     #[test]
-    fn do_support_assertion_is_bare() {
+    fn root_mood_of_do_support_rides_the_aux() {
         // "He did leave." Do-support roots the infinitive and parks
         // Mood=Ind on the `aux` child, whose lemma is outside the
-        // modal class, so the clause is a bare assertion.
+        // modal class.
         let sent = Sentence::new(
             "He did leave.".to_string(),
             vec![
@@ -2085,7 +2258,7 @@ mod tests {
             ],
         );
         assert!(sent.modals.is_empty());
-        assert!(sent.bare_assertion);
+        assert_eq!(mood_of(&sent), Some((3, "Ind")));
     }
 
     #[test]
@@ -2139,18 +2312,18 @@ mod tests {
             ],
         );
         assert!(sent.modals.is_empty());
-        // The indicative passive is a bare assertion: Mood=Ind rides
-        // the `aux:pass` child of the participle root.
-        assert!(sent.bare_assertion);
+        // In the indicative passive, Mood=Ind rides the `aux:pass`
+        // child of the participle root.
+        assert_eq!(mood_of(&sent), Some((4, "Ind")));
     }
 
     #[test]
-    fn directive_with_modal_is_not_a_bare_assertion() {
+    fn a_modalized_directive_has_no_root_mood() {
         // "You must complete the form by Friday." The directive
-        // surface form with a modal: `must` is reported, and the
-        // infinitive root carries no Mood, so the discriminator is
-        // false. Whether `must` is obligation or inference here is
-        // the consumer's reading.
+        // surface form with a modal: `must` is reported, and neither
+        // the infinitive root nor the modal carries a Mood. Whether
+        // `must` is obligation or inference here is the consumer's
+        // reading.
         let sent = Sentence::new(
             "You must complete the form by Friday.".to_string(),
             vec![
@@ -2166,13 +2339,13 @@ mod tests {
         );
         assert_eq!(sent.modals.len(), 1);
         assert_eq!(sent.modals[0].aux_lemma, "must");
-        assert!(!sent.bare_assertion);
+        assert_eq!(sent.root_mood, None);
     }
 
     #[test]
-    fn bare_assertion_on_indicative_root_without_modal() {
-        // "The committee approved it." The assertoric surface form:
-        // root carries Mood=Ind and no modal attaches.
+    fn root_mood_reads_the_indicative_root() {
+        // "The committee approved it." The root carries Mood=Ind and no
+        // modal attaches.
         let sent = Sentence::new(
             "The committee approved it.".to_string(),
             vec![
@@ -2191,14 +2364,13 @@ mod tests {
             ],
         );
         assert!(sent.modals.is_empty());
-        assert!(sent.bare_assertion);
+        assert_eq!(mood_of(&sent), Some((3, "Ind")));
     }
 
     #[test]
-    fn imperative_root_is_not_a_bare_assertion() {
+    fn root_mood_reads_the_imperative_root() {
         // "Complete the form by Friday." The bare directive surface
-        // form: Mood=Imp on the root, so the discriminator is false
-        // without any modal being involved.
+        // form: Mood=Imp on the root, with no modal involved.
         let sent = Sentence::new(
             "Complete the form by Friday.".to_string(),
             vec![
@@ -2211,16 +2383,16 @@ mod tests {
             ],
         );
         assert!(sent.modals.is_empty());
-        assert!(!sent.bare_assertion);
+        assert_eq!(mood_of(&sent), Some((1, "Imp")));
     }
 
     #[test]
-    fn subordinate_modal_is_reported_and_does_not_defeat_bare_assertion() {
-        // "I know it might rain." The discriminator reads the root
-        // clause: `know` carries Mood=Ind and `might` attaches to the
-        // subordinate `rain`, so the matrix stays a bare assertion
-        // while the modal is still reported with its own head. The
-        // consumer sees both facts and does its own reading.
+    fn subordinate_modal_is_reported_and_leaves_the_root_mood() {
+        // "I know it might rain." The detector reads the root clause:
+        // `know` carries Mood=Ind and `might` attaches to the
+        // subordinate `rain`, so the root mood is the matrix's while
+        // the modal is still reported with its own head. The consumer
+        // sees both facts and does its own reading.
         let sent = Sentence::new(
             "I know it might rain.".to_string(),
             vec![
@@ -2242,22 +2414,52 @@ mod tests {
         assert_eq!(sent.modals.len(), 1);
         assert_eq!(sent.modals[0].aux_lemma, "might");
         assert_eq!(sent.modals[0].head_id, 5);
-        assert!(sent.bare_assertion);
+        assert_eq!(mood_of(&sent), Some((2, "Ind")));
+    }
+
+    /// The root mood as `(root_id, mood)`, for terse assertions.
+    fn mood_of(sent: &Sentence) -> Option<(usize, &str)> {
+        sent.root_mood
+            .as_ref()
+            .map(|m| (m.root_id, m.mood.as_str()))
     }
 
     #[test]
-    fn modals_serialize_and_default_on_old_json() {
-        // The fields cross the wire (RFC-0008) ...
+    fn modals_and_root_mood_cross_the_wire() {
+        // The fields cross the wire as data (RFC-0008): the modal with
+        // its lemma, and an absent root mood as null rather than a
+        // missing key.
         let sent = modal_clause("might");
         let json = serde_json::to_value(&sent).unwrap();
         assert_eq!(json["modals"][0]["aux_lemma"], "might");
-        assert_eq!(json["bare_assertion"], false);
-        // ... and JSON serialized before the fields existed still
-        // deserializes, with empty and false defaults.
-        let old = r#"{"text":"old","tokens":[]}"#;
-        let sent: Sentence = serde_json::from_str(old).unwrap();
-        assert!(sent.modals.is_empty());
-        assert!(!sent.bare_assertion);
+        assert!(json["root_mood"].is_null());
+        assert!(json.as_object().unwrap().contains_key("root_mood"));
+        let indicative = Sentence::new(
+            "It rains.".to_string(),
+            vec![
+                make_token(1, "It", "PRON", "expl", 2),
+                make_token_feats(2, "rains", "VERB", "root", 0, "Mood=Ind|VerbForm=Fin"),
+                make_token(3, ".", "PUNCT", "punct", 2),
+            ],
+        );
+        let json = serde_json::to_value(&indicative).unwrap();
+        assert_eq!(
+            json["root_mood"],
+            serde_json::json!({"root_id": 2, "mood": "Ind"})
+        );
+    }
+
+    #[test]
+    fn features_cross_the_wire_as_a_map() {
+        let tok = token_with_feats("Mood=Ind|Tense=Pres");
+        let json = serde_json::to_value(&tok).unwrap();
+        assert_eq!(
+            json["features"],
+            serde_json::json!({"Mood": "Ind", "Tense": "Pres"})
+        );
+        assert!(json.get("feats").is_none(), "no raw string beside the map");
+        let empty = serde_json::to_value(token_with_feats("_")).unwrap();
+        assert_eq!(empty["features"], serde_json::json!({}));
     }
 
     // Reporting and root-adverbial fixtures mirror live UDPipe parses
@@ -2267,7 +2469,7 @@ mod tests {
     // the root.
 
     #[test]
-    fn reporting_self_attribution() {
+    fn clausal_complement_self_attribution() {
         // "We show that the method works."
         let sent = Sentence::new(
             "We show that the method works.".to_string(),
@@ -2281,8 +2483,8 @@ mod tests {
                 make_token(7, ".", "PUNCT", "punct", 2),
             ],
         );
-        assert_eq!(sent.reportings.len(), 1);
-        let r = &sent.reportings[0];
+        assert_eq!(sent.clausal_complements.len(), 1);
+        let r = &sent.clausal_complements[0];
         assert_eq!(r.verb_id, 2);
         assert_eq!(r.verb_lemma, "show");
         assert_eq!(r.ccomp_id, 6);
@@ -2293,7 +2495,7 @@ mod tests {
     }
 
     #[test]
-    fn reporting_other_attribution() {
+    fn clausal_complement_other_attribution() {
         // "Smith reported that the effect vanished."
         let sent = Sentence::new(
             "Smith reported that the effect vanished.".to_string(),
@@ -2307,15 +2509,15 @@ mod tests {
                 make_token(7, ".", "PUNCT", "punct", 2),
             ],
         );
-        assert_eq!(sent.reportings.len(), 1);
-        let r = &sent.reportings[0];
+        assert_eq!(sent.clausal_complements.len(), 1);
+        let r = &sent.clausal_complements[0];
         assert_eq!((r.verb_id, r.ccomp_id), (2, 6));
         assert_eq!(r.verb_lemma, "reported");
         assert_eq!(r.subject_id, Some(1));
     }
 
     #[test]
-    fn reporting_impersonal() {
+    fn clausal_complement_impersonal() {
         // "These results suggest that the mechanism is shared."
         // The complement is passive; its `nsubj:pass` belongs to the
         // complement head, not to the reporting verb.
@@ -2333,15 +2535,15 @@ mod tests {
                 make_token(9, ".", "PUNCT", "punct", 3),
             ],
         );
-        assert_eq!(sent.reportings.len(), 1);
-        let r = &sent.reportings[0];
+        assert_eq!(sent.clausal_complements.len(), 1);
+        let r = &sent.clausal_complements[0];
         assert_eq!((r.verb_id, r.ccomp_id), (3, 8));
         assert_eq!(r.subject_id, Some(2));
         assert_eq!(r.subject_lemma.as_deref(), Some("results"));
     }
 
     #[test]
-    fn reporting_survives_upstream_split_with_no_subject() {
+    fn clausal_complement_survives_upstream_split_with_no_subject() {
         // Known upstream defect, recorded not fixed: UDPipe splits
         // "Smith et al. reported that the effect vanished." into two
         // sentences at the period in "et al." (verified live,
@@ -2360,15 +2562,15 @@ mod tests {
                 make_token(6, ".", "PUNCT", "punct", 1),
             ],
         );
-        assert_eq!(sent.reportings.len(), 1);
-        let r = &sent.reportings[0];
+        assert_eq!(sent.clausal_complements.len(), 1);
+        let r = &sent.clausal_complements[0];
         assert_eq!((r.verb_id, r.ccomp_id), (1, 5));
         assert_eq!(r.subject_id, None);
         assert_eq!(r.subject_lemma, None);
     }
 
     #[test]
-    fn reporting_no_fire_without_ccomp() {
+    fn clausal_complement_no_fire_without_ccomp() {
         // "Smith reported a similar finding." takes a plain object,
         // not a clausal complement; the construction is absent.
         let sent = Sentence::new(
@@ -2382,12 +2584,12 @@ mod tests {
                 make_token(6, ".", "PUNCT", "punct", 2),
             ],
         );
-        assert!(sent.reportings.is_empty());
-        assert!(active_sentence().reportings.is_empty());
+        assert!(sent.clausal_complements.is_empty());
+        assert!(active_sentence().clausal_complements.is_empty());
     }
 
     #[test]
-    fn reporting_no_fire_on_non_verb_head() {
+    fn clausal_complement_no_fire_on_non_verb_head() {
         // "I am sure that it works." parses the `ccomp` under the
         // adjective `sure`. The plan defines the reporting
         // construction as verbal, so a non-VERB head is outside it
@@ -2404,7 +2606,7 @@ mod tests {
                 make_token(7, ".", "PUNCT", "punct", 3),
             ],
         );
-        assert!(sent.reportings.is_empty());
+        assert!(sent.clausal_complements.is_empty());
     }
 
     #[test]
@@ -2470,7 +2672,7 @@ mod tests {
             ],
         );
         assert!(sent.root_adverbials.is_empty());
-        assert_eq!(sent.reportings.len(), 1);
+        assert_eq!(sent.clausal_complements.len(), 1);
     }
 
     #[test]
@@ -2496,7 +2698,7 @@ mod tests {
     }
 
     #[test]
-    fn reportings_in_filters_by_caller_lexicon() {
+    fn clausal_complements_in_filters_by_caller_lexicon() {
         // matra ships no evidential lexicon (open class); the caller
         // supplies one and the filter is a view over crossing data.
         let sent = Sentence::new(
@@ -2513,13 +2715,16 @@ mod tests {
         );
         // make_token lemmatizes to the lowercased text, so the
         // caller's lexicon here uses the surface-derived lemma.
-        assert_eq!(sent.reportings_in(&["reported", "suggest"]).len(), 1);
-        assert!(sent.reportings_in(&["say", "claim"]).is_empty());
+        assert_eq!(
+            sent.clausal_complements_in(&["reported", "suggest"]).len(),
+            1
+        );
+        assert!(sent.clausal_complements_in(&["say", "claim"]).is_empty());
     }
 
     #[test]
-    fn reportings_serialize_and_default_on_old_json() {
-        // The fields cross the wire (RFC-0008) ...
+    fn clausal_complements_and_root_adverbials_cross_the_wire() {
+        // The fields cross the wire as data (RFC-0008).
         let sent = Sentence::new(
             "Reportedly, it works.".to_string(),
             vec![
@@ -2531,19 +2736,23 @@ mod tests {
         );
         let json = serde_json::to_value(&sent).unwrap();
         assert_eq!(json["root_adverbials"][0]["adv_lemma"], "reportedly");
-        assert!(json["reportings"].as_array().unwrap().is_empty());
-        // ... and JSON serialized before the fields existed still
-        // deserializes, with empty defaults.
-        let old = r#"{"text":"old","tokens":[]}"#;
-        let sent: Sentence = serde_json::from_str(old).unwrap();
-        assert!(sent.reportings.is_empty());
-        assert!(sent.root_adverbials.is_empty());
+        assert!(json["clausal_complements"].as_array().unwrap().is_empty());
+    }
+
+    /// The derived counts cross the wire beside the tokens, so a
+    /// binding reads them rather than recounting.
+    #[test]
+    fn sentence_counts_cross_the_wire() {
+        let json = serde_json::to_value(passive_sentence()).unwrap();
+        assert_eq!(json["word_count"], 7);
+        assert_eq!(json["passive"], true);
+        assert_eq!(json["tree_depth"], 2);
     }
 
     #[test]
     fn tree_depth_computes_max() {
         let sent = active_sentence();
-        assert!(sent.tree_depth() > 0);
+        assert!(sent.tree_depth.is_some_and(|d| d > 0));
     }
 
     #[test]
@@ -2614,7 +2823,7 @@ mod tests {
         // Depth from A: A->20(B)->30(C)->root = 2
         // Depth from B: B->30(C)->root = 1
         // Depth from C: root = 0
-        assert_eq!(sent.tree_depth(), 2);
+        assert_eq!(sent.tree_depth, Some(2));
         assert_eq!(sent.root_token().unwrap().text, "C");
         assert_eq!(sent.children_of(30).len(), 1);
         assert_eq!(sent.head_of(10).unwrap().text, "B");
@@ -2637,9 +2846,9 @@ mod tests {
     #[test]
     fn empty_sentence_is_safe() {
         let sent = Sentence::new(String::new(), vec![]);
-        assert_eq!(sent.word_count(), 0);
-        assert!(!sent.is_passive());
-        assert_eq!(sent.tree_depth(), 0);
+        assert_eq!(sent.word_count, 0);
+        assert!(!sent.passive);
+        assert_eq!(sent.tree_depth, Some(0));
         assert!(sent.root_token().is_none());
         assert!(sent.children_of(1).is_empty());
         assert!(sent.head_of(1).is_none());
@@ -2661,7 +2870,7 @@ mod tests {
         // Verifies the previously-magic-< 20 ceiling is gone: a 25-token
         // chain has true depth 24 (token 25 is 24 hops from root).
         let sent = straight_chain(25);
-        assert_eq!(sent.tree_depth(), 24);
+        assert_eq!(sent.tree_depth, Some(24));
     }
 
     #[test]
@@ -2669,11 +2878,14 @@ mod tests {
         // Verifies O(n) complexity: a 1000-token chain returns 999, fast.
         // The pre-fix O(n^2) impl would do ~10^6 inner finds; this is well
         // under 50ms on commodity hardware.
-        let sent = straight_chain(1000);
+        let tokens: Vec<Token> = (1..=1000)
+            .map(|i| make_token(i, "x", "NOUN", "dep", if i == 1 { 0 } else { i - 1 }))
+            .collect();
         let start = std::time::Instant::now();
-        let depth = sent.tree_depth();
+        let depth = measure_tree_depth(&tokens);
         let elapsed = start.elapsed();
-        assert_eq!(depth, 999);
+        assert_eq!(depth, Some(999));
+        assert_eq!(straight_chain(1000).tree_depth, Some(999));
         assert!(
             elapsed < std::time::Duration::from_millis(50),
             "tree_depth on 1000-chain took {elapsed:?} (expected < 50ms; suggests non-linear complexity)"
@@ -2686,13 +2898,16 @@ mod tests {
         let items: Vec<std::result::Result<CorpusEntry, DocumentError>> = vec![
             Ok(CorpusEntry::new(
                 Some(PathBuf::from("a.md")),
-                Document::new(Vec::new()),
+                Document::new(Provenance::for_test(), Vec::new()),
             )),
             Err(DocumentError::new(
                 Some(PathBuf::from("b.md")),
                 Error::ParseFailed("bad".to_string()),
             )),
-            Ok(CorpusEntry::new(None, Document::new(Vec::new()))),
+            Ok(CorpusEntry::new(
+                None,
+                Document::new(Provenance::for_test(), Vec::new()),
+            )),
             Err(DocumentError::new(
                 None,
                 Error::ParseFailed("worse".to_string()),
@@ -2779,11 +2994,11 @@ mod tests {
     }
 
     #[test]
-    fn tree_depth_returns_max_on_cycle() {
-        // A -> B -> A is a cycle. The new impl returns usize::MAX for
-        // tokens transitively rooted in the cycle, surfacing the
-        // malformed parse loudly. The previous magic-< 20 ceiling
-        // silently truncated to 20 — protective by accident, not by
+    fn tree_depth_is_none_on_a_cycle() {
+        // A -> B -> A is a cycle. The depth is `None`, a value a reader
+        // must handle, rather than a sentinel number that reads as a
+        // very deep tree. The magic-< 20 ceiling before the visited set
+        // silently truncated to 20, protective by accident, not by
         // design (and silently wrong on legitimate deep parses).
         let sent = Sentence::new(
             "cyclic".to_string(),
@@ -2792,7 +3007,49 @@ mod tests {
                 make_token(2, "B", "NOUN", "dep", 1),
             ],
         );
-        assert_eq!(sent.tree_depth(), usize::MAX);
+        assert_eq!(sent.tree_depth, None);
+    }
+
+    /// A token rooted in a cycle, reached after the cycle was memoized,
+    /// still makes the sentence's depth `None`: the cycle is not hidden
+    /// behind a well-formed chain that leads into it.
+    #[test]
+    fn tree_depth_is_none_when_a_chain_leads_into_a_cycle() {
+        let sent = Sentence::new(
+            "cyclic tail".to_string(),
+            vec![
+                make_token(1, "A", "NOUN", "dep", 2),
+                make_token(2, "B", "NOUN", "dep", 1),
+                make_token(3, "C", "NOUN", "dep", 1),
+            ],
+        );
+        assert_eq!(sent.tree_depth, None);
+    }
+
+    #[test]
+    fn provenance_carries_this_builds_versions_and_the_format_vocabulary() {
+        let p = Provenance::for_test();
+        assert_eq!(p.schema, SCHEMA_VERSION);
+        assert_eq!(p.matra, env!("CARGO_PKG_VERSION"));
+        let json = serde_json::to_value(&p).unwrap();
+        assert_eq!(json["format"], "plain_text");
+        assert!(json["source"]["path"].is_null());
+        assert_eq!(
+            serde_json::to_value(Format::Markdown).unwrap(),
+            serde_json::json!("markdown")
+        );
+    }
+
+    /// A path that is not UTF-8 serializes lossily rather than failing
+    /// the whole document over its name.
+    #[cfg(unix)]
+    #[test]
+    fn a_non_utf8_source_path_serializes_lossily() {
+        use std::os::unix::ffi::OsStrExt;
+        let path = PathBuf::from(std::ffi::OsStr::from_bytes(b"bad\xffname.md"));
+        let source = ProvenanceSource::new(Some(path), 3, "abc");
+        let json = serde_json::to_value(&source).expect("serializes");
+        assert_eq!(json["path"], "bad\u{fffd}name.md");
     }
 
     /// The main gate's label is `"input"`, and the message once read

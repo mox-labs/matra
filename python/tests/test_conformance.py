@@ -12,12 +12,14 @@ Requires the UDPipe model:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
 from typing import Any
 
 import pytest
+from document_schema import assert_valid_document
 
 # The extension module is built by maturin. Without a built wheel there is
 # nothing to conform, so skip rather than fail collection.
@@ -50,10 +52,6 @@ def sentences_of(doc: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
-def paragraph_count(doc: dict[str, Any]) -> int:
-    return sum(len(section["paragraphs"]) for section in doc["sections"])
-
-
 @pytest.fixture(scope="module")
 def matra() -> Matra:
     return Matra.english(model_dir())
@@ -65,18 +63,33 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
     text = fixture["input"]
     if fixture["format"] == "markdown":
         doc = matra.analyze_markdown(text)
-    elif fixture["format"] == "plain":
+    elif fixture["format"] == "plain_text":
         doc = matra.analyze(text)
     else:
         pytest.fail(f"unknown format {fixture['format']}")
 
+    assert_valid_document(doc, fixture["name"])
+
+    # Provenance: this build's schema, the parser's own identity, and the
+    # input as it was handed in.
+    provenance = doc["provenance"]
+    assert provenance["schema"] == "2.0", "schema"
+    assert provenance["format"] == fixture["format"], "format"
+    assert provenance["parser"]["name"] == "udpipe", "parser name"
+    assert provenance["parser"]["model"] == "english-ewt-ud-2.5-191206", "parser model"
+    assert provenance["parser"]["license"], "parser licence"
+    assert provenance["source"]["path"] is None, "in-memory input"
+    assert provenance["source"]["bytes"] == len(text.encode()), "input bytes"
+    assert provenance["source"]["sha256"] == hashlib.sha256(text.encode()).hexdigest()
+
     expect = fixture["expect"]
+    metrics = doc["metrics"]
     got_sentences = sentences_of(doc)
 
-    assert len(got_sentences) == expect["total_sentences"], "sentence count"
-    words = sum(len([t for t in s["tokens"] if not t["is_punct"]]) for s in got_sentences)
-    assert words == expect["total_words"], "word count"
-    assert paragraph_count(doc) == expect["paragraph_count"], "paragraph count"
+    assert metrics["total_sentences"] == expect["metrics"]["total_sentences"], "sentence count"
+    assert len(got_sentences) == expect["metrics"]["total_sentences"], "sentences attached"
+    assert metrics["total_words"] == expect["metrics"]["total_words"], "word count"
+    assert metrics["paragraph_count"] == expect["metrics"]["paragraph_count"], "paragraph count"
 
     assert len(got_sentences) == len(expect["sentences"]), "sentences returned"
 
@@ -86,10 +99,12 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
             assert got["negations"] == want["negations"], f"sentence {i} negations"
         if "modals" in want:
             assert got["modals"] == want["modals"], f"sentence {i} modals"
-        if "bare_assertion" in want:
-            assert got["bare_assertion"] == want["bare_assertion"], f"sentence {i} bare_assertion"
-        if "reportings" in want:
-            assert got["reportings"] == want["reportings"], f"sentence {i} reportings"
+        if "root_mood" in want:
+            assert got["root_mood"] == want["root_mood"], f"sentence {i} root_mood"
+        if "clausal_complements" in want:
+            assert got["clausal_complements"] == want["clausal_complements"], (
+                f"sentence {i} clausal_complements"
+            )
         if "root_adverbials" in want:
             assert got["root_adverbials"] == want["root_adverbials"], (
                 f"sentence {i} root_adverbials"
@@ -106,9 +121,7 @@ def test_python_crust_conforms_to_spec(matra: Matra, fixture: dict[str, Any]) ->
             assert token["head"] == wanted["head"], f"{where} head"
             assert token["dep"] == wanted["dep"], f"{where} dep"
 
-    if expect.get("passive_ratio") is not None:
-        assert abs(doc["passive_ratio"] - expect["passive_ratio"]) < TOLERANCE
-    if expect.get("vocabulary_ttr") is not None:
-        assert abs(doc["vocabulary_ttr"] - expect["vocabulary_ttr"]) < TOLERANCE
-    if expect.get("nominalization_ratio") is not None:
-        assert abs(doc["nominalization_ratio"] - expect["nominalization_ratio"]) < TOLERANCE
+    for ratio in ("passive_ratio", "vocabulary_ttr", "nominalization_ratio"):
+        want = expect["metrics"].get(ratio)
+        if want is not None:
+            assert abs(metrics[ratio] - want) < TOLERANCE, ratio

@@ -1,11 +1,16 @@
 {
   "name": "passive-voice",
   "input": "The committee approved the proposal. It was reviewed by three members.",
-  "format": "plain",
+  "format": "plain_text",
   "expect": {
-    "total_sentences": 2,
-    "total_words": 11,
-    "paragraph_count": 1,
+    "metrics": {
+      "total_sentences": 2,
+      "total_words": 11,
+      "paragraph_count": 1,
+      "vocabulary_ttr": 0.909091,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.5
+    },
     "sentences": [
       {
         "text": "The committee approved the proposal.",
@@ -123,9 +128,6 @@
           }
         ]
       }
-    ],
-    "vocabulary_ttr": 0.909091,
-    "nominalization_ratio": 0.0,
-    "passive_ratio": 0.5
+    ]
   }
 }

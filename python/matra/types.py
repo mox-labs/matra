@@ -32,14 +32,18 @@ the other fails the corpus conformance lane.
 
 
 class Token(TypedDict):
-    """One CoNLL-U token. Mirrors `matra::domain::Token`."""
+    """One CoNLL-U token. Mirrors `matra::domain::Token`.
+
+    ``features`` is CoNLL-U column 6 as a map, ``{"Mood": "Ind"}``; a
+    multi-valued feature keeps its value unsplit (``"Nom,Acc"``).
+    """
 
     id: int
     text: str
     lemma: str
     pos: str
     xpos: str
-    feats: str
+    features: dict[str, str]
     head: int
     dep: str
     deps: str
@@ -74,17 +78,17 @@ class Modal(TypedDict):
     head_id: int
 
 
-class Reporting(TypedDict):
-    """One reporting construction. Mirrors `matra::domain::Reporting`.
+class ClausalComplement(TypedDict):
+    """One clausal complement. Mirrors `matra::domain::ClausalComplement`.
 
     Reports structure only: a verb governing a clausal complement
     (`ccomp`), plus its subject when the parse has one in the same
     sentence. Fires for every verb that fills the construction; which
-    verb lemmas count as evidential is the consumer's lexicon, and
-    whether the source is credible is the consumer's reading. The
-    subject is absent when upstream sentence segmentation strands the
-    attribution in a previous sentence ("Smith et al. reported ..."
-    splits at the period in "et al.").
+    verb lemmas count as reporting or evidential is the consumer's
+    lexicon, and whether the source is credible is the consumer's
+    reading. The subject is absent when upstream sentence segmentation
+    strands the attribution in a previous sentence ("Smith et al.
+    reported ..." splits at the period in "et al.").
     """
 
     verb_id: int
@@ -92,6 +96,18 @@ class Reporting(TypedDict):
     ccomp_id: int
     subject_id: int | None
     subject_lemma: str | None
+
+
+class RootMood(TypedDict):
+    """The root clause's mood. Mirrors `matra::domain::RootMood`.
+
+    ``mood`` is the ``Mood`` feature read off the root, or off its first
+    ``cop``, ``aux`` or ``aux:pass`` child when the root carries none.
+    The values are an open set (``Ind``, ``Imp``, ...).
+    """
+
+    root_id: int
+    mood: str
 
 
 class RootAdverbial(TypedDict):
@@ -153,27 +169,42 @@ class HearstPair(TypedDict):
 
 
 class Sentence(TypedDict):
-    """One parsed sentence. Mirrors `matra::domain::Sentence`."""
+    """One parsed sentence. Mirrors `matra::domain::Sentence`.
+
+    ``tree_depth`` is ``None`` when the parse's head references loop.
+    """
 
     text: str
     tokens: list[Token]
+    word_count: int
+    tree_depth: int | None
+    passive: bool
     negations: list[Negation]
     modals: list[Modal]
-    bare_assertion: bool
-    reportings: list[Reporting]
+    clausal_complements: list[ClausalComplement]
     root_adverbials: list[RootAdverbial]
     hearst_pairs: list[HearstPair]
+    root_mood: RootMood | None
+
+
+class ParagraphMetrics(TypedDict):
+    """A paragraph's metrics. Mirrors `matra::domain::ParagraphMetrics`.
+
+    Each slot is ``None`` when the paragraph did not meet its condition.
+    """
+
+    readability_grade: float | None
+    lexical_density: float | None
+    compression_ratio: float | None
 
 
 class Paragraph(TypedDict):
-    """One paragraph with optional metric slots. Mirrors `matra::domain::Paragraph`."""
+    """One paragraph. Mirrors `matra::domain::Paragraph`."""
 
     text: str
     in_blockquote: bool
     sentences: list[Sentence]
-    readability_grade: float | None
-    lexical_density: float | None
-    compression_ratio: float | None
+    metrics: ParagraphMetrics
 
 
 class Section(TypedDict):
@@ -184,25 +215,72 @@ class Section(TypedDict):
     paragraphs: list[Paragraph]
 
 
-class Document(TypedDict):
-    """Top-level analysis output. Mirrors `matra::domain::Document`.
+class DocumentMetrics(TypedDict):
+    """A document's metrics. Mirrors `matra::domain::DocumentMetrics`.
 
-    Document-level aggregates that cross the FFI boundary do so as
-    fields filled by the metric suite (RFC-0008): `passive_ratio`
-    arrives materialized, like `vocabulary_ttr`. Remaining aggregate
-    methods on the Rust `Document` (`mean_sentence_length`,
-    `total_words`, etc.) do not cross; consumers compute them from
-    `sections` if needed.
-
-    `vocabulary_ttr` is a raw type-token ratio with no length
-    correction. It falls as a document grows, so documents of different
-    lengths are not comparable on it.
+    The counts are always present. Each ratio is ``None`` when its
+    condition was not met: a mean and the passive ratio need a sentence,
+    the sample deviation two, the type-token and nominalization ratios a
+    word. ``vocabulary_ttr`` has no length correction, so documents of
+    different lengths are not comparable on it.
     """
 
-    sections: list[Section]
+    total_words: int
+    total_sentences: int
+    paragraph_count: int
+    mean_sentence_length: float | None
+    sentence_length_std: float | None
     vocabulary_ttr: float | None
     nominalization_ratio: float | None
     passive_ratio: float | None
+
+
+class Identity(TypedDict):
+    """Who produced a result. Mirrors `matra::domain::Identity`.
+
+    ``model``, ``sha256`` and ``license`` are ``None`` when not known,
+    as for a model matra does not pin.
+    """
+
+    name: str
+    model: str | None
+    sha256: str | None
+    license: str | None
+
+
+class ProvenanceSource(TypedDict):
+    """The analysed input. Mirrors `matra::domain::ProvenanceSource`."""
+
+    path: str | None
+    bytes: int
+    sha256: str
+
+
+class Provenance(TypedDict):
+    """Where a document came from. Mirrors `matra::domain::Provenance`.
+
+    ``schema`` is the schema version, ``"major.minor"``, and the one
+    place it appears; reject a major you do not know. ``format`` is one
+    of ``markdown`` and ``plain_text`` today, an open set.
+    """
+
+    matra: str
+    schema: str
+    parser: Identity
+    format: str
+    source: ProvenanceSource
+
+
+class Document(TypedDict):
+    """Top-level analysis output. Mirrors `matra::domain::Document`.
+
+    The document's aggregates arrive in ``metrics``, materialized by the
+    metric suite, because methods do not cross the FFI boundary.
+    """
+
+    provenance: Provenance
+    sections: list[Section]
+    metrics: DocumentMetrics
 
 
 class ScoredSentence(TypedDict):
@@ -254,7 +332,7 @@ class SemanticClusters(TypedDict):
     above-threshold edge appears in no cluster.
     """
 
-    model_hash: str
+    identity: str
     threshold: float
     clusters: list[SemanticCluster]
 
@@ -263,8 +341,9 @@ class CorpusEntry(TypedDict):
     """One analyzed document from a path. Mirrors ``matra::domain::CorpusEntry``.
 
     ``path`` is the file the document was read from, or ``None`` for
-    text that never came from disk. ``analysis`` is the same
-    ``Document`` shape ``analyze`` returns.
+    text that never came from disk; ``analysis["provenance"]["source"]``
+    carries the same path. ``analysis`` is the same ``Document`` shape
+    ``analyze`` returns.
     """
 
     path: str | None
@@ -334,18 +413,24 @@ class Embedder(Protocol):
 
 __all__ = [
     "ERROR_KINDS",
+    "ClausalComplement",
     "CorpusEntry",
     "CorpusItem",
     "Document",
     "DocumentError",
+    "DocumentMetrics",
     "Embedder",
     "ErrorInfo",
+    "Identity",
     "Keyphrase",
     "Modal",
     "Negation",
     "Paragraph",
-    "Reporting",
+    "ParagraphMetrics",
+    "Provenance",
+    "ProvenanceSource",
     "RootAdverbial",
+    "RootMood",
     "ScoredSentence",
     "Section",
     "SemanticCluster",

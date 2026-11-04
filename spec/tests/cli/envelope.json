@@ -5,14 +5,15 @@
   "args": ["analyze", "--json"],
   "expect": {
     "envelope_keys": ["command", "format_version", "input", "result"],
-    "format_version": 1,
+    "format_version": 2,
     "command": "analyze",
     "result_keys": [
-      "nominalization_ratio",
-      "passive_ratio",
-      "sections",
-      "vocabulary_ttr"
+      "metrics",
+      "provenance",
+      "sections"
     ],
+    "schema": "2.0",
+    "format": "plain_text",
     "result_sections": 1,
     "result_sentences": 2
   }

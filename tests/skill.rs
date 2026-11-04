@@ -400,7 +400,7 @@ fn run(incantation: &Incantation) {
         });
         assert_eq!(
             value.get("format_version").and_then(|v| v.as_u64()),
-            Some(1),
+            Some(2),
             "{}:{} `{}` emitted no format_version",
             incantation.source,
             incantation.line,

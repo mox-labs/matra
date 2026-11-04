@@ -32,8 +32,8 @@ mod with_model {
             Format::PlainText,
         );
 
-        assert!(analysis.total_sentences() >= 2);
-        assert!(analysis.total_words() > 0);
+        assert!(analysis.metrics.total_sentences >= 2);
+        assert!(analysis.metrics.total_words > 0);
     }
 
     #[test]
@@ -79,8 +79,8 @@ mod with_model {
             Format::PlainText,
         );
 
-        assert!(analysis.sentences().any(|s| s.is_passive()));
-        assert!(analysis.sentences().any(|s| !s.is_passive()));
+        assert!(analysis.sentences().any(|s| s.passive));
+        assert!(analysis.sentences().any(|s| !s.passive));
     }
 
     #[test]
@@ -89,7 +89,9 @@ mod with_model {
         let long_para = "The quick brown fox jumps over the lazy dog. ".repeat(10);
         let analysis = analyze(&long_para, Format::PlainText);
 
-        let has_ratio = analysis.paragraphs().any(|p| p.compression_ratio.is_some());
+        let has_ratio = analysis
+            .paragraphs()
+            .any(|p| p.metrics.compression_ratio.is_some());
         assert!(has_ratio, "long paragraph should have compression ratio");
     }
 

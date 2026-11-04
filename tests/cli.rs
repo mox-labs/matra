@@ -21,6 +21,8 @@
 
 #![cfg(feature = "cli")]
 
+mod document_schema;
+
 use std::ffi::OsString;
 use std::io::Write;
 use std::path::Path;
@@ -322,7 +324,7 @@ fn the_skill_json_is_the_envelope() {
             .collect();
         keys.sort_unstable();
         assert_eq!(keys, ["command", "format_version", "input", "result"]);
-        assert_eq!(parsed["format_version"], 1);
+        assert_eq!(parsed["format_version"], 2);
         assert_eq!(parsed["command"], "skill");
         assert!(parsed["input"].is_null(), "{args:?}: input is not null");
 
@@ -525,7 +527,7 @@ fn every_command_emits_the_same_envelope() {
         let mut keys: Vec<&str> = object.keys().map(String::as_str).collect();
         keys.sort_unstable();
         assert_eq!(keys, ["command", "format_version", "input", "result"]);
-        assert_eq!(parsed["format_version"], 1);
+        assert_eq!(parsed["format_version"], 2);
         assert_eq!(parsed["command"], command);
         assert!(parsed["input"].is_string());
     }
@@ -545,6 +547,7 @@ fn the_result_is_the_domain_value_unchanged() {
         result["sections"][0]["paragraphs"][0]["sentences"][0]["tokens"][0]["lemma"].is_string(),
         "token lemma reachable at the documented path"
     );
+    document_schema::assert_valid_document(result, "analyze --json");
 }
 
 /// The shared CLI fixture, run through the Rust launcher. The Python
@@ -597,6 +600,14 @@ fn envelope_matches_the_conformance_fixture() {
         .collect();
     result_keys.sort_unstable();
     assert_eq!(serde_json::json!(result_keys), expect["result_keys"]);
+
+    assert_eq!(got["result"]["provenance"]["schema"], expect["schema"]);
+    assert_eq!(got["result"]["provenance"]["format"], expect["format"]);
+    assert_eq!(
+        got["result"]["metrics"]["total_sentences"],
+        expect["result_sentences"]
+    );
+    document_schema::assert_valid_document(&got["result"], "the envelope fixture");
 
     let sections = got["result"]["sections"].as_array().expect("sections");
     assert_eq!(serde_json::json!(sections.len()), expect["result_sections"]);

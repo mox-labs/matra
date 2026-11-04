@@ -1,11 +1,16 @@
 {
   "name": "hearst",
   "input": "Animals such as dogs and cats need daily care. They built temples, treasuries, and other important civic buildings. She invited John, and other guests brought gifts.",
-  "format": "plain",
+  "format": "plain_text",
   "expect": {
-    "total_sentences": 3,
-    "total_words": 26,
-    "paragraph_count": 1,
+    "metrics": {
+      "total_sentences": 3,
+      "total_words": 26,
+      "paragraph_count": 1,
+      "vocabulary_ttr": 0.8846153846153846,
+      "nominalization_ratio": 0.0,
+      "passive_ratio": 0.0
+    },
     "sentences": [
       {
         "text": "Animals such as dogs and cats need daily care.",
@@ -346,9 +351,6 @@
           }
         ]
       }
-    ],
-    "vocabulary_ttr": 0.8846153846153846,
-    "nominalization_ratio": 0.0,
-    "passive_ratio": 0.0
+    ]
   }
 }

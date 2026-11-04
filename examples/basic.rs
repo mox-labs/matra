@@ -44,16 +44,20 @@ fn report(analysis: &matra::domain::Document) {
         )
     };
 
-    println!("Sentences:      {}", analysis.total_sentences());
-    println!("Words:          {}", analysis.total_words());
-    println!("Passive ratio:  {:.1}%", analysis.passive_ratio() * 100.0);
+    let metrics = &analysis.metrics;
+    println!("Sentences:      {}", metrics.total_sentences);
+    println!("Words:          {}", metrics.total_words);
+    println!(
+        "Passive ratio:  {}",
+        or_none(metrics.passive_ratio, 100.0, "%")
+    );
     println!(
         "Vocabulary TTR: {}",
-        or_none(analysis.vocabulary_ttr, 1.0, "")
+        or_none(metrics.vocabulary_ttr, 1.0, "")
     );
     println!(
         "Nominalization: {}",
-        or_none(analysis.nominalization_ratio, 100.0, "%")
+        or_none(metrics.nominalization_ratio, 100.0, "%")
     );
 
     println!("\nSections:");

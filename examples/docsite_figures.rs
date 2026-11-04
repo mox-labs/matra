@@ -308,9 +308,9 @@ fn page_measures(doc: &Document) -> Vec<Value> {
                 "in_blockquote": p.in_blockquote,
                 "sentences": p.sentences.len(),
                 "words": p.word_count(),
-                "readability_grade": p.readability_grade.map(round4),
-                "lexical_density": p.lexical_density.map(round4),
-                "compression_ratio": p.compression_ratio.map(round4),
+                "readability_grade": p.metrics.readability_grade.map(round4),
+                "lexical_density": p.metrics.lexical_density.map(round4),
+                "compression_ratio": p.metrics.compression_ratio.map(round4),
             })
         })
         .collect()
@@ -368,8 +368,8 @@ fn primitives_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
                 "root_id": root,
                 "negations": serde_json::to_value(&s.negations)?,
                 "modals": serde_json::to_value(&s.modals)?,
-                "bare_assertion": s.bare_assertion,
-                "reportings": serde_json::to_value(&s.reportings)?,
+                "root_mood": serde_json::to_value(&s.root_mood)?,
+                "clausal_complements": serde_json::to_value(&s.clausal_complements)?,
                 "root_adverbials": serde_json::to_value(&s.root_adverbials)?,
                 "hearst_pairs": serde_json::to_value(&s.hearst_pairs)?,
             }));
@@ -392,24 +392,24 @@ fn metrics_figure(input: &Input) -> Result<Value, Box<dyn Error>> {
             "opening": opening.join(" "),
             "words": p.word_count(),
             "in_blockquote": p.in_blockquote,
-            "readability_grade": p.readability_grade.map(round4),
-            "lexical_density": p.lexical_density.map(round4),
-            "compression_ratio": p.compression_ratio.map(round4),
+            "readability_grade": p.metrics.readability_grade.map(round4),
+            "lexical_density": p.metrics.lexical_density.map(round4),
+            "compression_ratio": p.metrics.compression_ratio.map(round4),
         }));
     }
     let measured = doc
         .sections
         .iter()
         .flat_map(|s| &s.paragraphs)
-        .any(|p| p.readability_grade.is_some());
+        .any(|p| p.metrics.readability_grade.is_some());
     let corpus = Corpus::new(vec![CorpusEntry::new(None, doc.clone())]);
     Ok(json!({
         "paragraphs": paragraphs,
         "document": {
             "mean_readability": measured.then(|| round4(corpus.mean_readability())),
-            "vocabulary_ttr": doc.vocabulary_ttr.map(round4),
-            "nominalization_ratio": doc.nominalization_ratio.map(round4),
-            "passive_ratio": doc.passive_ratio.map(round4),
+            "vocabulary_ttr": doc.metrics.vocabulary_ttr.map(round4),
+            "nominalization_ratio": doc.metrics.nominalization_ratio.map(round4),
+            "passive_ratio": doc.metrics.passive_ratio.map(round4),
         },
     }))
 }
@@ -615,9 +615,9 @@ fn stage(doc: &Document) -> Value {
                         "in_blockquote": p.in_blockquote,
                         "sentences": p.sentences.len(),
                         "tokens": p.sentences.iter().map(|x| x.tokens.len()).sum::<usize>(),
-                        "readability_grade": p.readability_grade.map(round4),
-                        "lexical_density": p.lexical_density.map(round4),
-                        "compression_ratio": p.compression_ratio.map(round4),
+                        "readability_grade": p.metrics.readability_grade.map(round4),
+                        "lexical_density": p.metrics.lexical_density.map(round4),
+                        "compression_ratio": p.metrics.compression_ratio.map(round4),
                     })
                 })
                 .collect();
@@ -627,9 +627,9 @@ fn stage(doc: &Document) -> Value {
     json!({
         "sections": sections,
         "document": {
-            "vocabulary_ttr": doc.vocabulary_ttr.map(round4),
-            "nominalization_ratio": doc.nominalization_ratio.map(round4),
-            "passive_ratio": doc.passive_ratio.map(round4),
+            "vocabulary_ttr": doc.metrics.vocabulary_ttr.map(round4),
+            "nominalization_ratio": doc.metrics.nominalization_ratio.map(round4),
+            "passive_ratio": doc.metrics.passive_ratio.map(round4),
         },
     })
 }

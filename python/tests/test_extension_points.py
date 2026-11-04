@@ -75,7 +75,7 @@ def test_a_python_object_is_an_embedder(engine: Matra) -> None:
 
     # The embedder's own identity travels into the result, so the scores
     # cannot be attributed to a model that did not produce them.
-    assert result["model_hash"] == "fake-embedder-v1"
+    assert result["identity"] == "fake-embedder-v1"
     assert len(result["clusters"]) == 1
 
     cluster = result["clusters"][0]
@@ -188,7 +188,7 @@ def test_analyze_path_returns_one_item_per_file_in_order(engine: Matra, tmp_path
     assert items[1]["error"]["message"]
 
     assert "analysis" in items[2]
-    assert items[2]["analysis"]["passive_ratio"] is not None
+    assert items[2]["analysis"]["metrics"]["passive_ratio"] is not None
 
 
 @pytest.mark.model
@@ -230,6 +230,9 @@ def test_a_file_whose_name_is_not_utf_8_is_analyzed_and_round_trips(
     assert "analysis" in items[0]
     assert os.fsencode(items[0]["path"]).endswith(name)
     assert items[0]["analysis"]["sections"][0]["paragraphs"][0]["sentences"]
+    # The document's own provenance names the same bytes, not the lossy
+    # string serde writes for a path JSON cannot carry.
+    assert items[0]["analysis"]["provenance"]["source"]["path"] == items[0]["path"]
 
 
 @pytest.mark.model

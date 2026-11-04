@@ -29,6 +29,7 @@ use tokenizers::Tokenizer;
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::config::Config;
+use crate::digest::hex;
 use crate::domain::{self, Embedding, Error};
 use crate::embed::Embedder;
 
@@ -651,21 +652,6 @@ fn digest_of(artifacts: &[Vec<u8>; 3]) -> String {
         hasher.update(bytes);
     }
     hex(&hasher.finalize())
-}
-
-/// Lowercase hex of a digest, two characters per byte.
-///
-/// sha2 0.11 no longer formats its output with `{:x}`. The UDPipe adapter
-/// has its own encoder; this one is private here because adapters do not
-/// import each other.
-fn hex(bytes: &[u8]) -> String {
-    const DIGITS: &[u8; 16] = b"0123456789abcdef";
-    let mut s = String::with_capacity(bytes.len() * 2);
-    for &b in bytes {
-        s.push(char::from(DIGITS[usize::from(b >> 4)]));
-        s.push(char::from(DIGITS[usize::from(b & 0x0f)]));
-    }
-    s
 }
 
 /// The refusal for a directory the provisioner did not fill itself.
@@ -1356,19 +1342,6 @@ mod tests {
         let out = m.embed(&texts).unwrap();
         assert_eq!(out.len(), texts.len());
         assert!(out.iter().all(|e| e.0.len() == m.dimensions()));
-    }
-
-    /// The digest renders as lowercase hex with leading zeros kept, so a
-    /// pin written from `sha256sum` output compares equal. The vector is
-    /// the FIPS 180-2 SHA-256 of "abc".
-    #[test]
-    fn hex_renders_a_digest_as_sha256sum_does() {
-        let digest = Sha256::digest(b"abc");
-        assert_eq!(
-            hex(&digest),
-            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-        );
-        assert_eq!(hex(&[0x00, 0x0f, 0xf0, 0xff]), "000ff0ff");
     }
 
     #[test]

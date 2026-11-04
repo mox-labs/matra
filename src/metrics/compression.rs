@@ -29,13 +29,13 @@ const BROTLI_QUALITY: u32 = 6;
 /// paragraph never triggers more than one window's worth of work.
 const MAX_PARAGRAPH_BYTES: usize = 256 * 1024;
 
-/// Populate `Paragraph::compression_ratio` for every paragraph with
+/// Populate `ParagraphMetrics::compression_ratio` for every paragraph with
 /// more than 50 words that is not in a blockquote and is at or under
 /// the per-paragraph byte cap.
 pub fn compute(analysis: &mut Document) {
     for para in analysis.paragraphs_mut() {
         if para.word_count() > 50 && !para.in_blockquote && para.text.len() <= MAX_PARAGRAPH_BYTES {
-            para.compression_ratio = compression_ratio(&para.text);
+            para.metrics.compression_ratio = compression_ratio(&para.text);
         }
     }
 }
@@ -66,7 +66,7 @@ mod tests {
             lemma: text.to_lowercase(),
             pos: "NOUN".to_string(),
             xpos: String::new(),
-            feats: String::new(),
+            features: std::collections::BTreeMap::new(),
             dep: "dep".to_string(),
             head: 0,
             deps: String::new(),
@@ -97,7 +97,7 @@ mod tests {
             level: 0,
             paragraphs: vec![Paragraph::new(big_text, false)],
         }];
-        let mut analysis = Document::new(sections);
+        let mut analysis = Document::new(crate::domain::Provenance::for_test(), sections);
 
         // Attach enough content tokens so word_count clears the >50 threshold.
         for para in analysis.paragraphs_mut() {
@@ -110,7 +110,7 @@ mod tests {
 
         let paras: Vec<_> = analysis.paragraphs().collect();
         assert!(
-            paras[0].compression_ratio.is_none(),
+            paras[0].metrics.compression_ratio.is_none(),
             "oversize paragraph should be skipped"
         );
         assert!(
@@ -138,7 +138,7 @@ mod tests {
                 Paragraph::new(text_51, false),
             ],
         }];
-        let mut analysis = Document::new(sections);
+        let mut analysis = Document::new(crate::domain::Provenance::for_test(), sections);
 
         // Attach enough content tokens so word_count clears the thresholds.
         for (i, para) in analysis.paragraphs_mut().enumerate() {
@@ -152,11 +152,11 @@ mod tests {
 
         let paras: Vec<_> = analysis.paragraphs().collect();
         assert!(
-            paras[0].compression_ratio.is_none(),
+            paras[0].metrics.compression_ratio.is_none(),
             "50 words should not get compression"
         );
         assert!(
-            paras[1].compression_ratio.is_some(),
+            paras[1].metrics.compression_ratio.is_some(),
             "51 words should get compression"
         );
     }
