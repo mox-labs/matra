@@ -38,16 +38,16 @@
         {
           "index": 0,
           "span": {
-            "start": 0,
-            "end": 48
+            "byte_start": 0,
+            "byte_end": 48
           },
           "score": 0.23852260290345143
         },
         {
           "index": 4,
           "span": {
-            "start": 213,
-            "end": 264
+            "byte_start": 213,
+            "byte_end": 264
           },
           "score": 0.26624849012584917
         }
@@ -60,24 +60,24 @@
         {
           "index": 1,
           "span": {
-            "start": 49,
-            "end": 106
+            "byte_start": 49,
+            "byte_end": 106
           },
           "score": 0.19232253890235745
         },
         {
           "index": 2,
           "span": {
-            "start": 107,
-            "end": 159
+            "byte_start": 107,
+            "byte_end": 159
           },
           "score": 0.21067522402579855
         },
         {
           "index": 3,
           "span": {
-            "start": 161,
-            "end": 212
+            "byte_start": 161,
+            "byte_end": 212
           },
           "score": 0.19232253890235745
         }
@@ -94,8 +94,8 @@
           "score": 3.25,
           "occurrences": [
             {
-              "start": 74,
-              "end": 86
+              "byte_start": 74,
+              "byte_end": 86
             }
           ]
         },
@@ -104,16 +104,16 @@
           "score": 1.25,
           "occurrences": [
             {
-              "start": 13,
-              "end": 17
+              "byte_start": 13,
+              "byte_end": 17
             },
             {
-              "start": 207,
-              "end": 211
+              "byte_start": 207,
+              "byte_end": 211
             },
             {
-              "start": 287,
-              "end": 291
+              "byte_start": 287,
+              "byte_end": 291
             }
           ]
         },
@@ -122,8 +122,8 @@
           "score": 1.0,
           "occurrences": [
             {
-              "start": 0,
-              "end": 6
+              "byte_start": 0,
+              "byte_end": 6
             }
           ]
         },
@@ -132,8 +132,8 @@
           "score": 1.0,
           "occurrences": [
             {
-              "start": 27,
-              "end": 36
+              "byte_start": 27,
+              "byte_end": 36
             }
           ]
         },
@@ -142,12 +142,12 @@
           "score": 1.0,
           "occurrences": [
             {
-              "start": 44,
-              "end": 47
+              "byte_start": 44,
+              "byte_end": 47
             },
             {
-              "start": 245,
-              "end": 248
+              "byte_start": 245,
+              "byte_end": 248
             }
           ]
         }
@@ -162,8 +162,8 @@
           "score": 14.515387431853066,
           "occurrences": [
             {
-              "start": 7,
-              "end": 36
+              "byte_start": 7,
+              "byte_end": 36
             }
           ]
         },
@@ -172,8 +172,8 @@
           "score": 13.593116974101944,
           "occurrences": [
             {
-              "start": 13,
-              "end": 36
+              "byte_start": 13,
+              "byte_end": 36
             }
           ]
         },
@@ -182,8 +182,8 @@
           "score": 13.101497743316209,
           "occurrences": [
             {
-              "start": 27,
-              "end": 36
+              "byte_start": 27,
+              "byte_end": 36
             }
           ]
         },
@@ -192,8 +192,8 @@
           "score": 10.263741568096126,
           "occurrences": [
             {
-              "start": 13,
-              "end": 47
+              "byte_start": 13,
+              "byte_end": 47
             }
           ]
         },
@@ -202,8 +202,8 @@
           "score": 9.892535115278534,
           "occurrences": [
             {
-              "start": 27,
-              "end": 47
+              "byte_start": 27,
+              "byte_end": 47
             }
           ]
         }
@@ -322,24 +322,24 @@
         "paragraphs": [
           {
             "span": {
-              "start": 0,
-              "end": 159
+              "byte_start": 0,
+              "byte_end": 159
             },
             "text": "Rivers carry silt from the mountains to the sea. Where a river slows, the silt settles and builds a delta. A delta grows for as long as the river carries silt.",
             "kind": "paragraph",
             "sentences": [
               {
                 "span": {
-                  "start": 0,
-                  "end": 48
+                  "byte_start": 0,
+                  "byte_end": 48
                 },
                 "text": "Rivers carry silt from the mountains to the sea.",
                 "tokens": [
                   {
                     "id": 1,
                     "span": {
-                      "start": 0,
-                      "end": 6
+                      "byte_start": 0,
+                      "byte_end": 6
                     },
                     "text": "Rivers",
                     "lemma": "Rivers",
@@ -357,8 +357,8 @@
                   {
                     "id": 2,
                     "span": {
-                      "start": 7,
-                      "end": 12
+                      "byte_start": 7,
+                      "byte_end": 12
                     },
                     "text": "carry",
                     "lemma": "carry",
@@ -378,8 +378,8 @@
                   {
                     "id": 3,
                     "span": {
-                      "start": 13,
-                      "end": 17
+                      "byte_start": 13,
+                      "byte_end": 17
                     },
                     "text": "silt",
                     "lemma": "silt",
@@ -397,8 +397,8 @@
                   {
                     "id": 4,
                     "span": {
-                      "start": 18,
-                      "end": 22
+                      "byte_start": 18,
+                      "byte_end": 22
                     },
                     "text": "from",
                     "lemma": "from",
@@ -414,8 +414,8 @@
                   {
                     "id": 5,
                     "span": {
-                      "start": 23,
-                      "end": 26
+                      "byte_start": 23,
+                      "byte_end": 26
                     },
                     "text": "the",
                     "lemma": "the",
@@ -434,8 +434,8 @@
                   {
                     "id": 6,
                     "span": {
-                      "start": 27,
-                      "end": 36
+                      "byte_start": 27,
+                      "byte_end": 36
                     },
                     "text": "mountains",
                     "lemma": "mountain",
@@ -453,8 +453,8 @@
                   {
                     "id": 7,
                     "span": {
-                      "start": 37,
-                      "end": 39
+                      "byte_start": 37,
+                      "byte_end": 39
                     },
                     "text": "to",
                     "lemma": "to",
@@ -470,8 +470,8 @@
                   {
                     "id": 8,
                     "span": {
-                      "start": 40,
-                      "end": 43
+                      "byte_start": 40,
+                      "byte_end": 43
                     },
                     "text": "the",
                     "lemma": "the",
@@ -490,8 +490,8 @@
                   {
                     "id": 9,
                     "span": {
-                      "start": 44,
-                      "end": 47
+                      "byte_start": 44,
+                      "byte_end": 47
                     },
                     "text": "sea",
                     "lemma": "sea",
@@ -509,8 +509,8 @@
                   {
                     "id": 10,
                     "span": {
-                      "start": 47,
-                      "end": 48
+                      "byte_start": 47,
+                      "byte_end": 48
                     },
                     "text": ".",
                     "lemma": ".",
@@ -539,16 +539,16 @@
               },
               {
                 "span": {
-                  "start": 49,
-                  "end": 106
+                  "byte_start": 49,
+                  "byte_end": 106
                 },
                 "text": "Where a river slows, the silt settles and builds a delta.",
                 "tokens": [
                   {
                     "id": 1,
                     "span": {
-                      "start": 49,
-                      "end": 54
+                      "byte_start": 49,
+                      "byte_end": 54
                     },
                     "text": "Where",
                     "lemma": "where",
@@ -566,8 +566,8 @@
                   {
                     "id": 2,
                     "span": {
-                      "start": 55,
-                      "end": 56
+                      "byte_start": 55,
+                      "byte_end": 56
                     },
                     "text": "a",
                     "lemma": "a",
@@ -586,8 +586,8 @@
                   {
                     "id": 3,
                     "span": {
-                      "start": 57,
-                      "end": 62
+                      "byte_start": 57,
+                      "byte_end": 62
                     },
                     "text": "river",
                     "lemma": "river",
@@ -605,8 +605,8 @@
                   {
                     "id": 4,
                     "span": {
-                      "start": 63,
-                      "end": 68
+                      "byte_start": 63,
+                      "byte_end": 68
                     },
                     "text": "slows",
                     "lemma": "slows",
@@ -628,8 +628,8 @@
                   {
                     "id": 5,
                     "span": {
-                      "start": 68,
-                      "end": 69
+                      "byte_start": 68,
+                      "byte_end": 69
                     },
                     "text": ",",
                     "lemma": ",",
@@ -645,8 +645,8 @@
                   {
                     "id": 6,
                     "span": {
-                      "start": 70,
-                      "end": 73
+                      "byte_start": 70,
+                      "byte_end": 73
                     },
                     "text": "the",
                     "lemma": "the",
@@ -665,8 +665,8 @@
                   {
                     "id": 7,
                     "span": {
-                      "start": 74,
-                      "end": 78
+                      "byte_start": 74,
+                      "byte_end": 78
                     },
                     "text": "silt",
                     "lemma": "silt",
@@ -684,8 +684,8 @@
                   {
                     "id": 8,
                     "span": {
-                      "start": 79,
-                      "end": 86
+                      "byte_start": 79,
+                      "byte_end": 86
                     },
                     "text": "settles",
                     "lemma": "settle",
@@ -703,8 +703,8 @@
                   {
                     "id": 9,
                     "span": {
-                      "start": 87,
-                      "end": 90
+                      "byte_start": 87,
+                      "byte_end": 90
                     },
                     "text": "and",
                     "lemma": "and",
@@ -720,8 +720,8 @@
                   {
                     "id": 10,
                     "span": {
-                      "start": 91,
-                      "end": 97
+                      "byte_start": 91,
+                      "byte_end": 97
                     },
                     "text": "builds",
                     "lemma": "build",
@@ -743,8 +743,8 @@
                   {
                     "id": 11,
                     "span": {
-                      "start": 98,
-                      "end": 99
+                      "byte_start": 98,
+                      "byte_end": 99
                     },
                     "text": "a",
                     "lemma": "a",
@@ -763,8 +763,8 @@
                   {
                     "id": 12,
                     "span": {
-                      "start": 100,
-                      "end": 105
+                      "byte_start": 100,
+                      "byte_end": 105
                     },
                     "text": "delta",
                     "lemma": "delta",
@@ -782,8 +782,8 @@
                   {
                     "id": 13,
                     "span": {
-                      "start": 105,
-                      "end": 106
+                      "byte_start": 105,
+                      "byte_end": 106
                     },
                     "text": ".",
                     "lemma": ".",
@@ -817,16 +817,16 @@
               },
               {
                 "span": {
-                  "start": 107,
-                  "end": 159
+                  "byte_start": 107,
+                  "byte_end": 159
                 },
                 "text": "A delta grows for as long as the river carries silt.",
                 "tokens": [
                   {
                     "id": 1,
                     "span": {
-                      "start": 107,
-                      "end": 108
+                      "byte_start": 107,
+                      "byte_end": 108
                     },
                     "text": "A",
                     "lemma": "a",
@@ -845,8 +845,8 @@
                   {
                     "id": 2,
                     "span": {
-                      "start": 109,
-                      "end": 114
+                      "byte_start": 109,
+                      "byte_end": 114
                     },
                     "text": "delta",
                     "lemma": "delta",
@@ -864,8 +864,8 @@
                   {
                     "id": 3,
                     "span": {
-                      "start": 115,
-                      "end": 120
+                      "byte_start": 115,
+                      "byte_end": 120
                     },
                     "text": "grows",
                     "lemma": "grow",
@@ -887,8 +887,8 @@
                   {
                     "id": 4,
                     "span": {
-                      "start": 121,
-                      "end": 124
+                      "byte_start": 121,
+                      "byte_end": 124
                     },
                     "text": "for",
                     "lemma": "for",
@@ -904,8 +904,8 @@
                   {
                     "id": 5,
                     "span": {
-                      "start": 125,
-                      "end": 127
+                      "byte_start": 125,
+                      "byte_end": 127
                     },
                     "text": "as",
                     "lemma": "as",
@@ -921,8 +921,8 @@
                   {
                     "id": 6,
                     "span": {
-                      "start": 128,
-                      "end": 132
+                      "byte_start": 128,
+                      "byte_end": 132
                     },
                     "text": "long",
                     "lemma": "long",
@@ -940,8 +940,8 @@
                   {
                     "id": 7,
                     "span": {
-                      "start": 133,
-                      "end": 135
+                      "byte_start": 133,
+                      "byte_end": 135
                     },
                     "text": "as",
                     "lemma": "as",
@@ -957,8 +957,8 @@
                   {
                     "id": 8,
                     "span": {
-                      "start": 136,
-                      "end": 139
+                      "byte_start": 136,
+                      "byte_end": 139
                     },
                     "text": "the",
                     "lemma": "the",
@@ -977,8 +977,8 @@
                   {
                     "id": 9,
                     "span": {
-                      "start": 140,
-                      "end": 145
+                      "byte_start": 140,
+                      "byte_end": 145
                     },
                     "text": "river",
                     "lemma": "river",
@@ -996,8 +996,8 @@
                   {
                     "id": 10,
                     "span": {
-                      "start": 146,
-                      "end": 153
+                      "byte_start": 146,
+                      "byte_end": 153
                     },
                     "text": "carries",
                     "lemma": "carry",
@@ -1019,8 +1019,8 @@
                   {
                     "id": 11,
                     "span": {
-                      "start": 154,
-                      "end": 158
+                      "byte_start": 154,
+                      "byte_end": 158
                     },
                     "text": "silt",
                     "lemma": "silt",
@@ -1036,8 +1036,8 @@
                   {
                     "id": 12,
                     "span": {
-                      "start": 158,
-                      "end": 159
+                      "byte_start": 158,
+                      "byte_end": 159
                     },
                     "text": ".",
                     "lemma": ".",
@@ -1073,24 +1073,24 @@
           },
           {
             "span": {
-              "start": 161,
-              "end": 316
+              "byte_start": 161,
+              "byte_end": 316
             },
             "text": "Engineers who dam a river starve its delta of silt. The delta then shrinks, and the sea takes the land. Restoring the flow of silt is how a delta is saved.",
             "kind": "paragraph",
             "sentences": [
               {
                 "span": {
-                  "start": 161,
-                  "end": 212
+                  "byte_start": 161,
+                  "byte_end": 212
                 },
                 "text": "Engineers who dam a river starve its delta of silt.",
                 "tokens": [
                   {
                     "id": 1,
                     "span": {
-                      "start": 161,
-                      "end": 170
+                      "byte_start": 161,
+                      "byte_end": 170
                     },
                     "text": "Engineers",
                     "lemma": "engineer",
@@ -1108,8 +1108,8 @@
                   {
                     "id": 2,
                     "span": {
-                      "start": 171,
-                      "end": 174
+                      "byte_start": 171,
+                      "byte_end": 174
                     },
                     "text": "who",
                     "lemma": "who",
@@ -1127,8 +1127,8 @@
                   {
                     "id": 3,
                     "span": {
-                      "start": 175,
-                      "end": 178
+                      "byte_start": 175,
+                      "byte_end": 178
                     },
                     "text": "dam",
                     "lemma": "dam",
@@ -1148,8 +1148,8 @@
                   {
                     "id": 4,
                     "span": {
-                      "start": 179,
-                      "end": 180
+                      "byte_start": 179,
+                      "byte_end": 180
                     },
                     "text": "a",
                     "lemma": "a",
@@ -1168,8 +1168,8 @@
                   {
                     "id": 5,
                     "span": {
-                      "start": 181,
-                      "end": 186
+                      "byte_start": 181,
+                      "byte_end": 186
                     },
                     "text": "river",
                     "lemma": "river",
@@ -1187,8 +1187,8 @@
                   {
                     "id": 6,
                     "span": {
-                      "start": 187,
-                      "end": 193
+                      "byte_start": 187,
+                      "byte_end": 193
                     },
                     "text": "starve",
                     "lemma": "starve",
@@ -1206,8 +1206,8 @@
                   {
                     "id": 7,
                     "span": {
-                      "start": 194,
-                      "end": 197
+                      "byte_start": 194,
+                      "byte_end": 197
                     },
                     "text": "its",
                     "lemma": "its",
@@ -1229,8 +1229,8 @@
                   {
                     "id": 8,
                     "span": {
-                      "start": 198,
-                      "end": 203
+                      "byte_start": 198,
+                      "byte_end": 203
                     },
                     "text": "delta",
                     "lemma": "delta",
@@ -1248,8 +1248,8 @@
                   {
                     "id": 9,
                     "span": {
-                      "start": 204,
-                      "end": 206
+                      "byte_start": 204,
+                      "byte_end": 206
                     },
                     "text": "of",
                     "lemma": "of",
@@ -1265,8 +1265,8 @@
                   {
                     "id": 10,
                     "span": {
-                      "start": 207,
-                      "end": 211
+                      "byte_start": 207,
+                      "byte_end": 211
                     },
                     "text": "silt",
                     "lemma": "silt",
@@ -1284,8 +1284,8 @@
                   {
                     "id": 11,
                     "span": {
-                      "start": 211,
-                      "end": 212
+                      "byte_start": 211,
+                      "byte_end": 212
                     },
                     "text": ".",
                     "lemma": ".",
@@ -1311,16 +1311,16 @@
               },
               {
                 "span": {
-                  "start": 213,
-                  "end": 264
+                  "byte_start": 213,
+                  "byte_end": 264
                 },
                 "text": "The delta then shrinks, and the sea takes the land.",
                 "tokens": [
                   {
                     "id": 1,
                     "span": {
-                      "start": 213,
-                      "end": 216
+                      "byte_start": 213,
+                      "byte_end": 216
                     },
                     "text": "The",
                     "lemma": "the",
@@ -1339,8 +1339,8 @@
                   {
                     "id": 2,
                     "span": {
-                      "start": 217,
-                      "end": 222
+                      "byte_start": 217,
+                      "byte_end": 222
                     },
                     "text": "delta",
                     "lemma": "delta",
@@ -1358,8 +1358,8 @@
                   {
                     "id": 3,
                     "span": {
-                      "start": 223,
-                      "end": 227
+                      "byte_start": 223,
+                      "byte_end": 227
                     },
                     "text": "then",
                     "lemma": "then",
@@ -1377,8 +1377,8 @@
                   {
                     "id": 4,
                     "span": {
-                      "start": 228,
-                      "end": 235
+                      "byte_start": 228,
+                      "byte_end": 235
                     },
                     "text": "shrinks",
                     "lemma": "shrink",
@@ -1400,8 +1400,8 @@
                   {
                     "id": 5,
                     "span": {
-                      "start": 235,
-                      "end": 236
+                      "byte_start": 235,
+                      "byte_end": 236
                     },
                     "text": ",",
                     "lemma": ",",
@@ -1417,8 +1417,8 @@
                   {
                     "id": 6,
                     "span": {
-                      "start": 237,
-                      "end": 240
+                      "byte_start": 237,
+                      "byte_end": 240
                     },
                     "text": "and",
                     "lemma": "and",
@@ -1434,8 +1434,8 @@
                   {
                     "id": 7,
                     "span": {
-                      "start": 241,
-                      "end": 244
+                      "byte_start": 241,
+                      "byte_end": 244
                     },
                     "text": "the",
                     "lemma": "the",
@@ -1454,8 +1454,8 @@
                   {
                     "id": 8,
                     "span": {
-                      "start": 245,
-                      "end": 248
+                      "byte_start": 245,
+                      "byte_end": 248
                     },
                     "text": "sea",
                     "lemma": "sea",
@@ -1473,8 +1473,8 @@
                   {
                     "id": 9,
                     "span": {
-                      "start": 249,
-                      "end": 254
+                      "byte_start": 249,
+                      "byte_end": 254
                     },
                     "text": "takes",
                     "lemma": "take",
@@ -1496,8 +1496,8 @@
                   {
                     "id": 10,
                     "span": {
-                      "start": 255,
-                      "end": 258
+                      "byte_start": 255,
+                      "byte_end": 258
                     },
                     "text": "the",
                     "lemma": "the",
@@ -1516,8 +1516,8 @@
                   {
                     "id": 11,
                     "span": {
-                      "start": 259,
-                      "end": 263
+                      "byte_start": 259,
+                      "byte_end": 263
                     },
                     "text": "land",
                     "lemma": "land",
@@ -1535,8 +1535,8 @@
                   {
                     "id": 12,
                     "span": {
-                      "start": 263,
-                      "end": 264
+                      "byte_start": 263,
+                      "byte_end": 264
                     },
                     "text": ".",
                     "lemma": ".",
@@ -1570,16 +1570,16 @@
               },
               {
                 "span": {
-                  "start": 265,
-                  "end": 316
+                  "byte_start": 265,
+                  "byte_end": 316
                 },
                 "text": "Restoring the flow of silt is how a delta is saved.",
                 "tokens": [
                   {
                     "id": 1,
                     "span": {
-                      "start": 265,
-                      "end": 274
+                      "byte_start": 265,
+                      "byte_end": 274
                     },
                     "text": "Restoring",
                     "lemma": "Restor",
@@ -1598,8 +1598,8 @@
                   {
                     "id": 2,
                     "span": {
-                      "start": 275,
-                      "end": 278
+                      "byte_start": 275,
+                      "byte_end": 278
                     },
                     "text": "the",
                     "lemma": "the",
@@ -1618,8 +1618,8 @@
                   {
                     "id": 3,
                     "span": {
-                      "start": 279,
-                      "end": 283
+                      "byte_start": 279,
+                      "byte_end": 283
                     },
                     "text": "flow",
                     "lemma": "flow",
@@ -1637,8 +1637,8 @@
                   {
                     "id": 4,
                     "span": {
-                      "start": 284,
-                      "end": 286
+                      "byte_start": 284,
+                      "byte_end": 286
                     },
                     "text": "of",
                     "lemma": "of",
@@ -1654,8 +1654,8 @@
                   {
                     "id": 5,
                     "span": {
-                      "start": 287,
-                      "end": 291
+                      "byte_start": 287,
+                      "byte_end": 291
                     },
                     "text": "silt",
                     "lemma": "silt",
@@ -1673,8 +1673,8 @@
                   {
                     "id": 6,
                     "span": {
-                      "start": 292,
-                      "end": 294
+                      "byte_start": 292,
+                      "byte_end": 294
                     },
                     "text": "is",
                     "lemma": "be",
@@ -1696,8 +1696,8 @@
                   {
                     "id": 7,
                     "span": {
-                      "start": 295,
-                      "end": 298
+                      "byte_start": 295,
+                      "byte_end": 298
                     },
                     "text": "how",
                     "lemma": "how",
@@ -1715,8 +1715,8 @@
                   {
                     "id": 8,
                     "span": {
-                      "start": 299,
-                      "end": 300
+                      "byte_start": 299,
+                      "byte_end": 300
                     },
                     "text": "a",
                     "lemma": "a",
@@ -1735,8 +1735,8 @@
                   {
                     "id": 9,
                     "span": {
-                      "start": 301,
-                      "end": 306
+                      "byte_start": 301,
+                      "byte_end": 306
                     },
                     "text": "delta",
                     "lemma": "delta",
@@ -1754,8 +1754,8 @@
                   {
                     "id": 10,
                     "span": {
-                      "start": 307,
-                      "end": 309
+                      "byte_start": 307,
+                      "byte_end": 309
                     },
                     "text": "is",
                     "lemma": "be",
@@ -1777,8 +1777,8 @@
                   {
                     "id": 11,
                     "span": {
-                      "start": 310,
-                      "end": 315
+                      "byte_start": 310,
+                      "byte_end": 315
                     },
                     "text": "saved",
                     "lemma": "save",
@@ -1798,8 +1798,8 @@
                   {
                     "id": 12,
                     "span": {
-                      "start": 315,
-                      "end": 316
+                      "byte_start": 315,
+                      "byte_end": 316
                     },
                     "text": ".",
                     "lemma": ".",

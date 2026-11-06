@@ -25,8 +25,8 @@
       "score": 12.636363636363637,
       "occurrences": [
         {
-          "start": 10132,
-          "end": 10161
+          "byte_start": 10132,
+          "byte_end": 10161
         }
       ]
     },
@@ -35,8 +35,8 @@
       "score": 9.0,
       "occurrences": [
         {
-          "start": 3228,
-          "end": 3245
+          "byte_start": 3228,
+          "byte_end": 3245
         }
       ]
     },
@@ -45,8 +45,8 @@
       "score": 9.0,
       "occurrences": [
         {
-          "start": 10791,
-          "end": 10809
+          "byte_start": 10791,
+          "byte_end": 10809
         }
       ]
     },
@@ -55,8 +55,8 @@
       "score": 8.5,
       "occurrences": [
         {
-          "start": 8016,
-          "end": 8045
+          "byte_start": 8016,
+          "byte_end": 8045
         }
       ]
     },
@@ -65,8 +65,8 @@
       "score": 8.2,
       "occurrences": [
         {
-          "start": 3501,
-          "end": 3530
+          "byte_start": 3501,
+          "byte_end": 3530
         }
       ]
     },
@@ -75,8 +75,8 @@
       "score": 7.6,
       "occurrences": [
         {
-          "start": 7626,
-          "end": 7647
+          "byte_start": 7626,
+          "byte_end": 7647
         }
       ]
     },
@@ -85,8 +85,8 @@
       "score": 7.357142857142858,
       "occurrences": [
         {
-          "start": 8090,
-          "end": 8118
+          "byte_start": 8090,
+          "byte_end": 8118
         }
       ]
     },
@@ -95,8 +95,8 @@
       "score": 6.914285714285715,
       "occurrences": [
         {
-          "start": 10197,
-          "end": 10222
+          "byte_start": 10197,
+          "byte_end": 10222
         }
       ]
     },
@@ -105,8 +105,8 @@
       "score": 6.666666666666667,
       "occurrences": [
         {
-          "start": 7123,
-          "end": 7140
+          "byte_start": 7123,
+          "byte_end": 7140
         }
       ]
     },
@@ -115,8 +115,8 @@
       "score": 5.972222222222222,
       "occurrences": [
         {
-          "start": 8059,
-          "end": 8082
+          "byte_start": 8059,
+          "byte_end": 8082
         }
       ]
     }

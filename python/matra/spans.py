@@ -19,7 +19,7 @@ def span_text(source: str | bytes, span: Span) -> str:
             boundaries of ``source``, so it was not taken from it.
     """
     data = source.encode() if isinstance(source, str) else source
-    return data[span["start"] : span["end"]].decode()
+    return data[span["byte_start"] : span["byte_end"]].decode()
 
 
 __all__ = ["span_text"]

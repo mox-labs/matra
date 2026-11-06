@@ -1364,7 +1364,7 @@ impl Sentence {
     /// (see the field's documentation).
     pub fn new(text: String, tokens: Vec<Token>) -> Self {
         let span = match (tokens.first(), tokens.last()) {
-            (Some(first), Some(last)) => Span::new(first.span.start, last.span.end),
+            (Some(first), Some(last)) => Span::new(first.span.byte_start, last.span.byte_end),
             _ => Span::default(),
         };
         let word_count = tokens.iter().filter(|t| !t.is_punct).count();
@@ -2186,26 +2186,34 @@ impl Block {
     }
 }
 
-/// A stretch of the analysed text, in UTF-8 bytes: `start` inclusive,
-/// `end` exclusive, so `&text[span.start..span.end]` is the stretch.
+/// A stretch of the analysed text, in UTF-8 bytes: `byte_start`
+/// inclusive, `byte_end` exclusive, so
+/// `&text[span.byte_start..span.byte_end]` is the stretch.
 ///
 /// For markdown and plain text the analysed text is the input itself;
 /// for block input it is the blocks' texts joined by a blank line.
 /// Bytes, not characters: a caller in a language that indexes strings by
-/// character converts.
+/// character converts. The unit is in the field names because a byte
+/// span used to slice a character-indexed string (a Python `str`) is
+/// right on ASCII and silently wrong after the first character outside
+/// it.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Span {
     /// The first byte.
-    pub start: usize,
+    pub byte_start: usize,
     /// One past the last byte.
-    pub end: usize,
+    pub byte_end: usize,
 }
 
 impl Span {
-    /// The span from `start` (inclusive) to `end` (exclusive).
-    pub fn new(start: usize, end: usize) -> Self {
-        Self { start, end }
+    /// The span from byte `byte_start` (inclusive) to byte `byte_end`
+    /// (exclusive).
+    pub fn new(byte_start: usize, byte_end: usize) -> Self {
+        Self {
+            byte_start,
+            byte_end,
+        }
     }
 }
 

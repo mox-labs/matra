@@ -46,12 +46,14 @@ def check_spans(source: bytes, doc: dict[str, Any]) -> None:
         outer = paragraph["span"]
         for sentence in paragraph["sentences"]:
             span = sentence["span"]
-            assert outer["start"] <= span["start"] <= span["end"] <= outer["end"]
+            assert (
+                outer["byte_start"] <= span["byte_start"] <= span["byte_end"] <= outer["byte_end"]
+            )
             if sentence["tokens"]:
-                assert span["start"] == sentence["tokens"][0]["span"]["start"]
-                assert span["end"] == sentence["tokens"][-1]["span"]["end"]
+                assert span["byte_start"] == sentence["tokens"][0]["span"]["byte_start"]
+                assert span["byte_end"] == sentence["tokens"][-1]["span"]["byte_end"]
             for token in sentence["tokens"]:
-                piece = source[token["span"]["start"] : token["span"]["end"]]
+                piece = source[token["span"]["byte_start"] : token["span"]["byte_end"]]
                 assert piece.decode() == token["text"], f"token {token['id']} span"
 
 
@@ -64,7 +66,7 @@ def check_accounting(text: str, doc: dict[str, Any]) -> None:
     spans += [p["span"] for p in paragraphs_of(doc)]
     spans += [s["span"] for s in doc["skipped"]]
     for span in spans:
-        for at in range(span["start"], span["end"]):
+        for at in range(span["byte_start"], span["byte_end"]):
             owners[at] += 1
     at = 0
     for char in text:

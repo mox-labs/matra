@@ -128,9 +128,9 @@ fn extract_candidates(sentences: &[&Sentence]) -> Vec<Candidate> {
                 }
             } else {
                 if words.is_empty() {
-                    span.start = token.span.start;
+                    span.byte_start = token.span.byte_start;
                 }
-                span.end = token.span.end;
+                span.byte_end = token.span.byte_end;
                 words.push(lower);
             }
         }
@@ -203,7 +203,7 @@ mod tests {
             .expect("the phrase is found");
         assert_eq!(found.occurrences, [Span::new(0, 13), Span::new(17, 30)]);
         for span in &found.occurrences {
-            assert_eq!(&text[span.start..span.end], "data pipeline");
+            assert_eq!(&text[span.byte_start..span.byte_end], "data pipeline");
         }
     }
 

@@ -24,8 +24,9 @@ use crate::domain;
 /// - Following `head` from any token reaches the root; the references
 ///   form no cycle.
 /// - Every token's `span` is where its form lies in `text`, the text
-///   `parse` was given, in UTF-8 bytes: `&text[span.start..span.end]` is
-///   the form, up to whitespace inside it. Spans follow token order and
+///   `parse` was given, in UTF-8 bytes:
+///   `&text[span.byte_start..span.byte_end]` is the form, up to
+///   whitespace inside it. Spans follow token order and
 ///   do not overlap. A provider that cannot place a token returns
 ///   [`domain::Error::ParseFailed`] naming it rather than a guessed span.
 ///   `Engine::annotate` maps the spans into the analysed text.

@@ -17,12 +17,12 @@
   },
   "$defs": {
     "Span": {
-      "description": "A stretch of the analysed text in UTF-8 bytes, `start` inclusive and `end` exclusive.",
+      "description": "A stretch of the analysed text in UTF-8 bytes, `byte_start` inclusive and `byte_end` exclusive. Bytes, not characters: a language that indexes strings by character converts before slicing.",
       "type": "object",
-      "required": ["start", "end"],
+      "required": ["byte_start", "byte_end"],
       "properties": {
-        "start": { "$ref": "#/$defs/count" },
-        "end": { "$ref": "#/$defs/count" }
+        "byte_start": { "$ref": "#/$defs/count" },
+        "byte_end": { "$ref": "#/$defs/count" }
       }
     },
     "Skipped": {

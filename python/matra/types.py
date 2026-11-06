@@ -34,14 +34,18 @@ the other fails the corpus conformance lane.
 class Span(TypedDict):
     """A stretch of the analysed text. Mirrors `matra::domain::Span`.
 
-    Counts UTF-8 bytes, ``start`` inclusive and ``end`` exclusive, not
-    characters: ``text.encode()[span["start"]:span["end"]].decode()`` is
-    the stretch. For markdown and plain text the analysed text is the
-    input; for block input it is the blocks' texts joined by a blank line.
+    Counts UTF-8 bytes, ``byte_start`` inclusive and ``byte_end``
+    exclusive, not characters:
+    ``text.encode()[span["byte_start"]:span["byte_end"]].decode()``, or
+    ``matra.span_text(text, span)``, is the stretch. Slicing the ``str``
+    itself by these numbers is right on ASCII and silently wrong after the
+    first character outside it. For markdown and plain text the analysed
+    text is the input; for block input it is the blocks' texts joined by a
+    blank line.
     """
 
-    start: int
-    end: int
+    byte_start: int
+    byte_end: int
 
 
 class Token(TypedDict):

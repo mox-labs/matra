@@ -20,30 +20,30 @@
       "heading": "Field notes",
       "level": 1,
       "span": {
-        "start": 0,
-        "end": 13
+        "byte_start": 0,
+        "byte_end": 13
       },
       "paragraphs": [
         {
           "span": {
-            "start": 15,
-            "end": 156
+            "byte_start": 15,
+            "byte_end": 156
           },
           "text": "The survey team reached the northern ridge on the third day. Snow had closed the lower pass, so the route ran along the eastern face instead.",
           "kind": "paragraph",
           "sentences": [
             {
               "span": {
-                "start": 15,
-                "end": 75
+                "byte_start": 15,
+                "byte_end": 75
               },
               "text": "The survey team reached the northern ridge on the third day.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 15,
-                    "end": 18
+                    "byte_start": 15,
+                    "byte_end": 18
                   },
                   "text": "The",
                   "lemma": "the",
@@ -62,8 +62,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 19,
-                    "end": 25
+                    "byte_start": 19,
+                    "byte_end": 25
                   },
                   "text": "survey",
                   "lemma": "survey",
@@ -81,8 +81,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 26,
-                    "end": 30
+                    "byte_start": 26,
+                    "byte_end": 30
                   },
                   "text": "team",
                   "lemma": "team",
@@ -100,8 +100,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 31,
-                    "end": 38
+                    "byte_start": 31,
+                    "byte_end": 38
                   },
                   "text": "reached",
                   "lemma": "reach",
@@ -121,8 +121,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 39,
-                    "end": 42
+                    "byte_start": 39,
+                    "byte_end": 42
                   },
                   "text": "the",
                   "lemma": "the",
@@ -141,8 +141,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 43,
-                    "end": 51
+                    "byte_start": 43,
+                    "byte_end": 51
                   },
                   "text": "northern",
                   "lemma": "northern",
@@ -160,8 +160,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 52,
-                    "end": 57
+                    "byte_start": 52,
+                    "byte_end": 57
                   },
                   "text": "ridge",
                   "lemma": "ridge",
@@ -179,8 +179,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 58,
-                    "end": 60
+                    "byte_start": 58,
+                    "byte_end": 60
                   },
                   "text": "on",
                   "lemma": "on",
@@ -196,8 +196,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 61,
-                    "end": 64
+                    "byte_start": 61,
+                    "byte_end": 64
                   },
                   "text": "the",
                   "lemma": "the",
@@ -216,8 +216,8 @@
                 {
                   "id": 10,
                   "span": {
-                    "start": 65,
-                    "end": 70
+                    "byte_start": 65,
+                    "byte_end": 70
                   },
                   "text": "third",
                   "lemma": "third",
@@ -236,8 +236,8 @@
                 {
                   "id": 11,
                   "span": {
-                    "start": 71,
-                    "end": 74
+                    "byte_start": 71,
+                    "byte_end": 74
                   },
                   "text": "day",
                   "lemma": "day",
@@ -255,8 +255,8 @@
                 {
                   "id": 12,
                   "span": {
-                    "start": 74,
-                    "end": 75
+                    "byte_start": 74,
+                    "byte_end": 75
                   },
                   "text": ".",
                   "lemma": ".",
@@ -285,16 +285,16 @@
             },
             {
               "span": {
-                "start": 76,
-                "end": 156
+                "byte_start": 76,
+                "byte_end": 156
               },
               "text": "Snow had closed the lower pass, so the route ran along the eastern face instead.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 76,
-                    "end": 80
+                    "byte_start": 76,
+                    "byte_end": 80
                   },
                   "text": "Snow",
                   "lemma": "snow",
@@ -310,8 +310,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 81,
-                    "end": 84
+                    "byte_start": 81,
+                    "byte_end": 84
                   },
                   "text": "had",
                   "lemma": "have",
@@ -331,8 +331,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 85,
-                    "end": 91
+                    "byte_start": 85,
+                    "byte_end": 91
                   },
                   "text": "closed",
                   "lemma": "close",
@@ -351,8 +351,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 92,
-                    "end": 95
+                    "byte_start": 92,
+                    "byte_end": 95
                   },
                   "text": "the",
                   "lemma": "the",
@@ -371,8 +371,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 96,
-                    "end": 101
+                    "byte_start": 96,
+                    "byte_end": 101
                   },
                   "text": "lower",
                   "lemma": "lower",
@@ -390,8 +390,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 102,
-                    "end": 106
+                    "byte_start": 102,
+                    "byte_end": 106
                   },
                   "text": "pass",
                   "lemma": "pass",
@@ -409,8 +409,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 106,
-                    "end": 107
+                    "byte_start": 106,
+                    "byte_end": 107
                   },
                   "text": ",",
                   "lemma": ",",
@@ -426,8 +426,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 108,
-                    "end": 110
+                    "byte_start": 108,
+                    "byte_end": 110
                   },
                   "text": "so",
                   "lemma": "so",
@@ -443,8 +443,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 111,
-                    "end": 114
+                    "byte_start": 111,
+                    "byte_end": 114
                   },
                   "text": "the",
                   "lemma": "the",
@@ -463,8 +463,8 @@
                 {
                   "id": 10,
                   "span": {
-                    "start": 115,
-                    "end": 120
+                    "byte_start": 115,
+                    "byte_end": 120
                   },
                   "text": "route",
                   "lemma": "route",
@@ -482,8 +482,8 @@
                 {
                   "id": 11,
                   "span": {
-                    "start": 121,
-                    "end": 124
+                    "byte_start": 121,
+                    "byte_end": 124
                   },
                   "text": "ran",
                   "lemma": "run",
@@ -503,8 +503,8 @@
                 {
                   "id": 12,
                   "span": {
-                    "start": 125,
-                    "end": 130
+                    "byte_start": 125,
+                    "byte_end": 130
                   },
                   "text": "along",
                   "lemma": "along",
@@ -520,8 +520,8 @@
                 {
                   "id": 13,
                   "span": {
-                    "start": 131,
-                    "end": 134
+                    "byte_start": 131,
+                    "byte_end": 134
                   },
                   "text": "the",
                   "lemma": "the",
@@ -540,8 +540,8 @@
                 {
                   "id": 14,
                   "span": {
-                    "start": 135,
-                    "end": 142
+                    "byte_start": 135,
+                    "byte_end": 142
                   },
                   "text": "eastern",
                   "lemma": "eastern",
@@ -559,8 +559,8 @@
                 {
                   "id": 15,
                   "span": {
-                    "start": 143,
-                    "end": 147
+                    "byte_start": 143,
+                    "byte_end": 147
                   },
                   "text": "face",
                   "lemma": "face",
@@ -578,8 +578,8 @@
                 {
                   "id": 16,
                   "span": {
-                    "start": 148,
-                    "end": 155
+                    "byte_start": 148,
+                    "byte_end": 155
                   },
                   "text": "instead",
                   "lemma": "instead",
@@ -595,8 +595,8 @@
                 {
                   "id": 17,
                   "span": {
-                    "start": 155,
-                    "end": 156
+                    "byte_start": 155,
+                    "byte_end": 156
                   },
                   "text": ".",
                   "lemma": ".",
@@ -641,8 +641,8 @@
         },
         {
           "span": {
-            "start": 158,
-            "end": 197
+            "byte_start": 158,
+            "byte_end": 197
           },
           "text": "Radio contact was lost for six hours.",
           "kind": "quote",
@@ -659,30 +659,30 @@
       "heading": "Findings",
       "level": 2,
       "span": {
-        "start": 199,
-        "end": 210
+        "byte_start": 199,
+        "byte_end": 210
       },
       "paragraphs": [
         {
           "span": {
-            "start": 212,
-            "end": 563
+            "byte_start": 212,
+            "byte_end": 563
           },
           "text": "Three of the five markers were intact and matched their recorded positions. The fourth had been moved about ten metres downhill by a rockfall, and its base plate was cracked. The fifth could not be found, although the team searched the slope below it for most of an afternoon. A replacement marker will be set on the next visit, once the pass is open.",
           "kind": "paragraph",
           "sentences": [
             {
               "span": {
-                "start": 212,
-                "end": 287
+                "byte_start": 212,
+                "byte_end": 287
               },
               "text": "Three of the five markers were intact and matched their recorded positions.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 212,
-                    "end": 217
+                    "byte_start": 212,
+                    "byte_end": 217
                   },
                   "text": "Three",
                   "lemma": "three",
@@ -700,8 +700,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 218,
-                    "end": 220
+                    "byte_start": 218,
+                    "byte_end": 220
                   },
                   "text": "of",
                   "lemma": "of",
@@ -717,8 +717,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 221,
-                    "end": 224
+                    "byte_start": 221,
+                    "byte_end": 224
                   },
                   "text": "the",
                   "lemma": "the",
@@ -737,8 +737,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 225,
-                    "end": 229
+                    "byte_start": 225,
+                    "byte_end": 229
                   },
                   "text": "five",
                   "lemma": "five",
@@ -756,8 +756,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 230,
-                    "end": 237
+                    "byte_start": 230,
+                    "byte_end": 237
                   },
                   "text": "markers",
                   "lemma": "marker",
@@ -775,8 +775,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 238,
-                    "end": 242
+                    "byte_start": 238,
+                    "byte_end": 242
                   },
                   "text": "were",
                   "lemma": "be",
@@ -796,8 +796,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 243,
-                    "end": 249
+                    "byte_start": 243,
+                    "byte_end": 249
                   },
                   "text": "intact",
                   "lemma": "intact",
@@ -815,8 +815,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 250,
-                    "end": 253
+                    "byte_start": 250,
+                    "byte_end": 253
                   },
                   "text": "and",
                   "lemma": "and",
@@ -832,8 +832,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 254,
-                    "end": 261
+                    "byte_start": 254,
+                    "byte_end": 261
                   },
                   "text": "matched",
                   "lemma": "matched",
@@ -853,8 +853,8 @@
                 {
                   "id": 10,
                   "span": {
-                    "start": 262,
-                    "end": 267
+                    "byte_start": 262,
+                    "byte_end": 267
                   },
                   "text": "their",
                   "lemma": "they",
@@ -875,8 +875,8 @@
                 {
                   "id": 11,
                   "span": {
-                    "start": 268,
-                    "end": 276
+                    "byte_start": 268,
+                    "byte_end": 276
                   },
                   "text": "recorded",
                   "lemma": "record",
@@ -894,8 +894,8 @@
                 {
                   "id": 12,
                   "span": {
-                    "start": 277,
-                    "end": 286
+                    "byte_start": 277,
+                    "byte_end": 286
                   },
                   "text": "positions",
                   "lemma": "position",
@@ -913,8 +913,8 @@
                 {
                   "id": 13,
                   "span": {
-                    "start": 286,
-                    "end": 287
+                    "byte_start": 286,
+                    "byte_end": 287
                   },
                   "text": ".",
                   "lemma": ".",
@@ -943,16 +943,16 @@
             },
             {
               "span": {
-                "start": 288,
-                "end": 386
+                "byte_start": 288,
+                "byte_end": 386
               },
               "text": "The fourth had been moved about ten metres downhill by a rockfall, and its base plate was cracked.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 288,
-                    "end": 291
+                    "byte_start": 288,
+                    "byte_end": 291
                   },
                   "text": "The",
                   "lemma": "the",
@@ -971,8 +971,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 292,
-                    "end": 298
+                    "byte_start": 292,
+                    "byte_end": 298
                   },
                   "text": "fourth",
                   "lemma": "fourth",
@@ -990,8 +990,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 299,
-                    "end": 302
+                    "byte_start": 299,
+                    "byte_end": 302
                   },
                   "text": "had",
                   "lemma": "have",
@@ -1011,8 +1011,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 303,
-                    "end": 307
+                    "byte_start": 303,
+                    "byte_end": 307
                   },
                   "text": "been",
                   "lemma": "be",
@@ -1031,8 +1031,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 308,
-                    "end": 313
+                    "byte_start": 308,
+                    "byte_end": 313
                   },
                   "text": "moved",
                   "lemma": "move",
@@ -1052,8 +1052,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 314,
-                    "end": 319
+                    "byte_start": 314,
+                    "byte_end": 319
                   },
                   "text": "about",
                   "lemma": "about",
@@ -1069,8 +1069,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 320,
-                    "end": 323
+                    "byte_start": 320,
+                    "byte_end": 323
                   },
                   "text": "ten",
                   "lemma": "ten",
@@ -1088,8 +1088,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 324,
-                    "end": 330
+                    "byte_start": 324,
+                    "byte_end": 330
                   },
                   "text": "metres",
                   "lemma": "metre",
@@ -1107,8 +1107,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 331,
-                    "end": 339
+                    "byte_start": 331,
+                    "byte_end": 339
                   },
                   "text": "downhill",
                   "lemma": "downhill",
@@ -1124,8 +1124,8 @@
                 {
                   "id": 10,
                   "span": {
-                    "start": 340,
-                    "end": 342
+                    "byte_start": 340,
+                    "byte_end": 342
                   },
                   "text": "by",
                   "lemma": "by",
@@ -1141,8 +1141,8 @@
                 {
                   "id": 11,
                   "span": {
-                    "start": 343,
-                    "end": 344
+                    "byte_start": 343,
+                    "byte_end": 344
                   },
                   "text": "a",
                   "lemma": "a",
@@ -1161,8 +1161,8 @@
                 {
                   "id": 12,
                   "span": {
-                    "start": 345,
-                    "end": 353
+                    "byte_start": 345,
+                    "byte_end": 353
                   },
                   "text": "rockfall",
                   "lemma": "rockfall",
@@ -1180,8 +1180,8 @@
                 {
                   "id": 13,
                   "span": {
-                    "start": 353,
-                    "end": 354
+                    "byte_start": 353,
+                    "byte_end": 354
                   },
                   "text": ",",
                   "lemma": ",",
@@ -1197,8 +1197,8 @@
                 {
                   "id": 14,
                   "span": {
-                    "start": 355,
-                    "end": 358
+                    "byte_start": 355,
+                    "byte_end": 358
                   },
                   "text": "and",
                   "lemma": "and",
@@ -1214,8 +1214,8 @@
                 {
                   "id": 15,
                   "span": {
-                    "start": 359,
-                    "end": 361
+                    "byte_start": 359,
+                    "byte_end": 361
                   },
                   "text": "it",
                   "lemma": "it",
@@ -1237,8 +1237,8 @@
                 {
                   "id": 16,
                   "span": {
-                    "start": 361,
-                    "end": 362
+                    "byte_start": 361,
+                    "byte_end": 362
                   },
                   "text": "s",
                   "lemma": "be",
@@ -1260,8 +1260,8 @@
                 {
                   "id": 17,
                   "span": {
-                    "start": 363,
-                    "end": 367
+                    "byte_start": 363,
+                    "byte_end": 367
                   },
                   "text": "base",
                   "lemma": "base",
@@ -1279,8 +1279,8 @@
                 {
                   "id": 18,
                   "span": {
-                    "start": 368,
-                    "end": 373
+                    "byte_start": 368,
+                    "byte_end": 373
                   },
                   "text": "plate",
                   "lemma": "plate",
@@ -1298,8 +1298,8 @@
                 {
                   "id": 19,
                   "span": {
-                    "start": 374,
-                    "end": 377
+                    "byte_start": 374,
+                    "byte_end": 377
                   },
                   "text": "was",
                   "lemma": "be",
@@ -1321,8 +1321,8 @@
                 {
                   "id": 20,
                   "span": {
-                    "start": 378,
-                    "end": 385
+                    "byte_start": 378,
+                    "byte_end": 385
                   },
                   "text": "cracked",
                   "lemma": "crack",
@@ -1342,8 +1342,8 @@
                 {
                   "id": 21,
                   "span": {
-                    "start": 385,
-                    "end": 386
+                    "byte_start": 385,
+                    "byte_end": 386
                   },
                   "text": ".",
                   "lemma": ".",
@@ -1372,16 +1372,16 @@
             },
             {
               "span": {
-                "start": 387,
-                "end": 488
+                "byte_start": 387,
+                "byte_end": 488
               },
               "text": "The fifth could not be found, although the team searched the slope below it for most of an afternoon.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 387,
-                    "end": 390
+                    "byte_start": 387,
+                    "byte_end": 390
                   },
                   "text": "The",
                   "lemma": "the",
@@ -1400,8 +1400,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 391,
-                    "end": 396
+                    "byte_start": 391,
+                    "byte_end": 396
                   },
                   "text": "fifth",
                   "lemma": "fifth",
@@ -1419,8 +1419,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 397,
-                    "end": 402
+                    "byte_start": 397,
+                    "byte_end": 402
                   },
                   "text": "could",
                   "lemma": "could",
@@ -1438,8 +1438,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 403,
-                    "end": 406
+                    "byte_start": 403,
+                    "byte_end": 406
                   },
                   "text": "not",
                   "lemma": "not",
@@ -1455,8 +1455,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 407,
-                    "end": 409
+                    "byte_start": 407,
+                    "byte_end": 409
                   },
                   "text": "be",
                   "lemma": "be",
@@ -1474,8 +1474,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 410,
-                    "end": 415
+                    "byte_start": 410,
+                    "byte_end": 415
                   },
                   "text": "found",
                   "lemma": "find",
@@ -1495,8 +1495,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 415,
-                    "end": 416
+                    "byte_start": 415,
+                    "byte_end": 416
                   },
                   "text": ",",
                   "lemma": ",",
@@ -1512,8 +1512,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 417,
-                    "end": 425
+                    "byte_start": 417,
+                    "byte_end": 425
                   },
                   "text": "although",
                   "lemma": "although",
@@ -1529,8 +1529,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 426,
-                    "end": 429
+                    "byte_start": 426,
+                    "byte_end": 429
                   },
                   "text": "the",
                   "lemma": "the",
@@ -1549,8 +1549,8 @@
                 {
                   "id": 10,
                   "span": {
-                    "start": 430,
-                    "end": 434
+                    "byte_start": 430,
+                    "byte_end": 434
                   },
                   "text": "team",
                   "lemma": "team",
@@ -1568,8 +1568,8 @@
                 {
                   "id": 11,
                   "span": {
-                    "start": 435,
-                    "end": 443
+                    "byte_start": 435,
+                    "byte_end": 443
                   },
                   "text": "searched",
                   "lemma": "search",
@@ -1589,8 +1589,8 @@
                 {
                   "id": 12,
                   "span": {
-                    "start": 444,
-                    "end": 447
+                    "byte_start": 444,
+                    "byte_end": 447
                   },
                   "text": "the",
                   "lemma": "the",
@@ -1609,8 +1609,8 @@
                 {
                   "id": 13,
                   "span": {
-                    "start": 448,
-                    "end": 453
+                    "byte_start": 448,
+                    "byte_end": 453
                   },
                   "text": "slope",
                   "lemma": "slope",
@@ -1628,8 +1628,8 @@
                 {
                   "id": 14,
                   "span": {
-                    "start": 454,
-                    "end": 459
+                    "byte_start": 454,
+                    "byte_end": 459
                   },
                   "text": "below",
                   "lemma": "below",
@@ -1645,8 +1645,8 @@
                 {
                   "id": 15,
                   "span": {
-                    "start": 460,
-                    "end": 462
+                    "byte_start": 460,
+                    "byte_end": 462
                   },
                   "text": "it",
                   "lemma": "it",
@@ -1668,8 +1668,8 @@
                 {
                   "id": 16,
                   "span": {
-                    "start": 463,
-                    "end": 466
+                    "byte_start": 463,
+                    "byte_end": 466
                   },
                   "text": "for",
                   "lemma": "for",
@@ -1685,8 +1685,8 @@
                 {
                   "id": 17,
                   "span": {
-                    "start": 467,
-                    "end": 471
+                    "byte_start": 467,
+                    "byte_end": 471
                   },
                   "text": "most",
                   "lemma": "most",
@@ -1704,8 +1704,8 @@
                 {
                   "id": 18,
                   "span": {
-                    "start": 472,
-                    "end": 474
+                    "byte_start": 472,
+                    "byte_end": 474
                   },
                   "text": "of",
                   "lemma": "of",
@@ -1721,8 +1721,8 @@
                 {
                   "id": 19,
                   "span": {
-                    "start": 475,
-                    "end": 477
+                    "byte_start": 475,
+                    "byte_end": 477
                   },
                   "text": "an",
                   "lemma": "a",
@@ -1741,8 +1741,8 @@
                 {
                   "id": 20,
                   "span": {
-                    "start": 478,
-                    "end": 487
+                    "byte_start": 478,
+                    "byte_end": 487
                   },
                   "text": "afternoon",
                   "lemma": "afternoon",
@@ -1760,8 +1760,8 @@
                 {
                   "id": 21,
                   "span": {
-                    "start": 487,
-                    "end": 488
+                    "byte_start": 487,
+                    "byte_end": 488
                   },
                   "text": ".",
                   "lemma": ".",
@@ -1812,16 +1812,16 @@
             },
             {
               "span": {
-                "start": 489,
-                "end": 563
+                "byte_start": 489,
+                "byte_end": 563
               },
               "text": "A replacement marker will be set on the next visit, once the pass is open.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 489,
-                    "end": 490
+                    "byte_start": 489,
+                    "byte_end": 490
                   },
                   "text": "A",
                   "lemma": "a",
@@ -1840,8 +1840,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 491,
-                    "end": 502
+                    "byte_start": 491,
+                    "byte_end": 502
                   },
                   "text": "replacement",
                   "lemma": "replacement",
@@ -1859,8 +1859,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 503,
-                    "end": 509
+                    "byte_start": 503,
+                    "byte_end": 509
                   },
                   "text": "marker",
                   "lemma": "marker",
@@ -1878,8 +1878,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 510,
-                    "end": 514
+                    "byte_start": 510,
+                    "byte_end": 514
                   },
                   "text": "will",
                   "lemma": "will",
@@ -1897,8 +1897,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 515,
-                    "end": 517
+                    "byte_start": 515,
+                    "byte_end": 517
                   },
                   "text": "be",
                   "lemma": "be",
@@ -1916,8 +1916,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 518,
-                    "end": 521
+                    "byte_start": 518,
+                    "byte_end": 521
                   },
                   "text": "set",
                   "lemma": "set",
@@ -1937,8 +1937,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 522,
-                    "end": 524
+                    "byte_start": 522,
+                    "byte_end": 524
                   },
                   "text": "on",
                   "lemma": "on",
@@ -1954,8 +1954,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 525,
-                    "end": 528
+                    "byte_start": 525,
+                    "byte_end": 528
                   },
                   "text": "the",
                   "lemma": "the",
@@ -1974,8 +1974,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 529,
-                    "end": 533
+                    "byte_start": 529,
+                    "byte_end": 533
                   },
                   "text": "next",
                   "lemma": "next",
@@ -1993,8 +1993,8 @@
                 {
                   "id": 10,
                   "span": {
-                    "start": 534,
-                    "end": 539
+                    "byte_start": 534,
+                    "byte_end": 539
                   },
                   "text": "visit",
                   "lemma": "visit",
@@ -2012,8 +2012,8 @@
                 {
                   "id": 11,
                   "span": {
-                    "start": 539,
-                    "end": 540
+                    "byte_start": 539,
+                    "byte_end": 540
                   },
                   "text": ",",
                   "lemma": ",",
@@ -2029,8 +2029,8 @@
                 {
                   "id": 12,
                   "span": {
-                    "start": 541,
-                    "end": 545
+                    "byte_start": 541,
+                    "byte_end": 545
                   },
                   "text": "once",
                   "lemma": "once",
@@ -2046,8 +2046,8 @@
                 {
                   "id": 13,
                   "span": {
-                    "start": 546,
-                    "end": 549
+                    "byte_start": 546,
+                    "byte_end": 549
                   },
                   "text": "the",
                   "lemma": "the",
@@ -2066,8 +2066,8 @@
                 {
                   "id": 14,
                   "span": {
-                    "start": 550,
-                    "end": 554
+                    "byte_start": 550,
+                    "byte_end": 554
                   },
                   "text": "pass",
                   "lemma": "pass",
@@ -2085,8 +2085,8 @@
                 {
                   "id": 15,
                   "span": {
-                    "start": 555,
-                    "end": 557
+                    "byte_start": 555,
+                    "byte_end": 557
                   },
                   "text": "is",
                   "lemma": "be",
@@ -2108,8 +2108,8 @@
                 {
                   "id": 16,
                   "span": {
-                    "start": 558,
-                    "end": 562
+                    "byte_start": 558,
+                    "byte_end": 562
                   },
                   "text": "open",
                   "lemma": "open",
@@ -2127,8 +2127,8 @@
                 {
                   "id": 17,
                   "span": {
-                    "start": 562,
-                    "end": 563
+                    "byte_start": 562,
+                    "byte_end": 563
                   },
                   "text": ".",
                   "lemma": ".",

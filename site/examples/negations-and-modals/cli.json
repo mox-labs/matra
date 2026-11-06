@@ -27,24 +27,24 @@
         "paragraphs": [
           {
             "span": {
-              "start": 0,
-              "end": 327
+              "byte_start": 0,
+              "byte_end": 327
             },
             "text": "We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.",
             "kind": "paragraph",
             "sentences": [
               {
                 "span": {
-                  "start": 0,
-                  "end": 327
+                  "byte_start": 0,
+                  "byte_end": 327
                 },
                 "text": "We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.",
                 "tokens": [
                   {
                     "id": 1,
                     "span": {
-                      "start": 0,
-                      "end": 2
+                      "byte_start": 0,
+                      "byte_end": 2
                     },
                     "text": "We",
                     "lemma": "we",
@@ -65,8 +65,8 @@
                   {
                     "id": 2,
                     "span": {
-                      "start": 3,
-                      "end": 6
+                      "byte_start": 3,
+                      "byte_end": 6
                     },
                     "text": "the",
                     "lemma": "the",
@@ -85,8 +85,8 @@
                   {
                     "id": 3,
                     "span": {
-                      "start": 7,
-                      "end": 13
+                      "byte_start": 7,
+                      "byte_end": 13
                     },
                     "text": "People",
                     "lemma": "People",
@@ -104,8 +104,8 @@
                   {
                     "id": 4,
                     "span": {
-                      "start": 14,
-                      "end": 16
+                      "byte_start": 14,
+                      "byte_end": 16
                     },
                     "text": "of",
                     "lemma": "of",
@@ -121,8 +121,8 @@
                   {
                     "id": 5,
                     "span": {
-                      "start": 17,
-                      "end": 20
+                      "byte_start": 17,
+                      "byte_end": 20
                     },
                     "text": "the",
                     "lemma": "the",
@@ -141,8 +141,8 @@
                   {
                     "id": 6,
                     "span": {
-                      "start": 21,
-                      "end": 27
+                      "byte_start": 21,
+                      "byte_end": 27
                     },
                     "text": "United",
                     "lemma": "United",
@@ -160,8 +160,8 @@
                   {
                     "id": 7,
                     "span": {
-                      "start": 28,
-                      "end": 34
+                      "byte_start": 28,
+                      "byte_end": 34
                     },
                     "text": "States",
                     "lemma": "States",
@@ -179,8 +179,8 @@
                   {
                     "id": 8,
                     "span": {
-                      "start": 34,
-                      "end": 35
+                      "byte_start": 34,
+                      "byte_end": 35
                     },
                     "text": ",",
                     "lemma": ",",
@@ -196,8 +196,8 @@
                   {
                     "id": 9,
                     "span": {
-                      "start": 36,
-                      "end": 38
+                      "byte_start": 36,
+                      "byte_end": 38
                     },
                     "text": "in",
                     "lemma": "in",
@@ -213,8 +213,8 @@
                   {
                     "id": 10,
                     "span": {
-                      "start": 39,
-                      "end": 44
+                      "byte_start": 39,
+                      "byte_end": 44
                     },
                     "text": "Order",
                     "lemma": "order",
@@ -232,8 +232,8 @@
                   {
                     "id": 11,
                     "span": {
-                      "start": 45,
-                      "end": 47
+                      "byte_start": 45,
+                      "byte_end": 47
                     },
                     "text": "to",
                     "lemma": "to",
@@ -249,8 +249,8 @@
                   {
                     "id": 12,
                     "span": {
-                      "start": 48,
-                      "end": 52
+                      "byte_start": 48,
+                      "byte_end": 52
                     },
                     "text": "form",
                     "lemma": "form",
@@ -268,8 +268,8 @@
                   {
                     "id": 13,
                     "span": {
-                      "start": 53,
-                      "end": 54
+                      "byte_start": 53,
+                      "byte_end": 54
                     },
                     "text": "a",
                     "lemma": "a",
@@ -288,8 +288,8 @@
                   {
                     "id": 14,
                     "span": {
-                      "start": 55,
-                      "end": 59
+                      "byte_start": 55,
+                      "byte_end": 59
                     },
                     "text": "more",
                     "lemma": "more",
@@ -305,8 +305,8 @@
                   {
                     "id": 15,
                     "span": {
-                      "start": 60,
-                      "end": 67
+                      "byte_start": 60,
+                      "byte_end": 67
                     },
                     "text": "perfect",
                     "lemma": "perfect",
@@ -324,8 +324,8 @@
                   {
                     "id": 16,
                     "span": {
-                      "start": 68,
-                      "end": 73
+                      "byte_start": 68,
+                      "byte_end": 73
                     },
                     "text": "Union",
                     "lemma": "Union",
@@ -343,8 +343,8 @@
                   {
                     "id": 17,
                     "span": {
-                      "start": 73,
-                      "end": 74
+                      "byte_start": 73,
+                      "byte_end": 74
                     },
                     "text": ",",
                     "lemma": ",",
@@ -360,8 +360,8 @@
                   {
                     "id": 18,
                     "span": {
-                      "start": 75,
-                      "end": 84
+                      "byte_start": 75,
+                      "byte_end": 84
                     },
                     "text": "establish",
                     "lemma": "establish",
@@ -379,8 +379,8 @@
                   {
                     "id": 19,
                     "span": {
-                      "start": 85,
-                      "end": 92
+                      "byte_start": 85,
+                      "byte_end": 92
                     },
                     "text": "Justice",
                     "lemma": "justice",
@@ -398,8 +398,8 @@
                   {
                     "id": 20,
                     "span": {
-                      "start": 92,
-                      "end": 93
+                      "byte_start": 92,
+                      "byte_end": 93
                     },
                     "text": ",",
                     "lemma": ",",
@@ -415,8 +415,8 @@
                   {
                     "id": 21,
                     "span": {
-                      "start": 94,
-                      "end": 100
+                      "byte_start": 94,
+                      "byte_end": 100
                     },
                     "text": "insure",
                     "lemma": "insure",
@@ -434,8 +434,8 @@
                   {
                     "id": 22,
                     "span": {
-                      "start": 101,
-                      "end": 109
+                      "byte_start": 101,
+                      "byte_end": 109
                     },
                     "text": "domestic",
                     "lemma": "domestic",
@@ -453,8 +453,8 @@
                   {
                     "id": 23,
                     "span": {
-                      "start": 110,
-                      "end": 121
+                      "byte_start": 110,
+                      "byte_end": 121
                     },
                     "text": "Tranquility",
                     "lemma": "Tranquility",
@@ -472,8 +472,8 @@
                   {
                     "id": 24,
                     "span": {
-                      "start": 121,
-                      "end": 122
+                      "byte_start": 121,
+                      "byte_end": 122
                     },
                     "text": ",",
                     "lemma": ",",
@@ -489,8 +489,8 @@
                   {
                     "id": 25,
                     "span": {
-                      "start": 123,
-                      "end": 130
+                      "byte_start": 123,
+                      "byte_end": 130
                     },
                     "text": "provide",
                     "lemma": "provide",
@@ -508,8 +508,8 @@
                   {
                     "id": 26,
                     "span": {
-                      "start": 131,
-                      "end": 134
+                      "byte_start": 131,
+                      "byte_end": 134
                     },
                     "text": "for",
                     "lemma": "for",
@@ -525,8 +525,8 @@
                   {
                     "id": 27,
                     "span": {
-                      "start": 135,
-                      "end": 138
+                      "byte_start": 135,
+                      "byte_end": 138
                     },
                     "text": "the",
                     "lemma": "the",
@@ -545,8 +545,8 @@
                   {
                     "id": 28,
                     "span": {
-                      "start": 139,
-                      "end": 145
+                      "byte_start": 139,
+                      "byte_end": 145
                     },
                     "text": "common",
                     "lemma": "common",
@@ -564,8 +564,8 @@
                   {
                     "id": 29,
                     "span": {
-                      "start": 146,
-                      "end": 153
+                      "byte_start": 146,
+                      "byte_end": 153
                     },
                     "text": "defence",
                     "lemma": "defence",
@@ -583,8 +583,8 @@
                   {
                     "id": 30,
                     "span": {
-                      "start": 153,
-                      "end": 154
+                      "byte_start": 153,
+                      "byte_end": 154
                     },
                     "text": ",",
                     "lemma": ",",
@@ -600,8 +600,8 @@
                   {
                     "id": 31,
                     "span": {
-                      "start": 155,
-                      "end": 162
+                      "byte_start": 155,
+                      "byte_end": 162
                     },
                     "text": "promote",
                     "lemma": "promote",
@@ -619,8 +619,8 @@
                   {
                     "id": 32,
                     "span": {
-                      "start": 163,
-                      "end": 166
+                      "byte_start": 163,
+                      "byte_end": 166
                     },
                     "text": "the",
                     "lemma": "the",
@@ -639,8 +639,8 @@
                   {
                     "id": 33,
                     "span": {
-                      "start": 167,
-                      "end": 174
+                      "byte_start": 167,
+                      "byte_end": 174
                     },
                     "text": "general",
                     "lemma": "general",
@@ -658,8 +658,8 @@
                   {
                     "id": 34,
                     "span": {
-                      "start": 175,
-                      "end": 182
+                      "byte_start": 175,
+                      "byte_end": 182
                     },
                     "text": "Welfare",
                     "lemma": "welfare",
@@ -677,8 +677,8 @@
                   {
                     "id": 35,
                     "span": {
-                      "start": 182,
-                      "end": 183
+                      "byte_start": 182,
+                      "byte_end": 183
                     },
                     "text": ",",
                     "lemma": ",",
@@ -694,8 +694,8 @@
                   {
                     "id": 36,
                     "span": {
-                      "start": 184,
-                      "end": 187
+                      "byte_start": 184,
+                      "byte_end": 187
                     },
                     "text": "and",
                     "lemma": "and",
@@ -711,8 +711,8 @@
                   {
                     "id": 37,
                     "span": {
-                      "start": 188,
-                      "end": 194
+                      "byte_start": 188,
+                      "byte_end": 194
                     },
                     "text": "secure",
                     "lemma": "secure",
@@ -730,8 +730,8 @@
                   {
                     "id": 38,
                     "span": {
-                      "start": 195,
-                      "end": 198
+                      "byte_start": 195,
+                      "byte_end": 198
                     },
                     "text": "the",
                     "lemma": "the",
@@ -750,8 +750,8 @@
                   {
                     "id": 39,
                     "span": {
-                      "start": 199,
-                      "end": 208
+                      "byte_start": 199,
+                      "byte_end": 208
                     },
                     "text": "Blessings",
                     "lemma": "blessing",
@@ -769,8 +769,8 @@
                   {
                     "id": 40,
                     "span": {
-                      "start": 209,
-                      "end": 211
+                      "byte_start": 209,
+                      "byte_end": 211
                     },
                     "text": "of",
                     "lemma": "of",
@@ -786,8 +786,8 @@
                   {
                     "id": 41,
                     "span": {
-                      "start": 212,
-                      "end": 219
+                      "byte_start": 212,
+                      "byte_end": 219
                     },
                     "text": "Liberty",
                     "lemma": "Liberty",
@@ -805,8 +805,8 @@
                   {
                     "id": 42,
                     "span": {
-                      "start": 220,
-                      "end": 222
+                      "byte_start": 220,
+                      "byte_end": 222
                     },
                     "text": "to",
                     "lemma": "to",
@@ -822,8 +822,8 @@
                   {
                     "id": 43,
                     "span": {
-                      "start": 223,
-                      "end": 232
+                      "byte_start": 223,
+                      "byte_end": 232
                     },
                     "text": "ourselves",
                     "lemma": "ourselves",
@@ -845,8 +845,8 @@
                   {
                     "id": 44,
                     "span": {
-                      "start": 233,
-                      "end": 236
+                      "byte_start": 233,
+                      "byte_end": 236
                     },
                     "text": "and",
                     "lemma": "and",
@@ -862,8 +862,8 @@
                   {
                     "id": 45,
                     "span": {
-                      "start": 237,
-                      "end": 240
+                      "byte_start": 237,
+                      "byte_end": 240
                     },
                     "text": "our",
                     "lemma": "we",
@@ -884,8 +884,8 @@
                   {
                     "id": 46,
                     "span": {
-                      "start": 241,
-                      "end": 250
+                      "byte_start": 241,
+                      "byte_end": 250
                     },
                     "text": "Posterity",
                     "lemma": "posterity",
@@ -903,8 +903,8 @@
                   {
                     "id": 47,
                     "span": {
-                      "start": 250,
-                      "end": 251
+                      "byte_start": 250,
+                      "byte_end": 251
                     },
                     "text": ",",
                     "lemma": ",",
@@ -920,8 +920,8 @@
                   {
                     "id": 48,
                     "span": {
-                      "start": 252,
-                      "end": 254
+                      "byte_start": 252,
+                      "byte_end": 254
                     },
                     "text": "do",
                     "lemma": "do",
@@ -940,8 +940,8 @@
                   {
                     "id": 49,
                     "span": {
-                      "start": 255,
-                      "end": 261
+                      "byte_start": 255,
+                      "byte_end": 261
                     },
                     "text": "ordain",
                     "lemma": "ordain",
@@ -959,8 +959,8 @@
                   {
                     "id": 50,
                     "span": {
-                      "start": 262,
-                      "end": 265
+                      "byte_start": 262,
+                      "byte_end": 265
                     },
                     "text": "and",
                     "lemma": "and",
@@ -976,8 +976,8 @@
                   {
                     "id": 51,
                     "span": {
-                      "start": 266,
-                      "end": 275
+                      "byte_start": 266,
+                      "byte_end": 275
                     },
                     "text": "establish",
                     "lemma": "establish",
@@ -995,8 +995,8 @@
                   {
                     "id": 52,
                     "span": {
-                      "start": 276,
-                      "end": 280
+                      "byte_start": 276,
+                      "byte_end": 280
                     },
                     "text": "this",
                     "lemma": "this",
@@ -1015,8 +1015,8 @@
                   {
                     "id": 53,
                     "span": {
-                      "start": 281,
-                      "end": 293
+                      "byte_start": 281,
+                      "byte_end": 293
                     },
                     "text": "Constitution",
                     "lemma": "constitution",
@@ -1034,8 +1034,8 @@
                   {
                     "id": 54,
                     "span": {
-                      "start": 294,
-                      "end": 297
+                      "byte_start": 294,
+                      "byte_end": 297
                     },
                     "text": "for",
                     "lemma": "for",
@@ -1051,8 +1051,8 @@
                   {
                     "id": 55,
                     "span": {
-                      "start": 298,
-                      "end": 301
+                      "byte_start": 298,
+                      "byte_end": 301
                     },
                     "text": "the",
                     "lemma": "the",
@@ -1071,8 +1071,8 @@
                   {
                     "id": 56,
                     "span": {
-                      "start": 302,
-                      "end": 308
+                      "byte_start": 302,
+                      "byte_end": 308
                     },
                     "text": "United",
                     "lemma": "United",
@@ -1090,8 +1090,8 @@
                   {
                     "id": 57,
                     "span": {
-                      "start": 309,
-                      "end": 315
+                      "byte_start": 309,
+                      "byte_end": 315
                     },
                     "text": "States",
                     "lemma": "States",
@@ -1109,8 +1109,8 @@
                   {
                     "id": 58,
                     "span": {
-                      "start": 316,
-                      "end": 318
+                      "byte_start": 316,
+                      "byte_end": 318
                     },
                     "text": "of",
                     "lemma": "of",
@@ -1126,8 +1126,8 @@
                   {
                     "id": 59,
                     "span": {
-                      "start": 319,
-                      "end": 326
+                      "byte_start": 319,
+                      "byte_end": 326
                     },
                     "text": "America",
                     "lemma": "America",
@@ -1145,8 +1145,8 @@
                   {
                     "id": 60,
                     "span": {
-                      "start": 326,
-                      "end": 327
+                      "byte_start": 326,
+                      "byte_end": 327
                     },
                     "text": ".",
                     "lemma": ".",
@@ -1179,24 +1179,24 @@
           },
           {
             "span": {
-              "start": 329,
-              "end": 480
+              "byte_start": 329,
+              "byte_end": 480
             },
             "text": "All legislative Powers herein granted shall be vested in a Congress of the United States, which shall consist of a Senate and House of Representatives.",
             "kind": "paragraph",
             "sentences": [
               {
                 "span": {
-                  "start": 329,
-                  "end": 480
+                  "byte_start": 329,
+                  "byte_end": 480
                 },
                 "text": "All legislative Powers herein granted shall be vested in a Congress of the United States, which shall consist of a Senate and House of Representatives.",
                 "tokens": [
                   {
                     "id": 1,
                     "span": {
-                      "start": 329,
-                      "end": 332
+                      "byte_start": 329,
+                      "byte_end": 332
                     },
                     "text": "All",
                     "lemma": "all",
@@ -1212,8 +1212,8 @@
                   {
                     "id": 2,
                     "span": {
-                      "start": 333,
-                      "end": 344
+                      "byte_start": 333,
+                      "byte_end": 344
                     },
                     "text": "legislative",
                     "lemma": "legislative",
@@ -1231,8 +1231,8 @@
                   {
                     "id": 3,
                     "span": {
-                      "start": 345,
-                      "end": 351
+                      "byte_start": 345,
+                      "byte_end": 351
                     },
                     "text": "Powers",
                     "lemma": "power",
@@ -1250,8 +1250,8 @@
                   {
                     "id": 4,
                     "span": {
-                      "start": 352,
-                      "end": 358
+                      "byte_start": 352,
+                      "byte_end": 358
                     },
                     "text": "herein",
                     "lemma": "herein",
@@ -1269,8 +1269,8 @@
                   {
                     "id": 5,
                     "span": {
-                      "start": 359,
-                      "end": 366
+                      "byte_start": 359,
+                      "byte_end": 366
                     },
                     "text": "granted",
                     "lemma": "grant",
@@ -1289,8 +1289,8 @@
                   {
                     "id": 6,
                     "span": {
-                      "start": 367,
-                      "end": 372
+                      "byte_start": 367,
+                      "byte_end": 372
                     },
                     "text": "shall",
                     "lemma": "shall",
@@ -1308,8 +1308,8 @@
                   {
                     "id": 7,
                     "span": {
-                      "start": 373,
-                      "end": 375
+                      "byte_start": 373,
+                      "byte_end": 375
                     },
                     "text": "be",
                     "lemma": "be",
@@ -1327,8 +1327,8 @@
                   {
                     "id": 8,
                     "span": {
-                      "start": 376,
-                      "end": 382
+                      "byte_start": 376,
+                      "byte_end": 382
                     },
                     "text": "vested",
                     "lemma": "vest",
@@ -1348,8 +1348,8 @@
                   {
                     "id": 9,
                     "span": {
-                      "start": 383,
-                      "end": 385
+                      "byte_start": 383,
+                      "byte_end": 385
                     },
                     "text": "in",
                     "lemma": "in",
@@ -1365,8 +1365,8 @@
                   {
                     "id": 10,
                     "span": {
-                      "start": 386,
-                      "end": 387
+                      "byte_start": 386,
+                      "byte_end": 387
                     },
                     "text": "a",
                     "lemma": "a",
@@ -1385,8 +1385,8 @@
                   {
                     "id": 11,
                     "span": {
-                      "start": 388,
-                      "end": 396
+                      "byte_start": 388,
+                      "byte_end": 396
                     },
                     "text": "Congress",
                     "lemma": "Congress",
@@ -1404,8 +1404,8 @@
                   {
                     "id": 12,
                     "span": {
-                      "start": 397,
-                      "end": 399
+                      "byte_start": 397,
+                      "byte_end": 399
                     },
                     "text": "of",
                     "lemma": "of",
@@ -1421,8 +1421,8 @@
                   {
                     "id": 13,
                     "span": {
-                      "start": 400,
-                      "end": 403
+                      "byte_start": 400,
+                      "byte_end": 403
                     },
                     "text": "the",
                     "lemma": "the",
@@ -1441,8 +1441,8 @@
                   {
                     "id": 14,
                     "span": {
-                      "start": 404,
-                      "end": 410
+                      "byte_start": 404,
+                      "byte_end": 410
                     },
                     "text": "United",
                     "lemma": "United",
@@ -1460,8 +1460,8 @@
                   {
                     "id": 15,
                     "span": {
-                      "start": 411,
-                      "end": 417
+                      "byte_start": 411,
+                      "byte_end": 417
                     },
                     "text": "States",
                     "lemma": "States",
@@ -1479,8 +1479,8 @@
                   {
                     "id": 16,
                     "span": {
-                      "start": 417,
-                      "end": 418
+                      "byte_start": 417,
+                      "byte_end": 418
                     },
                     "text": ",",
                     "lemma": ",",
@@ -1496,8 +1496,8 @@
                   {
                     "id": 17,
                     "span": {
-                      "start": 419,
-                      "end": 424
+                      "byte_start": 419,
+                      "byte_end": 424
                     },
                     "text": "which",
                     "lemma": "which",
@@ -1515,8 +1515,8 @@
                   {
                     "id": 18,
                     "span": {
-                      "start": 425,
-                      "end": 430
+                      "byte_start": 425,
+                      "byte_end": 430
                     },
                     "text": "shall",
                     "lemma": "shall",
@@ -1534,8 +1534,8 @@
                   {
                     "id": 19,
                     "span": {
-                      "start": 431,
-                      "end": 438
+                      "byte_start": 431,
+                      "byte_end": 438
                     },
                     "text": "consist",
                     "lemma": "consist",
@@ -1553,8 +1553,8 @@
                   {
                     "id": 20,
                     "span": {
-                      "start": 439,
-                      "end": 441
+                      "byte_start": 439,
+                      "byte_end": 441
                     },
                     "text": "of",
                     "lemma": "of",
@@ -1570,8 +1570,8 @@
                   {
                     "id": 21,
                     "span": {
-                      "start": 442,
-                      "end": 443
+                      "byte_start": 442,
+                      "byte_end": 443
                     },
                     "text": "a",
                     "lemma": "a",
@@ -1590,8 +1590,8 @@
                   {
                     "id": 22,
                     "span": {
-                      "start": 444,
-                      "end": 450
+                      "byte_start": 444,
+                      "byte_end": 450
                     },
                     "text": "Senate",
                     "lemma": "Senate",
@@ -1609,8 +1609,8 @@
                   {
                     "id": 23,
                     "span": {
-                      "start": 451,
-                      "end": 454
+                      "byte_start": 451,
+                      "byte_end": 454
                     },
                     "text": "and",
                     "lemma": "and",
@@ -1626,8 +1626,8 @@
                   {
                     "id": 24,
                     "span": {
-                      "start": 455,
-                      "end": 460
+                      "byte_start": 455,
+                      "byte_end": 460
                     },
                     "text": "House",
                     "lemma": "House",
@@ -1645,8 +1645,8 @@
                   {
                     "id": 25,
                     "span": {
-                      "start": 461,
-                      "end": 463
+                      "byte_start": 461,
+                      "byte_end": 463
                     },
                     "text": "of",
                     "lemma": "of",
@@ -1662,8 +1662,8 @@
                   {
                     "id": 26,
                     "span": {
-                      "start": 464,
-                      "end": 479
+                      "byte_start": 464,
+                      "byte_end": 479
                     },
                     "text": "Representatives",
                     "lemma": "Representatives",
@@ -1681,8 +1681,8 @@
                   {
                     "id": 27,
                     "span": {
-                      "start": 479,
-                      "end": 480
+                      "byte_start": 479,
+                      "byte_end": 480
                     },
                     "text": ".",
                     "lemma": ".",
@@ -1726,24 +1726,24 @@
           },
           {
             "span": {
-              "start": 482,
-              "end": 982
+              "byte_start": 482,
+              "byte_end": 982
             },
             "text": "The House of Representatives shall be composed of Members chosen every second Year by the People of the several States, and the Electors in each State shall have the Qualifications requisite for Electors of the most numerous Branch of the State Legislature. No Person shall be a Representative who shall not have attained to the Age of twenty five Years, and been seven Years a Citizen of the United States, and who shall not, when elected, be an Inhabitant of that State in which he shall be chosen.",
             "kind": "paragraph",
             "sentences": [
               {
                 "span": {
-                  "start": 482,
-                  "end": 739
+                  "byte_start": 482,
+                  "byte_end": 739
                 },
                 "text": "The House of Representatives shall be composed of Members chosen every second Year by the People of the several States, and the Electors in each State shall have the Qualifications requisite for Electors of the most numerous Branch of the State Legislature.",
                 "tokens": [
                   {
                     "id": 1,
                     "span": {
-                      "start": 482,
-                      "end": 485
+                      "byte_start": 482,
+                      "byte_end": 485
                     },
                     "text": "The",
                     "lemma": "the",
@@ -1762,8 +1762,8 @@
                   {
                     "id": 2,
                     "span": {
-                      "start": 486,
-                      "end": 491
+                      "byte_start": 486,
+                      "byte_end": 491
                     },
                     "text": "House",
                     "lemma": "House",
@@ -1781,8 +1781,8 @@
                   {
                     "id": 3,
                     "span": {
-                      "start": 492,
-                      "end": 494
+                      "byte_start": 492,
+                      "byte_end": 494
                     },
                     "text": "of",
                     "lemma": "of",
@@ -1798,8 +1798,8 @@
                   {
                     "id": 4,
                     "span": {
-                      "start": 495,
-                      "end": 510
+                      "byte_start": 495,
+                      "byte_end": 510
                     },
                     "text": "Representatives",
                     "lemma": "Representatives",
@@ -1817,8 +1817,8 @@
                   {
                     "id": 5,
                     "span": {
-                      "start": 511,
-                      "end": 516
+                      "byte_start": 511,
+                      "byte_end": 516
                     },
                     "text": "shall",
                     "lemma": "shall",
@@ -1836,8 +1836,8 @@
                   {
                     "id": 6,
                     "span": {
-                      "start": 517,
-                      "end": 519
+                      "byte_start": 517,
+                      "byte_end": 519
                     },
                     "text": "be",
                     "lemma": "be",
@@ -1855,8 +1855,8 @@
                   {
                     "id": 7,
                     "span": {
-                      "start": 520,
-                      "end": 528
+                      "byte_start": 520,
+                      "byte_end": 528
                     },
                     "text": "composed",
                     "lemma": "compose",
@@ -1876,8 +1876,8 @@
                   {
                     "id": 8,
                     "span": {
-                      "start": 529,
-                      "end": 531
+                      "byte_start": 529,
+                      "byte_end": 531
                     },
                     "text": "of",
                     "lemma": "of",
@@ -1893,8 +1893,8 @@
                   {
                     "id": 9,
                     "span": {
-                      "start": 532,
-                      "end": 539
+                      "byte_start": 532,
+                      "byte_end": 539
                     },
                     "text": "Members",
                     "lemma": "member",
@@ -1912,8 +1912,8 @@
                   {
                     "id": 10,
                     "span": {
-                      "start": 540,
-                      "end": 546
+                      "byte_start": 540,
+                      "byte_end": 546
                     },
                     "text": "chosen",
                     "lemma": "choose",
@@ -1933,8 +1933,8 @@
                   {
                     "id": 11,
                     "span": {
-                      "start": 547,
-                      "end": 552
+                      "byte_start": 547,
+                      "byte_end": 552
                     },
                     "text": "every",
                     "lemma": "every",
@@ -1950,8 +1950,8 @@
                   {
                     "id": 12,
                     "span": {
-                      "start": 553,
-                      "end": 559
+                      "byte_start": 553,
+                      "byte_end": 559
                     },
                     "text": "second",
                     "lemma": "second",
@@ -1970,8 +1970,8 @@
                   {
                     "id": 13,
                     "span": {
-                      "start": 560,
-                      "end": 564
+                      "byte_start": 560,
+                      "byte_end": 564
                     },
                     "text": "Year",
                     "lemma": "year",
@@ -1989,8 +1989,8 @@
                   {
                     "id": 14,
                     "span": {
-                      "start": 565,
-                      "end": 567
+                      "byte_start": 565,
+                      "byte_end": 567
                     },
                     "text": "by",
                     "lemma": "by",
@@ -2006,8 +2006,8 @@
                   {
                     "id": 15,
                     "span": {
-                      "start": 568,
-                      "end": 571
+                      "byte_start": 568,
+                      "byte_end": 571
                     },
                     "text": "the",
                     "lemma": "the",
@@ -2026,8 +2026,8 @@
                   {
                     "id": 16,
                     "span": {
-                      "start": 572,
-                      "end": 578
+                      "byte_start": 572,
+                      "byte_end": 578
                     },
                     "text": "People",
                     "lemma": "People",
@@ -2045,8 +2045,8 @@
                   {
                     "id": 17,
                     "span": {
-                      "start": 579,
-                      "end": 581
+                      "byte_start": 579,
+                      "byte_end": 581
                     },
                     "text": "of",
                     "lemma": "of",
@@ -2062,8 +2062,8 @@
                   {
                     "id": 18,
                     "span": {
-                      "start": 582,
-                      "end": 585
+                      "byte_start": 582,
+                      "byte_end": 585
                     },
                     "text": "the",
                     "lemma": "the",
@@ -2082,8 +2082,8 @@
                   {
                     "id": 19,
                     "span": {
-                      "start": 586,
-                      "end": 593
+                      "byte_start": 586,
+                      "byte_end": 593
                     },
                     "text": "several",
                     "lemma": "several",
@@ -2101,8 +2101,8 @@
                   {
                     "id": 20,
                     "span": {
-                      "start": 594,
-                      "end": 600
+                      "byte_start": 594,
+                      "byte_end": 600
                     },
                     "text": "States",
                     "lemma": "States",
@@ -2120,8 +2120,8 @@
                   {
                     "id": 21,
                     "span": {
-                      "start": 600,
-                      "end": 601
+                      "byte_start": 600,
+                      "byte_end": 601
                     },
                     "text": ",",
                     "lemma": ",",
@@ -2137,8 +2137,8 @@
                   {
                     "id": 22,
                     "span": {
-                      "start": 602,
-                      "end": 605
+                      "byte_start": 602,
+                      "byte_end": 605
                     },
                     "text": "and",
                     "lemma": "and",
@@ -2154,8 +2154,8 @@
                   {
                     "id": 23,
                     "span": {
-                      "start": 606,
-                      "end": 609
+                      "byte_start": 606,
+                      "byte_end": 609
                     },
                     "text": "the",
                     "lemma": "the",
@@ -2174,8 +2174,8 @@
                   {
                     "id": 24,
                     "span": {
-                      "start": 610,
-                      "end": 618
+                      "byte_start": 610,
+                      "byte_end": 618
                     },
                     "text": "Electors",
                     "lemma": "Elector",
@@ -2193,8 +2193,8 @@
                   {
                     "id": 25,
                     "span": {
-                      "start": 619,
-                      "end": 621
+                      "byte_start": 619,
+                      "byte_end": 621
                     },
                     "text": "in",
                     "lemma": "in",
@@ -2210,8 +2210,8 @@
                   {
                     "id": 26,
                     "span": {
-                      "start": 622,
-                      "end": 626
+                      "byte_start": 622,
+                      "byte_end": 626
                     },
                     "text": "each",
                     "lemma": "each",
@@ -2227,8 +2227,8 @@
                   {
                     "id": 27,
                     "span": {
-                      "start": 627,
-                      "end": 632
+                      "byte_start": 627,
+                      "byte_end": 632
                     },
                     "text": "State",
                     "lemma": "State",
@@ -2246,8 +2246,8 @@
                   {
                     "id": 28,
                     "span": {
-                      "start": 633,
-                      "end": 638
+                      "byte_start": 633,
+                      "byte_end": 638
                     },
                     "text": "shall",
                     "lemma": "shall",
@@ -2265,8 +2265,8 @@
                   {
                     "id": 29,
                     "span": {
-                      "start": 639,
-                      "end": 643
+                      "byte_start": 639,
+                      "byte_end": 643
                     },
                     "text": "have",
                     "lemma": "have",
@@ -2284,8 +2284,8 @@
                   {
                     "id": 30,
                     "span": {
-                      "start": 644,
-                      "end": 647
+                      "byte_start": 644,
+                      "byte_end": 647
                     },
                     "text": "the",
                     "lemma": "the",
@@ -2304,8 +2304,8 @@
                   {
                     "id": 31,
                     "span": {
-                      "start": 648,
-                      "end": 662
+                      "byte_start": 648,
+                      "byte_end": 662
                     },
                     "text": "Qualifications",
                     "lemma": "qualifications",
@@ -2323,8 +2323,8 @@
                   {
                     "id": 32,
                     "span": {
-                      "start": 663,
-                      "end": 672
+                      "byte_start": 663,
+                      "byte_end": 672
                     },
                     "text": "requisite",
                     "lemma": "requisite",
@@ -2342,8 +2342,8 @@
                   {
                     "id": 33,
                     "span": {
-                      "start": 673,
-                      "end": 676
+                      "byte_start": 673,
+                      "byte_end": 676
                     },
                     "text": "for",
                     "lemma": "for",
@@ -2359,8 +2359,8 @@
                   {
                     "id": 34,
                     "span": {
-                      "start": 677,
-                      "end": 685
+                      "byte_start": 677,
+                      "byte_end": 685
                     },
                     "text": "Electors",
                     "lemma": "Elector",
@@ -2378,8 +2378,8 @@
                   {
                     "id": 35,
                     "span": {
-                      "start": 686,
-                      "end": 688
+                      "byte_start": 686,
+                      "byte_end": 688
                     },
                     "text": "of",
                     "lemma": "of",
@@ -2395,8 +2395,8 @@
                   {
                     "id": 36,
                     "span": {
-                      "start": 689,
-                      "end": 692
+                      "byte_start": 689,
+                      "byte_end": 692
                     },
                     "text": "the",
                     "lemma": "the",
@@ -2415,8 +2415,8 @@
                   {
                     "id": 37,
                     "span": {
-                      "start": 693,
-                      "end": 697
+                      "byte_start": 693,
+                      "byte_end": 697
                     },
                     "text": "most",
                     "lemma": "most",
@@ -2432,8 +2432,8 @@
                   {
                     "id": 38,
                     "span": {
-                      "start": 698,
-                      "end": 706
+                      "byte_start": 698,
+                      "byte_end": 706
                     },
                     "text": "numerous",
                     "lemma": "numerous",
@@ -2451,8 +2451,8 @@
                   {
                     "id": 39,
                     "span": {
-                      "start": 707,
-                      "end": 713
+                      "byte_start": 707,
+                      "byte_end": 713
                     },
                     "text": "Branch",
                     "lemma": "branch",
@@ -2470,8 +2470,8 @@
                   {
                     "id": 40,
                     "span": {
-                      "start": 714,
-                      "end": 716
+                      "byte_start": 714,
+                      "byte_end": 716
                     },
                     "text": "of",
                     "lemma": "of",
@@ -2487,8 +2487,8 @@
                   {
                     "id": 41,
                     "span": {
-                      "start": 717,
-                      "end": 720
+                      "byte_start": 717,
+                      "byte_end": 720
                     },
                     "text": "the",
                     "lemma": "the",
@@ -2507,8 +2507,8 @@
                   {
                     "id": 42,
                     "span": {
-                      "start": 721,
-                      "end": 726
+                      "byte_start": 721,
+                      "byte_end": 726
                     },
                     "text": "State",
                     "lemma": "state",
@@ -2526,8 +2526,8 @@
                   {
                     "id": 43,
                     "span": {
-                      "start": 727,
-                      "end": 738
+                      "byte_start": 727,
+                      "byte_end": 738
                     },
                     "text": "Legislature",
                     "lemma": "legislature",
@@ -2545,8 +2545,8 @@
                   {
                     "id": 44,
                     "span": {
-                      "start": 738,
-                      "end": 739
+                      "byte_start": 738,
+                      "byte_end": 739
                     },
                     "text": ".",
                     "lemma": ".",
@@ -2583,16 +2583,16 @@
               },
               {
                 "span": {
-                  "start": 740,
-                  "end": 982
+                  "byte_start": 740,
+                  "byte_end": 982
                 },
                 "text": "No Person shall be a Representative who shall not have attained to the Age of twenty five Years, and been seven Years a Citizen of the United States, and who shall not, when elected, be an Inhabitant of that State in which he shall be chosen.",
                 "tokens": [
                   {
                     "id": 1,
                     "span": {
-                      "start": 740,
-                      "end": 742
+                      "byte_start": 740,
+                      "byte_end": 742
                     },
                     "text": "No",
                     "lemma": "no",
@@ -2608,8 +2608,8 @@
                   {
                     "id": 2,
                     "span": {
-                      "start": 743,
-                      "end": 749
+                      "byte_start": 743,
+                      "byte_end": 749
                     },
                     "text": "Person",
                     "lemma": "person",
@@ -2627,8 +2627,8 @@
                   {
                     "id": 3,
                     "span": {
-                      "start": 750,
-                      "end": 755
+                      "byte_start": 750,
+                      "byte_end": 755
                     },
                     "text": "shall",
                     "lemma": "shall",
@@ -2646,8 +2646,8 @@
                   {
                     "id": 4,
                     "span": {
-                      "start": 756,
-                      "end": 758
+                      "byte_start": 756,
+                      "byte_end": 758
                     },
                     "text": "be",
                     "lemma": "be",
@@ -2665,8 +2665,8 @@
                   {
                     "id": 5,
                     "span": {
-                      "start": 759,
-                      "end": 760
+                      "byte_start": 759,
+                      "byte_end": 760
                     },
                     "text": "a",
                     "lemma": "a",
@@ -2685,8 +2685,8 @@
                   {
                     "id": 6,
                     "span": {
-                      "start": 761,
-                      "end": 775
+                      "byte_start": 761,
+                      "byte_end": 775
                     },
                     "text": "Representative",
                     "lemma": "Representative",
@@ -2704,8 +2704,8 @@
                   {
                     "id": 7,
                     "span": {
-                      "start": 776,
-                      "end": 779
+                      "byte_start": 776,
+                      "byte_end": 779
                     },
                     "text": "who",
                     "lemma": "who",
@@ -2723,8 +2723,8 @@
                   {
                     "id": 8,
                     "span": {
-                      "start": 780,
-                      "end": 785
+                      "byte_start": 780,
+                      "byte_end": 785
                     },
                     "text": "shall",
                     "lemma": "shall",
@@ -2742,8 +2742,8 @@
                   {
                     "id": 9,
                     "span": {
-                      "start": 786,
-                      "end": 789
+                      "byte_start": 786,
+                      "byte_end": 789
                     },
                     "text": "not",
                     "lemma": "not",
@@ -2759,8 +2759,8 @@
                   {
                     "id": 10,
                     "span": {
-                      "start": 790,
-                      "end": 794
+                      "byte_start": 790,
+                      "byte_end": 794
                     },
                     "text": "have",
                     "lemma": "have",
@@ -2778,8 +2778,8 @@
                   {
                     "id": 11,
                     "span": {
-                      "start": 795,
-                      "end": 803
+                      "byte_start": 795,
+                      "byte_end": 803
                     },
                     "text": "attained",
                     "lemma": "attain",
@@ -2798,8 +2798,8 @@
                   {
                     "id": 12,
                     "span": {
-                      "start": 804,
-                      "end": 806
+                      "byte_start": 804,
+                      "byte_end": 806
                     },
                     "text": "to",
                     "lemma": "to",
@@ -2815,8 +2815,8 @@
                   {
                     "id": 13,
                     "span": {
-                      "start": 807,
-                      "end": 810
+                      "byte_start": 807,
+                      "byte_end": 810
                     },
                     "text": "the",
                     "lemma": "the",
@@ -2835,8 +2835,8 @@
                   {
                     "id": 14,
                     "span": {
-                      "start": 811,
-                      "end": 814
+                      "byte_start": 811,
+                      "byte_end": 814
                     },
                     "text": "Age",
                     "lemma": "age",
@@ -2854,8 +2854,8 @@
                   {
                     "id": 15,
                     "span": {
-                      "start": 815,
-                      "end": 817
+                      "byte_start": 815,
+                      "byte_end": 817
                     },
                     "text": "of",
                     "lemma": "of",
@@ -2871,8 +2871,8 @@
                   {
                     "id": 16,
                     "span": {
-                      "start": 818,
-                      "end": 824
+                      "byte_start": 818,
+                      "byte_end": 824
                     },
                     "text": "twenty",
                     "lemma": "twenty",
@@ -2890,8 +2890,8 @@
                   {
                     "id": 17,
                     "span": {
-                      "start": 825,
-                      "end": 829
+                      "byte_start": 825,
+                      "byte_end": 829
                     },
                     "text": "five",
                     "lemma": "five",
@@ -2909,8 +2909,8 @@
                   {
                     "id": 18,
                     "span": {
-                      "start": 830,
-                      "end": 835
+                      "byte_start": 830,
+                      "byte_end": 835
                     },
                     "text": "Years",
                     "lemma": "year",
@@ -2928,8 +2928,8 @@
                   {
                     "id": 19,
                     "span": {
-                      "start": 835,
-                      "end": 836
+                      "byte_start": 835,
+                      "byte_end": 836
                     },
                     "text": ",",
                     "lemma": ",",
@@ -2945,8 +2945,8 @@
                   {
                     "id": 20,
                     "span": {
-                      "start": 837,
-                      "end": 840
+                      "byte_start": 837,
+                      "byte_end": 840
                     },
                     "text": "and",
                     "lemma": "and",
@@ -2962,8 +2962,8 @@
                   {
                     "id": 21,
                     "span": {
-                      "start": 841,
-                      "end": 845
+                      "byte_start": 841,
+                      "byte_end": 845
                     },
                     "text": "been",
                     "lemma": "be",
@@ -2982,8 +2982,8 @@
                   {
                     "id": 22,
                     "span": {
-                      "start": 846,
-                      "end": 851
+                      "byte_start": 846,
+                      "byte_end": 851
                     },
                     "text": "seven",
                     "lemma": "seven",
@@ -3001,8 +3001,8 @@
                   {
                     "id": 23,
                     "span": {
-                      "start": 852,
-                      "end": 857
+                      "byte_start": 852,
+                      "byte_end": 857
                     },
                     "text": "Years",
                     "lemma": "year",
@@ -3020,8 +3020,8 @@
                   {
                     "id": 24,
                     "span": {
-                      "start": 858,
-                      "end": 859
+                      "byte_start": 858,
+                      "byte_end": 859
                     },
                     "text": "a",
                     "lemma": "a",
@@ -3040,8 +3040,8 @@
                   {
                     "id": 25,
                     "span": {
-                      "start": 860,
-                      "end": 867
+                      "byte_start": 860,
+                      "byte_end": 867
                     },
                     "text": "Citizen",
                     "lemma": "citizen",
@@ -3059,8 +3059,8 @@
                   {
                     "id": 26,
                     "span": {
-                      "start": 868,
-                      "end": 870
+                      "byte_start": 868,
+                      "byte_end": 870
                     },
                     "text": "of",
                     "lemma": "of",
@@ -3076,8 +3076,8 @@
                   {
                     "id": 27,
                     "span": {
-                      "start": 871,
-                      "end": 874
+                      "byte_start": 871,
+                      "byte_end": 874
                     },
                     "text": "the",
                     "lemma": "the",
@@ -3096,8 +3096,8 @@
                   {
                     "id": 28,
                     "span": {
-                      "start": 875,
-                      "end": 881
+                      "byte_start": 875,
+                      "byte_end": 881
                     },
                     "text": "United",
                     "lemma": "United",
@@ -3115,8 +3115,8 @@
                   {
                     "id": 29,
                     "span": {
-                      "start": 882,
-                      "end": 888
+                      "byte_start": 882,
+                      "byte_end": 888
                     },
                     "text": "States",
                     "lemma": "States",
@@ -3134,8 +3134,8 @@
                   {
                     "id": 30,
                     "span": {
-                      "start": 888,
-                      "end": 889
+                      "byte_start": 888,
+                      "byte_end": 889
                     },
                     "text": ",",
                     "lemma": ",",
@@ -3151,8 +3151,8 @@
                   {
                     "id": 31,
                     "span": {
-                      "start": 890,
-                      "end": 893
+                      "byte_start": 890,
+                      "byte_end": 893
                     },
                     "text": "and",
                     "lemma": "and",
@@ -3168,8 +3168,8 @@
                   {
                     "id": 32,
                     "span": {
-                      "start": 894,
-                      "end": 897
+                      "byte_start": 894,
+                      "byte_end": 897
                     },
                     "text": "who",
                     "lemma": "who",
@@ -3187,8 +3187,8 @@
                   {
                     "id": 33,
                     "span": {
-                      "start": 898,
-                      "end": 903
+                      "byte_start": 898,
+                      "byte_end": 903
                     },
                     "text": "shall",
                     "lemma": "shall",
@@ -3206,8 +3206,8 @@
                   {
                     "id": 34,
                     "span": {
-                      "start": 904,
-                      "end": 907
+                      "byte_start": 904,
+                      "byte_end": 907
                     },
                     "text": "not",
                     "lemma": "not",
@@ -3223,8 +3223,8 @@
                   {
                     "id": 35,
                     "span": {
-                      "start": 907,
-                      "end": 908
+                      "byte_start": 907,
+                      "byte_end": 908
                     },
                     "text": ",",
                     "lemma": ",",
@@ -3240,8 +3240,8 @@
                   {
                     "id": 36,
                     "span": {
-                      "start": 909,
-                      "end": 913
+                      "byte_start": 909,
+                      "byte_end": 913
                     },
                     "text": "when",
                     "lemma": "when",
@@ -3259,8 +3259,8 @@
                   {
                     "id": 37,
                     "span": {
-                      "start": 914,
-                      "end": 921
+                      "byte_start": 914,
+                      "byte_end": 921
                     },
                     "text": "elected",
                     "lemma": "elect",
@@ -3279,8 +3279,8 @@
                   {
                     "id": 38,
                     "span": {
-                      "start": 921,
-                      "end": 922
+                      "byte_start": 921,
+                      "byte_end": 922
                     },
                     "text": ",",
                     "lemma": ",",
@@ -3296,8 +3296,8 @@
                   {
                     "id": 39,
                     "span": {
-                      "start": 923,
-                      "end": 925
+                      "byte_start": 923,
+                      "byte_end": 925
                     },
                     "text": "be",
                     "lemma": "be",
@@ -3315,8 +3315,8 @@
                   {
                     "id": 40,
                     "span": {
-                      "start": 926,
-                      "end": 928
+                      "byte_start": 926,
+                      "byte_end": 928
                     },
                     "text": "an",
                     "lemma": "a",
@@ -3335,8 +3335,8 @@
                   {
                     "id": 41,
                     "span": {
-                      "start": 929,
-                      "end": 939
+                      "byte_start": 929,
+                      "byte_end": 939
                     },
                     "text": "Inhabitant",
                     "lemma": "Inhabitant",
@@ -3354,8 +3354,8 @@
                   {
                     "id": 42,
                     "span": {
-                      "start": 940,
-                      "end": 942
+                      "byte_start": 940,
+                      "byte_end": 942
                     },
                     "text": "of",
                     "lemma": "of",
@@ -3371,8 +3371,8 @@
                   {
                     "id": 43,
                     "span": {
-                      "start": 943,
-                      "end": 947
+                      "byte_start": 943,
+                      "byte_end": 947
                     },
                     "text": "that",
                     "lemma": "that",
@@ -3391,8 +3391,8 @@
                   {
                     "id": 44,
                     "span": {
-                      "start": 948,
-                      "end": 953
+                      "byte_start": 948,
+                      "byte_end": 953
                     },
                     "text": "State",
                     "lemma": "state",
@@ -3410,8 +3410,8 @@
                   {
                     "id": 45,
                     "span": {
-                      "start": 954,
-                      "end": 956
+                      "byte_start": 954,
+                      "byte_end": 956
                     },
                     "text": "in",
                     "lemma": "in",
@@ -3427,8 +3427,8 @@
                   {
                     "id": 46,
                     "span": {
-                      "start": 957,
-                      "end": 962
+                      "byte_start": 957,
+                      "byte_end": 962
                     },
                     "text": "which",
                     "lemma": "which",
@@ -3446,8 +3446,8 @@
                   {
                     "id": 47,
                     "span": {
-                      "start": 963,
-                      "end": 965
+                      "byte_start": 963,
+                      "byte_end": 965
                     },
                     "text": "he",
                     "lemma": "he",
@@ -3469,8 +3469,8 @@
                   {
                     "id": 48,
                     "span": {
-                      "start": 966,
-                      "end": 971
+                      "byte_start": 966,
+                      "byte_end": 971
                     },
                     "text": "shall",
                     "lemma": "shall",
@@ -3488,8 +3488,8 @@
                   {
                     "id": 49,
                     "span": {
-                      "start": 972,
-                      "end": 974
+                      "byte_start": 972,
+                      "byte_end": 974
                     },
                     "text": "be",
                     "lemma": "be",
@@ -3507,8 +3507,8 @@
                   {
                     "id": 50,
                     "span": {
-                      "start": 975,
-                      "end": 981
+                      "byte_start": 975,
+                      "byte_end": 981
                     },
                     "text": "chosen",
                     "lemma": "chosen",
@@ -3528,8 +3528,8 @@
                   {
                     "id": 51,
                     "span": {
-                      "start": 981,
-                      "end": 982
+                      "byte_start": 981,
+                      "byte_end": 982
                     },
                     "text": ".",
                     "lemma": ".",

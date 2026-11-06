@@ -22,15 +22,15 @@
       {
         "kind": "paragraph",
         "span": {
-          "start": 0,
-          "end": 33
+          "byte_start": 0,
+          "byte_end": 33
         }
       },
       {
         "kind": "paragraph",
         "span": {
-          "start": 35,
-          "end": 90
+          "byte_start": 35,
+          "byte_end": 90
         }
       }
     ],
@@ -38,8 +38,8 @@
     "sentences": [
       {
         "span": {
-          "start": 0,
-          "end": 33
+          "byte_start": 0,
+          "byte_end": 33
         },
         "text": "First paragraph has one sentence.",
         "token_count": 6,
@@ -47,8 +47,8 @@
           {
             "id": 1,
             "span": {
-              "start": 0,
-              "end": 5
+              "byte_start": 0,
+              "byte_end": 5
             },
             "text": "First",
             "lemma": "first",
@@ -59,8 +59,8 @@
           {
             "id": 2,
             "span": {
-              "start": 6,
-              "end": 15
+              "byte_start": 6,
+              "byte_end": 15
             },
             "text": "paragraph",
             "lemma": "paragraph",
@@ -71,8 +71,8 @@
           {
             "id": 3,
             "span": {
-              "start": 16,
-              "end": 19
+              "byte_start": 16,
+              "byte_end": 19
             },
             "text": "has",
             "lemma": "have",
@@ -83,8 +83,8 @@
           {
             "id": 4,
             "span": {
-              "start": 20,
-              "end": 23
+              "byte_start": 20,
+              "byte_end": 23
             },
             "text": "one",
             "lemma": "one",
@@ -95,8 +95,8 @@
           {
             "id": 5,
             "span": {
-              "start": 24,
-              "end": 32
+              "byte_start": 24,
+              "byte_end": 32
             },
             "text": "sentence",
             "lemma": "sentence",
@@ -107,8 +107,8 @@
           {
             "id": 6,
             "span": {
-              "start": 32,
-              "end": 33
+              "byte_start": 32,
+              "byte_end": 33
             },
             "text": ".",
             "lemma": ".",
@@ -120,8 +120,8 @@
       },
       {
         "span": {
-          "start": 35,
-          "end": 70
+          "byte_start": 35,
+          "byte_end": 70
         },
         "text": "Second paragraph has two sentences.",
         "token_count": 6,
@@ -129,8 +129,8 @@
           {
             "id": 1,
             "span": {
-              "start": 35,
-              "end": 41
+              "byte_start": 35,
+              "byte_end": 41
             },
             "text": "Second",
             "lemma": "second",
@@ -141,8 +141,8 @@
           {
             "id": 2,
             "span": {
-              "start": 42,
-              "end": 51
+              "byte_start": 42,
+              "byte_end": 51
             },
             "text": "paragraph",
             "lemma": "paragraph",
@@ -153,8 +153,8 @@
           {
             "id": 3,
             "span": {
-              "start": 52,
-              "end": 55
+              "byte_start": 52,
+              "byte_end": 55
             },
             "text": "has",
             "lemma": "have",
@@ -165,8 +165,8 @@
           {
             "id": 4,
             "span": {
-              "start": 56,
-              "end": 59
+              "byte_start": 56,
+              "byte_end": 59
             },
             "text": "two",
             "lemma": "two",
@@ -177,8 +177,8 @@
           {
             "id": 5,
             "span": {
-              "start": 60,
-              "end": 69
+              "byte_start": 60,
+              "byte_end": 69
             },
             "text": "sentences",
             "lemma": "sentence",
@@ -189,8 +189,8 @@
           {
             "id": 6,
             "span": {
-              "start": 69,
-              "end": 70
+              "byte_start": 69,
+              "byte_end": 70
             },
             "text": ".",
             "lemma": ".",
@@ -202,8 +202,8 @@
       },
       {
         "span": {
-          "start": 71,
-          "end": 90
+          "byte_start": 71,
+          "byte_end": 90
         },
         "text": "This is the second.",
         "token_count": 5,
@@ -211,8 +211,8 @@
           {
             "id": 1,
             "span": {
-              "start": 71,
-              "end": 75
+              "byte_start": 71,
+              "byte_end": 75
             },
             "text": "This",
             "lemma": "this",
@@ -223,8 +223,8 @@
           {
             "id": 2,
             "span": {
-              "start": 76,
-              "end": 78
+              "byte_start": 76,
+              "byte_end": 78
             },
             "text": "is",
             "lemma": "be",
@@ -235,8 +235,8 @@
           {
             "id": 3,
             "span": {
-              "start": 79,
-              "end": 82
+              "byte_start": 79,
+              "byte_end": 82
             },
             "text": "the",
             "lemma": "the",
@@ -247,8 +247,8 @@
           {
             "id": 4,
             "span": {
-              "start": 83,
-              "end": 89
+              "byte_start": 83,
+              "byte_end": 89
             },
             "text": "second",
             "lemma": "second",
@@ -259,8 +259,8 @@
           {
             "id": 5,
             "span": {
-              "start": 89,
-              "end": 90
+              "byte_start": 89,
+              "byte_end": 90
             },
             "text": ".",
             "lemma": ".",
