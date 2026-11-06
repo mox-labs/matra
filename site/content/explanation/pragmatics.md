@@ -47,7 +47,7 @@ Start around 0.85 with the reference model and calibrate on your own corpus.
 
 Both models work the same way, and the constructor you reach for is what decides whether anything is fetched.
 
-**Ask for nothing and you get the pinned model in the resolved place.** `Engine::new()`, `Engine::from_config(cfg)` and `Model2Vec::from_config(cfg)` resolve the directory through [`Config`](programming-model.md) and fetch the pinned model when it is absent. In Python that is `matra.Engine()` and `Model2Vec.potion_base_8m()` with no argument. This is the path to take unless you have a reason not to.
+**Ask for nothing and you get the pinned model in the resolved place.** `Engine::new()`, `Engine::from_config(cfg)` and `Model2Vec::from_config(cfg)` resolve the directory through [`Config`](programming-model.md) and fetch the pinned model when it is absent. In Python that is `matra.Engine()` and `Model2Vec.potion_base_8m()` with no argument, which read the environment and no configuration file, and `Engine.from_config()` and `Model2Vec.from_config()`, which read one. This is the path to take unless you have a reason not to.
 
 **Naming the directory changes where, not what.** `Engine::from_config(&cfg.with_model_dir(dir))`, Python's `matra.Engine()` under `MATRA_MODEL_DIR`, and `Model2Vec::potion_base_8m(dir)` fetch the same pinned artifacts into the models directory you name, each model in its own place there. Take them when the model belongs somewhere specific.
 

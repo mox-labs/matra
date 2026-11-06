@@ -15,7 +15,7 @@ Everything else matra returns is deterministic structure, checkable against the 
 $ matra clusters notes.md --threshold 0.8 --json
 ```
 
-The library and Python take the threshold as an argument and read no configuration. `Model2Vec.potion_base_8m()` with no argument provisions into the same directory the command line uses.
+The library and Python take the threshold as an argument and read no configuration. `Model2Vec.from_config()` provisions into the directory the command line uses, read from the configuration file; `Model2Vec.potion_base_8m()` with no argument reads the environment and no file, as `Engine()` does.
 
 ## What you get
 

@@ -204,7 +204,7 @@ matra: downloading potion-base-8M (30.9 MB) into /home/u/.local/share/matra/mode
 matra: the model is licensed MIT, separately from matra: https://opensource.org/license/mit
 ```
 
-Python writes the same two lines to `sys.stderr` before `Engine()`, `Engine.from_config()` or `Model2Vec.potion_base_8m()` downloads; redirect `sys.stderr` to silence them. A Rust caller gets the facts from `Engine::from_config_with_notice` and `Model2Vec::from_config_with_notice` and chooses the wording, since the library writes to no terminal. The other Rust constructors, `Engine::new`, `Engine::from_config`, `Model2Vec::potion_base_8m` and `Model2Vec::from_config`, take no notice and say nothing for the length of their download.
+Python writes the same two lines to `sys.stderr` before `Engine()`, `Engine.from_config()`, `Model2Vec.potion_base_8m()` or `Model2Vec.from_config()` downloads; redirect `sys.stderr` to silence them. A Rust caller gets the facts from `Engine::from_config_with_notice` and `Model2Vec::from_config_with_notice` and chooses the wording, since the library writes to no terminal. The other Rust constructors, `Engine::new`, `Engine::from_config`, `Model2Vec::potion_base_8m` and `Model2Vec::from_config`, take no notice and say nothing for the length of their download.
 
 ## Per-document failures: `DocumentError`
 

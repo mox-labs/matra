@@ -137,7 +137,8 @@ The same words Rust has, in Python's syntax: `Engine`, the read-only `Document`,
 | `clusters(doc, embedder, threshold=0.85)` | `clusters` |
 | `span_text(text, span)` | slicing the analysed text by a `Span` |
 | `Model2Vec.from_dir`, `.model_hash`, `.dimensions`, `.embed`, `.identity` | `Model2Vec` behind the `Embedder` port |
-| `Model2Vec.potion_base_8m` | `Model2Vec::potion_base_8m`; with no argument it is `Model2Vec::from_config` |
+| `Model2Vec.potion_base_8m` | `Model2Vec::potion_base_8m`; with no argument, over the model directory the environment names, reading no config file, as `Engine()` does |
+| `Model2Vec.from_config` | `Model2Vec::from_config` over `Config::from_file` or `Config::resolve`, as `Engine.from_config` is `Engine::from_config` |
 | any object with `embed` and `identity` | an `Embedder` implementor, wrapped by an adapter in the binding |
 | `_core.cli_main(argv)` | `cli::run`, which is what the `matra` console script launches |
 
