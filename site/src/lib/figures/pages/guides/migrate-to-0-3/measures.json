@@ -194,8 +194,17 @@
       "lexical_density": 0.7778,
       "readability_grade": null,
       "sentences": 2,
-      "text": "Error keeps its variants and kind(). Two shapes changed.",
+      "text": "Error keeps its variants and kind(). Three shapes changed.",
       "words": 9
+    },
+    {
+      "compression_ratio": 0.5346,
+      "kind": "paragraph",
+      "lexical_density": 0.6207,
+      "readability_grade": 12.6478,
+      "sentences": 3,
+      "text": "InvalidInput's reason names the check that failed, a stable name the errors reference lists, and details[\"reason\"] carries it, where 0.2 put the message text there. Four InputTooLarge labels name what you read rather than matra's modules: file_source is file_read, config_file is config_file_read, udpipe_download is parser_model_download and embedding_download is embedding_model_download. A match on the old strings no longer fires.",
+      "words": 61
     },
     {
       "compression_ratio": 0.5419,
@@ -207,13 +216,13 @@
       "words": 82
     },
     {
-      "compression_ratio": 0.5595,
+      "compression_ratio": 0.5494,
       "kind": "paragraph",
-      "lexical_density": 0.5821,
-      "readability_grade": 13.0599,
-      "sentences": 4,
-      "text": "These modules and items are private to the crate in 0.3: nlp with NlpProvider and Udpipe, metrics with Metric, default_suite, run_suite and readability::flesch_kincaid_grade, hearst, extraction, decompose with MarkdownDecomposer, PlainTextDecomposer and Decomposers, source with FileSource and DirectorySource, and standard_decomposers. The measures stay public as fields of the Document. For another measure, write a function over &Document. Embedder stays public and unchanged: it is the one port you implement.",
-      "words": 69
+      "lexical_density": 0.59,
+      "readability_grade": 13.121,
+      "sentences": 7,
+      "text": "These modules and items are private to the crate in 0.3: nlp with NlpProvider and Udpipe, metrics with Metric, default_suite, run_suite and readability::flesch_kincaid_grade, hearst, extraction, decompose with MarkdownDecomposer, PlainTextDecomposer and Decomposers, source with FileSource and DirectorySource, and standard_decomposers. The measures stay public as fields of the Document. For another measure, write a function over &Document. Embedder stays public: it is the one port you implement. Its identity returns a domain::Identity, the shape the parser reports, where it returned &str: Identity::new(\"my-service\", Some(\"v3\".into()), None, None) in place of \"my-service/v3\". Return ModelInvalid, Io or InputTooLarge for your own failures, as the trait documents.",
+      "words": 110
     },
     {
       "compression_ratio": null,
@@ -501,6 +510,15 @@
       "readability_grade": 7.0965,
       "sentences": 3,
       "text": "Model2Vec.potion_base_8m(dir) looks in dir/potion-base-8M/, where 0.2 looked in dir itself. A 0.2 call that passed the model's own directory still runs, and downloads a second copy one level down. Pass the models directory instead.",
+      "words": 40
+    },
+    {
+      "compression_ratio": null,
+      "kind": "list_item",
+      "lexical_density": 0.5263,
+      "readability_grade": 8.6168,
+      "sentences": 3,
+      "text": "Model2Vec.potion_base_8m() with no argument reads no config file. It finds the model directory from the environment, as Engine() does, so a model_dir or models.embedding set only in the config file no longer moves it. Model2Vec.from_config() reads the file.",
       "words": 40
     },
     {

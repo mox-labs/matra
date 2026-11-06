@@ -29,6 +29,8 @@ uvx 'matra>=0.3' --skill                              # the skill for 0.3
 | `embed_and_cluster`, `extraction::semantic_clusters` | `clusters` | Rust |
 | `ScoredSentence`, `SemanticClusters`, `SemanticCluster`, `SemanticEdge` | `SummarySentence` in a `Summary`, `Clusters`, `Cluster`, `SimilarityEdge` | Rust, Python types |
 | `domain::MAX_INPUT_BYTES` | `domain::limits::MAX_INPUT_BYTES` | Rust |
+| `Error::InvalidInput(message)` | `Error::InvalidInput { reason, message }` | Rust |
+| `Embedder::identity() -> &str` | `Embedder::identity() -> Identity` | Rust |
 | `Config::summarize_n`, `summarize_algorithm`, `keyphrases_algorithm` | `Config::summary_n`, `summary_method`, `keyphrases_method` | Rust |
 | `Config::udpipe_model`, `Config::semantic_threshold` | none; `Config::clusters_threshold` is new | Rust |
 | `nlp`, `Udpipe`, `NlpProvider`, `metrics`, `hearst`, `extraction`, `decompose`, `source`, `standard_decomposers` | private to the crate | Rust |
@@ -39,6 +41,8 @@ uvx 'matra>=0.3' --skill                              # the skill for 0.3
 | `Matra.rake_keyphrases(text, max_phrases)`, `yake_keyphrases` | `matra.keyphrases(doc, n, method=...)` | Python |
 | `Matra.semantic_clusters(text, threshold, model)` | `matra.clusters(doc, model, threshold)` | Python |
 | `matra.semantic_clusters(vectors, threshold, model_hash)` | none: a cosine over the vectors you hold | Python |
+| an embedder's `identity() -> str`, `Model2Vec.identity()` | `identity()` returning an `Identity` dict, `{name, model, sha256, license}` | Python |
+| `Model2Vec.potion_base_8m()` reading the config file | `Model2Vec.from_config()` | Python |
 | `Document`, `CorpusEntry`, `CorpusItem` (types) | `matra.Document` (a class), `DocumentDict`, and `Document` or `DocumentError` items | Python |
 | `paragraph["readability_grade"]` and its siblings | `paragraph["metrics"]["readability_grade"]` | JSON, Python |
 | `doc["vocabulary_ttr"]` and its siblings | `doc["metrics"]["vocabulary_ttr"]` | JSON, Python |
@@ -48,6 +52,8 @@ uvx 'matra>=0.3' --skill                              # the skill for 0.3
 | `Token.feats` (a string) | `Token.features` (a map) | all |
 | `Sentence.tree_depth()` returning `usize::MAX` on a cycle | `Sentence.tree_depth`, `None` on a cycle | all |
 | `SemanticClusters.model_hash` | `Clusters.provenance.parameters.embedder.sha256` | all |
+| `InputTooLarge` `what`: `file_source`, `config_file`, `udpipe_download`, `embedding_download` | `file_read`, `config_file_read`, `parser_model_download`, `embedding_model_download` | all |
+| `invalid_input` `details.reason`, the message text | `details.reason`, the name of the check that failed | all |
 | `Format` serialized as `"Markdown"`, `"PlainText"` | `"markdown"`, `"plain_text"`, `"blocks"` | Rust serde, JSON |
 | `[summarize]`, `algorithm`, `[semantic] threshold`, `[models] udpipe` | `[summary]`, `method`, `[clusters] threshold`, none | config file |
 | `--json` envelope `format_version: 1` | `format_version: 2`, with an `error` key | command line |
@@ -206,25 +212,29 @@ What moved inside the results:
 
 ### Errors
 
-`Error` keeps its variants and `kind()`. Two shapes changed.
+`Error` keeps its variants and `kind()`. Three shapes changed.
 
 ```rust
 // 0.2
 Error::UnsupportedFormat(format)
+Error::InvalidInput(message)
 domain::MAX_INPUT_BYTES
 ```
 
 ```rust
 // 0.3
 Error::UnsupportedFormat { format, feature }   // both Option
+Error::InvalidInput { reason, message }       // reason: "threshold_not_finite", ...
 domain::limits::MAX_INPUT_BYTES
 ```
+
+`InvalidInput`'s `reason` names the check that failed, a stable name the [errors reference](../reference/errors.md#invalidinput) lists, and `details["reason"]` carries it, where 0.2 put the message text there. Four `InputTooLarge` labels name what you read rather than matra's modules: `file_source` is `file_read`, `config_file` is `config_file_read`, `udpipe_download` is `parser_model_download` and `embedding_download` is `embedding_model_download`. A match on the old strings no longer fires.
 
 `Error::details()` is new. It returns every value in the message by name, so no caller parses a message. `Error` and `DocumentError` serialize as `{kind, message, details}`, and `DocumentError` adds `path`. A failed read now names its path: `io error: cannot read essay.md: No such file or directory (os error 2)`. A file whose bytes are not UTF-8 is `UnsupportedFormat`, not `Io`. Every cap is in `domain::limits`, with the same values as 0.2. [Errors](../reference/errors.md) lists every kind and its details.
 
 ### What left the public surface
 
-These modules and items are private to the crate in 0.3: `nlp` with `NlpProvider` and `Udpipe`, `metrics` with `Metric`, `default_suite`, `run_suite` and `readability::flesch_kincaid_grade`, `hearst`, `extraction`, `decompose` with `MarkdownDecomposer`, `PlainTextDecomposer` and `Decomposers`, `source` with `FileSource` and `DirectorySource`, and `standard_decomposers`. The measures stay public as fields of the `Document`. For another measure, write a function over `&Document`. `Embedder` stays public and unchanged: it is the one port you implement.
+These modules and items are private to the crate in 0.3: `nlp` with `NlpProvider` and `Udpipe`, `metrics` with `Metric`, `default_suite`, `run_suite` and `readability::flesch_kincaid_grade`, `hearst`, `extraction`, `decompose` with `MarkdownDecomposer`, `PlainTextDecomposer` and `Decomposers`, `source` with `FileSource` and `DirectorySource`, and `standard_decomposers`. The measures stay public as fields of the `Document`. For another measure, write a function over `&Document`. `Embedder` stays public: it is the one port you implement. Its `identity` returns a `domain::Identity`, the shape the parser reports, where it returned `&str`: `Identity::new("my-service", Some("v3".into()), None, None)` in place of `"my-service/v3"`. Return `ModelInvalid`, `Io` or `InputTooLarge` for your own failures, as the trait documents.
 
 ### Configuration
 
@@ -504,5 +514,6 @@ A few results differ for the same input, and nothing about the call tells you so
 - **A binary file** is `unsupported_format`, naming the format when it is a PDF or DOCX. In 0.2 it was an I/O error.
 - **The size cap's message** reads `input too large`, where 0.2 read `input input too large`.
 - **`Model2Vec.potion_base_8m(dir)`** looks in `dir/potion-base-8M/`, where 0.2 looked in `dir` itself. A 0.2 call that passed the model's own directory still runs, and downloads a second copy one level down. Pass the models directory instead.
+- **`Model2Vec.potion_base_8m()` with no argument reads no config file.** It finds the model directory from the environment, as `Engine()` does, so a `model_dir` or `models.embedding` set only in the config file no longer moves it. `Model2Vec.from_config()` reads the file.
 - **Python's constructors announce a download.** `Engine()`, `Engine.from_config()` and `Model2Vec.potion_base_8m()` write two lines to `sys.stderr` before they download a model, the ones the command line prints. Once the model is on disk they write nothing.
 - **An empty result says so.** `matra summarize`, `keyphrases` and `clusters` still exit 1 when they find nothing, and now also write one line to stderr saying so, unless `--json` or `--quiet` is given.
