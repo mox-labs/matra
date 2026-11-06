@@ -1565,7 +1565,9 @@ impl Paragraph {
 
     /// Total word count across all sentences.
     pub fn word_count(&self) -> usize {
-        self.sentences.iter().map(|s| s.word_count).sum()
+        self.sentences
+            .iter()
+            .fold(0usize, |total, s| total.saturating_add(s.word_count))
     }
 
     /// Number of sentences.
@@ -1575,6 +1577,10 @@ impl Paragraph {
 }
 
 /// A structural section of a document (heading + paragraphs).
+    ///
+    /// Saturates at `usize::MAX` rather than overflowing: the counts are
+    /// whatever the sentences carry, and a document read back from JSON
+    /// can carry any, so a sum past the largest count reads as that.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Section {
