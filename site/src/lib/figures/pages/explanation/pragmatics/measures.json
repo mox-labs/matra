@@ -135,13 +135,13 @@
       "words": 19
     },
     {
-      "compression_ratio": 0.5746,
+      "compression_ratio": 0.5103,
       "kind": "paragraph",
-      "lexical_density": 0.463,
-      "readability_grade": 8.2422,
+      "lexical_density": 0.4783,
+      "readability_grade": 9.1506,
       "sentences": 4,
-      "text": "Ask for nothing and you get the pinned model in the resolved place. Engine::new(), Engine::from_config(cfg) and Model2Vec::from_config(cfg) resolve the directory through Config and fetch the pinned model when it is absent. In Python that is matra.Engine() and Model2Vec.potion_base_8m() with no argument. This is the path to take unless you have a reason not to.",
-      "words": 59
+      "text": "Ask for nothing and you get the pinned model in the resolved place. Engine::new(), Engine::from_config(cfg) and Model2Vec::from_config(cfg) resolve the directory through Config and fetch the pinned model when it is absent. In Python that is matra.Engine() and Model2Vec.potion_base_8m() with no argument, which read the environment and no configuration file, and Engine.from_config() and Model2Vec.from_config(), which read one. This is the path to take unless you have a reason not to.",
+      "words": 76
     },
     {
       "compression_ratio": null,

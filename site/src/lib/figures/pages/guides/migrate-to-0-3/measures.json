@@ -162,13 +162,13 @@
       "words": 14
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5239,
       "kind": "list_item",
-      "lexical_density": 0.5349,
-      "readability_grade": 10.1063,
+      "lexical_density": 0.537,
+      "readability_grade": 9.1129,
       "sentences": 5,
-      "text": "SemanticClusters { model_hash, threshold, clusters } is Clusters { provenance, clusters, edges }. The embedder's identity is provenance.parameters.embedder and the threshold provenance.parameters.threshold. The edges moved out of each cluster into one list, ordered by a and then b. Each Cluster holds only members.",
-      "words": 40
+      "text": "SemanticClusters { model_hash, threshold, clusters } is Clusters { provenance, clusters, edges }. The embedder's identity is provenance.parameters.embedder, an Identity like the parser's (the old hash is its sha256), and the threshold provenance.parameters.threshold. The edges moved out of each cluster into one list, ordered by a and then b. Each Cluster holds only members.",
+      "words": 52
     },
     {
       "compression_ratio": null,

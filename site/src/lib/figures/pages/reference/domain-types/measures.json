@@ -369,13 +369,13 @@
       "words": 47
     },
     {
-      "compression_ratio": 0.4996,
+      "compression_ratio": 0.492,
       "kind": "paragraph",
-      "lexical_density": 0.5495,
-      "readability_grade": 10.8289,
+      "lexical_density": 0.5528,
+      "readability_grade": 11.1519,
       "sentences": 7,
-      "text": "Provenance holds matra, the version that produced the document; schema, the schema version as \"major.minor\" (SCHEMA_VERSION, \"2.0\"), which appears nowhere else; parser, the parser's Identity; format, the Format the input was read as; and source, a ProvenanceSource with the input's path (None for anything but a file), and the length in bytes and the sha256 of the analysed text every span points into, computed once at annotation. For markdown and plain text that is the input; for block input, the blocks joined. On a document, method and parameters are None and absent from the JSON; an outcome derived from the document carries a copy of its provenance with both set (see Summary). There is no timestamp, so two analyses of the same input by the same build are identical. Identity names a model-backed component: name (udpipe), model (english-ewt-ud-2.5-191206), sha256 of the model artifact, and license. The UDPipe adapter derives it from the bytes it loaded, so a model matra does not pin reports its digest with model and license set to None. Provenance::new(parser, format, source) fills matra and schema from the build.",
-      "words": 187
+      "text": "Provenance holds matra, the version that produced the document; schema, the schema version as \"major.minor\" (SCHEMA_VERSION, \"2.0\"), which appears nowhere else; parser, the parser's Identity; format, the Format the input was read as; and source, a ProvenanceSource with the input's path (None for anything but a file), and the length in bytes and the sha256 of the analysed text every span points into, computed once at annotation. For markdown and plain text that is the input; for block input, the blocks joined. On a document, method and parameters are None and absent from the JSON; an outcome derived from the document carries a copy of its provenance with both set (see Summary). There is no timestamp, so two analyses of the same input by the same build are identical. Identity names a model-backed component: name (udpipe), model (english-ewt-ud-2.5-191206), sha256 of the model artifact, and license. The UDPipe adapter derives it from the bytes it loaded, so a model matra does not pin reports its digest with model and license set to None; an embedder reports one in the same shape (model2vec for Model2Vec), recorded in a cluster result's parameters.embedder. Provenance::new(parser, format, source) fills matra and schema from the build.",
+      "words": 205
     },
     {
       "compression_ratio": null,
@@ -405,13 +405,13 @@
       "words": 37
     },
     {
-      "compression_ratio": 0.5928,
+      "compression_ratio": 0.5726,
       "kind": "paragraph",
-      "lexical_density": 0.5532,
-      "readability_grade": 14.1622,
+      "lexical_density": 0.5273,
+      "readability_grade": 15.5168,
       "sentences": 3,
-      "text": "Parameters records what shaped an outcome, each field present only when the method takes it: n (Option<usize>) for a summary and keyphrases, threshold (Option<f64>) and embedder (Option<String>, the embedder's identity) for clusters. In JSON an absent parameter is an absent key, so a summary's is {\"n\": 3}.",
-      "words": 52
+      "text": "Parameters records what shaped an outcome, each field present only when the method takes it: n (Option<usize>) for a summary and keyphrases, threshold (Option<f64>) and embedder (Option<Identity>, the identity the embedder reports, the same shape as the parser's) for clusters. In JSON an absent parameter is an absent key, so a summary's is {\"n\": 3}.",
+      "words": 61
     },
     {
       "compression_ratio": null,
@@ -540,13 +540,13 @@
       "words": 26
     },
     {
-      "compression_ratio": 0.5686,
+      "compression_ratio": 0.5133,
       "kind": "paragraph",
-      "lexical_density": 0.6027,
-      "readability_grade": 9.6316,
-      "sentences": 4,
-      "text": "domain::limits holds every bound matra holds its work to, each defined once and read where it applies. They are constants, not settings: no configuration changes them, and changing one is a breaking change. A cap that is exceeded returns InputTooLarge, whose limit detail is the constant and whose what detail names the gate; a paragraph outside a metric's bounds keeps that metric None. Each constant's rustdoc carries the cost model behind its value.",
-      "words": 76
+      "lexical_density": 0.5368,
+      "readability_grade": 10.468,
+      "sentences": 6,
+      "text": "domain::limits holds every bound matra holds its work to, each defined once and read where it applies. They are published so you can size work before a call instead of learning a bound from a refusal: split an input under MAX_INPUT_BYTES, or chunk a document's sentences under the cap of the method you select, each named for that method as SummaryMethod and KeyphraseMethod name it. They are constants, not settings: no configuration changes them. They are this release's values and may change in any 0.x release, so read them from domain::limits rather than copying the numbers. A cap that is exceeded returns InputTooLarge, whose limit detail is the constant and whose what detail names the gate; a paragraph outside a metric's bounds keeps that metric None. Each constant's rustdoc carries the cost model behind its value.",
+      "words": 142
     },
     {
       "compression_ratio": null,

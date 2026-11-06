@@ -243,12 +243,12 @@
       "words": 141
     },
     {
-      "compression_ratio": 0.5519,
+      "compression_ratio": 0.5548,
       "kind": "paragraph",
       "lexical_density": 0.5333,
       "readability_grade": 5.315,
       "sentences": 5,
-      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.135 and scores the bare error at 1.468, while YAKE's first is move copy at 2011.470. What is low there is the score, not the position: 1.468 sits not far above 1.000, the floor any single word scores, and 230 of the 583 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 304th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
+      "text": "Expect the top phrase not to be the document's topic. On this book's errors page, RAKE puts error implement st ::error, read off the code span std::error::Error and the words around it, first at 12.135 and scores the bare error at 1.468, while YAKE's first is move copy at 2020.552. What is low there is the score, not the position: 1.468 sits not far above 1.000, the floor any single word scores, and 223 of the 567 phrases sit flat on that floor underneath it, which puts error around the middle of the ranking, 294th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. Methodology carries both formulas and every departure from the published versions.",
       "words": 125
     },
     {
@@ -315,13 +315,13 @@
       "words": 26
     },
     {
-      "compression_ratio": 0.5747,
+      "compression_ratio": 0.5624,
       "kind": "paragraph",
-      "lexical_density": 0.5484,
-      "readability_grade": 10.9428,
+      "lexical_density": 0.5556,
+      "readability_grade": 10.8637,
       "sentences": 3,
-      "text": "models.embedding is the name of the embedding model's directory under model_dir, which matra clusters, Model2Vec::from_config and Model2Vec.potion_base_8m() provision into and load from. The file's sections are [models], [summary] and [keyphrases], each of the last two with n and method, and [clusters] with threshold. They configure the command line only: the library and Python take every count, method and threshold as an argument.",
-      "words": 65
+      "text": "models.embedding is the name of the embedding model's directory under model_dir, which matra clusters, Model2Vec::from_config and Python's Model2Vec.from_config() provision into and load from. The file's sections are [models], [summary] and [keyphrases], each of the last two with n and method, and [clusters] with threshold. They configure the command line only: the library and Python take every count, method and threshold as an argument.",
+      "words": 67
     },
     {
       "compression_ratio": 0.5645,
@@ -504,13 +504,13 @@
       "words": 41
     },
     {
-      "compression_ratio": 0.5057,
+      "compression_ratio": 0.492,
       "kind": "paragraph",
-      "lexical_density": 0.5738,
-      "readability_grade": 9.1973,
+      "lexical_density": 0.5659,
+      "readability_grade": 8.386,
       "sentences": 7,
-      "text": "The message still goes to stderr and the exit code is still 2, so a script that reads only the exit code is unchanged. Branch on error.kind and read values from error.details, never from the message. The command line's own refusals carry the kind whose remedy matches, which for every one of them is invalid_input, a call to change: a directory given to a command that reads one document, --format with a directory, -r without --skill, an unknown reference or schema name, config init over an existing file, and clusters in a build without an embedder. A usage error under --json, such as an unknown flag, is an envelope too, with command null when the arguments name none. Errors lists every kind.",
-      "words": 123
+      "text": "The message still goes to stderr and the exit code is still 2, so a script that reads only the exit code is unchanged. Branch on error.kind and read values from error.details, never from the message. The command line's own refusals carry the kind whose remedy matches, which for every one of them is invalid_input, a call to change, with error.details.reason naming which refusal it is: a directory given to a command that reads one document, --format with a directory, -r without --skill, an unknown reference or schema name, config init over an existing file, and clusters in a build without an embedder. A usage error under --json, such as an unknown flag, is an envelope too, with command null when the arguments name none. Errors lists every kind.",
+      "words": 130
     },
     {
       "compression_ratio": null,

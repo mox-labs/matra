@@ -45,13 +45,13 @@
       "words": 43
     },
     {
-      "compression_ratio": 0.5663,
+      "compression_ratio": 0.5578,
       "kind": "paragraph",
-      "lexical_density": 0.5349,
-      "readability_grade": 8.3947,
+      "lexical_density": 0.5402,
+      "readability_grade": 8.806,
       "sentences": 7,
-      "text": "Once the model is on disk nothing is written. Engine.from_config() and Model2Vec.potion_base_8m() announce a download the same way. Redirect sys.stderr if a notice must not reach your terminal. It finds the model directory from the environment alone: MATRA_MODEL_DIR if you set it, otherwise the models subdirectory of $XDG_DATA_HOME/matra, which defaults to ~/.local/share/matra. A pre-existing ~/.matra/models is used instead when the new location does not exist yet and that one is not empty, so a cache from 0.1.0 keeps working. Programming model has the full resolution order.",
-      "words": 92
+      "text": "Once the model is on disk nothing is written. Engine.from_config(), Model2Vec.potion_base_8m() and Model2Vec.from_config() announce a download the same way. Redirect sys.stderr if a notice must not reach your terminal. It finds the model directory from the environment alone: MATRA_MODEL_DIR if you set it, otherwise the models subdirectory of $XDG_DATA_HOME/matra, which defaults to ~/.local/share/matra. A pre-existing ~/.matra/models is used instead when the new location does not exist yet and that one is not empty, so a cache from 0.1.0 keeps working. Programming model has the full resolution order.",
+      "words": 94
     },
     {
       "compression_ratio": 0.6596,
@@ -315,21 +315,21 @@
       "words": 69
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5396,
       "kind": "paragraph",
-      "lexical_density": 0.4762,
-      "readability_grade": 12.2667,
-      "sentences": 2,
-      "text": "identity is read once, when the object is handed over, and travels into the result's provenance as parameters[\"embedder\"]. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.",
-      "words": 44
+      "lexical_density": 0.4545,
+      "readability_grade": 9.1709,
+      "sentences": 5,
+      "text": "identity returns the shape provenance[\"parser\"] has, matra.types.Identity: a name, and the model, its sha256 and its license, each None when you do not know it. It is read once, when the object is handed over, and travels into the result's provenance as parameters[\"embedder\"], so the model's licence travels with the scores as the parsing model's does with the parse. A bare string is refused. Two embedders that can disagree must not report the same identity, or scores end up attributed to a geometry that did not produce them.",
+      "words": 93
     },
     {
-      "compression_ratio": 0.6005,
+      "compression_ratio": 0.6032,
       "kind": "paragraph",
       "lexical_density": 0.5395,
       "readability_grade": 8.6591,
       "sentences": 5,
-      "text": "Every input over 8 MiB is rejected with matra.InputTooLargeError, a ValueError, whose details carry what, limit and actual. Text, bytes and blocks are checked as input; a file is checked before it is read, as file_source. The gate lives in the one step every input passes through to reach the parser, so there is no input that skips it. In analyze_all, an oversized input is one item whose kind is input_too_large, and the stream goes on.",
+      "text": "Every input over 8 MiB is rejected with matra.InputTooLargeError, a ValueError, whose details carry what, limit and actual. Text, bytes and blocks are checked as input; a file is checked before it is read, as file_read. The gate lives in the one step every input passes through to reach the parser, so there is no input that skips it. In analyze_all, an oversized input is one item whose kind is input_too_large, and the stream goes on.",
       "words": 77
     },
     {
@@ -459,12 +459,12 @@
       "words": 62
     },
     {
-      "compression_ratio": 0.5647,
+      "compression_ratio": 0.5634,
       "kind": "paragraph",
-      "lexical_density": 0.5867,
-      "readability_grade": 8.8846,
+      "lexical_density": 0.5733,
+      "readability_grade": 8.5699,
       "sentences": 6,
-      "text": "IoNotFoundError and IoPermissionError derive from IoError, so except matra.IoError catches every I/O failure. matra.IoError is not the builtin IOError, which is another name for OSError. Every exception carries kind, the stable string from matra.ERROR_KINDS, and details, a dict of every value in its message: what, limit and actual on an InputTooLargeError, path on a missing file, url and retryable on a download that did not arrive. The errors reference lists the keys for every kind.",
+      "text": "IoNotFoundError and IoPermissionError derive from IoError, so except matra.IoError catches every I/O failure. matra.IoError is not the builtin IOError, which is another name for OSError. Every exception carries kind, the stable string from matra.ERROR_KINDS, and details, a dict of the values to act on: what, limit and actual on an InputTooLargeError, path on a missing file, url and retryable on a download that did not arrive. The errors reference lists the keys for every kind.",
       "words": 76
     },
     {
@@ -486,13 +486,13 @@
       "words": 14
     },
     {
-      "compression_ratio": 0.5878,
+      "compression_ratio": 0.505,
       "kind": "paragraph",
-      "lexical_density": 0.5224,
-      "readability_grade": 12.317,
-      "sentences": 3,
-      "text": "The message on each exception is the Rust error's own Display output, for a person to read. Branch on the class or on kind, and read values from details. An InputTooLargeError names its gate in details[\"what\"]: input and file_source for an input, tfidf, textrank, rake, yake and clusters for an outcome, and config_file, udpipe_download and embedding_download for the constructors that read a configuration or download a model.",
-      "words": 69
+      "lexical_density": 0.5377,
+      "readability_grade": 15.3393,
+      "sentences": 4,
+      "text": "The message on each exception is the Rust error's own Display output, for a person to read. Branch on the class or on kind, and read values from details. An InputTooLargeError names its gate in details[\"what\"]: input and file_read for an input, tfidf, textrank, rake, yake and clusters for an outcome, and config_file_read, parser_model_download and embedding_model_download for the constructors that read a configuration or download a model. An InvalidInputError names the check that failed in details[\"reason\"], a stable name such as method_unknown, embedder_raised or config_malformed, so a caller tells a bad argument from a broken embedder or a config file to fix without reading the message.",
+      "words": 109
     },
     {
       "compression_ratio": 0.6246,
