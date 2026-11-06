@@ -257,9 +257,28 @@ pub enum Error {
     /// Model file exists but could not be loaded (corrupt, wrong format).
     #[error("invalid model: {0}")]
     ModelInvalid(String),
-    /// NLP parsing failed on the input text.
-    #[error("parse failed: {0}")]
-    ParseFailed(String),
+    /// The parser or a reader failed on the input, or returned what its
+    /// contract forbids.
+    ///
+    /// A failure the component reports itself carries only its `cause`.
+    /// When the engine's checks on what a parser or a reader returned
+    /// fail (a head out of range, a span outside its paragraph), `reason`
+    /// names the check, a stable snake_case name, and `cause` names the
+    /// token or block and what was wrong with it. The remedy is the
+    /// component, not the input: the same input through the same parser
+    /// fails the same way.
+    #[error("parse failed: {cause}")]
+    ParseFailed {
+        /// Which of the engine's checks failed, a stable snake_case name:
+        /// the `reason` detail. `None` when the parser or the reader
+        /// reported the failure itself; a provider leaves it `None`. The
+        /// names in use are listed in the errors reference
+        /// (`site/content/reference/errors.md`); a reader treats the set
+        /// as open.
+        reason: Option<&'static str>,
+        /// What went wrong, for a person: the `cause` detail.
+        cause: String,
+    },
     /// Input exceeded a bounded limit (e.g. too many sentences for
     /// an O(n^2) algorithm like TextRank).
     ///
@@ -334,7 +353,7 @@ impl Error {
         match self {
             Error::ModelNotFound(_) => "model_not_found",
             Error::ModelInvalid(_) => "model_invalid",
-            Error::ParseFailed(_) => "parse_failed",
+            Error::ParseFailed { .. } => "parse_failed",
             Error::InputTooLarge { .. } => "input_too_large",
             Error::UnsupportedFormat { .. } => "unsupported_format",
             Error::InvalidInput { .. } => "invalid_input",
@@ -353,18 +372,19 @@ impl Error {
     /// | Kind | Keys |
     /// |---|---|
     /// | `model_not_found` | `path` |
-    /// | `model_invalid`, `parse_failed` | `reason` |
+    /// | `model_invalid` | `cause` |
+    /// | `parse_failed` | `cause`; `reason` when one of the engine's checks failed |
     /// | `invalid_input` | `reason` |
     /// | `input_too_large` | `what`, `limit`, `actual` |
     /// | `unsupported_format` | `format` when one was recognised, `feature` when one would read it |
-    /// | `io` | `io_kind` and `reason`; `path` when the failure concerns a path matra named; `url` and `retryable` when a download did not arrive |
+    /// | `io` | `io_kind` and `cause`; `path` when the failure concerns a path matra named; `url` and `retryable` when a download did not arrive |
     ///
     /// A key that does not apply is absent, never empty. A key, once a
-    /// kind carries it, keeps appearing in later versions. On
-    /// `invalid_input`, `reason` names the check that failed, a stable
-    /// snake_case name to branch on (`threshold_not_finite`,
-    /// `config_malformed`, ...); elsewhere it is the variant's own text:
-    /// the message a payload `String` holds, or the operating system's
+    /// kind carries it, keeps appearing in later versions. One word, one
+    /// meaning: `reason` is always a stable snake_case name of a check to
+    /// branch on (`threshold_not_finite`, `config_malformed`,
+    /// `head_out_of_range`, ...), and `cause` is always free text for a
+    /// person: the message a payload holds, or the operating system's
     /// account of an I/O failure. `io_kind` names the
     /// I/O failure's class (`not_found`, `permission_denied`,
     /// `timed_out`, ...; [`std::io::ErrorKind`] in Rust), a set a reader
@@ -383,8 +403,13 @@ impl Error {
         let details = ErrorDetails::default();
         match self {
             Error::ModelNotFound(path) => details.text("path", path.to_string_lossy()),
-            Error::ModelInvalid(reason) | Error::ParseFailed(reason) => {
-                details.text("reason", reason.as_str())
+            Error::ModelInvalid(cause) => details.text("cause", cause.as_str()),
+            Error::ParseFailed { reason, cause } => {
+                let details = match reason {
+                    Some(reason) => details.text("reason", *reason),
+                    None => details,
+                };
+                details.text("cause", cause.as_str())
             }
             Error::InvalidInput { reason, .. } => details.text("reason", *reason),
             Error::InputTooLarge {
@@ -414,7 +439,7 @@ impl Error {
                     Some(context) => context.add_to(details),
                     None => details,
                 };
-                details.text("reason", error.to_string())
+                details.text("cause", error.to_string())
             }
         }
     }
@@ -628,7 +653,7 @@ impl std::error::Error for IoContext {}
 ///
 /// Written out rather than derived from `Debug`, which promises no
 /// stable text. A kind not named here is `other`; the operating system's
-/// account is in `reason` either way.
+/// account is in `cause` either way.
 fn io_kind_name(kind: std::io::ErrorKind) -> &'static str {
     use std::io::ErrorKind;
     match kind {
@@ -3612,18 +3637,33 @@ mod tests {
     fn document_error_display_with_and_without_path() {
         let with_path = DocumentError::new(
             Some(PathBuf::from("essay.md")),
-            Error::ParseFailed("boom".to_string()),
+            Error::ParseFailed {
+                reason: None,
+                cause: "boom".to_string(),
+            },
         );
         assert_eq!(with_path.to_string(), "essay.md: parse failed: boom");
 
-        let without = DocumentError::new(None, Error::ParseFailed("boom".to_string()));
+        let without = DocumentError::new(
+            None,
+            Error::ParseFailed {
+                reason: None,
+                cause: "boom".to_string(),
+            },
+        );
         assert_eq!(without.to_string(), "parse failed: boom");
     }
 
     #[test]
     fn document_error_source_is_the_domain_error() {
         use std::error::Error as _;
-        let err = DocumentError::new(None, Error::ParseFailed("boom".to_string()));
+        let err = DocumentError::new(
+            None,
+            Error::ParseFailed {
+                reason: None,
+                cause: "boom".to_string(),
+            },
+        );
         assert!(err.source().is_some());
     }
 
@@ -3830,7 +3870,13 @@ mod tests {
                 Error::ModelInvalid("truncated".to_string()),
                 "model_invalid",
             ),
-            (Error::ParseFailed("no parse".to_string()), "parse_failed"),
+            (
+                Error::ParseFailed {
+                    reason: None,
+                    cause: "no parse".to_string(),
+                },
+                "parse_failed",
+            ),
             (
                 Error::InputTooLarge {
                     limit: 1,
@@ -3906,11 +3952,24 @@ mod tests {
             ),
             (
                 Error::ModelInvalid("truncated at byte 7".to_string()),
-                json!({ "reason": "truncated at byte 7" }),
+                json!({ "cause": "truncated at byte 7" }),
             ),
             (
-                Error::ParseFailed("udpipe panicked: boom".to_string()),
-                json!({ "reason": "udpipe panicked: boom" }),
+                Error::ParseFailed {
+                    reason: None,
+                    cause: "udpipe panicked: boom".to_string(),
+                },
+                json!({ "cause": "udpipe panicked: boom" }),
+            ),
+            (
+                Error::ParseFailed {
+                    reason: Some("head_out_of_range"),
+                    cause: "token 3 of sentence 1 has head 9".to_string(),
+                },
+                json!({
+                    "reason": "head_out_of_range",
+                    "cause": "token 3 of sentence 1 has head 9",
+                }),
             ),
             (
                 Error::InputTooLarge {
@@ -3953,7 +4012,7 @@ mod tests {
                     std::io::ErrorKind::PermissionDenied,
                     "denied",
                 )),
-                json!({ "io_kind": "permission_denied", "reason": "denied" }),
+                json!({ "io_kind": "permission_denied", "cause": "denied" }),
             ),
             (
                 Error::Io(IoContext::at_path(
@@ -3964,7 +4023,7 @@ mod tests {
                 json!({
                     "io_kind": "not_found",
                     "path": "/models/x",
-                    "reason": "cannot read /models/x: gone",
+                    "cause": "cannot read /models/x: gone",
                 }),
             ),
             (
@@ -3978,7 +4037,7 @@ mod tests {
                     "io_kind": "timed_out",
                     "url": "https://models.example/m",
                     "retryable": true,
-                    "reason": "download https://models.example/m: timeout",
+                    "cause": "download https://models.example/m: timeout",
                 }),
             ),
         ];
@@ -4025,7 +4084,10 @@ mod tests {
 
         let on_disk = DocumentError::new(
             Some(PathBuf::from("essay.md")),
-            Error::ParseFailed("boom".to_string()),
+            Error::ParseFailed {
+                reason: None,
+                cause: "boom".to_string(),
+            },
         );
         assert_eq!(
             serde_json::to_value(&on_disk).unwrap(),
@@ -4033,10 +4095,16 @@ mod tests {
                 "path": "essay.md",
                 "kind": "parse_failed",
                 "message": "parse failed: boom",
-                "details": { "reason": "boom" },
+                "details": { "cause": "boom" },
             })
         );
-        let in_memory = DocumentError::new(None, Error::ParseFailed("boom".to_string()));
+        let in_memory = DocumentError::new(
+            None,
+            Error::ParseFailed {
+                reason: None,
+                cause: "boom".to_string(),
+            },
+        );
         assert!(serde_json::to_value(&in_memory).unwrap()["path"].is_null());
     }
 
@@ -4047,7 +4115,13 @@ mod tests {
     fn a_non_utf8_document_error_path_serializes_lossily() {
         use std::os::unix::ffi::OsStrExt;
         let path = PathBuf::from(std::ffi::OsStr::from_bytes(b"bad\xffname.md"));
-        let err = DocumentError::new(Some(path), Error::ParseFailed("boom".to_string()));
+        let err = DocumentError::new(
+            Some(path),
+            Error::ParseFailed {
+                reason: None,
+                cause: "boom".to_string(),
+            },
+        );
         let json = serde_json::to_value(&err).expect("serializes");
         assert_eq!(json["path"], "bad\u{fffd}name.md");
     }

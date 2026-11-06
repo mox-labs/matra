@@ -69,7 +69,10 @@ fn every_variant() -> [Error; 7] {
     [
         Error::ModelNotFound(PathBuf::from("english.udpipe")),
         Error::ModelInvalid("truncated".to_string()),
-        Error::ParseFailed("no parse".to_string()),
+        Error::ParseFailed {
+            reason: None,
+            cause: "no parse".to_string(),
+        },
         Error::InputTooLarge {
             limit: 1,
             actual: 2,
@@ -126,7 +129,10 @@ fn the_item_shapes_are_the_ones_the_fixture_names() {
     );
     let failed = DocumentError::new(
         Some(PathBuf::from("b.txt")),
-        Error::ParseFailed("boom".to_string()),
+        Error::ParseFailed {
+            reason: None,
+            cause: "boom".to_string(),
+        },
     );
 
     for (value, shape) in [

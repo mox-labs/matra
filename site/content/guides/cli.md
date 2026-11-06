@@ -134,7 +134,7 @@ Phrases are printed as lowercased lemmas, not as the surface text of the documen
 
 Neither number is a probability, a percentage, or comparable with the other. RAKE sums a per-word degree-over-frequency ratio across the words of the phrase, and that ratio is at least 1 for every word, so a phrase of k words scores at least k. That is a floor per length, not an order across lengths: on this book's methodology page the two-word `lexical density` scores `5.667` and the three-word `model file name` scores `5.200`. YAKE multiplies its words' term scores and returns the reciprocal, so it is unbounded above and carries no interpretable unit, and phrase length does not predict where a YAKE score lands. Use either score to order phrases within one document under one method. Do not read it as a magnitude, and do not compare a RAKE number with a YAKE number.
 
-Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE puts `error implement st ::error`, read off the code span `std::error::Error` and the words around it, first at `12.135` and scores the bare `error` at `1.468`, while YAKE's first is `move copy` at `2020.552`. What is low there is the score, not the position: `1.468` sits not far above `1.000`, the floor any single word scores, and 223 of the 567 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking, 294th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
+Expect the top phrase not to be the document's topic. On this book's [errors](../reference/errors.md) page, RAKE puts `error implement st ::error`, read off the code span `std::error::Error` and the words around it, first at `12.135` and scores the bare `error` at `1.468`, while YAKE's first is `move copy` at `2035.733`. What is low there is the score, not the position: `1.468` sits not far above `1.000`, the floor any single word scores, and 224 of the 571 phrases sit flat on that floor underneath it, which puts `error` around the middle of the ranking, 297th. Both methods are behaving as specified: they rank properties of word co-occurrence, not aboutness. [Methodology](../reference/methodology.md) carries both formulas and every departure from the published versions.
 
 ```bash
 matra keyphrases essay.md --json | jq '.result.phrases[0:3]'
@@ -308,7 +308,7 @@ All five keys are always present, and exactly one of `result` and `error` is nul
   "error": {
     "kind": "io",
     "message": "io error: cannot read missing.md: No such file or directory (os error 2)",
-    "details": { "io_kind": "not_found", "path": "missing.md", "reason": "cannot read missing.md: No such file or directory (os error 2)" }
+    "details": { "io_kind": "not_found", "path": "missing.md", "cause": "cannot read missing.md: No such file or directory (os error 2)" }
   }
 }
 ```

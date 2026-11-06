@@ -705,7 +705,10 @@ where
                 .map(|s| (*s).to_string())
                 .or_else(|| payload.downcast_ref::<String>().cloned())
                 .unwrap_or_else(|| "udpipe panic (no message captured)".to_string());
-            Err(Error::ParseFailed(format!("udpipe panicked: {message}")))
+            Err(Error::ParseFailed {
+                reason: None,
+                cause: format!("udpipe panicked: {message}"),
+            })
         }
     }
 }
@@ -713,9 +716,10 @@ where
 impl NlpProvider for Udpipe {
     fn parse(&self, text: &str) -> crate::domain::Result<Vec<Sentence>> {
         let words = catch_parse_panic(|| {
-            self.model
-                .parse(text)
-                .map_err(|e| Error::ParseFailed(e.to_string()))
+            self.model.parse(text).map_err(|e| Error::ParseFailed {
+                reason: None,
+                cause: e.to_string(),
+            })
         })?;
 
         let mut by_sentence: HashMap<i32, Vec<&udpipe_rs::Word>> = HashMap::new();
@@ -736,16 +740,22 @@ impl NlpProvider for Udpipe {
                     .iter()
                     .map(|w| {
                         let id = usize::try_from(w.id).map_err(|_| {
-                            Error::ParseFailed(format!(
+                            Error::ParseFailed {
+ reason: None,
+ cause: format!(
                                 "invalid token id {} in sentence {}",
                                 w.id, w.sentence_id
-                            ))
+                            ),
+}
                         })?;
                         let head = usize::try_from(w.head).map_err(|_| {
-                            Error::ParseFailed(format!(
+                            Error::ParseFailed {
+ reason: None,
+ cause: format!(
                                 "invalid head {} for token {} in sentence {}",
                                 w.head, w.id, w.sentence_id
-                            ))
+                            ),
+}
                         })?;
                         Ok(Token {
                             id,
@@ -766,12 +776,15 @@ impl NlpProvider for Udpipe {
 
                 for token in &mut tokens {
                     let (start, end) = locate(text, cursor, &token.text).ok_or_else(|| {
-                        Error::ParseFailed(format!(
+                        Error::ParseFailed {
+ reason: None,
+ cause: format!(
                             "token {} ({:?}) of sentence {} is not in the parsed text at or after byte {cursor}, so it has no span",
                             token.id,
                             token.text,
                             id + 1
-                        ))
+                        ),
+}
                     })?;
                     token.span = Span::new(start, end);
                     cursor = end;
@@ -884,7 +897,7 @@ mod tests {
             panic!("simulated udpipe-rs panic");
         });
         match result {
-            Err(Error::ParseFailed(msg)) => {
+            Err(Error::ParseFailed { cause: msg, .. }) => {
                 assert!(
                     msg.contains("udpipe panicked"),
                     "expected wrapper prefix in: {msg}"
@@ -903,7 +916,7 @@ mod tests {
         let result: crate::domain::Result<()> =
             catch_parse_panic(|| panic!("{}", "owned string panic"));
         match result {
-            Err(Error::ParseFailed(msg)) => {
+            Err(Error::ParseFailed { cause: msg, .. }) => {
                 assert!(
                     msg.contains("owned string panic"),
                     "expected payload in: {msg}"
@@ -918,10 +931,14 @@ mod tests {
         let ok: crate::domain::Result<i32> = catch_parse_panic(|| Ok(42));
         assert_eq!(ok.unwrap(), 42);
 
-        let err: crate::domain::Result<i32> =
-            catch_parse_panic(|| Err(Error::ParseFailed("boring failure".into())));
+        let err: crate::domain::Result<i32> = catch_parse_panic(|| {
+            Err(Error::ParseFailed {
+                reason: None,
+                cause: "boring failure".into(),
+            })
+        });
         match err {
-            Err(Error::ParseFailed(msg)) => assert_eq!(msg, "boring failure"),
+            Err(Error::ParseFailed { cause: msg, .. }) => assert_eq!(msg, "boring failure"),
             other => panic!("expected pass-through ParseFailed, got {other:?}"),
         }
     }

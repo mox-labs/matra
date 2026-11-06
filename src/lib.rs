@@ -815,7 +815,10 @@ mod tests {
             self.calls.fetch_add(1, Ordering::SeqCst);
             self.max_len_seen.fetch_max(text.len(), Ordering::SeqCst);
             if text.contains("POISON") {
-                return Err(domain::Error::ParseFailed("poisoned".to_string()));
+                return Err(domain::Error::ParseFailed {
+                    reason: None,
+                    cause: "poisoned".to_string(),
+                });
             }
             DotSplitNlp.parse(text)
         }
