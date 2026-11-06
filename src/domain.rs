@@ -1294,9 +1294,11 @@ fn measure_tree_depth(tokens: &[Token]) -> Option<usize> {
 /// - Following `head` references never loops back on itself.
 ///
 /// Nothing validates these: [`Sentence::new`] trusts its caller, and the
-/// `NlpProvider` contract states them for providers. The tree walks stay
-/// safe on input that breaks the last one: [`Sentence::tree_depth`] is
-/// `None` on a cycle and [`Sentence::subtree`] carries a visited set.
+/// parser's contract states them for the parser. A sentence read back from
+/// JSON or built by hand can break any of them, so nothing downstream
+/// relies on them for safety: [`Sentence::tree_depth`] is `None` on a
+/// cycle, [`Sentence::subtree`] carries a visited set, and every outcome
+/// over a [`Document`] holds on a sentence that breaks them all.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Sentence {
@@ -1803,6 +1805,12 @@ fn serialize_path_lossy<S: serde::Serializer>(
 ///
 /// No timestamp: matra's outputs are deterministic, and a timestamp would
 /// make two identical analyses differ.
+///
+/// A record, not proof. It says how a result says it was made: a
+/// document read back from JSON, or built with [`Provenance::new`], carries
+/// whatever provenance it was given, and an outcome derived from it copies
+/// that on. What it can be checked against is `source.sha256`, the digest
+/// of the analysed text every span points into.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Provenance {
@@ -1869,7 +1877,9 @@ impl Parameters {
 
 impl Provenance {
     /// The provenance of a result this build produces: `matra` and
-    /// `schema` are this build's own, the rest is what the caller names.
+    /// `schema` are this build's own, the rest is what the caller names,
+    /// unchecked. A caller building a document by hand names a parser
+    /// that did not run at its own word; see [`Provenance`].
     pub fn new(parser: Identity, format: Format, source: ProvenanceSource) -> Self {
         Self {
             matra: env!("CARGO_PKG_VERSION").to_string(),
@@ -1912,6 +1922,17 @@ impl Provenance {
 /// Paragraphs live in sections (single source of truth). The document's
 /// aggregates are a record, [`DocumentMetrics`], rather than methods, so
 /// they cross FFI as data.
+///
+/// A document is data. It can come from `Engine::analyze`, from JSON a
+/// caller saved and read back (`--json` output, cut by `--depth` or
+/// whole), or from the public constructors, and nothing tells those
+/// apart. So every outcome (`summarize`, `keyphrases`, `clusters` and
+/// their `_with` forms) and every view on these types holds on a document
+/// whose parts contradict each other (spans out of range or inverted,
+/// heads pointing nowhere or in a cycle, empty sentences, texts that do
+/// not match their tokens): it returns a result that carries the
+/// contradiction through, or an error, and never panics or loops.
+/// `tests/hostile_documents.rs` holds them to it.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Document {
