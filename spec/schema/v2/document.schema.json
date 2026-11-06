@@ -84,8 +84,8 @@
           "type": "number"
         },
         "embedder": {
-          "description": "The identity of the embedder whose vectors were clustered, as it reports it.",
-          "type": "string"
+          "description": "The embedder whose vectors were clustered, as it reports itself: the same shape as `provenance.parser`, so the embedding model's name, digest and licence travel with the scores.",
+          "$ref": "#/$defs/Identity"
         }
       }
     },

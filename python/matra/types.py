@@ -314,7 +314,7 @@ class Parameters(TypedDict, total=False):
 
     n: int
     threshold: float
-    embedder: str
+    embedder: Identity
 
 
 class Provenance(TypedDict):
@@ -532,10 +532,13 @@ class Embedder(Protocol):
     ``InvalidInputError`` (a ``ValueError``) from ``clusters``, with the
     same message a Rust implementor would get.
 
-    ``identity`` names the geometry the vectors live in, and travels
-    into every result derived from them so scores stay attributable. It
-    is read once, when the object is handed over. Two embedders that can
-    disagree must not return the same string.
+    ``identity`` says who produces the vectors, in the shape the parser
+    reports itself (``Identity``): a ``name``, and the ``model``, its
+    ``sha256`` and its ``license``, each ``None`` when not known. It travels into every result derived from the
+    vectors as ``provenance["parameters"]["embedder"]``, so scores stay
+    attributable and the model's licence travels with them. It is read
+    once, when the object is handed over. Two embedders that can disagree
+    must not report the same identity.
 
     ``Model2Vec`` satisfies this protocol; so does any class you write.
     """
@@ -544,8 +547,8 @@ class Embedder(Protocol):
         """Embed each text into a vector: one per text, in order."""
         ...
 
-    def identity(self) -> str:
-        """A stable identifier for the model behind this embedder."""
+    def identity(self) -> Identity:
+        """Who produces these vectors: the component and its model."""
         ...
 
 

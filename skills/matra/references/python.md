@@ -91,10 +91,10 @@ found = matra.clusters(doc, model, threshold=0.85)
 |---|---|---|
 | `Model2Vec.from_dir` | `(dir) -> Model2Vec` | Loads three artifacts from a directory. Never touches the network |
 | `Model2Vec.potion_base_8m` | `(dir=None) -> Model2Vec` | Downloads the pinned reference model if absent, announced on `sys.stderr`. `dir` is a models directory, as `MATRA_MODEL_DIR` is, and the files live in its `potion-base-8M` subdirectory; with no argument the directory comes from the configuration |
-| `model_hash` | property, `str` | SHA-256 over the three artifact files: the model identity |
+| `model_hash` | property, `str` | SHA-256 over the three artifact files: the digest `identity()` carries |
 | `dimensions` | property, `int` | Length of every vector this model produces |
 | `embed` | `(texts: list[str]) -> list[list[float]]` | One vector per text, in order, all of `dimensions` length |
-| `identity` | `() -> str` | The same string `model_hash` carries |
+| `identity` | `() -> Identity` | `{name: "model2vec", model, sha256, license}`, the shape of `provenance["parser"]`; `model` and `license` are `None` unless the digest is the pinned model's |
 
 `embed` plus `identity` is the whole `Embedder` protocol, declared in `matra.types`. Any object with those two methods is accepted where a model is asked for; `Model2Vec` takes a fast path that calls no Python, and your own object goes through the same contract check. Vectors you already hold get in the same way: an object whose `embed` returns them.
 
@@ -103,15 +103,15 @@ class Constant:
     def embed(self, texts: list[str]) -> list[list[float]]:
         return [[1.0, 0.0] for _ in texts]
 
-    def identity(self) -> str:
-        return "constant-v1"
+    def identity(self) -> matra.types.Identity:
+        return {"name": "constant", "model": "v1", "sha256": None, "license": None}
 
 found = matra.clusters(doc, Constant(), threshold=0.9)
 ```
 
 The contract is checked in the library, so a Python embedder returning the wrong number of vectors raises `matra.InvalidInputError`, a `ValueError`, with the same message a Rust implementor would read, and an exception raised inside `embed` arrives as `matra.InvalidInputError` carrying its own text. `identity` is read once, before anything is embedded, so a broken embedder costs one method call.
 
-Two embedders that can disagree must not return the same identity string.
+`identity` returns the shape `provenance["parser"]` has: a `name`, and the `model`, its `sha256` and its `license`, each `None` when unknown. A bare string is refused. Two embedders that can disagree must not report the same identity.
 
 ## Exceptions
 

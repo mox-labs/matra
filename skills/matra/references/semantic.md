@@ -25,7 +25,7 @@ Feed a document and an embedding model, get connected components of sentences wh
 Clusters
   provenance   the document's, plus method "cosine" and parameters:
                  threshold   the cutoff you supplied
-                 embedder    identity of the model whose vector space produced the scores
+                 embedder    the embedder's identity: name, model, sha256, license
   clusters     each: member sentence indices
   edges        every pair that cleared the threshold, with its score
 ```
@@ -70,7 +70,7 @@ Bringing your own model loads what you supply and never reaches the network, wha
 
 Whatever produced the vectors, its identity travels with every result derived from them, in `provenance.parameters.embedder`. That is the field that makes a score attributable: two runs with different identities are not comparable, and a cluster reported without it is a number with no provenance. When you write results down, write the hash down with them.
 
-For a caller-supplied embedder, the identity is whatever that embedder's `identity()` returns. It is read once, when the object is handed over, so scores cannot be reattributed part way through a call. Two embedders that can disagree must not return the same string.
+The identity has the parser's shape: `name`, `model`, `sha256` and `license`, so the embedding model's licence travels with the scores as the parsing model's does with the parse. For `Model2Vec` the `sha256` is its `model_hash`. For a caller-supplied embedder, the identity is whatever that embedder's `identity()` returns, a dict of those four keys. It is read once, when the object is handed over, so scores cannot be reattributed part way through a call. Two embedders that can disagree must not report the same identity.
 
 ## Bounds and failures
 

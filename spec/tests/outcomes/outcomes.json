@@ -3,7 +3,12 @@
   "description": "The outcome lane: summarize, keyphrases and clusters over a document from a fixture, with no parser in the build. `document` is the whole Document the pinned parser produces from `input`, apart from the matra version; the ignored Rust test checks that against the model, and regenerates the fixture with MATRA_REGENERATE_OUTCOMES=1. Each case pins what one call returns: a summary's sentences by index, span and score; keyphrases by phrase, score and every occurrence; clusters by members and edges. `embeddings` holds one hand-built vector per sentence, returned by an embedder named `embedder`, so the clusters case pins the clustering, not a model: sentences 0, 1 and 2 chain at 0.92 while 0 and 2 alone do not clear it, 3 stands apart, and 4 and 5 pair.",
   "input": "Rivers carry silt from the mountains to the sea. Where a river slows, the silt settles and builds a delta. A delta grows for as long as the river carries silt.\n\nEngineers who dam a river starve its delta of silt. The delta then shrinks, and the sea takes the land. Restoring the flow of silt is how a delta is saved.",
   "format": "plain_text",
-  "embedder": "outcomes-fixture-vectors",
+  "embedder": {
+    "name": "outcomes-fixture-vectors",
+    "model": null,
+    "sha256": null,
+    "license": null
+  },
   "embeddings": [
     [
       1.0,

@@ -20,11 +20,14 @@ import json
 import os
 import struct
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import matra
 import pytest
 from matra import Model2Vec
+
+if TYPE_CHECKING:
+    from matra.types import Identity
 
 SPEC = Path(__file__).resolve().parents[2] / "spec" / "tests" / "semantic" / "clusters.json"
 REF = SPEC.parent / "reference-model.json"
@@ -54,11 +57,11 @@ def assert_same_edges(got: list[dict[str, Any]], expect: list[dict[str, Any]]) -
 class Vectors:
     """Returns the vectors it was built with, one per sentence."""
 
-    def __init__(self, vectors: list[list[float]], identity: str) -> None:
+    def __init__(self, vectors: list[list[float]], identity: Identity) -> None:
         self.vectors = vectors
         self._identity = identity
 
-    def identity(self) -> str:
+    def identity(self) -> Identity:
         return self._identity
 
     def embed(self, texts: list[str]) -> list[list[float]]:
@@ -110,6 +113,12 @@ def test_reference_model_vectors_and_clusters_are_exact(engine: Any) -> None:
     fixture = json.loads(REF.read_text())
     model = Model2Vec.potion_base_8m(os.environ.get("MATRA_MODEL2VEC_DIR"))
     assert model.model_hash == fixture["model"]["artifact_hash"]
+    assert model.identity() == {
+        "name": "model2vec",
+        "model": "potion-base-8M",
+        "sha256": model.model_hash,
+        "license": "MIT",
+    }
     assert model.dimensions == fixture["model"]["dimensions"]
 
     vectors = model.embed(fixture["inputs"])
@@ -129,6 +138,11 @@ def test_reference_model_vectors_and_clusters_are_exact(engine: Any) -> None:
     assert sentences_of(doc) == fixture["inputs"]
     for case in fixture["cases"]:
         got = matra.clusters(doc, model, case["threshold"])
-        assert got["provenance"]["parameters"]["embedder"] == model.model_hash
+        assert got["provenance"]["parameters"]["embedder"] == {
+            "name": "model2vec",
+            "model": "potion-base-8M",
+            "sha256": model.model_hash,
+            "license": "MIT",
+        }
         assert got["clusters"] == case["clusters"]
         assert_same_edges(got["edges"], case["edges"])

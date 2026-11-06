@@ -47,7 +47,7 @@ uvx 'matra>=0.3' --skill                              # the skill for 0.3
 | `Sentence.bare_assertion` | `Sentence.root_mood` | all |
 | `Token.feats` (a string) | `Token.features` (a map) | all |
 | `Sentence.tree_depth()` returning `usize::MAX` on a cycle | `Sentence.tree_depth`, `None` on a cycle | all |
-| `SemanticClusters.model_hash` | `Clusters.provenance.parameters.embedder` | all |
+| `SemanticClusters.model_hash` | `Clusters.provenance.parameters.embedder.sha256` | all |
 | `Format` serialized as `"Markdown"`, `"PlainText"` | `"markdown"`, `"plain_text"`, `"blocks"` | Rust serde, JSON |
 | `[summarize]`, `algorithm`, `[semantic] threshold`, `[models] udpipe` | `[summary]`, `method`, `[clusters] threshold`, none | config file |
 | `--json` envelope `format_version: 1` | `format_version: 2`, with an `error` key | command line |
@@ -200,7 +200,7 @@ What moved inside the results:
 
 - `ScoredSentence { text, score, position }` is `SummarySentence { index, span, text, score }`, in `Summary.sentences`. `position` is `index`.
 - `Keyphrase` gains `occurrences`, every span the phrase was found in, and sits in `Keyphrases.phrases`.
-- `SemanticClusters { model_hash, threshold, clusters }` is `Clusters { provenance, clusters, edges }`. The embedder's identity is `provenance.parameters.embedder` and the threshold `provenance.parameters.threshold`. The edges moved out of each cluster into one list, ordered by `a` and then `b`. Each `Cluster` holds only `members`.
+- `SemanticClusters { model_hash, threshold, clusters }` is `Clusters { provenance, clusters, edges }`. The embedder's identity is `provenance.parameters.embedder`, an `Identity` like the parser's (the old hash is its `sha256`), and the threshold `provenance.parameters.threshold`. The edges moved out of each cluster into one list, ordered by `a` and then `b`. Each `Cluster` holds only `members`.
 - The threshold and every score are `f64`, not `f32`.
 - `Model2Vec::potion_base_8m(dir)` takes the models directory, the one `MATRA_MODEL_DIR` names, and keeps the three files in `dir/potion-base-8M/`. In 0.2 `dir` was the model's own directory. Pass the parent: `potion_base_8m(cfg.model_dir())` where 0.2 took `potion_base_8m(cfg.model_dir().join("potion-base-8M"))`. Python's `Model2Vec.potion_base_8m(dir)` changed the same way.
 

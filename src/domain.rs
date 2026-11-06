@@ -1793,11 +1793,12 @@ pub struct Parameters {
     /// join them in a cluster.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub threshold: Option<f64>,
-    /// The identity of the embedder whose vectors were clustered, as it
-    /// reports it (for a file-loaded model, a digest over its artifacts),
-    /// so the scores stay attributable to one geometry.
+    /// The embedder whose vectors were clustered, as it reports itself
+    /// (`Embedder::identity`): its name, its model, the digest over the
+    /// model's artifacts and its licence, so the scores stay attributable
+    /// to one geometry and the model's terms travel with them.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub embedder: Option<String>,
+    pub embedder: Option<Identity>,
 }
 
 impl Parameters {
@@ -1810,7 +1811,7 @@ impl Parameters {
     }
 
     /// The parameters of clustering: the threshold and the embedder.
-    pub(crate) fn clustering(threshold: f64, embedder: impl Into<String>) -> Self {
+    pub(crate) fn clustering(threshold: f64, embedder: Identity) -> Self {
         Self {
             threshold: Some(threshold),
             embedder: Some(embedder.into()),

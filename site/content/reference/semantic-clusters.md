@@ -10,14 +10,14 @@ The value semantic clustering returns, the model it embeds with, and its bounds.
 Clusters
   provenance   the document's, plus method "cosine" and parameters:
                  threshold   the cutoff you supplied
-                 embedder    identity of the model whose vector space produced the scores
+                 embedder    the embedder's identity: name, model, sha256, license
   clusters     each: member sentence indices
   edges        every pair that cleared the threshold
 ```
 
 | Type | Field | Holds |
 |---|---|---|
-| `Clusters` | `provenance` | The document's `Provenance`, with `method` and `parameters`. `parameters.embedder` is the identity the embedder reports: for `Model2Vec`, the SHA-256 over its three artifacts, the value its `model_hash` returns. `parameters.threshold` is the cosine cutoff the call was given |
+| `Clusters` | `provenance` | The document's `Provenance`, with `method` and `parameters`. `parameters.embedder` is the `Identity` the embedder reports, the shape `provenance.parser` has: for `Model2Vec`, `name` `model2vec`, `sha256` the digest over its three artifacts (the value its `model_hash` returns), and `model` `potion-base-8M` and `license` `MIT` when that digest is the pinned model's, `None` otherwise. `parameters.threshold` is the cosine cutoff the call was given |
 | | `clusters` | The connected components, ordered by smallest member index |
 | | `edges` | Every pair whose cosine cleared the threshold, ordered by `a`, then `b`; both ends lie in one cluster |
 | `Cluster` | `members` | Sentence indices in document order, sorted, at least two |
