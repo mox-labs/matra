@@ -142,7 +142,7 @@ pub(super) fn keyphrases(sentences: &[&Sentence], n: usize) -> Result<Vec<Keyphr
                     .product();
                 // A window spans its first word's start to its last
                 // word's end, stop words between them included.
-                let span = Span::new(ngram[0].1.start, ngram[ngram.len() - 1].1.end);
+                let span = Span::new(ngram[0].1.byte_start, ngram[ngram.len() - 1].1.byte_end);
                 match slot.get(&phrase) {
                     Some(&at) => {
                         let entry = &mut candidates[at];

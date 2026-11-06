@@ -22,8 +22,8 @@
       {
         "kind": "paragraph",
         "span": {
-          "start": 0,
-          "end": 165
+          "byte_start": 0,
+          "byte_end": 165
         }
       }
     ],
@@ -31,8 +31,8 @@
     "sentences": [
       {
         "span": {
-          "start": 0,
-          "end": 46
+          "byte_start": 0,
+          "byte_end": 46
         },
         "text": "Animals such as dogs and cats need daily care.",
         "token_count": 10,
@@ -72,8 +72,8 @@
           {
             "id": 1,
             "span": {
-              "start": 0,
-              "end": 7
+              "byte_start": 0,
+              "byte_end": 7
             },
             "text": "Animals",
             "lemma": "animal",
@@ -84,8 +84,8 @@
           {
             "id": 2,
             "span": {
-              "start": 8,
-              "end": 12
+              "byte_start": 8,
+              "byte_end": 12
             },
             "text": "such",
             "lemma": "such",
@@ -96,8 +96,8 @@
           {
             "id": 3,
             "span": {
-              "start": 13,
-              "end": 15
+              "byte_start": 13,
+              "byte_end": 15
             },
             "text": "as",
             "lemma": "as",
@@ -108,8 +108,8 @@
           {
             "id": 4,
             "span": {
-              "start": 16,
-              "end": 20
+              "byte_start": 16,
+              "byte_end": 20
             },
             "text": "dogs",
             "lemma": "dog",
@@ -120,8 +120,8 @@
           {
             "id": 5,
             "span": {
-              "start": 21,
-              "end": 24
+              "byte_start": 21,
+              "byte_end": 24
             },
             "text": "and",
             "lemma": "and",
@@ -132,8 +132,8 @@
           {
             "id": 6,
             "span": {
-              "start": 25,
-              "end": 29
+              "byte_start": 25,
+              "byte_end": 29
             },
             "text": "cats",
             "lemma": "cat",
@@ -144,8 +144,8 @@
           {
             "id": 7,
             "span": {
-              "start": 30,
-              "end": 34
+              "byte_start": 30,
+              "byte_end": 34
             },
             "text": "need",
             "lemma": "need",
@@ -156,8 +156,8 @@
           {
             "id": 8,
             "span": {
-              "start": 35,
-              "end": 40
+              "byte_start": 35,
+              "byte_end": 40
             },
             "text": "daily",
             "lemma": "daily",
@@ -168,8 +168,8 @@
           {
             "id": 9,
             "span": {
-              "start": 41,
-              "end": 45
+              "byte_start": 41,
+              "byte_end": 45
             },
             "text": "care",
             "lemma": "care",
@@ -180,8 +180,8 @@
           {
             "id": 10,
             "span": {
-              "start": 45,
-              "end": 46
+              "byte_start": 45,
+              "byte_end": 46
             },
             "text": ".",
             "lemma": ".",
@@ -193,8 +193,8 @@
       },
       {
         "span": {
-          "start": 47,
-          "end": 115
+          "byte_start": 47,
+          "byte_end": 115
         },
         "text": "They built temples, treasuries, and other important civic buildings.",
         "token_count": 12,
@@ -234,8 +234,8 @@
           {
             "id": 1,
             "span": {
-              "start": 47,
-              "end": 51
+              "byte_start": 47,
+              "byte_end": 51
             },
             "text": "They",
             "lemma": "they",
@@ -246,8 +246,8 @@
           {
             "id": 2,
             "span": {
-              "start": 52,
-              "end": 57
+              "byte_start": 52,
+              "byte_end": 57
             },
             "text": "built",
             "lemma": "build",
@@ -258,8 +258,8 @@
           {
             "id": 3,
             "span": {
-              "start": 58,
-              "end": 65
+              "byte_start": 58,
+              "byte_end": 65
             },
             "text": "temples",
             "lemma": "temple",
@@ -270,8 +270,8 @@
           {
             "id": 4,
             "span": {
-              "start": 65,
-              "end": 66
+              "byte_start": 65,
+              "byte_end": 66
             },
             "text": ",",
             "lemma": ",",
@@ -282,8 +282,8 @@
           {
             "id": 5,
             "span": {
-              "start": 67,
-              "end": 77
+              "byte_start": 67,
+              "byte_end": 77
             },
             "text": "treasuries",
             "lemma": "treasury",
@@ -294,8 +294,8 @@
           {
             "id": 6,
             "span": {
-              "start": 77,
-              "end": 78
+              "byte_start": 77,
+              "byte_end": 78
             },
             "text": ",",
             "lemma": ",",
@@ -306,8 +306,8 @@
           {
             "id": 7,
             "span": {
-              "start": 79,
-              "end": 82
+              "byte_start": 79,
+              "byte_end": 82
             },
             "text": "and",
             "lemma": "and",
@@ -318,8 +318,8 @@
           {
             "id": 8,
             "span": {
-              "start": 83,
-              "end": 88
+              "byte_start": 83,
+              "byte_end": 88
             },
             "text": "other",
             "lemma": "other",
@@ -330,8 +330,8 @@
           {
             "id": 9,
             "span": {
-              "start": 89,
-              "end": 98
+              "byte_start": 89,
+              "byte_end": 98
             },
             "text": "important",
             "lemma": "important",
@@ -342,8 +342,8 @@
           {
             "id": 10,
             "span": {
-              "start": 99,
-              "end": 104
+              "byte_start": 99,
+              "byte_end": 104
             },
             "text": "civic",
             "lemma": "civic",
@@ -354,8 +354,8 @@
           {
             "id": 11,
             "span": {
-              "start": 105,
-              "end": 114
+              "byte_start": 105,
+              "byte_end": 114
             },
             "text": "buildings",
             "lemma": "building",
@@ -366,8 +366,8 @@
           {
             "id": 12,
             "span": {
-              "start": 114,
-              "end": 115
+              "byte_start": 114,
+              "byte_end": 115
             },
             "text": ".",
             "lemma": ".",
@@ -379,8 +379,8 @@
       },
       {
         "span": {
-          "start": 116,
-          "end": 165
+          "byte_start": 116,
+          "byte_end": 165
         },
         "text": "She invited John, and other guests brought gifts.",
         "token_count": 10,
@@ -389,8 +389,8 @@
           {
             "id": 1,
             "span": {
-              "start": 116,
-              "end": 119
+              "byte_start": 116,
+              "byte_end": 119
             },
             "text": "She",
             "lemma": "she",
@@ -401,8 +401,8 @@
           {
             "id": 2,
             "span": {
-              "start": 120,
-              "end": 127
+              "byte_start": 120,
+              "byte_end": 127
             },
             "text": "invited",
             "lemma": "invite",
@@ -413,8 +413,8 @@
           {
             "id": 3,
             "span": {
-              "start": 128,
-              "end": 132
+              "byte_start": 128,
+              "byte_end": 132
             },
             "text": "John",
             "lemma": "John",
@@ -425,8 +425,8 @@
           {
             "id": 4,
             "span": {
-              "start": 132,
-              "end": 133
+              "byte_start": 132,
+              "byte_end": 133
             },
             "text": ",",
             "lemma": ",",
@@ -437,8 +437,8 @@
           {
             "id": 5,
             "span": {
-              "start": 134,
-              "end": 137
+              "byte_start": 134,
+              "byte_end": 137
             },
             "text": "and",
             "lemma": "and",
@@ -449,8 +449,8 @@
           {
             "id": 6,
             "span": {
-              "start": 138,
-              "end": 143
+              "byte_start": 138,
+              "byte_end": 143
             },
             "text": "other",
             "lemma": "other",
@@ -461,8 +461,8 @@
           {
             "id": 7,
             "span": {
-              "start": 144,
-              "end": 150
+              "byte_start": 144,
+              "byte_end": 150
             },
             "text": "guests",
             "lemma": "guest",
@@ -473,8 +473,8 @@
           {
             "id": 8,
             "span": {
-              "start": 151,
-              "end": 158
+              "byte_start": 151,
+              "byte_end": 158
             },
             "text": "brought",
             "lemma": "bring",
@@ -485,8 +485,8 @@
           {
             "id": 9,
             "span": {
-              "start": 159,
-              "end": 164
+              "byte_start": 159,
+              "byte_end": 164
             },
             "text": "gifts",
             "lemma": "gift",
@@ -497,8 +497,8 @@
           {
             "id": 10,
             "span": {
-              "start": 164,
-              "end": 165
+              "byte_start": 164,
+              "byte_end": 165
             },
             "text": ".",
             "lemma": ".",

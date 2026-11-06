@@ -181,7 +181,7 @@ fn summaries_match_the_fixture() {
             let sentence = doc.sentences().nth(g.index).unwrap();
             assert_eq!(g.text, sentence.text, "{at}: text");
             assert_eq!(
-                &fixture.input[g.span.start..g.span.end],
+                &fixture.input[g.span.byte_start..g.span.byte_end],
                 sentence.text,
                 "{at}: the span slices the input to the sentence"
             );

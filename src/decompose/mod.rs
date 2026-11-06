@@ -190,7 +190,7 @@ impl TextMap {
                 continue;
             }
             let source = if piece.verbatim {
-                let offset = piece.source.start + (start - piece.text_start);
+                let offset = piece.source.byte_start + (start - piece.text_start);
                 Span::new(offset, offset + (end - start))
             } else {
                 piece.source
@@ -198,7 +198,7 @@ impl TextMap {
             out.push(start - from, end - start, source, piece.verbatim);
         }
         if let Some(first) = out.pieces.first() {
-            out.origin = first.source.start;
+            out.origin = first.source.byte_start;
         }
         out
     }
@@ -206,11 +206,11 @@ impl TextMap {
     /// The span of the analysed text that `local`, a span of the text,
     /// came from.
     pub(crate) fn map(&self, local: Span) -> Span {
-        let start = self.map_start(local.start);
-        if local.end <= local.start {
+        let start = self.map_start(local.byte_start);
+        if local.byte_end <= local.byte_start {
             return Span::new(start, start);
         }
-        let end = self.map_end(local.end).max(start);
+        let end = self.map_end(local.byte_end).max(start);
         Span::new(start, end)
     }
 
@@ -219,16 +219,18 @@ impl TextMap {
         for piece in &self.pieces {
             if at < piece.text_start + piece.len {
                 if at < piece.text_start {
-                    return piece.source.start;
+                    return piece.source.byte_start;
                 }
                 return if piece.verbatim {
-                    piece.source.start + (at - piece.text_start)
+                    piece.source.byte_start + (at - piece.text_start)
                 } else {
-                    piece.source.start
+                    piece.source.byte_start
                 };
             }
         }
-        self.pieces.last().map_or(self.origin, |p| p.source.end)
+        self.pieces
+            .last()
+            .map_or(self.origin, |p| p.source.byte_end)
     }
 
     /// Where the text up to `at` (exclusive) ends in the analysed text.
@@ -239,9 +241,9 @@ impl TextMap {
                 break;
             }
             end = if piece.verbatim && at < piece.text_start + piece.len {
-                piece.source.start + (at - piece.text_start)
+                piece.source.byte_start + (at - piece.text_start)
             } else {
-                piece.source.end
+                piece.source.byte_end
             };
         }
         end

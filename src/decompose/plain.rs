@@ -99,7 +99,7 @@ mod tests {
         assert_eq!(got[0].0, "One line.\r\nSame paragraph.");
         assert_eq!(got[1].0, "Next one.");
         for (text, span) in got {
-            assert_eq!(&input[span.start..span.end], text);
+            assert_eq!(&input[span.byte_start..span.byte_end], text);
         }
     }
 

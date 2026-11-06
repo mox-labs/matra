@@ -87,6 +87,22 @@ mod with_model {
         assert!(has_ratio, "long paragraph should have compression ratio");
     }
 
+    /// Spans count UTF-8 bytes through the real parser too: after the
+    /// first character outside ASCII, each sentence's span sliced from
+    /// the source as bytes is still the sentence's text.
+    #[test]
+    #[ignore]
+    fn non_ascii_sentence_spans_slice_as_bytes() {
+        let text = "Café ☕ is open. Naïve plan.";
+        let analysis = analyze(text, Format::PlainText);
+        let sentences: Vec<_> = analysis.sentences().collect();
+        assert_eq!(sentences.len(), 2);
+        for sentence in sentences {
+            let span = sentence.span;
+            assert_eq!(&text[span.byte_start..span.byte_end], sentence.text);
+        }
+    }
+
     /// The outcome functions read the analysed document and need no
     /// engine: a summary and keyphrases of a real parse.
     #[test]

@@ -337,7 +337,7 @@ def test_the_new_shapes_are_importable_from_the_package_root() -> None:
 
     assert set(DocumentError.__annotations__) == {"path", "kind", "message", "details"}
     assert set(DocumentDict.__annotations__) == {"provenance", "sections", "metrics", "skipped"}
-    assert set(Span.__annotations__) == {"start", "end"}
+    assert set(Span.__annotations__) == {"byte_start", "byte_end"}
     assert set(Skipped.__annotations__) == {"kind", "span"}
     assert set(ErrorInfo.__annotations__) == {"kind", "message", "details"}
     assert callable(Embedder.embed) and callable(Embedder.identity)

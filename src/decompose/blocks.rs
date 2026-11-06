@@ -102,7 +102,7 @@ mod tests {
         assert_eq!(text, "Field notes\n\nThe river rose.");
         match &read.blocks[1] {
             ReadBlock::Paragraph { span, .. } => {
-                assert_eq!(&text[span.start..span.end], "The river rose.");
+                assert_eq!(&text[span.byte_start..span.byte_end], "The river rose.");
             }
             ReadBlock::Heading { .. } => panic!("second block is a paragraph"),
         }

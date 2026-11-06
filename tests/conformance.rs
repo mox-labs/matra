@@ -225,7 +225,7 @@ fn check_outcomes(input: &str, doc: &Document, name: &str) {
         for picked in &summary.sentences {
             let sentence = doc.sentences().nth(picked.index).expect("an index");
             assert_eq!(picked.span, sentence.span, "{name}: summary span");
-            assert!(picked.span.end <= input.len(), "{name}: summary span");
+            assert!(picked.span.byte_end <= input.len(), "{name}: summary span");
         }
     }
     for method in [KeyphraseMethod::Rake, KeyphraseMethod::Yake] {
@@ -238,11 +238,11 @@ fn check_outcomes(input: &str, doc: &Document, name: &str) {
         for phrase in &found.phrases {
             for span in &phrase.occurrences {
                 assert!(
-                    span.start < span.end && input.is_char_boundary(span.start),
+                    span.byte_start < span.byte_end && input.is_char_boundary(span.byte_start),
                     "{name}: {} occurs at {span:?}",
                     phrase.phrase
                 );
-                assert!(input.is_char_boundary(span.end), "{name}: {span:?}");
+                assert!(input.is_char_boundary(span.byte_end), "{name}: {span:?}");
             }
         }
     }
@@ -253,21 +253,22 @@ fn check_outcomes(input: &str, doc: &Document, name: &str) {
 /// its last, and both lie inside their paragraph's span.
 fn check_spans(input: &str, doc: &Document, name: &str) {
     for (p, paragraph) in doc.paragraphs().enumerate() {
-        let within =
-            |span: Span| span.start >= paragraph.span.start && span.end <= paragraph.span.end;
+        let within = |span: Span| {
+            span.byte_start >= paragraph.span.byte_start && span.byte_end <= paragraph.span.byte_end
+        };
         for (i, sentence) in paragraph.sentences.iter().enumerate() {
             let at = format!("{name}: paragraph {p} sentence {i}");
             assert!(within(sentence.span), "{at}: span outside its paragraph");
             if let (Some(first), Some(last)) = (sentence.tokens.first(), sentence.tokens.last()) {
                 assert_eq!(
                     sentence.span,
-                    Span::new(first.span.start, last.span.end),
+                    Span::new(first.span.byte_start, last.span.byte_end),
                     "{at}: span"
                 );
             }
             for token in &sentence.tokens {
                 assert_eq!(
-                    &input[token.span.start..token.span.end],
+                    &input[token.span.byte_start..token.span.byte_end],
                     token.text,
                     "{at} token {}: span",
                     token.id
@@ -288,7 +289,7 @@ fn accounting(input: &str, doc: &Document) -> Result<(), String> {
         .chain(doc.paragraphs().map(|p| p.span))
         .chain(doc.skipped.iter().map(|s| s.span));
     for span in spans {
-        for owner in &mut owners[span.start..span.end] {
+        for owner in &mut owners[span.byte_start..span.byte_end] {
             *owner += 1;
         }
     }

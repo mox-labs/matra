@@ -17,16 +17,16 @@
         "heading": "Field notes",
         "level": 1,
         "span": {
-          "start": 28,
-          "end": 41
+          "byte_start": 28,
+          "byte_end": 41
         }
       },
       {
         "heading": "References",
         "level": 2,
         "span": {
-          "start": 173,
-          "end": 186
+          "byte_start": 173,
+          "byte_end": 186
         }
       }
     ],
@@ -34,29 +34,29 @@
       {
         "kind": "paragraph",
         "span": {
-          "start": 43,
-          "end": 72
+          "byte_start": 43,
+          "byte_end": 72
         }
       },
       {
         "kind": "quote",
         "span": {
-          "start": 74,
-          "end": 95
+          "byte_start": 74,
+          "byte_end": 95
         }
       },
       {
         "kind": "list_item",
         "span": {
-          "start": 97,
-          "end": 122
+          "byte_start": 97,
+          "byte_end": 122
         }
       },
       {
         "kind": "paragraph",
         "span": {
-          "start": 188,
-          "end": 210
+          "byte_start": 188,
+          "byte_end": 210
         }
       }
     ],
@@ -64,23 +64,23 @@
       {
         "kind": "front_matter",
         "span": {
-          "start": 0,
-          "end": 26
+          "byte_start": 0,
+          "byte_end": 26
         }
       },
       {
         "kind": "table",
         "span": {
-          "start": 124,
-          "end": 171
+          "byte_start": 124,
+          "byte_end": 171
         }
       }
     ],
     "sentences": [
       {
         "span": {
-          "start": 43,
-          "end": 72
+          "byte_start": 43,
+          "byte_end": 72
         },
         "text": "The river rose overnight.",
         "token_count": 5,
@@ -88,8 +88,8 @@
           {
             "id": 1,
             "span": {
-              "start": 43,
-              "end": 46
+              "byte_start": 43,
+              "byte_end": 46
             },
             "text": "The",
             "lemma": "the",
@@ -100,8 +100,8 @@
           {
             "id": 2,
             "span": {
-              "start": 47,
-              "end": 52
+              "byte_start": 47,
+              "byte_end": 52
             },
             "text": "river",
             "lemma": "river",
@@ -112,8 +112,8 @@
           {
             "id": 3,
             "span": {
-              "start": 55,
-              "end": 59
+              "byte_start": 55,
+              "byte_end": 59
             },
             "text": "rose",
             "lemma": "rise",
@@ -124,8 +124,8 @@
           {
             "id": 4,
             "span": {
-              "start": 62,
-              "end": 71
+              "byte_start": 62,
+              "byte_end": 71
             },
             "text": "overnight",
             "lemma": "overnight",
@@ -136,8 +136,8 @@
           {
             "id": 5,
             "span": {
-              "start": 71,
-              "end": 72
+              "byte_start": 71,
+              "byte_end": 72
             },
             "text": ".",
             "lemma": ".",
@@ -149,8 +149,8 @@
       },
       {
         "span": {
-          "start": 99,
-          "end": 122
+          "byte_start": 99,
+          "byte_end": 122
         },
         "text": "Bring boots tomorrow.",
         "token_count": 4,
@@ -158,8 +158,8 @@
           {
             "id": 1,
             "span": {
-              "start": 99,
-              "end": 104
+              "byte_start": 99,
+              "byte_end": 104
             },
             "text": "Bring",
             "lemma": "bring",
@@ -170,8 +170,8 @@
           {
             "id": 2,
             "span": {
-              "start": 106,
-              "end": 111
+              "byte_start": 106,
+              "byte_end": 111
             },
             "text": "boots",
             "lemma": "boot",
@@ -182,8 +182,8 @@
           {
             "id": 3,
             "span": {
-              "start": 113,
-              "end": 121
+              "byte_start": 113,
+              "byte_end": 121
             },
             "text": "tomorrow",
             "lemma": "tomorrow",
@@ -194,8 +194,8 @@
           {
             "id": 4,
             "span": {
-              "start": 121,
-              "end": 122
+              "byte_start": 121,
+              "byte_end": 122
             },
             "text": ".",
             "lemma": ".",
@@ -207,8 +207,8 @@
       },
       {
         "span": {
-          "start": 188,
-          "end": 210
+          "byte_start": 188,
+          "byte_end": 210
         },
         "text": "Smith wrote the guide.",
         "token_count": 5,
@@ -216,8 +216,8 @@
           {
             "id": 1,
             "span": {
-              "start": 188,
-              "end": 193
+              "byte_start": 188,
+              "byte_end": 193
             },
             "text": "Smith",
             "lemma": "Smith",
@@ -228,8 +228,8 @@
           {
             "id": 2,
             "span": {
-              "start": 194,
-              "end": 199
+              "byte_start": 194,
+              "byte_end": 199
             },
             "text": "wrote",
             "lemma": "write",
@@ -240,8 +240,8 @@
           {
             "id": 3,
             "span": {
-              "start": 200,
-              "end": 203
+              "byte_start": 200,
+              "byte_end": 203
             },
             "text": "the",
             "lemma": "the",
@@ -252,8 +252,8 @@
           {
             "id": 4,
             "span": {
-              "start": 204,
-              "end": 209
+              "byte_start": 204,
+              "byte_end": 209
             },
             "text": "guide",
             "lemma": "guide",
@@ -264,8 +264,8 @@
           {
             "id": 5,
             "span": {
-              "start": 209,
-              "end": 210
+              "byte_start": 209,
+              "byte_end": 210
             },
             "text": ".",
             "lemma": ".",

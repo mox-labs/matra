@@ -1025,10 +1025,10 @@ mod tests {
             .chain(doc.paragraphs().map(|p| p.span))
             .chain(doc.skipped.iter().map(|s| s.span));
         for span in spans {
-            if span.start > span.end || span.end > text.len() {
+            if span.byte_start > span.byte_end || span.byte_end > text.len() {
                 return Err(format!("span {span:?} is outside the text"));
             }
-            for owner in &mut owners[span.start..span.end] {
+            for owner in &mut owners[span.byte_start..span.byte_end] {
                 *owner = owner.saturating_add(1);
             }
         }
@@ -1214,7 +1214,7 @@ mod tests {
         let doc = engine.analyze(Input::text(md, Format::Markdown)).unwrap();
         let tokens: Vec<&str> = doc
             .tokens()
-            .map(|t| &md[t.span.start..t.span.end])
+            .map(|t| &md[t.span.byte_start..t.span.byte_end])
             .collect();
         assert_eq!(
             tokens,
@@ -1222,7 +1222,7 @@ mod tests {
         );
         let sentence = doc.sentences().next().unwrap();
         assert_eq!(
-            &md[sentence.span.start..sentence.span.end],
+            &md[sentence.span.byte_start..sentence.span.byte_end],
             "Some **bold** and `code` here."
         );
     }
@@ -1235,10 +1235,79 @@ mod tests {
             .analyze(Input::text(text, Format::PlainText))
             .unwrap();
         for token in doc.tokens() {
-            assert_eq!(&text[token.span.start..token.span.end], token.text);
+            assert_eq!(
+                &text[token.span.byte_start..token.span.byte_end],
+                token.text
+            );
         }
         let second = doc.paragraphs().nth(1).unwrap();
         assert_eq!(second.span, Span::new(15, 21));
+    }
+
+    /// Whitespace-separated words with their spans, a sentence ending at
+    /// each word that ends in `.`, so one paragraph holds several
+    /// sentences whose spans do not start at the paragraph's start.
+    struct SentenceNlp;
+    impl NlpProvider for SentenceNlp {
+        fn parse(&self, text: &str) -> domain::Result<Vec<domain::Sentence>> {
+            let mut sentences = Vec::new();
+            let mut tokens: Vec<domain::Token> = Vec::new();
+            let mut at = 0;
+            for word in text.split_whitespace() {
+                let start = at + text[at..].find(word).unwrap_or(0);
+                at = start + word.len();
+                tokens.push(
+                    domain::Token::builder(
+                        tokens.len() + 1,
+                        word.to_string(),
+                        word.to_lowercase(),
+                        "X".to_string(),
+                        0,
+                        "dep".to_string(),
+                    )
+                    .span(Span::new(start, at))
+                    .build(),
+                );
+                if word.ends_with('.') {
+                    let words: Vec<&str> = tokens.iter().map(|t| t.text.as_str()).collect();
+                    sentences.push(domain::Sentence::new(
+                        words.join(" "),
+                        std::mem::take(&mut tokens),
+                    ));
+                }
+            }
+            Ok(sentences)
+        }
+        fn identity(&self) -> domain::Identity {
+            domain::Identity::new("sentences", None, None, None)
+        }
+    }
+
+    /// The regression the field names exist for: after the first
+    /// character outside ASCII, a byte offset and a character offset
+    /// part, so a sentence's span sliced as bytes is its text and the
+    /// same numbers taken as characters are not.
+    #[test]
+    fn non_ascii_sentence_spans_slice_as_bytes() {
+        let engine = Engine::with_parser(Box::new(SentenceNlp));
+        let text = "Café ☕ is open. Naïve plan.";
+        let doc = engine
+            .analyze(Input::text(text, Format::PlainText))
+            .unwrap();
+        let sentences: Vec<_> = doc.sentences().collect();
+        assert_eq!(sentences.len(), 2);
+        for sentence in &sentences {
+            let span = sentence.span;
+            assert_eq!(&text[span.byte_start..span.byte_end], sentence.text);
+        }
+        let second = sentences[1].span;
+        assert_eq!(second, Span::new(19, 31));
+        let by_chars: String = text
+            .chars()
+            .skip(second.byte_start)
+            .take(second.byte_end - second.byte_start)
+            .collect();
+        assert_ne!(by_chars, sentences[1].text);
     }
 
     /// Block input's analysed text is the blocks joined by a blank line,
@@ -1263,7 +1332,7 @@ mod tests {
         assert_eq!(doc.sections[0].level, 1);
         assert_eq!(doc.sections[0].span, Some(Span::new(0, 11)));
         let token = doc.tokens().nth(1).unwrap();
-        assert_eq!(&joined[token.span.start..token.span.end], "river");
+        assert_eq!(&joined[token.span.byte_start..token.span.byte_end], "river");
     }
 
     #[test]
@@ -1925,7 +1994,10 @@ mod tests {
             let sentence = doc.sentences().nth(picked.index).unwrap();
             assert_eq!(picked.span, sentence.span);
             assert_eq!(picked.text, sentence.text);
-            assert_eq!(&text[picked.span.start..picked.span.end], picked.text);
+            assert_eq!(
+                &text[picked.span.byte_start..picked.span.byte_end],
+                picked.text
+            );
         }
     }
 

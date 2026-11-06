@@ -22,8 +22,8 @@
       {
         "kind": "paragraph",
         "span": {
-          "start": 0,
-          "end": 89
+          "byte_start": 0,
+          "byte_end": 89
         }
       }
     ],
@@ -31,8 +31,8 @@
     "sentences": [
       {
         "span": {
-          "start": 0,
-          "end": 24
+          "byte_start": 0,
+          "byte_end": 24
         },
         "text": "It might have been done.",
         "token_count": 6,
@@ -49,8 +49,8 @@
           {
             "id": 1,
             "span": {
-              "start": 0,
-              "end": 2
+              "byte_start": 0,
+              "byte_end": 2
             },
             "text": "It",
             "lemma": "it",
@@ -61,8 +61,8 @@
           {
             "id": 2,
             "span": {
-              "start": 3,
-              "end": 8
+              "byte_start": 3,
+              "byte_end": 8
             },
             "text": "might",
             "lemma": "might",
@@ -73,8 +73,8 @@
           {
             "id": 3,
             "span": {
-              "start": 9,
-              "end": 13
+              "byte_start": 9,
+              "byte_end": 13
             },
             "text": "have",
             "lemma": "have",
@@ -85,8 +85,8 @@
           {
             "id": 4,
             "span": {
-              "start": 14,
-              "end": 18
+              "byte_start": 14,
+              "byte_end": 18
             },
             "text": "been",
             "lemma": "be",
@@ -97,8 +97,8 @@
           {
             "id": 5,
             "span": {
-              "start": 19,
-              "end": 23
+              "byte_start": 19,
+              "byte_end": 23
             },
             "text": "done",
             "lemma": "do",
@@ -109,8 +109,8 @@
           {
             "id": 6,
             "span": {
-              "start": 23,
-              "end": 24
+              "byte_start": 23,
+              "byte_end": 24
             },
             "text": ".",
             "lemma": ".",
@@ -122,8 +122,8 @@
       },
       {
         "span": {
-          "start": 25,
-          "end": 62
+          "byte_start": 25,
+          "byte_end": 62
         },
         "text": "You must complete the form by Friday.",
         "token_count": 8,
@@ -140,8 +140,8 @@
           {
             "id": 1,
             "span": {
-              "start": 25,
-              "end": 28
+              "byte_start": 25,
+              "byte_end": 28
             },
             "text": "You",
             "lemma": "you",
@@ -152,8 +152,8 @@
           {
             "id": 2,
             "span": {
-              "start": 29,
-              "end": 33
+              "byte_start": 29,
+              "byte_end": 33
             },
             "text": "must",
             "lemma": "must",
@@ -164,8 +164,8 @@
           {
             "id": 3,
             "span": {
-              "start": 34,
-              "end": 42
+              "byte_start": 34,
+              "byte_end": 42
             },
             "text": "complete",
             "lemma": "complete",
@@ -176,8 +176,8 @@
           {
             "id": 4,
             "span": {
-              "start": 43,
-              "end": 46
+              "byte_start": 43,
+              "byte_end": 46
             },
             "text": "the",
             "lemma": "the",
@@ -188,8 +188,8 @@
           {
             "id": 5,
             "span": {
-              "start": 47,
-              "end": 51
+              "byte_start": 47,
+              "byte_end": 51
             },
             "text": "form",
             "lemma": "form",
@@ -200,8 +200,8 @@
           {
             "id": 6,
             "span": {
-              "start": 52,
-              "end": 54
+              "byte_start": 52,
+              "byte_end": 54
             },
             "text": "by",
             "lemma": "by",
@@ -212,8 +212,8 @@
           {
             "id": 7,
             "span": {
-              "start": 55,
-              "end": 61
+              "byte_start": 55,
+              "byte_end": 61
             },
             "text": "Friday",
             "lemma": "Friday",
@@ -224,8 +224,8 @@
           {
             "id": 8,
             "span": {
-              "start": 61,
-              "end": 62
+              "byte_start": 61,
+              "byte_end": 62
             },
             "text": ".",
             "lemma": ".",
@@ -237,8 +237,8 @@
       },
       {
         "span": {
-          "start": 63,
-          "end": 89
+          "byte_start": 63,
+          "byte_end": 89
         },
         "text": "The committee approved it.",
         "token_count": 5,
@@ -252,8 +252,8 @@
           {
             "id": 1,
             "span": {
-              "start": 63,
-              "end": 66
+              "byte_start": 63,
+              "byte_end": 66
             },
             "text": "The",
             "lemma": "the",
@@ -264,8 +264,8 @@
           {
             "id": 2,
             "span": {
-              "start": 67,
-              "end": 76
+              "byte_start": 67,
+              "byte_end": 76
             },
             "text": "committee",
             "lemma": "committee",
@@ -276,8 +276,8 @@
           {
             "id": 3,
             "span": {
-              "start": 77,
-              "end": 85
+              "byte_start": 77,
+              "byte_end": 85
             },
             "text": "approved",
             "lemma": "approve",
@@ -288,8 +288,8 @@
           {
             "id": 4,
             "span": {
-              "start": 86,
-              "end": 88
+              "byte_start": 86,
+              "byte_end": 88
             },
             "text": "it",
             "lemma": "it",
@@ -300,8 +300,8 @@
           {
             "id": 5,
             "span": {
-              "start": 88,
-              "end": 89
+              "byte_start": 88,
+              "byte_end": 89
             },
             "text": ".",
             "lemma": ".",

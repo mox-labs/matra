@@ -370,10 +370,10 @@ def test_a_file_path_travels_into_an_outcome(engine: Any, tmp_path: Path) -> Non
 
 def test_span_text_counts_bytes_not_characters() -> None:
     text = "Café au lait. Tea."
-    assert matra.span_text(text, {"start": 0, "end": 5}) == "Café"
-    assert matra.span_text(text.encode(), {"start": 15, "end": 19}) == "Tea."
+    assert matra.span_text(text, {"byte_start": 0, "byte_end": 5}) == "Café"
+    assert matra.span_text(text.encode(), {"byte_start": 15, "byte_end": 19}) == "Tea."
     with pytest.raises(UnicodeDecodeError):
-        matra.span_text(text, {"start": 0, "end": 4})
+        matra.span_text(text, {"byte_start": 0, "byte_end": 4})
 
 
 @pytest.mark.model
@@ -385,3 +385,23 @@ def test_every_token_span_slices_its_text(engine: Any) -> None:
             for sentence in paragraph["sentences"]:
                 for token in sentence["tokens"]:
                     assert matra.span_text(text, token["span"]) == token["text"]
+
+
+@pytest.mark.model
+def test_non_ascii_sentence_spans_slice_as_bytes(engine: Any) -> None:
+    """A sentence's span read with ``span_text`` is its text, after the
+    first character outside ASCII, where slicing the ``str`` by the same
+    numbers goes wrong without an error."""
+    text = "Café ☕ is open. Naïve plan."
+    doc = engine.analyze(text)
+    sentences = [
+        sentence
+        for section in doc["sections"]
+        for paragraph in section["paragraphs"]
+        for sentence in paragraph["sentences"]
+    ]
+    assert [s["text"] for s in sentences] == ["Café ☕ is open.", "Naïve plan."]
+    for sentence in sentences:
+        assert matra.span_text(text, sentence["span"]) == sentence["text"]
+    second = sentences[1]["span"]
+    assert text[second["byte_start"] : second["byte_end"]] != sentences[1]["text"]

@@ -23,24 +23,24 @@
       "paragraphs": [
         {
           "span": {
-            "start": 0,
-            "end": 116
+            "byte_start": 0,
+            "byte_end": 116
           },
           "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
           "kind": "paragraph",
           "sentences": [
             {
               "span": {
-                "start": 0,
-                "end": 116
+                "byte_start": 0,
+                "byte_end": 116
               },
               "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 0,
-                    "end": 2
+                    "byte_start": 0,
+                    "byte_end": 2
                   },
                   "text": "It",
                   "lemma": "it",
@@ -62,8 +62,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 3,
-                    "end": 5
+                    "byte_start": 3,
+                    "byte_end": 5
                   },
                   "text": "is",
                   "lemma": "be",
@@ -85,8 +85,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 6,
-                    "end": 7
+                    "byte_start": 6,
+                    "byte_end": 7
                   },
                   "text": "a",
                   "lemma": "a",
@@ -105,8 +105,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 8,
-                    "end": 13
+                    "byte_start": 8,
+                    "byte_end": 13
                   },
                   "text": "truth",
                   "lemma": "truth",
@@ -124,8 +124,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 14,
-                    "end": 25
+                    "byte_start": 14,
+                    "byte_end": 25
                   },
                   "text": "universally",
                   "lemma": "universally",
@@ -141,8 +141,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 26,
-                    "end": 38
+                    "byte_start": 26,
+                    "byte_end": 38
                   },
                   "text": "acknowledged",
                   "lemma": "acknowledge",
@@ -162,8 +162,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 38,
-                    "end": 39
+                    "byte_start": 38,
+                    "byte_end": 39
                   },
                   "text": ",",
                   "lemma": ",",
@@ -179,8 +179,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 40,
-                    "end": 44
+                    "byte_start": 40,
+                    "byte_end": 44
                   },
                   "text": "that",
                   "lemma": "that",
@@ -199,8 +199,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 45,
-                    "end": 46
+                    "byte_start": 45,
+                    "byte_end": 46
                   },
                   "text": "a",
                   "lemma": "a",
@@ -219,8 +219,8 @@
                 {
                   "id": 10,
                   "span": {
-                    "start": 47,
-                    "end": 53
+                    "byte_start": 47,
+                    "byte_end": 53
                   },
                   "text": "single",
                   "lemma": "single",
@@ -238,8 +238,8 @@
                 {
                   "id": 11,
                   "span": {
-                    "start": 54,
-                    "end": 57
+                    "byte_start": 54,
+                    "byte_end": 57
                   },
                   "text": "man",
                   "lemma": "man",
@@ -257,8 +257,8 @@
                 {
                   "id": 12,
                   "span": {
-                    "start": 58,
-                    "end": 60
+                    "byte_start": 58,
+                    "byte_end": 60
                   },
                   "text": "in",
                   "lemma": "in",
@@ -274,8 +274,8 @@
                 {
                   "id": 13,
                   "span": {
-                    "start": 61,
-                    "end": 71
+                    "byte_start": 61,
+                    "byte_end": 71
                   },
                   "text": "possession",
                   "lemma": "possession",
@@ -293,8 +293,8 @@
                 {
                   "id": 14,
                   "span": {
-                    "start": 72,
-                    "end": 74
+                    "byte_start": 72,
+                    "byte_end": 74
                   },
                   "text": "of",
                   "lemma": "of",
@@ -310,8 +310,8 @@
                 {
                   "id": 15,
                   "span": {
-                    "start": 75,
-                    "end": 76
+                    "byte_start": 75,
+                    "byte_end": 76
                   },
                   "text": "a",
                   "lemma": "a",
@@ -330,8 +330,8 @@
                 {
                   "id": 16,
                   "span": {
-                    "start": 77,
-                    "end": 81
+                    "byte_start": 77,
+                    "byte_end": 81
                   },
                   "text": "good",
                   "lemma": "good",
@@ -349,8 +349,8 @@
                 {
                   "id": 17,
                   "span": {
-                    "start": 82,
-                    "end": 89
+                    "byte_start": 82,
+                    "byte_end": 89
                   },
                   "text": "fortune",
                   "lemma": "fortune",
@@ -368,8 +368,8 @@
                 {
                   "id": 18,
                   "span": {
-                    "start": 90,
-                    "end": 94
+                    "byte_start": 90,
+                    "byte_end": 94
                   },
                   "text": "must",
                   "lemma": "must",
@@ -387,8 +387,8 @@
                 {
                   "id": 19,
                   "span": {
-                    "start": 95,
-                    "end": 97
+                    "byte_start": 95,
+                    "byte_end": 97
                   },
                   "text": "be",
                   "lemma": "be",
@@ -406,8 +406,8 @@
                 {
                   "id": 20,
                   "span": {
-                    "start": 98,
-                    "end": 100
+                    "byte_start": 98,
+                    "byte_end": 100
                   },
                   "text": "in",
                   "lemma": "in",
@@ -423,8 +423,8 @@
                 {
                   "id": 21,
                   "span": {
-                    "start": 101,
-                    "end": 105
+                    "byte_start": 101,
+                    "byte_end": 105
                   },
                   "text": "want",
                   "lemma": "want",
@@ -442,8 +442,8 @@
                 {
                   "id": 22,
                   "span": {
-                    "start": 106,
-                    "end": 108
+                    "byte_start": 106,
+                    "byte_end": 108
                   },
                   "text": "of",
                   "lemma": "of",
@@ -459,8 +459,8 @@
                 {
                   "id": 23,
                   "span": {
-                    "start": 109,
-                    "end": 110
+                    "byte_start": 109,
+                    "byte_end": 110
                   },
                   "text": "a",
                   "lemma": "a",
@@ -479,8 +479,8 @@
                 {
                   "id": 24,
                   "span": {
-                    "start": 111,
-                    "end": 115
+                    "byte_start": 111,
+                    "byte_end": 115
                   },
                   "text": "wife",
                   "lemma": "wife",
@@ -498,8 +498,8 @@
                 {
                   "id": 25,
                   "span": {
-                    "start": 115,
-                    "end": 116
+                    "byte_start": 115,
+                    "byte_end": 116
                   },
                   "text": ".",
                   "lemma": ".",

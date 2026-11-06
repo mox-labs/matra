@@ -23,24 +23,24 @@
       "paragraphs": [
         {
           "span": {
-            "start": 0,
-            "end": 108
+            "byte_start": 0,
+            "byte_end": 108
           },
           "text": "The committee did not approve the budget on Tuesday. The chair said that a second vote may follow next week.",
           "kind": "paragraph",
           "sentences": [
             {
               "span": {
-                "start": 0,
-                "end": 52
+                "byte_start": 0,
+                "byte_end": 52
               },
               "text": "The committee did not approve the budget on Tuesday.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 0,
-                    "end": 3
+                    "byte_start": 0,
+                    "byte_end": 3
                   },
                   "text": "The",
                   "lemma": "the",
@@ -59,8 +59,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 4,
-                    "end": 13
+                    "byte_start": 4,
+                    "byte_end": 13
                   },
                   "text": "committee",
                   "lemma": "committee",
@@ -78,8 +78,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 14,
-                    "end": 17
+                    "byte_start": 14,
+                    "byte_end": 17
                   },
                   "text": "did",
                   "lemma": "do",
@@ -99,8 +99,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 18,
-                    "end": 21
+                    "byte_start": 18,
+                    "byte_end": 21
                   },
                   "text": "not",
                   "lemma": "not",
@@ -116,8 +116,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 22,
-                    "end": 29
+                    "byte_start": 22,
+                    "byte_end": 29
                   },
                   "text": "approve",
                   "lemma": "approve",
@@ -135,8 +135,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 30,
-                    "end": 33
+                    "byte_start": 30,
+                    "byte_end": 33
                   },
                   "text": "the",
                   "lemma": "the",
@@ -155,8 +155,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 34,
-                    "end": 40
+                    "byte_start": 34,
+                    "byte_end": 40
                   },
                   "text": "budget",
                   "lemma": "budget",
@@ -174,8 +174,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 41,
-                    "end": 43
+                    "byte_start": 41,
+                    "byte_end": 43
                   },
                   "text": "on",
                   "lemma": "on",
@@ -191,8 +191,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 44,
-                    "end": 51
+                    "byte_start": 44,
+                    "byte_end": 51
                   },
                   "text": "Tuesday",
                   "lemma": "Tuesday",
@@ -210,8 +210,8 @@
                 {
                   "id": 10,
                   "span": {
-                    "start": 51,
-                    "end": 52
+                    "byte_start": 51,
+                    "byte_end": 52
                   },
                   "text": ".",
                   "lemma": ".",
@@ -251,16 +251,16 @@
             },
             {
               "span": {
-                "start": 53,
-                "end": 108
+                "byte_start": 53,
+                "byte_end": 108
               },
               "text": "The chair said that a second vote may follow next week.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 53,
-                    "end": 56
+                    "byte_start": 53,
+                    "byte_end": 56
                   },
                   "text": "The",
                   "lemma": "the",
@@ -279,8 +279,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 57,
-                    "end": 62
+                    "byte_start": 57,
+                    "byte_end": 62
                   },
                   "text": "chair",
                   "lemma": "chair",
@@ -298,8 +298,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 63,
-                    "end": 67
+                    "byte_start": 63,
+                    "byte_end": 67
                   },
                   "text": "said",
                   "lemma": "say",
@@ -319,8 +319,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 68,
-                    "end": 72
+                    "byte_start": 68,
+                    "byte_end": 72
                   },
                   "text": "that",
                   "lemma": "that",
@@ -336,8 +336,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 73,
-                    "end": 74
+                    "byte_start": 73,
+                    "byte_end": 74
                   },
                   "text": "a",
                   "lemma": "a",
@@ -356,8 +356,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 75,
-                    "end": 81
+                    "byte_start": 75,
+                    "byte_end": 81
                   },
                   "text": "second",
                   "lemma": "second",
@@ -376,8 +376,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 82,
-                    "end": 86
+                    "byte_start": 82,
+                    "byte_end": 86
                   },
                   "text": "vote",
                   "lemma": "vote",
@@ -395,8 +395,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 87,
-                    "end": 90
+                    "byte_start": 87,
+                    "byte_end": 90
                   },
                   "text": "may",
                   "lemma": "may",
@@ -414,8 +414,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 91,
-                    "end": 97
+                    "byte_start": 91,
+                    "byte_end": 97
                   },
                   "text": "follow",
                   "lemma": "follow",
@@ -433,8 +433,8 @@
                 {
                   "id": 10,
                   "span": {
-                    "start": 98,
-                    "end": 102
+                    "byte_start": 98,
+                    "byte_end": 102
                   },
                   "text": "next",
                   "lemma": "next",
@@ -452,8 +452,8 @@
                 {
                   "id": 11,
                   "span": {
-                    "start": 103,
-                    "end": 107
+                    "byte_start": 103,
+                    "byte_end": 107
                   },
                   "text": "week",
                   "lemma": "week",
@@ -471,8 +471,8 @@
                 {
                   "id": 12,
                   "span": {
-                    "start": 107,
-                    "end": 108
+                    "byte_start": 107,
+                    "byte_end": 108
                   },
                   "text": ".",
                   "lemma": ".",
@@ -522,24 +522,24 @@
         },
         {
           "span": {
-            "start": 110,
-            "end": 203
+            "byte_start": 110,
+            "byte_end": 203
           },
           "text": "Three amendments were submitted by the working group. Each one narrows the scope of the plan.",
           "kind": "paragraph",
           "sentences": [
             {
               "span": {
-                "start": 110,
-                "end": 163
+                "byte_start": 110,
+                "byte_end": 163
               },
               "text": "Three amendments were submitted by the working group.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 110,
-                    "end": 115
+                    "byte_start": 110,
+                    "byte_end": 115
                   },
                   "text": "Three",
                   "lemma": "three",
@@ -557,8 +557,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 116,
-                    "end": 126
+                    "byte_start": 116,
+                    "byte_end": 126
                   },
                   "text": "amendments",
                   "lemma": "amendment",
@@ -576,8 +576,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 127,
-                    "end": 131
+                    "byte_start": 127,
+                    "byte_end": 131
                   },
                   "text": "were",
                   "lemma": "be",
@@ -597,8 +597,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 132,
-                    "end": 141
+                    "byte_start": 132,
+                    "byte_end": 141
                   },
                   "text": "submitted",
                   "lemma": "submit",
@@ -618,8 +618,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 142,
-                    "end": 144
+                    "byte_start": 142,
+                    "byte_end": 144
                   },
                   "text": "by",
                   "lemma": "by",
@@ -635,8 +635,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 145,
-                    "end": 148
+                    "byte_start": 145,
+                    "byte_end": 148
                   },
                   "text": "the",
                   "lemma": "the",
@@ -655,8 +655,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 149,
-                    "end": 156
+                    "byte_start": 149,
+                    "byte_end": 156
                   },
                   "text": "working",
                   "lemma": "work",
@@ -674,8 +674,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 157,
-                    "end": 162
+                    "byte_start": 157,
+                    "byte_end": 162
                   },
                   "text": "group",
                   "lemma": "group",
@@ -693,8 +693,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 162,
-                    "end": 163
+                    "byte_start": 162,
+                    "byte_end": 163
                   },
                   "text": ".",
                   "lemma": ".",
@@ -723,16 +723,16 @@
             },
             {
               "span": {
-                "start": 164,
-                "end": 203
+                "byte_start": 164,
+                "byte_end": 203
               },
               "text": "Each one narrows the scope of the plan.",
               "tokens": [
                 {
                   "id": 1,
                   "span": {
-                    "start": 164,
-                    "end": 168
+                    "byte_start": 164,
+                    "byte_end": 168
                   },
                   "text": "Each",
                   "lemma": "each",
@@ -748,8 +748,8 @@
                 {
                   "id": 2,
                   "span": {
-                    "start": 169,
-                    "end": 172
+                    "byte_start": 169,
+                    "byte_end": 172
                   },
                   "text": "one",
                   "lemma": "one",
@@ -767,8 +767,8 @@
                 {
                   "id": 3,
                   "span": {
-                    "start": 173,
-                    "end": 180
+                    "byte_start": 173,
+                    "byte_end": 180
                   },
                   "text": "narrows",
                   "lemma": "narrow",
@@ -790,8 +790,8 @@
                 {
                   "id": 4,
                   "span": {
-                    "start": 181,
-                    "end": 184
+                    "byte_start": 181,
+                    "byte_end": 184
                   },
                   "text": "the",
                   "lemma": "the",
@@ -810,8 +810,8 @@
                 {
                   "id": 5,
                   "span": {
-                    "start": 185,
-                    "end": 190
+                    "byte_start": 185,
+                    "byte_end": 190
                   },
                   "text": "scope",
                   "lemma": "scope",
@@ -829,8 +829,8 @@
                 {
                   "id": 6,
                   "span": {
-                    "start": 191,
-                    "end": 193
+                    "byte_start": 191,
+                    "byte_end": 193
                   },
                   "text": "of",
                   "lemma": "of",
@@ -846,8 +846,8 @@
                 {
                   "id": 7,
                   "span": {
-                    "start": 194,
-                    "end": 197
+                    "byte_start": 194,
+                    "byte_end": 197
                   },
                   "text": "the",
                   "lemma": "the",
@@ -866,8 +866,8 @@
                 {
                   "id": 8,
                   "span": {
-                    "start": 198,
-                    "end": 202
+                    "byte_start": 198,
+                    "byte_end": 202
                   },
                   "text": "plan",
                   "lemma": "plan",
@@ -885,8 +885,8 @@
                 {
                   "id": 9,
                   "span": {
-                    "start": 202,
-                    "end": 203
+                    "byte_start": 202,
+                    "byte_end": 203
                   },
                   "text": ".",
                   "lemma": ".",

@@ -328,7 +328,7 @@ impl<'a> Reader<'a> {
             } => {
                 let span = self.trimmed(start, end);
                 let map = if trimmed.is_empty() {
-                    TextMap::at(span.start)
+                    TextMap::at(span.byte_start)
                 } else {
                     map.window(lead, lead + trimmed.len())
                 };
@@ -375,7 +375,7 @@ impl<'a> Reader<'a> {
                 .map(|b| *b.span_mut())
                 .chain(self.skipped.iter().map(|s| s.span))
                 .collect();
-            covered.sort_by_key(|s| s.start);
+            covered.sort_by_key(|s| s.byte_start);
             let mut found = Vec::new();
             let mut cursor = 0;
             for span in covered
@@ -383,16 +383,16 @@ impl<'a> Reader<'a> {
                 .copied()
                 .chain([Span::new(self.input.len(), self.input.len())])
             {
-                if span.start > cursor {
-                    let gap = &self.input[cursor..span.start];
+                if span.byte_start > cursor {
+                    let gap = &self.input[cursor..span.byte_start];
                     if !gap
                         .chars()
                         .all(|c| c.is_whitespace() || is_container_markup(c))
                     {
-                        found.extend(definitions_in(self.input, cursor, span.start));
+                        found.extend(definitions_in(self.input, cursor, span.byte_start));
                     }
                 }
-                cursor = cursor.max(span.end);
+                cursor = cursor.max(span.byte_end);
             }
             if found.is_empty() {
                 return;
@@ -405,25 +405,25 @@ impl<'a> Reader<'a> {
 
     fn finish(mut self) -> Read {
         self.close();
-        self.skipped.sort_by_key(|s| s.span.start);
+        self.skipped.sort_by_key(|s| s.span.byte_start);
         for (kind, span) in std::mem::take(&mut self.empty) {
             let holds_a_definition = self
                 .skipped
                 .iter()
-                .any(|s| s.span.start < span.end && span.start < s.span.end);
+                .any(|s| s.span.byte_start < span.byte_end && span.byte_start < s.span.byte_end);
             if holds_a_definition {
                 continue;
             }
             let at = self
                 .blocks
-                .partition_point(|b| block_start(b) <= span.start);
+                .partition_point(|b| block_start(b) <= span.byte_start);
             self.blocks.insert(
                 at,
                 ReadBlock::Paragraph {
                     kind,
                     text: String::new(),
                     span,
-                    map: TextMap::at(span.start),
+                    map: TextMap::at(span.byte_start),
                 },
             );
         }
@@ -438,7 +438,7 @@ impl<'a> Reader<'a> {
 
 fn block_start(block: &ReadBlock) -> usize {
     match block {
-        ReadBlock::Heading { span, .. } | ReadBlock::Paragraph { span, .. } => span.start,
+        ReadBlock::Heading { span, .. } | ReadBlock::Paragraph { span, .. } => span.byte_start,
     }
 }
 
@@ -478,12 +478,12 @@ fn absorb_container_markup(input: &str, blocks: &mut [ReadBlock], skipped: &mut 
     let mut order: Vec<(usize, bool, usize)> = blocks
         .iter_mut()
         .enumerate()
-        .map(|(i, b)| (b.span_mut().start, true, i))
+        .map(|(i, b)| (b.span_mut().byte_start, true, i))
         .chain(
             skipped
                 .iter()
                 .enumerate()
-                .map(|(i, s)| (s.span.start, false, i)),
+                .map(|(i, s)| (s.span.byte_start, false, i)),
         )
         .collect();
     order.sort_unstable();
@@ -492,8 +492,8 @@ fn absorb_container_markup(input: &str, blocks: &mut [ReadBlock], skipped: &mut 
     let mut previous: Option<(bool, usize)> = None;
     for &(_, is_block, index) in &order {
         let span = *span_at(blocks, skipped, is_block, index);
-        if span.start > cursor {
-            let gap = &input[cursor..span.start];
+        if span.byte_start > cursor {
+            let gap = &input[cursor..span.byte_start];
             if gap
                 .chars()
                 .all(|c| c.is_whitespace() || is_container_markup(c))
@@ -501,7 +501,7 @@ fn absorb_container_markup(input: &str, blocks: &mut [ReadBlock], skipped: &mut 
                 // The part of the gap on the block's own first line.
                 let line_start = gap.rfind('\n').map_or(0, |i| i + 1);
                 let (before, on_line) = gap.split_at(line_start);
-                let mut new_start = span.start;
+                let mut new_start = span.byte_start;
                 if let Some(first) = first_visible(on_line) {
                     new_start = cursor + line_start + first;
                 }
@@ -509,17 +509,17 @@ fn absorb_container_markup(input: &str, blocks: &mut [ReadBlock], skipped: &mut 
                     match previous {
                         Some((was_block, at)) => {
                             let prev = span_at(blocks, skipped, was_block, at);
-                            prev.end = prev.end.max(cursor + last);
+                            prev.byte_end = prev.byte_end.max(cursor + last);
                         }
                         None => {
                             new_start = cursor + first_visible(before).unwrap_or(0);
                         }
                     }
                 }
-                span_at(blocks, skipped, is_block, index).start = new_start;
+                span_at(blocks, skipped, is_block, index).byte_start = new_start;
             }
         }
-        cursor = cursor.max(span_at(blocks, skipped, is_block, index).end);
+        cursor = cursor.max(span_at(blocks, skipped, is_block, index).byte_end);
         previous = Some((is_block, index));
     }
 
@@ -533,7 +533,7 @@ fn absorb_container_markup(input: &str, blocks: &mut [ReadBlock], skipped: &mut 
             .all(|c| c.is_whitespace() || is_container_markup(c))
             && let Some(last) = last_visible(gap)
         {
-            span_at(blocks, skipped, is_block, index).end = cursor + last;
+            span_at(blocks, skipped, is_block, index).byte_end = cursor + last;
         }
     }
 }
@@ -596,7 +596,7 @@ mod tests {
     }
 
     fn slice(input: &str, span: Span) -> &str {
-        &input[span.start..span.end]
+        &input[span.byte_start..span.byte_end]
     }
 
     #[test]
