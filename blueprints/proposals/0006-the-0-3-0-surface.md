@@ -255,8 +255,8 @@ Every top-level result carries `provenance`; every heading, paragraph, sentence,
     "source": { "path": "notes.md", "bytes": 1832, "sha256": "…" }
   },
   "metrics": { "total_words": 412, "total_sentences": 19, "passive_ratio": 0.11 },
-  "sections": [ { "heading": "Field notes", "level": 1, "span": { "start": 0, "end": 13 }, "paragraphs": [] } ],
-  "skipped": [ { "kind": "table", "span": { "start": 640, "end": 812 } } ]
+  "sections": [ { "heading": "Field notes", "level": 1, "span": { "byte_start": 0, "byte_end": 13 }, "paragraphs": [] } ],
+  "skipped": [ { "kind": "table", "span": { "byte_start": 640, "byte_end": 812 } } ]
 }
 ```
 
@@ -421,7 +421,7 @@ Sentence         { span, text, tokens, word_count, tree_depth: Option, passive,
                    negations, modals, clausal_complements, root_adverbials, hearst_pairs, root_mood }
 Token            { id, span, text, lemma, pos, xpos, features: map, head, dep, deps, misc }
 Skipped          { kind, span }
-Span             { start, end }          UTF-8 bytes of the analysed text
+Span             { byte_start, byte_end } UTF-8 bytes of the analysed text
 Provenance       { matra, schema, parser: Identity, format, source: { path?, bytes, sha256 }, method?, parameters? }
 Identity         { name, model, sha256, license }
 Summary          { provenance, sentences: [SummarySentence { index, span, text, score: f64 }] }
@@ -804,7 +804,7 @@ matra.span_text(text, p["span"])              # what (a) asks of a Python caller
 
 **Against.** Two encodings of one fact on every token cost every reader, agents included, for each token shown [agent-computer-interfaces:c2], and one unit is the smaller surface [api-design-practice:c6]. Bytes are the one unit identical in every binding, checkable against the input's digest, and what the input cap measures (own judgment; the canon is silent on offset units). JavaScript indexes strings by UTF-16 code unit, so (b) would not spare TypeScript callers a conversion either. The helper is the broader contract Meyer asks for, placed in one function per binding instead of in every field.
 
-**Outcome.** Rejected; the owner accepted bytes only, with a slicing helper per binding. The quiet wrong slice is the price, and the helper and the guides are where it is answered.
+**Outcome.** Rejected; the owner accepted bytes only, with a slicing helper per binding. The quiet wrong slice is the price, and the field names (`byte_start` and `byte_end`, so the unit shows wherever a span is read), the helper and the guides are where it is answered.
 
 ### Make the text fields verbatim
 
@@ -950,7 +950,7 @@ Each entry says what the source did, what matra takes from it, and where matra d
 - **A. Cockburn, "The Hexagonal (Ports and Adapters) Architecture", 2005.** An application is driven through ports named for the purpose of a conversation, adapters translate each technology to a port, and business logic that leaks into an adapter is caught by driving every function through the API in tests [card:cockburn-hexagonal-current] (unverified reading). matra takes the diagnosis (application rules leaked into the Python binding and the command line) and the remedy: the outcome surface is the driving port, and the parity test drives all three adapters through it. It departs on the driven side. Cockburn keeps driven ports open so a test or a new technology can be swapped in; matra keeps the parser, reader and source ports inside the crate, where tests and in-tree adapters still swap them, and only the embedder is open to outside implementers ([decision 5](#decision-provider-traits)).
 - **Terraform's JSON output format.** Its `format_version` is a major and a minor; a consumer ignores properties it does not recognise and rejects a major it does not know [machine-readable-contracts:c35]. matra takes those consumer rules unchanged and the major-and-minor form for `provenance.schema`. It departs by keeping the shipped integer `format_version` on the command-line envelope as well, moving with the schema major, because agents already pin it.
 - **`cargo metadata --format-version`.** One integer version, chosen by a flag; within a version, Cargo does not count new fields or new values of enum-like fields as incompatible, and it recommends passing the flag to future-proof a caller. matra takes the integer and the rule that new fields and values are compatible. It departs by offering no flag to select an older output, because 0.3.0 keeps no 0.2 projection ([decision 8](#decision-transition-window)).
-- **The W3C Web Annotation Data Model.** Its text position selector has `start` and `end` and counts "in terms of unicode code points", not code units. matra takes the shape and departs on the unit: its `start` and `end` count UTF-8 bytes ([decision 3](#decision-offset-unit)). The same names with a different unit are a trap for a caller who knows the standard, which is why the slicing helper exists.
+- **The W3C Web Annotation Data Model.** Its text position selector has `start` and `end` and counts "in terms of unicode code points", not code units. matra takes the shape and departs on the unit: its spans count UTF-8 bytes, and the fields say so, `byte_start` and `byte_end` ([decision 3](#decision-offset-unit)). The standard's names with a different unit would be a trap for a caller who knows the standard, which is why the names carry the unit and the slicing helper exists.
 - **CommonMark, and pulldown-cmark.** CommonMark is a specification of Markdown with a conformance test suite, and pulldown-cmark is a pull parser for it whose offset iterator pairs every event with its range in the source. matra takes the specification instead of its own line scanner, which is what removes the dropped tables and the `## References` cut-off, and the source ranges, which give every block its span. The parser crate is chosen in milestone 2's pull request; the canon does not address it.
 - **Universal Dependencies and CoNLL-U.** UD supplies the vocabulary matra adopts (`pos`, `dep`, the morphological features), and CoNLL-U is the ten-column text encoding UDPipe emits, with the features packed as `Name=Value|...` strings. matra takes the vocabulary as is and departs from the encoding: `features` becomes a map. UDPipe's own `ranges` option stores each token's range "counted in Unicode characters". matra's spans count bytes, so whichever way the adapter finds token positions (that option, or aligning token forms against the text), it converts them at the one place each paragraph is parsed.
 - **spaCy.** A `Language` object (`nlp`) is the one entry point, and `nlp(text)` returns a `Doc` whose values are attributes, with `Doc.to_json()` for a plain-data view and, added later (in 3.3.1), a `Doc.from_json` that can validate its input. matra takes the shape for Python: one `Engine`, a read-only `Document` handle with `to_dict()`, and a from-JSON entry left for later ([decision 6](#decision-python-document)). It departs twice. spaCy's offsets (`Token.idx`) count characters, and matra's count bytes. spaCy's pipeline is open, so a caller can add a component with `Language.add_pipe`; matra keeps its stages and its parser private in 0.3.0.
@@ -1030,7 +1030,7 @@ The owner accepted Claude's recommendations in conversation: streaming lands in 
 
 <choice key="a" title="UTF-8 bytes only">
 
-`span: { start, end }` in UTF-8 bytes of the analysed text. Each binding offers a helper (`matra.span_text(source, span)` in Python, the same in TypeScript) to slice by it.
+`span: { byte_start, byte_end }` in UTF-8 bytes of the analysed text. Each binding offers a helper (`matra.span_text(source, span)` in Python, the same in TypeScript) to slice by it. The unit is in the field names because a Python `str` sliced with a byte span is right on ASCII and wrong, with no error, after the first character outside it; the name puts the unit at every call site.
 
 </choice>
 
