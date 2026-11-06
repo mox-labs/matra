@@ -324,12 +324,12 @@
       "words": 34
     },
     {
-      "compression_ratio": 0.5435,
+      "compression_ratio": 0.5317,
       "kind": "paragraph",
       "lexical_density": 0.5543,
-      "readability_grade": 6.4814,
+      "readability_grade": 7.251,
       "sentences": 4,
-      "text": "Every heading (Section::span), paragraph, skipped construct, sentence and token carries a Span { start, end } into the analysed text, in UTF-8 bytes, so &text[span.start..span.end] is what it came from. For markdown and plain text the analysed text is the input; for block input it is the blocks' texts joined by a blank line. The text fields are normalized (a sentence's text is rebuilt from its tokens, a paragraph's has its markup removed); the span is the authority on where a value came from. provenance.source records the analysed text's length and SHA-256.",
+      "text": "Every heading (Section::span), paragraph, skipped construct, sentence and token carries a Span { byte_start, byte_end } into the analysed text, in UTF-8 bytes, so &text[span.byte_start..span.byte_end] is what it came from. For markdown and plain text the analysed text is the input; for block input it is the blocks' texts joined by a blank line. The text fields are normalized (a sentence's text is rebuilt from its tokens, a paragraph's has its markup removed); the span is the authority on where a value came from. provenance.source records the analysed text's length and SHA-256.",
       "words": 100
     },
     {

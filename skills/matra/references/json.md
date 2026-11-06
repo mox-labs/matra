@@ -57,7 +57,7 @@ Four keys: `{"provenance": {}, "sections": [], "metrics": {}, "skipped": []}`, w
 
 ## `Span`
 
-`{"start": integer, "end": integer}`: where a value lies in the input, in UTF-8 bytes, `start` inclusive and `end` exclusive. Headings, paragraphs, `skipped` entries, sentences and tokens carry one. Bytes, not characters: slice the file's bytes (`head -c`, or `bytes[start:end]` in Python) rather than a decoded string. The text fields are normalized, a sentence's rebuilt from its tokens and a markdown paragraph's with its markup removed, so the span, not the text, is where a value came from. Every byte of the input that is not whitespace lies in exactly one heading, paragraph or skipped span.
+`{"byte_start": integer, "byte_end": integer}`: where a value lies in the input, in UTF-8 bytes, `byte_start` inclusive and `byte_end` exclusive. Headings, paragraphs, `skipped` entries, sentences and tokens carry one. Bytes, not characters: slice the file's bytes (`head -c`, or `data[span["byte_start"]:span["byte_end"]]` over the encoded bytes in Python) rather than a decoded string. The text fields are normalized, a sentence's rebuilt from its tokens and a markdown paragraph's with its markup removed, so the span, not the text, is where a value came from. Every byte of the input that is not whitespace lies in exactly one heading, paragraph or skipped span.
 
 `metrics` holds:
 
@@ -121,7 +121,7 @@ Twelve fields. `span`, `text` and `tokens` are the parse; the other nine are cou
 
 ```json
 {
-  "span": { "start": 0, "end": 127 },
+  "span": { "byte_start": 0, "byte_end": 127 },
   "text": "Reviewers should confirm that the rollback path still works, because the rollback path was never exercised on the new hardware.",
   "tokens": [],
   "word_count": 20,
@@ -182,9 +182,9 @@ Ten CoNLL-U columns, the token's span and one derived flag, all present on every
 
 Each carries `provenance`: the document's, with two keys a document's lacks. `method` names what ranked the result (`tfidf`, `textrank`, `rake` or `yake`; treat the set as open) and `parameters` holds what it ran with, `{ "n": integer }`. Scores from different methods are on unrelated scales, so read `method` before comparing two results. `matra --schema summary` and `matra --schema keyphrases` print their schemas.
 
-`summarize`'s `sentences` are `{ "index": integer, "span": { "start", "end" }, "text": string, "score": float }`, in ascending `index`, which is document order and not score order. `index` is the sentence's position among the document's sentences, and `span` is where it lies in the input.
+`summarize`'s `sentences` are `{ "index": integer, "span": { "byte_start", "byte_end" }, "text": string, "score": float }`, in ascending `index`, which is document order and not score order. `index` is the sentence's position among the document's sentences, and `span` is where it lies in the input.
 
-`keyphrases`' `phrases` are `{ "phrase": string, "score": float, "occurrences": [{ "start", "end" }] }`, highest score first. Every occurrence is a span of the input, from the phrase's first word to its last, so a stop word the method passed over lies inside it.
+`keyphrases`' `phrases` are `{ "phrase": string, "score": float, "occurrences": [{ "byte_start", "byte_end" }] }`, highest score first. Every occurrence is a span of the input, from the phrase's first word to its last, so a stop word the method passed over lies inside it.
 
 Equal scores come back in the same order on every run, so a diff across runs of the same input and version is stable; a tie at the `-n` boundary still decides which phrase makes the list by that order, not by merit.
 

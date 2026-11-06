@@ -164,7 +164,7 @@ Every byte of the input that is not whitespace lies in exactly one heading span,
 
 ## Spans
 
-Every heading (`Section::span`), paragraph, skipped construct, sentence and token carries a `Span { start, end }` into the analysed text, in UTF-8 bytes, so `&text[span.start..span.end]` is what it came from. For markdown and plain text the analysed text is the input; for block input it is the blocks' texts joined by a blank line. The text fields are normalized (a sentence's `text` is rebuilt from its tokens, a paragraph's has its markup removed); the span is the authority on where a value came from. `provenance.source` records the analysed text's length and SHA-256.
+Every heading (`Section::span`), paragraph, skipped construct, sentence and token carries a `Span { byte_start, byte_end }` into the analysed text, in UTF-8 bytes, so `&text[span.byte_start..span.byte_end]` is what it came from. For markdown and plain text the analysed text is the input; for block input it is the blocks' texts joined by a blank line. The text fields are normalized (a sentence's `text` is rebuilt from its tokens, a paragraph's has its markup removed); the span is the authority on where a value came from. `provenance.source` records the analysed text's length and SHA-256.
 
 ## Handle `domain::Error`
 

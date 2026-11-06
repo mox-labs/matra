@@ -103,7 +103,7 @@ The human table prints each score at three decimals. Two sentences whose scores 
 
 ```bash
 matra summarize essay.md --json | jq '.result.sentences[0]'
-# {"index": 4, "span": {"start": 812, "end": 951}, "text": "...", "score": 0.312}
+# {"index": 4, "span": {"byte_start": 812, "byte_end": 951}, "text": "...", "score": 0.312}
 matra summarize essay.md --json | jq '.result.provenance.method'
 # "tfidf"
 ```
