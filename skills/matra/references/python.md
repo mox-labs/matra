@@ -90,7 +90,8 @@ found = matra.clusters(doc, model, threshold=0.85)
 | Member | Signature | Notes |
 |---|---|---|
 | `Model2Vec.from_dir` | `(dir) -> Model2Vec` | Loads three artifacts from a directory. Never touches the network |
-| `Model2Vec.potion_base_8m` | `(dir=None) -> Model2Vec` | Downloads the pinned reference model if absent, announced on `sys.stderr`. `dir` is a models directory, as `MATRA_MODEL_DIR` is, and the files live in its `potion-base-8M` subdirectory; with no argument the directory comes from the configuration |
+| `Model2Vec.potion_base_8m` | `(dir=None) -> Model2Vec` | Downloads the pinned reference model if absent, announced on `sys.stderr`. `dir` is a models directory, as `MATRA_MODEL_DIR` is, and the files live in its `potion-base-8M` subdirectory; with no argument the directory comes from the environment, and no config file is read |
+| `Model2Vec.from_config` | `(config_file=None) -> Model2Vec` | `potion_base_8m()` in the directory and under the `models.embedding` name a configuration file sets: `config_file`, or with none the one the environment names |
 | `model_hash` | property, `str` | SHA-256 over the three artifact files: the digest `identity()` carries |
 | `dimensions` | property, `int` | Length of every vector this model produces |
 | `embed` | `(texts: list[str]) -> list[list[float]]` | One vector per text, in order, all of `dimensions` length |

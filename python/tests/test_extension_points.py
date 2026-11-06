@@ -350,6 +350,33 @@ def test_potion_base_8m_takes_the_models_directory(
     assert capfd.readouterr().err == ""
 
 
+def test_only_from_config_reads_the_config_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression: `potion_base_8m()` with no argument read the config
+    file, where `Engine()` reads none and configuration belongs to the
+    `from_config` constructors. With a malformed file named in the
+    environment, `from_config()` refuses it by name, and
+    `potion_base_8m()` never reads it: it goes on to the model directory,
+    where a partial artifact set is refused before anything downloads,
+    so neither call reaches the network."""
+    bad = tmp_path / "config.toml"
+    bad.write_text("this is = not [ toml\n")
+    models = tmp_path / "models"
+    (models / "potion-base-8M").mkdir(parents=True)
+    (models / "potion-base-8M" / "config.json").write_text("{}")
+    monkeypatch.setenv("MATRA_CONFIG_FILE", str(bad))
+    monkeypatch.setenv("MATRA_MODEL_DIR", str(models))
+
+    with pytest.raises(matra.InvalidInputError) as configured:
+        matra.Model2Vec.from_config()
+    assert configured.value.details["reason"] == "config_malformed"
+
+    with pytest.raises(matra.ModelInvalidError) as defaulted:
+        matra.Model2Vec.potion_base_8m()
+    assert "partial" in str(defaulted.value) or "part of" in str(defaulted.value)
+
+
 @pytest.mark.model
 def test_a_missing_directory_raises(engine: Any, tmp_path: Path) -> None:
     """A listing failure has no per-document result to travel in, so it

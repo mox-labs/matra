@@ -36,7 +36,8 @@ The `Model2Vec` adapter, behind the `model2vec` feature, loads static embedding 
 
 | Constructor | Rust | Python | Reaches the network |
 |---|---|---|---|
-| The configured directory | `Model2Vec::from_config(&cfg)` | `Model2Vec.potion_base_8m()` | when the pinned model is absent |
+| The configured directory | `Model2Vec::from_config(&cfg)` | `Model2Vec.from_config()`, or `Model2Vec.from_config(config_file)` | when the pinned model is absent |
+| The directory the environment names, or the default one; no config file read | `Model2Vec::potion_base_8m(dir)` with the directory you resolve | `Model2Vec.potion_base_8m()` | when the pinned model is absent |
 | A models directory you name, the model in its `potion-base-8M` subdirectory | `Model2Vec::potion_base_8m(dir)` | `Model2Vec.potion_base_8m(dir)` | when the pinned model is absent |
 | Files you supply | `Model2Vec::from_dir(dir)` | `Model2Vec.from_dir(dir)` | never |
 

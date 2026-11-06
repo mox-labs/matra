@@ -46,21 +46,43 @@ impl PyModel2Vec {
     ///
     /// `dir` is a models directory, the one `MATRA_MODEL_DIR` names,
     /// and the three files land in its `potion-base-8M` subdirectory.
-    /// With no argument it is the model directory the configuration
-    /// resolves, joined with the configured embedding model name. A
+    /// With no argument it is the model directory the environment
+    /// names, or the default one; no configuration file is read, as
+    /// `Engine()` reads none (`Model2Vec.from_config` reads one). A
     /// directory is anything Python calls a path: a `str`, or an
     /// `os.PathLike` such as a `pathlib.Path`. A download is announced
     /// on `sys.stderr` first, as the command line announces it.
     #[staticmethod]
     #[pyo3(signature = (dir=None))]
     fn potion_base_8m(py: Python<'_>, dir: Option<PathBuf>) -> PyResult<Self> {
-        // An explicit directory is the model directory and nothing else,
-        // so the configuration file is not read for it: the environment
-        // and the shipped defaults, with `dir` on top, which puts the set
-        // in `dir/potion-base-8M` as `Model2Vec::potion_base_8m(dir)` does.
-        let cfg = match dir {
-            Some(dir) => crate::config::Config::from_sources(|key| std::env::var(key).ok(), None)
-                .map(|cfg| cfg.with_model_dir(dir)),
+        // The environment and the shipped defaults, never the config
+        // file: a library default is the signature's, and configuration
+        // applies in `from_config`. With `dir`, the set lands in
+        // `dir/potion-base-8M`, as `Model2Vec::potion_base_8m(dir)` puts it.
+        let cfg = crate::config::Config::from_sources(|key| std::env::var(key).ok(), None)
+            .map(|cfg| match dir {
+                Some(dir) => cfg.with_model_dir(dir),
+                None => cfg,
+            })
+            .map_err(MatraError)?;
+        let inner = crate::embed::model2vec::Model2Vec::from_config_with_notice(&cfg, |n| {
+            super::cli::announce(py, n);
+        })
+        .map_err(MatraError)?;
+        Ok(Self { inner })
+    }
+
+    /// `Model2Vec::from_config`, over `Config::from_file(config_file)`,
+    /// or over `Config::resolve()` (the environment and the config file
+    /// it names) when no file is given: the pinned model, in the model
+    /// directory and under the `models.embedding` name the configuration
+    /// resolves. A download is announced on `sys.stderr`, as
+    /// `potion_base_8m` announces it.
+    #[staticmethod]
+    #[pyo3(signature = (config_file=None))]
+    fn from_config(py: Python<'_>, config_file: Option<PathBuf>) -> PyResult<Self> {
+        let cfg = match config_file {
+            Some(path) => crate::config::Config::from_file(path),
             None => crate::config::Config::resolve(),
         }
         .map_err(MatraError)?;

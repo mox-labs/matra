@@ -319,22 +319,38 @@ class Model2Vec:
         the three files live in its `potion-base-8M` subdirectory, so
         `potion_base_8m(dir)` and `Engine()` under `MATRA_MODEL_DIR=dir`
         share one tree. With no argument it is the model directory the
-        configuration resolves, joined with the configured embedding
-        model name. A download (30.9 MB) writes two lines to
-        `sys.stderr` first, as `Engine()` does.
+        environment names, or the default one. No configuration file is
+        read, as `Engine()` reads none; `Model2Vec.from_config` reads one.
+        A download (30.9 MB) writes two lines to `sys.stderr` first, as
+        `Engine()` does.
 
         Raises:
-            OSError: the directory cannot be created, read, or written,
+            IoError: the directory cannot be created, read, or written,
                 or a download failed at the transport or answered with a
                 non-2xx status. A filesystem failure names the operation
                 and the path; a transport failure names the URL.
-            ValueError: a download exceeded the 64 MiB artifact cap; or,
-                with no argument, the config file is malformed or
-                exceeds 64 KiB, or the environment names no home
-                directory.
-            RuntimeError: the directory already holds artifacts that are
-                not the pinned set, the digest still mismatched after one
-                retry, or the verified bytes do not parse.
+            InputTooLargeError: a download exceeded the 64 MiB artifact
+                cap.
+            InvalidInputError: the environment names no home directory.
+            ModelInvalidError: the directory already holds artifacts that
+                are not the pinned set, the digest still mismatched after
+                one retry, or the verified bytes do not parse.
+        """
+        ...
+
+    @staticmethod
+    def from_config(config_file: str | os.PathLike[str] | None = None) -> Model2Vec:
+        """`potion_base_8m()`, with a configuration file read and checked,
+        as `Engine.from_config` reads one: the one at `config_file`, which
+        must exist, or with no argument the one the environment names,
+        where a missing file is no error. The model lands in the
+        configured model directory, under the `models.embedding` name.
+
+        Raises:
+            InvalidInputError: the config file is malformed or not UTF-8.
+            InputTooLargeError: the config file exceeds 64 KiB.
+            IoError: `config_file` does not exist or cannot be read; and
+                whatever `potion_base_8m()` raises.
         """
         ...
 
