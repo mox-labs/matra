@@ -413,7 +413,7 @@ matra collects nothing across documents: a stream is the collection, and how to 
 
 ## Limits
 
-`domain::limits` holds every bound matra holds its work to, each defined once and read where it applies. They are constants, not settings: no configuration changes them, and changing one is a breaking change. A cap that is exceeded returns `InputTooLarge`, whose `limit` detail is the constant and whose `what` detail names the gate; a paragraph outside a metric's bounds keeps that metric `None`. Each constant's rustdoc carries the cost model behind its value.
+`domain::limits` holds every bound matra holds its work to, each defined once and read where it applies. They are published so you can size work before a call instead of learning a bound from a refusal: split an input under `MAX_INPUT_BYTES`, or chunk a document's sentences under the cap of the method you select, each named for that method as `SummaryMethod` and `KeyphraseMethod` name it. They are constants, not settings: no configuration changes them. They are this release's values and may change in any 0.x release, so read them from `domain::limits` rather than copying the numbers. A cap that is exceeded returns `InputTooLarge`, whose `limit` detail is the constant and whose `what` detail names the gate; a paragraph outside a metric's bounds keeps that metric `None`. Each constant's rustdoc carries the cost model behind its value.
 
 | Constant | Value | Bounds |
 |---|---|---|

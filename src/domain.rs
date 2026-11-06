@@ -13,9 +13,18 @@ use serde::{Deserialize, Serialize};
 /// reads, the caps each outcome method checks before it runs, and the
 /// minimum a paragraph needs before a metric is measured on it.
 ///
+/// Published so a caller can size its work before the call rather than
+/// learn the bound from a refusal: split a long input under
+/// [`limits::MAX_INPUT_BYTES`], or chunk a document's sentences under the
+/// cap of the method it selects ([`limits::MAX_TFIDF_SENTENCES`] for
+/// `SummaryMethod::TfIdf`, [`limits::MAX_RAKE_TOKENS`] for
+/// `KeyphraseMethod::Rake`, and so on). Each method cap is named for the
+/// method a caller names, as the selectors are.
+///
 /// Constants, not settings: no configuration, argument or environment
-/// variable changes any of them, and changing one is a breaking change.
-/// A cap that is exceeded returns [`Error::InputTooLarge`],
+/// variable changes any of them. They are this release's values and may
+/// change in any 0.x release, so read them from here rather than copying
+/// the number. A cap that is exceeded returns [`Error::InputTooLarge`],
 /// whose `limit` detail is the constant here and whose `what` detail
 /// names the gate. A paragraph under a minimum, or a paragraph over
 /// [`limits::MAX_COMPRESSION_PARAGRAPH_BYTES`], is not an error: its metric slot
@@ -3813,9 +3822,9 @@ mod tests {
         }
     }
 
-    /// Each limit is published, and changing one is a breaking change, so
-    /// every value is pinned here: a change fails this test and has to be
-    /// made on purpose, with the docs that state the number.
+    /// Each limit is published and the docs state its number, so every
+    /// value is pinned here: a change fails this test and has to be made
+    /// on purpose, with the docs that state it.
     #[test]
     fn the_limits_hold_their_published_values() {
         use super::limits::*;
