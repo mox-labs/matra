@@ -104,7 +104,7 @@ impl Class {
         match error {
             ModelNotFound(_) => Class::ModelNotFound,
             ModelInvalid(_) => Class::ModelInvalid,
-            ParseFailed(_) => Class::ParseFailed,
+            ParseFailed { .. } => Class::ParseFailed,
             InputTooLarge { .. } => Class::InputTooLarge,
             UnsupportedFormat { .. } => Class::UnsupportedFormat,
             InvalidInput { .. } => Class::InvalidInput,

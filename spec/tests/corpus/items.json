@@ -84,7 +84,7 @@
         "detail_keys": [
           "io_kind",
           "path",
-          "reason"
+          "cause"
         ]
       }
     }

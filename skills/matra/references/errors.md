@@ -28,13 +28,14 @@ The serde form of an error is `{kind, message, details}`, and a Python exception
 | Kind | Details |
 |---|---|
 | `model_not_found` | `path` |
-| `model_invalid`, `parse_failed` | `reason`, the variant's own text |
+| `model_invalid` | `cause`, the variant's own text |
+| `parse_failed` | `cause`, the parser's or reader's own text; `reason`, the stable name of the check, when what the parser or a reader returned failed the engine's checks |
 | `invalid_input` | `reason`, the stable name of the check that failed (below) |
 | `input_too_large` | `what`, `limit`, `actual` |
 | `unsupported_format` | `format` when one was recognised; `feature` when a feature would read it |
-| `io` | `io_kind` (`not_found`, `permission_denied`, `timed_out`, ...) and `reason`; `path` when the failure concerns a path; `url` and `retryable` when a download did not arrive |
+| `io` | `io_kind` (`not_found`, `permission_denied`, `timed_out`, ...) and `cause`; `path` when the failure concerns a path; `url` and `retryable` when a download did not arrive |
 
-A detail that does not apply is absent. A key a kind carries keeps appearing; new keys may be added, so read the ones you know. `retryable` is `true` when the same call can be made again as it is and may succeed, and appears only on a download. The JSON Schema is `spec/schema/v2/error.schema.json`.
+`reason` is always the stable name of a check to branch on, and `cause` always free text for a person. A detail that does not apply is absent. A key a kind carries keeps appearing; new keys may be added, so read the ones you know. `retryable` is `true` when the same call can be made again as it is and may succeed, and appears only on a download. The JSON Schema is `spec/schema/v2/error.schema.json`.
 
 ## What to do about each
 

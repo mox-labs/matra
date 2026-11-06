@@ -444,17 +444,19 @@ type ErrorDetails = dict[str, str | int | bool]
 """The values a failure's caller acts on, by name. Mirrors
 ``matra::domain::ErrorDetails``.
 
-The keys per kind: ``path`` for ``model_not_found``; ``reason`` for
-``model_invalid`` and ``parse_failed``, the variant's own text; ``reason``
-for ``invalid_input``, the stable snake_case name of the check that
-failed (``threshold_not_finite``, ``config_malformed``, ...; the errors
-reference lists them, an open set); ``what``,
+The keys per kind: ``path`` for ``model_not_found``; ``cause`` for
+``model_invalid``, the variant's own text; ``cause`` for ``parse_failed``,
+with ``reason`` when the engine's checks on what the parser or a reader
+returned failed; ``reason`` for ``invalid_input``; ``what``,
 ``limit`` and ``actual`` for ``input_too_large``; ``format`` (when one was
 recognised) and ``feature`` (when one would read it) for
-``unsupported_format``; and for ``io``, ``io_kind`` and ``reason``, with
+``unsupported_format``; and for ``io``, ``io_kind`` and ``cause``, with
 ``path`` when the failure concerns a path matra named, and ``url`` and
-``retryable`` when a download did not arrive. A key that does not apply
-is absent. A key a kind carries keeps appearing in later versions, and
+``retryable`` when a download did not arrive. ``reason`` is always the
+stable snake_case name of the check that failed (``threshold_not_finite``,
+``head_out_of_range``, ...; the errors reference lists them, an open
+set), and ``cause`` is always free text for a person. A key that does
+not apply is absent. A key a kind carries keeps appearing in later versions, and
 new keys may be added, so read the ones you know and ignore the rest.
 """
 

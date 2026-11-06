@@ -15,7 +15,7 @@
       "type": "string"
     },
     "details": {
-      "description": "The values a caller acts on, by name: every dynamic value in `message`, except on `invalid_input` (see `message`). The keys depend on `kind`; each value is a string, a whole number or a boolean.",
+      "description": "The values a caller acts on, by name: every dynamic value in `message`, except on `invalid_input` (see `message`). The keys depend on `kind`; each value is a string, a whole number or a boolean. One word, one meaning: `reason` is always the stable name of a check that failed, to branch on, and `cause` is always free text for a person.",
       "type": "object",
       "additionalProperties": { "type": ["string", "integer", "boolean"] }
     },
@@ -58,19 +58,37 @@
       }
     },
     {
-      "if": {
-        "properties": { "kind": { "enum": ["model_invalid", "parse_failed"] } },
-        "required": ["kind"],
-        "additionalProperties": true
-      },
+      "if": { "properties": { "kind": { "const": "model_invalid" } }, "required": ["kind"], "additionalProperties": true },
       "then": {
         "properties": {
           "details": {
-            "required": ["reason"],
+            "required": ["cause"],
             "properties": {
-              "reason": {
-                "description": "What went wrong, as the variant's own text.",
+              "cause": {
+                "description": "What went wrong, for a person: the variant's own text.",
                 "type": "string"
+              }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "parse_failed" } }, "required": ["kind"], "additionalProperties": true },
+      "then": {
+        "properties": {
+          "details": {
+            "required": ["cause"],
+            "properties": {
+              "cause": {
+                "description": "What went wrong, for a person: the parser's or the reader's own text, or which token or block failed the engine's check and how.",
+                "type": "string"
+              },
+              "reason": {
+                "description": "Present when the engine's checks on what a parser or a reader returned failed: the check, a stable snake_case name to branch on, such as `head_out_of_range`, `head_cycle` or `block_span_invalid`. The errors reference lists every one. Absent when the parser or the reader reported the failure itself. An open set.",
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
               }
             }
           }
@@ -126,7 +144,7 @@
       "then": {
         "properties": {
           "details": {
-            "required": ["io_kind", "reason"],
+            "required": ["io_kind", "cause"],
             "properties": {
               "io_kind": {
                 "description": "The class of the I/O failure, in snake case: `not_found`, `permission_denied`, `already_exists`, `unsupported`, `invalid_input`, `invalid_data`, `timed_out`, `not_connected`, `connection_refused`, `connection_reset`, `unexpected_eof`, `interrupted`, `not_a_directory`, `is_a_directory`, `storage_full` or `other`. An open set.",
@@ -144,8 +162,8 @@
                 "description": "On a download that did not arrive: whether the same call can be made again as it is and may succeed. Absent elsewhere, which makes no claim either way.",
                 "type": "boolean"
               },
-              "reason": {
-                "description": "The I/O failure's own text.",
+              "cause": {
+                "description": "The I/O failure's own text, for a person.",
                 "type": "string"
               }
             }

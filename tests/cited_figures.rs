@@ -38,7 +38,7 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
             "site/content/guides/cli.md",
-            "26797:7c01f82d49fdef23",
+            "26796:f12490ddfcae9196",
             "the 0.8272 pair score in site/content/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md, and the 0.5800 unrelated score",
         ),
@@ -54,9 +54,9 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/reference/errors.md",
-            "37574:62f45ab7a2453da2",
-            "the RAKE and YAKE figures in site/content/guides/cli.md: 567 phrases, \
-             the one first at 12.135, 1.468 (294th), 223 at the floor, and YAKE's 2020.552",
+            "37897:467da7ecfb760186",
+            "the RAKE and YAKE figures in site/content/guides/cli.md: 571 phrases, \
+             the one first at 12.135, 1.468 (297th), 224 at the floor, and YAKE's 2035.733",
         ),
         (
             "site/content/reference/domain-types.md",

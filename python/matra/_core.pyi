@@ -80,11 +80,13 @@ class ModelNotFoundError(MatraError, FileNotFoundError):
 
 class ModelInvalidError(MatraError, RuntimeError):
     """Bytes that arrived could not be verified against the pin, or could
-    not be loaded. `kind` is `model_invalid`."""
+    not be loaded. `kind` is `model_invalid`; `details` carries `cause`."""
 
 class ParseFailedError(MatraError, RuntimeError):
-    """The parser failed on the input, or panicked. `kind` is
-    `parse_failed`."""
+    """The parser or a reader failed on the input, or returned what its
+    contract forbids. `kind` is `parse_failed`; `details` carries `cause`,
+    and `reason` naming the check when the engine's checks on what the
+    parser or a reader returned failed."""
 
 class InputTooLargeError(MatraError, ValueError):
     """A size gate rejected the input. `kind` is `input_too_large`;
@@ -103,7 +105,7 @@ class InvalidInputError(MatraError, ValueError):
 
 class IoError(MatraError, OSError):
     """A filesystem operation failed, or a download did not arrive. `kind`
-    is `io`; `details` carries `io_kind` and `reason`, `path` when the
+    is `io`; `details` carries `io_kind` and `cause`, `path` when the
     failure concerns one, and `url` and `retryable` for a download. Not
     the builtin `IOError`, which is another name for `OSError`."""
 

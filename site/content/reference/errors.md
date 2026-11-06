@@ -12,7 +12,7 @@ Every error reads the same way on every channel. It has a kind, a stable string 
 |---|---|---|
 | `ModelNotFound` | `PathBuf` | A model file does not exist at the given path |
 | `ModelInvalid` | `String` | Bytes that arrived could not be verified against the pin, or could not be loaded |
-| `ParseFailed` | `String` | The NLP provider failed on the input, or panicked, or produced an unusable token id |
+| `ParseFailed` | `{ reason: Option<&'static str>, cause: String }` | The parser or a reader failed on the input, or returned what its contract forbids. `reason` names the engine's check that failed, when one did |
 | `InputTooLarge` | `{ limit: usize, actual: usize, what: &'static str }` | A size gate rejected the input. `what` names the gate |
 | `UnsupportedFormat` | `{ format: Option<Format>, feature: Option<&'static str> }` | The input is in a format no reader in this build reads, or is not UTF-8 text |
 | `InvalidInput` | `{ reason: &'static str, message: String }` | The call cannot be honored as made. `reason` names the check that failed |
@@ -159,8 +159,8 @@ The UDPipe provisioner (behind `Engine::new` and `Engine::from_config`, in Rust 
 | Non-2xx status | `Io` | `io` | The URL and the status | `url`, `retryable: true` |
 | Response past 64 MiB | `InputTooLarge` | `input_too_large` | `what` is `"parser_model_download"` or `"embedding_model_download"` | `what`, `limit`, `actual` |
 | Directory, write or rename failed | `Io` | `io` | The operation and the path | `path` |
-| Bytes arrived and failed the pinned digest, twice | `ModelInvalid` | `model_invalid` | The URL, or the directory and the expected digest | `reason` |
-| Bytes arrived, passed the digest, and did not load | `ModelInvalid` | `model_invalid` | The loader's message | `reason` |
+| Bytes arrived and failed the pinned digest, twice | `ModelInvalid` | `model_invalid` | The URL, or the directory and the expected digest | `cause` |
+| Bytes arrived, passed the digest, and did not load | `ModelInvalid` | `model_invalid` | The loader's message | `cause` |
 
 The rule behind the table: `model_invalid` is about bytes that arrived. Anything that stopped a fetch from arriving, or a filesystem from accepting it, is `io` ([RFC-0015](https://github.com/mox-labs/matra/blob/main/blueprints/legacy/rfcs/0015-provisioning-failures.md)).
 
@@ -223,14 +223,14 @@ Two kinds of entry never appear on either side. The directory listing skips syml
 | Kind | Details |
 |---|---|
 | `model_not_found` | `path` |
-| `model_invalid` | `reason` |
-| `parse_failed` | `reason` |
+| `model_invalid` | `cause` |
+| `parse_failed` | `cause`; `reason` when what the parser or a reader returned failed one of the engine's checks, from [the table above](#parsefailed) |
 | `input_too_large` | `what`, `limit`, `actual` |
 | `unsupported_format` | `format` when one was recognised; `feature` when a Cargo feature would read it |
 | `invalid_input` | `reason`, the check that failed, from [the table above](#invalidinput) |
-| `io` | `io_kind` and `reason`; `path` when the failure concerns a path matra named; `url` and `retryable` when a download did not arrive |
+| `io` | `io_kind` and `cause`; `path` when the failure concerns a path matra named; `url` and `retryable` when a download did not arrive |
 
-- On `model_invalid`, `parse_failed` and `io`, `reason` is the variant's own text: the `String` the variant holds, or the operating system's account of an I/O failure. It is for a person, like the message. On `invalid_input` it is the name of the check that failed, stable, to branch on.
+- One word, one meaning. `reason` is always the name of a check that failed, stable and snake_case, to branch on: on `invalid_input` always, and on `parse_failed` when the engine's checks refused what a parser or a reader returned. `cause` is always free text for a person, like the message: the text the variant holds, or the operating system's account of an I/O failure.
 - `io_kind` is the I/O failure's class in snake case: `not_found`, `permission_denied`, `already_exists`, `unsupported`, `invalid_input`, `invalid_data`, `timed_out`, `not_connected`, `connection_refused`, `connection_reset`, `unexpected_eof`, `interrupted`, `not_a_directory`, `is_a_directory` or `storage_full`. Any other class is `other`. Treat the set as open.
 - `retryable` appears only on a download that did not arrive. Its absence makes no claim either way.
 
@@ -253,7 +253,7 @@ These are the strings `Display` produces, which are also the strings Python's `s
 |---|---|---|
 | `ModelNotFound(path)` | `model not found: {path}` | `model_not_found` |
 | `ModelInvalid(s)` | `invalid model: {s}` | `model_invalid` |
-| `ParseFailed(s)` | `parse failed: {s}` | `parse_failed` |
+| `ParseFailed { reason, cause }` | `parse failed: {cause}` | `parse_failed` |
 | `InputTooLarge { limit, actual, what }` | `{what} input too large: {actual} > limit {limit}`, or `input too large: {actual} > limit {limit}` when `what` is `"input"` | `input_too_large` |
 | `UnsupportedFormat { format, feature }` | `unsupported format: {format}; no feature of this matra version reads it`, `` unsupported format: {format}; enable the `{feature}` feature to read it ``, or `unsupported format: the input is not UTF-8 text and carries no signature matra recognises` when `format` is `None` | `unsupported_format` |
 | `InvalidInput { reason, message }` | `invalid input: {message}` | `invalid_input` |

@@ -30,6 +30,7 @@ uvx 'matra>=0.3' --skill                              # the skill for 0.3
 | `ScoredSentence`, `SemanticClusters`, `SemanticCluster`, `SemanticEdge` | `SummarySentence` in a `Summary`, `Clusters`, `Cluster`, `SimilarityEdge` | Rust, Python types |
 | `domain::MAX_INPUT_BYTES` | `domain::limits::MAX_INPUT_BYTES` | Rust |
 | `Error::InvalidInput(message)` | `Error::InvalidInput { reason, message }` | Rust |
+| `Error::ParseFailed(message)` | `Error::ParseFailed { reason, cause }` | Rust |
 | `Embedder::identity() -> &str` | `Embedder::identity() -> Identity` | Rust |
 | `Config::summarize_n`, `summarize_algorithm`, `keyphrases_algorithm` | `Config::summary_n`, `summary_method`, `keyphrases_method` | Rust |
 | `Config::udpipe_model`, `Config::semantic_threshold` | none; `Config::clusters_threshold` is new | Rust |
@@ -54,6 +55,7 @@ uvx 'matra>=0.3' --skill                              # the skill for 0.3
 | `SemanticClusters.model_hash` | `Clusters.provenance.parameters.embedder.sha256` | all |
 | `InputTooLarge` `what`: `file_source`, `config_file`, `udpipe_download`, `embedding_download` | `file_read`, `config_file_read`, `parser_model_download`, `embedding_model_download` | all |
 | `invalid_input` `details.reason`, the message text | `details.reason`, the name of the check that failed | all |
+| `model_invalid`, `parse_failed` and `io` `details.reason`, the error's text | `details.cause` | all |
 | `Format` serialized as `"Markdown"`, `"PlainText"` | `"markdown"`, `"plain_text"`, `"blocks"` | Rust serde, JSON |
 | `[summarize]`, `algorithm`, `[semantic] threshold`, `[models] udpipe` | `[summary]`, `method`, `[clusters] threshold`, none | config file |
 | `--json` envelope `format_version: 1` | `format_version: 2`, with an `error` key | command line |
@@ -218,6 +220,7 @@ What moved inside the results:
 // 0.2
 Error::UnsupportedFormat(format)
 Error::InvalidInput(message)
+Error::ParseFailed(message)
 domain::MAX_INPUT_BYTES
 ```
 
@@ -225,10 +228,11 @@ domain::MAX_INPUT_BYTES
 // 0.3
 Error::UnsupportedFormat { format, feature }   // both Option
 Error::InvalidInput { reason, message }       // reason: "threshold_not_finite", ...
+Error::ParseFailed { reason, cause }          // reason: None, or "head_out_of_range", ...
 domain::limits::MAX_INPUT_BYTES
 ```
 
-`InvalidInput`'s `reason` names the check that failed, a stable name the [errors reference](../reference/errors.md#invalidinput) lists, and `details["reason"]` carries it, where 0.2 put the message text there. Four `InputTooLarge` labels name what you read rather than matra's modules: `file_source` is `file_read`, `config_file` is `config_file_read`, `udpipe_download` is `parser_model_download` and `embedding_download` is `embedding_model_download`. A match on the old strings no longer fires.
+`InvalidInput`'s `reason` names the check that failed, a stable name the [errors reference](../reference/errors.md#invalidinput) lists, and `details["reason"]` carries it, where 0.2 put the message text there. On `model_invalid`, `parse_failed` and `io` the error's own text moves from `details["reason"]` to `details["cause"]`, so `reason` names a check wherever it appears. Four `InputTooLarge` labels name what you read rather than matra's modules: `file_source` is `file_read`, `config_file` is `config_file_read`, `udpipe_download` is `parser_model_download` and `embedding_download` is `embedding_model_download`. A match on the old strings no longer fires.
 
 `Error::details()` is new. It returns every value in the message by name, so no caller parses a message. `Error` and `DocumentError` serialize as `{kind, message, details}`, and `DocumentError` adds `path`. A failed read now names its path: `io error: cannot read essay.md: No such file or directory (os error 2)`. A file whose bytes are not UTF-8 is `UnsupportedFormat`, not `Io`. Every cap is in `domain::limits`, with the same values as 0.2. [Errors](../reference/errors.md) lists every kind and its details.
 
