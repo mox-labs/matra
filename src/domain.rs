@@ -1281,6 +1281,12 @@ pub struct Sentence {
     /// whitespace can differ from the source; `span` locates the source.
     pub text: String,
     /// CoNLL-U tokens in id-sorted order.
+    ///
+    /// Read as empty when the JSON has no `tokens` key, which is how
+    /// `matra analyze --json --depth sentence` writes a sentence, so a cut
+    /// document reads back into this type. Empty then means "not written",
+    /// not "no tokens": the sentence's derived fields still describe them.
+    #[serde(default)]
     pub tokens: Vec<Token>,
     /// Count of non-punctuation tokens, derived at construction.
     ///
@@ -1544,6 +1550,11 @@ pub struct Paragraph {
     pub kind: ParagraphKind,
     /// Sentences produced by parsing this paragraph (attached by
     /// `Engine::annotate`).
+    ///
+    /// Read as empty when the JSON has no `sentences` key, as
+    /// `matra analyze --json --depth paragraph` writes a paragraph; the
+    /// paragraph's metrics still describe them.
+    #[serde(default)]
     pub sentences: Vec<Sentence>,
     /// The paragraph's metrics, filled by `Engine::compose`.
     pub metrics: ParagraphMetrics,
@@ -1564,6 +1575,10 @@ impl Paragraph {
     }
 
     /// Total word count across all sentences.
+    ///
+    /// Saturates at `usize::MAX` rather than overflowing: the counts are
+    /// whatever the sentences carry, and a document read back from JSON
+    /// can carry any, so a sum past the largest count reads as that.
     pub fn word_count(&self) -> usize {
         self.sentences
             .iter()
@@ -1577,10 +1592,6 @@ impl Paragraph {
 }
 
 /// A structural section of a document (heading + paragraphs).
-    ///
-    /// Saturates at `usize::MAX` rather than overflowing: the counts are
-    /// whatever the sentences carry, and a document read back from JSON
-    /// can carry any, so a sum past the largest count reads as that.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Section {
@@ -1820,7 +1831,7 @@ impl Parameters {
     pub(crate) fn clustering(threshold: f64, embedder: Identity) -> Self {
         Self {
             threshold: Some(threshold),
-            embedder: Some(embedder.into()),
+            embedder: Some(embedder),
             ..Self::default()
         }
     }
@@ -1877,6 +1888,11 @@ pub struct Document {
     /// Where the document came from and what produced it.
     pub provenance: Provenance,
     /// Section tree (the single source of truth for paragraph ownership).
+    ///
+    /// Read as empty when the JSON has no `sections` key, as
+    /// `matra analyze --json --depth document` writes a document; its
+    /// metrics still describe them.
+    #[serde(default)]
     pub sections: Vec<Section>,
     /// The document's metrics, filled by `Engine::compose`.
     pub metrics: DocumentMetrics,
