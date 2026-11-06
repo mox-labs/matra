@@ -60,7 +60,7 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/reference/domain-types.md",
-            "46846:e20e9835a69ec431",
+            "47228:748830e840fea446",
             "the 141-word saturation floor and the 54-word window in \
              site/content/guides/semantic-clusters.md and skills/matra/references/semantic.md",
         ),
