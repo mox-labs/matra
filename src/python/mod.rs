@@ -18,6 +18,7 @@
 //! - [`embed`]: `Model2Vec`, and a Python object as an embedder.
 //! - [`errors`]: one exception class per error kind.
 //! - [`cli`]: `cli_main`, the command line's Python launcher.
+//! - [`add_limits`]: `domain::limits`, the values `matra.limits` reads.
 
 mod cli;
 mod document;
@@ -47,5 +48,33 @@ pub fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(pyo3::wrap_pyfunction!(outcomes::keyphrases, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(outcomes::clusters, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(cli::cli_main, m)?)?;
+    add_limits(m)?;
+    Ok(())
+}
+
+/// Every constant in [`crate::domain::limits`], as a module attribute of
+/// the same name: what `python/matra/limits.py` re-exports, so Python
+/// reads the values this build was compiled with rather than a copy.
+/// `python/tests/test_limits.py` holds the list to the Rust module.
+fn add_limits(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    use crate::domain::limits;
+    for (name, value) in [
+        ("MAX_INPUT_BYTES", limits::MAX_INPUT_BYTES),
+        ("MAX_CONFIG_FILE_BYTES", limits::MAX_CONFIG_FILE_BYTES),
+        ("MAX_DOWNLOAD_BYTES", limits::MAX_DOWNLOAD_BYTES),
+        ("MAX_TFIDF_SENTENCES", limits::MAX_TFIDF_SENTENCES),
+        ("MAX_TEXTRANK_SENTENCES", limits::MAX_TEXTRANK_SENTENCES),
+        ("MAX_CLUSTER_SENTENCES", limits::MAX_CLUSTER_SENTENCES),
+        ("MAX_RAKE_TOKENS", limits::MAX_RAKE_TOKENS),
+        ("MAX_YAKE_TOKENS", limits::MAX_YAKE_TOKENS),
+        (
+            "MAX_COMPRESSION_PARAGRAPH_BYTES",
+            limits::MAX_COMPRESSION_PARAGRAPH_BYTES,
+        ),
+        ("MIN_READABILITY_WORDS", limits::MIN_READABILITY_WORDS),
+        ("MIN_COMPRESSION_WORDS", limits::MIN_COMPRESSION_WORDS),
+    ] {
+        m.add(name, value)?;
+    }
     Ok(())
 }

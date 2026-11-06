@@ -199,6 +199,20 @@ Every input over 8 MiB is rejected with `matra.InputTooLargeError`, a `ValueErro
 
 The outcome functions add caps of their own: 2000 sentences for a summary and for `clusters`, and 200000 tokens for keyphrases, each raising `matra.InputTooLargeError` with the method in `details["what"]`.
 
+Every cap, and the word counts a paragraph needs before it gets a readability grade or a compression ratio, is a constant in `matra.limits`, under the name Rust's `domain::limits` gives it, read from the extension so it is the value the library enforces:
+
+```python
+from pathlib import Path
+
+import matra
+
+data = Path("transcript.txt").read_bytes()
+if len(data) > matra.limits.MAX_INPUT_BYTES:
+    ...  # split it before analysing it
+```
+
+The eleven are `MAX_INPUT_BYTES`, `MAX_CONFIG_FILE_BYTES`, `MAX_DOWNLOAD_BYTES`, `MAX_TFIDF_SENTENCES`, `MAX_TEXTRANK_SENTENCES`, `MAX_CLUSTER_SENTENCES`, `MAX_RAKE_TOKENS`, `MAX_YAKE_TOKENS`, `MAX_COMPRESSION_PARAGRAPH_BYTES`, `MIN_READABILITY_WORDS` and `MIN_COMPRESSION_WORDS`.
+
 ## The shapes of the data
 
 A `Document` reads as a dict, and every outcome returns one. `DocumentDict`, `Section`, `Paragraph`, `Sentence`, `Token`, `Summary`, `Keyphrases` and `Clusters` are `TypedDict` definitions in `matra.types` that describe the shapes at both runtime and type-check time:
