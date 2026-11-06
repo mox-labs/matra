@@ -53,7 +53,7 @@ The proposal stays `proposed` and nothing built on it merges. Claude raises the 
 
 </pragmatics>
 
-<changed date="2026-11-03" since="the text of 2026-10-06">
+<changed date="2026-11-06" since="the text of 2026-10-06">
 
 <was>
 
@@ -112,6 +112,54 @@ Every renamed name, flag and JSON field stayed for 0.3.x, the JSON emitted under
 <now>
 
 Nothing keeps its old name: 0.3.0 is one clean break in every language and on the wire, which the schema's own version already announces: [decision 8](#decision-transition-window).
+
+</now>
+
+<was>
+
+Keeping the parser private kept documents trustworthy: the outcomes could rely on the parser's invariants, and a `Document` handle stopped a summary carrying provenance no matra run produced.
+
+</was>
+
+<now>
+
+A document is data: the public constructors and `Deserialize` stay so a saved document reads back, so every outcome holds on a document whose parts contradict each other, and a test feeds it such documents. Provenance records how a document says it was made, and is not proof. An architect review of the built surface found the gap; the owner ruled it, and [#178](https://github.com/mox-labs/matra/pull/178) carries the test and the one fix it needed. See [reference](#reference-level-explanation).
+
+</now>
+
+<was>
+
+The embedder reported its identity as a string, and its trait stated no error rule.
+
+</was>
+
+<now>
+
+The embedder's `identity` returns the `Identity` the parser reports, so the embedding model's licence reaches the result, and the trait names the kinds an implementation returns. The owner ruled it after the same review; [#178](https://github.com/mox-labs/matra/pull/178) implements it. See [rationale](#keep-the-embedder-as-epr-0005-shipped-it).
+
+</now>
+
+<was>
+
+`domain::limits` was published with no alternative recorded, and changing a constant was called a breaking change.
+
+</was>
+
+<now>
+
+The limits are published because a caller needs them before the call, and their values may change in any 0.x release. The owner ruled it; [#178](https://github.com/mox-labs/matra/pull/178) rewrites their documentation. See [rationale](#keep-the-limits-private).
+
+</now>
+
+<was>
+
+`invalid_input` covered a contract breach, bad block input, a malformed config file and a failing embedder with nothing to tell them apart, and the size gates' labels named private modules, the file source and the UDPipe adapter.
+
+</was>
+
+<now>
+
+`invalid_input` stays one kind, one remedy, with a `reason` naming each check, and the labels name what the caller reads, a file or a model download. The owner ruled both; [#178](https://github.com/mox-labs/matra/pull/178) implements them. See [reference](#reference-level-explanation).
 
 </now>
 
@@ -267,7 +315,7 @@ A summary adds what shaped it: `"method": "textrank", "parameters": { "n": 3 }`.
 ```python
 try:
     engine.analyze(text=huge)
-except matra.InputTooLarge as e:     # also a ValueError
+except matra.InputTooLargeError as e:   # also a ValueError
     print(e.kind, e.details["limit"], e.details["actual"])
 ```
 
@@ -350,7 +398,8 @@ Today the Python box and the command-line box each carry an application rule. Pr
 - **Block.** `Block` is input only and opaque, with two constructors, `Block::heading(level, text)` and `Block::paragraph(text)`. Its JSON form is a published input format, `Format::Blocks`, with an input schema in `spec/schema/`; an unknown `kind` is refused, naming it. The richer vocabulary the readers emit (heading, paragraph, list item, table cell, code) is a separate, private type, so the likely change, more kinds, touches no interface [parnas-process:c22]. A shared format used as an interface becomes costly as a design evolves [parnas-modules:c25], which holds for a type callers receive or implement and not for one they only send.
 - **Outcomes are free functions over a `Document`.** They need no engine and no parser, so they run in a build without UDPipe, which the TypeScript surface will need. The richer mechanism is built using the simpler one [parnas-modules:c33]. The method is a secret behind the outcome's name: the selector is an enum the caller sends, which can gain values safely, and the method recorded on the result is a string the caller receives, which readers treat as an open set (this send-versus-receive distinction is the canon synthesis's own suggestion, not a source finding). `n` is the one word for "how many" everywhere.
 - **`clusters` takes an embedder in every language.** An implicit default would download a model inside an outcome call. Only the command line, the application tier, builds the default embedder from configuration.
-- **The stages are internal.** `annotate` and `compose` stay as the crate's own stages, and the property that annotation is the only route from text to the parser holds for every `Input` constructor, which a law tests. <claim id="python-annotated" basis="observed">Their one caller outside the engine is the Python binding's own helper [lib.rs:488](../../src/lib.rs#L488 "self.engine.annotate(&raw)")</claim>. A public parse-only call would publish a second shape of `Document`, every metric empty, under the same name; "a feature which is included before it is fully understood can never be removed later" [neighbours-hoare-brooks-lampson:c13].
+- **A document is data.** `Document` and its records keep their public constructors and `Deserialize`, so a caller, an agent among them, saves `--json` output, whole or cut by `--depth`, and reads it back into the type the outcomes take. Desirable properties "should not be hidden" [neighbours-hoare-brooks-lampson:c37], and reading back what matra wrote is one. Nothing tells a document matra parsed from one it was handed, so the outcomes promise nothing that depends on the difference: `summarize`, `keyphrases`, `clusters` and every view on the records hold on a document whose parts contradict each other (spans past the text or inverted, heads pointing nowhere or in a cycle, empty sentences, texts that do not match their tokens), returning a result that carries the contradiction through or an error, never a panic or a loop. They correct nothing they cannot know and guess nothing. A test runs every outcome over documents broken one way each, with a deadline (own judgment: the canon does not address untrusted records).
+- **The stages are internal.** `annotate` and `compose` stay as the crate's own stages, and the property that annotation is the only route from text to the parser holds for every `Input` constructor, which a law tests. <claim id="python-annotated" basis="observed">Their one caller outside the engine is the Python binding's own helper [lib.rs:488](../../src/lib.rs#L488 "self.engine.annotate(&raw)")</claim>. A public parse-only call would publish a second shape of `Document`, every metric empty, under the same name, and a reader could not tell it from a measured one, since a `null` metric already means a condition not met; "a feature which is included before it is fully understood can never be removed later" [neighbours-hoare-brooks-lampson:c13]. `--depth` also writes a smaller `Document`, and the difference is what a reader can see: it removes a level as a key, so what was not written is absent rather than empty.
 - **Adapters translate and decide nothing.** The Python binding moves out of `lib.rs` into its own module and is held to boundary rule 7, the public surface only, with a semgrep rule. The command line keeps no application rule. Henning's "an API is a user interface" [api-design-practice:c21] is the grounding, with the drift above as the evidence.
 - **A cross-surface parity test.** The same inputs through Rust, Python and the command line give the same `Document`, the same summary and the same error `kind`; testing finds what structure is meant to prevent [dijkstra-structure:c30].
 
@@ -419,10 +468,11 @@ Paragraph        { span, text, kind, sentences, metrics: ParagraphMetrics }
 ParagraphMetrics { readability_grade, lexical_density, compression_ratio }
 Sentence         { span, text, tokens, word_count, tree_depth: Option, passive,
                    negations, modals, clausal_complements, root_adverbials, hearst_pairs, root_mood }
-Token            { id, span, text, lemma, pos, xpos, features: map, head, dep, deps, misc }
+Token            { id, span, text, lemma, pos, xpos, features: map, head, dep, deps, misc, is_punct }
 Skipped          { kind, span }
 Span             { byte_start, byte_end } UTF-8 bytes of the analysed text
 Provenance       { matra, schema, parser: Identity, format, source: { path?, bytes, sha256 }, method?, parameters? }
+Parameters       { n?, threshold?, embedder?: Identity }
 Identity         { name, model, sha256, license }
 Summary          { provenance, sentences: [SummarySentence { index, span, text, score: f64 }] }
 Keyphrases       { provenance, phrases: [Keyphrase { phrase, score: f64, occurrences: [Span] }] }
@@ -433,7 +483,7 @@ DocumentError    { path?, kind, message, details }
 - **Aggregates are fields.** What the command line prints and Python rebuilds becomes data: if data exists only in string form, the string becomes a de facto API [api-design-practice:c11]. `ParagraphMetrics` and `DocumentMetrics` are names RFC-0006 reserved, and no outer `Option` wraps either record, because each slot gates on its own.
 - **One home for the path.** <claim id="corpus-entry-path" basis="observed">`CorpusEntry` pairs a path with a document [domain.rs:1351](../../src/domain.rs#L1351 "Self { path, analysis }")</claim>, and the path also belongs in `provenance.source.path`. `CorpusEntry` goes; there must be one, and only one, place for every fact [parnas-process:c14]. `Corpus` leaves the surface too, with its aggregate methods: methods do not cross into Python, averaging across documents is the caller's decision (defect 12 below), and nothing in the tree needed a collector.
 - **Skipped kinds** name the construct (`table`, `code`, `front_matter`, `html`, `thematic_break`, `link_definition`, later `page_image`), never a judgment, following matra's rule that a derived field names a construction (EPR-0002). `skipped` is not an error and carries no error code: skipping a construct is specified behaviour reported beside a correct result, so AIP-193's rule against partial errors [api-design-systems:c30] does not bind it.
-- **CoNLL-U is converted.** `features` is a map. **Sentinels become `Option`**: `tree_depth` is `None` on a cycle instead of `usize::MAX`, and the visited-set walk is unchanged. **Scalars cross as `f64`.**
+- **CoNLL-U is converted.** `features` is a map. `is_punct` is a field the parse derives, which every word count and metric reads, so a reader counts words as matra counted them without knowing which tags it treats as punctuation; it is a second home for a fact the parse already carries [parnas-process:c14], kept because the counts depend on it. **Sentinels become `Option`**: `tree_depth` is `None` on a cycle instead of `usize::MAX`, and the visited-set walk is unchanged. **Scalars cross as `f64`.**
 - **Record facts are named for what the detector finds.** `ClausalComplement` and `clausal_complements` replace `Reporting` and `reportings`; `root_mood` (the mood feature of the root, with the root's token id) replaces the `bare_assertion` flag. Name a thing by what it is [dijkstra-systems:c2]; `root_mood` is a retype, and its values are an open set.
 - **One format vocabulary**: `markdown`, `plain_text`, `blocks`, in the JSON, in Python and on the command line.
 - **Where spans sit**: section headings, paragraphs, `skipped` entries, sentences, tokens, summary sentences and keyphrase occurrences. Cluster members stay sentence indices, which already resolve through the document.
@@ -451,11 +501,15 @@ DocumentError    { path?, kind, message, details }
 
 ### Provenance
 
-`provenance` sits on `Document`, `Summary`, `Keyphrases` and `Clusters`. Derived results copy the document's provenance and add their own `method` and `parameters` (`n`, `threshold`, the embedder's identity). The parser reports its own identity, as the embedder already does: <claim id="embedder-identity" basis="observed">two embedders "that can disagree must not share an identity" [embed/mod.rs:41](../../src/embed/mod.rs#L41 "embedders that can disagree must not share an identity")</claim>. The model is the decision most likely to change (a permissively licensed model is planned), so a consumer must see which model produced a parse rather than discover it as a shift in the numbers; an interface states "the meaning and limits of information exchanged" [parnas-process:c46]. The input digest is computed once, at annotation, with `sha2`, which becomes a required dependency of the crate, not of `domain`. There is no timestamp: matra's outputs are deterministic, conformance compares them, and a timestamp would make two identical analyses differ (own judgment).
+`provenance` sits on `Document`, `Summary`, `Keyphrases` and `Clusters`. Derived results copy the document's provenance and add their own `method` and `parameters` (`n`, `threshold`, the embedder's identity). The parser and the embedder report themselves in one shape, `Identity { name, model, sha256, license }`, so the embedding model's name, digest and licence reach `parameters.embedder` as the parsing model's reach `parser`, and one reader reads both; the same word means the same thing [api-design-practice:c8]. The rule the embedder already carried applies to both: <claim id="embedder-identity" basis="observed">two embedders "that can disagree must not share an identity" [embed/mod.rs:41](../../src/embed/mod.rs#L41 "embedders that can disagree must not share an identity")</claim>. The model is the decision most likely to change (a permissively licensed model is planned), so a consumer must see which model produced a parse rather than discover it as a shift in the numbers; an interface states "the meaning and limits of information exchanged" [parnas-process:c46]. The input digest is computed once, at annotation, with `sha2`, which becomes a required dependency of the crate, not of `domain`. There is no timestamp: matra's outputs are deterministic, conformance compares them, and a timestamp would make two identical analyses differ (own judgment).
+
+Provenance is a record, not proof. It says how a result says it was made: a document read back from JSON, or built with `Provenance::new`, carries whatever provenance it was given, and an outcome derived from it copies that on. What a reader can check it against is `source.sha256`, the digest of the analysed text every span points into. In Python a `Document` comes only from `analyze`, so a Python outcome carries the provenance an analysis recorded; that is a property of the Python surface, not of documents.
 
 ### Errors on every channel
 
-- **Rust.** `Error` keeps its variants and `kind()`, and gains `details()`, every dynamic value in the message as structured data, and a serde form `{kind, message, details}`. `DocumentError` serializes as that plus `path`, so the hand-built projection in the Python binding is deleted. Every dynamic value in an error message must also be present as metadata [machine-readable-contracts:c13]. `UnsupportedFormat`'s details name the feature that would read the format, when one exists.
+- **Rust.** `Error` keeps its variants and `kind()`, and gains `details()`, the values a caller acts on as structured data, and a serde form `{kind, message, details}`. `DocumentError` serializes as that plus `path`, so the hand-built projection in the Python binding is deleted. Every dynamic value in an error message must also be present as metadata [machine-readable-contracts:c13]. `UnsupportedFormat`'s details name the feature that would read the format, when one exists.
+- **Labels in the caller's terms.** `InputTooLarge.what` names the gate by what the caller reads or selects, never by a private module: `input`; `file_read` and `config_file_read`; `parser_model_download` and `embedding_model_download`; and for an outcome, the method the caller selects (`tfidf`, `textrank`, `rake`, `yake`) or `clusters`. Error messages "must not assume that the user will know anything about" the implementation [api-design-systems:c29], and a label naming the `Source` adapter or the UDPipe adapter asks exactly that.
+- **One kind for one remedy, and a reason for each check.** `invalid_input` stays one kind, because its cases share a remedy: change the call, the configuration, the data or the embedder, since making the call again as it is fails the same way [api-design-systems:c28]. Its cases still call for different actions (fix a config file, fix an embedder, pass a directory to `Inputs::dir`), so `InvalidInput { reason, message }` carries `reason`, a stable snake_case name for the check that failed (`threshold_not_finite`, `embedder_vector_count`, `config_malformed`, `is_a_directory`, `usage`, ...), in `details.reason` on every channel. The errors reference lists every reason, and a test holds the list to the source. Here the design departs from [machine-readable-contracts:c13] for this one kind: an `invalid_input` message adds, for a person, values its details do not repeat, because `reason` is what a caller acts on.
 - **Python.** `matra.MatraError` with `.kind` and `.details`, and one subclass per kind that also inherits today's builtin class (`InputTooLargeError(MatraError, ValueError)`), so a caller who catches the builtin class catches it too [api-design-practice:c39]. The class names end in `Error`, as Python names its exceptions; the name shared across languages is the `kind` string. `IoError` routes on the kind it wraps: `IoNotFoundError` (also a `FileNotFoundError`), `IoPermissionError` (also a `PermissionError`), else `IoError` (an `OSError`). An I/O failure on a path matra was given names that path, in the message and in `details.path`.
 - **Command line.** Under `--json`, a failure writes the envelope with `"result": null` and an `error` object to stdout, writes `matra: <message>` to stderr, and exits 2. On success `"error": null`; both keys are always present. The command line's own refusals use the existing kind whose remedy matches: error identity is defined by what the caller would do about it [api-design-systems:c28].
 - **Exit codes** stay 0 (found), 1 (nothing found), 2 (failed). In `analyze DIR --json`, each document is one envelope per line; a failed document is a line with its `error`, the walk continues, and the exit code is 2 if any document failed. Per-item failure in a bulk operation is the one sanctioned partial success [api-design-systems:c30].
@@ -463,7 +517,7 @@ DocumentError    { path?, kind, message, details }
 
 ### Limits and defaults
 
-The input cap, the sentence caps and the metric minimums move into one module as published constants, `domain::limits`, each defined once and referenced where it applies. Raising a cap is left out of this release: the canon does not cover resilience bounds, and the resilience floor keeps safe defaults until its own reviewer rules. Library defaults are written in the signatures; configuration applies at the command line and in the `from_config` constructors. Defaults "should be written explicitly", and changing one is breaking [api-design-systems:c38] [api-design-systems:c25]. The effective parameters are recorded in `provenance`.
+The input cap, the sentence caps and the metric minimums move into one module as published constants, `domain::limits`, each defined once and referenced where it applies. They are published because a caller needs them before the call: to split an input under `MAX_INPUT_BYTES`, or to chunk a document's sentences or tokens under the cap of the method it selects, where the error's `limit` detail reports a cap only after the call has been refused. Desirable properties "should not be hidden" [neighbours-hoare-brooks-lampson:c37]. Each method cap is named for the method the caller selects (`MAX_TFIDF_SENTENCES` for `SummaryMethod::TfIdf`), as the selectors are, so the names follow the caller's choice. The values are this release's and may change in any 0.x release; each constant's documentation carries the cost model behind its value, and a caller reads the constant rather than copying the number. Raising a cap is left out of this release: the canon does not cover resilience bounds, and the resilience floor keeps safe defaults until its own reviewer rules. Library defaults are written in the signatures; configuration applies at the command line and in the `from_config` constructors, in Python as in Rust: `Engine()` and `Model2Vec.potion_base_8m()` read no configuration file, and `Engine.from_config` and `Model2Vec.from_config` read one. Defaults "should be written explicitly" [api-design-systems:c38], and a changed default is a changed behaviour [api-design-systems:c25]. The effective parameters are recorded in `provenance`.
 
 ### Signatures
 
@@ -496,6 +550,11 @@ pub fn clusters(doc: &Document, embedder: &dyn Embedder, threshold: f64) -> Resu
 #[non_exhaustive] pub enum SummaryMethod { TfIdf, TextRank }
 #[non_exhaustive] pub enum KeyphraseMethod { Rake, Yake }
 #[non_exhaustive] pub enum Format { Markdown, PlainText, Blocks, Pdf, Docx }   // Pdf, Docx recognised, not read
+pub trait Embedder: Send {
+    fn embed(&self, texts: &[&str]) -> Result<Vec<Embedding>>;   // ModelInvalid, Io or InputTooLarge on its own failure
+    fn identity(&self) -> Identity;                               // the shape the parser reports
+}
+// Error::InvalidInput { reason: &'static str, message: String }, reason the check that failed
 ```
 
 ```python
@@ -516,6 +575,14 @@ def clusters(doc: Document, embedder: Embedder, threshold: float = 0.85) -> Clus
 
 class Document: ...   # read-only; doc["metrics"]["total_words"]; doc.to_dict()
 class MatraError(Exception): kind: str; details: dict
+
+class Model2Vec:      # an Embedder: embed(texts) and identity() -> Identity
+    @staticmethod
+    def from_dir(dir: os.PathLike) -> Model2Vec: ...
+    @staticmethod
+    def potion_base_8m(dir: os.PathLike | None = None) -> Model2Vec: ...      # reads no config file
+    @staticmethod
+    def from_config(config_file: os.PathLike | None = None) -> Model2Vec: ...
 ```
 
 Exactly one of `text`, `file`, `bytes` and `blocks` (and of `dir` and `texts`) is accepted; any other count is a `TypeError` at the call. A `str` is always text, never a path, and reads as `plain_text` when no `format` is given. Python's vectors-in `semantic_clusters` goes with the rest: it has no Rust counterpart, and `clusters` takes an embedder, which can return vectors the caller already holds.
@@ -529,7 +596,7 @@ matra config show | init [--force]        matra completions SHELL
 matra --schema [NAME]                     matra --skill [-r NAME]
 ```
 
-`-` reads stdin as bytes and detects the format. `--depth` lets an agent choose how much of the parse it pays for, since every token shown costs the caller [agent-computer-interfaces:c2] (vendor guidance). It requires `--json`, defaults to `token` (the whole parse), and removes the levels it cuts rather than leaving them empty. `--format` names the format of a file or stdin and is refused with a directory. In `analyze DIR`, a file that is neither text nor a recognised binary format (an image) is an `unsupported_format` line, so a walk over a mixed directory exits 2 (decision 7). Under `--json` a usage error is an envelope too.
+`-` reads stdin as bytes and detects the format. `--depth` lets an agent choose how much of the parse it pays for, since every token shown costs the caller [agent-computer-interfaces:c2] (vendor guidance). It requires `--json`, defaults to `token` (the whole parse), and removes the levels it cuts rather than leaving them empty. A cut document reads back into Rust's `Document`, the removed levels empty, so what the command line writes composes with what the library takes. `--format` names the format of a file or stdin and is refused with a directory. In `analyze DIR`, a file that is neither text nor a recognised binary format (an image) is an `unsupported_format` line, so a walk over a mixed directory exits 2 (decision 7). Under `--json` a usage error is an envelope too.
 
 ### Names
 
@@ -545,7 +612,10 @@ matra --schema [NAME]                     matra --skill [-r NAME]
 | `Reporting`, `Sentence.reportings` | `ClausalComplement`, `clausal_complements` | type, field |
 | `Sentence.bare_assertion` | `Sentence.root_mood` | field (retyped) |
 | `Paragraph.in_blockquote` | `Paragraph.kind` | field (retyped) |
-| `SemanticClusters.model_hash` | `identity` | field |
+| `SemanticClusters.model_hash` | `Clusters.provenance.parameters.embedder`, an `Identity` whose `sha256` is the old hash | field (moved, retyped) |
+| `Embedder::identity() -> &str` | `Embedder::identity() -> Identity` | trait method (retyped) |
+| `InputTooLarge.what`: `file_source`, `config_file`, `udpipe_download`, `embedding_download` | `file_read`, `config_file_read`, `parser_model_download`, `embedding_model_download` | error labels |
+| `Error::InvalidInput(String)` | `Error::InvalidInput { reason, message }` | variant (reshaped) |
 | `CorpusEntry` | `provenance.source.path` | type removed |
 | `Paragraph.readability_grade` and siblings | `Paragraph.metrics.*` | fields (moved) |
 | `Document.vocabulary_ttr` and siblings | `Document.metrics.*` | fields (moved) |
@@ -689,7 +759,7 @@ engine.compose(&mut doc);
 
 **For.** A caller who needs only the parse could skip the metric suite. Parnas observes that "the 'more powerful' mechanism could have been built separately from, but using, simpler mechanisms" [parnas-modules:c33], and the point of building it that way is that the simpler one stays available. Read for what it protects, that claim argues for this alternative. This page cites it for outcome functions that need no engine. The design does not dispute the claim; it answers with the cost below. Lampson's "higher levels should not bury this power" [neighbours-hoare-brooks-lampson:c37] points the same way, but only if measuring costs enough to matter, and nobody has measured it.
 
-**Against.** A public parse-only call publishes a second shape of `Document` under the same name, every metric empty, and a reader of the JSON cannot tell an unmeasured document from one with no sentences. "A feature which is included before it is fully understood can never be removed later" [neighbours-hoare-brooks-lampson:c13]. No use case asks for a parse without its measures; the [one caller outside the engine](#claim-python-annotated) is matra's own Python helper. Agent-facing guidance also warns against tools that "merely wrap existing software functionality" [agent-computer-interfaces:c6] (vendor guidance), which is what a stage name is. What RFC-0007 wanted from the stages survives: they stay inside the crate, and a law tests that annotation is the only route from text to the parser.
+**Against.** A public parse-only call publishes a second shape of `Document` under the same name, every metric empty, and a reader of the JSON cannot tell an unmeasured document from one with no sentences, because a `null` metric already means a condition not met. `matra analyze --depth` writes a smaller `Document` under the same schema too, and what separates the two is what a reader can see: `--depth` removes a level as a key, so what was not written is absent, never present and empty, and the schema says which keys a cut may remove. "A feature which is included before it is fully understood can never be removed later" [neighbours-hoare-brooks-lampson:c13]. No use case asks for a parse without its measures; the [one caller outside the engine](#claim-python-annotated) is matra's own Python helper. Agent-facing guidance also warns against tools that "merely wrap existing software functionality" [agent-computer-interfaces:c6] (vendor guidance), which is what a stage name is. What RFC-0007 wanted from the stages survives: they stay inside the crate, and a law tests that annotation is the only route from text to the parser.
 
 **Outcome.** Rejected; the owner settled outcomes over stages on 2026-11-02.
 
@@ -852,7 +922,7 @@ matra.summarize(doc, n=3)                    # rebuilds and re-checks the whole 
 
 **For.** A dict is what a Python caller expects from a JSON-shaped result, and code that tests `isinstance(doc, dict)` keeps working. "An API is a user interface" [api-design-practice:c21], and this is the interface Python callers know.
 
-**Against.** Every outcome call would rebuild the Rust value and re-check ids, heads, acyclicity and spans, a second home for checks the parse already made; Meyer's rule is that a condition is checked in one place, "but never in both" [neighbours-contracts-simplicity:c5]. A hand-edited dict could also carry provenance into a summary no matra run produced. A wrong argument that is a type error fails at the "first bad method invocation" [api-design-practice:c10], and agent-facing guidance says the same ("Use enums and object structure to prevent invalid states" [agent-computer-interfaces:c19], vendor guidance). The handle keeps the dict reading (`doc["metrics"]["total_words"]`), and `to_dict()` gives a real dict.
+**Against.** Every outcome call would convert the whole document from Python objects into the Rust value again, where the handle hands the outcome the value the analysis made, so a text crosses the binding once however many outcomes are asked of it. A wrong argument that is a type error fails at the "first bad method invocation" [api-design-practice:c10], and agent-facing guidance says the same ("Use enums and object structure to prevent invalid states" [agent-computer-interfaces:c19], vendor guidance). The handle keeps the dict reading (`doc["metrics"]["total_words"]`), and `to_dict()` gives a real dict. Two reasons an earlier text gave do not hold. A dict would need no re-check of the parser's invariants, because the outcomes rely on none of them: they hold on any document, since Rust reads documents back from JSON ([the public surface](#reference-level-explanation)). And the handle does not make provenance proof: in Rust a document read from JSON carries whatever provenance it was given, so provenance is a record in every language ([Provenance](#reference-level-explanation)).
 
 **Outcome.** Rejected. spaCy took the same path (Prior art).
 
@@ -879,6 +949,33 @@ matra.clusters(doc)      # would download an embedding model on first use
 **Against.** A call that looks like a pure function over a document would reach the network and the disk, and the result would depend on a model the call does not show. Henning's split fits: general-purpose APIs "should be 'policy-free'", and special-purpose ones "policy-rich" [api-design-practice:c20]. The library is the general-purpose part, so it takes the embedder as an argument, and the command line, the special-purpose part, builds the default from configuration.
 
 **Outcome.** Rejected.
+
+### Keep the `Embedder` as EPR-0005 shipped it
+
+```rust
+pub trait Embedder: Send {
+    fn embed(&self, texts: &[&str]) -> Result<Vec<Embedding>>;
+    fn identity(&self) -> &str;   // for Model2Vec, the digest over its artifacts
+}
+```
+
+**For.** A string is the least an implementer has to produce, and the one implementation in the tree needed no more. "When in doubt leave it out" [api-design-practice:c6].
+
+**Against.** This is the port a caller implements, and an implementer writes against what it says [api-design-practice:c32] [api-design-practice:c37]. As shipped it said too little in two places. "Who produced this" had two shapes: the parser reports an `Identity` with its model's name, digest and licence, the embedder a string, so the embedding model's licence reached the download notice and never the result, and a reader learnt two shapes for one fact [api-design-practice:c8]. And it said nothing about failure, though the "expected behavior when undesired events occur" is part of an interface [parnas-process:c46]: `Model2Vec` returned `ModelInvalid`, the Python bridge `InvalidInput`, and an implementer had no rule to follow. Bloch's count bears on the shape: an interface with one implementation "probably won't support another" [api-design-practice:c4], and an abstraction should be tested by "several concrete implementations" before it ships [api-design-practice:c36] (corrected wording). Test doubles by the port's author do not count, by the canon's own critique, and neither does the Python bridge, so the count is one. The reshaped `identity` takes the parser's shape, the nearest second voice the tree has; a second, independent embedder written against the trait (one that calls a remote service, say) is what would show whether the shape fits.
+
+**Outcome.** Rejected. `identity` returns `Identity`, the shape the parser reports, and the trait names the kinds an implementation returns for its own failure: `ModelInvalid` when its model cannot embed an input, `Io` when something it reaches fails, and `InputTooLarge` past a cap it holds. `InvalidInput` is what `clusters` returns when the vectors break the contract, and what the Python bridge returns for an object that raised, since it cannot tell which of the three an arbitrary exception is. No method is added for growth (a `dimensions`, which `Model2Vec` already has): no caller asks for one [api-design-practice:c6].
+
+### Keep the limits private
+
+```rust
+pub(crate) const MAX_TFIDF_SENTENCES: usize = 2000;   // reported only as the error's `limit`
+```
+
+**For.** An interface carries only the assumptions "considered unlikely to change" [parnas-process:c20], and each module hides a decision likely to change [parnas-modules:c23]. A per-method memory bound is such a decision: its documentation justifies its value by a cost model, which is a fact about the implementation. The error already reports the cap that fired as data, in its `limit` detail [machine-readable-contracts:c13].
+
+**Against.** A caller needs the bound before the call, not after a refusal. An agent splitting a long input under `MAX_INPUT_BYTES`, or chunking a document's sentences under the cap of the method it selects, has nothing to size from if the number arrives only inside an error; desirable properties "should not be hidden" [neighbours-hoare-brooks-lampson:c37]. The names follow the selector the caller sends (`MAX_TFIDF_SENTENCES` for `SummaryMethod::TfIdf`), so a published cap reveals the method the caller chose and nothing behind it. Parnas's concern is the value, and the design answers it without hiding the name: each constant is documented as this release's value, which may change in any 0.x release, and a caller reads it from `domain::limits` rather than copying the number.
+
+**Outcome.** Rejected: the limits are published, because callers need them. Python and the command line state the same caps in their documentation and in the error's `limit` detail; giving Python the constants themselves is not part of 0.3.0.
 
 ### Derive the JSON Schema from the domain types
 
@@ -941,9 +1038,9 @@ $ matra analyze README.md --json --format-version 1     # the 0.2 output, throug
 Each entry says what the source did, what matra takes from it, and where matra departs and why.
 
 - **The owner's software-design canon** (462 claims from primary texts, each checked against a fresh copy of its source; cited here as `[cluster:cN]`), and its canon-0010 reading cards (cited as `[card:...]`, unverified readings). It supplies the grounds for every structural choice on this page. matra departs from it where it is silent: offset units, resilience bounds and the choice of Markdown parser are marked as own judgment. Its own review warns that "Zero refutations is evidence that the quotes are faithful. It is not evidence that the canon is balanced", and that no part of it was gathered from its authors' critics. That is why the rationale above names what each citation rules out and where the canon pulls the other way.
-- **J. Bloch, "How to Design a Good API and Why it Matters", 2006.** Heuristics drawn from the Java libraries: leave it out when in doubt, keep everything as private as possible, fail fast, give programmatic access to data available as strings, and write three plug-ins before shipping a plug-in interface. matra takes the defaults: private traits, aggregates as fields, typed errors. It departs in one place: `Embedder` stays public with one implementation in the tree (`Model2Vec`) and the Python bridge to caller objects, short of the three. It was published by EPR-0005, its contract is two methods, and closing it would remove what callers use.
+- **J. Bloch, "How to Design a Good API and Why it Matters", 2006.** Heuristics drawn from the Java libraries: leave it out when in doubt, keep everything as private as possible, fail fast, give programmatic access to data available as strings, and write three plug-ins before shipping a plug-in interface. matra takes the defaults: private traits, aggregates as fields, typed errors. It departs in one place: `Embedder` stays public with one implementation in the tree (`Model2Vec`), short of the three. Test doubles and the Python bridge to caller objects are not independent implementations, so the count is one. It stays public because it is what a caller with vectors of its own (from a service, a cache, a library matra does not ship) hands to `clusters`, the one extension point a 0.3.0 use case asks for. The one-implementation risk is the port's shape, and [Reshape the `Embedder`](#keep-the-embedder-as-epr-0005-shipped-it) records how that was answered.
 - **M. Henning, "API Design Matters", 2007.** An API is a user interface for programmers, and a flaw in it is paid for at every call site. matra takes the caller-first stance behind the outcome surface, and Henning's split between policy-free general APIs and policy-rich special ones is why the command line, not the library, builds a default embedder. It departs on timing: Henning says the worst time to document "is after implementation" [api-design-practice:c23]. This proposal was written before the code, and it was then revised as each milestone settled a detail against the code. That is iteration, which Brooks argues for when he writes that the building metaphor "has outlived its usefulness" [neighbours-hoare-brooks-lampson:c33].
-- **AIP-180 and AIP-193 (Google's API improvement proposals for compatibility and errors).** AIP-180 treats a rename as a removal, a changed default as a break, and semantic compatibility as compatibility. AIP-193 gives each error a machine-readable identity defined by the caller's remedy, puts every dynamic value in metadata, and forbids partial success except in bulk operations. matra takes all of these: the Names table lists every rename as a break, a changed default method is a schema-major change, `details` carries every dynamic value, and `analyze DIR` is the one bulk operation with per-item failure. It departs on keeping old names. AIP-180 keeps them within a major version; 0.3.0 starts a new one under Cargo's rules for 0.x, and it keeps none ([decision 8](#decision-transition-window)).
+- **AIP-180 and AIP-193 (Google's API improvement proposals for compatibility and errors).** AIP-180 treats a rename as a removal, a changed default as a break, and semantic compatibility as compatibility. AIP-193 gives each error a machine-readable identity defined by the caller's remedy, puts every dynamic value in metadata, and forbids partial success except in bulk operations. matra takes all of these: the Names table lists every rename as a break, a changed default method is a schema-major change, `details` carries every dynamic value, and `analyze DIR` is the one bulk operation with per-item failure. It departs twice. On `invalid_input`, `details.reason` names the check that failed and the message adds values for a person that the details do not repeat ([Errors on every channel](#reference-level-explanation)). And on keeping old names. AIP-180 keeps them within a major version; 0.3.0 starts a new one under Cargo's rules for 0.x, and it keeps none ([decision 8](#decision-transition-window)).
 - **The Kubernetes API conventions.** Defaults are written explicitly, and phase enums were deprecated because "adding new enum values breaks backward compatibility". matra takes explicit defaults and the rule that every string set a consumer receives is open. It departs by keeping such sets rather than replacing them with conditions. matra's Rust enums are `#[non_exhaustive]`, which forces a wildcard arm, and JSON readers are told to treat every set they receive as open. The send-versus-receive distinction this relies on is the canon synthesis's suggestion, not Kubernetes's.
 - **D. L. Parnas, "On the Criteria To Be Used in Decomposing Systems into Modules", 1972, and the 1985 module guide.** The 1972 paper decomposes one small program two ways and shows that the decomposition by hidden decisions survives change better than the one by processing steps. The 1985 guide describes each module of a large system by its secret. matra takes both: the input-side table names each module's secret. One thing deserves saying plainly, because the figure looks like a pipeline. Parnas's own second decomposition still has an input module, a circular shifter, an alphabetizer and an output module (read in the 1972 text, Modularization 2). What separates it from the flowchart is what each module hides, not the order the modules run in, and the same test applies here: a new format or parser touches one box. matra departs on scale. The A-7E guide is a tree with restricted and hidden interfaces, because hiding without a guide "could backfire" at hundreds of modules [parnas-process:c23]; matra has nine modules and a flat table. It also reveals more than Parnas's "even the presence or absence of a component should be hidden" [parnas-modules:c37]: an `UnsupportedFormat` names the feature that would read the format, because the caller needs the remedy, the kind of restriction the A-7E team revealed when "there is no loss in revealing" it [parnas-process:c49].
 - **D. D. Woods, "The theory of graceful extensibility", 2018**, outside the verified canon. Brittleness is how fast performance falls near a unit's boundary, and neighbouring units extend it by monitoring its signals. matra takes the idea of a signal at the boundary: `skipped` is that signal. It departs in scope: Woods writes about adaptive units in sociotechnical systems, and matra borrows one idea, not the theory. The canon claims cited for `skipped` carry the decision alone.
@@ -952,9 +1049,9 @@ Each entry says what the source did, what matra takes from it, and where matra d
 - **`cargo metadata --format-version`.** One integer version, chosen by a flag; within a version, Cargo does not count new fields or new values of enum-like fields as incompatible, and it recommends passing the flag to future-proof a caller. matra takes the integer and the rule that new fields and values are compatible. It departs by offering no flag to select an older output, because 0.3.0 keeps no 0.2 projection ([decision 8](#decision-transition-window)).
 - **The W3C Web Annotation Data Model.** Its text position selector has `start` and `end` and counts "in terms of unicode code points", not code units. matra takes the shape and departs on the unit: its spans count UTF-8 bytes, and the fields say so, `byte_start` and `byte_end` ([decision 3](#decision-offset-unit)). The standard's names with a different unit would be a trap for a caller who knows the standard, which is why the names carry the unit and the slicing helper exists.
 - **CommonMark, and pulldown-cmark.** CommonMark is a specification of Markdown with a conformance test suite, and pulldown-cmark is a pull parser for it whose offset iterator pairs every event with its range in the source. matra takes the specification instead of its own line scanner, which is what removes the dropped tables and the `## References` cut-off, and the source ranges, which give every block its span. The parser crate is chosen in milestone 2's pull request; the canon does not address it.
-- **Universal Dependencies and CoNLL-U.** UD supplies the vocabulary matra adopts (`pos`, `dep`, the morphological features), and CoNLL-U is the ten-column text encoding UDPipe emits, with the features packed as `Name=Value|...` strings. matra takes the vocabulary as is and departs from the encoding: `features` becomes a map. UDPipe's own `ranges` option stores each token's range "counted in Unicode characters". matra's spans count bytes, so whichever way the adapter finds token positions (that option, or aligning token forms against the text), it converts them at the one place each paragraph is parsed.
+- **Universal Dependencies and CoNLL-U.** UD supplies the tag vocabularies matra adopts (the universal part-of-speech tags, the dependency relations, the morphological features), and CoNLL-U is the ten-column text encoding UDPipe emits, its columns `ID`, `FORM`, `LEMMA`, `UPOS`, `XPOS`, `FEATS`, `HEAD`, `DEPREL`, `DEPS` and `MISC`, with the features packed as `Name=Value|...` strings ([the CoNLL-U format](https://universaldependencies.org/format.html)). matra takes the tag values as is and departs from the encoding: `features` becomes a map. It also departs on the column names, which this page does not argue for: `pos` holds `UPOS` and `dep` holds `DEPREL`, while `xpos`, `deps` and `misc` keep CoNLL-U's names, so a reader fluent in CoNLL-U meets a mapping, and `dep` sits one letter from `deps`. UDPipe's own `ranges` option stores each token's range "counted in Unicode characters". matra's spans count bytes, so whichever way the adapter finds token positions (that option, or aligning token forms against the text), it converts them at the one place each paragraph is parsed.
 - **spaCy.** A `Language` object (`nlp`) is the one entry point, and `nlp(text)` returns a `Doc` whose values are attributes, with `Doc.to_json()` for a plain-data view and, added later (in 3.3.1), a `Doc.from_json` that can validate its input. matra takes the shape for Python: one `Engine`, a read-only `Document` handle with `to_dict()`, and a from-JSON entry left for later ([decision 6](#decision-python-document)). It departs twice. spaCy's offsets (`Token.idx`) count characters, and matra's count bytes. spaCy's pipeline is open, so a caller can add a component with `Language.add_pipe`; matra keeps its stages and its parser private in 0.3.0.
-- **Earlier records here.** RFC-0006 reserved `SourceSpan`, sketched in bytes as an offset and a length, and the names `ParagraphMetrics` and `DocumentMetrics`; this proposal takes the bytes and the record names, and departs on the span's shape, `Span { start, end }`, which this page does not argue for separately. RFC-0007 made the surface one pipeline with public stages; this proposal keeps its laws and takes the stages off the surface (above). EPR-0002's rule that a derived field names a construction, "never a category", is why `Reporting` becomes `ClausalComplement` and why `skipped` kinds name constructs.
+- **Earlier records here.** RFC-0006 reserved `SourceSpan`, sketched in bytes as an offset and a length, and the names `ParagraphMetrics` and `DocumentMetrics`; this proposal takes the bytes and the record names, and departs on the span's shape, `Span { byte_start, byte_end }`, whose names carry its unit ([decision 3](#decision-offset-unit)). RFC-0007 made the surface one pipeline with public stages; this proposal keeps its laws and takes the stages off the surface (above). EPR-0002's rule that a derived field names a construction, "never a category", is why `Reporting` becomes `ClausalComplement` and why `skipped` kinds name constructs.
 
 ## Unresolved questions
 
@@ -1144,7 +1241,9 @@ The owner accepted Claude's recommendations in conversation, for now: the traits
 
 <recommendation choice="a">
 
-Under (b), every `matra.summarize(doc)` rebuilds the whole document from Python objects and must re-check the parser's invariants (ids, heads, acyclicity, spans), a second home for checks the parse already made [neighbours-contracts-simplicity:c5]. A hand-edited dict could also carry provenance into a summary that no matra run produced. Making the wrong argument unrepresentable fails at the first bad call [api-design-practice:c10]. Accepting a validated dict is additive later, and belongs with the TypeScript from-JSON entry, designed once.
+Under (b), every `matra.summarize(doc)` converts the whole document from Python objects into the Rust value again; under (a) the outcome takes the value the analysis made, so a text crosses the binding once however many outcomes are asked of it. Making the wrong argument unrepresentable fails at the first bad call [api-design-practice:c10]. A from-dict entry belongs with the TypeScript from-JSON entry, designed once.
+
+Two reasons this recommendation first gave do not hold, and the choice stands without them. The outcomes rely on none of the parser's invariants, since Rust reads documents back from JSON and every outcome holds on a document whose parts contradict each other, so a dict would need no re-check. And neither choice makes provenance proof: it records how a document says it was made, in every language ([Provenance](#reference-level-explanation)).
 
 </recommendation>
 
