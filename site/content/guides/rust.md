@@ -29,7 +29,7 @@ let engine = Engine::from_config(&cfg)?;
 
 ## Where the model lives
 
-The parser is UDPipe with one pinned English model, `english-ewt-ud-2.5-191206`, and the engine builds it for you: the parser and reader traits are private to the crate, so there is no provider to construct. Name a directory you own: provisioning trusts what it finds there, and a shared one such as `/tmp` is writable by anybody on the machine. The engine creates the directory if it is missing, downloads the model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.
+The parser is UDPipe with one pinned English model, `english-ewt-ud-2.5-191206`, and the engine builds it for you, so there is no parser to construct unless you bring your own ([below](#bring-your-own-parser-or-reader)). Name a directory you own: provisioning trusts what it finds there, and a shared one such as `/tmp` is writable by anybody on the machine. The engine creates the directory if it is missing, downloads the model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.
 
 The path is passed to `std::fs::create_dir_all` unchanged, and `~` in it is taken literally: neither Rust nor matra expands it, so `with_model_dir("~/models")` creates a directory literally named `~` under your current working directory. The same holds for `MATRA_MODEL_DIR` and the other variables when the shell has not already expanded them. Pass an absolute path, or expand the home directory yourself.
 
@@ -275,7 +275,7 @@ for sentence in doc.sentences() {
 }
 ```
 
-Token fields carry the CoNLL-U columns under Rust names: `text` is the surface form, `pos` is the universal POS tag, `xpos` is the language-specific tag, and `dep` is the dependency relation. `features` is the FEATS column as a map from feature name to value (`token.feat("Mood")` reads one), `deps` and `misc` hold their raw column strings, and `is_punct` is derived by the adapter.
+Token fields carry the CoNLL-U columns under Rust names: `text` is the surface form, `pos` is the universal POS tag, `xpos` is the language-specific tag, and `dep` is the dependency relation. `features` is the FEATS column as a map from feature name to value (`token.feat("Mood")` reads one), `deps` and `misc` hold their raw column strings, and `is_punct` is set by the parser.
 
 `subtree(id)` collects every token reachable from a given token, sorted back into document order, which is the tool for pulling a phrase out from under a dependency relation rather than a single token. Pulling the direct object out of every sentence that has one:
 
@@ -299,3 +299,61 @@ matra reports the dependency label UDPipe assigned (`"obj"` here). It does not i
 The remaining navigation methods: `head_of(id)` returns the head token, or `None` for the root and for an id that is not in the sentence; `content_tokens()` gives you the non-punctuation view. Three counts are fields, computed when the sentence is built: `word_count`, the non-punctuation token count; `passive`, whether any token carries `nsubj:pass`, `nsubjpass`, or `aux:pass`; and `tree_depth`.
 
 `tree_depth` is the longest root-to-leaf path in the sentence, an `Option<usize>`. On a malformed parse where tokens form a cycle it is `None` rather than a depth truncated at some arbitrary ceiling, so a broken parse is a value the compiler makes you handle rather than a number that reads as a deep tree. `subtree` and `children_of` stay safe on the same malformed input; both use a visited set.
+
+## Bring your own parser or reader
+
+The engine is assembled from three parts, and each is a trait you can implement: the parser (`matra::nlp::NlpProvider`), a reader for one format (`matra::decompose::Decomposer`), and the source that reads the paths inputs name (`matra::source::Source`). Plug one in and the rest of the pipeline, every metric and every outcome function, runs on what it produces, with no fork of matra.
+
+A parser takes one paragraph's text and returns its sentences, each a `Vec<Token>`. It does not build `Sentence` values: the engine builds them from your tokens, text, span and every derived field included, so passive, negations and mood mean the same thing whichever parser ran. `Engine::with_parser` takes it, in any build, `udpipe` or not:
+
+```rust
+use matra::domain::{Format, Identity, Result, Span, Token};
+use matra::nlp::NlpProvider;
+use matra::{Engine, Input};
+
+struct Words;
+
+impl NlpProvider for Words {
+    fn parse(&self, text: &str) -> Result<Vec<Vec<Token>>> {
+        let mut tokens = Vec::new();
+        let mut at = 0;
+        for word in text.split_whitespace() {
+            let start = at + text[at..].find(word).unwrap_or(0);
+            at = start + word.len();
+            let id = tokens.len() + 1;
+            let head = if id == 1 { 0 } else { 1 };
+            tokens.push(
+                Token::builder(id, word.into(), word.to_lowercase(), "X".into(), head, "dep".into())
+                    .span(Span::new(start, at))
+                    .build(),
+            );
+        }
+        Ok(if tokens.is_empty() { Vec::new() } else { vec![tokens] })
+    }
+
+    fn identity(&self) -> Identity {
+        Identity::new("words", None, None, None)
+    }
+}
+
+let doc = Engine::with_parser(Words).analyze(Input::text("The river rose.", Format::PlainText))?;
+```
+
+The contract is on the trait. In short: ids run `1..=n` in each sentence; every head is `0` or a token of the sentence, and exactly one is `0`; the heads form no cycle; and every span is where the token's form lies in the paragraph text you were handed, in UTF-8 bytes relative to that text, in token order. Set `is_punct` for punctuation and `SpaceAfter=No` in `misc` where no space follows, since the sentence text is rebuilt from the forms. `identity` names your parser and its model, and lands in every document's `provenance.parser`. `examples/custom_parser.rs` is a runnable version that splits sentences too: `cargo run --example custom_parser --no-default-features`.
+
+A reader takes a format's bytes and returns a `Read`: its blocks, built with `ReadBlock::heading(level, text, span)` and `ReadBlock::paragraph(kind, text, span)`, and the constructs it skipped. A paragraph's text is the analysed text at its span. For a format that is not text, extract the text and name it with `Read::with_text`, and every span points into that. Register a reader for a format with `with_reader`, which composes with the standard constructors:
+
+```rust
+let engine = Engine::new()?
+    .with_reader(Format::Pdf, MyPdfReader)          // matra recognises PDF and ships no reader
+    .with_reader(Format::named("html"), MyHtmlReader); // a format matra has no name for
+let doc = engine.analyze(Input::file_as("page.html", Format::named("html")))?;
+```
+
+A PDF or DOCX is detected by its bytes, so a registered reader for it runs on `Input::file` with no format named. A `Format::Other` is never detected: name it on the input, as above. Replacing a shipped reader, say `Format::Markdown`, works the same way.
+
+A source takes a path and returns the bytes there. `with_source` swaps it in for the local filesystem, so `Input::file("bucket/notes.md")` reads through it, the extension still decides the format, and the path is still what `provenance.source.path` records. `Inputs::dir` still lists the local filesystem, and `Input::bytes` and `Input::blocks` need no source at all.
+
+The engine trusts none of the three. What a reader returns is checked before the section tree is built, and what the parser returns is checked for each paragraph before a sentence is built from it. A break fails that document with `Error::ParseFailed`, whose `reason` names the check (`head_out_of_range`, `token_span_order`, `block_span_invalid`, and the rest [Errors](../reference/errors.md#parsefailed) lists) and whose `cause` names the paragraph, sentence and token, or the block. That is also how to test an implementation: run your own texts through `Engine::analyze`, and it conforms when no document fails with one of those reasons. `tests/providers.rs` in the repository holds a broken parser and a broken reader for each check. A failure of your own is `ParseFailed` with `reason` `None`, or the kind the trait lists for it, and never a panic: a parser wrapping native code catches a panic at its own boundary, as the UDPipe adapter does.
+
+These traits are Rust only in 0.3.0. Python takes an embedder of your own, and not yet a parser, a reader or a source.

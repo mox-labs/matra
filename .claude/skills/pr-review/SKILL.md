@@ -98,6 +98,12 @@ not a fix.
 
 - `Engine::annotate` must remain the only route from text to
   `NlpProvider::parse`. Grep the diff for new `.parse(` call sites.
+- What a reader or the parser returns must pass `conform::read` and
+  `conform::parse` (`src/conform.rs`) before it enters a `Document`,
+  at the one place each is called in `Engine::annotate`. A new rule in
+  a provider contract is a check there with its `reason` row in the
+  errors reference (`tests/error_tables.rs` holds them together), never
+  trust in the provider.
 - The seven equivalence laws (L1-L7 tests in `src/lib.rs`) and the accounting law (L8) must not be
   weakened, deleted, or made vacuous. A test edit that keeps the name
   but shrinks the claim is a finding.

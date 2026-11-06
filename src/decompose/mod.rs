@@ -1,12 +1,12 @@
-//! Reading port. A reader turns one format's text into blocks, each with
-//! its span in the analysed text, and lists what it skipped.
+//! Reading port. A reader turns one format's bytes into blocks, each
+//! with its span in the analysed text, and lists what it skipped.
 //!
-//! This module holds the [`Decomposer`] trait, the block vocabulary
-//! readers emit ([`ReadBlock`]), and the map from a block's text back to
-//! the analysed text ([`TextMap`]). Adapters live in submodules:
-//! markdown.rs, plain.rs, blocks.rs. All of it is crate-private: a caller
-//! hands in an `Input`, the format decides which reader runs, and the
-//! block vocabulary can grow without touching a published signature.
+//! This module holds the [`Decomposer`] trait and what a reader returns,
+//! [`Read`] and its [`ReadBlock`]s, built through their constructors so
+//! the block vocabulary can grow without breaking a reader. The readers
+//! matra ships live in submodules (markdown.rs, plain.rs, blocks.rs) and
+//! are registered by the composition root; a reader of your own reaches
+//! the pipeline through `Engine::with_reader`.
 
 pub(crate) mod blocks;
 pub(crate) mod markdown;
@@ -14,12 +14,75 @@ pub(crate) mod plain;
 
 use crate::domain::{self, Format, ParagraphKind, Skipped, Span};
 
-/// What a reader produces from one input.
-pub(crate) struct Read {
-    /// The analysed text, when it is not the input itself. Block input is
-    /// the one case today: its analysed text is the blocks' texts joined
-    /// by a blank line. `None` means the input is the analysed text, and
-    /// every span points into it.
+/// A reader: one format's bytes in, the document's headings and
+/// paragraphs out, each with where it lies in the analysed text.
+///
+/// The engine looks up the reader registered for the input's
+/// [`Format`], hands it the input's bytes, builds the section tree from
+/// the blocks it returns, and parses each paragraph that is not a quote.
+///
+/// # What `decompose` returns
+///
+/// A [`Read`]: the blocks in document order, and the constructs the
+/// reader saw and did not analyse (a table, a code block) as
+/// [`Skipped`] values in document order.
+///
+/// - The analysed text is `input` decoded as UTF-8, unless the reader
+///   names another with [`Read::with_text`]: the text it extracted from a
+///   binary format, or a text it assembled. Every span points into the
+///   analysed text, in UTF-8 bytes.
+/// - Every span lies within the analysed text, starts at or before its
+///   end, and falls on character boundaries.
+/// - Blocks are in document order, and no two spans among the blocks and
+///   the skipped constructs overlap.
+/// - A heading's level is 1 or more. Its text is what the heading says,
+///   markers dropped; its span covers the heading, markers included.
+/// - A paragraph's text is the analysed text at its span, byte for byte
+///   ([`ReadBlock::paragraph`]). A reader that needs a paragraph's text
+///   to differ from its source (markup dropped, an entity decoded) names
+///   the extracted text as the analysed text instead.
+///
+/// The engine checks every rule above before a block reaches a
+/// [`domain::Document`], and fails the document with
+/// [`domain::Error::ParseFailed`] when one breaks, its `reason` naming
+/// the check (`block_span_invalid`, `block_span_order`,
+/// `heading_level` or `paragraph_text_mismatch`) and its `cause` the
+/// block. A conforming reader is one whose output passes those checks on
+/// every input it accepts.
+///
+/// # Errors
+///
+/// A reader of a text syntax is total: malformed markup is read as best
+/// it can be. A failure is an `Err`, never a panic:
+///
+/// - [`domain::Error::UnsupportedFormat`] with `format` `None` when the
+///   bytes are not text the reader reads (not UTF-8, for a text format).
+/// - [`domain::Error::InvalidInput`] when the input does not have the
+///   shape its format names (block input that is not a block array),
+///   with a `reason` naming the check.
+/// - [`domain::Error::ParseFailed`], with `reason` `None`, when the
+///   reader cannot read input of its format (a PDF its extractor
+///   cannot open).
+///
+/// A reader does no I/O of its own: the bytes are already read.
+///
+/// # Threads
+///
+/// `Send`, because an engine holds its readers and moves to a worker
+/// thread.
+pub trait Decomposer: Send {
+    /// Read `input` into blocks and skipped constructs, satisfying the
+    /// contract above.
+    fn decompose(&self, input: &[u8]) -> domain::Result<Read>;
+}
+
+/// What a reader produces from one input: built with [`Read::new`], and
+/// [`Read::with_text`] when the analysed text is not the input itself.
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct Read {
+    /// The analysed text, when it is not the input itself. `None` means
+    /// the input, decoded as UTF-8, is the analysed text.
     pub(crate) text: Option<String>,
     /// Headings and paragraphs, in document order.
     pub(crate) blocks: Vec<ReadBlock>,
@@ -27,9 +90,54 @@ pub(crate) struct Read {
     pub(crate) skipped: Vec<Skipped>,
 }
 
-/// One block a reader emits. The richer vocabulary stays here, private,
-/// so a new kind is a change to the readers and the structure step only.
-pub(crate) enum ReadBlock {
+impl Read {
+    /// The headings and paragraphs of an input, in document order, and
+    /// the constructs the reader skipped, in document order. Every span
+    /// points into the input decoded as UTF-8, unless
+    /// [`Read::with_text`] names another analysed text.
+    ///
+    /// ```
+    /// use matra::decompose::{Read, ReadBlock};
+    /// use matra::domain::{ParagraphKind, Span};
+    /// let read = Read::new(
+    ///     vec![
+    ///         ReadBlock::heading(1, "Notes", Span::new(0, 7)),
+    ///         ReadBlock::paragraph(ParagraphKind::Paragraph, "The river rose.", Span::new(9, 24)),
+    ///     ],
+    ///     Vec::new(),
+    /// );
+    /// ```
+    pub fn new(blocks: Vec<ReadBlock>, skipped: Vec<Skipped>) -> Read {
+        Read {
+            text: None,
+            blocks,
+            skipped,
+        }
+    }
+
+    /// The same read, with `text` as the analysed text: what the reader
+    /// extracted from a format that is not text, or assembled. Every span
+    /// then points into `text`, and the document's provenance records its
+    /// length and digest.
+    #[must_use]
+    pub fn with_text(mut self, text: impl Into<String>) -> Read {
+        self.text = Some(text.into());
+        self
+    }
+}
+
+/// One heading or paragraph a reader emits: built with
+/// [`ReadBlock::heading`] or [`ReadBlock::paragraph`], and opaque, so a
+/// new kind of block is an additive change.
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct ReadBlock(pub(crate) BlockKind);
+
+/// What a [`ReadBlock`] holds. Crate-private, so the vocabulary can grow
+/// and a paragraph can carry the map of a text that is not a slice of
+/// the analysed text, which only matra's own markdown reader builds.
+#[derive(Debug, Clone)]
+pub(crate) enum BlockKind {
     /// A heading, which opens a section.
     Heading {
         /// 1 or more.
@@ -53,29 +161,73 @@ pub(crate) enum ReadBlock {
 }
 
 impl ReadBlock {
+    /// A heading at `level` (1 for a top-level heading) saying `text`,
+    /// lying at `span` in the analysed text, markers included. A heading
+    /// opens a section; its text is not parsed.
+    pub fn heading(level: usize, text: impl Into<String>, span: Span) -> ReadBlock {
+        ReadBlock(BlockKind::Heading {
+            level,
+            text: text.into(),
+            span,
+        })
+    }
+
+    /// A paragraph of `kind` whose text is `text`, the analysed text at
+    /// `span` byte for byte. The parser reads `text`, and the engine maps
+    /// each token's span from it into the analysed text. A
+    /// [`ParagraphKind::Quote`] is kept and not parsed.
+    pub fn paragraph(kind: ParagraphKind, text: impl Into<String>, span: Span) -> ReadBlock {
+        let text = text.into();
+        let map = TextMap::verbatim(span.byte_start, text.len());
+        ReadBlock(BlockKind::Paragraph {
+            kind,
+            text,
+            span,
+            map,
+        })
+    }
+
+    /// A paragraph whose text maps back to the analysed text through
+    /// `map`, for a reader that drops markup from the text it parses.
+    pub(crate) fn mapped(kind: ParagraphKind, text: String, span: Span, map: TextMap) -> ReadBlock {
+        ReadBlock(BlockKind::Paragraph {
+            kind,
+            text,
+            span,
+            map,
+        })
+    }
+
     /// The block's span, to adjust in place.
     pub(crate) fn span_mut(&mut self) -> &mut Span {
-        match self {
-            ReadBlock::Heading { span, .. } | ReadBlock::Paragraph { span, .. } => span,
+        match &mut self.0 {
+            BlockKind::Heading { span, .. } | BlockKind::Paragraph { span, .. } => span,
+        }
+    }
+
+    /// The block's span.
+    pub(crate) fn span(&self) -> Span {
+        match &self.0 {
+            BlockKind::Heading { span, .. } | BlockKind::Paragraph { span, .. } => *span,
         }
     }
 }
 
-/// Reads one format. Postcondition: every span the reader returns lies
-/// within the analysed text, and spans of distinct blocks and skipped
-/// constructs do not overlap.
-pub(crate) trait Decomposer: Send {
-    /// Read `input` into blocks and skipped constructs. A reader of a
-    /// text syntax is total: malformed markup is read as best it can be.
-    /// A reader of a structured format (block input as JSON) fails with
-    /// [`domain::Error::InvalidInput`] on input that does not parse.
-    fn decompose(&self, input: &str) -> domain::Result<Read>;
+/// The text of `input`, for a reader of a text format: bytes that are
+/// not UTF-8 are not text it reads, and fail as an unsupported format
+/// rather than as a read error, since nothing went wrong reading them.
+pub(crate) fn text_of(input: &[u8]) -> domain::Result<&str> {
+    std::str::from_utf8(input).map_err(|_| domain::Error::UnsupportedFormat {
+        format: None,
+        feature: None,
+    })
 }
 
 /// Format-indexed table of readers. Lookup is the partial step; which
-/// formats a build reads is a question asked of a value, and a miss is
+/// formats an engine reads is a question asked of a value, and a miss is
 /// `Error::UnsupportedFormat`. Population happens in the composition
-/// root, the only place that names the adapters.
+/// root, the only place that names the adapters, and through
+/// `Engine::with_reader`.
 ///
 /// Backed by a `Vec` keyed on [`Format`] equality. The table holds a
 /// handful of entries, so a linear lookup is not a cost worth a `Hash`
@@ -203,6 +355,45 @@ impl TextMap {
         out
     }
 
+    /// What is wrong with this map as the map of a paragraph whose text
+    /// is `text` and which lies at `span` in `analysed`, or `None` when
+    /// nothing is: every piece lies within `text` and comes from within
+    /// `span`, and a verbatim piece's text is the analysed text it came
+    /// from, byte for byte. A map that holds maps every token span inside
+    /// the paragraph's span.
+    pub(crate) fn mismatch(&self, text: &str, analysed: &str, span: Span) -> Option<String> {
+        let inside = |s: Span| span.byte_start <= s.byte_start && s.byte_end <= span.byte_end;
+        if !inside(Span::new(self.origin, self.origin)) {
+            return Some(format!(
+                "its empty text maps to byte {}, outside its span",
+                self.origin
+            ));
+        }
+        for piece in &self.pieces {
+            let end = piece.text_start + piece.len;
+            let Some(own) = text.get(piece.text_start..end) else {
+                return Some(format!(
+                    "bytes {}..{end} of its text are not a slice of the text",
+                    piece.text_start
+                ));
+            };
+            if piece.source.byte_start > piece.source.byte_end || !inside(piece.source) {
+                return Some(format!(
+                    "bytes {}..{end} of its text map to {}..{}, outside its span",
+                    piece.text_start, piece.source.byte_start, piece.source.byte_end
+                ));
+            }
+            let source = analysed.get(piece.source.byte_start..piece.source.byte_end);
+            if piece.verbatim && source != Some(own) {
+                return Some(format!(
+                    "its text {own:?} at {}..{end} is not the analysed text at {}..{}",
+                    piece.text_start, piece.source.byte_start, piece.source.byte_end
+                ));
+            }
+        }
+        None
+    }
+
     /// The span of the analysed text that `local`, a span of the text,
     /// came from.
     pub(crate) fn map(&self, local: Span) -> Span {
@@ -256,22 +447,17 @@ mod tests {
 
     struct Marker(&'static str);
     impl Decomposer for Marker {
-        fn decompose(&self, _text: &str) -> domain::Result<Read> {
-            Ok(Read {
-                text: None,
-                blocks: vec![ReadBlock::Heading {
-                    level: 1,
-                    text: self.0.to_string(),
-                    span: Span::default(),
-                }],
-                skipped: Vec::new(),
-            })
+        fn decompose(&self, _input: &[u8]) -> domain::Result<Read> {
+            Ok(Read::new(
+                vec![ReadBlock::heading(1, self.0, Span::default())],
+                Vec::new(),
+            ))
         }
     }
 
     fn marker_of(d: &dyn Decomposer) -> String {
-        match d.decompose("").unwrap().blocks.into_iter().next() {
-            Some(ReadBlock::Heading { text, .. }) => text,
+        match d.decompose(b"").unwrap().blocks.into_iter().next() {
+            Some(ReadBlock(BlockKind::Heading { text, .. })) => text,
             _ => String::new(),
         }
     }

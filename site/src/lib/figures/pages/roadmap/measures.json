@@ -281,10 +281,10 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6222,
-      "readability_grade": 12.3272,
+      "lexical_density": 0.6364,
+      "readability_grade": 13.3718,
       "sentences": 2,
-      "text": "The NlpProvider trait, private to the crate, requires no change to support a WASM implementation. Any Rust type inside matra that can implement NlpProvider::parse without C FFI can be used as the WASM backend, and the outcome functions over a Document already need no parser.",
+      "text": "The NlpProvider trait requires no change to support a WASM implementation. Any Rust type that implements NlpProvider::parse without C FFI can be the WASM backend through Engine::with_parser, which builds without the udpipe feature, and the outcome functions over a Document already need no parser.",
       "words": 46
     },
     {
@@ -396,13 +396,13 @@
       "words": 19
     },
     {
-      "compression_ratio": 0.5217,
+      "compression_ratio": 0.5535,
       "kind": "paragraph",
-      "lexical_density": 0.5484,
-      "readability_grade": 10.6292,
-      "sentences": 5,
-      "text": "What it is. Opening the NlpProvider trait to outside implementors, and extracting it into a separately published minimal crate, so third-party NLP provider implementors can depend on the port contract without depending on all of matra. Since 0.3.0 the trait is private to the crate (EPR-0006, decision 5), so opening it is first an addition to the public surface. This follows the Pattern 6 criterion: separately publish a minimal port crate if and only if an external implementor ecosystem exists that needs to pin the contract independently of the main crate's version churn.",
-      "words": 96
+      "lexical_density": 0.5821,
+      "readability_grade": 10.7703,
+      "sentences": 3,
+      "text": "What it is. Extracting the NlpProvider trait, public since 0.3.0, into a separately published minimal crate, so third-party NLP provider implementors can depend on the port contract without depending on all of matra. This follows the Pattern 6 criterion: separately publish a minimal port crate if and only if an external implementor ecosystem exists that needs to pin the contract independently of the main crate's version churn.",
+      "words": 69
     },
     {
       "compression_ratio": null,

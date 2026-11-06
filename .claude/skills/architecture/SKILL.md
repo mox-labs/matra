@@ -41,7 +41,7 @@ Dependencies point inward. Adapters know about `domain` and the port they implem
 These are non-negotiable:
 
 1. `domain.rs` depends only on `serde`, `thiserror`, `std`. Any further dep requires an enhancement proposal.
-2. Port modules (`source/mod.rs`, `decompose/mod.rs`, `nlp/mod.rs`) import only from `domain`.
+2. Port modules (`source/mod.rs`, `decompose/mod.rs`, `nlp/mod.rs`, `embed/mod.rs`) import only from `domain`.
 3. No port module imports another port module.
 4. `nlp/udpipe.rs` is the only file that imports `udpipe_rs`.
 5. `metrics/` and `extraction/` import only from `domain` and `stopwords`.
@@ -69,7 +69,7 @@ The recipe:
 5. **Translate external errors** to `domain::Error` variants. Never propagate external crate errors through the boundary.
 6. **Document contract overrides** inline. If your adapter's behavior differs from the port's documented postconditions (e.g., FileSource's refusal of a directory with `InvalidInput` naming `Inputs::dir`), document the override at the impl site.
 7. **Add unit tests** for the adapter's contract: what it accepts, what it rejects, what it returns under each input class.
-8. **Wire it into the composition root.** `Source`, `Decomposer` and `NlpProvider` are crate-private, so an adapter of theirs that `lib.rs` does not wire is unreachable; an `Embedder` adapter is the caller's to pass to `clusters`.
+8. **Wire it into the composition root.** An adapter matra ships is registered in `lib.rs` (`standard_readers`, the `Engine` constructors); an adapter a caller writes reaches the engine through `Engine::with_parser`, `with_reader` or `with_source`, and an `Embedder` is the caller's to pass to `clusters`. Either way the engine checks what a parser or a reader returns (`src/conform.rs`), so a new adapter's output must pass those checks; run it through `Engine::analyze` over real inputs.
 
 ## Adding a new port
 
@@ -102,9 +102,9 @@ If a third-party `matra-stanza`, `matra-spacy`, etc. emerges, extract `matra-nlp
 
 ### Pattern 10 — orthogonal-dispatch axes
 
-Matra uses **one** runtime dispatch axis: `&dyn NlpProvider`. The Source and Decomposer choices are made statically at the composition root (detected format → the markdown, plain-text or block-input reader; `Input::file` reads through FileSource, and `Inputs::dir` lists with DirectorySource, which reads nothing, and hands each file to FileSource).
+The engine holds its three parts as values: a `Box<dyn NlpProvider>`, a table from `Format` to `Box<dyn Decomposer>`, and a `Box<dyn Source>`, each replaceable by a caller. Which reader runs is one dispatch, the detected format looked up in the table; the parser and the source are chosen at construction, not per call. `Inputs::dir` lists with `DirectorySource`, which reads nothing, and the engine's source reads each listed file.
 
-This is appropriate at matra's scale. The corpus shows N=4 axes only at search-engine scale (tantivy). Resist the temptation to runtime-dispatch the other ports until there's a concrete need.
+This is appropriate at matra's scale. The corpus shows N=4 axes only at search-engine scale (tantivy). Resist adding dispatch inside a call (several parsers per document, a source chosen per path) until there's a concrete need.
 
 ### Pattern 11 — incremental computation
 

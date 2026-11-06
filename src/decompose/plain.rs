@@ -2,7 +2,7 @@
 
 use crate::domain::{self, ParagraphKind, Span};
 
-use super::{Decomposer, Read, ReadBlock, TextMap};
+use super::{Decomposer, Read, ReadBlock};
 
 /// Reads plain text into paragraphs: runs of lines separated by lines
 /// that hold only whitespace, so `\n` and `\r\n` line endings read the
@@ -12,12 +12,8 @@ use super::{Decomposer, Read, ReadBlock, TextMap};
 pub(crate) struct PlainTextDecomposer;
 
 impl Decomposer for PlainTextDecomposer {
-    fn decompose(&self, input: &str) -> domain::Result<Read> {
-        Ok(Read {
-            text: None,
-            blocks: paragraphs(input),
-            skipped: Vec::new(),
-        })
+    fn decompose(&self, input: &[u8]) -> domain::Result<Read> {
+        Ok(Read::new(paragraphs(super::text_of(input)?), Vec::new()))
     }
 }
 
@@ -48,12 +44,11 @@ fn paragraph(input: &str, start: usize, stop: usize) -> ReadBlock {
     let lead = raw.len() - raw.trim_start().len();
     let text = raw.trim();
     let begin = start + lead;
-    ReadBlock::Paragraph {
-        kind: ParagraphKind::Paragraph,
-        text: text.to_string(),
-        span: Span::new(begin, begin + text.len()),
-        map: TextMap::verbatim(begin, text.len()),
-    }
+    ReadBlock::paragraph(
+        ParagraphKind::Paragraph,
+        text,
+        Span::new(begin, begin + text.len()),
+    )
 }
 
 #[cfg(test)]
@@ -63,9 +58,9 @@ mod tests {
     fn texts_and_spans(input: &str) -> Vec<(String, Span)> {
         paragraphs(input)
             .into_iter()
-            .map(|b| match b {
-                ReadBlock::Paragraph { text, span, .. } => (text, span),
-                ReadBlock::Heading { .. } => panic!("plain text has no headings"),
+            .map(|b| match b.0 {
+                super::super::BlockKind::Paragraph { text, span, .. } => (text, span),
+                super::super::BlockKind::Heading { .. } => panic!("plain text has no headings"),
             })
             .collect()
     }

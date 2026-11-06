@@ -62,7 +62,7 @@ Two mechanism facts carry over. Predicates read materialized fields, not the raw
 
 **What is blocking it.** The current `NlpProvider` is UDPipe, which uses C FFI compiled to native machine code. C FFI cannot run in a WASM sandbox. A WASM `NlpProvider` requires either a WASM-compiled variant of UDPipe (which has been explored by the upstream project but is not production-ready), a smaller Rust-native model, or a network-backed provider that performs parsing server-side and returns annotated output.
 
-The `NlpProvider` trait, private to the crate, requires no change to support a WASM implementation. Any Rust type inside matra that can implement `NlpProvider::parse` without C FFI can be used as the WASM backend, and the outcome functions over a `Document` already need no parser.
+The `NlpProvider` trait requires no change to support a WASM implementation. Any Rust type that implements `NlpProvider::parse` without C FFI can be the WASM backend through `Engine::with_parser`, which builds without the `udpipe` feature, and the outcome functions over a `Document` already need no parser.
 
 **Planned for 0.4.0, in three steps, each usable alone.** First, TypeScript types generated from the published JSON Schema in `spec/schema/v2/`, and a web component that renders a parse from matra's JSON. These need no WASM at all. Second, the pure-Rust core in WASM: the outcome functions over a `Document` already build without the parser. Third, a spike on compiling UDPipe's C++ to WASM, which ends in a go or a no-go for an in-browser parser.
 
@@ -96,7 +96,7 @@ The `NlpProvider` trait, private to the crate, requires no change to support a W
 
 ## Separate `matra-nlp-api` port crate
 
-**What it is.** Opening the `NlpProvider` trait to outside implementors, and extracting it into a separately published minimal crate, so third-party NLP provider implementors can depend on the port contract without depending on all of matra. Since 0.3.0 the trait is private to the crate (EPR-0006, decision 5), so opening it is first an addition to the public surface. This follows the Pattern 6 criterion: separately publish a minimal port crate if and only if an external implementor ecosystem exists that needs to pin the contract independently of the main crate's version churn.
+**What it is.** Extracting the `NlpProvider` trait, public since 0.3.0, into a separately published minimal crate, so third-party NLP provider implementors can depend on the port contract without depending on all of matra. This follows the Pattern 6 criterion: separately publish a minimal port crate if and only if an external implementor ecosystem exists that needs to pin the contract independently of the main crate's version churn.
 
 **What is blocking it.** No third-party NLP provider implementor crate exists today. The criterion is ecosystem size, not architectural elegance. Extracting `matra-nlp-api` before any external implementor exists would add a publishing burden (two crates to version, two changelogs, two sets of CI) for zero current benefit.
 

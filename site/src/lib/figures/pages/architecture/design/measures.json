@@ -20,47 +20,47 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6296,
-      "readability_grade": 7.5935,
+      "lexical_density": 0.6154,
+      "readability_grade": 6.2723,
       "sentences": 2,
-      "text": "Take a 40 KB markdown file. Analysing it runs five things in order, each a crate-private module hiding one decision, and only the last two are expensive.",
-      "words": 27
+      "text": "Take a 40 KB markdown file. Analysing it runs five things in order, each a module hiding one decision, and only the last two are expensive.",
+      "words": 26
     },
     {
-      "compression_ratio": 0.5767,
+      "compression_ratio": 0.5488,
       "kind": "paragraph",
-      "lexical_density": 0.5526,
-      "readability_grade": 7.8263,
+      "lexical_density": 0.5814,
+      "readability_grade": 8.6851,
+      "sentences": 7,
+      "text": "Fetch. Engine::annotate reads the file through the engine's source, FileSource unless the caller supplied another with Engine::with_source. FileSource calls symlink_metadata, which does not traverse. A symlink is refused, and a directory is refused naming Inputs::dir. Anything else that is not a regular file is refused. A file whose metadata size exceeds MAX_INPUT_BYTES, 8 MiB, is refused before a byte is read, so a 1 GB file costs one stat call rather than a GB of resident memory. Then all 40 KB are read in as bytes.",
+      "words": 90
+    },
+    {
+      "compression_ratio": 0.5092,
+      "kind": "paragraph",
+      "lexical_density": 0.5225,
+      "readability_grade": 10.9727,
       "sentences": 6,
-      "text": "Fetch. Engine::annotate reads the file through FileSource, which calls symlink_metadata, which does not traverse. A symlink is refused, and a directory is refused naming Inputs::dir. Anything else that is not a regular file is refused. A file whose metadata size exceeds MAX_INPUT_BYTES, 8 MiB, is refused before a byte is read, so a 1 GB file costs one stat call rather than a GB of resident memory. Then all 40 KB are read in as bytes.",
-      "words": 79
+      "text": "Detect. The bytes are checked against the cap again (the same limit under the \"input\" label, because bytes and text handed in directly never passed the first gate), then given a format: a PDF or DOCX signature first, then a format the caller named, then the extension, so .md is Format::Markdown. A format with no reader in the engine's table is Error::UnsupportedFormat. Otherwise the reader registered for the format gets the bytes; a text reader decodes them as UTF-8, and bytes that are not are Error::UnsupportedFormat too. Unless the reader names an analysed text of its own, as a PDF reader would, the bytes become the analysed text, with no copy.",
+      "words": 115
     },
     {
-      "compression_ratio": 0.5677,
+      "compression_ratio": 0.5,
       "kind": "paragraph",
-      "lexical_density": 0.5316,
-      "readability_grade": 9.5416,
-      "sentences": 5,
-      "text": "Detect. The bytes are checked against the cap again (the same limit under the \"input\" label, because bytes and text handed in directly never passed the first gate), then given a format: a PDF or DOCX signature first, then a format the caller named, then the extension, so .md is Format::Markdown. A format with no reader in the engine's table is Error::UnsupportedFormat; bytes that are not UTF-8 are too. Otherwise the bytes become the analysed text, with no copy.",
-      "words": 82
+      "lexical_density": 0.5702,
+      "readability_grade": 11.4992,
+      "sentences": 6,
+      "text": "Read. The markdown reader runs a CommonMark parser over the text once, and turns its events into headings and paragraphs, each with its span in the text and its own text with the inline markup removed: a second copy of the prose. Front matter, code, tables and HTML are recorded in skipped with their spans rather than dropped. The engine then checks what the reader returned against the reader's contract: every span inside the text and on character boundaries, blocks in document order, no two spans overlapping, every heading at level 1 or more, and every paragraph's text lined up with the text its span covers. The structure step then makes the blocks a section tree, a heading opening each section.",
+      "words": 124
     },
     {
-      "compression_ratio": 0.5505,
+      "compression_ratio": 0.4894,
       "kind": "paragraph",
-      "lexical_density": 0.5342,
-      "readability_grade": 8.3385,
-      "sentences": 4,
-      "text": "Read. The markdown reader runs a CommonMark parser over the text once, and turns its events into headings and paragraphs, each with its span in the text and its own text with the inline markup removed: a second copy of the prose. Front matter, code, tables and HTML are recorded in skipped with their spans rather than dropped. The structure step then makes the blocks a section tree, a heading opening each section.",
-      "words": 74
-    },
-    {
-      "compression_ratio": 0.5186,
-      "kind": "paragraph",
-      "lexical_density": 0.631,
-      "readability_grade": 10.7691,
-      "sentences": 4,
-      "text": "Parse and measure. annotate walks every paragraph in document order, skips the quotes, and calls nlp.parse on each remaining paragraph's text. Sixty body paragraphs means sixty calls into UDPipe, and each call's sentences are stored on their paragraph, with the token spans the parser reports against the paragraph's text mapped back into the file's bytes. Then compose runs four metric functions over the attached tree; the document-level pair aggregates over the same attachment, so there is no second sentence set to keep in agreement.",
-      "words": 89
+      "lexical_density": 0.5852,
+      "readability_grade": 9.2594,
+      "sentences": 6,
+      "text": "Parse and measure. annotate walks every paragraph in document order, skips the quotes, and calls the parser on each remaining paragraph's text. Sixty body paragraphs means sixty calls into UDPipe. Each call returns sentences of tokens, and the engine checks them before it uses them: ids 1..=n, every head in range, one root, no cycle, and every span a span of the paragraph, in order, over its token's form. Then it maps the spans from the paragraph's text into the file's bytes and builds each Sentence itself, its text and the fields derived from its tree included, so no derived field depends on which parser ran. Then compose runs four metric functions over the attached tree; the document-level pair aggregates over the same attachment, so there is no second sentence set to keep in agreement.",
+      "words": 143
     },
     {
       "compression_ratio": null,
@@ -360,13 +360,22 @@
       "words": 59
     },
     {
-      "compression_ratio": 0.5699,
+      "compression_ratio": 0.4886,
       "kind": "paragraph",
-      "lexical_density": 0.5319,
-      "readability_grade": 12.0282,
+      "lexical_density": 0.551,
+      "readability_grade": 10.581,
+      "sentences": 5,
+      "text": "The parser and the readers are ports anyone can implement, so the engine trusts none of them, matra's own included: what a reader returns is checked once per document, and what the parser returns once per paragraph, before either reaches a Document. A break is Error::ParseFailed with a reason naming the check and a cause naming the token or block (Errors lists the checks). Each check is a pass over what it reads. Measured over the docsite's inputs and its own reference and guide pages, nearly two thousand paragraphs, the parse checks cost about 0.014% of UDPipe's parse time, roughly 3 microseconds a paragraph, and the reader checks about 7% of the readers' own time, under a tenth of a millisecond for a 140 KB page: together 0.015% of reading and parsing. Every document an engine returns therefore holds the invariants Sentence documents, whichever parts built it.",
+      "words": 156
+    },
+    {
+      "compression_ratio": 0.555,
+      "kind": "paragraph",
+      "lexical_density": 0.5333,
+      "readability_grade": 12.6285,
       "sentences": 4,
-      "text": "Two guards live in the domain types rather than at an edge, because a parse arrives from outside and its shape is not guaranteed. Sentence::tree_depth is computed by walking head references with a visited set, and is None when they form a cycle. Sentence::subtree carries the same visited set so it terminates. The None is deliberate: an earlier version capped depth at a magic 20, which silently truncated malformed parses and legitimate deep ones alike, and a sentinel number would read as a very deep tree to anyone who did not check for it.",
-      "words": 96
+      "text": "Two guards live in the domain types rather than at an edge, because a document can arrive from outside the engine, read back from JSON or built by hand, and its shape is not guaranteed. Sentence::tree_depth is computed by walking head references with a visited set, and is None when they form a cycle. Sentence::subtree carries the same visited set so it terminates. The None is deliberate: an earlier version capped depth at a magic 20, which silently truncated malformed parses and legitimate deep ones alike, and a sentinel number would read as a very deep tree to anyone who did not check for it.",
+      "words": 106
     },
     {
       "compression_ratio": 0.6127,
@@ -378,13 +387,13 @@
       "words": 52
     },
     {
-      "compression_ratio": 0.4793,
+      "compression_ratio": 0.4829,
       "kind": "paragraph",
-      "lexical_density": 0.58,
-      "readability_grade": 8.668,
-      "sentences": 6,
-      "text": "Every arrow points down, and that is the rule: a module imports from the row below it, never the row above. Two arrows run sideways. source/directory.rs reaches into source/file.rs, inside a single port, so a directory read inherits the same symlink and size guards rather than reimplementing them. And src/bin/matra.rs reaches into src/cli/, which is the whole of that file: the command line lives in the library so both launchers run one program, and the binary only collects arguments, locks the streams, and returns the code. One arrow from src/cli/ reaches past lib.rs, and it still points down: matra clusters builds Model2Vec from the configuration, because the library builds no embedder inside an outcome call and choosing the default one is the application's decision. embed is the one port open to outside implementers, and boundary rule 7 admits it for the command line as it does for the Python binding.",
-      "words": 153
+      "lexical_density": 0.5556,
+      "readability_grade": 10.3169,
+      "sentences": 4,
+      "text": "Every arrow points down, and that is the rule: a module imports from the row below it, never the row above. One arrow runs sideways: src/bin/matra.rs reaches into src/cli/, which is the whole of that file: the command line lives in the library so both launchers run one program, and the binary only collects arguments, locks the streams, and returns the code. One arrow from src/cli/ reaches past lib.rs, and it still points down: matra clusters builds Model2Vec from the configuration, because the library builds no embedder inside an outcome call and choosing the default one is the application's decision. Boundary rule 7 admits embed for the command line as it does for the Python binding; the other three ports are public too, and neither needs them, so the rule keeps them out of both.",
+      "words": 135
     },
     {
       "compression_ratio": 0.5414,
@@ -405,22 +414,31 @@
       "words": 62
     },
     {
-      "compression_ratio": 0.5141,
+      "compression_ratio": 0.5021,
       "kind": "paragraph",
-      "lexical_density": 0.566,
-      "readability_grade": 11.8252,
-      "sentences": 5,
-      "text": "Two ports are dispatched at runtime. NlpProvider has two methods, parse and identity, and the engine holds it as Box<dyn NlpProvider>. It is private to the crate, so a second parser is a file and a registration line inside it, and nothing downstream changes, because nothing downstream of parse knows which parser ran. Embedder is the same shape one tier over, and the one port open to outside implementers: clusters takes it as &dyn Embedder, and its identity travels into every result's provenance so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library.",
-      "words": 110
+      "lexical_density": 0.5517,
+      "readability_grade": 12.0914,
+      "sentences": 6,
+      "text": "Every port is open to outside implementers, and each is one or two methods over domain types. NlpProvider has two, parse and identity: a paragraph in, sentences of tokens out, and who parsed them, which the engine records in every document's provenance. Decomposer has one, decompose: a format's bytes in, blocks and skipped constructs out, built with Read::new and ReadBlock::heading and ReadBlock::paragraph. Source has one, read: a path in, bytes out. Embedder is the same shape one tier over: clusters takes it as &dyn Embedder, and its identity travels into every result's provenance so the scores stay attributable to the model that produced them. That is what makes UDPipe an implementation detail rather than the library.",
+      "words": 123
     },
     {
-      "compression_ratio": 0.5112,
+      "compression_ratio": 0.4636,
       "kind": "paragraph",
-      "lexical_density": 0.5152,
-      "readability_grade": 10.69,
-      "sentences": 7,
-      "text": "The input side is private to the crate. Decomposer dispatch is a value inside it, a table mapping each Format to a boxed reader, so a new format is a reader file and a registration line in lib.rs and changes no published signature. Source stays static, with one adapter: Input::file names FileSource, and Inputs::dir lists a directory with DirectorySource, which reads nothing, so each file is read through FileSource when its Input is analysed and a file that fails is one item of the stream rather than a gap in it. To read from somewhere else, fetch the bytes yourself and hand them in with Input::bytes; to analyse a format matra has no reader for, hand in its headings and paragraphs with Input::blocks. The pipeline does not care where they came from.",
-      "words": 137
+      "lexical_density": 0.5581,
+      "readability_grade": 9.7785,
+      "sentences": 6,
+      "text": "The engine holds a parser, a table mapping each Format to a boxed reader, and a source, and a caller replaces any of them without forking matra. Engine::with_parser(parser) builds an engine around a parser of your own, in any build, with the shipped readers and the file source; .with_reader(format, reader) registers a reader for a format, replacing a shipped one, supplying one for Format::Pdf or Format::Docx, or reading a Format::Other you name; .with_source(source) reads the paths inputs name from somewhere else. Both methods compose with the standard constructors, so Engine::new()?.with_reader(Format::Pdf, MyPdf) is UDPipe with your PDF reader. It is one constructor and two consuming methods rather than a builder type: every part but the parser has a default, so there is nothing for a builder to hold that the engine does not already hold. Inputs::dir still lists the local filesystem, and Input::bytes and Input::blocks reach no source and no reader, so a caller with bytes or blocks from anywhere needs neither. Bring your own parser or reader walks through one of each.",
+      "words": 186
+    },
+    {
+      "compression_ratio": 0.5072,
+      "kind": "paragraph",
+      "lexical_density": 0.6154,
+      "readability_grade": 12.0847,
+      "sentences": 4,
+      "text": "The traits are frozen once someone implements them, since a new method would break every implementation, so they ask for only what the engine cannot derive. A parser returns tokens, not Sentence values: the sentence's text, span and every field derived from its tree are the engine's, computed the same way whichever parser ran. A reader returns opaque blocks, so the block vocabulary can grow without breaking one. And neither trait promises well-formed output in its signature; the engine checks it instead, at the one place each kind of output enters.",
+      "words": 95
     },
     {
       "compression_ratio": 0.5704,

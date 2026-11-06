@@ -117,49 +117,76 @@
       "words": 63
     },
     {
+      "compression_ratio": 0.5784,
+      "kind": "paragraph",
+      "lexical_density": 0.4444,
+      "readability_grade": 7.6004,
+      "sentences": 3,
+      "text": "The parser or a reader failed on the input, or returned what its contract forbids. The remedy is the component, not the call: the same input through the same parser fails the same way. cause is free text for a person, and reason is present when the failure is one of the engine's checks.",
+      "words": 55
+    },
+    {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.6667,
-      "readability_grade": null,
-      "sentences": 1,
-      "text": "Returned by the UDPipe adapter's parse in three situations:",
-      "words": 10
+      "lexical_density": 0.5238,
+      "readability_grade": 10.019,
+      "sentences": 2,
+      "text": "A parser or a reader reports its own failure with reason None. The UDPipe adapter's parse does so in four situations:",
+      "words": 22
     },
     {
       "compression_ratio": null,
       "kind": "list_item",
       "lexical_density": 0.5833,
-      "readability_grade": 6.4167,
+      "readability_grade": 5.4333,
       "sentences": 2,
-      "text": "The underlying parser returns an error. The payload is that error's message.",
+      "text": "The underlying parser returns an error. The cause is that error's message.",
       "words": 13
     },
     {
       "compression_ratio": null,
       "kind": "list_item",
       "lexical_density": 0.6486,
-      "readability_grade": 9.704,
+      "readability_grade": 9.3851,
       "sentences": 3,
-      "text": "The underlying parser panics. The payload is udpipe panicked: <message>. The catch_unwind boundary that produces this lives in nlp/udpipe.rs, and it exists because an unhandled panic crossing the C++ boundary aborts the host process instead of unwinding.",
+      "text": "The underlying parser panics. The cause is udpipe panicked: <message>. The catch_unwind boundary that produces this lives in nlp/udpipe.rs, and it exists because an unhandled panic crossing the C++ boundary aborts the host process instead of unwinding.",
       "words": 40
     },
     {
       "compression_ratio": null,
       "kind": "list_item",
       "lexical_density": 0.5789,
-      "readability_grade": 6.1255,
+      "readability_grade": 5.5045,
       "sentences": 2,
-      "text": "A token id or head value cannot be represented as usize. The payload names the token and its sentence.",
+      "text": "A token id or head value cannot be represented as usize. The cause names the token and its sentence.",
       "words": 20
     },
     {
-      "compression_ratio": 0.567,
+      "compression_ratio": 0.5637,
       "kind": "list_item",
       "lexical_density": 0.4898,
-      "readability_grade": 7.3963,
+      "readability_grade": 7.1555,
       "sentences": 3,
-      "text": "A token's form cannot be found in the paragraph text the parser was given, at or after the previous token, so the token has no span. The payload names the token, its sentence and the byte the search began at. The adapter reports this rather than a guessed span.",
+      "text": "A token's form cannot be found in the paragraph text the parser was given, at or after the previous token, so the token has no span. The cause names the token, its sentence and the byte the search began at. The adapter reports this rather than a guessed span.",
       "words": 52
+    },
+    {
+      "compression_ratio": 0.5127,
+      "kind": "paragraph",
+      "lexical_density": 0.5692,
+      "readability_grade": 30.6369,
+      "sentences": 2,
+      "text": "The engine trusts no parser and no reader, matra's own included. Before anything a reader returns becomes a section, and before anything the parser returns for a paragraph becomes a sentence, the engine checks it against the contract its trait states (matra::decompose::Decomposer, matra::nlp::NlpProvider), and a break fails the document with reason naming the check and cause naming the block, or the paragraph, sentence and token:",
+      "words": 68
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5455,
+      "readability_grade": 7.5618,
+      "sentences": 2,
+      "text": "A conforming parser or reader is one whose output passes these checks on every input it accepts. The checks are a pass over what they read: on the docsite's own pages they cost about 0.014% of UDPipe's parse time, about 3 microseconds a paragraph.",
+      "words": 48
     },
     {
       "compression_ratio": null,
@@ -200,11 +227,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.4783,
-      "readability_grade": 9.7974,
+      "lexical_density": 0.4828,
+      "readability_grade": 11.589,
       "sentences": 1,
-      "text": "The parser is private to the crate, so no caller reaches it except through the engine, and no text bypasses the \"input\" gate.",
-      "words": 23
+      "text": "Every route from text to a parser, a parser of your own included, runs through the engine, so no text bypasses the \"input\" gate on its way to one.",
+      "words": 29
     },
     {
       "compression_ratio": 0.5883,
@@ -270,13 +297,13 @@
       "words": 7
     },
     {
-      "compression_ratio": 0.5847,
+      "compression_ratio": 0.5225,
       "kind": "list_item",
-      "lexical_density": 0.5429,
-      "readability_grade": 8.7664,
-      "sentences": 4,
-      "text": "The input's format has no reader in this build: Pdf or Docx, whether named by the caller, read off the extension, or recognised from the bytes (%PDF, or a zip archive holding [Content_Types].xml, which outranks the extension). format is that format, and feature names the Cargo feature that would read it; no feature of this version reads either, so feature is None. Markdown, PlainText and Blocks always have a reader.",
-      "words": 72
+      "lexical_density": 0.5217,
+      "readability_grade": 10.0556,
+      "sentences": 5,
+      "text": "The engine has no reader for the input's format: Pdf or Docx, whether named by the caller, read off the extension, or recognised from the bytes (%PDF, or a zip archive holding [Content_Types].xml, which outranks the extension), or a Format::Other the caller named and registered no reader for. format is that format, and feature names the Cargo feature that would read it; no feature of this version reads any of them, so feature is None. A reader registered with Engine::with_reader reads any of them. Markdown, PlainText and Blocks always have a reader.",
+      "words": 96
     },
     {
       "compression_ratio": null,
@@ -540,13 +567,13 @@
       "words": 50
     },
     {
-      "compression_ratio": 0.6044,
+      "compression_ratio": 0.558,
       "kind": "list_item",
-      "lexical_density": 0.4792,
-      "readability_grade": 8.1042,
+      "lexical_density": 0.5714,
+      "readability_grade": 10.3937,
       "sentences": 3,
-      "text": "On model_invalid, parse_failed and io, reason is the variant's own text: the String the variant holds, or the operating system's account of an I/O failure. It is for a person, like the message. On invalid_input it is the name of the check that failed, stable, to branch on.",
-      "words": 51
+      "text": "One word, one meaning. reason is always the name of a check that failed, stable and snake_case, to branch on: on invalid_input always, and on parse_failed when the engine's checks refused what a parser or a reader returned. cause is always free text for a person, like the message: the text the variant holds, or the operating system's account of an I/O failure.",
+      "words": 66
     },
     {
       "compression_ratio": null,

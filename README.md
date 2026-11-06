@@ -130,7 +130,7 @@ Under `--json` every command writes one envelope, `{format_version, command, inp
 
 ## Architecture
 
-Hex architecture. The pipeline depends on port traits (`Source`, `Decomposer`, `NlpProvider`), not on adapters directly. All three, with detection, the step that turns blocks into sections, the metric suite and the ranking methods, are private to the crate: a caller hands in an `Input` and asks for an outcome. `Embedder` is the one port open to outside implementers. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
+Hex architecture. The pipeline depends on port traits (`Source`, `Decomposer`, `NlpProvider`), not on adapters directly. All three are public, so a parser, a reader or a source of your own plugs in through `Engine::with_parser`, `with_reader` and `with_source`, and the engine checks everything a parser or a reader returns before it reaches a `Document`. The shipped adapters, detection, the step that turns blocks into sections, the metric suite and the ranking methods are private to the crate: a caller hands in an `Input` and asks for an outcome. `Embedder` is the fourth port, which `clusters` takes. UDPipe is the default NLP adapter, behind the `udpipe` feature flag.
 
 The domain sits at the centre and depends on nothing. Four ports (`Source`, `Decomposer`, `NlpProvider`, `Embedder`) depend only on the domain. Adapters implement one port each, and `nlp/udpipe.rs` is the only file that imports the UDPipe bindings. Metrics and the outcome methods are plain functions over the domain. `lib.rs` wires it together and is the only file that knows the whole shape.
 

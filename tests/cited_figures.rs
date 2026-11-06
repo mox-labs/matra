@@ -9,7 +9,7 @@
 //!
 //! That is not hypothetical. Three wrong figures shipped across three review
 //! rounds of one branch, and the margin that carries the whole lesson of the
-//! semantic example is 0.0228: a near-duplicate pair scores 0.8272 against a
+//! semantic example is 0.0219: a near-duplicate pair scores 0.8281 against a
 //! cutoff of 0.85, and the example exists to show that the cutoff calls them
 //! unrelated. An ordinary edit to either guide can push that pair over the
 //! line, at which point two pages teach the opposite of what they say, in
@@ -38,29 +38,29 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
             "site/content/guides/cli.md",
-            "26796:f12490ddfcae9196",
-            "the 0.8272 pair score in site/content/guides/semantic-clusters.md \
+            "26796:5c733f5d92ae6adf",
+            "the 0.8281 pair score in site/content/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md, and the 0.5800 unrelated score",
         ),
         (
             "site/content/guides/rust.md",
-            "22347:99e74231c79a550c",
-            "the 0.8272 pair score and the 0.6114 unrelated score, in the same two files",
+            "27297:c94c5c017c9fb55b",
+            "the 0.8281 pair score and the 0.6121 unrelated score, in the same two files",
         ),
         (
             "site/content/roadmap.md",
-            "32370:b94f342e631c6d74",
-            "the 0.5800 and 0.6114 unrelated scores, in the same two files",
+            "32249:bd32705baf0b3747",
+            "the 0.5800 and 0.6121 unrelated scores, in the same two files",
         ),
         (
             "site/content/reference/errors.md",
-            "37897:467da7ecfb760186",
-            "the RAKE and YAKE figures in site/content/guides/cli.md: 571 phrases, \
-             the one first at 12.135, 1.468 (297th), 224 at the floor, and YAKE's 2035.733",
+            "40473:0a99f5687f2d2904",
+            "the RAKE and YAKE figures in site/content/guides/cli.md: 589 phrases, \
+             the one first at 12.135, 1.468 (306th), 229 at the floor, and YAKE's 2257.447",
         ),
         (
             "site/content/reference/domain-types.md",
-            "47234:2efe5a008f92bcb2",
+            "48150:81567503a69ee16f",
             "the 141-word saturation floor and the 54-word window in \
              site/content/guides/semantic-clusters.md and skills/matra/references/semantic.md",
         ),

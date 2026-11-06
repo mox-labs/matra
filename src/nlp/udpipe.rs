@@ -11,7 +11,7 @@ use udpipe_rs::Model;
 use crate::config::Config;
 use crate::digest::sha256_hex;
 use crate::domain::Error;
-use crate::domain::{Identity, ProvisionNotice, Sentence, Span, Token};
+use crate::domain::{Identity, ProvisionNotice, Span, Token};
 
 use super::NlpProvider;
 
@@ -714,7 +714,7 @@ where
 }
 
 impl NlpProvider for Udpipe {
-    fn parse(&self, text: &str) -> crate::domain::Result<Vec<Sentence>> {
+    fn parse(&self, text: &str) -> crate::domain::Result<Vec<Vec<Token>>> {
         let words = catch_parse_panic(|| {
             self.model.parse(text).map_err(|e| Error::ParseFailed {
                 reason: None,
@@ -735,74 +735,17 @@ impl NlpProvider for Udpipe {
         let mut cursor = 0;
         ids.into_iter()
             .map(|id| {
-                let sent_words = &by_sentence[&id];
-                let mut tokens: Vec<Token> = sent_words
+                let mut tokens = by_sentence[&id]
                     .iter()
-                    .map(|w| {
-                        let id = usize::try_from(w.id).map_err(|_| {
-                            Error::ParseFailed {
- reason: None,
- cause: format!(
-                                "invalid token id {} in sentence {}",
-                                w.id, w.sentence_id
-                            ),
-}
-                        })?;
-                        let head = usize::try_from(w.head).map_err(|_| {
-                            Error::ParseFailed {
- reason: None,
- cause: format!(
-                                "invalid head {} for token {} in sentence {}",
-                                w.head, w.id, w.sentence_id
-                            ),
-}
-                        })?;
-                        Ok(Token {
-                            id,
-                            span: Span::default(),
-                            text: w.form.clone(),
-                            lemma: w.lemma.clone(),
-                            pos: w.upostag.clone(),
-                            xpos: w.xpostag.clone(),
-                            features: crate::domain::features_from_conllu(&w.feats),
-                            dep: w.deprel.clone(),
-                            head,
-                            deps: String::from("_"),
-                            misc: w.misc.clone(),
-                            is_punct: w.is_punct(),
-                        })
-                    })
+                    .map(|w| token_of(w))
                     .collect::<crate::domain::Result<Vec<Token>>>()?;
-
                 for token in &mut tokens {
-                    let (start, end) = locate(text, cursor, &token.text).ok_or_else(|| {
-                        Error::ParseFailed {
- reason: None,
- cause: format!(
-                            "token {} ({:?}) of sentence {} is not in the parsed text at or after byte {cursor}, so it has no span",
-                            token.id,
-                            token.text,
-                            id + 1
-                        ),
-}
-                    })?;
+                    let (start, end) = locate(text, cursor, &token.text)
+                        .ok_or_else(|| unplaced(token, id + 1, cursor))?;
                     token.span = Span::new(start, end);
                     cursor = end;
                 }
-
-                // Reconstruct original text using SpaceAfter=No from misc field.
-                let text = {
-                    let mut buf = String::new();
-                    for (i, tok) in tokens.iter().enumerate() {
-                        buf.push_str(&tok.text);
-                        if i + 1 < tokens.len() && !tok.misc.contains("SpaceAfter=No") {
-                            buf.push(' ');
-                        }
-                    }
-                    buf
-                };
-
-                Ok(Sentence::new(text, tokens))
+                Ok(tokens)
             })
             .collect()
     }
@@ -825,28 +768,54 @@ impl NlpProvider for Udpipe {
 fn locate(text: &str, cursor: usize, form: &str) -> Option<(usize, usize)> {
     let rest = text.get(cursor..)?;
     let start = cursor + (rest.len() - rest.trim_start().len());
-    let mut at = start;
-    let mut wanted = form.chars().peekable();
-    while let Some(c) = wanted.next() {
-        if c.is_whitespace() {
-            while wanted.peek().is_some_and(|c| c.is_whitespace()) {
-                wanted.next();
-            }
-            let tail = text.get(at..)?;
-            let skipped = tail.len() - tail.trim_start().len();
-            if skipped == 0 {
-                return None;
-            }
-            at += skipped;
-        } else {
-            let found = text.get(at..)?.chars().next()?;
-            if found != c {
-                return None;
-            }
-            at += found.len_utf8();
-        }
+    let end = crate::domain::form_end(text, start, form)?;
+    Some((start, end))
+}
+
+/// The token UDPipe emitted as `word`, its span not yet placed. A
+/// negative id or head, which `udpipe_rs` types as `i32`, is a failure
+/// rather than a wrapped number.
+fn token_of(word: &udpipe_rs::Word) -> crate::domain::Result<Token> {
+    let id = usize::try_from(word.id).map_err(|_| Error::ParseFailed {
+        reason: None,
+        cause: format!(
+            "invalid token id {} in sentence {}",
+            word.id, word.sentence_id
+        ),
+    })?;
+    let head = usize::try_from(word.head).map_err(|_| Error::ParseFailed {
+        reason: None,
+        cause: format!(
+            "invalid head {} for token {} in sentence {}",
+            word.head, word.id, word.sentence_id
+        ),
+    })?;
+    Ok(Token {
+        id,
+        span: Span::default(),
+        text: word.form.clone(),
+        lemma: word.lemma.clone(),
+        pos: word.upostag.clone(),
+        xpos: word.xpostag.clone(),
+        features: crate::domain::features_from_conllu(&word.feats),
+        dep: word.deprel.clone(),
+        head,
+        deps: String::from("_"),
+        misc: word.misc.clone(),
+        is_punct: word.is_punct(),
+    })
+}
+
+/// The failure for a token whose form is not in the text at or after
+/// `cursor`: reported rather than given a guessed span.
+fn unplaced(token: &Token, sentence: i32, cursor: usize) -> Error {
+    Error::ParseFailed {
+        reason: None,
+        cause: format!(
+            "token {} ({:?}) of sentence {sentence} is not in the parsed text at or after byte {cursor}, so it has no span",
+            token.id, token.text
+        ),
     }
-    Some((start, at))
 }
 
 #[cfg(test)]

@@ -153,13 +153,13 @@
       "words": 24
     },
     {
-      "compression_ratio": 0.5491,
+      "compression_ratio": 0.5,
       "kind": "paragraph",
-      "lexical_density": 0.5349,
-      "readability_grade": 13.1528,
+      "lexical_density": 0.5259,
+      "readability_grade": 17.0883,
       "sentences": 3,
-      "text": "span comes from aligning each form with the paragraph text the parser was given, then mapping it into the analysed text. A form the adapter cannot find where the text says it should be is Error::ParseFailed naming the token, never a guessed span. In a markdown paragraph whose markup the reader removed, a token's span can cover markup inside it (foo**bar** is one token from the f to the last r), and a token read from an escape or an entity (&amp;) covers all of it.",
-      "words": 92
+      "text": "span comes from aligning each form with the paragraph text the parser was given, then mapping it into the analysed text. A form the adapter cannot find where the text says it should be is Error::ParseFailed naming the token, never a guessed span, and the engine checks every parser's spans by the same rule, so a span from any parser that does not line up with its form is Error::ParseFailed with reason token_form_mismatch. In a markdown paragraph whose markup the reader removed, a token's span can cover markup inside it (foo**bar** is one token from the f to the last r), and a token read from an escape or an entity (&amp;) covers all of it.",
+      "words": 124
     },
     {
       "compression_ratio": 0.5367,
@@ -189,13 +189,13 @@
       "words": 34
     },
     {
-      "compression_ratio": 0.6078,
+      "compression_ratio": 0.5369,
       "kind": "paragraph",
-      "lexical_density": 0.6102,
-      "readability_grade": 14.115,
-      "sentences": 2,
-      "text": "Invariants that downstream code relies on, and that a hand-built Sentence and every NlpProvider are expected to uphold: tokens are id-sorted; exactly one token has head == 0; every other head names a token in the same sentence; following head never loops. Nothing validates them, and the tree walks stay safe when the last one breaks (see tree_depth below).",
-      "words": 61
+      "lexical_density": 0.6022,
+      "readability_grade": 13.629,
+      "sentences": 3,
+      "text": "Invariants that downstream code relies on: tokens are id-sorted; exactly one token has head == 0; every other head names a token in the same sentence; following head never loops. Every sentence the engine builds holds them, because it checks what the parser returns before it builds one and fails the document with Error::ParseFailed naming the check otherwise. A sentence built by hand with Sentence::new, which trusts its caller, or read back from JSON can break any of them, and the tree walks stay safe when the last one breaks (see tree_depth below).",
+      "words": 97
     },
     {
       "compression_ratio": 0.5889,
@@ -207,13 +207,13 @@
       "words": 81
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5627,
       "kind": "paragraph",
-      "lexical_density": 0.5745,
-      "readability_grade": 11.4005,
+      "lexical_density": 0.56,
+      "readability_grade": 11.86,
       "sentences": 2,
-      "text": "The UDPipe adapter builds text by joining token surface forms, inserting a space unless the preceding token carries SpaceAfter=No in misc. The string is a reconstruction, not a slice of the input, so whitespace can differ from the source text; span is where the sentence came from.",
-      "words": 48
+      "text": "The engine builds text by joining the token surface forms a parser returned, inserting a space unless the preceding token carries SpaceAfter=No in misc. The string is a reconstruction, not a slice of the input, so whitespace can differ from the source text; span is where the sentence came from.",
+      "words": 51
     },
     {
       "compression_ratio": 0.5491,
@@ -459,13 +459,13 @@
       "words": 75
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5142,
       "kind": "paragraph",
-      "lexical_density": 0.6,
-      "readability_grade": 12.2867,
-      "sentences": 3,
-      "text": "Pdf and Docx have no reader, so analyzing such a document returns Error::UnsupportedFormat with that format. Input::text and Input::file_as take the format as an argument; Input::bytes takes one optionally; Input::file detects one. Format derives PartialEq and Eq, which is what the reader table keys on.",
-      "words": 48
+      "lexical_density": 0.5315,
+      "readability_grade": 12.9473,
+      "sentences": 5,
+      "text": "Pdf, Docx and an Other have no reader that ships, so analyzing such a document returns Error::UnsupportedFormat with that format, unless the engine was given a reader for it with Engine::with_reader. Other names a format matra has no variant for, the one a caller's own reader reads: Format::named(\"html\"). Format::named gives the variant matra has for a name it knows, so Format::named(\"markdown\") is Markdown, and a name read back from JSON does the same, an unknown one reading as Other rather than failing. Input::text and Input::file_as take the format as an argument; Input::bytes takes one optionally; Input::file detects one. Format derives PartialEq and Eq, which is what the reader table keys on.",
+      "words": 120
     },
     {
       "compression_ratio": null,

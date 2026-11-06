@@ -3,7 +3,7 @@
 
 use crate::domain::{self, Block, BlockContent, Error, ParagraphKind, Span};
 
-use super::{Decomposer, Read, ReadBlock, TextMap};
+use super::{Decomposer, Read, ReadBlock};
 
 /// What separates two blocks' texts in the analysed text.
 const SEPARATOR: &str = "\n\n";
@@ -17,7 +17,7 @@ const SEPARATOR: &str = "\n\n";
 pub(crate) struct BlocksDecomposer;
 
 impl Decomposer for BlocksDecomposer {
-    fn decompose(&self, input: &str) -> domain::Result<Read> {
+    fn decompose(&self, input: &[u8]) -> domain::Result<Read> {
         assemble(&parse(input)?)
     }
 }
@@ -32,8 +32,8 @@ enum WireBlock {
 }
 
 /// Parse the JSON array into blocks.
-fn parse(input: &str) -> domain::Result<Vec<Block>> {
-    let wire: Vec<WireBlock> = serde_json::from_str(input).map_err(|e| Error::InvalidInput {
+fn parse(input: &[u8]) -> domain::Result<Vec<Block>> {
+    let wire: Vec<WireBlock> = serde_json::from_slice(input).map_err(|e| Error::InvalidInput {
         reason: "blocks_malformed",
         message: format!("block input is not a block array: {e}"),
     })?;
@@ -68,32 +68,28 @@ pub(crate) fn assemble(blocks: &[Block]) -> domain::Result<Read> {
                     });
                 }
                 text.push_str(own);
-                out.push(ReadBlock::Heading {
-                    level: usize::from(*level),
-                    text: own.clone(),
-                    span: Span::new(start, text.len()),
-                });
+                out.push(ReadBlock::heading(
+                    usize::from(*level),
+                    own.clone(),
+                    Span::new(start, text.len()),
+                ));
             }
             BlockContent::Paragraph { text: own } => {
                 text.push_str(own);
-                out.push(ReadBlock::Paragraph {
-                    kind: ParagraphKind::Paragraph,
-                    text: own.clone(),
-                    span: Span::new(start, text.len()),
-                    map: TextMap::verbatim(start, own.len()),
-                });
+                out.push(ReadBlock::paragraph(
+                    ParagraphKind::Paragraph,
+                    own.clone(),
+                    Span::new(start, text.len()),
+                ));
             }
         }
     }
-    Ok(Read {
-        text: Some(text),
-        blocks: out,
-        skipped: Vec::new(),
-    })
+    Ok(Read::new(out, Vec::new()).with_text(text))
 }
 
 #[cfg(test)]
 mod tests {
+    use super::super::BlockKind;
     use super::*;
 
     #[test]
@@ -105,31 +101,30 @@ mod tests {
         .unwrap();
         let text = read.text.unwrap();
         assert_eq!(text, "Field notes\n\nThe river rose.");
-        match &read.blocks[1] {
-            ReadBlock::Paragraph { span, .. } => {
+        match &read.blocks[1].0 {
+            BlockKind::Paragraph { span, .. } => {
                 assert_eq!(&text[span.byte_start..span.byte_end], "The river rose.");
             }
-            ReadBlock::Heading { .. } => panic!("second block is a paragraph"),
+            BlockKind::Heading { .. } => panic!("second block is a paragraph"),
         }
     }
 
     #[test]
     fn json_reads_the_same_blocks() {
         let json = r#"[{"kind":"heading","level":2,"text":"A"},{"kind":"paragraph","text":"B"}]"#;
-        let read = BlocksDecomposer.decompose(json).unwrap();
+        let read = BlocksDecomposer.decompose(json.as_bytes()).unwrap();
         assert_eq!(read.text.as_deref(), Some("A\n\nB"));
         assert!(matches!(
-            read.blocks[0],
-            ReadBlock::Heading { level: 2, .. }
+            read.blocks[0].0,
+            BlockKind::Heading { level: 2, .. }
         ));
     }
 
     #[test]
     fn an_unknown_kind_is_refused_by_name() {
         let err = BlocksDecomposer
-            .decompose(r#"[{"kind":"table","text":"x"}]"#)
-            .err()
-            .expect("refused");
+            .decompose(br#"[{"kind":"table","text":"x"}]"#)
+            .expect_err("refused");
         assert!(matches!(err, Error::InvalidInput { .. }));
         assert!(err.to_string().contains("table"), "{err}");
     }
@@ -137,15 +132,14 @@ mod tests {
     #[test]
     fn an_unknown_field_is_refused() {
         let err = BlocksDecomposer
-            .decompose(r#"[{"kind":"paragraph","text":"x","style":"bold"}]"#)
-            .err()
-            .expect("refused");
+            .decompose(br#"[{"kind":"paragraph","text":"x","style":"bold"}]"#)
+            .expect_err("refused");
         assert!(err.to_string().contains("style"), "{err}");
     }
 
     #[test]
     fn a_level_zero_heading_is_refused() {
-        let err = assemble(&[Block::heading(0, "x")]).err().expect("refused");
+        let err = assemble(&[Block::heading(0, "x")]).expect_err("refused");
         assert!(matches!(err, Error::InvalidInput { .. }));
     }
 

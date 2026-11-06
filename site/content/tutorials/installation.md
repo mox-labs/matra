@@ -28,7 +28,7 @@ For the Python package, use Python 3.12 or later (check with `python3 --version`
 cargo add matra@0.3
 ```
 
-The default features include `udpipe`, so `matra::Engine::new()` builds the pinned UDPipe parser without a feature flag. The parser itself is private to the crate: you reach it through `Engine`.
+The default features include `udpipe`, so `matra::Engine::new()` builds the pinned UDPipe parser without a feature flag. The UDPipe adapter itself is private to the crate: you reach it through `Engine`, and a parser of your own reaches it through `Engine::with_parser`.
 
 ---
 

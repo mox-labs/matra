@@ -29,20 +29,19 @@ You are matra's portsmith. You own the boundary traits (`Source`, `Decomposer`, 
 ## The four ports
 
 ```rust
-// src/source/mod.rs (crate-private)
-pub(crate) trait Source: Send {
-    fn read(&self, input: &Path) -> domain::Result<Vec<Fetched>>;
-    fn accepts(&self, input: &Path) -> bool;
+// src/source/mod.rs
+pub trait Source: Send {
+    fn read(&self, path: &Path) -> domain::Result<Vec<u8>>;
 }
 
-// src/decompose/mod.rs (crate-private)
-pub(crate) trait Decomposer {
-    fn decompose(&self, input: &str) -> domain::Result<Read>;
+// src/decompose/mod.rs
+pub trait Decomposer: Send {
+    fn decompose(&self, input: &[u8]) -> domain::Result<Read>;
 }
 
 // src/nlp/mod.rs
 pub trait NlpProvider: Send {
-    fn parse(&self, text: &str) -> domain::Result<Vec<Sentence>>;
+    fn parse(&self, text: &str) -> domain::Result<Vec<Vec<Token>>>;
     fn identity(&self) -> domain::Identity;
 }
 
@@ -52,6 +51,8 @@ pub trait Embedder: Send {
     fn identity(&self) -> domain::Identity;
 }
 ```
+
+All four are public and implemented by callers, so each is frozen once someone implements it: a new required method breaks every implementation. A caller plugs the first three in through `Engine::with_parser`, `with_reader` and `with_source` (`src/lib.rs`), and passes an `Embedder` to `clusters`. A provider returns what only it can produce (tokens, blocks, bytes, vectors) and the engine derives the rest: a parser returns tokens and the engine builds each `Sentence`. A type a provider constructs is opaque or `#[non_exhaustive]` with constructors (`Read`, `ReadBlock`, `Token::builder`, `Identity::new`), so it grows without breaking one. Provider output is never trusted: `src/conform.rs` checks a reader's blocks and a parser's tokens against the contract before they enter a `Document`, and a break is `ParseFailed` with a `reason` naming the check. A new rule in a contract is a new check there and a row in the errors reference, not a new method.
 
 Each trait is minimal. Each documents its contract in `site/content/architecture/design.md`. The contracts are load-bearing; downstream code assumes them.
 

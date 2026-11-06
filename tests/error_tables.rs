@@ -356,12 +356,15 @@ fn the_skill_reference_agrees_with_the_pyerr_routing() {
     );
 }
 
-/// Every `reason` an `invalid_input` can carry, read out of the library
-/// source: the `reason: "..."` of each `Error::InvalidInput` it builds,
-/// and the first argument of the two helpers that build one, the command
-/// line's `Failure::refused` and the Python binding's `invalid_input`.
+/// Every `reason` an error can carry, read out of the library source:
+/// the quoted snake_case name after each of `markers`. For
+/// `invalid_input` the markers are the `reason: "..."` of each
+/// `Error::InvalidInput` it builds and the first argument of the two
+/// helpers that build one, the command line's `Failure::refused` and the
+/// Python binding's `invalid_input`; for `parse_failed`, the first
+/// argument of the engine's checks' `broken` and any `reason: Some(..)`.
 /// Test modules are left out, since what they build is not raised.
-fn reasons_in_source() -> std::collections::BTreeSet<String> {
+fn reasons_in_source(markers: &[&str]) -> std::collections::BTreeSet<String> {
     fn walk(dir: &std::path::Path, out: &mut Vec<PathBuf>) {
         for entry in fs::read_dir(dir).expect("read src") {
             let path = entry.expect("entry").path();
@@ -379,11 +382,7 @@ fn reasons_in_source() -> std::collections::BTreeSet<String> {
         let text = fs::read_to_string(&file).expect("read source");
         let code =
             flatten(text.split("#[cfg(test)]\nmod tests").next().unwrap_or("")).replace("( ", "(");
-        for marker in [
-            "InvalidInput { reason: \"",
-            "refused(\"",
-            "invalid_input(\"",
-        ] {
+        for marker in markers {
             for piece in code.split(marker).skip(1) {
                 let name: String = piece
                     .chars()
@@ -410,7 +409,11 @@ fn the_reference_page_lists_every_invalid_input_reason() {
         .into_iter()
         .map(|r| r[0].clone())
         .collect();
-    let raised = reasons_in_source();
+    let raised = reasons_in_source(&[
+        "InvalidInput { reason: \"",
+        "refused(\"",
+        "invalid_input(\"",
+    ]);
     assert!(
         raised.len() > 20,
         "the source scan found only {raised:?}: the markers no longer match how the source builds the error"
@@ -418,5 +421,27 @@ fn the_reference_page_lists_every_invalid_input_reason() {
     assert_eq!(
         documented, raised,
         "site/content/reference/errors.md (### InvalidInput) disagrees with the reasons src/ raises"
+    );
+}
+
+/// The errors reference lists every `parse_failed` reason the engine's
+/// checks raise, and nothing they do not: the same contract as
+/// `invalid_input`'s, for what a parser or a reader returned.
+#[test]
+fn the_reference_page_lists_every_parse_failed_reason() {
+    let page = read("site/content/reference/errors.md");
+    let section = between(&page, "### ParseFailed", "### InputTooLarge");
+    let documented: std::collections::BTreeSet<String> = rows(section, "")
+        .into_iter()
+        .map(|r| r[0].clone())
+        .collect();
+    let raised = reasons_in_source(&["broken(\"", "reason: Some(\""]);
+    assert!(
+        raised.len() > 8,
+        "the source scan found only {raised:?}: the markers no longer match how the checks build the error"
+    );
+    assert_eq!(
+        documented, raised,
+        "site/content/reference/errors.md (### ParseFailed) disagrees with the reasons src/ raises"
     );
 }

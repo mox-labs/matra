@@ -3,11 +3,8 @@
 #[cfg(feature = "cli")]
 pub mod cli;
 pub mod config;
-// Without `udpipe` the build ships no parser, so no engine is built and no
-// reader runs: the readers are unreachable there, and still compile, which
-// is what boundary rule 6 asks of that build.
-#[cfg_attr(not(feature = "udpipe"), allow(dead_code))]
-mod decompose;
+mod conform;
+pub mod decompose;
 mod detect;
 mod digest;
 pub mod domain;
@@ -15,8 +12,8 @@ pub mod embed;
 mod extraction;
 mod hearst;
 mod metrics;
-mod nlp;
-mod source;
+pub mod nlp;
+pub mod source;
 mod stopwords;
 mod structure;
 
@@ -253,40 +250,193 @@ impl Iterator for Inputs {
 
 impl ExactSizeIterator for Inputs {}
 
-/// The assembled pipeline: the parser, plus the readers this build ships.
+/// The assembled pipeline: a source, a reader per format, and a parser.
 ///
 /// Construction is the wiring step; after it, analysis is
 /// `fetch -> detect -> read -> structure -> parse -> measure`, each step
-/// a crate-private module hiding one decision. Variation lives in the
-/// data ([`Input`]'s constructors, the format), not in the function
+/// a module hiding one decision. Variation lives in the data
+/// ([`Input`]'s constructors, the format), not in the function
 /// namespace. What a caller does with the [`Document`] it returns is an
 /// outcome function's job ([`summarize`], [`keyphrases`], [`clusters`]),
 /// and those need no engine.
 ///
-/// The parser is UDPipe with its pinned English model, so an engine is
-/// built only in a build with the `udpipe` feature: [`Engine::new`],
-/// [`Engine::from_config`] and [`Engine::from_config_with_notice`].
+/// [`Engine::new`], [`Engine::from_config`] and
+/// [`Engine::from_config_with_notice`] build the standard pipeline,
+/// UDPipe with its pinned English model, in a build with the `udpipe`
+/// feature. [`Engine::with_parser`] builds one around a parser of your
+/// own, in any build. Either way the engine reads files from the local
+/// filesystem and reads markdown, plain text and block input, and
+/// [`Engine::with_reader`] and [`Engine::with_source`] change that.
 ///
-/// An `Engine` is `Send` but not `Sync`: the model holds C-side state
-/// its parse path mutates, so an engine moves to another thread but is
-/// not shared between two. Build one on each worker thread, or serialize
-/// calls behind a `Mutex`.
+/// The engine trusts no part it holds. What a reader and the parser
+/// return is checked against their contracts ([`decompose::Decomposer`],
+/// [`nlp::NlpProvider`]) before it enters a [`Document`], and a break
+/// fails the document with [`domain::Error::ParseFailed`] naming the
+/// check, so every document an engine returns holds the invariants the
+/// domain documents, whichever parts built it.
+///
+/// An `Engine` is `Send` but not `Sync`: the UDPipe model holds C-side
+/// state its parse path mutates, and the parts are only required to be
+/// `Send`, so an engine moves to another thread but is not shared between
+/// two. Build one on each worker thread, or serialize calls behind a
+/// `Mutex`.
 pub struct Engine {
-    nlp: Box<dyn NlpProvider>,
+    parser: Box<dyn NlpProvider>,
     readers: decompose::Decomposers,
+    source: Box<dyn Source>,
 }
 
+// How a caller supplies the parts, and why it takes this shape.
+//
+// The parts are provider interfaces, implemented by callers, and the
+// engine is the client interface, called by them: two roles that evolve
+// under opposite rules, so they are separate types composed here rather
+// than one type serving both (Tulach, Practical API Design, ch. 8,
+// "Separate APIs for Clients and Providers"). A provider interface
+// freezes once implemented, since a new method puts an unsatisfiable
+// requirement on every existing implementation (Tulach, "ProviderAPI"),
+// which is why each trait is one or two methods over domain types, and
+// why the engine checks provider output instead of widening the traits
+// with ways to promise it. The traits are the extension points left
+// open, and nothing else is: the engine's fields and the shipped adapters
+// stay closed, the default for a type not designed for extension (Bloch,
+// How to Design a Good API: design and document for inheritance or else
+// prohibit it), while the traits are designed and documented for
+// implementation, which is the reason to leave a point open rather than
+// a want of foreseeing one (Cwalina and Abrams, Framework Design
+// Guidelines, on sealing).
+//
+// The construction surface is one constructor and two consuming
+// methods, not a builder type. A builder would be a second type standing
+// for the engine before it exists; every part but the parser has a
+// default, and the parser is the one argument, so `with_parser` takes it
+// and the two methods replace a default each. They also compose with
+// the standard constructors, `Engine::new()?.with_reader(..)`, which a
+// builder could only offer by publishing the UDPipe adapter to name it.
+// An earlier design rejected a builder for want of a use case; the use
+// case is a caller's own parser, reader or source, and this is the
+// smallest surface that serves it.
 impl Engine {
-    /// Wire an engine around a parser, with the readers this build ships
-    /// (markdown, plain text and block input). Crate-private: the parser
-    /// trait is, so the one parser outside the tests is UDPipe, wired by
-    /// the public constructors.
-    #[cfg(any(feature = "udpipe", test))]
-    pub(crate) fn with_parser(nlp: Box<dyn NlpProvider>) -> Self {
-        Self {
-            nlp,
+    /// An engine around `parser`, a parser of your own, with the readers
+    /// this build ships (markdown, plain text and block input) and the
+    /// file source. Available in every build, with or without `udpipe`.
+    ///
+    /// What the parser returns is checked before it enters a document
+    /// ([`nlp::NlpProvider`] states the contract), and the engine
+    /// records its [`identity`](nlp::NlpProvider::identity) in every
+    /// document's `provenance.parser`.
+    ///
+    /// ```
+    /// use matra::domain::{Format, Identity, Result, Span, Token};
+    /// use matra::nlp::NlpProvider;
+    /// use matra::{Engine, Input};
+    ///
+    /// /// One sentence per paragraph, one token per word, every word
+    /// /// attached to the first.
+    /// struct Words;
+    ///
+    /// impl NlpProvider for Words {
+    ///     fn parse(&self, text: &str) -> Result<Vec<Vec<Token>>> {
+    ///         let mut tokens = Vec::new();
+    ///         let mut at = 0;
+    ///         for word in text.split_whitespace() {
+    ///             let start = at + text[at..].find(word).unwrap_or(0);
+    ///             at = start + word.len();
+    ///             let id = tokens.len() + 1;
+    ///             let head = if id == 1 { 0 } else { 1 };
+    ///             let token = Token::builder(id, word.into(), word.to_lowercase(), "X".into(), head, "dep".into())
+    ///                 .span(Span::new(start, at))
+    ///                 .build();
+    ///             tokens.push(token);
+    ///         }
+    ///         Ok(if tokens.is_empty() { Vec::new() } else { vec![tokens] })
+    ///     }
+    ///
+    ///     fn identity(&self) -> Identity {
+    ///         Identity::new("words", None, None, None)
+    ///     }
+    /// }
+    ///
+    /// let doc = Engine::with_parser(Words).analyze(Input::text("The river rose.", Format::PlainText))?;
+    /// assert_eq!(doc.metrics.total_words, 3);
+    /// assert_eq!(doc.provenance.parser.name, "words");
+    /// # Ok::<(), matra::domain::Error>(())
+    /// ```
+    pub fn with_parser(parser: impl NlpProvider + 'static) -> Engine {
+        Engine {
+            parser: Box::new(parser),
             readers: standard_readers(),
+            source: Box::new(source::file::FileSource),
         }
+    }
+
+    /// This engine, reading `format` with `reader` in place of the reader
+    /// this build ships for it, if any.
+    ///
+    /// A reader for [`Format::Pdf`] or [`Format::Docx`], which matra
+    /// recognises and ships no reader for, makes the engine read them;
+    /// one for a [`Format::Other`] reads a format matra has no name for,
+    /// which a caller names on the input (`Input::file_as(path,
+    /// Format::named("html"))`). Detection is unchanged: a PDF or DOCX
+    /// signature still outranks the format a caller names. [`Input::blocks`]
+    /// is already blocks and reaches no reader; block input as JSON,
+    /// [`Format::Blocks`], does.
+    ///
+    /// What the reader returns is checked before it enters a document
+    /// ([`decompose::Decomposer`] states the contract).
+    ///
+    /// ```
+    /// use matra::decompose::{Decomposer, Read, ReadBlock};
+    /// use matra::domain::{Format, ParagraphKind, Result, Span};
+    ///
+    /// /// Every non-empty line is a paragraph.
+    /// struct Lines;
+    ///
+    /// impl Decomposer for Lines {
+    ///     fn decompose(&self, input: &[u8]) -> Result<Read> {
+    ///         let text = std::str::from_utf8(input).map_err(|_| matra::domain::Error::UnsupportedFormat {
+    ///             format: None,
+    ///             feature: None,
+    ///         })?;
+    ///         let mut blocks = Vec::new();
+    ///         let mut at = 0;
+    ///         for line in text.split_inclusive('\n') {
+    ///             let own = line.trim_end();
+    ///             if !own.is_empty() {
+    ///                 blocks.push(ReadBlock::paragraph(ParagraphKind::Paragraph, own, Span::new(at, at + own.len())));
+    ///             }
+    ///             at += line.len();
+    ///         }
+    ///         Ok(Read::new(blocks, Vec::new()))
+    ///     }
+    /// }
+    ///
+    /// # #[cfg(feature = "udpipe")]
+    /// # fn build() -> matra::domain::Result<matra::Engine> {
+    /// let engine = matra::Engine::new()?.with_reader(Format::named("lines"), Lines);
+    /// # Ok(engine)
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn with_reader(mut self, format: Format, reader: impl Decomposer + 'static) -> Engine {
+        self.readers = self.readers.with(format, Box::new(reader));
+        self
+    }
+
+    /// This engine, reading every path an input names ([`Input::file`],
+    /// [`Input::file_as`], each item of [`Inputs::dir`]) through `source`
+    /// in place of the local filesystem. The path is still what the
+    /// document's `provenance.source.path` records and what an extension
+    /// is read from. [`Inputs::dir`] still lists a directory on the local
+    /// filesystem, and [`Input::text`], [`Input::bytes`] and
+    /// [`Input::blocks`] reach no source.
+    ///
+    /// The engine caps what a source returns at [`MAX_INPUT_BYTES`]
+    /// ([`source::Source`] states the contract).
+    #[must_use]
+    pub fn with_source(mut self, source: impl Source + 'static) -> Engine {
+        self.source = Box::new(source);
+        self
     }
 
     /// Analyze one document: read it, parse each paragraph, and measure
@@ -295,11 +445,13 @@ impl Engine {
     /// # Errors
     ///
     /// [`domain::Error::InputTooLarge`] over [`MAX_INPUT_BYTES`];
-    /// [`domain::Error::UnsupportedFormat`] for a format no reader ships
-    /// for, or bytes that are not UTF-8; [`domain::Error::InvalidInput`]
-    /// for a directory named as a file and for block input that does not
-    /// parse; [`domain::Error::Io`] when a file cannot be read; and
-    /// [`domain::Error::ParseFailed`] when the parser fails.
+    /// [`domain::Error::UnsupportedFormat`] for a format the engine has
+    /// no reader for, or bytes that are not UTF-8;
+    /// [`domain::Error::InvalidInput`] for a directory named as a file and
+    /// for block input that does not parse; [`domain::Error::Io`] when a
+    /// file cannot be read; and [`domain::Error::ParseFailed`] when the
+    /// parser or a reader fails, or returns what its contract forbids,
+    /// with `reason` naming the check that failed.
     pub fn analyze(&self, input: Input) -> domain::Result<Document> {
         let mut doc = self.annotate(input)?;
         self.compose(&mut doc);
@@ -370,35 +522,34 @@ impl Engine {
     /// [`NlpProvider::identity`], the format, and the input's path and
     /// the analysed text's length and SHA-256.
     ///
+    /// The engine's checks run here, at the two places provider output
+    /// enters: the reader's blocks against the analysed text, before the
+    /// section tree is built from them, and each paragraph's parse
+    /// against the paragraph's text, before its spans are mapped and its
+    /// sentences built (`conform`).
+    ///
     /// # Errors
     ///
     /// [`domain::Error::InputTooLarge`] over the cap;
-    /// [`domain::Error::UnsupportedFormat`] for a format no reader ships
-    /// for, or bytes that are not UTF-8; [`domain::Error::InvalidInput`]
-    /// for a directory named as a file and for block input that does not
-    /// parse; [`domain::Error::Io`] when a file cannot be read; and
-    /// whatever the parser returns.
+    /// [`domain::Error::UnsupportedFormat`] for a format the engine has
+    /// no reader for, or bytes that are not UTF-8;
+    /// [`domain::Error::InvalidInput`] for a directory named as a file and
+    /// for block input that does not parse; [`domain::Error::Io`] when a
+    /// file cannot be read; [`domain::Error::ParseFailed`] naming the
+    /// check when a reader's or the parser's output breaks its contract;
+    /// and whatever the source, the reader or the parser returns.
     pub(crate) fn annotate(&self, input: Input) -> domain::Result<Document> {
         let path = input.path().map(Path::to_path_buf);
-        let (format, input_text, read) = match input.0 {
+        let (format, input_text, mut read) = match input.0 {
             InputKind::Text { text, format } => {
                 check_input_size(text.len())?;
-                let read = self.reader(&format)?.decompose(&text)?;
+                let read = self.reader(&format)?.decompose(text.as_bytes())?;
                 (format, text, read)
             }
             InputKind::Bytes { data, format } => self.read_bytes(data, format.as_ref(), None)?,
             InputKind::File { path, format } => {
-                let fetched = source::file::FileSource
-                    .read(&path)?
-                    .into_iter()
-                    .next()
-                    .ok_or_else(|| {
-                        domain::Error::Io(std::io::Error::new(
-                            std::io::ErrorKind::InvalidData,
-                            "source returned no documents",
-                        ))
-                    })?;
-                self.read_bytes(fetched.bytes, format.as_ref(), Some(&fetched.path))?
+                let bytes = self.source.read(&path)?;
+                self.read_bytes(bytes, format.as_ref(), Some(&path))?
             }
             InputKind::Blocks(blocks) => (
                 Format::Blocks,
@@ -406,35 +557,42 @@ impl Engine {
                 decompose::blocks::assemble(&blocks)?,
             ),
         };
-        let text = read.text.unwrap_or(input_text);
+        let text = read.text.take().unwrap_or(input_text);
         check_input_size(text.len())?;
+        conform::read(&text, &read)?;
 
         let provenance = domain::Provenance::new(
-            self.nlp.identity(),
+            self.parser.identity(),
             format,
             domain::ProvenanceSource::new(path, text.len(), digest::sha256_hex(text.as_bytes())),
         );
         let (sections, maps) = structure::sections(read.blocks);
         let mut doc = Document::new(provenance, sections, read.skipped);
-        for (para, map) in doc.paragraphs_mut().zip(&maps) {
+        for (index, (para, map)) in doc.paragraphs_mut().zip(&maps).enumerate() {
             if para.kind == ParagraphKind::Quote {
                 continue;
             }
-            let mut sentences = self.nlp.parse(&para.text)?;
-            for sentence in &mut sentences {
-                sentence.span = map.map(sentence.span);
-                for token in &mut sentence.tokens {
-                    token.span = map.map(token.span);
-                }
-                sentence.hearst_pairs = hearst::hypernymy_pairs(&sentence.tokens);
-            }
-            para.sentences = sentences;
+            let parsed = self.parser.parse(&para.text)?;
+            conform::parse(index + 1, &para.text, &parsed)?;
+            para.sentences = parsed
+                .into_iter()
+                .map(|mut tokens| {
+                    for token in &mut tokens {
+                        token.span = map.map(token.span);
+                    }
+                    let mut sentence = domain::Sentence::from_tokens(tokens);
+                    sentence.hearst_pairs = hearst::hypernymy_pairs(&sentence.tokens);
+                    sentence
+                })
+                .collect();
         }
         Ok(doc)
     }
 
-    /// Detect the format of `bytes`, decode them, and read them: the
-    /// shared half of byte and file input.
+    /// Detect the format of `bytes` and read them: the shared half of
+    /// byte and file input. The bytes are decoded as the analysed text
+    /// only when the reader names no analysed text of its own, so a
+    /// reader of a binary format is never asked for UTF-8.
     fn read_bytes(
         &self,
         bytes: Vec<u8>,
@@ -443,9 +601,12 @@ impl Engine {
     ) -> domain::Result<(Format, String, decompose::Read)> {
         check_input_size(bytes.len())?;
         let format = detect::format_of(&bytes, declared, name);
-        let reader = self.reader(&format)?;
-        let text = detect::decode(bytes)?;
-        let read = reader.decompose(&text)?;
+        let read = self.reader(&format)?.decompose(&bytes)?;
+        let text = if read.text.is_some() {
+            String::new()
+        } else {
+            detect::decode(bytes)?
+        };
         Ok((format, text, read))
     }
 
@@ -514,8 +675,7 @@ impl Engine {
     /// or written, or the download fails; [`domain::Error::ModelInvalid`]
     /// when the downloaded bytes fail the pinned digest or do not load.
     pub fn from_config(cfg: &config::Config) -> domain::Result<Engine> {
-        let nlp = nlp::udpipe::Udpipe::from_config(cfg)?;
-        Ok(Engine::with_parser(Box::new(nlp)))
+        Ok(Engine::with_parser(nlp::udpipe::Udpipe::from_config(cfg)?))
     }
 
     /// [`Engine::from_config`], with `notice` called once before each
@@ -541,42 +701,48 @@ impl Engine {
         cfg: &config::Config,
         notice: impl FnMut(&domain::ProvisionNotice),
     ) -> domain::Result<Engine> {
-        let nlp = nlp::udpipe::Udpipe::from_config_with_notice(cfg, notice)?;
-        Ok(Engine::with_parser(Box::new(nlp)))
+        Ok(Engine::with_parser(
+            nlp::udpipe::Udpipe::from_config_with_notice(cfg, notice)?,
+        ))
     }
 }
 
 /// The reader this build ships for `format`, or `None` for a format that
-/// is recognised but has no reader.
+/// is recognised but has no reader, and for a format matra has no name
+/// for, which only a caller's reader reads.
 ///
 /// The match is deliberately exhaustive with no wildcard: adding a
 /// `Format` variant fails compilation here, so a new format is a
 /// conscious registration decision rather than a silent
 /// `Error::UnsupportedFormat` at run time.
-#[cfg(any(feature = "udpipe", test))]
 fn default_reader(format: &Format) -> Option<Box<dyn Decomposer>> {
     match format {
         Format::Markdown => Some(Box::new(decompose::markdown::MarkdownDecomposer)),
         Format::PlainText => Some(Box::new(decompose::plain::PlainTextDecomposer)),
         Format::Blocks => Some(Box::new(decompose::blocks::BlocksDecomposer)),
-        Format::Pdf | Format::Docx => None,
+        Format::Pdf | Format::Docx | Format::Other(_) => None,
     }
 }
 
 /// The Cargo feature that would add a reader for `format`, for the
 /// `UnsupportedFormat` message. No feature of this version reads PDF or
-/// DOCX. Exhaustive for the same reason as [`default_reader`]: a reader
-/// behind a feature is a decision to record here.
+/// DOCX, and none reads a format matra has no name for. Exhaustive for
+/// the same reason as [`default_reader`]: a reader behind a feature is a
+/// decision to record here.
 fn reader_feature(format: &Format) -> Option<&'static str> {
     match format {
-        Format::Markdown | Format::PlainText | Format::Blocks | Format::Pdf | Format::Docx => None,
+        Format::Markdown
+        | Format::PlainText
+        | Format::Blocks
+        | Format::Pdf
+        | Format::Docx
+        | Format::Other(_) => None,
     }
 }
 
 /// The reader table this build ships: markdown, plain text and block
 /// input. Lives in the composition root because it is the only place
 /// that names every adapter (boundary rule 7).
-#[cfg(any(feature = "udpipe", test))]
 fn standard_readers() -> decompose::Decomposers {
     let mut table = decompose::Decomposers::new();
     for format in [
@@ -714,11 +880,53 @@ mod tests {
         assert_send::<Engine>();
     }
 
+    /// The whitespace-separated words of `text[from..to]` as one
+    /// sentence that meets the parser contract: ids `1..=n`, the first
+    /// word the root and every other attached to it, and each span where
+    /// the word lies in `text`. Empty when the range holds no word.
+    fn flat_sentence(text: &str, from: usize, to: usize) -> Vec<domain::Token> {
+        let mut tokens = Vec::new();
+        let mut at = from;
+        for word in text[from..to].split_whitespace() {
+            let start = at + text[at..to].find(word).unwrap_or(0);
+            at = start + word.len();
+            let id = tokens.len() + 1;
+            tokens.push(
+                domain::Token::builder(
+                    id,
+                    word.to_string(),
+                    word.to_lowercase(),
+                    "X".to_string(),
+                    usize::from(id > 1),
+                    "dep".to_string(),
+                )
+                .span(Span::new(start, at))
+                .build(),
+            );
+        }
+        tokens
+    }
+
+    /// `tokens` with each span placed where its form next lies in
+    /// `text`, for a stand-in that emits a fixed parse of a fixed text.
+    fn placed(text: &str, mut tokens: Vec<domain::Token>) -> Vec<domain::Token> {
+        let mut at = 0;
+        for token in &mut tokens {
+            let start = at
+                + text[at..]
+                    .find(&token.text)
+                    .expect("the form is in the text");
+            at = start + token.text.len();
+            token.span = Span::new(start, at);
+        }
+        tokens
+    }
+
     /// Minimal NlpProvider that returns no sentences. Lets us test composition-root
     /// gates (input size, etc.) without requiring a real NLP backend.
     struct EmptyNlp;
     impl NlpProvider for EmptyNlp {
-        fn parse(&self, _text: &str) -> domain::Result<Vec<domain::Sentence>> {
+        fn parse(&self, _text: &str) -> domain::Result<Vec<Vec<domain::Token>>> {
             Ok(Vec::new())
         }
         fn identity(&self) -> domain::Identity {
@@ -726,19 +934,23 @@ mod tests {
         }
     }
 
-    /// Splits the input on `.` and returns one [`Sentence`] per non-empty
-    /// piece. Tokens are not constructed (the pipeline tests below only
+    /// Splits the input on `.` and returns one sentence per piece that
+    /// holds a word, its words as flat tokens (the pipeline tests below
     /// look at sentence text and counts). Lets us assert the
     /// per-paragraph parse contract without a real NLP backend.
     struct DotSplitNlp;
     impl NlpProvider for DotSplitNlp {
-        fn parse(&self, text: &str) -> domain::Result<Vec<domain::Sentence>> {
-            Ok(text
-                .split('.')
-                .map(str::trim)
-                .filter(|s| !s.is_empty())
-                .map(|s| domain::Sentence::new(s.to_string(), Vec::new()))
-                .collect())
+        fn parse(&self, text: &str) -> domain::Result<Vec<Vec<domain::Token>>> {
+            let mut sentences = Vec::new();
+            let mut from = 0;
+            for piece in text.split('.') {
+                let sentence = flat_sentence(text, from, from + piece.len());
+                if !sentence.is_empty() {
+                    sentences.push(sentence);
+                }
+                from += piece.len() + 1;
+            }
+            Ok(sentences)
         }
         fn identity(&self) -> domain::Identity {
             domain::Identity::new("dot-split", None, None, None)
@@ -751,30 +963,13 @@ mod tests {
     /// engine mapping those spans into the analysed text.
     struct WordNlp;
     impl NlpProvider for WordNlp {
-        fn parse(&self, text: &str) -> domain::Result<Vec<domain::Sentence>> {
-            let mut tokens = Vec::new();
-            let mut at = 0;
-            for word in text.split_whitespace() {
-                let start = at + text[at..].find(word).unwrap_or(0);
-                let end = start + word.len();
-                tokens.push(
-                    domain::Token::builder(
-                        tokens.len() + 1,
-                        word.to_string(),
-                        word.to_lowercase(),
-                        "X".to_string(),
-                        0,
-                        "dep".to_string(),
-                    )
-                    .span(Span::new(start, end))
-                    .build(),
-                );
-                at = end;
-            }
-            if tokens.is_empty() {
-                return Ok(Vec::new());
-            }
-            Ok(vec![domain::Sentence::new(text.to_string(), tokens)])
+        fn parse(&self, text: &str) -> domain::Result<Vec<Vec<domain::Token>>> {
+            let sentence = flat_sentence(text, 0, text.len());
+            Ok(if sentence.is_empty() {
+                Vec::new()
+            } else {
+                vec![sentence]
+            })
         }
         fn identity(&self) -> domain::Identity {
             domain::Identity::new("words", None, None, None)
@@ -811,7 +1006,7 @@ mod tests {
         }
     }
     impl NlpProvider for ObservableNlp {
-        fn parse(&self, text: &str) -> domain::Result<Vec<domain::Sentence>> {
+        fn parse(&self, text: &str) -> domain::Result<Vec<Vec<domain::Token>>> {
             self.calls.fetch_add(1, Ordering::SeqCst);
             self.max_len_seen.fetch_max(text.len(), Ordering::SeqCst);
             if text.contains("POISON") {
@@ -828,7 +1023,7 @@ mod tests {
     }
 
     fn law_engine() -> Engine {
-        Engine::with_parser(Box::new(DotSplitNlp))
+        Engine::with_parser(DotSplitNlp)
     }
 
     /// Structural fingerprint for law equality: serialized documents plus
@@ -926,7 +1121,7 @@ mod tests {
     #[test]
     fn law_l5_partition_documents_plus_errors_equals_inputs() {
         let (nlp, _, _) = ObservableNlp::new();
-        let engine = Engine::with_parser(Box::new(nlp));
+        let engine = Engine::with_parser(nlp);
         let dir = tempfile::tempdir().unwrap();
         let mut inputs: Vec<Input> = constructors("Good document one.", dir.path())
             .into_iter()
@@ -954,7 +1149,7 @@ mod tests {
     #[test]
     fn law_l6_a_failed_read_never_reaches_the_parser() {
         let (nlp, calls, _) = ObservableNlp::new();
-        let engine = Engine::with_parser(Box::new(nlp));
+        let engine = Engine::with_parser(nlp);
         let dir = tempfile::tempdir().unwrap();
         let ghost = dir.path().join("ghost.md");
         let inputs = vec![
@@ -986,7 +1181,7 @@ mod tests {
     #[test]
     fn law_l7_no_oversized_input_reaches_the_parser() {
         let (nlp, _, max_len) = ObservableNlp::new();
-        let engine = Engine::with_parser(Box::new(nlp));
+        let engine = Engine::with_parser(nlp);
         let dir = tempfile::tempdir().unwrap();
         let oversized = "a".repeat(MAX_INPUT_BYTES + 1);
         for (name, input) in constructors(&oversized, dir.path()) {
@@ -1063,7 +1258,7 @@ mod tests {
     }
 
     fn accounting_engine() -> Engine {
-        Engine::with_parser(Box::new(EmptyNlp))
+        Engine::with_parser(EmptyNlp)
     }
 
     /// L8 over every conformance fixture, in the format it names.
@@ -1219,7 +1414,7 @@ mod tests {
     /// removed.
     #[test]
     fn token_and_sentence_spans_point_into_the_analysed_text() {
-        let engine = Engine::with_parser(Box::new(WordNlp));
+        let engine = Engine::with_parser(WordNlp);
         let md = "# Title\n\nSome **bold** and `code` here.\n\n- item text";
         let doc = engine.analyze(Input::text(md, Format::Markdown)).unwrap();
         let tokens: Vec<&str> = doc
@@ -1239,7 +1434,7 @@ mod tests {
 
     #[test]
     fn spans_count_bytes_not_characters() {
-        let engine = Engine::with_parser(Box::new(WordNlp));
+        let engine = Engine::with_parser(WordNlp);
         let text = "Café naïve.\n\nÜber.";
         let doc = engine
             .analyze(Input::text(text, Format::PlainText))
@@ -1259,31 +1454,15 @@ mod tests {
     /// sentences whose spans do not start at the paragraph's start.
     struct SentenceNlp;
     impl NlpProvider for SentenceNlp {
-        fn parse(&self, text: &str) -> domain::Result<Vec<domain::Sentence>> {
+        fn parse(&self, text: &str) -> domain::Result<Vec<Vec<domain::Token>>> {
             let mut sentences = Vec::new();
-            let mut tokens: Vec<domain::Token> = Vec::new();
+            let mut from = 0;
             let mut at = 0;
             for word in text.split_whitespace() {
-                let start = at + text[at..].find(word).unwrap_or(0);
-                at = start + word.len();
-                tokens.push(
-                    domain::Token::builder(
-                        tokens.len() + 1,
-                        word.to_string(),
-                        word.to_lowercase(),
-                        "X".to_string(),
-                        0,
-                        "dep".to_string(),
-                    )
-                    .span(Span::new(start, at))
-                    .build(),
-                );
+                at += text[at..].find(word).unwrap_or(0) + word.len();
                 if word.ends_with('.') {
-                    let words: Vec<&str> = tokens.iter().map(|t| t.text.as_str()).collect();
-                    sentences.push(domain::Sentence::new(
-                        words.join(" "),
-                        std::mem::take(&mut tokens),
-                    ));
+                    sentences.push(flat_sentence(text, from, at));
+                    from = at;
                 }
             }
             Ok(sentences)
@@ -1299,7 +1478,7 @@ mod tests {
     /// same numbers taken as characters are not.
     #[test]
     fn non_ascii_sentence_spans_slice_as_bytes() {
-        let engine = Engine::with_parser(Box::new(SentenceNlp));
+        let engine = Engine::with_parser(SentenceNlp);
         let text = "Café ☕ is open. Naïve plan.";
         let doc = engine
             .analyze(Input::text(text, Format::PlainText))
@@ -1324,7 +1503,7 @@ mod tests {
     /// and every span and the provenance describe that text.
     #[test]
     fn block_input_spans_point_into_the_joined_text() {
-        let engine = Engine::with_parser(Box::new(WordNlp));
+        let engine = Engine::with_parser(WordNlp);
         let doc = engine
             .analyze(Input::blocks([
                 Block::heading(1, "Field notes"),
@@ -1348,7 +1527,7 @@ mod tests {
     #[test]
     fn a_quote_is_not_parsed() {
         let (nlp, calls, _) = ObservableNlp::new();
-        let engine = Engine::with_parser(Box::new(nlp));
+        let engine = Engine::with_parser(nlp);
         let doc = engine
             .analyze(Input::text("> Quoted words.", Format::Markdown))
             .unwrap();
@@ -1631,7 +1810,7 @@ mod tests {
     #[test]
     fn input_at_cap_is_accepted() {
         // "a" repeated MAX_INPUT_BYTES times = exactly the cap.
-        let engine = Engine::with_parser(Box::new(EmptyNlp));
+        let engine = Engine::with_parser(EmptyNlp);
         assert!(
             engine
                 .annotate(Input::text("a".repeat(MAX_INPUT_BYTES), Format::PlainText))
@@ -1642,7 +1821,7 @@ mod tests {
 
     #[test]
     fn input_one_byte_over_cap_is_rejected() {
-        let engine = Engine::with_parser(Box::new(EmptyNlp));
+        let engine = Engine::with_parser(EmptyNlp);
         match engine.annotate(Input::text(
             "a".repeat(MAX_INPUT_BYTES + 1),
             Format::PlainText,
@@ -1697,7 +1876,7 @@ mod tests {
         /// pipeline running the detector without a real model.
         struct SuchAsNlp;
         impl NlpProvider for SuchAsNlp {
-            fn parse(&self, _text: &str) -> domain::Result<Vec<domain::Sentence>> {
+            fn parse(&self, text: &str) -> domain::Result<Vec<Vec<domain::Token>>> {
                 let tok = |id: usize, text: &str, lemma: &str, pos: &str, dep: &str, head| {
                     domain::Token::builder(
                         id,
@@ -1709,8 +1888,8 @@ mod tests {
                     )
                     .build()
                 };
-                Ok(vec![domain::Sentence::new(
-                    "Animals such as dogs bark".to_string(),
+                Ok(vec![placed(
+                    text,
                     vec![
                         tok(1, "Animals", "animal", "NOUN", "nsubj", 5),
                         tok(2, "such", "such", "ADJ", "case", 4),
@@ -1726,9 +1905,9 @@ mod tests {
             }
         }
 
-        let engine = Engine::with_parser(Box::new(SuchAsNlp));
+        let engine = Engine::with_parser(SuchAsNlp);
         let doc = engine
-            .annotate(Input::text("any text", Format::PlainText))
+            .annotate(Input::text("Animals such as dogs bark", Format::PlainText))
             .unwrap();
         let sentence = doc.sentences().next().expect("one sentence");
         assert_eq!(sentence.hearst_pairs.len(), 1, "annotate ran the detector");
@@ -1793,26 +1972,18 @@ mod tests {
         // exercises a hand-built reader table end to end.
         struct InjectEmptyParagraph;
         impl Decomposer for InjectEmptyParagraph {
-            fn decompose(&self, text: &str) -> domain::Result<decompose::Read> {
-                let mut read = decompose::plain::PlainTextDecomposer.decompose(text)?;
+            fn decompose(&self, input: &[u8]) -> domain::Result<decompose::Read> {
+                let mut read = decompose::plain::PlainTextDecomposer.decompose(input)?;
                 read.blocks.insert(
                     0,
-                    decompose::ReadBlock::Paragraph {
-                        kind: ParagraphKind::Paragraph,
-                        text: String::new(),
-                        span: Span::default(),
-                        map: decompose::TextMap::at(0),
-                    },
+                    decompose::ReadBlock::paragraph(ParagraphKind::Paragraph, "", Span::default()),
                 );
                 Ok(read)
             }
         }
 
-        let engine = Engine {
-            nlp: Box::new(DotSplitNlp),
-            readers: decompose::Decomposers::new()
-                .with(Format::PlainText, Box::new(InjectEmptyParagraph)),
-        };
+        let engine =
+            Engine::with_parser(DotSplitNlp).with_reader(Format::PlainText, InjectEmptyParagraph);
         let analysis = engine
             .analyze(Input::text(
                 "Real content sentence.\n\nAnother real one.",
@@ -1865,7 +2036,7 @@ mod tests {
     }
 
     fn two_sentence_doc() -> Document {
-        let engine = Engine::with_parser(Box::new(DotSplitNlp));
+        let engine = Engine::with_parser(DotSplitNlp);
         engine
             .annotate(Input::text(
                 "One sentence. Another sentence.",
@@ -1923,7 +2094,7 @@ mod tests {
     #[test]
     fn clusters_caps_before_embedding() {
         let many = "Word. ".repeat(domain::limits::MAX_CLUSTER_SENTENCES + 1);
-        let engine = Engine::with_parser(Box::new(DotSplitNlp));
+        let engine = Engine::with_parser(DotSplitNlp);
         let doc = engine
             .annotate(Input::text(many, Format::PlainText))
             .expect("annotate");
@@ -1954,7 +2125,7 @@ mod tests {
     /// the method that ran and the `n` they were asked for.
     #[test]
     fn outcomes_record_the_method_and_n() {
-        let doc = Engine::with_parser(Box::new(WordNlp))
+        let doc = Engine::with_parser(WordNlp)
             .analyze(Input::text(
                 "Rivers carry silt.\n\nSilt builds deltas.",
                 Format::PlainText,
@@ -1998,7 +2169,7 @@ mod tests {
     #[test]
     fn a_summary_sentence_points_into_the_document() {
         let text = "Rivers carry silt downstream.\n\nThe silt settles where rivers slow.";
-        let doc = Engine::with_parser(Box::new(WordNlp))
+        let doc = Engine::with_parser(WordNlp)
             .analyze(Input::text(text, Format::PlainText))
             .unwrap();
         let summary = summarize(&doc, 2).unwrap();
@@ -2049,8 +2220,14 @@ mod tests {
     /// field on `Sentence` is populated.
     struct RecordParser;
 
+    /// The text [`RecordParser`] parses with every arc populated.
+    const RECORD_SENTENCE: &str = "Smith never said that animals such as dogs may bark.";
+
     impl NlpProvider for RecordParser {
-        fn parse(&self, _text: &str) -> domain::Result<Vec<domain::Sentence>> {
+        fn parse(&self, text: &str) -> domain::Result<Vec<Vec<domain::Token>>> {
+            if text != RECORD_SENTENCE {
+                return WordNlp.parse(text);
+            }
             let tok = |id: usize, text: &str, pos: &str, dep: &str, head: usize, feats: &str| {
                 domain::Token::builder(
                     id,
@@ -2064,8 +2241,8 @@ mod tests {
                 .is_punct(pos == "PUNCT")
                 .build()
             };
-            Ok(vec![domain::Sentence::new(
-                "Smith never said that animals such as dogs may bark.".to_string(),
+            Ok(vec![placed(
+                text,
                 vec![
                     tok(1, "Smith", "PROPN", "nsubj", 3, "Number=Sing"),
                     tok(2, "never", "ADV", "advmod", 3, "_"),
@@ -2100,7 +2277,7 @@ mod tests {
     }
 
     fn record_document(text: &str, format: Format) -> Document {
-        Engine::with_parser(Box::new(RecordParser))
+        Engine::with_parser(RecordParser)
             .analyze(Input::text(text, format))
             .expect("analyze")
     }
@@ -2111,7 +2288,7 @@ mod tests {
 
     #[test]
     fn a_plain_text_document_matches_the_schema() {
-        let doc = record_json("One paragraph of prose.", Format::PlainText);
+        let doc = record_json(RECORD_SENTENCE, Format::PlainText);
         // The stand-in emits every record field, so the check below is
         // over populated arrays and objects rather than empty ones.
         let sentence = &doc["sections"][0]["paragraphs"][0]["sentences"][0];
@@ -2182,7 +2359,7 @@ mod tests {
         assert_eq!(doc["sections"][0]["heading"], "Field notes");
         document_schema::assert_valid("document", &doc, "block input");
 
-        let engine = Engine::with_parser(Box::new(RecordParser));
+        let engine = Engine::with_parser(RecordParser);
         for bad in [
             serde_json::json!([{"kind": "table", "text": "x"}]),
             serde_json::json!([{"kind": "heading", "level": 0, "text": "x"}]),
@@ -2219,7 +2396,8 @@ mod tests {
     /// schema, with the derived provenance the document's schema allows.
     #[test]
     fn every_outcome_of_a_parsed_document_matches_its_schema() {
-        let doc = record_document("First paragraph.\n\nSecond paragraph.", Format::PlainText);
+        let text = format!("{RECORD_SENTENCE}\n\n{RECORD_SENTENCE}");
+        let doc = record_document(&text, Format::PlainText);
         for method in [SummaryMethod::TfIdf, SummaryMethod::TextRank] {
             let value = serde_json::to_value(summarize_with(&doc, 1, method).unwrap()).unwrap();
             document_schema::assert_valid("summary", &value, method.name());
@@ -2345,7 +2523,7 @@ mod tests {
             }
         }
 
-        let items: Vec<_> = Engine::with_parser(Box::new(EmptyNlp))
+        let items: Vec<_> = Engine::with_parser(EmptyNlp)
             .analyze_all(Inputs::dir(dir.path()).unwrap())
             .collect();
 

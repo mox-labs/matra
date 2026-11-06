@@ -39,12 +39,32 @@ A file whose hash does not match the pinned constant is treated as untrusted and
 
 ### ParseFailed
 
-Returned by the UDPipe adapter's `parse` in three situations:
+The parser or a reader failed on the input, or returned what its contract forbids. The remedy is the component, not the call: the same input through the same parser fails the same way. `cause` is free text for a person, and `reason` is present when the failure is one of the engine's checks.
 
-- The underlying parser returns an error. The payload is that error's message.
-- The underlying parser panics. The payload is `udpipe panicked: <message>`. The `catch_unwind` boundary that produces this lives in `nlp/udpipe.rs`, and it exists because an unhandled panic crossing the C++ boundary aborts the host process instead of unwinding.
-- A token id or head value cannot be represented as `usize`. The payload names the token and its sentence.
-- A token's form cannot be found in the paragraph text the parser was given, at or after the previous token, so the token has no span. The payload names the token, its sentence and the byte the search began at. The adapter reports this rather than a guessed span.
+A parser or a reader reports its own failure with `reason` `None`. The UDPipe adapter's `parse` does so in four situations:
+
+- The underlying parser returns an error. The cause is that error's message.
+- The underlying parser panics. The cause is `udpipe panicked: <message>`. The `catch_unwind` boundary that produces this lives in `nlp/udpipe.rs`, and it exists because an unhandled panic crossing the C++ boundary aborts the host process instead of unwinding.
+- A token id or head value cannot be represented as `usize`. The cause names the token and its sentence.
+- A token's form cannot be found in the paragraph text the parser was given, at or after the previous token, so the token has no span. The cause names the token, its sentence and the byte the search began at. The adapter reports this rather than a guessed span.
+
+The engine trusts no parser and no reader, matra's own included. Before anything a reader returns becomes a section, and before anything the parser returns for a paragraph becomes a sentence, the engine checks it against the contract its trait states (`matra::decompose::Decomposer`, `matra::nlp::NlpProvider`), and a break fails the document with `reason` naming the check and `cause` naming the block, or the paragraph, sentence and token:
+
+| `reason` | Check that failed | Of |
+|---|---|---|
+| `token_id_sequence` | A sentence's token ids do not run `1..=n` in order | the parser |
+| `head_out_of_range` | A head is neither `0` nor the id of a token in the sentence | the parser |
+| `root_count` | A sentence has no token whose head is `0`, or more than one; a sentence with no tokens has none | the parser |
+| `head_cycle` | Following heads from a token never reaches the root | the parser |
+| `token_span_invalid` | A token's span is reversed, runs past the paragraph, or splits a character | the parser |
+| `token_span_order` | A token's span starts before the previous token's ends, within a sentence or across two | the parser |
+| `token_form_mismatch` | The paragraph text at a token's span is not its form (a run of whitespace in the form matches any run of whitespace) | the parser |
+| `block_span_invalid` | A block's or a skipped construct's span is reversed, runs past the analysed text, or splits a character | a reader |
+| `block_span_order` | The blocks are out of document order, or two spans among the blocks and skipped constructs overlap | a reader |
+| `heading_level` | A heading is at level 0 | a reader |
+| `paragraph_text_mismatch` | A paragraph's text is not the analysed text its span covers | a reader |
+
+A conforming parser or reader is one whose output passes these checks on every input it accepts. The checks are a pass over what they read: on the docsite's own pages they cost about 0.014% of UDPipe's parse time, about 3 microseconds a paragraph.
 
 ### InputTooLarge
 
@@ -69,7 +89,7 @@ The caps bound worst-case memory and time. TextRank builds a dense similarity ma
 
 A document from disk crosses both gates in sequence: `"file_read"` when the file is read, `"input"` before it is parsed. In practice `"file_read"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
-The parser is private to the crate, so no caller reaches it except through the engine, and no text bypasses the `"input"` gate.
+Every route from text to a parser, a parser of your own included, runs through the engine, so no text bypasses the `"input"` gate on its way to one.
 
 The label has a second producer. The CLI reads stdin through `read_capped` in `src/cli/mod.rs`, which reads at most one byte past `MAX_INPUT_BYTES` and returns `InputTooLarge` with `what` set to `"input"` before the bytes ever reach the engine. Same limit, same label, so a caller sees one gate however the text arrived. The CLI never decodes what it reads: the bytes go to the engine as `Input::bytes`, so an oversized pipe is reported as too large, and a pipe that is not UTF-8 is `UnsupportedFormat`, as a file's bytes would be.
 
@@ -127,7 +147,7 @@ A config file that is simply absent is not an error for `Config::resolve`, and t
 
 Returned by `Engine::analyze` in two cases:
 
-- The input's format has no reader in this build: `Pdf` or `Docx`, whether named by the caller, read off the extension, or recognised from the bytes (`%PDF`, or a zip archive holding `[Content_Types].xml`, which outranks the extension). `format` is that format, and `feature` names the Cargo feature that would read it; no feature of this version reads either, so `feature` is `None`. `Markdown`, `PlainText` and `Blocks` always have a reader.
+- The engine has no reader for the input's format: `Pdf` or `Docx`, whether named by the caller, read off the extension, or recognised from the bytes (`%PDF`, or a zip archive holding `[Content_Types].xml`, which outranks the extension), or a `Format::Other` the caller named and registered no reader for. `format` is that format, and `feature` names the Cargo feature that would read it; no feature of this version reads any of them, so `feature` is `None`. A reader registered with `Engine::with_reader` reads any of them. `Markdown`, `PlainText` and `Blocks` always have a reader.
 - The bytes are not UTF-8 text and carry no signature matra recognises. `format` and `feature` are both `None`. This used to be `Io` with kind `InvalidData`; nothing went wrong reading the bytes, so it is now a kind with a remedy.
 
 A UTF-8 file with an extension matra does not know is not this error: it reads as plain text.
@@ -255,7 +275,7 @@ These are the strings `Display` produces, which are also the strings Python's `s
 | `ModelInvalid(s)` | `invalid model: {s}` | `model_invalid` |
 | `ParseFailed { reason, cause }` | `parse failed: {cause}` | `parse_failed` |
 | `InputTooLarge { limit, actual, what }` | `{what} input too large: {actual} > limit {limit}`, or `input too large: {actual} > limit {limit}` when `what` is `"input"` | `input_too_large` |
-| `UnsupportedFormat { format, feature }` | `unsupported format: {format}; no feature of this matra version reads it`, `` unsupported format: {format}; enable the `{feature}` feature to read it ``, or `unsupported format: the input is not UTF-8 text and carries no signature matra recognises` when `format` is `None` | `unsupported_format` |
+| `UnsupportedFormat { format, feature }` | `unsupported format: {format}; no feature of this matra version reads it`, `unsupported format: {format}; no reader is registered for it` for a `Format::Other`, `` unsupported format: {format}; enable the `{feature}` feature to read it ``, or `unsupported format: the input is not UTF-8 text and carries no signature matra recognises` when `format` is `None` | `unsupported_format` |
 | `InvalidInput { reason, message }` | `invalid input: {message}` | `invalid_input` |
 | `Io(e)` | `io error: {e}` | `io` |
 
