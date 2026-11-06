@@ -360,13 +360,13 @@
       "words": 8
     },
     {
-      "compression_ratio": 0.5767,
+      "compression_ratio": 0.5539,
       "kind": "paragraph",
-      "lexical_density": 0.5735,
-      "readability_grade": 9.2606,
-      "sentences": 3,
-      "text": "Every heading, paragraph, skipped construct, sentence and token has a span, {\"start\": int, \"end\": int}, into the analysed text. It counts UTF-8 bytes, not characters, so slice with matra.span_text(text, span), which encodes the text and decodes the stretch for you. The text fields are normalized (a sentence's text is rebuilt from its tokens, a markdown paragraph's has its markup removed); the span is where the value came from.",
-      "words": 73
+      "lexical_density": 0.5604,
+      "readability_grade": 10.3102,
+      "sentences": 4,
+      "text": "Every heading, paragraph, skipped construct, sentence and token has a span, {\"byte_start\": int, \"byte_end\": int}, into the analysed text. It counts UTF-8 bytes, not characters, as the field names say: text[span[\"byte_start\"]:span[\"byte_end\"]] on a str is right on ASCII and wrong, with no error, after the first character outside it. Slice with matra.span_text(text, span), which encodes the text and decodes the stretch for you. The text fields are normalized (a sentence's text is rebuilt from its tokens, a markdown paragraph's has its markup removed); the span is where the value came from.",
+      "words": 100
     },
     {
       "compression_ratio": 0.6352,

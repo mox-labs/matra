@@ -486,13 +486,13 @@
       "words": 81
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.5351,
       "kind": "paragraph",
-      "lexical_density": 0.5588,
-      "readability_grade": 6.0866,
-      "sentences": 4,
-      "text": "A stretch of the analysed text in UTF-8 bytes, so &text[span.start..span.end] is the stretch. Bytes rather than characters: a caller in a language that indexes strings by character converts. Span::new(start, end) is the constructor.",
-      "words": 40
+      "lexical_density": 0.5507,
+      "readability_grade": 7.2694,
+      "sentences": 5,
+      "text": "A stretch of the analysed text in UTF-8 bytes, so &text[span.byte_start..span.byte_end] is the stretch. Bytes rather than characters: a caller in a language that indexes strings by character converts. The unit is in the field names because a byte span used to slice a character-indexed string, a Python str, is right on ASCII and wrong, with no error, after the first character outside it. Span::new(byte_start, byte_end) is the constructor.",
+      "words": 76
     },
     {
       "compression_ratio": 0.6083,

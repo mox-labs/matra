@@ -38,13 +38,13 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
             "site/content/guides/cli.md",
-            "26725:8d0956c3528908ce",
+            "26735:a1f090b61df7c598",
             "the 0.8272 pair score in site/content/guides/semantic-clusters.md \
              and skills/matra/references/semantic.md, and the 0.5800 unrelated score",
         ),
         (
             "site/content/guides/rust.md",
-            "22225:5fce866de83e8abf",
+            "22245:e03433e14a21415d",
             "the 0.8272 pair score and the 0.6114 unrelated score, in the same two files",
         ),
         (
@@ -60,7 +60,7 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/reference/domain-types.md",
-            "46454:0562cd7497bb5fa5",
+            "46675:bd3e897b40bc8df5",
             "the 141-word saturation floor and the 54-word window in \
              site/content/guides/semantic-clusters.md and skills/matra/references/semantic.md",
         ),

@@ -226,7 +226,7 @@ print(doc["metrics"]["nominalization_ratio"])  # float or None
 print(doc["skipped"])                          # [{"kind": "table", "span": {...}}, ...]
 ```
 
-Every heading, paragraph, skipped construct, sentence and token has a `span`, `{"start": int, "end": int}`, into the analysed text. It counts UTF-8 bytes, not characters, so slice with `matra.span_text(text, span)`, which encodes the text and decodes the stretch for you. The text fields are normalized (a sentence's `text` is rebuilt from its tokens, a markdown paragraph's has its markup removed); the span is where the value came from.
+Every heading, paragraph, skipped construct, sentence and token has a `span`, `{"byte_start": int, "byte_end": int}`, into the analysed text. It counts UTF-8 bytes, not characters, as the field names say: `text[span["byte_start"]:span["byte_end"]]` on a `str` is right on ASCII and wrong, with no error, after the first character outside it. Slice with `matra.span_text(text, span)`, which encodes the text and decodes the stretch for you. The text fields are normalized (a sentence's `text` is rebuilt from its tokens, a markdown paragraph's has its markup removed); the span is where the value came from.
 
 A `Token` carries the ten CoNLL-U columns under these keys: `id`, `text`, `lemma`, `pos`, `xpos`, `features`, `head`, `dep`, `deps`, `misc`, plus its `span` and the derived `is_punct`. `features` is a dict from feature name to value, `{"Number": "Plur"}`. `head` is the `id` of the governing token in the same sentence, and `0` marks the root.
 

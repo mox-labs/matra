@@ -371,10 +371,10 @@ The analysed text of block input is the blocks' texts joined by a blank line (`"
 
 | Field | Type | Contents |
 |---|---|---|
-| `start` | `usize` | The first byte |
-| `end` | `usize` | One past the last byte |
+| `byte_start` | `usize` | The first byte |
+| `byte_end` | `usize` | One past the last byte |
 
-A stretch of the analysed text in UTF-8 bytes, so `&text[span.start..span.end]` is the stretch. Bytes rather than characters: a caller in a language that indexes strings by character converts. `Span::new(start, end)` is the constructor.
+A stretch of the analysed text in UTF-8 bytes, so `&text[span.byte_start..span.byte_end]` is the stretch. Bytes rather than characters: a caller in a language that indexes strings by character converts. The unit is in the field names because a byte span used to slice a character-indexed string, a Python `str`, is right on ASCII and wrong, with no error, after the first character outside it. `Span::new(byte_start, byte_end)` is the constructor.
 
 ## Skipped
 
