@@ -37,6 +37,7 @@ except ImportError as _exc:  # pragma: no cover
         "the 'model2vec' cargo feature (official wheels include it; for "
         "source builds use: maturin develop --features python,udpipe,model2vec)"
     ) from _exc
+from matra import limits
 from matra.spans import span_text
 from matra.types import (
     ERROR_KINDS,
@@ -109,6 +110,7 @@ __all__ = [
     "UnsupportedFormatError",
     "clusters",
     "keyphrases",
+    "limits",
     "span_text",
     "summarize",
 ]

@@ -344,6 +344,24 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
+      "lexical_density": 0.5116,
+      "readability_grade": 20.3893,
+      "sentences": 1,
+      "text": "Every cap, and the word counts a paragraph needs before it gets a readability grade or a compression ratio, is a constant in matra.limits, under the name Rust's domain::limits gives it, read from the extension so it is the value the library enforces:",
+      "words": 45
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.8,
+      "readability_grade": 46.1133,
+      "sentences": 1,
+      "text": "The eleven are MAX_INPUT_BYTES, MAX_CONFIG_FILE_BYTES, MAX_DOWNLOAD_BYTES, MAX_TFIDF_SENTENCES, MAX_TEXTRANK_SENTENCES, MAX_CLUSTER_SENTENCES, MAX_RAKE_TOKENS, MAX_YAKE_TOKENS, MAX_COMPRESSION_PARAGRAPH_BYTES, MIN_READABILITY_WORDS and MIN_COMPRESSION_WORDS.",
+      "words": 15
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
       "lexical_density": 0.6571,
       "readability_grade": 13.8236,
       "sentences": 3,

@@ -39,6 +39,17 @@ from matra.types import (
 )
 
 __all__ = [
+    "MAX_CLUSTER_SENTENCES",
+    "MAX_COMPRESSION_PARAGRAPH_BYTES",
+    "MAX_CONFIG_FILE_BYTES",
+    "MAX_DOWNLOAD_BYTES",
+    "MAX_INPUT_BYTES",
+    "MAX_RAKE_TOKENS",
+    "MAX_TEXTRANK_SENTENCES",
+    "MAX_TFIDF_SENTENCES",
+    "MAX_YAKE_TOKENS",
+    "MIN_COMPRESSION_WORDS",
+    "MIN_READABILITY_WORDS",
     "Document",
     "Engine",
     "InputTooLargeError",
@@ -57,6 +68,19 @@ __all__ = [
     "keyphrases",
     "summarize",
 ]
+
+# `matra::domain::limits`, one attribute per constant; `matra.limits` re-exports them.
+MAX_INPUT_BYTES: int
+MAX_CONFIG_FILE_BYTES: int
+MAX_DOWNLOAD_BYTES: int
+MAX_TFIDF_SENTENCES: int
+MAX_TEXTRANK_SENTENCES: int
+MAX_CLUSTER_SENTENCES: int
+MAX_RAKE_TOKENS: int
+MAX_YAKE_TOKENS: int
+MAX_COMPRESSION_PARAGRAPH_BYTES: int
+MIN_READABILITY_WORDS: int
+MIN_COMPRESSION_WORDS: int
 
 class MatraError(Exception):
     """Every failure matra raises.
