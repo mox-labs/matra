@@ -87,10 +87,13 @@ enum Failure {
 
 impl Failure {
     /// A refusal of the call as given: the `invalid_input` kind, whose
-    /// remedy is to change the call.
-    fn refused(message: impl Into<String>) -> Failure {
+    /// remedy is to change the call, with `reason` naming the check.
+    fn refused(reason: &'static str, message: impl Into<String>) -> Failure {
         Failure::Error {
-            error: domain::Error::InvalidInput(message.into()),
+            error: domain::Error::InvalidInput {
+                reason,
+                message: message.into(),
+            },
             path: None,
         }
     }
@@ -182,7 +185,10 @@ pub fn run(
                 // A usage failure is a failure, and `--json` promises an
                 // envelope for every failure. Its kind is the one whose
                 // remedy is to change the call.
-                let error = domain::Error::InvalidInput(early.summary);
+                let error = domain::Error::InvalidInput {
+                    reason: "usage",
+                    message: early.summary,
+                };
                 let _ = write_failure(out, command_named(&args), None, &error, Layout::Pretty);
             }
             return early.code;
@@ -602,6 +608,7 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
     }
     if cli.reference.is_some() {
         return Err(Failure::refused(
+            "reference_without_skill",
             "--reference names a section of the agent skill; pass --skill with it, \
              or run `matra --skill -r` to list the references",
         ));
@@ -611,6 +618,7 @@ fn execute(cli: &Cli, out: &mut dyn Write, err: &mut dyn Write) -> Fallible<Outc
     // is one by the time execution reaches here.
     let Some(command) = &cli.command else {
         return Err(Failure::refused(
+            "no_command",
             "no command given; run `matra --help` for the list",
         ));
     };
@@ -766,6 +774,7 @@ fn clusters(
     _err: &mut dyn Write,
 ) -> Fallible<Outcome> {
     Err(Failure::refused(
+        "embedder_unavailable",
         "clusters needs an embedder, and this build was compiled without the `model2vec` \
          feature that ships one; install the Python wheel, or build with \
          `--features cli,model2vec`",
@@ -800,11 +809,14 @@ fn analyze(
     };
 
     if format.is_some() {
-        return Err(Failure::refused(format!(
-            "--format reads one file or stdin as the format named; {} is a directory, \
+        return Err(Failure::refused(
+            "format_with_directory",
+            format!(
+                "--format reads one file or stdin as the format named; {} is a directory, \
              and each of its files is read as its own name and bytes say",
-            path.display()
-        )));
+                path.display()
+            ),
+        ));
     }
     let cfg = resolve_config(cli)?;
     let engine = build_engine(cli, &cfg, err)?;
@@ -875,11 +887,14 @@ fn one_document(
 ) -> Fallible<(String, Document, Config)> {
     let target = Target::of(path)?;
     if let Target::Dir(_) = target {
-        return Err(Failure::refused(format!(
-            "{} is a directory; {command} reads one document, and `matra analyze` reads a \
+        return Err(Failure::refused(
+            "directory_for_one_document",
+            format!(
+                "{} is a directory; {command} reads one document, and `matra analyze` reads a \
              directory",
-            path.display()
-        )));
+                path.display()
+            ),
+        ));
     }
     analyzed(cli, target, path, format, err)
 }
@@ -1052,9 +1067,10 @@ fn summary_method(name: &str) -> Fallible<crate::SummaryMethod> {
     match name {
         "tfidf" => Ok(crate::SummaryMethod::TfIdf),
         "textrank" => Ok(crate::SummaryMethod::TextRank),
-        other => Err(Failure::refused(format!(
-            "summary.method is `{other}`, which this build cannot run"
-        ))),
+        other => Err(Failure::refused(
+            "method_unavailable",
+            format!("summary.method is `{other}`, which this build cannot run"),
+        )),
     }
 }
 
@@ -1063,9 +1079,10 @@ fn keyphrase_method(name: &str) -> Fallible<crate::KeyphraseMethod> {
     match name {
         "rake" => Ok(crate::KeyphraseMethod::Rake),
         "yake" => Ok(crate::KeyphraseMethod::Yake),
-        other => Err(Failure::refused(format!(
-            "keyphrases.method is `{other}`, which this build cannot run"
-        ))),
+        other => Err(Failure::refused(
+            "method_unavailable",
+            format!("keyphrases.method is `{other}`, which this build cannot run"),
+        )),
     }
 }
 
@@ -1100,7 +1117,10 @@ impl Target {
         }
         match crate::Inputs::dir(path) {
             Ok(inputs) => Ok(Target::Dir(inputs)),
-            Err(domain::Error::InvalidInput(_)) => Ok(Target::File(path.to_path_buf())),
+            Err(domain::Error::InvalidInput {
+                reason: "not_a_directory",
+                ..
+            }) => Ok(Target::File(path.to_path_buf())),
             Err(error) => Err(Failure::Error { error, path: None }),
         }
     }

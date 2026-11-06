@@ -224,10 +224,13 @@ impl Inputs {
             )));
         }
         if !file_type.is_dir() {
-            return Err(domain::Error::InvalidInput(format!(
-                "{} is not a directory; read a file with Input::file",
-                path.display()
-            )));
+            return Err(domain::Error::InvalidInput {
+                reason: "not_a_directory",
+                message: format!(
+                    "{} is not a directory; read a file with Input::file",
+                    path.display()
+                ),
+            });
         }
         let paths = source::directory::DirectorySource.candidate_paths(path)?;
         Ok(Inputs {
@@ -647,17 +650,21 @@ pub fn clusters(
         });
     }
     if !threshold.is_finite() {
-        return Err(domain::Error::InvalidInput(format!(
-            "threshold must be finite, got {threshold}"
-        )));
+        return Err(domain::Error::InvalidInput {
+            reason: "threshold_not_finite",
+            message: format!("threshold must be finite, got {threshold}"),
+        });
     }
     let embeddings = embedder.embed(&texts)?;
     if embeddings.len() != texts.len() {
-        return Err(domain::Error::InvalidInput(format!(
-            "embedder returned {} for {}, violating its contract",
-            counted(embeddings.len(), "vector"),
-            counted(texts.len(), "sentence"),
-        )));
+        return Err(domain::Error::InvalidInput {
+            reason: "embedder_vector_count",
+            message: format!(
+                "embedder returned {} for {}, violating its contract",
+                counted(embeddings.len(), "vector"),
+                counted(texts.len(), "sentence"),
+            ),
+        });
     }
     let (clusters, edges) = extraction::cluster(&embeddings, threshold)?;
     Ok(domain::Clusters {
@@ -1505,7 +1512,7 @@ mod tests {
     fn input_file_on_a_directory_names_inputs_dir() {
         let dir = tempfile::tempdir().unwrap();
         match law_engine().analyze(Input::file(dir.path())) {
-            Err(domain::Error::InvalidInput(message)) => {
+            Err(domain::Error::InvalidInput { message, .. }) => {
                 assert!(message.contains("Inputs::dir"), "{message}");
             }
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
@@ -1550,7 +1557,7 @@ mod tests {
         let file = dir.path().join("one.txt");
         std::fs::write(&file, "x").unwrap();
         match Inputs::dir(&file) {
-            Err(domain::Error::InvalidInput(message)) => {
+            Err(domain::Error::InvalidInput { message, .. }) => {
                 assert!(message.contains("Input::file"), "{message}");
             }
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
@@ -1899,7 +1906,7 @@ mod tests {
             force_count: Some(1),
         };
         match clusters(&doc, &embedder, 0.9) {
-            Err(domain::Error::InvalidInput(msg)) => {
+            Err(domain::Error::InvalidInput { message: msg, .. }) => {
                 // Regression: the count read "1 vectors".
                 assert_eq!(
                     msg,
@@ -1931,7 +1938,7 @@ mod tests {
         for threshold in [f64::NAN, f64::INFINITY] {
             assert!(matches!(
                 clusters(&doc, &MustNotEmbed, threshold),
-                Err(domain::Error::InvalidInput(_))
+                Err(domain::Error::InvalidInput { .. })
             ));
         }
     }

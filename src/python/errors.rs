@@ -20,9 +20,14 @@ impl From<domain::Error> for MatraError {
 
 /// A caller broke a documented contract at the call: an unknown format
 /// or method name, block input that is not data. Raised as
-/// `InvalidInputError`, the class the same mistake raises from Rust.
-pub(super) fn invalid_input(reason: impl Into<String>) -> PyErr {
-    MatraError(domain::Error::InvalidInput(reason.into())).into()
+/// `InvalidInputError`, the class the same mistake raises from Rust,
+/// with `reason` naming the check in `details`.
+pub(super) fn invalid_input(reason: &'static str, message: impl Into<String>) -> PyErr {
+    MatraError(domain::Error::InvalidInput {
+        reason,
+        message: message.into(),
+    })
+    .into()
 }
 
 /// Raises the error as an instance of its [`Class`], carrying the
@@ -102,7 +107,7 @@ impl Class {
             ParseFailed(_) => Class::ParseFailed,
             InputTooLarge { .. } => Class::InputTooLarge,
             UnsupportedFormat { .. } => Class::UnsupportedFormat,
-            InvalidInput(_) => Class::InvalidInput,
+            InvalidInput { .. } => Class::InvalidInput,
             Io(e) => match e.kind() {
                 std::io::ErrorKind::NotFound => Class::IoNotFound,
                 std::io::ErrorKind::PermissionDenied => Class::IoPermissionDenied,

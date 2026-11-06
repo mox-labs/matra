@@ -195,7 +195,7 @@ The contract is the one the Rust port carries: exactly one vector per sentence, 
 
 ## Size limits
 
-Every input over 8 MiB is rejected with `matra.InputTooLargeError`, a `ValueError`, whose `details` carry `what`, `limit` and `actual`. Text, bytes and blocks are checked as `input`; a file is checked before it is read, as `file_source`. The gate lives in the one step every input passes through to reach the parser, so there is no input that skips it. In `analyze_all`, an oversized input is one item whose `kind` is `input_too_large`, and the stream goes on.
+Every input over 8 MiB is rejected with `matra.InputTooLargeError`, a `ValueError`, whose `details` carry `what`, `limit` and `actual`. Text, bytes and blocks are checked as `input`; a file is checked before it is read, as `file_read`. The gate lives in the one step every input passes through to reach the parser, so there is no input that skips it. In `analyze_all`, an oversized input is one item whose `kind` is `input_too_large`, and the stream goes on.
 
 The outcome functions add caps of their own: 2000 sentences for a summary and for `clusters`, and 200000 tokens for keyphrases, each raising `matra.InputTooLargeError` with the method in `details["what"]`.
 
@@ -298,7 +298,7 @@ Every `domain::Error` variant crosses the FFI boundary as a class of its own, na
 | Model file corrupt or wrong format, or bytes that arrived and failed the pinned hash | `ModelInvalidError` | `RuntimeError` |
 | NLP parsing failed, including a panic caught at the UDPipe boundary | `ParseFailedError` | `RuntimeError` |
 
-`IoNotFoundError` and `IoPermissionError` derive from `IoError`, so `except matra.IoError` catches every I/O failure. `matra.IoError` is not the builtin `IOError`, which is another name for `OSError`. Every exception carries `kind`, the stable string from `matra.ERROR_KINDS`, and `details`, a dict of every value in its message: `what`, `limit` and `actual` on an `InputTooLargeError`, `path` on a missing file, `url` and `retryable` on a download that did not arrive. The [errors reference](../reference/errors.md#kinds-and-details) lists the keys for every kind.
+`IoNotFoundError` and `IoPermissionError` derive from `IoError`, so `except matra.IoError` catches every I/O failure. `matra.IoError` is not the builtin `IOError`, which is another name for `OSError`. Every exception carries `kind`, the stable string from `matra.ERROR_KINDS`, and `details`, a dict of the values to act on: `what`, `limit` and `actual` on an `InputTooLargeError`, `path` on a missing file, `url` and `retryable` on a download that did not arrive. The [errors reference](../reference/errors.md#kinds-and-details) lists the keys for every kind.
 
 A call with the wrong arguments (no input, two inputs, `format` with `blocks`) raises the builtin `TypeError`, as any Python function does. It is a mistake in the call, not a failure of the analysis.
 
@@ -322,7 +322,7 @@ except matra.MatraError as e:
     print(f"{e.kind}: {e}")
 ```
 
-The message on each exception is the Rust error's own `Display` output, for a person to read. Branch on the class or on `kind`, and read values from `details`. An `InputTooLargeError` names its gate in `details["what"]`: `input` and `file_source` for an input, `tfidf`, `textrank`, `rake`, `yake` and `clusters` for an outcome, and `config_file`, `udpipe_download` and `embedding_download` for the constructors that read a configuration or download a model.
+The message on each exception is the Rust error's own `Display` output, for a person to read. Branch on the class or on `kind`, and read values from `details`. An `InputTooLargeError` names its gate in `details["what"]`: `input` and `file_read` for an input, `tfidf`, `textrank`, `rake`, `yake` and `clusters` for an outcome, and `config_file_read`, `parser_model_download` and `embedding_model_download` for the constructors that read a configuration or download a model. An `InvalidInputError` names the check that failed in `details["reason"]`, a stable name such as `method_unknown`, `embedder_raised` or `config_malformed`, so a caller tells a bad argument from a broken embedder or a config file to fix without reading the message.
 
 The mapping is exhaustive and enforced at compile time on the Rust side. The match that picks the class has no wildcard arm over the variants, so adding a new `domain::Error` variant without also giving it a class fails to build. A new variant cannot fall through to another variant's class by accident.
 

@@ -89,14 +89,14 @@ Seven caps guard the pipeline and the functions over its output. Each one return
 | `what` | Limit | Fires in |
 |---|---|---|
 | `"input"` | 8 MiB (`domain::limits::MAX_INPUT_BYTES`) | the engine's reading stage, which is the only route from text to the parser, on the bytes handed in and on the analysed text, so every `Input` constructor and every pipeline call inherits it |
-| `"file_source"` | 8 MiB on disk | `Input::file`, checked against file metadata before any read |
+| `"file_read"` | 8 MiB on disk | `Input::file`, checked against file metadata before any read |
 | `"tfidf"` | 2000 sentences | `summarize`, and `summarize_with` with `SummaryMethod::TfIdf` |
 | `"textrank"` | 2000 sentences | `summarize_with` with `SummaryMethod::TextRank` |
 | `"rake"` | 200000 tokens summed across all sentences | `keyphrases`, and `keyphrases_with` with `KeyphraseMethod::Rake` |
 | `"yake"` | 200000 tokens summed across all sentences | `keyphrases_with` with `KeyphraseMethod::Yake` |
 | `"clusters"` | 2000 sentences | `clusters`, before the embedding pass |
 
-Three more labels guard what matra reads that is not your text: `"udpipe_download"` and `"embedding_download"` cap a model download at 64 MiB, and `"config_file"` caps the config file at 64 KiB. [Errors](../reference/errors.md#inputtoolarge) lists all ten.
+Three more labels guard what matra reads that is not your text: `"parser_model_download"` and `"embedding_model_download"` cap a model download at 64 MiB, and `"config_file_read"` caps the config file at 64 KiB. [Errors](../reference/errors.md#inputtoolarge) lists all ten.
 
 A document from disk passes the gates in sequence: the metadata check when the file is read, then the byte and text checks before it is parsed. Block input is checked on its analysed text, the blocks joined, so blocks each under the cap that join to more than it are refused. A file at exactly the cap is accepted; one byte over is rejected.
 
@@ -193,7 +193,7 @@ for outcome in engine.analyze_all(matra::Inputs::dir("notes/")?) {
 
 `Error::ParseFailed` also carries panics that crossed the UDPipe FFI boundary. The adapter wraps the C-side call in `catch_unwind` and converts a panic into `ParseFailed` with the payload message, so a bug inside UDPipe surfaces as a matchable error instead of aborting your process. It is also what the parser returns when it cannot place a token in the text it was given, rather than reporting a span it guessed.
 
-To pass an error on to another program, use what every channel carries rather than the message. `e.kind()` is a stable string such as `"input_too_large"`. `e.details()` holds every dynamic value in the message by name, so `e.details().get("limit")` reads a cap without matching the variant. `serde_json::to_value(&e)` is `{"kind", "message", "details"}`, and a `DocumentError` serializes the same way with its `path` beside them. [Errors](../reference/errors.md#kinds-and-details) lists the keys for every kind.
+To pass an error on to another program, use what every channel carries rather than the message. `e.kind()` is a stable string such as `"input_too_large"`. `e.details()` holds the values to act on by name (every dynamic value in the message, and on `invalid_input` the `reason` naming the check that failed), so `e.details().get("limit")` reads a cap without matching the variant. `serde_json::to_value(&e)` is `{"kind", "message", "details"}`, and a `DocumentError` serializes the same way with its `path` beside them. [Errors](../reference/errors.md#kinds-and-details) lists the keys for every kind.
 
 `domain::Error` is `#[non_exhaustive]`, so a trailing `_ =>` (or a named catch-all binding, as above) is required even once you have named every variant that exists today. A future variant becomes a compile requirement for code that matches without a wildcard, and a routed catch-all for code that has one.
 
@@ -244,7 +244,7 @@ for err in errors.iter().filter_map(|r| r.as_ref().err()) {
 }
 ```
 
-`Inputs::dir` is `Err` only when the listing itself fails, such as the directory not existing. Everything else is an `Err` item carrying its path: an unreadable file as `Io`, a file over the cap as `InputTooLarge` with `what = "file_source"`, a non-UTF-8 file, a PDF or a DOCX (by signature or by name) as `UnsupportedFormat`, and a parser failure as `ParseFailed`. Documents plus errors always equals inputs consumed, and each document names its file in `provenance.source.path`.
+`Inputs::dir` is `Err` only when the listing itself fails, such as the directory not existing. Everything else is an `Err` item carrying its path: an unreadable file as `Io`, a file over the cap as `InputTooLarge` with `what = "file_read"`, a non-UTF-8 file, a PDF or a DOCX (by signature or by name) as `UnsupportedFormat`, and a parser failure as `ParseFailed`. Documents plus errors always equals inputs consumed, and each document names its file in `provenance.source.path`.
 
 Two kinds of entry are skipped without an error entry, so they will not appear in either list: subdirectories, because the walk is one level deep, and symlinks, which are filtered out with `symlink_metadata` so a link cannot redirect the read elsewhere. Files are attempted in sorted path order. How to aggregate across documents is yours to decide: a count such as `total_words` sums, and a ratio such as `vocabulary_ttr` does not, since it falls as a document grows.
 

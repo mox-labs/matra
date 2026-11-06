@@ -133,7 +133,7 @@ struct Pin<'a> {
 }
 
 /// Ceiling on any one downloaded artifact, past which
-/// [`Error::InputTooLarge`] has `what` set to `"embedding_download"`:
+/// [`Error::InputTooLarge`] has `what` set to `"embedding_model_download"`:
 /// [`limits::MAX_DOWNLOAD_BYTES`](crate::domain::limits::MAX_DOWNLOAD_BYTES).
 /// The largest of the three pinned artifacts, `model.safetensors`, is
 /// 30,236,760 bytes.
@@ -315,7 +315,7 @@ impl Model2Vec {
     /// status: the message names the URL, and the `io::ErrorKind`
     /// separates a timeout from an unreachable host.
     /// [`Error::InputTooLarge`] with `what` set to
-    /// `"embedding_download"` if a response exceeds the 64 MiB cap.
+    /// `"embedding_model_download"` if a response exceeds the 64 MiB cap.
     /// [`Error::ModelInvalid`] if `dir` already holds artifacts that are
     /// not the pinned set, if the digest still mismatches after one
     /// re-download, or if the verified bytes do not parse.
@@ -1000,7 +1000,7 @@ where
             return Err(Error::InputTooLarge {
                 limit: MAX_ARTIFACT_BYTES,
                 actual: bytes.len(),
-                what: "embedding_download",
+                what: "embedding_model_download",
             });
         }
         *slot = bytes;
@@ -1980,7 +1980,7 @@ mod provisioning {
             } => {
                 assert_eq!(limit, MAX_ARTIFACT_BYTES);
                 assert_eq!(actual, MAX_ARTIFACT_BYTES + 1);
-                assert_eq!(what, "embedding_download");
+                assert_eq!(what, "embedding_model_download");
             }
             other => panic!("expected InputTooLarge, got {other:?}"),
         }
@@ -2087,7 +2087,7 @@ mod provisioning {
             } => {
                 assert_eq!(limit, MAX_ARTIFACT_BYTES);
                 assert_eq!(actual, MAX_ARTIFACT_BYTES + 1);
-                assert_eq!(what, "embedding_download");
+                assert_eq!(what, "embedding_model_download");
             }
             other => panic!("expected InputTooLarge, got {other:?}"),
         }

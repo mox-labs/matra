@@ -81,7 +81,7 @@ def test_an_oversized_input_is_input_too_large_with_its_gate(tmp_path: Path) -> 
     assert isinstance(error, matra.InputTooLargeError)
     assert error.kind == "input_too_large"
     assert error.details == {
-        "what": "config_file",
+        "what": "config_file_read",
         "limit": CONFIG_CAP,
         "actual": CONFIG_CAP + 1,
     }
@@ -96,7 +96,8 @@ def test_a_broken_contract_is_invalid_input_with_its_reason(tmp_path: Path) -> N
 
     error = caught.value
     assert isinstance(error, matra.InvalidInputError)
-    assert error.details["reason"] in str(error)
+    # `reason` names the check, stably, and the message carries the value.
+    assert error.details["reason"] == "config_method_unknown"
     assert "lsa" in str(error)
     assert_valid("error", _as_data(error), "invalid_input")
 

@@ -79,7 +79,10 @@ fn every_variant() -> [Error; 7] {
             format: Some(Format::Pdf),
             feature: None,
         },
-        Error::InvalidInput("bad argument".to_string()),
+        Error::InvalidInput {
+            reason: "threshold_not_finite",
+            message: "threshold must be finite, got NaN".to_string(),
+        },
         Error::Io(std::io::Error::from(std::io::ErrorKind::NotFound)),
     ]
 }
@@ -166,7 +169,13 @@ fn every_error_matches_the_error_schema() {
             context,
         );
         for path in [None, Some(PathBuf::from("a.txt"))] {
-            let item = DocumentError::new(path, Error::InvalidInput(error.to_string()));
+            let item = DocumentError::new(
+                path,
+                Error::InvalidInput {
+                    reason: "is_a_directory",
+                    message: error.to_string(),
+                },
+            );
             document_schema::assert_valid(
                 "error",
                 &serde_json::to_value(&item).expect("serialize"),

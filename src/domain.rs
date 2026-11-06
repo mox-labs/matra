@@ -40,7 +40,7 @@ pub mod limits {
     /// `Engine::analyze_all` check it on every `Input` (text, bytes, a
     /// file, blocks), on the bytes handed in and again on the analysed
     /// text a reader produces from them; reading a file checks it on the
-    /// file's size before reading (`"file_source"`), and the command line
+    /// file's size before reading (`"file_read"`), and the command line
     /// on stdin as the bytes arrive.
     ///
     /// 8 MiB holds book-length English (a typical novel is ~1.5 MiB,
@@ -51,7 +51,7 @@ pub mod limits {
 
     /// The largest configuration file read, in bytes: 64 KiB.
     ///
-    /// The gate whose `what` is `"config_file"`, checked on the file's
+    /// The gate whose `what` is `"config_file_read"`, checked on the file's
     /// size before any read. A config file is small by construction;
     /// anything larger is a mistake or an attack, and either way it is
     /// not read into memory first and rejected second.
@@ -59,8 +59,8 @@ pub mod limits {
 
     /// The most bytes read from any one model download: 64 MiB.
     ///
-    /// The gates whose `what` is `"udpipe_download"` (the parsing model)
-    /// and `"embedding_download"` (each embedding artifact). One number,
+    /// The gates whose `what` is `"parser_model_download"` (the parsing model)
+    /// and `"embedding_model_download"` (each embedding artifact). One number,
     /// because it answers one question: how much a redirected or
     /// misbehaving server can make the process hold. The pinned artifacts
     /// are 16.3 MB and at most 30.2 MB, so this is headroom for a later
@@ -245,7 +245,7 @@ impl std::fmt::Display for FormatSubject<'_> {
 ///
 /// Every channel reads a failure the same way: a stable [`kind`](Error::kind)
 /// to branch on, a message for a person, and [`details`](Error::details),
-/// every dynamic value in the message as named data. The serde form is
+/// the values a caller acts on as named data. The serde form is
 /// those three, `{kind, message, details}`, and is what the Python
 /// binding and the JSON carry, so no reader has to parse a message.
 #[derive(thiserror::Error, Debug)]
@@ -274,9 +274,9 @@ pub enum Error {
         actual: usize,
         /// Discriminator naming which gate fired, so consumers can route
         /// differently per gate. The labels in use: `"input"`,
-        /// `"file_source"`, `"tfidf"`, `"textrank"`, `"rake"`, `"yake"`,
-        /// `"clusters"`, `"udpipe_download"`,
-        /// `"embedding_download"` and `"config_file"`.
+        /// `"file_read"`, `"tfidf"`, `"textrank"`, `"rake"`, `"yake"`,
+        /// `"clusters"`, `"parser_model_download"`,
+        /// `"embedding_model_download"` and `"config_file_read"`.
         what: &'static str,
     },
     /// The input is in a format this build cannot read: a format matra
@@ -294,11 +294,24 @@ pub enum Error {
         /// `None` for both today.
         feature: Option<&'static str>,
     },
-    /// A caller violated a documented API contract (mismatched argument
-    /// lengths, disagreeing dimensions, a non-finite parameter). Names
-    /// the violation; fix the call site, not the input data.
-    #[error("invalid input: {0}")]
-    InvalidInput(String),
+    /// The call cannot be honored as made: a documented contract broken
+    /// (disagreeing dimensions, a non-finite parameter), a configuration
+    /// that does not read, input data that is not the shape its format
+    /// names. The remedy is to change the call, its configuration or the
+    /// data it was handed, never to retry it as it is.
+    ///
+    /// One kind, many checks: `reason` names which one failed, so a caller
+    /// routes on it without reading `message`.
+    #[error("invalid input: {message}")]
+    InvalidInput {
+        /// Which check failed, a stable snake_case name: the `reason`
+        /// detail. The names in use are listed in the errors reference
+        /// (`site/content/reference/errors.md`), each with the check it
+        /// names; a reader treats the set as open.
+        reason: &'static str,
+        /// What was wrong, for a person, with the values that made it so.
+        message: String,
+    },
     /// File I/O error.
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
@@ -324,28 +337,35 @@ impl Error {
             Error::ParseFailed(_) => "parse_failed",
             Error::InputTooLarge { .. } => "input_too_large",
             Error::UnsupportedFormat { .. } => "unsupported_format",
-            Error::InvalidInput(_) => "invalid_input",
+            Error::InvalidInput { .. } => "invalid_input",
             Error::Io(_) => "io",
         }
     }
 
-    /// Every dynamic value in this error's message, as named data, so a
-    /// caller acts on a failure without parsing its message.
+    /// The values a caller acts on, as named data, so a caller acts on a
+    /// failure without parsing its message: every dynamic value in the
+    /// message, except on `invalid_input`, whose `reason` names the check
+    /// that failed and whose message adds, for a person, the values that
+    /// failed it.
     ///
     /// The keys per kind:
     ///
     /// | Kind | Keys |
     /// |---|---|
     /// | `model_not_found` | `path` |
-    /// | `model_invalid`, `parse_failed`, `invalid_input` | `reason` |
+    /// | `model_invalid`, `parse_failed` | `reason` |
+    /// | `invalid_input` | `reason` |
     /// | `input_too_large` | `what`, `limit`, `actual` |
     /// | `unsupported_format` | `format` when one was recognised, `feature` when one would read it |
     /// | `io` | `io_kind` and `reason`; `path` when the failure concerns a path matra named; `url` and `retryable` when a download did not arrive |
     ///
     /// A key that does not apply is absent, never empty. A key, once a
-    /// kind carries it, keeps appearing in later versions. `reason` is the
-    /// variant's own text: the message a payload `String` holds, or the
-    /// operating system's account of an I/O failure. `io_kind` names the
+    /// kind carries it, keeps appearing in later versions. On
+    /// `invalid_input`, `reason` names the check that failed, a stable
+    /// snake_case name to branch on (`threshold_not_finite`,
+    /// `config_malformed`, ...); elsewhere it is the variant's own text:
+    /// the message a payload `String` holds, or the operating system's
+    /// account of an I/O failure. `io_kind` names the
     /// I/O failure's class (`not_found`, `permission_denied`,
     /// `timed_out`, ...; [`std::io::ErrorKind`] in Rust), a set a reader
     /// treats as open. `retryable` is `true` when the same call can be made
@@ -363,9 +383,10 @@ impl Error {
         let details = ErrorDetails::default();
         match self {
             Error::ModelNotFound(path) => details.text("path", path.to_string_lossy()),
-            Error::ModelInvalid(reason)
-            | Error::ParseFailed(reason)
-            | Error::InvalidInput(reason) => details.text("reason", reason.as_str()),
+            Error::ModelInvalid(reason) | Error::ParseFailed(reason) => {
+                details.text("reason", reason.as_str())
+            }
+            Error::InvalidInput { reason, .. } => details.text("reason", *reason),
             Error::InputTooLarge {
                 limit,
                 actual,
@@ -419,7 +440,7 @@ impl Serialize for Error {
 /// Result type for matra operations.
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// Every dynamic value in an [`Error`]'s message, by name: what
+/// The values a caller acts on in an [`Error`], by name: what
 /// [`Error::details`] returns.
 ///
 /// Serializes as an object, its keys in the order the error names them.
@@ -3805,7 +3826,10 @@ mod tests {
                 "unsupported_format",
             ),
             (
-                Error::InvalidInput("bad argument".to_string()),
+                Error::InvalidInput {
+                    reason: "threshold_not_finite",
+                    message: "bad argument".to_string(),
+                },
                 "invalid_input",
             ),
             (
@@ -3846,8 +3870,9 @@ mod tests {
         serde_json::to_value(error.details()).expect("details serialize")
     }
 
-    /// Every dynamic value in a message is also a detail, so a reader
-    /// never parses the message (EPR-0006). One case per variant, and per
+    /// Every value a caller acts on is a detail, so a reader never parses
+    /// the message (EPR-0006): every dynamic value in it, and on
+    /// `invalid_input` the name of the check that failed. One case per variant, and per
     /// shape a variant takes, each built with values distinct enough
     /// that a detail cannot match by accident.
     #[test]
@@ -3896,8 +3921,11 @@ mod tests {
                 json!({}),
             ),
             (
-                Error::InvalidInput("threshold must be finite".to_string()),
-                json!({ "reason": "threshold must be finite" }),
+                Error::InvalidInput {
+                    reason: "threshold_not_finite",
+                    message: "threshold must be finite, got NaN".to_string(),
+                },
+                json!({ "reason": "threshold_not_finite" }),
             ),
             (
                 Error::Io(std::io::Error::new(

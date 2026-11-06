@@ -102,13 +102,13 @@ Every gate returns a typed variant of `Error`. There is no `Result<T, String>` a
 | Gate | Cap | Variant |
 |---|---|---|
 | reading, every `Input` | 8 MiB (`MAX_INPUT_BYTES`) | `InputTooLarge`, `what` is `"input"` |
-| file read | 8 MiB | `InputTooLarge`, `what` is `"file_source"` |
+| file read | 8 MiB | `InputTooLarge`, `what` is `"file_read"` |
 | `summarize`, `summarize_with` | 2,000 sentences | `InputTooLarge`, `what` is `"tfidf"` or `"textrank"` |
 | `clusters` | 2,000 sentences | `InputTooLarge`, `what` is `"clusters"` |
 | `keyphrases`, `keyphrases_with` | 200,000 tokens | `InputTooLarge`, `what` is `"rake"` or `"yake"` |
-| the pinned UDPipe model being downloaded | 64 MiB | `InputTooLarge`, `what` is `"udpipe_download"` |
-| one pinned embedding artifact being downloaded | 64 MiB | `InputTooLarge`, `what` is `"embedding_download"` |
-| the config file, checked against its metadata | 64 KiB | `InputTooLarge`, `what` is `"config_file"` |
+| the pinned UDPipe model being downloaded | 64 MiB | `InputTooLarge`, `what` is `"parser_model_download"` |
+| one pinned embedding artifact being downloaded | 64 MiB | `InputTooLarge`, `what` is `"embedding_model_download"` |
+| the config file, checked against its metadata | 64 KiB | `InputTooLarge`, `what` is `"config_file_read"` |
 
 The `what` discriminator names which gate fired, so a caller can route a document-too-big differently from a corpus-too-big.
 

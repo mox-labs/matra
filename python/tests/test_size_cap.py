@@ -45,7 +45,7 @@ CALLS: list[Any] = [
     pytest.param(lambda e, _: e.analyze(OVERSIZED), "input", id="text"),
     pytest.param(lambda e, _: e.analyze(OVERSIZED, format="markdown"), "input", id="text-markdown"),
     pytest.param(lambda e, _: e.analyze(bytes=OVERSIZED.encode()), "input", id="bytes"),
-    pytest.param(lambda e, p: e.analyze(file=_file(p)), "file_source", id="file"),
+    pytest.param(lambda e, p: e.analyze(file=_file(p)), "file_read", id="file"),
     pytest.param(
         lambda e, _: e.analyze(blocks=[{"kind": "paragraph", "text": OVERSIZED}]),
         "input",

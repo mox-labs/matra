@@ -230,7 +230,7 @@ impl DocumentStream {
 /// two cannot spell one differently.
 fn format_of(name: &str) -> PyResult<Format> {
     serde_json::from_value(serde_json::Value::String(name.to_string()))
-        .map_err(|e| invalid_input(format!("format: {e}")))
+        .map_err(|e| invalid_input("format_unknown", format!("format: {e}")))
 }
 
 /// Block input from Python data: the list of heading and paragraph dicts
@@ -243,8 +243,12 @@ fn format_of(name: &str) -> PyResult<Format> {
 /// JSON values, so a non-string key, bytes or a bytearray is refused by
 /// `depythonize` or by the reader rather than widened.
 fn blocks_input(blocks: &Bound<'_, PyAny>) -> PyResult<crate::Input> {
-    let value: serde_json::Value = pythonize::depythonize(blocks)
-        .map_err(|e| invalid_input(format!("block input is not a block array: {e}")))?;
+    let value: serde_json::Value = pythonize::depythonize(blocks).map_err(|e| {
+        invalid_input(
+            "blocks_malformed",
+            format!("block input is not a block array: {e}"),
+        )
+    })?;
     Ok(crate::Input::text(value.to_string(), Format::Blocks))
 }
 

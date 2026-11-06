@@ -121,22 +121,29 @@ fn list(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
 fn lookup(name: &str) -> Fallible<&'static str> {
     match SCHEMAS.iter().find(|(known, _)| *known == name) {
         Some((_, text)) => Ok(text),
-        None => Err(Failure::refused(format!(
-            "no schema named `{name}`; known schemas: {}",
-            SCHEMAS
-                .iter()
-                .map(|(name, _)| *name)
-                .collect::<Vec<_>>()
-                .join(", ")
-        ))),
+        None => Err(Failure::refused(
+            "schema_unknown",
+            format!(
+                "no schema named `{name}`; known schemas: {}",
+                SCHEMAS
+                    .iter()
+                    .map(|(name, _)| *name)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        )),
     }
 }
 
 /// A schema as JSON. Each is checked to parse by the tests below, so the
 /// failure is for a file that has not finished being written.
 fn parsed(name: &str, text: &str) -> Fallible<Value> {
-    serde_json::from_str(text)
-        .map_err(|e| Failure::refused(format!("schema `{name}` is not valid JSON: {e}")))
+    serde_json::from_str(text).map_err(|e| {
+        Failure::refused(
+            "embedded_file_malformed",
+            format!("schema `{name}` is not valid JSON: {e}"),
+        )
+    })
 }
 
 /// The `title` a schema declares.
@@ -145,7 +152,12 @@ fn title_of(name: &str, text: &str) -> Fallible<String> {
         .get("title")
         .and_then(Value::as_str)
         .map(str::to_string)
-        .ok_or_else(|| Failure::refused(format!("schema `{name}` declares no title")))
+        .ok_or_else(|| {
+            Failure::refused(
+                "embedded_file_malformed",
+                format!("schema `{name}` declares no title"),
+            )
+        })
 }
 
 #[cfg(test)]

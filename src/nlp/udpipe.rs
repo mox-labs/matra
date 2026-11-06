@@ -71,7 +71,7 @@ struct Pin<'a> {
 }
 
 /// Ceiling on the downloaded model, past which [`Error::InputTooLarge`]
-/// has `what` set to `"udpipe_download"`:
+/// has `what` set to `"parser_model_download"`:
 /// [`limits::MAX_DOWNLOAD_BYTES`](crate::domain::limits::MAX_DOWNLOAD_BYTES),
 /// the number the embedding adapter uses, because it is the same question.
 use crate::domain::limits::MAX_DOWNLOAD_BYTES as MAX_MODEL_BYTES;
@@ -184,7 +184,7 @@ impl Udpipe {
     /// (the message names the URL, and the `io::ErrorKind` separates a
     /// timeout from an unreachable host), or if the verified bytes
     /// cannot be written. [`Error::InputTooLarge`] with `what` set to
-    /// `"udpipe_download"` if the response exceeds
+    /// `"parser_model_download"` if the response exceeds
     /// [`MAX_MODEL_BYTES`](self). [`Error::ModelInvalid`] if two
     /// downloads in a row fail the digest, or if the verified bytes do not
     /// load.
@@ -326,7 +326,7 @@ fn fetch_verified(
             return Err(Error::InputTooLarge {
                 limit: MAX_MODEL_BYTES,
                 actual: bytes.len(),
-                what: "udpipe_download",
+                what: "parser_model_download",
             });
         }
         if verified(&bytes, pin.size, pin.sha256) {
@@ -1226,7 +1226,7 @@ mod tests {
             } => {
                 assert_eq!(limit, MAX_MODEL_BYTES);
                 assert_eq!(actual, MAX_MODEL_BYTES + 1);
-                assert_eq!(what, "udpipe_download");
+                assert_eq!(what, "parser_model_download");
             }
             other => panic!("expected InputTooLarge, got {other:?}"),
         }

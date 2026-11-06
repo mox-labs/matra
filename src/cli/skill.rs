@@ -156,10 +156,10 @@ fn list(cli: &Cli, out: &mut dyn Write) -> Fallible<Outcome> {
 fn lookup(name: &str) -> Fallible<&'static str> {
     match REFERENCES.iter().find(|(known, _)| *known == name) {
         Some((_, body)) => Ok(body),
-        None => Err(Failure::refused(format!(
-            "no reference named `{name}`; known references: {}",
-            names()
-        ))),
+        None => Err(Failure::refused(
+            "reference_unknown",
+            format!("no reference named `{name}`; known references: {}", names()),
+        )),
     }
 }
 
@@ -181,9 +181,10 @@ fn names() -> String {
 fn summary_of<'a>(name: &str, body: &'a str) -> Fallible<&'a str> {
     let mut lines = body.lines();
     if lines.next() != Some("---") {
-        return Err(Failure::refused(format!(
-            "reference `{name}` does not open with frontmatter"
-        )));
+        return Err(Failure::refused(
+            "embedded_file_malformed",
+            format!("reference `{name}` does not open with frontmatter"),
+        ));
     }
     for line in lines {
         if line == "---" {
@@ -197,9 +198,10 @@ fn summary_of<'a>(name: &str, body: &'a str) -> Fallible<&'a str> {
             return Ok(summary);
         }
     }
-    Err(Failure::refused(format!(
-        "reference `{name}` declares no summary in its frontmatter"
-    )))
+    Err(Failure::refused(
+        "embedded_file_malformed",
+        format!("reference `{name}` declares no summary in its frontmatter"),
+    ))
 }
 
 #[cfg(test)]

@@ -61,7 +61,7 @@ The derived structural types (`Negation`, `Modal`, `ClausalComplement`, `RootAdv
 | `Parameters` | what shaped an outcome, recorded in its `provenance` |
 | `Format` | which reader a document needs |
 | `Error` | every failure the library can return |
-| `ErrorDetails`, `DetailValue` | every dynamic value in an error's message, by name: what `Error::details` returns |
+| `ErrorDetails`, `DetailValue` | the values a caller acts on in an error, by name: what `Error::details` returns |
 | `DocumentError` | one document's failure, an `Err` item of `analyze_all`'s stream |
 | `Embedding` | one vector from an `Embedder`, the input to clustering |
 | `ProvisionNotice` | what a model fetch is about to download, handed to the `_with_notice` constructors' callback, described in [Errors](errors.md#the-first-run-says-so) |
@@ -408,7 +408,7 @@ matra collects nothing across documents: a stream is the collection, and how to 
 | `SCHEMA_VERSION` | `&str`, `"2.0"` | The document schema version this build emits, as `"major.minor"`, written into `Provenance::schema`. The JSON Schema for each major is in `spec/schema/` |
 | `Result<T>` | `std::result::Result<T, Error>` | Return type of every fallible library function |
 | `Error` | enum, `#[non_exhaustive]` | Every failure the library returns. See [Errors](errors.md) |
-| `ErrorDetails` | ordered names and values; `get(key)`, `iter()`, `len()`, `is_empty()` | What `Error::details` returns: every dynamic value in the message, by name. Serializes as an object. See [kinds and details](errors.md#kinds-and-details) |
+| `ErrorDetails` | ordered names and values; `get(key)`, `iter()`, `len()`, `is_empty()` | What `Error::details` returns: the values a caller acts on, by name. Serializes as an object. See [kinds and details](errors.md#kinds-and-details) |
 | `DetailValue` | enum, `#[non_exhaustive]`: `Text(String)`, `Integer(u64)`, `Bool(bool)` | One value in an `ErrorDetails`. Serializes as the bare value |
 
 ## Limits
@@ -417,9 +417,9 @@ matra collects nothing across documents: a stream is the collection, and how to 
 
 | Constant | Value | Bounds |
 |---|---|---|
-| `MAX_INPUT_BYTES` | 8,388,608 (8 MiB) | Text one input may hold; the `"input"` and `"file_source"` gates |
-| `MAX_CONFIG_FILE_BYTES` | 65,536 (64 KiB) | The configuration file; the `"config_file"` gate |
-| `MAX_DOWNLOAD_BYTES` | 67,108,864 (64 MiB) | Any one model download; the `"udpipe_download"` and `"embedding_download"` gates |
+| `MAX_INPUT_BYTES` | 8,388,608 (8 MiB) | Text one input may hold; the `"input"` and `"file_read"` gates |
+| `MAX_CONFIG_FILE_BYTES` | 65,536 (64 KiB) | The configuration file; the `"config_file_read"` gate |
+| `MAX_DOWNLOAD_BYTES` | 67,108,864 (64 MiB) | Any one model download; the `"parser_model_download"` and `"embedding_model_download"` gates |
 | `MAX_TFIDF_SENTENCES` | 2,000 | Sentences a TF-IDF summary ranks; `"tfidf"` |
 | `MAX_TEXTRANK_SENTENCES` | 2,000 | Sentences a TextRank summary ranks; `"textrank"` |
 | `MAX_CLUSTER_SENTENCES` | `MAX_TEXTRANK_SENTENCES` | Sentences or vectors clustered; `"clusters"`. Defined as TextRank's, since both build the same quadratic graph |

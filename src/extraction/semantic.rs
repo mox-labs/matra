@@ -39,9 +39,10 @@ pub(crate) fn cluster(
     threshold: f64,
 ) -> Result<(Vec<Cluster>, Vec<SimilarityEdge>)> {
     if !threshold.is_finite() {
-        return Err(Error::InvalidInput(format!(
-            "threshold must be finite, got {threshold}"
-        )));
+        return Err(Error::InvalidInput {
+            reason: "threshold_not_finite",
+            message: format!("threshold must be finite, got {threshold}"),
+        });
     }
     if embeddings.len() > MAX_SENTENCES {
         return Err(Error::InputTooLarge {
@@ -53,18 +54,19 @@ pub(crate) fn cluster(
     let dim = embeddings.first().map_or(0, |e| e.0.len());
     for (i, e) in embeddings.iter().enumerate() {
         if e.0.len() != dim {
-            return Err(Error::InvalidInput(format!(
-                "embedding {i} has dimension {}, expected {dim}",
-                e.0.len()
-            )));
+            return Err(Error::InvalidInput {
+                reason: "embedder_dimensions_differ",
+                message: format!("embedding {i} has dimension {}, expected {dim}", e.0.len()),
+            });
         }
         // A zero vector is a real geometry (documented above); a NaN or
         // infinity is not a geometry at all, and letting it through
         // would silently park its sentence in the unclustered count.
         if !e.0.iter().all(|v| v.is_finite()) {
-            return Err(Error::InvalidInput(format!(
-                "embedding {i} contains a non-finite value"
-            )));
+            return Err(Error::InvalidInput {
+                reason: "embedder_value_not_finite",
+                message: format!("embedding {i} contains a non-finite value"),
+            });
         }
     }
 
@@ -238,7 +240,7 @@ mod tests {
     fn dimension_disagreement_is_invalid_input() {
         let emb = [e(&[1.0, 0.0]), e(&[1.0, 0.0, 0.0])];
         match cluster(&emb, 0.8) {
-            Err(Error::InvalidInput(msg)) => assert!(msg.contains("dimension")),
+            Err(Error::InvalidInput { message: msg, .. }) => assert!(msg.contains("dimension")),
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
     }
@@ -247,7 +249,7 @@ mod tests {
     fn non_finite_embedding_value_is_invalid_input() {
         let emb = [e(&[1.0, 0.0]), e(&[f32::NAN, 0.0])];
         match cluster(&emb, 0.8) {
-            Err(Error::InvalidInput(msg)) => assert!(msg.contains("non-finite")),
+            Err(Error::InvalidInput { message: msg, .. }) => assert!(msg.contains("non-finite")),
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
     }
@@ -255,7 +257,7 @@ mod tests {
     #[test]
     fn non_finite_threshold_is_invalid_input() {
         match cluster(&[], f64::NAN) {
-            Err(Error::InvalidInput(msg)) => assert!(msg.contains("finite")),
+            Err(Error::InvalidInput { message: msg, .. }) => assert!(msg.contains("finite")),
             other => panic!("expected InvalidInput, got {:?}", other.map(|_| ())),
         }
     }

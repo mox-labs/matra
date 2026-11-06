@@ -316,10 +316,13 @@ impl Config {
             &file_path,
         )?;
         if !clusters_threshold.is_finite() {
-            return Err(Error::InvalidInput(format!(
-                "{}: clusters.threshold must be finite, got {clusters_threshold}",
-                origin_of("clusters.threshold", &sources, &file_path),
-            )));
+            return Err(Error::InvalidInput {
+                reason: "config_threshold_not_finite",
+                message: format!(
+                    "{}: clusters.threshold must be finite, got {clusters_threshold}",
+                    origin_of("clusters.threshold", &sources, &file_path),
+                ),
+            });
         }
         check_path_component("models.embedding", &embedding_model, &sources, &file_path)?;
 
@@ -524,8 +527,9 @@ struct ClustersSection {
 /// with a message naming what replaced it: the shape's own refusal would
 /// list the keys that exist and leave the reader to guess which one.
 fn parse_toml(text: &str, path: &Path) -> domain::Result<FileConfig> {
-    let invalid = |e: toml::de::Error| {
-        Error::InvalidInput(format!("{}: {}", path.display(), e.to_string().trim_end()))
+    let invalid = |e: toml::de::Error| Error::InvalidInput {
+        reason: "config_malformed",
+        message: format!("{}: {}", path.display(), e.to_string().trim_end()),
     };
     let table: toml::Table = toml::from_str(text).map_err(invalid)?;
     let renamed: Vec<&str> = RENAMED_KEYS
@@ -534,12 +538,15 @@ fn parse_toml(text: &str, path: &Path) -> domain::Result<FileConfig> {
         .map(|(_, replaced_by)| *replaced_by)
         .collect();
     if !renamed.is_empty() {
-        return Err(Error::InvalidInput(format!(
-            "{}: matra 0.3.0 renamed or removed {} this file sets: {}",
-            path.display(),
-            if renamed.len() == 1 { "a key" } else { "keys" },
-            renamed.join("; "),
-        )));
+        return Err(Error::InvalidInput {
+            reason: "config_key_renamed",
+            message: format!(
+                "{}: matra 0.3.0 renamed or removed {} this file sets: {}",
+                path.display(),
+                if renamed.len() == 1 { "a key" } else { "keys" },
+                renamed.join("; "),
+            ),
+        });
     }
     toml::from_str(text).map_err(invalid)
 }
@@ -573,9 +580,10 @@ fn choose<T>(
         sources.push((key, ValueSource::Default));
         return Ok(value);
     }
-    Err(Error::InvalidInput(format!(
-        "built-in defaults (config/default.toml) are missing `{key}`"
-    )))
+    Err(Error::InvalidInput {
+        reason: "config_default_missing",
+        message: format!("built-in defaults (config/default.toml) are missing `{key}`"),
+    })
 }
 
 /// The origin to name in a validation message: the config file when the
@@ -597,11 +605,14 @@ fn check_method(
     if known.contains(&value) {
         return Ok(());
     }
-    Err(Error::InvalidInput(format!(
-        "{}: {key} is `{value}`, which is not one of {}",
-        origin_of(key, sources, file_path),
-        known.join(", "),
-    )))
+    Err(Error::InvalidInput {
+        reason: "config_method_unknown",
+        message: format!(
+            "{}: {key} is `{value}`, which is not one of {}",
+            origin_of(key, sources, file_path),
+            known.join(", "),
+        ),
+    })
 }
 
 /// Reject a configured name that is not a single ordinary path
@@ -632,12 +643,15 @@ fn check_path_component(
     if single && !value.contains('\\') {
         return Ok(());
     }
-    Err(Error::InvalidInput(format!(
-        "{}: {key} is `{value}`, which is not a single path component. It names a directory \
-         inside the model directory, so it cannot be empty, absolute, or contain `/`, `\\`, \
-         `.` or `..`",
-        origin_of(key, sources, file_path),
-    )))
+    Err(Error::InvalidInput {
+        reason: "config_not_path_component",
+        message: format!(
+            "{}: {key} is `{value}`, which is not a single path component. It names a directory \
+             inside the model directory, so it cannot be empty, absolute, or contain `/`, `\\`, \
+             `.` or `..`",
+            origin_of(key, sources, file_path),
+        ),
+    })
 }
 // The three resolvers below are the whole of matra's environment surface, and
 // `scripts/e2e-sandbox.sh` transcribes the variables they read by hand so an
@@ -685,9 +699,11 @@ fn resolve_data_dir(
             ValueSource::Default,
         ));
     }
-    Err(Error::InvalidInput(
-        "cannot locate the data directory: set MATRA_DATA_DIR, XDG_DATA_HOME, or HOME".to_string(),
-    ))
+    Err(Error::InvalidInput {
+        reason: "no_data_directory",
+        message: "cannot locate the data directory: set MATRA_DATA_DIR, XDG_DATA_HOME, or HOME"
+            .to_string(),
+    })
 }
 
 fn resolve_model_dir(
@@ -750,15 +766,15 @@ fn read_config_file(path: &Path) -> domain::Result<Option<String>> {
         return Err(Error::InputTooLarge {
             limit: limits::MAX_CONFIG_FILE_BYTES,
             actual: metadata.len() as usize,
-            what: "config_file",
+            what: "config_file_read",
         });
     }
     match std::fs::read_to_string(path) {
         Ok(text) => Ok(Some(text)),
-        Err(e) if e.kind() == std::io::ErrorKind::InvalidData => Err(Error::InvalidInput(format!(
-            "{}: not valid UTF-8",
-            path.display()
-        ))),
+        Err(e) if e.kind() == std::io::ErrorKind::InvalidData => Err(Error::InvalidInput {
+            reason: "config_not_utf8",
+            message: format!("{}: not valid UTF-8", path.display()),
+        }),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(e) => Err(Error::Io(domain::IoContext::cannot("read", path, &e))),
     }
@@ -893,7 +909,7 @@ algorithm = "rake"
     fn a_config_file_from_0_2_fails_naming_every_replacement() {
         let err = Config::from_sources(env_of(&[("HOME", "/home/tester")]), Some(CONFIG_FROM_0_2))
             .unwrap_err();
-        let Error::InvalidInput(message) = err else {
+        let Error::InvalidInput { message, .. } = err else {
             panic!("expected InvalidInput, got {err:?}");
         };
         for named in [
@@ -924,7 +940,7 @@ algorithm = "rake"
         ] {
             let err =
                 Config::from_sources(env_of(&[("HOME", "/home/tester")]), Some(file)).unwrap_err();
-            let Error::InvalidInput(message) = err else {
+            let Error::InvalidInput { message, .. } = err else {
                 panic!("expected InvalidInput for {file:?}, got {err:?}");
             };
             assert!(message.contains(replacement), "{file:?}: {message}");
@@ -1015,7 +1031,7 @@ algorithm = "rake"
     fn an_environment_with_no_home_at_all_is_an_error() {
         let err = Config::from_sources(env_of(&[]), None).unwrap_err();
         assert!(
-            matches!(err, Error::InvalidInput(ref m) if m.contains("MATRA_DATA_DIR")),
+            matches!(err, Error::InvalidInput { message: ref m, .. } if m.contains("MATRA_DATA_DIR")),
             "unexpected error: {err}"
         );
     }
@@ -1186,7 +1202,7 @@ algorithm = "rake"
             Some("[clusters\nthreshold = 0.5\n"),
         )
         .unwrap_err();
-        let Error::InvalidInput(message) = err else {
+        let Error::InvalidInput { message, .. } = err else {
             panic!("expected InvalidInput, got {err:?}");
         };
         assert!(
@@ -1206,7 +1222,7 @@ algorithm = "rake"
             Some("[clusters]\nthreshold = \"high\"\n"),
         )
         .unwrap_err();
-        let Error::InvalidInput(message) = err else {
+        let Error::InvalidInput { message, .. } = err else {
             panic!("expected InvalidInput, got {err:?}");
         };
         assert!(
@@ -1223,7 +1239,7 @@ algorithm = "rake"
             Some("[clusters]\ntreshold = 0.5\n"),
         )
         .unwrap_err();
-        let Error::InvalidInput(message) = err else {
+        let Error::InvalidInput { message, .. } = err else {
             panic!("expected InvalidInput, got {err:?}");
         };
         assert!(
@@ -1239,7 +1255,7 @@ algorithm = "rake"
             Some("[summary]\nmethod = \"lexrank\"\n"),
         )
         .unwrap_err();
-        let Error::InvalidInput(message) = err else {
+        let Error::InvalidInput { message, .. } = err else {
             panic!("expected InvalidInput, got {err:?}");
         };
         assert!(
@@ -1258,7 +1274,7 @@ algorithm = "rake"
             Some("[keyphrases]\nmethod = \"textrank\"\n"),
         )
         .unwrap_err();
-        let Error::InvalidInput(message) = err else {
+        let Error::InvalidInput { message, .. } = err else {
             panic!("expected InvalidInput, got {err:?}");
         };
         assert!(
@@ -1281,7 +1297,7 @@ algorithm = "rake"
                 Some(&format!("[models]\nembedding = '{value}'\n")),
             )
             .unwrap_err();
-            let Error::InvalidInput(message) = err else {
+            let Error::InvalidInput { message, .. } = err else {
                 panic!("expected InvalidInput for {value:?}, got {err:?}");
             };
             assert!(
@@ -1315,7 +1331,7 @@ algorithm = "rake"
         )
         .unwrap_err();
         assert!(
-            matches!(err, Error::InvalidInput(ref m) if m.contains("clusters.threshold")),
+            matches!(err, Error::InvalidInput { message: ref m, .. } if m.contains("clusters.threshold")),
             "unexpected error: {err}"
         );
     }
@@ -1339,7 +1355,7 @@ algorithm = "rake"
             matches!(
                 err,
                 Error::InputTooLarge {
-                    what: "config_file",
+                    what: "config_file_read",
                     ..
                 }
             ),

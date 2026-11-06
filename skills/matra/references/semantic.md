@@ -74,7 +74,7 @@ The identity has the parser's shape: `name`, `model`, `sha256` and `license`, so
 
 ## Bounds and failures
 
-Capped at 2,000 sentences, with the `what` label `clusters`. An artifact download is capped at 64 MiB with the label `embedding_download`, bounded at 300 seconds end to end and 30 seconds on the connection.
+Capped at 2,000 sentences, with the `what` label `clusters`. An artifact download is capped at 64 MiB with the label `embedding_model_download`, bounded at 300 seconds end to end and 30 seconds on the connection.
 
 Contract violations are `invalid_input`, which means the call site is wrong and not the text: vectors disagreeing on dimension, a vector containing a non-finite value, a non-finite threshold, or an embedder returning the wrong number of vectors. An empty slice returns empty clusters rather than failing.
 
