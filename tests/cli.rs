@@ -922,6 +922,18 @@ fn depth_cuts_the_document_at_the_level_asked_for() {
     assert!(first["text"].is_string());
     assert!(first.get("tokens").is_none());
 
+    // Every cut reads back into the library's own `Document`, the way a
+    // caller who saved `--json` output reads it: the keys a cut removes
+    // read as empty.
+    for depth in ["document", "paragraph", "sentence"] {
+        let (_, out, _) = run(&["analyze", path_of(&f), "--json", "--depth", depth]);
+        let envelope: serde_json::Value = serde_json::from_str(&out).expect("JSON");
+        let text = serde_json::to_string(&envelope["result"]).expect("JSON");
+        let back: matra::domain::Document = serde_json::from_str(&text)
+            .unwrap_or_else(|e| panic!("--depth {depth} does not read back: {e}"));
+        assert_eq!(back.metrics.total_sentences, 3, "{depth}");
+    }
+
     let token = result("token");
     let (_, whole, _) = run(&["analyze", path_of(&f), "--json"]);
     let whole: serde_json::Value = serde_json::from_str(&whole).expect("JSON");

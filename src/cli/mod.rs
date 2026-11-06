@@ -1577,6 +1577,57 @@ mod tests {
         assert_ne!(keys(paragraph_whole), sorted);
     }
 
+    /// Regression: a document cut by `--depth` reads back into
+    /// [`Document`] at every level. The cut removes keys, and before the
+    /// three it removes read as empty, `serde_json::from_str::<Document>`
+    /// refused every cut but `token`, so what the command line wrote did
+    /// not compose with what the library takes.
+    #[test]
+    fn every_depth_reads_back_into_a_document() {
+        let mut paragraph = domain::Paragraph::new(
+            "A sentence.".to_string(),
+            domain::ParagraphKind::Paragraph,
+            domain::Span::new(0, 11),
+        );
+        let token = domain::Token::builder(
+            1,
+            "A".to_string(),
+            "a".to_string(),
+            "DET".to_string(),
+            0,
+            "root".to_string(),
+        )
+        .build();
+        paragraph.sentences.push(domain::Sentence::new(
+            "A sentence.".to_string(),
+            vec![token],
+        ));
+        let doc = Document::new(
+            domain::Provenance::for_test(),
+            vec![domain::Section::new(None, 0, None, vec![paragraph])],
+            Vec::new(),
+        );
+        for depth in [
+            Depth::Document,
+            Depth::Paragraph,
+            Depth::Sentence,
+            Depth::Token,
+        ] {
+            let text = serde_json::to_string(&at_depth(&doc, depth).expect("value")).expect("json");
+            let back: Document = serde_json::from_str(&text)
+                .unwrap_or_else(|e| panic!("{depth:?} does not read back: {e}"));
+            let sentences = back.sentences().count();
+            let tokens = back.tokens().count();
+            let expected = match depth {
+                Depth::Document | Depth::Paragraph => (0, 0),
+                Depth::Sentence => (1, 0),
+                Depth::Token => (1, 1),
+            };
+            assert_eq!((sentences, tokens), expected, "{depth:?}");
+            assert_eq!(back.provenance, doc.provenance, "{depth:?}");
+        }
+    }
+
     /// Regression: the notice a first run prints names the artifact, a
     /// size a person can read, and the directory it is going into. Every
     /// user meets that line on their first command, and before it
