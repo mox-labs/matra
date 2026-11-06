@@ -33,9 +33,10 @@ pub fn summarize<'py>(
         Some("tfidf") => crate::summarize_with(doc, n, SummaryMethod::TfIdf),
         Some("textrank") => crate::summarize_with(doc, n, SummaryMethod::TextRank),
         Some(other) => {
-            return Err(invalid_input(format!(
-                "unknown summary method `{other}`; expected tfidf or textrank"
-            )));
+            return Err(invalid_input(
+                "method_unknown",
+                format!("unknown summary method `{other}`; expected tfidf or textrank"),
+            ));
         }
     }
     .map_err(MatraError)?;
@@ -62,9 +63,10 @@ pub fn keyphrases<'py>(
         Some("rake") => crate::keyphrases_with(doc, n, KeyphraseMethod::Rake),
         Some("yake") => crate::keyphrases_with(doc, n, KeyphraseMethod::Yake),
         Some(other) => {
-            return Err(invalid_input(format!(
-                "unknown keyphrase method `{other}`; expected rake or yake"
-            )));
+            return Err(invalid_input(
+                "method_unknown",
+                format!("unknown keyphrase method `{other}`; expected rake or yake"),
+            ));
         }
     }
     .map_err(MatraError)?;

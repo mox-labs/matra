@@ -11,11 +11,11 @@
       "type": "string"
     },
     "message": {
-      "description": "The error's text, for a person. Every dynamic value in it is also in `details`.",
+      "description": "The error's text, for a person. Every dynamic value in it is also in `details`, except on `invalid_input`, whose `details.reason` names the check that failed and whose message adds, for a person, the values that failed it.",
       "type": "string"
     },
     "details": {
-      "description": "Every dynamic value in `message`, by name. The keys depend on `kind`; each value is a string, a whole number or a boolean.",
+      "description": "The values a caller acts on, by name: every dynamic value in `message`, except on `invalid_input` (see `message`). The keys depend on `kind`; each value is a string, a whole number or a boolean.",
       "type": "object",
       "additionalProperties": { "type": ["string", "integer", "boolean"] }
     },
@@ -40,8 +40,26 @@
       }
     },
     {
+      "if": { "properties": { "kind": { "const": "invalid_input" } }, "required": ["kind"], "additionalProperties": true },
+      "then": {
+        "properties": {
+          "details": {
+            "required": ["reason"],
+            "properties": {
+              "reason": {
+                "description": "The check that failed, a stable snake_case name to branch on, such as `threshold_not_finite`, `embedder_vector_count`, `blocks_malformed`, `config_malformed` or `usage`. The errors reference lists every one. An open set.",
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
       "if": {
-        "properties": { "kind": { "enum": ["model_invalid", "parse_failed", "invalid_input"] } },
+        "properties": { "kind": { "enum": ["model_invalid", "parse_failed"] } },
         "required": ["kind"],
         "additionalProperties": true
       },
@@ -68,7 +86,7 @@
             "required": ["what", "limit", "actual"],
             "properties": {
               "what": {
-                "description": "The gate that fired: `input`, `file_source`, `tfidf`, `textrank`, `rake`, `yake`, `clusters`, `udpipe_download`, `embedding_download` or `config_file`. An open set.",
+                "description": "The gate that fired: `input`, `file_read`, `tfidf`, `textrank`, `rake`, `yake`, `clusters`, `parser_model_download`, `embedding_model_download` or `config_file_read`. An open set.",
                 "type": "string"
               },
               "limit": { "description": "The cap.", "type": "integer", "minimum": 0 },

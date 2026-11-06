@@ -116,9 +116,12 @@ fn value_of(cfg: &Config, key: &str) -> Fallible<Value> {
         "keyphrases.method" => json!(cfg.keyphrases_method()),
         "clusters.threshold" => json!(cfg.clusters_threshold()),
         other => {
-            return Err(Failure::refused(format!(
-                "config show cannot render `{other}`: the key is resolved but has no reader here"
-            )));
+            return Err(Failure::refused(
+                "config_key_unrendered",
+                format!(
+                    "config show cannot render `{other}`: the key is resolved but has no reader here"
+                ),
+            ));
         }
     })
 }
@@ -161,6 +164,7 @@ fn origin_of(source: &ValueSource) -> Value {
 fn init(cli: &Cli, force: bool, out: &mut dyn Write) -> Fallible<Outcome> {
     let path = Config::config_file_path().ok_or_else(|| {
         Failure::refused(
+            "no_config_file_location",
             "cannot locate a config file: set MATRA_CONFIG_FILE, XDG_CONFIG_HOME, or HOME",
         )
     })?;
@@ -190,10 +194,13 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
     // The early check exists for the message, not for the guarantee. The
     // guarantee is the link below.
     if !force && path.exists() {
-        return Err(Failure::refused(format!(
-            "{} already exists; pass --force to overwrite it",
-            path.display()
-        )));
+        return Err(Failure::refused(
+            "config_file_exists",
+            format!(
+                "{} already exists; pass --force to overwrite it",
+                path.display()
+            ),
+        ));
     }
 
     let parent = path
@@ -234,10 +241,13 @@ fn write_defaults(path: &Path, force: bool) -> Fallible<()> {
     if let Err(e) = arrived {
         let _ = std::fs::remove_file(&temp);
         if e.kind() == std::io::ErrorKind::AlreadyExists {
-            return Err(Failure::refused(format!(
-                "{} already exists; pass --force to overwrite it",
-                path.display()
-            )));
+            return Err(Failure::refused(
+                "config_file_exists",
+                format!(
+                    "{} already exists; pass --force to overwrite it",
+                    path.display()
+                ),
+            ));
         }
         return Err(io_at("move the config into place at", path, &e).into());
     }

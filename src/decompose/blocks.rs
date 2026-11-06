@@ -33,8 +33,10 @@ enum WireBlock {
 
 /// Parse the JSON array into blocks.
 fn parse(input: &str) -> domain::Result<Vec<Block>> {
-    let wire: Vec<WireBlock> = serde_json::from_str(input)
-        .map_err(|e| Error::InvalidInput(format!("block input is not a block array: {e}")))?;
+    let wire: Vec<WireBlock> = serde_json::from_str(input).map_err(|e| Error::InvalidInput {
+        reason: "blocks_malformed",
+        message: format!("block input is not a block array: {e}"),
+    })?;
     Ok(wire
         .into_iter()
         .map(|block| match block {
@@ -58,9 +60,12 @@ pub(crate) fn assemble(blocks: &[Block]) -> domain::Result<Read> {
         match &block.0 {
             BlockContent::Heading { level, text: own } => {
                 if *level == 0 {
-                    return Err(Error::InvalidInput(format!(
-                        "block {index} is a heading at level 0; a heading's level is 1 or more"
-                    )));
+                    return Err(Error::InvalidInput {
+                        reason: "heading_level_zero",
+                        message: format!(
+                            "block {index} is a heading at level 0; a heading's level is 1 or more"
+                        ),
+                    });
                 }
                 text.push_str(own);
                 out.push(ReadBlock::Heading {
@@ -125,7 +130,7 @@ mod tests {
             .decompose(r#"[{"kind":"table","text":"x"}]"#)
             .err()
             .expect("refused");
-        assert!(matches!(err, Error::InvalidInput(_)));
+        assert!(matches!(err, Error::InvalidInput { .. }));
         assert!(err.to_string().contains("table"), "{err}");
     }
 
@@ -141,7 +146,7 @@ mod tests {
     #[test]
     fn a_level_zero_heading_is_refused() {
         let err = assemble(&[Block::heading(0, "x")]).err().expect("refused");
-        assert!(matches!(err, Error::InvalidInput(_)));
+        assert!(matches!(err, Error::InvalidInput { .. }));
     }
 
     #[test]

@@ -287,26 +287,46 @@ fn a_failure_under_json_is_an_envelope_on_stdout() {
 }
 
 /// The command line's own refusals carry the kind whose remedy matches:
-/// each of these is a call to change, which is `invalid_input`.
+/// each of these is a call to change, which is `invalid_input`, and each
+/// names its check in `details.reason`, so a caller tells them apart
+/// without reading the message.
 #[test]
 fn the_command_line_s_own_refusals_are_invalid_input() {
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().to_str().expect("utf8 path");
-    for (args, command) in [
-        (vec!["summarize", path, "--json"], "summarize"),
+    for (args, command, reason) in [
+        (
+            vec!["summarize", path, "--json"],
+            "summarize",
+            "directory_for_one_document",
+        ),
         (
             vec!["analyze", path, "--format", "blocks", "--json"],
             "analyze",
+            "format_with_directory",
         ),
-        (vec!["-r", "json", "--json"], "skill"),
-        (vec!["--skill", "-r", "jsn", "--json"], "skill"),
-        (vec!["--schema", "documnet", "--json"], "schema"),
+        (
+            vec!["-r", "json", "--json"],
+            "skill",
+            "reference_without_skill",
+        ),
+        (
+            vec!["--skill", "-r", "jsn", "--json"],
+            "skill",
+            "reference_unknown",
+        ),
+        (
+            vec!["--schema", "documnet", "--json"],
+            "schema",
+            "schema_unknown",
+        ),
     ] {
         let (code, out, err) = run(&args);
         assert_eq!(code, 2, "{args:?}: {err}");
         let envelope = failure_envelope(&out);
         assert_eq!(envelope["command"], command, "{args:?}");
         assert_eq!(envelope["error"]["kind"], "invalid_input", "{args:?}");
+        assert_eq!(envelope["error"]["details"]["reason"], reason, "{args:?}");
     }
 }
 
@@ -321,6 +341,7 @@ fn a_usage_failure_under_json_is_an_envelope() {
     let envelope = failure_envelope(&out);
     assert_eq!(envelope["command"], "analyze");
     assert_eq!(envelope["error"]["kind"], "invalid_input");
+    assert_eq!(envelope["error"]["details"]["reason"], "usage");
     assert!(
         envelope["error"]["message"]
             .as_str()

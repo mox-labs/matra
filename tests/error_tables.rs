@@ -355,3 +355,68 @@ fn the_skill_reference_agrees_with_the_pyerr_routing() {
         "skills/matra/references/errors.md disagrees with the routing in src/python/errors.rs"
     );
 }
+
+/// Every `reason` an `invalid_input` can carry, read out of the library
+/// source: the `reason: "..."` of each `Error::InvalidInput` it builds,
+/// and the first argument of the two helpers that build one, the command
+/// line's `Failure::refused` and the Python binding's `invalid_input`.
+/// Test modules are left out, since what they build is not raised.
+fn reasons_in_source() -> std::collections::BTreeSet<String> {
+    fn walk(dir: &std::path::Path, out: &mut Vec<PathBuf>) {
+        for entry in fs::read_dir(dir).expect("read src") {
+            let path = entry.expect("entry").path();
+            if path.is_dir() {
+                walk(&path, out);
+            } else if path.extension().is_some_and(|e| e == "rs") {
+                out.push(path);
+            }
+        }
+    }
+    let mut files = Vec::new();
+    walk(&repo("src"), &mut files);
+    let mut found = std::collections::BTreeSet::new();
+    for file in files {
+        let text = fs::read_to_string(&file).expect("read source");
+        let code =
+            flatten(text.split("#[cfg(test)]\nmod tests").next().unwrap_or("")).replace("( ", "(");
+        for marker in [
+            "InvalidInput { reason: \"",
+            "refused(\"",
+            "invalid_input(\"",
+        ] {
+            for piece in code.split(marker).skip(1) {
+                let name: String = piece
+                    .chars()
+                    .take_while(|c| c.is_ascii_lowercase() || *c == '_' || c.is_ascii_digit())
+                    .collect();
+                if piece[name.len()..].starts_with('"') && !name.is_empty() {
+                    found.insert(name);
+                }
+            }
+        }
+    }
+    found
+}
+
+/// The errors reference lists every `invalid_input` reason the library
+/// raises, and nothing it does not: `reason` is the stable name a caller
+/// branches on, so a check added without a row, or a row left behind by a
+/// check removed, is a contract the page misstates.
+#[test]
+fn the_reference_page_lists_every_invalid_input_reason() {
+    let page = read("site/content/reference/errors.md");
+    let section = between(&page, "### InvalidInput", "### UnsupportedFormat");
+    let documented: std::collections::BTreeSet<String> = rows(section, "")
+        .into_iter()
+        .map(|r| r[0].clone())
+        .collect();
+    let raised = reasons_in_source();
+    assert!(
+        raised.len() > 20,
+        "the source scan found only {raised:?}: the markers no longer match how the source builds the error"
+    );
+    assert_eq!(
+        documented, raised,
+        "site/content/reference/errors.md (### InvalidInput) disagrees with the reasons src/ raises"
+    );
+}

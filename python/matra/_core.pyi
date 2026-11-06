@@ -62,9 +62,9 @@ class MatraError(Exception):
     """Every failure matra raises.
 
     `kind` is the stable string to branch on, one of `ERROR_KINDS`; each
-    subclass below carries its own. `details` holds every dynamic value
-    in the message, by name (see `matra.ErrorDetails` for the keys per
-    kind), so nothing has to be parsed out of `str(exc)`.
+    subclass below carries its own. `details` holds the values to act on,
+    by name (see `matra.ErrorDetails` for the keys per kind), so nothing
+    has to be parsed out of `str(exc)`.
 
     Each subclass also derives from the builtin class matra raised before
     0.3.0, so `except ValueError` still catches an `InputTooLargeError`.
@@ -96,8 +96,10 @@ class UnsupportedFormatError(MatraError, ValueError):
     one was recognised and `feature` when one would read it."""
 
 class InvalidInputError(MatraError, ValueError):
-    """A caller broke a documented contract. `kind` is
-    `invalid_input`."""
+    """The call cannot be honored as made: change the arguments, the
+    configuration, the data or the embedder. `kind` is `invalid_input`,
+    and `details["reason"]` names the check that failed, a stable
+    snake_case name (`method_unknown`, `embedder_raised`, ...)."""
 
 class IoError(MatraError, OSError):
     """A filesystem operation failed, or a download did not arrive. `kind`

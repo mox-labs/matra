@@ -143,13 +143,19 @@ impl PyEmbedder {
     pub(super) fn new(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
         use super::errors::invalid_input;
         let raw = obj.call_method0("identity").map_err(|e| {
-            invalid_input(format!("calling identity() on the embedder failed: {e}"))
+            invalid_input(
+                "embedder_identity_failed",
+                format!("calling identity() on the embedder failed: {e}"),
+            )
         })?;
         let identity = pythonize::depythonize::<domain::Identity>(&raw).map_err(|e| {
-            invalid_input(format!(
-                "the embedder's identity() must return a dict with a `name` string \
+            invalid_input(
+                "embedder_identity_shape",
+                format!(
+                    "the embedder's identity() must return a dict with a `name` string \
                  and optional `model`, `sha256` and `license` strings: {e}"
-            ))
+                ),
+            )
         })?;
         Ok(Self {
             obj: obj.clone().unbind(),
@@ -165,16 +171,20 @@ impl Embedder for PyEmbedder {
                 .obj
                 .bind(py)
                 .call_method1("embed", (texts.to_vec(),))
-                .map_err(|e| {
-                    domain::Error::InvalidInput(format!("the embedder's embed() raised {e}"))
+                .map_err(|e| domain::Error::InvalidInput {
+                    reason: "embedder_raised",
+                    message: format!("the embedder's embed() raised {e}"),
                 })?;
             // Two stages rather than one `Vec<Vec<f64>>` extraction,
             // so the message names which level of the shape was
             // wrong and which vector went astray.
             let rows = returned.extract::<Vec<Bound<'_, PyAny>>>().map_err(|e| {
-                domain::Error::InvalidInput(format!(
-                    "the embedder's embed() must return a sequence of vectors: {e}"
-                ))
+                domain::Error::InvalidInput {
+                    reason: "embedder_return_shape",
+                    message: format!(
+                        "the embedder's embed() must return a sequence of vectors: {e}"
+                    ),
+                }
             })?;
             rows.iter()
                 .enumerate()
@@ -185,9 +195,12 @@ impl Embedder for PyEmbedder {
                     // `clusters` and the clustering it calls, and is
                     // not restated here.
                     let values = row.extract::<Vec<f64>>().map_err(|e| {
-                        domain::Error::InvalidInput(format!(
-                            "the embedder's embed() returned a vector at index {i} that is not a sequence of numbers: {e}"
-                        ))
+                        domain::Error::InvalidInput {
+                            reason: "embedder_return_shape",
+                            message: format!(
+                                "the embedder's embed() returned a vector at index {i} that is not a sequence of numbers: {e}"
+                            ),
+                        }
                     })?;
                     Ok(domain::Embedding(
                         values.into_iter().map(|v| v as f32).collect(),

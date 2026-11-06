@@ -441,11 +441,14 @@ class Clusters(TypedDict):
 
 
 type ErrorDetails = dict[str, str | int | bool]
-"""Every dynamic value in a failure's message, by name. Mirrors
+"""The values a failure's caller acts on, by name. Mirrors
 ``matra::domain::ErrorDetails``.
 
 The keys per kind: ``path`` for ``model_not_found``; ``reason`` for
-``model_invalid``, ``parse_failed`` and ``invalid_input``; ``what``,
+``model_invalid`` and ``parse_failed``, the variant's own text; ``reason``
+for ``invalid_input``, the stable snake_case name of the check that
+failed (``threshold_not_finite``, ``config_malformed``, ...; the errors
+reference lists them, an open set); ``what``,
 ``limit`` and ``actual`` for ``input_too_large``; ``format`` (when one was
 recognised) and ``feature`` (when one would read it) for
 ``unsupported_format``; and for ``io``, ``io_kind`` and ``reason``, with
@@ -463,8 +466,9 @@ class ErrorInfo(TypedDict):
     ``kind`` is a stable string naming the variant; ``ERROR_KINDS`` holds
     the whole vocabulary. Branch on it. ``message`` is the Rust error's
     own text, meant for a human and not a contract. ``details`` holds
-    every dynamic value in the message, so nothing has to be parsed out
-    of it.
+    the values to act on, so nothing has to be parsed out of it: every
+    dynamic value in the message, and on ``invalid_input`` the ``reason``
+    naming the check that failed.
     """
 
     kind: str

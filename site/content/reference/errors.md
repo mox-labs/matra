@@ -4,7 +4,7 @@ Every fallible function in matra returns `domain::Result<T>`, which is `std::res
 
 `Error` is `#[non_exhaustive]`. Variants can be added in a minor release, so a match on it from another crate needs a catch-all arm. `Error` does not derive `Clone`; it is moved, not copied. The stream surface wraps it in `DocumentError`, which adds the path the failure occurred at, and yields it as that input's `Err` item.
 
-Every error reads the same way on every channel. It has a kind, a stable string to branch on. It has a message, for a person. And it has details: every dynamic value in the message, as named data. In Rust these are `Error::kind`, `Display` and `Error::details`. The serde form is the three together, and Python exceptions carry the same three. See [kinds and details](#kinds-and-details).
+Every error reads the same way on every channel. It has a kind, a stable string to branch on. It has a message, for a person. And it has details: the values a caller acts on, as named data, so nothing has to parse the message. For every kind but `invalid_input` that is every dynamic value in the message; an `invalid_input` names the check that failed, and its message adds the values that failed it for a person. In Rust these are `Error::kind`, `Display` and `Error::details`. The serde form is the three together, and Python exceptions carry the same three. See [kinds and details](#kinds-and-details).
 
 ## The variants
 
@@ -15,7 +15,7 @@ Every error reads the same way on every channel. It has a kind, a stable string 
 | `ParseFailed` | `String` | The NLP provider failed on the input, or panicked, or produced an unusable token id |
 | `InputTooLarge` | `{ limit: usize, actual: usize, what: &'static str }` | A size gate rejected the input. `what` names the gate |
 | `UnsupportedFormat` | `{ format: Option<Format>, feature: Option<&'static str> }` | The input is in a format no reader in this build reads, or is not UTF-8 text |
-| `InvalidInput` | `String` | A caller violated a documented API contract |
+| `InvalidInput` | `{ reason: &'static str, message: String }` | The call cannot be honored as made. `reason` names the check that failed |
 | `Io` | `std::io::Error` | A filesystem operation failed, or a download did not arrive |
 
 `Error` implements `std::error::Error` and `Display` through `thiserror`, and `From<std::io::Error>`, so `?` converts I/O failures automatically.
@@ -53,21 +53,21 @@ Ten gate labels produce this variant. The `what` field carries the label so a ca
 | `what` | Gate | Limit | Measured over |
 |---|---|---|---|
 | `"input"` | The engine's reading stage, the only route from text to the parser, for every `Input` constructor, and the CLI's stdin read, which applies the same cap first | `MAX_INPUT_BYTES`, 8 MiB (8,388,608) | Byte length of the input handed in, and of the analysed text the reader produces (for block input, the blocks joined); the CLI counts the bytes as they arrive, before decoding them |
-| `"file_source"` | Reading the file an `Input::file` names | `MAX_INPUT_BYTES`, 8,388,608 bytes | File size reported by the filesystem, checked before any read |
+| `"file_read"` | Reading the file an `Input::file` names | `MAX_INPUT_BYTES`, 8,388,608 bytes | File size reported by the filesystem, checked before any read |
 | `"tfidf"` | `summarize`, and `summarize_with` with `SummaryMethod::TfIdf` | `MAX_TFIDF_SENTENCES`, 2,000 | Number of sentences in the document |
 | `"textrank"` | `summarize_with` with `SummaryMethod::TextRank` | `MAX_TEXTRANK_SENTENCES`, 2,000 | Number of sentences in the document |
 | `"rake"` | `keyphrases`, and `keyphrases_with` with `KeyphraseMethod::Rake` | `MAX_RAKE_TOKENS`, 200,000 | Total tokens across the document's sentences, punctuation included |
 | `"yake"` | `keyphrases_with` with `KeyphraseMethod::Yake` | `MAX_YAKE_TOKENS`, 200,000 | Total tokens across the document's sentences, punctuation included |
 | `"clusters"` | `clusters`, before anything is embedded | `MAX_CLUSTER_SENTENCES`, 2,000 | Number of sentences in the document |
-| `"udpipe_download"` | The UDPipe provisioner | `MAX_DOWNLOAD_BYTES`, 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
-| `"embedding_download"` | `Model2Vec::potion_base_8m`, per artifact | `MAX_DOWNLOAD_BYTES`, 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
-| `"config_file"` | `Config::resolve` and `Config::from_file`, reading a config file | `MAX_CONFIG_FILE_BYTES`, 64 KiB (65,536) | File size reported by the filesystem, checked before any read |
+| `"parser_model_download"` | The UDPipe provisioner | `MAX_DOWNLOAD_BYTES`, 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
+| `"embedding_model_download"` | `Model2Vec::potion_base_8m`, per artifact | `MAX_DOWNLOAD_BYTES`, 64 MiB (67,108,864) | Bytes read from the response, which stops one past the cap |
+| `"config_file_read"` | `Config::resolve` and `Config::from_file`, reading a config file | `MAX_CONFIG_FILE_BYTES`, 64 KiB (65,536) | File size reported by the filesystem, checked before any read |
 
 `limit` carries the cap and `actual` carries the measured size, so an error message can be built without hardcoding the constants. Each cap is a published constant in `domain::limits`, named in the table; the module's documentation carries the cost model behind each value. No configuration changes any of them.
 
 The caps bound worst-case memory and time. TextRank builds a dense similarity matrix that reaches roughly 32 MB of `f64` at 2,000 sentences. RAKE and YAKE build phrase-keyed maps whose size follows token count rather than sentence count, which is why their caps are stated in tokens. The two download caps are the gates whose input is not the caller's: they bound what a redirected or misbehaving server can make the process hold, and the read stops at the bound rather than continuing, so `actual` reports the bound that was breached rather than the response's full length. Both are 64 MiB per file, against the 16.3 MB parsing model and the embedding model's largest file, 30.2 MB of its 30.9 MB set, which is headroom for a later version and still finite.
 
-A document from disk crosses both gates in sequence: `"file_source"` when the file is read, `"input"` before it is parsed. In practice `"file_source"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
+A document from disk crosses both gates in sequence: `"file_read"` when the file is read, `"input"` before it is parsed. In practice `"file_read"` fires first, since both carry the same 8 MiB limit and the file size is checked before the read.
 
 The parser is private to the crate, so no caller reaches it except through the engine, and no text bypasses the `"input"` gate.
 
@@ -79,9 +79,49 @@ A metric has no gate of its own. The compression ratio skips any paragraph over 
 
 ### InvalidInput
 
-Returned by `clusters` when a caller or an embedder breaks a documented contract (a non-finite threshold, an embedder returning the wrong number of vectors, embeddings disagreeing on dimension, an embedding containing a non-finite value). Python's outcome functions use it for a method name they do not know, and `Engine.analyze` for a `format` name it does not know. The payload names the violation. This variant means a call site or a provider implementation is wrong, not the input data; nothing about the analyzed text produces it.
+The call cannot be honored as made, and making it again as it is will fail the same way. The remedy is to change something the caller controls: the arguments, the configuration, the data handed in, or the embedder passed to `clusters`. Nothing about analysed text produces it.
 
-`Config::resolve` and `Config::from_file` use the same variant for a configuration that cannot be honored: a config file that does not parse, an unknown key, a key 0.3.0 renamed or removed (`[summarize]`, `algorithm`, `[semantic]`, `models.udpipe`, each refused with what replaced it), a method name this build does not know, a threshold that is not finite, a config file that is not valid UTF-8, or an environment with none of `MATRA_DATA_DIR`, `XDG_DATA_HOME` or `HOME` set. The payload names the file and the offending key or line. A config file that is simply absent is not an error for `Config::resolve`, and the built-in defaults stand; `Config::from_file` refuses one with `Io`, because the caller named it.
+One kind covers every such check, because they share that remedy, and `reason` says which check failed: a stable snake_case name, in `details["reason"]` on every channel, to branch on where the remedy differs. `message` names the values that failed it, for a person. A reader treats the set of reasons as open, since a later version can add a check.
+
+| `reason` | Check that failed | Raised by |
+|---|---|---|
+| `threshold_not_finite` | The threshold is NaN or infinite | `clusters` |
+| `embedder_vector_count` | The embedder returned a different number of vectors than there are sentences | `clusters` |
+| `embedder_dimensions_differ` | Two of the embedder's vectors have different lengths | `clusters` |
+| `embedder_value_not_finite` | A vector holds a NaN or an infinity | `clusters` |
+| `not_a_directory` | The path is not a directory | `Inputs::dir` |
+| `is_a_directory` | The path is a directory where one file is read | `Engine::analyze` of an `Input::file` or `Input::file_as` |
+| `blocks_malformed` | Block input is not an array of heading and paragraph blocks | `Engine::analyze` of input read as `Format::Blocks`; Python's `Engine.analyze(blocks=...)` |
+| `heading_level_zero` | A heading block has level 0 | `Engine::analyze` of block input, from `Input::blocks`, JSON or Python |
+| `config_malformed` | The config file does not parse, holds an unknown key, or a value of the wrong type | `Config::resolve`, `Config::from_file` |
+| `config_key_renamed` | The config file sets a key 0.3.0 renamed or removed (`[summarize]`, `algorithm`, `[semantic]`, `models.udpipe`); the message names each replacement | `Config::resolve`, `Config::from_file` |
+| `config_method_unknown` | `summary.method` or `keyphrases.method` names a method this build does not know | `Config::resolve`, `Config::from_file` |
+| `config_threshold_not_finite` | `clusters.threshold` is NaN or infinite | `Config::resolve`, `Config::from_file` |
+| `config_not_path_component` | `models.embedding` is not a single directory name | `Config::resolve`, `Config::from_file` |
+| `config_not_utf8` | The config file is not valid UTF-8 | `Config::resolve`, `Config::from_file` |
+| `config_default_missing` | The built-in defaults lack a key: a defect in this build, to report | `Config::resolve`, `Config::from_file` |
+| `no_data_directory` | None of `MATRA_DATA_DIR`, `XDG_DATA_HOME` or `HOME` is set | `Config::resolve`, `Engine::new` |
+| `format_unknown` | A `format` name matra does not know | Python's `Engine.analyze` |
+| `method_unknown` | A `method` name matra does not know | Python's `summarize` and `keyphrases` |
+| `embedder_identity_failed` | The embedder has no `identity()`, or it raised | Python's `clusters` |
+| `embedder_identity_shape` | `identity()` returned something other than an `Identity` dict | Python's `clusters` |
+| `embedder_raised` | The embedder's `embed()` raised | Python's `clusters` |
+| `embedder_return_shape` | `embed()` returned something other than a sequence of number sequences | Python's `clusters` |
+| `usage` | The arguments do not parse: an unknown flag, a missing value | the command line, under `--json` |
+| `no_command` | No subcommand and neither `--skill` nor `--schema` | the command line |
+| `reference_without_skill` | `-r` without `--skill` | the command line |
+| `reference_unknown` | `--skill -r` names no reference | the command line |
+| `schema_unknown` | `--schema` names no schema | the command line |
+| `format_with_directory` | `--format` given with a directory | `matra analyze` |
+| `directory_for_one_document` | A directory given to a command that reads one document | `matra summarize`, `keyphrases`, `clusters` |
+| `method_unavailable` | The configured method is one this build cannot run | `matra summarize`, `keyphrases` |
+| `embedder_unavailable` | The build has no embedder (no `model2vec` feature) | `matra clusters` |
+| `config_file_exists` | The config file exists and `--force` was not given | `matra config init` |
+| `no_config_file_location` | None of `MATRA_CONFIG_FILE`, `XDG_CONFIG_HOME` or `HOME` is set | `matra config init` |
+| `config_key_unrendered` | A resolved key has no renderer: a defect in this build, to report | `matra config show` |
+| `embedded_file_malformed` | A schema or skill reference compiled into the binary does not read: a defect in this build, to report | `matra --schema`, `matra --skill` |
+
+A config file that is simply absent is not an error for `Config::resolve`, and the built-in defaults stand; `Config::from_file` refuses one with `Io`, because the caller named it.
 
 ### UnsupportedFormat
 
@@ -117,7 +157,7 @@ The UDPipe provisioner (behind `Engine::new` and `Engine::from_config`, in Rust 
 | Fetch budget exceeded (300 seconds, lookup through last byte) | `Io`, `ErrorKind::TimedOut` | `io` | The URL | `url`, `retryable: true` |
 | TLS certificate rejected | `Io` | `io` | The host, why matra cannot be made to trust it, the way out, then the underlying failure | `url`, `retryable: false` |
 | Non-2xx status | `Io` | `io` | The URL and the status | `url`, `retryable: true` |
-| Response past 64 MiB | `InputTooLarge` | `input_too_large` | `what` is `"udpipe_download"` or `"embedding_download"` | `what`, `limit`, `actual` |
+| Response past 64 MiB | `InputTooLarge` | `input_too_large` | `what` is `"parser_model_download"` or `"embedding_model_download"` | `what`, `limit`, `actual` |
 | Directory, write or rename failed | `Io` | `io` | The operation and the path | `path` |
 | Bytes arrived and failed the pinned digest, twice | `ModelInvalid` | `model_invalid` | The URL, or the directory and the expected digest | `reason` |
 | Bytes arrived, passed the digest, and did not load | `ModelInvalid` | `model_invalid` | The loader's message | `reason` |
@@ -178,7 +218,7 @@ Two kinds of entry never appear on either side. The directory listing skips syml
 
 ## Kinds and details
 
-`Error::details` returns an `ErrorDetails`: every dynamic value in the message, by name. Each value is a `DetailValue`, which is text, a whole number or a boolean. A caller reads a value instead of parsing the message.
+`Error::details` returns an `ErrorDetails`: the values a caller acts on, by name, which for every kind but `invalid_input` is every dynamic value in the message. Each value is a `DetailValue`, which is text, a whole number or a boolean. A caller reads a value instead of parsing the message.
 
 | Kind | Details |
 |---|---|
@@ -187,10 +227,10 @@ Two kinds of entry never appear on either side. The directory listing skips syml
 | `parse_failed` | `reason` |
 | `input_too_large` | `what`, `limit`, `actual` |
 | `unsupported_format` | `format` when one was recognised; `feature` when a Cargo feature would read it |
-| `invalid_input` | `reason` |
+| `invalid_input` | `reason`, the check that failed, from [the table above](#invalidinput) |
 | `io` | `io_kind` and `reason`; `path` when the failure concerns a path matra named; `url` and `retryable` when a download did not arrive |
 
-- `reason` is the variant's own text: the `String` the variant holds, or the operating system's account of an I/O failure. It is for a person, like the message.
+- On `model_invalid`, `parse_failed` and `io`, `reason` is the variant's own text: the `String` the variant holds, or the operating system's account of an I/O failure. It is for a person, like the message. On `invalid_input` it is the name of the check that failed, stable, to branch on.
 - `io_kind` is the I/O failure's class in snake case: `not_found`, `permission_denied`, `already_exists`, `unsupported`, `invalid_input`, `invalid_data`, `timed_out`, `not_connected`, `connection_refused`, `connection_reset`, `unexpected_eof`, `interrupted`, `not_a_directory`, `is_a_directory` or `storage_full`. Any other class is `other`. Treat the set as open.
 - `retryable` appears only on a download that did not arrive. Its absence makes no claim either way.
 
@@ -216,7 +256,7 @@ These are the strings `Display` produces, which are also the strings Python's `s
 | `ParseFailed(s)` | `parse failed: {s}` | `parse_failed` |
 | `InputTooLarge { limit, actual, what }` | `{what} input too large: {actual} > limit {limit}`, or `input too large: {actual} > limit {limit}` when `what` is `"input"` | `input_too_large` |
 | `UnsupportedFormat { format, feature }` | `unsupported format: {format}; no feature of this matra version reads it`, `` unsupported format: {format}; enable the `{feature}` feature to read it ``, or `unsupported format: the input is not UTF-8 text and carries no signature matra recognises` when `format` is `None` | `unsupported_format` |
-| `InvalidInput(s)` | `invalid input: {s}` | `invalid_input` |
+| `InvalidInput { reason, message }` | `invalid input: {message}` | `invalid_input` |
 | `Io(e)` | `io error: {e}` | `io` |
 
 `UnsupportedFormat` renders the format's wire name, so the string reads `unsupported format: pdf; no feature of this matra version reads it`.
@@ -294,7 +334,7 @@ except FileNotFoundError as exc:
 
 The classes name `matra` as their module, so a traceback reads `matra.InputTooLargeError`, and an exception survives `pickle` with its `kind` and `details`.
 
-Every Python input reaches the parser through the engine's reading stage, so the 8 MiB `"input"` gate applies uniformly, to `text`, `bytes` and `blocks` alike, and a `file` meets `"file_source"` first. The outcome functions take a `Document`, never text, and their own caps apply to it.
+Every Python input reaches the parser through the engine's reading stage, so the 8 MiB `"input"` gate applies uniformly, to `text`, `bytes` and `blocks` alike, and a `file` meets `"file_read"` first. The outcome functions take a `Document`, never text, and their own caps apply to it.
 
 One further failure has no `Error` variant behind it. Python's `Engine` is `#[pyclass(unsendable)]`, because the loaded model holds C-side state that is not thread-safe. Accessing one engine from a thread other than the one that created it fails at runtime. Multi-process use is unaffected.
 

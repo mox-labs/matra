@@ -32,10 +32,13 @@ impl Source for FileSource {
         let file_type = metadata.file_type();
 
         if file_type.is_dir() {
-            return Err(Error::InvalidInput(format!(
-                "{} is a directory; read a directory with Inputs::dir",
-                input.display()
-            )));
+            return Err(Error::InvalidInput {
+                reason: "is_a_directory",
+                message: format!(
+                    "{} is a directory; read a directory with Inputs::dir",
+                    input.display()
+                ),
+            });
         }
 
         if file_type.is_symlink() {
@@ -60,7 +63,7 @@ impl Source for FileSource {
             return Err(Error::InputTooLarge {
                 limit: MAX_INPUT_BYTES,
                 actual: usize::try_from(len).unwrap_or(usize::MAX),
-                what: "file_source",
+                what: "file_read",
             });
         }
 
@@ -146,7 +149,7 @@ mod tests {
     fn a_directory_is_refused_naming_inputs_dir() {
         let dir = tempfile::tempdir().unwrap();
         match FileSource.read(dir.path()) {
-            Err(Error::InvalidInput(message)) => {
+            Err(Error::InvalidInput { message, .. }) => {
                 assert!(message.contains("Inputs::dir"), "{message}");
             }
             other => panic!("expected InvalidInput, got {:?}", other.map(|v| v.len())),
@@ -191,7 +194,7 @@ mod tests {
             }) => {
                 assert_eq!(limit, MAX_INPUT_BYTES);
                 assert_eq!(actual, MAX_INPUT_BYTES + 1);
-                assert_eq!(what, "file_source");
+                assert_eq!(what, "file_read");
             }
             other => panic!("expected InputTooLarge, got {:?}", other.map(|v| v.len())),
         }

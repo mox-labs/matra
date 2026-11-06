@@ -2495,9 +2495,9 @@
       "count": 8388609,
       "expect": {
         "kind": "input_too_large",
-        "message": "file_source input too large: 8388609 > limit 8388608",
+        "message": "file_read input too large: 8388609 > limit 8388608",
         "details": {
-          "what": "file_source",
+          "what": "file_read",
           "limit": 8388608,
           "actual": 8388609
         }

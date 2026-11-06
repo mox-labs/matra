@@ -53,10 +53,10 @@ Called from `Engine::annotate` before decomposition. Because annotate is the uni
 | `what` value | Where it fires |
 |---|---|
 | `"input"` | `Engine::annotate` in `lib.rs` |
-| `"file_source"` | `source/file.rs` before reading the file |
+| `"file_read"` | `source/file.rs` before reading the file |
 | `"tfidf"`, `"textrank"`, `"rake"`, `"yake"` | Per-method caps in `extraction/` |
-| `"config_file"` | `config.rs` before reading the config file |
-| `"udpipe_download"`, `"embedding_download"` | The two provisioners, on the bytes a download returns |
+| `"config_file_read"` | `config.rs` before reading the config file |
+| `"parser_model_download"`, `"embedding_model_download"` | The two provisioners, on the bytes a download returns |
 | `"clusters"` | `matra::clusters` in `lib.rs` before embedding, and the clustering in `extraction/semantic.rs` |
 
 When adding a new gate, pick a distinct `what` discriminator and put its cap in `domain::limits`; the `limit` detail of its error is that constant.
