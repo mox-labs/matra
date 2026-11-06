@@ -27,13 +27,13 @@
       "words": 59
     },
     {
-      "compression_ratio": 0.5611,
+      "compression_ratio": 0.4965,
       "kind": "paragraph",
-      "lexical_density": 0.5231,
-      "readability_grade": 5.096,
-      "sentences": 7,
-      "text": "Every error reads the same way on every channel. It has a kind, a stable string to branch on. It has a message, for a person. And it has details: every dynamic value in the message, as named data. In Rust these are Error::kind, Display and Error::details. The serde form is the three together, and Python exceptions carry the same three. See kinds and details.",
-      "words": 67
+      "lexical_density": 0.5,
+      "readability_grade": 6.8396,
+      "sentences": 8,
+      "text": "Every error reads the same way on every channel. It has a kind, a stable string to branch on. It has a message, for a person. And it has details: the values a caller acts on, as named data, so nothing has to parse the message. For every kind but invalid_input that is every dynamic value in the message; an invalid_input names the check that failed, and its message adds the values that failed it for a person. In Rust these are Error::kind, Display and Error::details. The serde form is the three together, and Python exceptions carry the same three. See kinds and details.",
+      "words": 106
     },
     {
       "compression_ratio": null,
@@ -194,7 +194,7 @@
       "lexical_density": 0.5238,
       "readability_grade": 9.1762,
       "sentences": 2,
-      "text": "A document from disk crosses both gates in sequence: \"file_source\" when the file is read, \"input\" before it is parsed. In practice \"file_source\" fires first, since both carry the same 8 MiB limit and the file size is checked before the read.",
+      "text": "A document from disk crosses both gates in sequence: \"file_read\" when the file is read, \"input\" before it is parsed. In practice \"file_read\" fires first, since both carry the same 8 MiB limit and the file size is checked before the read.",
       "words": 42
     },
     {
@@ -234,22 +234,31 @@
       "words": 45
     },
     {
-      "compression_ratio": 0.5312,
+      "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5765,
-      "readability_grade": 11.1694,
-      "sentences": 5,
-      "text": "Returned by clusters when a caller or an embedder breaks a documented contract (a non-finite threshold, an embedder returning the wrong number of vectors, embeddings disagreeing on dimension, an embedding containing a non-finite value). Python's outcome functions use it for a method name they do not know, and Engine.analyze for a format name it does not know. The payload names the violation. This variant means a call site or a provider implementation is wrong, not the input data; nothing about the analyzed text produces it.",
-      "words": 86
+      "lexical_density": 0.5,
+      "readability_grade": 9.825,
+      "sentences": 4,
+      "text": "The call cannot be honored as made, and making it again as it is will fail the same way. The remedy is to change something the caller controls: the arguments, the configuration, the data handed in, or the embedder passed to clusters. Nothing about analysed text produces it.",
+      "words": 49
     },
     {
-      "compression_ratio": 0.5159,
+      "compression_ratio": 0.5685,
       "kind": "paragraph",
-      "lexical_density": 0.5268,
-      "readability_grade": 10.5489,
+      "lexical_density": 0.6,
+      "readability_grade": 9.7133,
       "sentences": 3,
-      "text": "Config::resolve and Config::from_file use the same variant for a configuration that cannot be honored: a config file that does not parse, an unknown key, a key 0.3.0 renamed or removed ([summarize], algorithm, [semantic], models.udpipe, each refused with what replaced it), a method name this build does not know, a threshold that is not finite, a config file that is not valid UTF-8, or an environment with none of MATRA_DATA_DIR, XDG_DATA_HOME or HOME set. The payload names the file and the offending key or line. A config file that is simply absent is not an error for Config::resolve, and the built-in defaults stand; Config::from_file refuses one with Io, because the caller named it.",
-      "words": 121
+      "text": "One kind covers every such check, because they share that remedy, and reason says which check failed: a stable snake_case name, in details[\"reason\"] on every channel, to branch on where the remedy differs. message names the values that failed it, for a person. A reader treats the set of reasons as open, since a later version can add a check.",
+      "words": 61
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5714,
+      "readability_grade": 14.2943,
+      "sentences": 1,
+      "text": "A config file that is simply absent is not an error for Config::resolve, and the built-in defaults stand; Config::from_file refuses one with Io, because the caller named it.",
+      "words": 32
     },
     {
       "compression_ratio": null,
@@ -477,13 +486,13 @@
       "words": 22
     },
     {
-      "compression_ratio": 0.4893,
+      "compression_ratio": 0.4741,
       "kind": "paragraph",
-      "lexical_density": 0.5902,
-      "readability_grade": 13.343,
+      "lexical_density": 0.5968,
+      "readability_grade": 13.697,
       "sentences": 3,
-      "text": "Python writes the same two lines to sys.stderr before Engine(), Engine.from_config() or Model2Vec.potion_base_8m() downloads; redirect sys.stderr to silence them. A Rust caller gets the facts from Engine::from_config_with_notice and Model2Vec::from_config_with_notice and chooses the wording, since the library writes to no terminal. The other Rust constructors, Engine::new, Engine::from_config, Model2Vec::potion_base_8m and Model2Vec::from_config, take no notice and say nothing for the length of their download.",
-      "words": 68
+      "text": "Python writes the same two lines to sys.stderr before Engine(), Engine.from_config(), Model2Vec.potion_base_8m() or Model2Vec.from_config() downloads; redirect sys.stderr to silence them. A Rust caller gets the facts from Engine::from_config_with_notice and Model2Vec::from_config_with_notice and chooses the wording, since the library writes to no terminal. The other Rust constructors, Engine::new, Engine::from_config, Model2Vec::potion_base_8m and Model2Vec::from_config, take no notice and say nothing for the length of their download.",
+      "words": 70
     },
     {
       "compression_ratio": 0.5493,
@@ -524,20 +533,20 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5556,
-      "readability_grade": 7.4456,
+      "lexical_density": 0.5306,
+      "readability_grade": 9.3229,
       "sentences": 3,
-      "text": "Error::details returns an ErrorDetails: every dynamic value in the message, by name. Each value is a DetailValue, which is text, a whole number or a boolean. A caller reads a value instead of parsing the message.",
-      "words": 37
+      "text": "Error::details returns an ErrorDetails: the values a caller acts on, by name, which for every kind but invalid_input is every dynamic value in the message. Each value is a DetailValue, which is text, a whole number or a boolean. A caller reads a value instead of parsing the message.",
+      "words": 50
     },
     {
-      "compression_ratio": null,
+      "compression_ratio": 0.6044,
       "kind": "list_item",
-      "lexical_density": 0.5,
-      "readability_grade": 6.3057,
-      "sentences": 2,
-      "text": "reason is the variant's own text: the String the variant holds, or the operating system's account of an I/O failure. It is for a person, like the message.",
-      "words": 31
+      "lexical_density": 0.4792,
+      "readability_grade": 8.1042,
+      "sentences": 3,
+      "text": "On model_invalid, parse_failed and io, reason is the variant's own text: the String the variant holds, or the operating system's account of an I/O failure. It is for a person, like the message. On invalid_input it is the name of the check that failed, stable, to branch on.",
+      "words": 51
     },
     {
       "compression_ratio": null,
@@ -662,7 +671,7 @@
       "lexical_density": 0.6304,
       "readability_grade": 11.08,
       "sentences": 2,
-      "text": "Every Python input reaches the parser through the engine's reading stage, so the 8 MiB \"input\" gate applies uniformly, to text, bytes and blocks alike, and a file meets \"file_source\" first. The outcome functions take a Document, never text, and their own caps apply to it.",
+      "text": "Every Python input reaches the parser through the engine's reading stage, so the 8 MiB \"input\" gate applies uniformly, to text, bytes and blocks alike, and a file meets \"file_read\" first. The outcome functions take a Document, never text, and their own caps apply to it.",
       "words": 47
     },
     {

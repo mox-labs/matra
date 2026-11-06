@@ -156,9 +156,9 @@
       "compression_ratio": null,
       "kind": "paragraph",
       "lexical_density": 0.5714,
-      "readability_grade": 7.755,
+      "readability_grade": 9.4407,
       "sentences": 2,
-      "text": "Three more labels guard what matra reads that is not your text: \"udpipe_download\" and \"embedding_download\" cap a model download at 64 MiB, and \"config_file\" caps the config file at 64 KiB. Errors lists all ten.",
+      "text": "Three more labels guard what matra reads that is not your text: \"parser_model_download\" and \"embedding_model_download\" cap a model download at 64 MiB, and \"config_file_read\" caps the config file at 64 KiB. Errors lists all ten.",
       "words": 35
     },
     {
@@ -351,13 +351,13 @@
       "words": 72
     },
     {
-      "compression_ratio": 0.5277,
+      "compression_ratio": 0.5187,
       "kind": "paragraph",
-      "lexical_density": 0.6029,
-      "readability_grade": 7.139,
+      "lexical_density": 0.5783,
+      "readability_grade": 7.4838,
       "sentences": 5,
-      "text": "To pass an error on to another program, use what every channel carries rather than the message. e.kind() is a stable string such as \"input_too_large\". e.details() holds every dynamic value in the message by name, so e.details().get(\"limit\") reads a cap without matching the variant. serde_json::to_value(&e) is {\"kind\", \"message\", \"details\"}, and a DocumentError serializes the same way with its path beside them. Errors lists the keys for every kind.",
-      "words": 73
+      "text": "To pass an error on to another program, use what every channel carries rather than the message. e.kind() is a stable string such as \"input_too_large\". e.details() holds the values to act on by name (every dynamic value in the message, and on invalid_input the reason naming the check that failed), so e.details().get(\"limit\") reads a cap without matching the variant. serde_json::to_value(&e) is {\"kind\", \"message\", \"details\"}, and a DocumentError serializes the same way with its path beside them. Errors lists the keys for every kind.",
+      "words": 88
     },
     {
       "compression_ratio": 0.6,
@@ -396,12 +396,12 @@
       "words": 16
     },
     {
-      "compression_ratio": 0.5909,
+      "compression_ratio": 0.5913,
       "kind": "paragraph",
       "lexical_density": 0.5395,
       "readability_grade": 10.2117,
       "sentences": 3,
-      "text": "Inputs::dir is Err only when the listing itself fails, such as the directory not existing. Everything else is an Err item carrying its path: an unreadable file as Io, a file over the cap as InputTooLarge with what = \"file_source\", a non-UTF-8 file, a PDF or a DOCX (by signature or by name) as UnsupportedFormat, and a parser failure as ParseFailed. Documents plus errors always equals inputs consumed, and each document names its file in provenance.source.path.",
+      "text": "Inputs::dir is Err only when the listing itself fails, such as the directory not existing. Everything else is an Err item carrying its path: an unreadable file as Io, a file over the cap as InputTooLarge with what = \"file_read\", a non-UTF-8 file, a PDF or a DOCX (by signature or by name) as UnsupportedFormat, and a parser failure as ParseFailed. Documents plus errors always equals inputs consumed, and each document names its file in provenance.source.path.",
       "words": 78
     },
     {

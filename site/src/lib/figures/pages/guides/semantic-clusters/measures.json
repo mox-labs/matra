@@ -171,13 +171,13 @@
       "words": 54
     },
     {
-      "compression_ratio": 0.5682,
+      "compression_ratio": 0.5764,
       "kind": "paragraph",
       "lexical_density": 0.5077,
-      "readability_grade": 9.2677,
+      "readability_grade": 9.4492,
       "sentences": 4,
-      "text": "Two things carry over from clusters, and on this route they are yours to keep. Attribution: the vectors do not carry the model identity, so record model.model_hash beside every score you keep, as clusters records it in parameters[\"embedder\"]. And a zero-magnitude vector, which is what an empty document embeds to, makes no claim: the cosine above returns 0.0 for it rather than dividing by zero.",
-      "words": 68
+      "text": "Two things carry over from clusters, and on this route they are yours to keep. Attribution: the vectors do not carry the model identity, so record model.model_hash beside every score you keep, as clusters records it in parameters[\"embedder\"][\"sha256\"]. And a zero-magnitude vector, which is what an empty document embeds to, makes no claim: the cosine above returns 0.0 for it rather than dividing by zero.",
+      "words": 69
     }
   ]
 }
