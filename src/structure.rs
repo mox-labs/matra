@@ -5,7 +5,7 @@
 //! before the first heading in a section of its own. A nested tree, or a
 //! different rule for headings, changes this file and no other.
 
-use crate::decompose::{ReadBlock, TextMap};
+use crate::decompose::{BlockKind, ReadBlock, TextMap};
 use crate::domain::{Paragraph, Section};
 
 /// The sections `blocks` make, and the text map of every paragraph in
@@ -20,14 +20,14 @@ pub(crate) fn sections(blocks: Vec<ReadBlock>) -> (Vec<Section>, Vec<TextMap>) {
     let mut maps = Vec::new();
     let mut current = Section::new(None, 0, None, Vec::new());
     for block in blocks {
-        match block {
-            ReadBlock::Heading { level, text, span } => {
+        match block.0 {
+            BlockKind::Heading { level, text, span } => {
                 if current.heading.is_some() || !current.paragraphs.is_empty() {
                     sections.push(current);
                 }
                 current = Section::new(Some(text), level, Some(span), Vec::new());
             }
-            ReadBlock::Paragraph {
+            BlockKind::Paragraph {
                 kind,
                 text,
                 span,
@@ -50,20 +50,16 @@ mod tests {
     use crate::domain::{ParagraphKind, Span};
 
     fn paragraph(text: &str) -> ReadBlock {
-        ReadBlock::Paragraph {
-            kind: ParagraphKind::Paragraph,
-            text: text.to_string(),
-            span: Span::default(),
-            map: TextMap::default(),
-        }
+        ReadBlock::mapped(
+            ParagraphKind::Paragraph,
+            text.to_string(),
+            Span::default(),
+            TextMap::default(),
+        )
     }
 
     fn heading(level: usize, text: &str) -> ReadBlock {
-        ReadBlock::Heading {
-            level,
-            text: text.to_string(),
-            span: Span::new(1, 2),
-        }
+        ReadBlock::heading(level, text, Span::new(1, 2))
     }
 
     #[test]

@@ -32,14 +32,14 @@ pub enum Error {
     ModelNotFound(PathBuf),
     #[error("invalid model: {0}")]
     ModelInvalid(String),
-    #[error("parse failed: {0}")]
-    ParseFailed(String),
+    #[error("parse failed: {cause}")]
+    ParseFailed { reason: Option<&'static str>, cause: String },
     #[error("{} too large: {actual} > limit {limit}", GateSubject(.what))]
     InputTooLarge { limit: usize, actual: usize, what: &'static str },
     #[error("{}", FormatSubject(.format.as_ref(), *.feature))]
     UnsupportedFormat { format: Option<Format>, feature: Option<&'static str> },
-    #[error("invalid input: {0}")]
-    InvalidInput(String),
+    #[error("invalid input: {message}")]
+    InvalidInput { reason: &'static str, message: String },
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -47,7 +47,7 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 ```
 
-Every channel reads it the same way: `kind()`, a stable string to branch on; the `Display` text, for a person; and `details()`, an `ErrorDetails` holding every dynamic value in the message by name. `Serialize` is written by hand as `{kind, message, details}`, because the enum wraps `std::io::Error`, which has no serde form. A new variant needs all three, and a new dynamic value in a message needs a key in `details()`. An I/O failure matra raises itself carries its path or URL through the crate-private `IoContext` inside the `std::io::Error`, so the variant's payload stays a plain `std::io::Error`.
+Every channel reads it the same way: `kind()`, a stable string to branch on; the `Display` text, for a person; and `details()`, an `ErrorDetails` holding every dynamic value in the message by name. `Serialize` is written by hand as `{kind, message, details}`, because the enum wraps `std::io::Error`, which has no serde form. A new variant needs all three, and a new dynamic value in a message needs a key in `details()`. One word, one meaning in the details: `reason` is always a stable snake_case name of a check (on `invalid_input`, and on `parse_failed` when the engine's checks refuse a provider's output), and `cause` is always free text for a person. An I/O failure matra raises itself carries its path or URL through the crate-private `IoContext` inside the `std::io::Error`, so the variant's payload stays a plain `std::io::Error`.
 
 **Why thiserror, not anyhow:** The decision rule is: if a caller may *match* on the error variant, the crate is library-tier and concrete enums (thiserror) preserve variant identity. If only the application's top-level handler will display/log/exit, type erasure (anyhow) is ergonomic.
 
@@ -89,7 +89,7 @@ Three principles:
 
 1. **Minimal contract.** The longest-lived ecosystem traits (tower::Service, tracing::Subscriber, futures::Stream) have one or two methods, not five. matra's four ports (`Source`, `Decomposer`, `NlpProvider`, `Embedder`) follow.
 2. **Object-safe.** Every port must be usable as `&dyn Trait`. The composition root needs runtime dispatch. No generic methods on Self.
-3. **`Send` if cross-thread is plausible.** `Source`, `NlpProvider` and `Decomposer` are `Send`, because an `Engine` holds a parser and its readers and must move to a worker thread (`an_engine_is_send` in `src/lib.rs` tests). Don't add `Sync` unless you have a concrete cross-thread sharing case.
+3. **`Send` if cross-thread is plausible.** `Source`, `NlpProvider` and `Decomposer` are `Send`, because an `Engine` holds a parser, its readers and a source and must move to a worker thread (`an_engine_is_send` in `src/lib.rs` tests). Don't add `Sync` unless you have a concrete cross-thread sharing case.
 
 ## `#[non_exhaustive]` discipline
 

@@ -34,7 +34,11 @@ uvx 'matra>=0.3' --skill                              # the skill for 0.3
 | `Embedder::identity() -> &str` | `Embedder::identity() -> Identity` | Rust |
 | `Config::summarize_n`, `summarize_algorithm`, `keyphrases_algorithm` | `Config::summary_n`, `summary_method`, `keyphrases_method` | Rust |
 | `Config::udpipe_model`, `Config::semantic_threshold` | none; `Config::clusters_threshold` is new | Rust |
-| `nlp`, `Udpipe`, `NlpProvider`, `metrics`, `hearst`, `extraction`, `decompose`, `source`, `standard_decomposers` | private to the crate | Rust |
+| `Engine::new(Box::new(parser), decomposers)` | `Engine::with_parser(parser)`, then `.with_reader(format, reader)` per reader | Rust |
+| `NlpProvider::parse -> Vec<Sentence>` | `NlpProvider::parse -> Vec<Vec<Token>>`, one list of tokens per sentence | Rust |
+| `Decomposer::decompose(&str) -> Vec<Section>` | `Decomposer::decompose(&[u8]) -> Result<Read>`, built from `ReadBlock::heading` and `ReadBlock::paragraph` | Rust |
+| `Source::read -> Vec<RawDocument>`, `Source::accepts` | `Source::read -> Vec<u8>`; `accepts` is gone | Rust |
+| `Udpipe`, `Decomposers`, `MarkdownDecomposer`, `PlainTextDecomposer`, `FileSource`, `DirectorySource`, `standard_decomposers`, `metrics`, `hearst`, `extraction` | private to the crate | Rust |
 | `Matra.english()`, `Matra.from_path(path)` | `matra.Engine()` | Python |
 | `Matra.analyze(text)`, `analyze_markdown(text)` | `engine.analyze(text)`, `engine.analyze(text, format="markdown")` | Python |
 | `Matra.analyze_path(path)` | `engine.analyze(file=path)`, `engine.analyze_all(dir=path)` | Python |
@@ -79,7 +83,23 @@ let engine = Engine::from_config(&Config::resolve()?)?;                     // r
 let engine = Engine::from_config(&Config::resolve()?.with_model_dir(dir))?; // a model directory you name
 ```
 
-The parser and reader traits are private to the crate, so there is no provider to construct and no reader table to pass. No surface loads a UDPipe model file of your choosing: the model is a pin.
+There is no provider to construct and no reader table to pass for the standard pipeline. No surface loads a UDPipe model file of your choosing: the model is a pin.
+
+A parser, reader or source of your own still plugs in, through the engine rather than a table:
+
+```rust
+// 0.2
+let engine = Engine::new(Box::new(MyParser), standard_decomposers().with(Format::Markdown, Box::new(MyReader)));
+```
+
+```rust
+// 0.3
+let engine = Engine::with_parser(MyParser).with_reader(Format::Markdown, MyReader);
+let engine = Engine::new()?.with_reader(Format::Pdf, MyPdfReader);   // UDPipe, plus a reader of yours
+let engine = Engine::new()?.with_source(MyStore);                    // paths read from somewhere else
+```
+
+The traits changed shape. `NlpProvider::parse` returns one `Vec<Token>` per sentence instead of `Sentence` values: the engine builds each sentence from the tokens, its text and every derived field included, so drop your `Sentence::new` call and return the tokens. Spans are required now, relative to the paragraph text `parse` was handed. `Decomposer::decompose` takes the format's bytes and returns a `Result<Read>` of `ReadBlock` values with their spans, where it returned sections; a text reader decodes the bytes itself. `Source::read` returns the document's bytes, and `accepts` is gone, since the engine never asked it. Whatever a parser or a reader returns is checked against its trait's contract, and a break is `Error::ParseFailed` naming the check ([Errors](../reference/errors.md#parsefailed)); 0.2 passed it through unchecked. [Bring your own parser or reader](rust.md#bring-your-own-parser-or-reader) has the contracts.
 
 ### Analyze one document
 
@@ -238,7 +258,7 @@ domain::limits::MAX_INPUT_BYTES
 
 ### What left the public surface
 
-These modules and items are private to the crate in 0.3: `nlp` with `NlpProvider` and `Udpipe`, `metrics` with `Metric`, `default_suite`, `run_suite` and `readability::flesch_kincaid_grade`, `hearst`, `extraction`, `decompose` with `MarkdownDecomposer`, `PlainTextDecomposer` and `Decomposers`, `source` with `FileSource` and `DirectorySource`, and `standard_decomposers`. The measures stay public as fields of the `Document`. For another measure, write a function over `&Document`. `Embedder` stays public: it is the one port you implement. Its `identity` returns a `domain::Identity`, the shape the parser reports, where it returned `&str`: `Identity::new("my-service", Some("v3".into()), None, None)` in place of `"my-service/v3"`. Return `ModelInvalid`, `Io` or `InputTooLarge` for your own failures, as the trait documents.
+These modules and items are private to the crate in 0.3: the `Udpipe` adapter, `metrics` with `Metric`, `default_suite`, `run_suite` and `readability::flesch_kincaid_grade`, `hearst`, `extraction`, the readers `MarkdownDecomposer` and `PlainTextDecomposer` with the `Decomposers` table, `FileSource` and `DirectorySource`, and `standard_decomposers`. The port modules `nlp`, `decompose` and `source` stay public with their traits, reshaped as above. The measures stay public as fields of the `Document`. For another measure, write a function over `&Document`. `Embedder` stays public and keeps its shape. Its `identity` returns a `domain::Identity`, the shape the parser reports, where it returned `&str`: `Identity::new("my-service", Some("v3".into()), None, None)` in place of `"my-service/v3"`. Return `ModelInvalid`, `Io` or `InputTooLarge` for your own failures, as the trait documents.
 
 ### Configuration
 

@@ -47,11 +47,29 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.4737,
-      "readability_grade": 7.3463,
+      "lexical_density": 0.4839,
+      "readability_grade": 6.8227,
       "sentences": 2,
-      "text": "The parser and reader traits are private to the crate, so there is no provider to construct and no reader table to pass. No surface loads a UDPipe model file of your choosing: the model is a pin.",
-      "words": 38
+      "text": "There is no provider to construct and no reader table to pass for the standard pipeline. No surface loads a UDPipe model file of your choosing: the model is a pin.",
+      "words": 31
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.4444,
+      "readability_grade": 5.8522,
+      "sentences": 1,
+      "text": "A parser, reader or source of your own still plugs in, through the engine rather than a table:",
+      "words": 18
+    },
+    {
+      "compression_ratio": 0.5127,
+      "kind": "paragraph",
+      "lexical_density": 0.6142,
+      "readability_grade": 10.206,
+      "sentences": 8,
+      "text": "The traits changed shape. NlpProvider::parse returns one Vec<Token> per sentence instead of Sentence values: the engine builds each sentence from the tokens, its text and every derived field included, so drop your Sentence::new call and return the tokens. Spans are required now, relative to the paragraph text parse was handed. Decomposer::decompose takes the format's bytes and returns a Result<Read> of ReadBlock values with their spans, where it returned sections; a text reader decodes the bytes itself. Source::read returns the document's bytes, and accepts is gone, since the engine never asked it. Whatever a parser or a reader returns is checked against its trait's contract, and a break is Error::ParseFailed naming the check (Errors); 0.2 passed it through unchecked. Bring your own parser or reader has the contracts.",
+      "words": 139
     },
     {
       "compression_ratio": null,
@@ -198,13 +216,13 @@
       "words": 9
     },
     {
-      "compression_ratio": 0.5346,
+      "compression_ratio": 0.5017,
       "kind": "paragraph",
-      "lexical_density": 0.6207,
-      "readability_grade": 12.6478,
-      "sentences": 3,
-      "text": "InvalidInput's reason names the check that failed, a stable name the errors reference lists, and details[\"reason\"] carries it, where 0.2 put the message text there. Four InputTooLarge labels name what you read rather than matra's modules: file_source is file_read, config_file is config_file_read, udpipe_download is parser_model_download and embedding_download is embedding_model_download. A match on the old strings no longer fires.",
-      "words": 61
+      "lexical_density": 0.6125,
+      "readability_grade": 13.07,
+      "sentences": 4,
+      "text": "InvalidInput's reason names the check that failed, a stable name the errors reference lists, and details[\"reason\"] carries it, where 0.2 put the message text there. On model_invalid, parse_failed and io the error's own text moves from details[\"reason\"] to details[\"cause\"], so reason names a check wherever it appears. Four InputTooLarge labels name what you read rather than matra's modules: file_source is file_read, config_file is config_file_read, udpipe_download is parser_model_download and embedding_download is embedding_model_download. A match on the old strings no longer fires.",
+      "words": 86
     },
     {
       "compression_ratio": 0.5419,
@@ -216,13 +234,13 @@
       "words": 82
     },
     {
-      "compression_ratio": 0.5494,
+      "compression_ratio": 0.5138,
       "kind": "paragraph",
-      "lexical_density": 0.59,
-      "readability_grade": 13.121,
-      "sentences": 7,
-      "text": "These modules and items are private to the crate in 0.3: nlp with NlpProvider and Udpipe, metrics with Metric, default_suite, run_suite and readability::flesch_kincaid_grade, hearst, extraction, decompose with MarkdownDecomposer, PlainTextDecomposer and Decomposers, source with FileSource and DirectorySource, and standard_decomposers. The measures stay public as fields of the Document. For another measure, write a function over &Document. Embedder stays public: it is the one port you implement. Its identity returns a domain::Identity, the shape the parser reports, where it returned &str: Identity::new(\"my-service\", Some(\"v3\".into()), None, None) in place of \"my-service/v3\". Return ModelInvalid, Io or InputTooLarge for your own failures, as the trait documents.",
-      "words": 110
+      "lexical_density": 0.5946,
+      "readability_grade": 12.3948,
+      "sentences": 8,
+      "text": "These modules and items are private to the crate in 0.3: the Udpipe adapter, metrics with Metric, default_suite, run_suite and readability::flesch_kincaid_grade, hearst, extraction, the readers MarkdownDecomposer and PlainTextDecomposer with the Decomposers table, FileSource and DirectorySource, and standard_decomposers. The port modules nlp, decompose and source stay public with their traits, reshaped as above. The measures stay public as fields of the Document. For another measure, write a function over &Document. Embedder stays public and keeps its shape. Its identity returns a domain::Identity, the shape the parser reports, where it returned &str: Identity::new(\"my-service\", Some(\"v3\".into()), None, None) in place of \"my-service/v3\". Return ModelInvalid, Io or InputTooLarge for your own failures, as the trait documents.",
+      "words": 121
     },
     {
       "compression_ratio": null,

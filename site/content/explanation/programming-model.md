@@ -93,7 +93,7 @@ The pipeline depends on port traits, and adapters implement them. The domain dep
 
 Features are additive. Enabling `udpipe` adds UDPipe; disabling it removes UDPipe and nothing else. `cargo check --no-default-features` compiles. The other two features are `cli` (the command line, which implies `udpipe`) and `python` (the PyO3 bindings, which implies `cli` so that a wheel carries the command).
 
-`Embedder` is the one port open to your own adapter: `clusters` takes any `&dyn Embedder`, and with your own implementation it needs no feature flag at all. The parser, fetch and read ports are private to the crate, so a new parser or reader is a file and a registration line inside it, and no published signature moves when one changes. From outside, bytes you fetch yourself go in through `Input::bytes`, and a format matra has no reader for goes in as headings and paragraphs through `Input::blocks`.
+Every port is open to your own adapter. `clusters` takes any `&dyn Embedder`, and with your own implementation it needs no feature flag at all. `Engine::with_parser` takes a parser of your own (`NlpProvider`), in any build; `with_reader` registers a reader (`Decomposer`) for a format, a `Format::Other` you name included; and `with_source` reads the paths inputs name from somewhere else (`Source`). The engine checks what a parser or a reader returns before it reaches a `Document`, so a part of yours cannot hand the outcomes a tree with a cycle or a span outside its text. Without implementing anything, bytes you fetch yourself go in through `Input::bytes`, and a format matra has no reader for goes in as headings and paragraphs through `Input::blocks`.
 
 ## Determinism and bounds
 

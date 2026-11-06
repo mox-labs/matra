@@ -26,14 +26,15 @@ Test strategy for matra. This skill codifies what kinds of tests matra has, what
 In-file, per-module. Test the immediate API of the module they live in. Examples:
 
 - `src/domain.rs` tests: `content_tokens_excludes_punct`, `passive_detects_passive`, `tree_depth_25_chain_returns_24`, `tree_depth_1000_chain_returns_999_in_bounded_time`, `tree_depth_is_none_on_a_cycle`, `tree_depth_is_none_when_a_chain_leads_into_a_cycle`.
-- `src/source/file.rs` tests: `reads_file_and_detects_markdown`, `rejects_symlink`, `rejects_oversized_file`, `accepts_file_at_size_cap`.
+- `src/source/file.rs` tests: `reads_the_files_bytes`, `rejects_symlink`, `rejects_oversized_file`, `accepts_file_at_size_cap`.
+- `src/conform.rs` tests: `each_parse_check_names_itself`, `a_cycle_anywhere_is_found`, `a_deep_tree_is_not_a_cycle`, `each_read_check_names_itself`.
 - `src/nlp/udpipe.rs` tests: `catch_parse_panic_converts_str_panic_to_parse_failed`, `read_and_verify_returns_bytes_on_match`, `read_and_verify_returned_bytes_are_what_was_hashed`.
 
 Run via `cargo test`.
 
 ### 2. Integration tests — `tests/integration.rs`
 
-End-to-end pipeline tests that exercise the public API. Many require the UDPipe model, so they're behind `#[ignore]` and run via:
+End-to-end pipeline tests that exercise the public API. `tests/providers.rs` needs no model: it plugs a parser, a reader and a source of its own into an `Engine` through the public surface, and breaks each rule of the provider contracts once, so it is also the list of what a conforming implementation must pass. Many others require the UDPipe model, so they're behind `#[ignore]` and run via:
 
 ```bash
 cargo test --test integration -- --ignored

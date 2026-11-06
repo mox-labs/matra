@@ -125,9 +125,9 @@ for a, b in combinations(range(len(docs)), 2):
 Those three are pages of this book, run from a checkout of the repository, so the numbers below are yours to reproduce. Two of them cover the same ground for different surfaces, and the third is unrelated. It prints:
 
 ```text
-0.8272  cli.md <-> rust.md
+0.8281  cli.md <-> rust.md
 0.5800  cli.md <-> roadmap.md
-0.6114  rust.md <-> roadmap.md
+0.6121  rust.md <-> roadmap.md
 ```
 
 The separation is decisive, and the sentence-level starting point does not carry over: against a cutoff of `0.85` no pair clears, so the near-duplicate pair would have been reported as unrelated. This is what "the threshold does not travel" costs when it is taken on faith. Calibrate on scores you have read.

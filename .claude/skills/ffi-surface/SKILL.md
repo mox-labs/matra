@@ -22,11 +22,11 @@ The Rust↔Python FFI surface for matra. This skill codifies the disciplines tha
 
 ## The PyO3 surface — what exists today
 
-The `_core` module in `src/python/mod.rs` (`_core`, `src/python/mod.rs:40`; matched by pyproject.toml's `module-name = "matra._core"`) registers three classes and four functions. It sits under boundary rule 7 like `src/cli/`: the public surface and the one open port, `embed`, never another port, a reader or parser adapter, or a crate-private module. This section is the one place in `.claude/` that lists them; the `ffi-keeper` agent points here.
+The `_core` module in `src/python/mod.rs` (`_core`, `src/python/mod.rs:40`; matched by pyproject.toml's `module-name = "matra._core"`) registers three classes and four functions. It sits under boundary rule 7 like `src/cli/`: the public surface and one port, `embed`, never another port, a reader or parser adapter, or a crate-private module. The other three ports are public, but Python implements no parser, reader or source in 0.3.0, so the binding has nothing to wrap as one. This section is the one place in `.claude/` that lists them; the `ffi-keeper` agent points here.
 
 - **`Engine`** (`PyEngine`, `src/python/engine.rs:28`), `#[pyclass(unsendable)]`: the Rust `Engine` is `Send` but not `Sync`, and a pyclass without `unsendable` must be both, so cross-thread access panics at runtime.
   - Constructors: `Engine()` and `Engine.from_config(config_file=None)`.
-  - Methods: `analyze(text=None, *, file, bytes, blocks, format)` and `analyze_all(*, dir, texts, format)`, which returns a lazy `DocumentStream` (`src/python/engine.rs:167`, also `unsendable`, not registered).
+  - Methods: `analyze(text=None, *, file, bytes, blocks, format)` and `analyze_all(*, dir, texts, format)`, which returns a lazy `DocumentStream` (`src/python/engine.rs:180`, also `unsendable`, not registered).
 - **`Document`** (`PyDocument`, `src/python/document.rs:27`), `#[pyclass(frozen)]`: read-only mapping access (`doc["metrics"]`), and `to_dict()` for the schema v2 JSON.
 - **`Model2Vec`** (`PyModel2Vec`, `src/python/embed.rs:20`), `#[pyclass(frozen)]`, registered only under the `model2vec` feature: an immutable embedder.
   - Constructors: `from_dir(dir)`, `potion_base_8m(dir=None)`.

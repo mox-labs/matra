@@ -333,13 +333,13 @@
       "words": 90
     },
     {
-      "compression_ratio": 0.4553,
+      "compression_ratio": 0.456,
       "kind": "paragraph",
-      "lexical_density": 0.5752,
-      "readability_grade": 13.5264,
-      "sentences": 6,
-      "text": "src/cli/ sits above that tier: it is the application, compiled into the library so both launchers run one program. From the crate it uses the public surface lib.rs exports (Engine, Input, Inputs, Block, the outcome functions summarize, summarize_with, keyphrases, keyphrases_with and clusters, and their selectors SummaryMethod and KeyphraseMethod), config, domain and embed, and never another port module, a reader or parser adapter, or a crate-private module such as extraction. It reaches the pipeline through Engine::from_config and the outcomes through the functions at the crate root, so rule 7 holds there too. embed is the one port open to outside implementers, and Model2Vec is public behind its feature. The library builds no embedder inside an outcome call, because building the default one downloads a model, so matra clusters builds it from the configuration with Model2Vec::from_config and hands it to clusters. Choosing that default is the application's decision, and the command line is the application.",
-      "words": 157
+      "lexical_density": 0.5612,
+      "readability_grade": 13.6517,
+      "sentences": 7,
+      "text": "src/cli/ sits above that tier: it is the application, compiled into the library so both launchers run one program. From the crate it uses the public surface lib.rs exports (Engine, Input, Inputs, Block, the outcome functions summarize, summarize_with, keyphrases, keyphrases_with and clusters, and their selectors SummaryMethod and KeyphraseMethod), config, domain and embed, and never another port module, a reader or parser adapter, or a crate-private module such as extraction. It reaches the pipeline through Engine::from_config and the outcomes through the functions at the crate root, so rule 7 holds there too. All four port modules are public since the provider traits opened, but only embed is on the command line's list: it implements no parser, reader or source and plugs none in, so nlp, decompose or source there would be wiring the composition root does, by another name, and the check keeps them out. Model2Vec is public behind its feature. The library builds no embedder inside an outcome call, because building the default one downloads a model, so matra clusters builds it from the configuration with Model2Vec::from_config and hands it to clusters. Choosing that default is the application's decision, and the command line is the application.",
+      "words": 201
     },
     {
       "compression_ratio": 0.4791,
@@ -351,13 +351,13 @@
       "words": 157
     },
     {
-      "compression_ratio": 0.5359,
+      "compression_ratio": 0.5022,
       "kind": "paragraph",
-      "lexical_density": 0.5769,
-      "readability_grade": 8.5203,
-      "sentences": 7,
-      "text": "src/python/ is the Python binding, a driving adapter that translates and decides nothing, held to the same rule by boundary-rule7-python-imports and boundary-rule7-python-root-super in .semgrep/rule7-python.yml. Its allowlist is the command line's plus cli, because the console script runs cli::run. It reaches embed for its own reason: a Python caller hands clusters an embedder (Model2Vec, or any object the binding wraps as an Embedder). Its own tree is crate::python. Before 0.3.0 the binding lived inside src/lib.rs, out of this check's reach, and it decided things the command line decided differently: it read markdown as plain text before a summary. Held to the public surface, it cannot.",
-      "words": 116
+      "lexical_density": 0.5267,
+      "readability_grade": 7.3899,
+      "sentences": 8,
+      "text": "src/python/ is the Python binding, a driving adapter that translates and decides nothing, held to the same rule by boundary-rule7-python-imports and boundary-rule7-python-root-super in .semgrep/rule7-python.yml. Its allowlist is the command line's plus cli, because the console script runs cli::run. It reaches embed for its own reason: a Python caller hands clusters an embedder (Model2Vec, or any object the binding wraps as an Embedder). It reaches no other port: Python cannot implement a parser, a reader or a source in 0.3.0, so the binding has nothing to wrap as one, and when it can, the wrapper is the reason to add the port to its list, as embed was added. Its own tree is crate::python. Before 0.3.0 the binding lived inside src/lib.rs, out of this check's reach, and it decided things the command line decided differently: it read markdown as plain text before a summary. Held to the public surface, it cannot.",
+      "words": 163
     },
     {
       "compression_ratio": null,

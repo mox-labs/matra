@@ -227,10 +227,21 @@ impl DocumentStream {
 
 /// A format name in the vocabulary every surface shares (`FormatName` in
 /// `matra.types`), read by the same serde form the JSON writes, so the
-/// two cannot spell one differently.
+/// two cannot spell one differently. A name matra has no variant for is
+/// refused: it would read as `Format::Other`, which only a reader a Rust
+/// caller registers reads, and Python registers none.
 fn format_of(name: &str) -> PyResult<Format> {
-    serde_json::from_value(serde_json::Value::String(name.to_string()))
-        .map_err(|e| invalid_input("format_unknown", format!("format: {e}")))
+    let format: Format = serde_json::from_value(serde_json::Value::String(name.to_string()))
+        .map_err(|e| invalid_input("format_unknown", format!("format: {e}")))?;
+    if let Format::Other(other) = &format {
+        return Err(invalid_input(
+            "format_unknown",
+            format!(
+                "format: unknown format {other:?}, expected one of `markdown`, `plain_text`, `blocks`, `pdf`, `docx`"
+            ),
+        ));
+    }
+    Ok(format)
 }
 
 /// Block input from Python data: the list of heading and paragraph dicts

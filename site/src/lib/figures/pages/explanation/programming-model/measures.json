@@ -198,13 +198,13 @@
       "words": 47
     },
     {
-      "compression_ratio": 0.5517,
+      "compression_ratio": 0.5061,
       "kind": "paragraph",
-      "lexical_density": 0.5172,
-      "readability_grade": 13.2166,
-      "sentences": 3,
-      "text": "Embedder is the one port open to your own adapter: clusters takes any &dyn Embedder, and with your own implementation it needs no feature flag at all. The parser, fetch and read ports are private to the crate, so a new parser or reader is a file and a registration line inside it, and no published signature moves when one changes. From outside, bytes you fetch yourself go in through Input::bytes, and a format matra has no reader for goes in as headings and paragraphs through Input::blocks.",
-      "words": 89
+      "lexical_density": 0.5492,
+      "readability_grade": 12.6899,
+      "sentences": 5,
+      "text": "Every port is open to your own adapter. clusters takes any &dyn Embedder, and with your own implementation it needs no feature flag at all. Engine::with_parser takes a parser of your own (NlpProvider), in any build; with_reader registers a reader (Decomposer) for a format, a Format::Other you name included; and with_source reads the paths inputs name from somewhere else (Source). The engine checks what a parser or a reader returns before it reaches a Document, so a part of yours cannot hand the outcomes a tree with a cycle or a span outside its text. Without implementing anything, bytes you fetch yourself go in through Input::bytes, and a format matra has no reader for goes in as headings and paragraphs through Input::blocks.",
+      "words": 129
     },
     {
       "compression_ratio": null,

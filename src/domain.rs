@@ -229,6 +229,10 @@ impl std::fmt::Display for FormatSubject<'_> {
                 "unsupported format: {}; enable the `{feature}` feature to read it",
                 format.wire_name()
             ),
+            (Some(Format::Other(name)), None) => write!(
+                f,
+                "unsupported format: {name}; no reader is registered for it"
+            ),
             (Some(format), None) => write!(
                 f,
                 "unsupported format: {}; no feature of this matra version reads it",
@@ -788,6 +792,41 @@ pub(crate) fn features_from_conllu(column: &str) -> std::collections::BTreeMap<S
     features
 }
 
+/// Where `form` ends in `text` when it starts at byte `at`, or `None`
+/// when it does not lie there: the one rule that says whether a token's
+/// span lines up with its form.
+///
+/// The form must match the text exactly, except that a run of
+/// whitespace inside the form matches any non-empty run of whitespace in
+/// the text (a token a tokenizer read across a line break). The UDPipe
+/// adapter finds each span with it and the engine checks every parser's
+/// spans with it, so a span the adapter can produce is a span the engine
+/// accepts.
+pub(crate) fn form_end(text: &str, at: usize, form: &str) -> Option<usize> {
+    let mut at = at;
+    let mut wanted = form.chars().peekable();
+    while let Some(c) = wanted.next() {
+        if c.is_whitespace() {
+            while wanted.peek().is_some_and(|c| c.is_whitespace()) {
+                wanted.next();
+            }
+            let tail = text.get(at..)?;
+            let skipped = tail.len() - tail.trim_start().len();
+            if skipped == 0 {
+                return None;
+            }
+            at += skipped;
+        } else {
+            let found = text.get(at..)?.chars().next()?;
+            if found != c {
+                return None;
+            }
+            at += found.len_utf8();
+        }
+    }
+    Some(at)
+}
+
 /// Builder for [`Token`]. Created via [`Token::builder`].
 ///
 /// The six CoNLL-U essentials (id, text, lemma, pos, head, dep) are required.
@@ -1318,12 +1357,14 @@ fn measure_tree_depth(tokens: &[Token]) -> Option<usize> {
 ///   or to `0`.
 /// - Following `head` references never loops back on itself.
 ///
-/// Nothing validates these: [`Sentence::new`] trusts its caller, and the
-/// parser's contract states them for the parser. A sentence read back from
-/// JSON or built by hand can break any of them, so nothing downstream
-/// relies on them for safety: [`Sentence::tree_depth`] is `None` on a
-/// cycle, [`Sentence::subtree`] carries a visited set, and every outcome
-/// over a [`Document`] holds on a sentence that breaks them all.
+/// Every sentence `Engine::analyze` returns holds them: the engine
+/// checks what the parser returns before it builds a sentence, and fails
+/// with [`Error::ParseFailed`] naming the check otherwise. A sentence
+/// read back from JSON or built by hand with [`Sentence::new`], which
+/// trusts its caller, can break any of them, so nothing downstream relies
+/// on them for safety: [`Sentence::tree_depth`] is `None` on a cycle,
+/// [`Sentence::subtree`] carries a visited set, and every outcome over a
+/// [`Document`] holds on a sentence that breaks them all.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Sentence {
@@ -1332,10 +1373,10 @@ pub struct Sentence {
     /// at construction from the token spans. The authority on where the
     /// sentence came from; `text` is normalized.
     pub span: Span,
-    /// Sentence text as the NLP provider reports it, normalized. The
-    /// UDPipe adapter rebuilds it from the token forms, joined by a space
-    /// unless a token carries `SpaceAfter=No` in `misc`, so its
-    /// whitespace can differ from the source; `span` locates the source.
+    /// Sentence text, normalized: the engine rebuilds it from the token
+    /// forms, joined by a space unless a token carries `SpaceAfter=No`
+    /// in `misc`, so its whitespace can differ from the source; `span`
+    /// locates the source.
     pub text: String,
     /// CoNLL-U tokens in id-sorted order.
     ///
@@ -1452,6 +1493,21 @@ impl Sentence {
             hearst_pairs: Vec::new(),
             root_mood,
         }
+    }
+
+    /// The sentence a parser's tokens make, as `Engine::annotate` builds
+    /// it: [`Sentence::new`] over `tokens`, with the text rebuilt from
+    /// their forms, joined by a space unless a token carries
+    /// `SpaceAfter=No` in `misc` (the CoNLL-U convention).
+    pub(crate) fn from_tokens(tokens: Vec<Token>) -> Self {
+        let mut text = String::new();
+        for (i, token) in tokens.iter().enumerate() {
+            text.push_str(&token.text);
+            if i + 1 < tokens.len() && !token.misc.contains("SpaceAfter=No") {
+                text.push(' ');
+            }
+        }
+        Self::new(text, tokens)
     }
 
     /// The clausal complements whose verb lemma is in the
@@ -2169,15 +2225,19 @@ impl SimilarityEdge {
 // Source / corpus types
 // ---------------------------------------------------------------------------
 
-/// A document's format: how its bytes are read.
+/// A document's format: which reader reads its bytes.
 ///
 /// `Pdf` and `Docx` are recognised, by extension and by their bytes, but
 /// no reader for either ships, so analysing one returns
-/// [`Error::UnsupportedFormat`].
+/// [`Error::UnsupportedFormat`] unless the caller registered a reader for
+/// it with `Engine::with_reader`. [`Format::Other`] names any other
+/// format, the one a caller's own reader reads.
 ///
 /// Serialized in the format vocabulary every surface shares:
-/// `markdown`, `plain_text`, `blocks`, `pdf`, `docx`. A reader treats the
-/// set as open.
+/// `markdown`, `plain_text`, `blocks`, `pdf`, `docx`, and an
+/// [`Format::Other`] as its own name. A reader treats the set as open,
+/// and reading a name back gives the variant matra has for it, or
+/// [`Format::Other`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[non_exhaustive]
@@ -2194,17 +2254,48 @@ pub enum Format {
     Pdf,
     /// DOCX (recognised; no reader ships).
     Docx,
+    /// A format matra has no variant for, by its name in the shared
+    /// vocabulary (`html`, `org`): what a caller names on an input to
+    /// reach a reader it registered for that name. No reader ships for
+    /// one, and nothing detects one: no signature or extension implies
+    /// it. Build one with [`Format::named`], which gives the variant
+    /// matra has for a name it knows, so `Other("markdown")` never
+    /// stands in for [`Format::Markdown`].
+    #[serde(untagged)]
+    Other(String),
 }
 
 impl Format {
+    /// The format a name in the shared vocabulary names: the variant
+    /// matra has for it (`"markdown"` is [`Format::Markdown`]), or
+    /// [`Format::Other`] holding the name.
+    ///
+    /// ```
+    /// # use matra::domain::Format;
+    /// assert_eq!(Format::named("markdown"), Format::Markdown);
+    /// assert_eq!(Format::named("html"), Format::Other("html".to_string()));
+    /// ```
+    pub fn named(name: impl Into<String>) -> Format {
+        let name = name.into();
+        match name.as_str() {
+            "markdown" => Format::Markdown,
+            "plain_text" => Format::PlainText,
+            "blocks" => Format::Blocks,
+            "pdf" => Format::Pdf,
+            "docx" => Format::Docx,
+            _ => Format::Other(name),
+        }
+    }
+
     /// The format's name in the shared vocabulary, as it serializes.
-    pub(crate) fn wire_name(&self) -> &'static str {
+    pub(crate) fn wire_name(&self) -> &str {
         match self {
             Format::Markdown => "markdown",
             Format::PlainText => "plain_text",
             Format::Blocks => "blocks",
             Format::Pdf => "pdf",
             Format::Docx => "docx",
+            Format::Other(name) => name,
         }
     }
 
@@ -3704,12 +3795,35 @@ mod tests {
             Format::Blocks,
             Format::Pdf,
             Format::Docx,
+            Format::Other("html".to_string()),
         ] {
-            assert_eq!(
-                serde_json::to_value(&format).unwrap(),
-                serde_json::json!(format.wire_name())
-            );
+            let wire = serde_json::to_value(&format).unwrap();
+            assert_eq!(wire, serde_json::json!(format.wire_name()));
+            assert_eq!(Format::named(format.wire_name()), format);
+            let back: Format = serde_json::from_value(wire).unwrap();
+            assert_eq!(back, format, "a name reads back as the variant it names");
         }
+    }
+
+    /// A name matra knows reads back as its own variant, never as an
+    /// `Other` holding it, so one format cannot have two values.
+    #[test]
+    fn a_known_name_is_never_other() {
+        let read: Format = serde_json::from_value(serde_json::json!("markdown")).unwrap();
+        assert_eq!(read, Format::Markdown);
+        assert_eq!(Format::named("pdf"), Format::Pdf);
+        let unknown = Error::UnsupportedFormat {
+            format: Some(Format::named("html")),
+            feature: None,
+        };
+        assert_eq!(
+            unknown.to_string(),
+            "unsupported format: html; no reader is registered for it"
+        );
+        assert_eq!(
+            unknown.details().get("format"),
+            Some(&DetailValue::Text("html".to_string()))
+        );
     }
 
     /// A sentence's span runs from its first token's start to its last

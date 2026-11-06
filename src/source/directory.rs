@@ -4,19 +4,15 @@ use std::path::{Path, PathBuf};
 
 use crate::domain;
 
-use super::Source;
-use super::file::FileSource;
-
 /// Lists the regular files in a directory (non-recursive, symlinks
 /// skipped), and reads none of them.
 ///
-/// It is not a [`Source`]. Reading a directory as one call would have to
+/// It is not a [`Source`](super::Source). Reading a directory as one call would have to
 /// choose between aborting on the first file that fails and dropping it,
 /// and dropping it is the silent omission matra does not allow: every
 /// failure has to reach the caller as an item carrying its path. So the
-/// library lists here and reads each file through
-/// [`FileSource`](super::file::FileSource) only when `Inputs::dir`'s
-/// `Input` for it is analysed, where a failure is one `Err` item of the
+/// library lists here and reads each file through the engine's source
+/// only when `Inputs::dir`'s `Input` for it is analysed, where a failure is one `Err` item of the
 /// stream. An implementation of `Source` here once read the directory in
 /// one call and discarded every failed file; nothing called it, and it is
 /// gone.
@@ -31,17 +27,16 @@ use super::file::FileSource;
 pub(crate) struct DirectorySource;
 
 impl DirectorySource {
-    /// The candidate paths in the directory, sorted, after the symlink
-    /// filter and `FileSource::accepts` (a regular file). No extension is
-    /// filtered: every regular file is a candidate, and its format is
-    /// decided when it is read.
+    /// The candidate paths in the directory, sorted: every entry that is
+    /// a regular file and not a symlink. No extension is filtered: every
+    /// regular file is a candidate, and its format is decided when it is
+    /// read.
     ///
     /// # Errors
     ///
     /// [`domain::Error::Io`] naming the directory when it cannot be
     /// listed, `not_found` among them.
     pub(crate) fn candidate_paths(&self, input: &Path) -> domain::Result<Vec<PathBuf>> {
-        let file_source = FileSource;
         let mut paths: Vec<_> = std::fs::read_dir(input)
             .map_err(|e| {
                 crate::domain::Error::Io(crate::domain::IoContext::cannot("list", input, &e))
@@ -55,7 +50,6 @@ impl DirectorySource {
                     .unwrap_or(false)
             })
             .map(|e| e.path())
-            .filter(|p| file_source.accepts(p))
             .collect();
         paths.sort();
         Ok(paths)

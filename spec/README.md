@@ -141,8 +141,8 @@ readable file and one whose bytes are not UTF-8, which is an
 `unsupported_format` item with no details, validated against the error schema. The Rust walk stubs the
 parser with a provider that returns no sentences, so it needs no model; what it
 pins is the shape and the order, not the parse, which the parse fixtures
-already cover. The parser trait is private to the crate, so that walk runs
-inside it (`src/lib.rs`, `a_directory_walk_yields_one_item_per_file`), and
+already cover. That walk runs inside the crate, beside the engine's other
+tests (`src/lib.rs`, `a_directory_walk_yields_one_item_per_file`), and
 `tests/corpus_conformance.rs` holds the rest of the lane. The Python runner reaches the walk through `Engine.analyze_all(dir=...)`, a
 method on a loaded engine, so its directory expectation carries the `model`
 marker while the vocabulary and shape assertions run everywhere.

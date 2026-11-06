@@ -5,7 +5,7 @@ use std::path::Path;
 use crate::domain::limits::MAX_INPUT_BYTES;
 use crate::domain::{self, Error, IoContext};
 
-use super::{Fetched, Source};
+use super::Source;
 
 /// Reads a single file.
 ///
@@ -26,7 +26,7 @@ use super::{Fetched, Source};
 pub(crate) struct FileSource;
 
 impl Source for FileSource {
-    fn read(&self, input: &Path) -> domain::Result<Vec<Fetched>> {
+    fn read(&self, input: &Path) -> domain::Result<Vec<u8>> {
         let metadata = std::fs::symlink_metadata(input)
             .map_err(|e| Error::Io(IoContext::cannot("read", input, &e)))?;
         let file_type = metadata.file_type();
@@ -67,16 +67,7 @@ impl Source for FileSource {
             });
         }
 
-        let bytes =
-            std::fs::read(input).map_err(|e| Error::Io(IoContext::cannot("read", input, &e)))?;
-        Ok(vec![Fetched {
-            bytes,
-            path: input.to_path_buf(),
-        }])
-    }
-
-    fn accepts(&self, input: &Path) -> bool {
-        input.is_file()
+        std::fs::read(input).map_err(|e| Error::Io(IoContext::cannot("read", input, &e)))
     }
 }
 
@@ -120,19 +111,13 @@ mod tests {
     }
 
     #[test]
-    fn reads_the_files_bytes_and_path() {
+    fn reads_the_files_bytes() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("test.md");
         let mut f = std::fs::File::create(&path).unwrap();
         f.write_all(b"## Hello\n\nWorld.").unwrap();
 
-        let source = FileSource;
-        assert!(source.accepts(&path));
-
-        let docs = source.read(&path).unwrap();
-        assert_eq!(docs.len(), 1);
-        assert_eq!(docs[0].bytes, b"## Hello\n\nWorld.");
-        assert_eq!(docs[0].path, path);
+        assert_eq!(FileSource.read(&path).unwrap(), b"## Hello\n\nWorld.");
     }
 
     /// Bytes that are not UTF-8 are read, not refused: whether they are
@@ -142,7 +127,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("binary.txt");
         std::fs::write(&path, [0xff, 0xfe, 0x00]).unwrap();
-        assert_eq!(FileSource.read(&path).unwrap()[0].bytes, [0xff, 0xfe, 0x00]);
+        assert_eq!(FileSource.read(&path).unwrap(), [0xff, 0xfe, 0x00]);
     }
 
     #[test]
@@ -207,7 +192,7 @@ mod tests {
         let f = std::fs::File::create(&path).unwrap();
         f.set_len(MAX_INPUT_BYTES as u64).unwrap();
 
-        let docs = FileSource.read(&path).unwrap();
-        assert_eq!(docs.len(), 1);
+        let bytes = FileSource.read(&path).unwrap();
+        assert_eq!(bytes.len(), MAX_INPUT_BYTES);
     }
 }

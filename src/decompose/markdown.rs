@@ -35,8 +35,8 @@ use super::{Decomposer, Read, ReadBlock, TextMap};
 pub(crate) struct MarkdownDecomposer;
 
 impl Decomposer for MarkdownDecomposer {
-    fn decompose(&self, input: &str) -> domain::Result<Read> {
-        Ok(read(input))
+    fn decompose(&self, input: &[u8]) -> domain::Result<Read> {
+        Ok(read(super::text_of(input)?))
     }
 }
 
@@ -318,11 +318,10 @@ impl<'a> Reader<'a> {
         let lead = text.len() - text.trim_start().len();
         let trimmed = text.trim();
         match open {
-            Open::Heading { level, start, end } => self.blocks.push(ReadBlock::Heading {
-                level,
-                text: trimmed.to_string(),
-                span: self.trimmed(start, end),
-            }),
+            Open::Heading { level, start, end } => {
+                let span = self.trimmed(start, end);
+                self.blocks.push(ReadBlock::heading(level, trimmed, span));
+            }
             Open::Paragraph {
                 kind, start, end, ..
             } => {
@@ -332,12 +331,8 @@ impl<'a> Reader<'a> {
                 } else {
                     map.window(lead, lead + trimmed.len())
                 };
-                self.blocks.push(ReadBlock::Paragraph {
-                    kind,
-                    text: trimmed.to_string(),
-                    span,
-                    map,
-                });
+                self.blocks
+                    .push(ReadBlock::mapped(kind, trimmed.to_string(), span, map));
             }
         }
     }
@@ -419,27 +414,16 @@ impl<'a> Reader<'a> {
                 .partition_point(|b| block_start(b) <= span.byte_start);
             self.blocks.insert(
                 at,
-                ReadBlock::Paragraph {
-                    kind,
-                    text: String::new(),
-                    span,
-                    map: TextMap::at(span.byte_start),
-                },
+                ReadBlock::mapped(kind, String::new(), span, TextMap::at(span.byte_start)),
             );
         }
         absorb_container_markup(self.input, &mut self.blocks, &mut self.skipped);
-        Read {
-            text: None,
-            blocks: self.blocks,
-            skipped: self.skipped,
-        }
+        Read::new(self.blocks, self.skipped)
     }
 }
 
 fn block_start(block: &ReadBlock) -> usize {
-    match block {
-        ReadBlock::Heading { span, .. } | ReadBlock::Paragraph { span, .. } => span.byte_start,
-    }
+    block.span().byte_start
 }
 
 /// Where a code span's content starts inside its source (`` `code` ``),
@@ -568,6 +552,7 @@ fn last_visible(s: &str) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::BlockKind;
     use super::*;
 
     struct Shape {
@@ -581,9 +566,9 @@ mod tests {
         let mut headings = Vec::new();
         let mut paragraphs = Vec::new();
         for block in read.blocks {
-            match block {
-                ReadBlock::Heading { level, text, span } => headings.push((level, text, span)),
-                ReadBlock::Paragraph {
+            match block.0 {
+                BlockKind::Heading { level, text, span } => headings.push((level, text, span)),
+                BlockKind::Paragraph {
                     kind, text, span, ..
                 } => paragraphs.push((kind, text, span)),
             }
@@ -718,7 +703,7 @@ mod tests {
     fn a_text_offset_maps_back_through_the_markup() {
         let md = "Plain **bold** end";
         let read = read(md);
-        let ReadBlock::Paragraph { text, map, .. } = &read.blocks[0] else {
+        let ReadBlock(BlockKind::Paragraph { text, map, .. }) = &read.blocks[0] else {
             panic!("a paragraph");
         };
         let at = text.find("bold").unwrap();
@@ -726,7 +711,7 @@ mod tests {
         assert_eq!(slice(md, span), "bold");
         let code = "Call `run()` now";
         let read = super::read(code);
-        let ReadBlock::Paragraph { text, map, .. } = &read.blocks[0] else {
+        let ReadBlock(BlockKind::Paragraph { text, map, .. }) = &read.blocks[0] else {
             panic!("a paragraph");
         };
         let at = text.find("run()").unwrap();

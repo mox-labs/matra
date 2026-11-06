@@ -63,13 +63,13 @@
       "words": 58
     },
     {
-      "compression_ratio": 0.5156,
+      "compression_ratio": 0.5179,
       "kind": "paragraph",
-      "lexical_density": 0.5166,
-      "readability_grade": 14.0052,
+      "lexical_density": 0.5102,
+      "readability_grade": 13.6964,
       "sentences": 4,
-      "text": "The parser is UDPipe with one pinned English model, english-ewt-ud-2.5-191206, and the engine builds it for you: the parser and reader traits are private to the crate, so there is no provider to construct. Name a directory you own: provisioning trusts what it finds there, and a shared one such as /tmp is writable by anybody on the machine. The engine creates the directory if it is missing, downloads the model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.",
-      "words": 155
+      "text": "The parser is UDPipe with one pinned English model, english-ewt-ud-2.5-191206, and the engine builds it for you, so there is no parser to construct unless you bring your own (below). Name a directory you own: provisioning trusts what it finds there, and a shared one such as /tmp is writable by anybody on the machine. The engine creates the directory if it is missing, downloads the model (about 16 MB) on first use, verifies it against a pinned SHA-256 hash, and loads from the cached file on every call after that. The verified bytes are written to a temporary subdirectory whose name is unique to the call (the process id, the clock in nanoseconds, and a counter) and moved into place with a single rename, so two processes pointed at the same directory cannot corrupt each other's file, even in containers where every process is pid 1.",
+      "words": 151
     },
     {
       "compression_ratio": 0.5909,
@@ -450,12 +450,12 @@
       "words": 46
     },
     {
-      "compression_ratio": 0.589,
+      "compression_ratio": 0.5889,
       "kind": "paragraph",
       "lexical_density": 0.629,
-      "readability_grade": 10.5506,
+      "readability_grade": 9.9797,
       "sentences": 2,
-      "text": "Token fields carry the CoNLL-U columns under Rust names: text is the surface form, pos is the universal POS tag, xpos is the language-specific tag, and dep is the dependency relation. features is the FEATS column as a map from feature name to value (token.feat(\"Mood\") reads one), deps and misc hold their raw column strings, and is_punct is derived by the adapter.",
+      "text": "Token fields carry the CoNLL-U columns under Rust names: text is the surface form, pos is the universal POS tag, xpos is the language-specific tag, and dep is the dependency relation. features is the FEATS column as a map from feature name to value (token.feat(\"Mood\") reads one), deps and misc hold their raw column strings, and is_punct is set by the parser.",
       "words": 65
     },
     {
@@ -493,6 +493,78 @@
       "sentences": 3,
       "text": "tree_depth is the longest root-to-leaf path in the sentence, an Option<usize>. On a malformed parse where tokens form a cycle it is None rather than a depth truncated at some arbitrary ceiling, so a broken parse is a value the compiler makes you handle rather than a number that reads as a deep tree. subtree and children_of stay safe on the same malformed input; both use a visited set.",
       "words": 73
+    },
+    {
+      "compression_ratio": 0.5805,
+      "kind": "paragraph",
+      "lexical_density": 0.5254,
+      "readability_grade": 15.315,
+      "sentences": 2,
+      "text": "The engine is assembled from three parts, and each is a trait you can implement: the parser (matra::nlp::NlpProvider), a reader for one format (matra::decompose::Decomposer), and the source that reads the paths inputs name (matra::source::Source). Plug one in and the rest of the pipeline, every metric and every outcome function, runs on what it produces, with no fork of matra.",
+      "words": 63
+    },
+    {
+      "compression_ratio": 0.5928,
+      "kind": "paragraph",
+      "lexical_density": 0.6111,
+      "readability_grade": 13.7326,
+      "sentences": 3,
+      "text": "A parser takes one paragraph's text and returns its sentences, each a Vec<Token>. It does not build Sentence values: the engine builds them from your tokens, text, span and every derived field included, so passive, negations and mood mean the same thing whichever parser ran. Engine::with_parser takes it, in any build, udpipe or not:",
+      "words": 58
+    },
+    {
+      "compression_ratio": 0.5199,
+      "kind": "paragraph",
+      "lexical_density": 0.5556,
+      "readability_grade": 7.5548,
+      "sentences": 5,
+      "text": "The contract is on the trait. In short: ids run 1..=n in each sentence; every head is 0 or a token of the sentence, and exactly one is 0; the heads form no cycle; and every span is where the token's form lies in the paragraph text you were handed, in UTF-8 bytes relative to that text, in token order. Set is_punct for punctuation and SpaceAfter=No in misc where no space follows, since the sentence text is rebuilt from the forms. identity names your parser and its model, and lands in every document's provenance.parser. examples/custom_parser.rs is a runnable version that splits sentences too: cargo run --example custom_parser --no-default-features.",
+      "words": 115
+    },
+    {
+      "compression_ratio": 0.5122,
+      "kind": "paragraph",
+      "lexical_density": 0.5211,
+      "readability_grade": 12.0879,
+      "sentences": 4,
+      "text": "A reader takes a format's bytes and returns a Read: its blocks, built with ReadBlock::heading(level, text, span) and ReadBlock::paragraph(kind, text, span), and the constructs it skipped. A paragraph's text is the analysed text at its span. For a format that is not text, extract the text and name it with Read::with_text, and every span points into that. Register a reader for a format with with_reader, which composes with the standard constructors:",
+      "words": 79
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.5,
+      "readability_grade": 8.9027,
+      "sentences": 3,
+      "text": "A PDF or DOCX is detected by its bytes, so a registered reader for it runs on Input::file with no format named. A Format::Other is never detected: name it on the input, as above. Replacing a shipped reader, say Format::Markdown, works the same way.",
+      "words": 47
+    },
+    {
+      "compression_ratio": 0.5521,
+      "kind": "paragraph",
+      "lexical_density": 0.5385,
+      "readability_grade": 8.2131,
+      "sentences": 3,
+      "text": "A source takes a path and returns the bytes there. with_source swaps it in for the local filesystem, so Input::file(\"bucket/notes.md\") reads through it, the extension still decides the format, and the path is still what provenance.source.path records. Inputs::dir still lists the local filesystem, and Input::bytes and Input::blocks need no source at all.",
+      "words": 59
+    },
+    {
+      "compression_ratio": 0.4882,
+      "kind": "paragraph",
+      "lexical_density": 0.5,
+      "readability_grade": 10.8341,
+      "sentences": 6,
+      "text": "The engine trusts none of the three. What a reader returns is checked before the section tree is built, and what the parser returns is checked for each paragraph before a sentence is built from it. A break fails that document with Error::ParseFailed, whose reason names the check (head_out_of_range, token_span_order, block_span_invalid, and the rest Errors lists) and whose cause names the paragraph, sentence and token, or the block. That is also how to test an implementation: run your own texts through Engine::analyze, and it conforms when no document fails with one of those reasons. tests/providers.rs in the repository holds a broken parser and a broken reader for each check. A failure of your own is ParseFailed with reason None, or the kind the trait lists for it, and never a panic: a parser wrapping native code catches a panic at its own boundary, as the UDPipe adapter does.",
+      "words": 150
+    },
+    {
+      "compression_ratio": null,
+      "kind": "paragraph",
+      "lexical_density": 0.375,
+      "readability_grade": 1.5,
+      "sentences": 2,
+      "text": "These traits are Rust only in 0.3.0. Python takes an embedder of your own, and not yet a parser, a reader or a source.",
+      "words": 24
     }
   ]
 }

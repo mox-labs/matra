@@ -1,45 +1,58 @@
-//! Fetch port. Reads the bytes of documents from paths, behind the
-//! guards on reading them.
+//! Fetch port: reads the bytes of a document from a path, behind the
+//! guards on reading it.
 //!
-//! This module contains the Source trait (port) and what it returns.
-//! `file.rs` is its adapter. `directory.rs` lists the files of a
-//! directory and reads none of them, so a failed file is reported as one
-//! item rather than dropped. Crate-private: a
-//! caller names a path through `Input::file` or `Inputs::dir`, and a
-//! caller whose bytes come from elsewhere hands them in with
-//! `Input::bytes`.
+//! This module holds the [`Source`] trait. `file.rs` is its adapter, the
+//! one an engine reads with unless the caller supplies another through
+//! `Engine::with_source`. `directory.rs` lists the files of a directory
+//! for `Inputs::dir` and reads none of them, so a failed file is reported
+//! as one item rather than dropped. A caller whose bytes come from
+//! somewhere with no path hands them in with `Input::bytes` and needs no
+//! source at all.
 
 pub(crate) mod directory;
 pub(crate) mod file;
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::domain;
 
-/// The bytes of one document as they were read, and where from. Which
-/// format they are is decided later, by detection.
-pub(crate) struct Fetched {
-    /// The document's bytes, unread by any reader yet.
-    pub(crate) bytes: Vec<u8>,
-    /// The path they were read from.
-    pub(crate) path: PathBuf,
-}
-
-/// Reads documents from a path. Paths only, not strings.
-pub(crate) trait Source: Send {
-    /// Read zero or more documents from `input`. Adapters translate
-    /// external errors into [`domain::Error`] variants, and never drop a
-    /// document they could not read: a failure is an `Err`, never an
-    /// omission. Postconditions are documented per adapter; see
-    /// [`crate::source::file::FileSource`], the one implementation.
-    fn read(&self, input: &Path) -> domain::Result<Vec<Fetched>>;
-    /// Cheap pre-check: whether this adapter can read `input`. Must not
-    /// read file contents.
-    ///
-    /// The composition root does not consult it to pick an adapter: the
-    /// caller chose by naming `Input::file` or `Inputs::dir`. Its one
-    /// caller in the library is the directory listing,
-    /// [`crate::source::directory::DirectorySource::candidate_paths`],
-    /// which keeps only the listed entries that `FileSource::accepts`.
-    fn accepts(&self, input: &Path) -> bool;
+/// Reads the bytes of the document a path names: the step behind
+/// `Input::file`, `Input::file_as` and each item of `Inputs::dir`.
+///
+/// A source of your own reads paths from somewhere other than the local
+/// filesystem (an archive, an object store, a sandbox), or under guards
+/// other than the file source's. The engine records the path in
+/// `provenance.source.path` and decides the format afterwards, from the
+/// bytes and then the path's extension, so a source returns bytes and
+/// nothing else.
+///
+/// # What `read` returns
+///
+/// The document's bytes, unread by any reader. A source returns one
+/// document per path, never several and never none: a path it cannot
+/// read is an `Err`, not an empty result. The engine refuses bytes over
+/// [`domain::limits::MAX_INPUT_BYTES`] after `read` returns, so a
+/// source that can learn a size first should refuse there, before
+/// reading, as the file source does with its metadata.
+///
+/// # Errors
+///
+/// - [`domain::Error::Io`] when the read fails, with its
+///   [`std::io::ErrorKind`] (`NotFound`, `PermissionDenied`, ...), so a
+///   caller can tell a missing document from a refused one.
+/// - [`domain::Error::InputTooLarge`] when the document exceeds a cap,
+///   with a `what` naming it (`file_read` for the file source's).
+/// - [`domain::Error::InvalidInput`] when the path names something the
+///   source does not read as a document, with a `reason` naming the
+///   check (`is_a_directory` for the file source's).
+///
+/// A failure is an `Err`, never a panic.
+///
+/// # Threads
+///
+/// `Send`, because an engine holds its source and moves to a worker
+/// thread.
+pub trait Source: Send {
+    /// Read the document at `path`, satisfying the contract above.
+    fn read(&self, path: &Path) -> domain::Result<Vec<u8>>;
 }

@@ -134,7 +134,7 @@ Provider-specific notes for the UDPipe adapter, the one adapter that ships:
 
 A token id or head that does not fit in `usize` is rejected at the adapter with `Error::ParseFailed` rather than being silently coerced.
 
-`span` comes from aligning each form with the paragraph text the parser was given, then mapping it into the analysed text. A form the adapter cannot find where the text says it should be is `Error::ParseFailed` naming the token, never a guessed span. In a markdown paragraph whose markup the reader removed, a token's span can cover markup inside it (`foo**bar**` is one token from the `f` to the last `r`), and a token read from an escape or an entity (`&amp;`) covers all of it.
+`span` comes from aligning each form with the paragraph text the parser was given, then mapping it into the analysed text. A form the adapter cannot find where the text says it should be is `Error::ParseFailed` naming the token, never a guessed span, and the engine checks every parser's spans by the same rule, so a span from any parser that does not line up with its form is `Error::ParseFailed` with `reason` `token_form_mismatch`. In a markdown paragraph whose markup the reader removed, a token's span can cover markup inside it (`foo**bar**` is one token from the `f` to the last `r`), and a token read from an escape or an entity (`&amp;`) covers all of it.
 
 ### Construction
 
@@ -170,7 +170,7 @@ let token = matra::domain::Token::builder(
 | Field | Type | Contents |
 |---|---|---|
 | `span` | `Span` | Where the sentence lies in the analysed text: from its first token's start to its last token's end, derived at construction |
-| `text` | `String` | Sentence text as the NLP provider reports it, normalized, not a slice of the input |
+| `text` | `String` | Sentence text rebuilt from the token forms, normalized, not a slice of the input |
 | `tokens` | `Vec<Token>` | Tokens in ascending `id` order |
 | `word_count` | `usize` | Non-punctuation tokens, derived at construction |
 | `tree_depth` | `Option<usize>` | Longest path from any token to the root, the root at depth 0, derived at construction. `None` when the head references form a cycle |
@@ -182,11 +182,11 @@ let token = matra::domain::Token::builder(
 | `hearst_pairs` | `Vec<HearstPair>` | Candidate hypernymy pairs from the six Hearst (1992) patterns, filled by the pipeline at the annotate stage |
 | `root_mood` | `Option<RootMood>` | The root clause's `Mood` feature with the root's token id, derived at construction. `None` when the root clause carries no mood |
 
-Invariants that downstream code relies on, and that a hand-built `Sentence` and every `NlpProvider` are expected to uphold: tokens are id-sorted; exactly one token has `head == 0`; every other `head` names a token in the same sentence; following `head` never loops. Nothing validates them, and the tree walks stay safe when the last one breaks (see `tree_depth` below).
+Invariants that downstream code relies on: tokens are id-sorted; exactly one token has `head == 0`; every other `head` names a token in the same sentence; following `head` never loops. Every sentence the engine builds holds them, because it checks what the parser returns before it builds one and fails the document with `Error::ParseFailed` naming the check otherwise. A sentence built by hand with `Sentence::new`, which trusts its caller, or read back from JSON can break any of them, and the tree walks stay safe when the last one breaks (see `tree_depth` below).
 
 `tree_depth` is computed in time linear in token count with a visited set, and is `None` when the head references form a cycle, which reports a malformed parse as a value a reader must handle instead of truncating it or returning a number that reads as a very deep tree. An empty sentence has depth `Some(0)`. `word_count` counts tokens the NLP provider identified, minus punctuation. It is not a whitespace split, and the two counts differ on the same text.
 
-The UDPipe adapter builds `text` by joining token surface forms, inserting a space unless the preceding token carries `SpaceAfter=No` in `misc`. The string is a reconstruction, not a slice of the input, so whitespace can differ from the source text; `span` is where the sentence came from.
+The engine builds `text` by joining the token surface forms a parser returned, inserting a space unless the preceding token carries `SpaceAfter=No` in `misc`. The string is a reconstruction, not a slice of the input, so whitespace can differ from the source text; `span` is where the sentence came from.
 
 ### Derived structural fields
 
@@ -356,10 +356,11 @@ Which reader a document needs.
 | `Blocks` | `blocks` | No extension: a caller names it, and `Input::blocks` takes it |
 | `Pdf` | `pdf` | Extension `.pdf`, or bytes opening with `%PDF` |
 | `Docx` | `docx` | Extension `.docx`, or a zip archive holding `[Content_Types].xml` |
+| `Other(String)` | the name it holds | Never detected: a caller names it, built with `Format::named` |
 
 `Format::from_path(path: impl AsRef<Path>) -> Format` is the extension column, and it is the only copy of it. Reading a file with `Input::file` applies it, and the command line reads it for the name given to `--stdin-filename` when `--format` names none, so a name means the same thing on both routes. When the bytes are read, a PDF or DOCX signature outranks both the extension and a format the caller names.
 
-`Pdf` and `Docx` have no reader, so analyzing such a document returns `Error::UnsupportedFormat` with that format. `Input::text` and `Input::file_as` take the format as an argument; `Input::bytes` takes one optionally; `Input::file` detects one. `Format` derives `PartialEq` and `Eq`, which is what the reader table keys on.
+`Pdf`, `Docx` and an `Other` have no reader that ships, so analyzing such a document returns `Error::UnsupportedFormat` with that format, unless the engine was given a reader for it with `Engine::with_reader`. `Other` names a format matra has no variant for, the one a caller's own reader reads: `Format::named("html")`. `Format::named` gives the variant matra has for a name it knows, so `Format::named("markdown")` is `Markdown`, and a name read back from JSON does the same, an unknown one reading as `Other` rather than failing. `Input::text` and `Input::file_as` take the format as an argument; `Input::bytes` takes one optionally; `Input::file` detects one. `Format` derives `PartialEq` and `Eq`, which is what the reader table keys on.
 
 ## Block
 

@@ -60,7 +60,7 @@
         },
         "parser": { "$ref": "#/$defs/Identity" },
         "format": {
-          "description": "The format the input was read as: `markdown`, `plain_text` or `blocks` today. An open set.",
+          "description": "The format the input was read as: `markdown`, `plain_text` or `blocks` from the readers matra ships, `pdf` or `docx` from a reader a caller registered, or the name of another format a caller's reader reads. An open set.",
           "type": "string"
         },
         "source": { "$ref": "#/$defs/ProvenanceSource" },
