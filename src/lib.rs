@@ -1838,8 +1838,8 @@ mod tests {
             let n = self.force_count.unwrap_or(texts.len());
             Ok((0..n).map(|_| domain::Embedding(vec![1.0, 0.0])).collect())
         }
-        fn identity(&self) -> &str {
-            self.identity
+        fn identity(&self) -> domain::Identity {
+            domain::Identity::new(self.identity, None, None, None)
         }
     }
 
@@ -1849,8 +1849,8 @@ mod tests {
         fn embed(&self, _texts: &[&str]) -> domain::Result<Vec<domain::Embedding>> {
             panic!("embed ran when a gate should have refused first");
         }
-        fn identity(&self) -> &str {
-            "unreached"
+        fn identity(&self) -> domain::Identity {
+            domain::Identity::new("unreached", None, None, None)
         }
     }
 
@@ -1877,7 +1877,10 @@ mod tests {
         let p = &out.provenance;
         assert_eq!(p.method.as_deref(), Some(CLUSTERS_METHOD));
         let parameters = p.parameters.as_ref().expect("parameters");
-        assert_eq!(parameters.embedder.as_deref(), Some("the-real-model"));
+        assert_eq!(
+            parameters.embedder,
+            Some(domain::Identity::new("the-real-model", None, None, None))
+        );
         assert_eq!(parameters.threshold, Some(0.9));
         assert_eq!(parameters.n, None);
         assert_eq!(p.source, doc.provenance.source, "the document's input");

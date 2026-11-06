@@ -21,7 +21,7 @@ struct Fixture {
     name: String,
     embeddings: Vec<Vec<f32>>,
     threshold: f64,
-    embedder: String,
+    embedder: Identity,
     expect: Expect,
 }
 
@@ -36,7 +36,7 @@ struct Expect {
 /// sentences say: the clustering, not an embedding model, is under test.
 struct Vectors {
     vectors: Vec<Vec<f32>>,
-    identity: String,
+    identity: Identity,
 }
 
 impl Embedder for Vectors {
@@ -45,8 +45,8 @@ impl Embedder for Vectors {
         Ok(self.vectors.iter().cloned().map(Embedding).collect())
     }
 
-    fn identity(&self) -> &str {
-        &self.identity
+    fn identity(&self) -> Identity {
+        self.identity.clone()
     }
 }
 
@@ -194,6 +194,16 @@ mod reference_model {
             fixture.model.name
         );
         assert_eq!(m.dimensions(), fixture.model.dimensions);
+        assert_eq!(
+            m.identity(),
+            matra::domain::Identity::new(
+                "model2vec",
+                Some(fixture.model.name.clone()),
+                Some(m.model_hash().to_string()),
+                Some("MIT".to_string()),
+            ),
+            "the pinned digest names the model and its licence"
+        );
 
         let texts: Vec<&str> = fixture.inputs.iter().map(String::as_str).collect();
         let embs = m.embed(&texts).expect("embed");
@@ -220,7 +230,8 @@ mod reference_model {
                 got.provenance
                     .parameters
                     .as_ref()
-                    .and_then(|p| p.embedder.as_deref()),
+                    .and_then(|p| p.embedder.as_ref())
+                    .and_then(|identity| identity.sha256.as_deref()),
                 Some(m.model_hash())
             );
             super::assert_same(

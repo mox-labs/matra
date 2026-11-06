@@ -28,6 +28,7 @@ from matra.types import (
     Embedder,
     ErrorDetails,
     FormatName,
+    Identity,
     KeyphraseMethodName,
     Keyphrases,
     Provenance,
@@ -337,7 +338,8 @@ class Model2Vec:
 
     @property
     def model_hash(self) -> str:
-        """SHA-256 over the three artifact files: the model identity."""
+        """SHA-256 over the three artifact files: the digest `identity()`
+        carries."""
         ...
 
     @property
@@ -354,9 +356,11 @@ class Model2Vec:
         """
         ...
 
-    def identity(self) -> str:
-        """The geometry these vectors live in: the same string
-        `model_hash` carries.
+    def identity(self) -> Identity:
+        """Who produces these vectors, in the shape of
+        `provenance["parser"]`: `name` is `model2vec`, `sha256` the value
+        `model_hash` carries, and `model` and `license` are named when the
+        digest is the pinned reference model's, `None` otherwise.
 
         With `embed`, this is what makes a `Model2Vec` an `Embedder`, so
         one annotation covers it and a caller's own object alike.

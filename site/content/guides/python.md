@@ -176,12 +176,13 @@ class MyEmbedder:
     def embed(self, texts: list[str]) -> list[list[float]]:
         return my_service.encode(texts)     # one vector per text, in order
 
-    def identity(self) -> str:
-        return "my-service/v3"              # names the geometry, not the run
+    def identity(self) -> matra.types.Identity:
+        # Names the geometry, not the run, in the shape the parser uses.
+        return {"name": "my-service", "model": "v3", "sha256": None, "license": None}
 
 
 found = matra.clusters(doc, MyEmbedder(), threshold=0.85)
-assert found["provenance"]["parameters"]["embedder"] == "my-service/v3"
+assert found["provenance"]["parameters"]["embedder"]["model"] == "v3"
 ```
 
 `Embedder` in `matra.types` is the protocol those two methods satisfy, and it is what `clusters` is annotated with. Importing it is optional and buys you a type checker's opinion, not a runtime check.
@@ -190,7 +191,7 @@ The object is asked for its identity before anything is embedded, so an embedder
 
 The contract is the one the Rust port carries: exactly one vector per sentence, in order, every vector the same length. Break it and the call raises `matra.InvalidInputError`, a `ValueError`, with the same message a Rust implementor gets, because the check is in the library and not in the binding. An exception raised inside your `embed` arrives as `matra.InvalidInputError` too, with your exception's own text inside the message.
 
-`identity` is read once, when the object is handed over, and travels into the result's provenance as `parameters["embedder"]`. Two embedders that can disagree must not return the same string, or scores end up attributed to a geometry that did not produce them.
+`identity` returns the shape `provenance["parser"]` has, `matra.types.Identity`: a `name`, and the `model`, its `sha256` and its `license`, each `None` when you do not know it. It is read once, when the object is handed over, and travels into the result's provenance as `parameters["embedder"]`, so the model's licence travels with the scores as the parsing model's does with the parse. A bare string is refused. Two embedders that can disagree must not report the same identity, or scores end up attributed to a geometry that did not produce them.
 
 ## Size limits
 

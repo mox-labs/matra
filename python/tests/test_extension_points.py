@@ -16,9 +16,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
+
+if TYPE_CHECKING:
+    from matra.types import Identity
 
 matra = pytest.importorskip("matra", reason="matra wheel not built")
 
@@ -44,8 +47,8 @@ class FakeEmbedder:
     """Fixed vectors keyed by a word in the sentence, so the assertion
     does not depend on how the parser segments the text."""
 
-    def identity(self) -> str:
-        return "fake-embedder-v1"
+    def identity(self) -> Identity:
+        return {"name": "fake-embedder", "model": "v1", "sha256": None, "license": "MIT"}
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         out = []
@@ -63,7 +66,12 @@ def test_a_python_object_is_an_embedder(engine: Any) -> None:
 
     # The embedder's own identity travels into the result, so the scores
     # cannot be attributed to a model that did not produce them.
-    assert result["provenance"]["parameters"]["embedder"] == "fake-embedder-v1"
+    assert result["provenance"]["parameters"]["embedder"] == {
+        "name": "fake-embedder",
+        "model": "v1",
+        "sha256": None,
+        "license": "MIT",
+    }
     assert result["provenance"]["parameters"]["threshold"] == 0.9
     assert result["provenance"]["method"] == "cosine"
     assert len(result["clusters"]) == 1
@@ -83,8 +91,8 @@ def test_wrong_vector_count_raises_the_same_message_a_rust_caller_gets(
     seen: list[int] = []
 
     class ShortEmbedder:
-        def identity(self) -> str:
-            return "short-embedder"
+        def identity(self) -> Identity:
+            return {"name": "short-embedder", "model": None, "sha256": None, "license": None}
 
         def embed(self, texts: list[str]) -> list[list[float]]:
             seen.append(len(texts))
@@ -103,8 +111,8 @@ def test_wrong_vector_count_raises_the_same_message_a_rust_caller_gets(
 @pytest.mark.model
 def test_an_exception_inside_embed_surfaces_with_its_own_text(engine: Any) -> None:
     class BoomEmbedder:
-        def identity(self) -> str:
-            return "boom-embedder"
+        def identity(self) -> Identity:
+            return {"name": "boom-embedder", "model": None, "sha256": None, "license": None}
 
         def embed(self, texts: list[str]) -> list[list[float]]:
             raise KeyError("no vectors cached for this batch")
@@ -120,8 +128,8 @@ def test_an_exception_inside_embed_surfaces_with_its_own_text(engine: Any) -> No
 @pytest.mark.model
 def test_a_shape_violation_names_the_level_that_was_wrong(engine: Any) -> None:
     class ScalarEmbedder:
-        def identity(self) -> str:
-            return "scalar-embedder"
+        def identity(self) -> Identity:
+            return {"name": "scalar-embedder", "model": None, "sha256": None, "license": None}
 
         def embed(self, texts: list[str]) -> list[list[float]]:
             return 42  # type: ignore[return-value]
@@ -148,6 +156,38 @@ def test_an_embedder_without_identity_is_refused_before_any_work(
         matra.clusters(engine.analyze(PARAPHRASE_A), Nameless(), 0.9)
 
     assert "identity()" in str(excinfo.value)
+
+
+@pytest.mark.model
+def test_an_identity_that_is_not_the_parsers_shape_is_refused(engine: Any) -> None:
+    """The embedder names itself as the parser does, so a bare string,
+    the shape before 0.3.0, is refused by name before anything is
+    embedded; a dict that leaves out the optional keys reads them as
+    `None`."""
+
+    class Stringly:
+        def identity(self) -> str:
+            return "a-bare-string"
+
+        def embed(self, texts: list[str]) -> list[list[float]]:
+            raise AssertionError("embed must not be called")
+
+    doc = engine.analyze(PARAPHRASE_A)
+    with pytest.raises(matra.InvalidInputError) as excinfo:
+        matra.clusters(doc, Stringly(), 0.9)  # type: ignore[arg-type]
+    assert "identity()" in str(excinfo.value)
+
+    class NameOnly(FakeEmbedder):
+        def identity(self) -> Identity:
+            return {"name": "name-only"}  # type: ignore[typeddict-item]
+
+    result = matra.clusters(doc, NameOnly(), 0.9)
+    assert result["provenance"]["parameters"]["embedder"] == {
+        "name": "name-only",
+        "model": None,
+        "sha256": None,
+        "license": None,
+    }
 
 
 # ---------------------------------------------------------------------------

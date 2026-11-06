@@ -22,7 +22,7 @@ mod document_schema;
 use std::path::PathBuf;
 
 use matra::domain::{
-    Cluster, Document, Embedding, Format, Keyphrase, Parameters, SimilarityEdge, Span,
+    Cluster, Document, Embedding, Format, Identity, Keyphrase, Parameters, SimilarityEdge, Span,
 };
 use matra::embed::Embedder;
 use matra::{KeyphraseMethod, SummaryMethod};
@@ -35,7 +35,7 @@ struct Fixture {
     input: String,
     format: Format,
     document: Document,
-    embedder: String,
+    embedder: Identity,
     embeddings: Vec<Vec<f32>>,
     summaries: Vec<SummaryCase>,
     keyphrases: Vec<KeyphraseCase>,
@@ -106,7 +106,7 @@ fn keyphrase_method(name: &str) -> KeyphraseMethod {
 /// Returns the fixture's vectors, one per sentence.
 struct Vectors<'a> {
     vectors: &'a [Vec<f32>],
-    identity: &'a str,
+    identity: &'a Identity,
 }
 
 impl Embedder for Vectors<'_> {
@@ -115,8 +115,8 @@ impl Embedder for Vectors<'_> {
         Ok(self.vectors.iter().cloned().map(Embedding).collect())
     }
 
-    fn identity(&self) -> &str {
-        self.identity
+    fn identity(&self) -> Identity {
+        self.identity.clone()
     }
 }
 
@@ -308,7 +308,7 @@ fn regenerate(path: &std::path::Path, raw: &serde_json::Value, doc: &Document) {
         description: &'a serde_json::Value,
         input: &'a serde_json::Value,
         format: &'a serde_json::Value,
-        embedder: &'a str,
+        embedder: &'a Identity,
         embeddings: &'a [Vec<f32>],
         summaries: Vec<SummaryCase>,
         keyphrases: Vec<KeyphraseCase>,
@@ -345,10 +345,10 @@ fn regenerate(path: &std::path::Path, raw: &serde_json::Value, doc: &Document) {
         })
         .collect();
     let embeddings: Vec<Vec<f32>> = serde_json::from_value(raw["embeddings"].clone()).unwrap();
-    let embedder = raw["embedder"].as_str().unwrap();
+    let embedder: Identity = serde_json::from_value(raw["embedder"].clone()).unwrap();
     let vectors = Vectors {
         vectors: &embeddings,
-        identity: embedder,
+        identity: &embedder,
     };
     let clusters = cases("clusters")
         .map(|case| {
@@ -368,7 +368,7 @@ fn regenerate(path: &std::path::Path, raw: &serde_json::Value, doc: &Document) {
         description: &raw["description"],
         input: &raw["input"],
         format: &raw["format"],
-        embedder,
+        embedder: &embedder,
         embeddings: &embeddings,
         summaries,
         keyphrases,

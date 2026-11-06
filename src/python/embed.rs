@@ -71,8 +71,8 @@ impl PyModel2Vec {
         Ok(Self { inner })
     }
 
-    /// SHA-256 over the three artifact files, the identity carried
-    /// into every result derived from this model's vectors.
+    /// SHA-256 over the three artifact files: the digest the model's
+    /// identity carries.
     #[getter]
     fn model_hash(&self) -> &str {
         self.inner.model_hash()
@@ -84,15 +84,18 @@ impl PyModel2Vec {
         self.inner.dimensions()
     }
 
-    /// The geometry this model's vectors live in, as the `Embedder`
-    /// protocol asks for it: the same string `model_hash` carries.
+    /// Who produces this model's vectors, as the `Embedder` protocol
+    /// asks for it: a dict in the shape of `provenance["parser"]`, with
+    /// `name` `model2vec`, `sha256` the value `model_hash` carries, and
+    /// `model` and `license` named when the digest is the pinned
+    /// reference model's.
     ///
     /// It is a method, not a getter, because the protocol a caller's
     /// own object satisfies declares a method. With it, `Model2Vec`
     /// satisfies that protocol rather than merely being accepted
     /// alongside it, and one annotation covers both.
-    fn identity(&self) -> String {
-        self.inner.model_hash().to_string()
+    fn identity<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        super::to_py(py, &self.inner.identity())
     }
 
     /// Embed each text into a vector. One vector per text, in
@@ -121,11 +124,11 @@ impl PyModel2Vec {
 ///
 /// The identity is read once, at construction. The trait's promise
 /// is that an identity names one geometry, and a Python object could
-/// return a different string on every call; reading it once keeps
-/// the promise on the object's behalf rather than trusting it.
+/// return a different one on every call; reading it once keeps the
+/// promise on the object's behalf rather than trusting it.
 pub(super) struct PyEmbedder {
     obj: Py<PyAny>,
-    identity: String,
+    identity: domain::Identity,
 }
 
 impl PyEmbedder {
@@ -134,14 +137,19 @@ impl PyEmbedder {
     /// # Errors
     ///
     /// `InvalidInputError` if `identity()` is missing, raises, or
-    /// returns something other than a string.
+    /// returns something other than a mapping in the shape of
+    /// `provenance["parser"]`: a `name` string, and `model`, `sha256` and
+    /// `license` each a string or `None` (a key left out reads as `None`).
     pub(super) fn new(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
         use super::errors::invalid_input;
         let raw = obj.call_method0("identity").map_err(|e| {
             invalid_input(format!("calling identity() on the embedder failed: {e}"))
         })?;
-        let identity = raw.extract::<String>().map_err(|e| {
-            invalid_input(format!("the embedder's identity() must return a str: {e}"))
+        let identity = pythonize::depythonize::<domain::Identity>(&raw).map_err(|e| {
+            invalid_input(format!(
+                "the embedder's identity() must return a dict with a `name` string \
+                 and optional `model`, `sha256` and `license` strings: {e}"
+            ))
         })?;
         Ok(Self {
             obj: obj.clone().unbind(),
@@ -189,7 +197,7 @@ impl Embedder for PyEmbedder {
         })
     }
 
-    fn identity(&self) -> &str {
-        &self.identity
+    fn identity(&self) -> domain::Identity {
+        self.identity.clone()
     }
 }

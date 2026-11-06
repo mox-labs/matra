@@ -30,14 +30,38 @@ use crate::domain;
 /// text that has passed through the pipeline is already bounded by
 /// [`domain::limits::MAX_INPUT_BYTES`], and applications embedding user-supplied
 /// text directly should validate size before calling.
+///
+/// # Errors
+///
+/// An implementation reports its own failure as one of three kinds, each
+/// naming what the caller can do about it, and [`crate::clusters`] passes
+/// it through unchanged:
+///
+/// - [`domain::Error::ModelInvalid`] when its model cannot embed an input
+///   (a tokenizer or a lookup that fails). Retrying will not help.
+/// - [`domain::Error::Io`] when something it reaches fails: a file, or a
+///   remote service. Its `io::ErrorKind` separates a timeout from a
+///   refusal, so a caller can tell a retry from a fix.
+/// - [`domain::Error::InputTooLarge`] when an input exceeds a cap the
+///   implementation holds, with a `what` naming that cap.
+///
+/// [`domain::Error::InvalidInput`] is not one of them: it is what
+/// `clusters` returns when the vectors break the contract above. The one
+/// implementation that returns it is the Python binding's bridge to a
+/// caller's object, for an object that raised: the bridge cannot know
+/// which of the three an arbitrary exception is, and in both cases the
+/// embedder the caller passed in is what failed.
 pub trait Embedder: Send {
     /// Embed each text into a dense vector.
     fn embed(&self, texts: &[&str]) -> domain::Result<Vec<domain::Embedding>>;
 
-    /// A stable identifier for the model behind this embedder, carried
-    /// into every provenance-bearing result derived from its vectors.
-    /// For file-loaded models this is a digest over the artifacts; the
-    /// point is that scores stay attributable to one geometry, so two
-    /// embedders that can disagree must not share an identity.
-    fn identity(&self) -> &str;
+    /// Who produces these vectors, as the parser reports itself
+    /// ([`domain::Identity`]): the component's name, the model it runs,
+    /// that model's digest and its licence, where known. `clusters`
+    /// records it in its result's `parameters.embedder`, so the scores
+    /// stay attributable to one geometry and the model's licence travels
+    /// with what it produced. Two embedders that can disagree must not
+    /// share an identity, so `sha256` covers every artifact that decides
+    /// the vectors.
+    fn identity(&self) -> domain::Identity;
 }

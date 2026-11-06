@@ -132,5 +132,5 @@ Those three are pages of this book, run from a checkout of the repository, so th
 
 The separation is decisive, and the sentence-level starting point does not carry over: against a cutoff of `0.85` no pair clears, so the near-duplicate pair would have been reported as unrelated. This is what "the threshold does not travel" costs when it is taken on faith. Calibrate on scores you have read.
 
-Two things carry over from `clusters`, and on this route they are yours to keep. Attribution: the vectors do not carry the model identity, so record `model.model_hash` beside every score you keep, as `clusters` records it in `parameters["embedder"]`. And a zero-magnitude vector, which is what an empty document embeds to, makes no claim: the `cosine` above returns 0.0 for it rather than dividing by zero.
+Two things carry over from `clusters`, and on this route they are yours to keep. Attribution: the vectors do not carry the model identity, so record `model.model_hash` beside every score you keep, as `clusters` records it in `parameters["embedder"]["sha256"]`. And a zero-magnitude vector, which is what an empty document embeds to, makes no claim: the `cosine` above returns 0.0 for it rather than dividing by zero.
 

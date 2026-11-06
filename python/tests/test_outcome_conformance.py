@@ -18,10 +18,13 @@ from __future__ import annotations
 import json
 import struct
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from document_schema import assert_valid
+
+if TYPE_CHECKING:
+    from matra.types import Identity
 
 matra = pytest.importorskip("matra", reason="matra wheel not built")
 
@@ -40,8 +43,8 @@ def as_f32(x: float) -> float:
 class Vectors:
     """Returns the fixture's vectors, one per sentence."""
 
-    def identity(self) -> str:
-        identity: str = FIXTURE["embedder"]
+    def identity(self) -> Identity:
+        identity: Identity = FIXTURE["embedder"]
         return identity
 
     def embed(self, texts: list[str]) -> list[list[float]]:

@@ -46,11 +46,12 @@ const ARTIFACT_FILES: [&str; 3] = ["model.safetensors", "tokenizer.json", "confi
 /// SHA-256 over the three artifact files of the pinned potion-base-8M
 /// release, concatenated in [`ARTIFACT_FILES`] order. The same value
 /// `spec/tests/semantic/reference-model.json` carries as `artifact_hash`,
-/// and the same value [`Model2Vec::model_hash`] reports once loaded.
+/// and the same value [`Model2Vec::model_hash`] reports once loaded. A
+/// loaded model whose digest equals it is the pinned model, whichever
+/// constructor loaded it, so its identity names the model and licence.
 ///
 /// Refresh this and [`POTION_BASE_8M_URLS`] together with
 /// `scripts/fetch-embedding-hash.sh <revision>`.
-#[cfg(not(target_arch = "wasm32"))]
 const POTION_BASE_8M_SHA256: &str =
     "81c3592150873b1c5a8c4262850f795bff4fd568fbde80ac69889d087f16a0b4";
 
@@ -70,8 +71,8 @@ const POTION_BASE_8M_URLS: [&str; 3] = [
     "https://huggingface.co/minishlab/potion-base-8M/resolve/bf8b056651a2c21b8d2565580b8569da283cab23/config.json",
 ];
 
-/// The pinned model's name, which a download notice names it by.
-#[cfg(not(target_arch = "wasm32"))]
+/// The pinned model's name, which a download notice names it by and
+/// [`Model2Vec`]'s identity carries when the pinned set is what loaded.
 const POTION_BASE_8M_NAME: &str = "potion-base-8M";
 
 /// The pinned release's three artifacts together, in bytes: 30,236,760
@@ -89,7 +90,6 @@ const POTION_BASE_8M_BYTES: u64 = 30_920_628;
 /// MIT too, but the model is a separate work with its own terms, so the
 /// download notice carries them as the parsing model's does. Beside the
 /// URLs because a new revision means checking both.
-#[cfg(not(target_arch = "wasm32"))]
 const POTION_BASE_8M_LICENSE: &str = "MIT";
 
 /// Where the text of [`POTION_BASE_8M_LICENSE`] is published.
@@ -715,13 +715,27 @@ impl Model2Vec {
     }
 }
 
+/// The component name a [`Model2Vec`] reports in its identity.
+const EMBEDDER_NAME: &str = "model2vec";
+
 impl Embedder for Model2Vec {
     fn embed(&self, texts: &[&str]) -> domain::Result<Vec<Embedding>> {
         catch_embed_panic(|| texts.iter().map(|t| self.embed_one(t)).collect())
     }
 
-    fn identity(&self) -> &str {
-        self.model_hash()
+    /// `model2vec`, with [`Model2Vec::model_hash`] as the digest. The
+    /// model's name and licence are known only when the digest is the
+    /// pinned reference model's, however it was loaded; a set of the
+    /// caller's own leaves both `None`, as a parser model matra does not
+    /// pin does.
+    fn identity(&self) -> domain::Identity {
+        let pinned = self.model_hash.eq_ignore_ascii_case(POTION_BASE_8M_SHA256);
+        domain::Identity::new(
+            EMBEDDER_NAME,
+            pinned.then(|| POTION_BASE_8M_NAME.to_string()),
+            Some(self.model_hash.clone()),
+            pinned.then(|| POTION_BASE_8M_LICENSE.to_string()),
+        )
     }
 }
 
@@ -1500,6 +1514,21 @@ mod tests {
         write_model(dir2.path(), None, r#"{"normalize": false}"#);
         let m2 = Model2Vec::from_dir(dir2.path()).unwrap();
         assert_ne!(m.model_hash(), m2.model_hash());
+    }
+
+    /// The identity is the parser's shape: a model of the caller's own
+    /// carries its digest and names neither a model nor a licence, since
+    /// matra knows neither. Only the pinned digest earns both, which the
+    /// ignored reference-model test checks in `tests/semantic_conformance.rs`.
+    #[test]
+    fn an_unpinned_model_reports_its_digest_and_nothing_it_cannot_know() {
+        let dir = tempfile::tempdir().unwrap();
+        write_model(dir.path(), None, "{}");
+        let m = Model2Vec::from_dir(dir.path()).unwrap();
+        assert_eq!(
+            m.identity(),
+            domain::Identity::new("model2vec", None, Some(m.model_hash().to_string()), None)
+        );
     }
 
     #[test]

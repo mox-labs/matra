@@ -49,7 +49,7 @@ pub trait NlpProvider: Send {
 // src/embed/mod.rs
 pub trait Embedder: Send {
     fn embed(&self, texts: &[&str]) -> domain::Result<Vec<Embedding>>;
-    fn identity(&self) -> &str;
+    fn identity(&self) -> domain::Identity;
 }
 ```
 
