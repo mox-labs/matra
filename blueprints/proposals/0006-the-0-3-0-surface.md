@@ -260,7 +260,7 @@ Every top-level result carries `provenance`; every heading, paragraph, sentence,
 }
 ```
 
-A summary adds what shaped it: `"method": "textrank", "parameters": { "n": 3 }`. A span counts UTF-8 bytes of the analysed text: for markdown and plain text that is the input itself, and for block input it is the blocks' texts joined by a blank line, in order. The text fields keep their 0.2 meaning, now documented as normalized; the span, not the text, is the authority on where a value came from.
+A summary adds what shaped it: `"method": "textrank", "parameters": { "n": 3 }`. The method strings are `tfidf`, `textrank`, `rake`, `yake` and, for clusters, `cosine`; `parameters` holds only what the method takes. A document was shaped by no method, so on a `Document` both keys are absent rather than null. A span counts UTF-8 bytes of the analysed text: for markdown and plain text that is the input itself, and for block input it is the blocks' texts joined by a blank line, in order. The text fields are normalized: a markdown paragraph's text is its inline text with the markup stripped and escapes decoded, which is what the parser reads. The span, not the text, is the authority on where a value came from.
 
 ### Errors carry a kind everywhere
 
@@ -345,7 +345,7 @@ Today the Python box and the command-line box each carry an application rule. Pr
 | keyphrases | `keyphrases(&Document, n)`, `keyphrases_with(&Document, n, KeyphraseMethod)` | `Keyphrases` |
 | clusters | `clusters(&Document, &dyn Embedder, threshold: f64)` | `Clusters` |
 
-- **Construction.** `Engine::new()` builds the defaults (the pinned parser model, the markdown and plain-text readers), locating the model by the existing resolver and reading no behaviour from a configuration file; defaults are written explicitly [api-design-systems:c38]. `Engine::from_config(&Config)` and `from_config_with_notice` stay. There is no builder: it would need the reader and parser traits public, and no use case asks for it [api-design-practice:c6]. <claim id="engine-new-injects" basis="observed">Today's `new` takes the parser and the reader table [lib.rs:159](../../src/lib.rs#L159 "pub fn new(nlp: Box<dyn NlpProvider>")</claim>, so the new `new` is a remove and an add [api-design-systems:c24], caught at compile time, and the migration guide says so. <claim id="with-defaults-reads-config" basis="observed">`with_defaults` reads the configuration file [lib.rs:321](../../src/lib.rs#L321 "Config::resolve()")</claim>, so it goes rather than survive with a meaning its name does not say; `Engine::from_config(&Config::resolve()?)` says the same thing explicitly.
+- **Construction.** `Engine::new()` builds the defaults (the pinned parser model, the markdown and plain-text readers), locating the model by the existing resolver and reading no behaviour from a configuration file; defaults are written explicitly [api-design-systems:c38]. `Engine::from_config(&Config)` and `from_config_with_notice` stay. There is no builder: it would need the reader and parser traits public, and no use case asks for it [api-design-practice:c6]. <claim id="engine-new-injects" basis="observed">Today's `new` takes the parser and the reader table [lib.rs:159](../../src/lib.rs#L159 "pub fn new(nlp: Box<dyn NlpProvider>")</claim>, so the new `new` is a remove and an add [api-design-systems:c24], caught at compile time, and the migration guide says so. <claim id="with-defaults-reads-config" basis="observed">`with_defaults` reads the configuration file [lib.rs:321](../../src/lib.rs#L321 "Config::resolve()")</claim>, so it goes rather than survive with a meaning its name does not say; `Engine::from_config(&Config::resolve()?)` says the same thing explicitly. An `Engine` is `Send` without `Sync`: it moves to a worker thread but is not shared between two, because the parser mutates state as it parses. Loading a parser model file of the caller's choosing leaves both surfaces with the parser trait: the model is a pin, and the permissive model arrives in 0.4.0 as a pin chosen by id, which is an addition where keeping a file loader now would make its later removal a break.
 - **Input.** `Input` is one document, opaque and lazy: `Input::text(s, Format)`, `Input::bytes(data, Option<Format>)` (detected when `None`), `Input::file(path)` (read at `analyze`, so a failed read is an item of a stream, not an abort), `Input::blocks(iter)`. `Inputs::dir(path) -> Result<Inputs>` is an iterator of `Input`. `Input::file` on a directory fails with `InvalidInput` naming `Inputs::dir`. `Ingest`, `Ingested` and `RawDocument` leave the surface. An opaque `Input` hides its representation [parnas-modules:c23], so a URL source later is a new constructor, and `Input::bytes` is what lets fetching stay private: a caller whose bytes come from elsewhere fetches them and hands them in, the cheapest extension mechanism [api-design-practice:c35].
 - **Block.** `Block` is input only and opaque, with two constructors, `Block::heading(level, text)` and `Block::paragraph(text)`. Its JSON form is a published input format, `Format::Blocks`, with an input schema in `spec/schema/`; an unknown `kind` is refused, naming it. The richer vocabulary the readers emit (heading, paragraph, list item, table cell, code) is a separate, private type, so the likely change, more kinds, touches no interface [parnas-process:c22]. A shared format used as an interface becomes costly as a design evolves [parnas-modules:c25], which holds for a type callers receive or implement and not for one they only send.
 - **Outcomes are free functions over a `Document`.** They need no engine and no parser, so they run in a build without UDPipe, which the TypeScript surface will need. The richer mechanism is built using the simpler one [parnas-modules:c33]. The method is a secret behind the outcome's name: the selector is an enum the caller sends, which can gain values safely, and the method recorded on the result is a string the caller receives, which readers treat as an open set (this send-versus-receive distinction is the canon synthesis's own suggestion, not a source finding). `n` is the one word for "how many" everywhere.
@@ -396,7 +396,7 @@ Each module hides one decision likely to change, and Parnas's procedure is exact
 | embed (`embed/`) | the embedding model | `Embedder` public; `Model2Vec` public behind its feature |
 | domain | none: it is the published data | public |
 
-- **Detection.** A binary signature wins over the extension (`%PDF`, a zip with `[Content_Types].xml`). Among text formats, the caller's `Format` or the extension decides. A recognised format this build cannot read fails with `UnsupportedFormat`, whose `details` name the feature to enable; bytes that are not UTF-8 and carry no known signature fail with `UnsupportedFormat` and no feature. A text file with an unknown extension reads as plain text (decision 7).
+- **Detection.** A binary signature wins over the extension (`%PDF`, a zip with `[Content_Types].xml`). Among text formats, the caller's `Format` or the extension decides. A recognised format this build cannot read fails with `UnsupportedFormat`, whose `details` name the feature that would read it when one exists (none does in 0.3.0, for PDF or DOCX); bytes that are not UTF-8 and carry no known signature fail with `UnsupportedFormat` and no feature. A text file with an unknown extension reads as plain text (decision 7).
 - **The markdown reader** is rewritten on a CommonMark parser that reports source offsets, so it recognises lists, tables, code, block quotes and front matter, strips inline markup from the text the parser reads, and gives every block its span. A `## References` heading is a heading like any other. A construct it does not analyse (a table, a code block, front matter) is recorded in `skipped`, never dropped. Which parser is an implementation choice the canon does not address; pulldown-cmark is the candidate, chosen in the milestone's pull request.
 - **`Paragraph.kind`** (`paragraph`, `quote`, `list_item`) arrives, since the reader can now fill it, and an enum can grow where a boolean cannot [api-design-practice:c40]. `in_blockquote` is removed in the same release (decision 8).
 - **The parser** reports its own identity and, for each token, its span within the text it was given; the engine shifts those spans to absolute offsets at the one place each paragraph is parsed. The UDPipe adapter takes token positions from UDPipe's own `ranges` tokenizer option, or aligns token forms against the paragraph text, and returns `ParseFailed` naming the token when alignment fails, never a guessed span: a handler that returns normally deceives the caller [neighbours-contracts-simplicity:c14]. <claim id="parser-unvalidated" basis="observed">The parser's contract is trusted unchecked today [nlp/mod.rs:30](../../src/nlp/mod.rs#L30 "nothing validates it on the")</claim>; keeping the trait private keeps that trust inside the crate.
@@ -406,7 +406,7 @@ Each module hides one decision likely to change, and Parnas's procedure is exact
 
 The seven equivalence laws in `src/lib.rs` restate over `Input` and are run for every constructor (text, bytes, file, blocks): a stream of one is one analysis, order is preserved, and a failed read never reaches the parser. The law that analysis is annotation then measurement stays as an internal test, since both stages leave the surface but the property still holds. One law is new:
 
-- **L9, the accounting law.** For text formats, every non-whitespace byte of the analysed text lies in exactly one of: a heading span, a paragraph span, a `skipped` span. A conformance test over every fixture checks it, which turns "never silently" into something a test can falsify.
+- **L8, the accounting law.** For text formats, every non-whitespace byte of the analysed text lies in exactly one of: a heading span, a paragraph span, a `skipped` span. A block's container markers (a quote's `>`, a list item's marker) fall inside its span. A conformance test over every fixture checks it, which turns "never silently" into something a test can falsify.
 
 ### The schema
 
@@ -414,7 +414,7 @@ The seven equivalence laws in `src/lib.rs` restate over `Input` and are run for 
 Document         { provenance, sections, metrics: DocumentMetrics, skipped: [Skipped] }
 DocumentMetrics  { total_words, total_sentences, paragraph_count, mean_sentence_length,
                    sentence_length_std, vocabulary_ttr, nominalization_ratio, passive_ratio }
-Section          { heading, level, span, paragraphs }
+Section          { heading, level, span: Option (the heading's), paragraphs }
 Paragraph        { span, text, kind, sentences, metrics: ParagraphMetrics }
 ParagraphMetrics { readability_grade, lexical_density, compression_ratio }
 Sentence         { span, text, tokens, word_count, tree_depth: Option, passive,
@@ -426,13 +426,13 @@ Provenance       { matra, schema, parser: Identity, format, source: { path?, byt
 Identity         { name, model, sha256, license }
 Summary          { provenance, sentences: [SummarySentence { index, span, text, score: f64 }] }
 Keyphrases       { provenance, phrases: [Keyphrase { phrase, score: f64, occurrences: [Span] }] }
-Clusters         { provenance, clusters, edges }
+Clusters         { provenance, clusters: [Cluster { members }], edges: [SimilarityEdge { a, b, score: f64 }] }
 DocumentError    { path?, kind, message, details }
 ```
 
 - **Aggregates are fields.** What the command line prints and Python rebuilds becomes data: if data exists only in string form, the string becomes a de facto API [api-design-practice:c11]. `ParagraphMetrics` and `DocumentMetrics` are names RFC-0006 reserved, and no outer `Option` wraps either record, because each slot gates on its own.
-- **One home for the path.** <claim id="corpus-entry-path" basis="observed">`CorpusEntry` pairs a path with a document [domain.rs:1351](../../src/domain.rs#L1351 "Self { path, analysis }")</claim>, and the path also belongs in `provenance.source.path`. `CorpusEntry` goes; there must be one, and only one, place for every fact [parnas-process:c14]. `Corpus`'s aggregate methods leave the surface too: methods do not cross into Python, and averaging across documents is the caller's decision (defect 12 below).
-- **Skipped kinds** name the construct (`table`, `code`, `front_matter`, later `page_image`), never a judgment, following matra's rule that a derived field names a construction (EPR-0002). `skipped` is not an error and carries no error code: skipping a construct is specified behaviour reported beside a correct result, so AIP-193's rule against partial errors [api-design-systems:c30] does not bind it.
+- **One home for the path.** <claim id="corpus-entry-path" basis="observed">`CorpusEntry` pairs a path with a document [domain.rs:1351](../../src/domain.rs#L1351 "Self { path, analysis }")</claim>, and the path also belongs in `provenance.source.path`. `CorpusEntry` goes; there must be one, and only one, place for every fact [parnas-process:c14]. `Corpus` leaves the surface too, with its aggregate methods: methods do not cross into Python, averaging across documents is the caller's decision (defect 12 below), and nothing in the tree needed a collector.
+- **Skipped kinds** name the construct (`table`, `code`, `front_matter`, `html`, `thematic_break`, `link_definition`, later `page_image`), never a judgment, following matra's rule that a derived field names a construction (EPR-0002). `skipped` is not an error and carries no error code: skipping a construct is specified behaviour reported beside a correct result, so AIP-193's rule against partial errors [api-design-systems:c30] does not bind it.
 - **CoNLL-U is converted.** `features` is a map. **Sentinels become `Option`**: `tree_depth` is `None` on a cycle instead of `usize::MAX`, and the visited-set walk is unchanged. **Scalars cross as `f64`.**
 - **Record facts are named for what the detector finds.** `ClausalComplement` and `clausal_complements` replace `Reporting` and `reportings`; `root_mood` (the mood feature of the root, with the root's token id) replaces the `bare_assertion` flag. Name a thing by what it is [dijkstra-systems:c2]; `root_mood` is a retype, and its values are an open set.
 - **One format vocabulary**: `markdown`, `plain_text`, `blocks`, in the JSON, in Python and on the command line.
@@ -456,14 +456,14 @@ DocumentError    { path?, kind, message, details }
 ### Errors on every channel
 
 - **Rust.** `Error` keeps its variants and `kind()`, and gains `details()`, every dynamic value in the message as structured data, and a serde form `{kind, message, details}`. `DocumentError` serializes as that plus `path`, so the hand-built projection in the Python binding is deleted. Every dynamic value in an error message must also be present as metadata [machine-readable-contracts:c13]. `UnsupportedFormat`'s details name the feature that would read the format, when one exists.
-- **Python.** `matra.MatraError` with `.kind` and `.details`, and one subclass per kind that also inherits today's builtin class (`InputTooLarge(MatraError, ValueError)`), so a caller who catches the builtin class catches it too [api-design-practice:c39]. `Io` routes on the kind it wraps: `FileNotFoundError`, `PermissionError`, else `OSError`.
+- **Python.** `matra.MatraError` with `.kind` and `.details`, and one subclass per kind that also inherits today's builtin class (`InputTooLargeError(MatraError, ValueError)`), so a caller who catches the builtin class catches it too [api-design-practice:c39]. The class names end in `Error`, as Python names its exceptions; the name shared across languages is the `kind` string. `IoError` routes on the kind it wraps: `IoNotFoundError` (also a `FileNotFoundError`), `IoPermissionError` (also a `PermissionError`), else `IoError` (an `OSError`). An I/O failure on a path matra was given names that path, in the message and in `details.path`.
 - **Command line.** Under `--json`, a failure writes the envelope with `"result": null` and an `error` object to stdout, writes `matra: <message>` to stderr, and exits 2. On success `"error": null`; both keys are always present. The command line's own refusals use the existing kind whose remedy matches: error identity is defined by what the caller would do about it [api-design-systems:c28].
 - **Exit codes** stay 0 (found), 1 (nothing found), 2 (failed). In `analyze DIR --json`, each document is one envelope per line; a failed document is a line with its `error`, the walk continues, and the exit code is 2 if any document failed. Per-item failure in a bulk operation is the one sanctioned partial success [api-design-systems:c30].
 - **Retry.** Download failures carry `details.retryable: true`. Whether a retry is safe depends on both the operation and the failure [machine-readable-contracts:c16].
 
 ### Limits and defaults
 
-The input cap, the sentence caps and the metric minimums move into one module as published constants. Raising a cap is left out of this release: the canon does not cover resilience bounds, and the resilience floor keeps safe defaults until its own reviewer rules. Library defaults are written in the signatures; configuration applies at the command line and in the `from_config` constructors. Defaults "should be written explicitly", and changing one is breaking [api-design-systems:c38] [api-design-systems:c25]. The effective parameters are recorded in `provenance`.
+The input cap, the sentence caps and the metric minimums move into one module as published constants, `domain::limits`, each defined once and referenced where it applies. Raising a cap is left out of this release: the canon does not cover resilience bounds, and the resilience floor keeps safe defaults until its own reviewer rules. Library defaults are written in the signatures; configuration applies at the command line and in the `from_config` constructors. Defaults "should be written explicitly", and changing one is breaking [api-design-systems:c38] [api-design-systems:c25]. The effective parameters are recorded in `provenance`.
 
 ### Signatures
 
@@ -480,6 +480,7 @@ impl Input {
     pub fn text(text: impl Into<String>, format: Format) -> Input;
     pub fn bytes(data: impl Into<Vec<u8>>, format: Option<Format>) -> Input;
     pub fn file(path: impl AsRef<Path>) -> Input;
+    pub fn file_as(path: impl AsRef<Path>, format: Format) -> Input;   // a binary signature still outranks it
     pub fn blocks(blocks: impl IntoIterator<Item = Block>) -> Input;
 }
 impl Inputs { pub fn dir(path: impl AsRef<Path>) -> Result<Inputs>; }   // Iterator<Item = Input>
@@ -506,7 +507,7 @@ class Engine:
                 bytes: builtins.bytes | None = None, blocks: list[BlockDict] | None = None,
                 format: Literal["markdown", "plain_text", "blocks"] | None = None) -> Document: ...
     def analyze_all(self, *, dir: os.PathLike | None = None, texts: Iterable[str] | None = None,
-                    format: Literal["markdown", "plain_text"] | None = None
+                    format: Literal["markdown", "plain_text", "blocks"] | None = None
                     ) -> Iterator[Document | DocumentError]: ...
 
 def summarize(doc: Document, n: int = 3, *, method: Literal["tfidf", "textrank"] | None = None) -> Summary: ...
@@ -517,18 +518,18 @@ class Document: ...   # read-only; doc["metrics"]["total_words"]; doc.to_dict()
 class MatraError(Exception): kind: str; details: dict
 ```
 
-Exactly one of `text`, `file`, `bytes` and `blocks` (and of `dir` and `texts`) is accepted; any other count is a `TypeError` at the call. A `str` is always text, never a path.
+Exactly one of `text`, `file`, `bytes` and `blocks` (and of `dir` and `texts`) is accepted; any other count is a `TypeError` at the call. A `str` is always text, never a path, and reads as `plain_text` when no `format` is given. Python's vectors-in `semantic_clusters` goes with the rest: it has no Rust counterpart, and `clusters` takes an embedder, which can return vectors the caller already holds.
 
 ```
 matra analyze    PATH|DIR|-  [--format markdown|plain_text|blocks] [--json] [--depth document|paragraph|sentence|token]
-matra summarize  PATH|-      [-n 3]  [--method tfidf|textrank] [--json]
-matra keyphrases PATH|-      [-n 10] [--method rake|yake]      [--json]
-matra clusters   PATH|-      [--threshold 0.85]                [--json]
+matra summarize  PATH|-      [-n 3]  [--method tfidf|textrank] [--format F] [--json]
+matra keyphrases PATH|-      [-n 10] [--method rake|yake]      [--format F] [--json]
+matra clusters   PATH|-      [--threshold 0.85]                [--format F] [--json]
 matra config show | init [--force]        matra completions SHELL
 matra --schema [NAME]                     matra --skill [-r NAME]
 ```
 
-`-` reads stdin as bytes and detects the format. `--depth` lets an agent choose how much of the parse it pays for, since every token shown costs the caller [agent-computer-interfaces:c2] (vendor guidance).
+`-` reads stdin as bytes and detects the format. `--depth` lets an agent choose how much of the parse it pays for, since every token shown costs the caller [agent-computer-interfaces:c2] (vendor guidance). It requires `--json`, defaults to `token` (the whole parse), and removes the levels it cuts rather than leaving them empty. `--format` names the format of a file or stdin and is refused with a directory. In `analyze DIR`, a file that is neither text nor a recognised binary format (an image) is an `unsupported_format` line, so a walk over a mixed directory exits 2 (decision 7). Under `--json` a usage error is an envelope too.
 
 ### Names
 
@@ -549,8 +550,10 @@ matra --schema [NAME]                     matra --skill [-r NAME]
 | `Paragraph.readability_grade` and siblings | `Paragraph.metrics.*` | fields (moved) |
 | `Document.vocabulary_ttr` and siblings | `Document.metrics.*` | fields (moved) |
 | `Source`, `Decomposer`, `NlpProvider`, `metrics`, `hearst` | crate-private (decisions 4 and 5) | traits, modules |
+| `Corpus`, `CorpusResult` | none: the caller collects | types removed |
+| Python `Matra.from_path` | none: the model is a pin | constructor removed |
 | Python `Matra`, `analyze_markdown` | `Engine`, `analyze(format=)` | class, method |
-| config `[summarize]`, `semantic.*` | `[summary]`, `[clusters] threshold` | keys |
+| config `[summarize]`, `semantic.*`, `algorithm`, `models.udpipe` | `[summary]`, `[keyphrases]`, `[clusters] threshold`, `method`, removed | keys |
 
 The private traits keep their names inside the crate; renaming them would move files the boundary checks scope by path, for no outside reader.
 
@@ -571,7 +574,7 @@ The private traits keep their names inside the crate; renaming them would move f
 
 | Release | Contents |
 |---|---|
-| 0.3.0 | Every break: the outcome surface, `Input` and `Block`, the private input side with the new markdown reader, spans, `skipped` and L9, schema 2.0 and its JSON Schema, provenance, errors on every channel, the Python `Document`, the parity test, the stability table and the semver gate |
+| 0.3.0 | Every break: the outcome surface, `Input` and `Block`, the private input side with the new markdown reader, spans, `skipped` and L8, schema 2.0 and its JSON Schema, provenance, errors on every channel, the Python `Document`, the parity test, the stability table and the semver gate |
 | 0.3.x | Fixes |
 | 0.4.0 | The feed for text arriving over time, in all three syntaxes at once; caller extensions (predicates and findings) or x.uma extensions in their own proposal; schema-typed TypeScript and a web component that renders a parse; the result of a UDPipe-in-WebAssembly spike; the permissive parser model as a pin chosen by id |
 
@@ -580,9 +583,9 @@ The private traits keep their names inside the crate; renaming them would move f
 Each is one pull request into `next`, with its documentation, skill text and CHANGELOG entry in the same pull request, and each leaves `next` building with every check green except the semver gate, which binds on the release pull request from `next` into `main`.
 
 1. **The schema.** The metric records, provenance with the parser's identity, the record-fact renames, `features` as a map, `tree_depth` as an `Option`, the format vocabulary; the JSON Schema in `spec/schema/` and its conformance fixtures.
-2. **The input side.** `Span`, `Skipped` and `Paragraph.kind` with their schema entries; `Input`, `Inputs` and `Block`, with `Engine::analyze(Input)` and `analyze_all` replacing `Ingest` and `analyze_one`, and `CorpusEntry` removed; detection; the CommonMark reader with spans and `skipped`; the plain-text reader with spans; structure from blocks; the parser's token spans; L9 and the laws restated over every constructor.
-3. **The outcomes.** `Engine::new`; the outcome functions and their method enums with the method and parameters recorded; the traits, `metrics`, `hearst` and the method modules made private; the `Corpus` aggregate methods removed.
-4. **Errors on every channel.** `details()` and the serde form in Rust; the Python exception classes.
+2. **The input side.** `Span`, `Skipped` and `Paragraph.kind` with their schema entries; `Input`, `Inputs` and `Block`, with `Engine::analyze(Input)` and `analyze_all` replacing `Ingest` and `analyze_one`, and `CorpusEntry` removed; detection; the CommonMark reader with spans and `skipped`; the plain-text reader with spans; structure from blocks; the parser's token spans; L8 and the laws restated over every constructor.
+3. **The outcomes.** `Engine::new`; the outcome functions and their method enums with the method and parameters recorded; the traits, `metrics`, `hearst` and the method modules made private; `Corpus` removed.
+4. **Errors on every channel.** `details()` and the serde form in Rust; the Python exception classes; `domain::limits`.
 5. **Python.** The module out of `lib.rs` under boundary rule 7, `Engine`, the read-only `Document`, the outcome functions, the stub file; the parity test.
 6. **The command line.** Directories, `clusters`, `--format`, `--json` errors, `--depth`, `--schema`, the configuration sections; the skill and its references.
 7. **The release.** The migration guide, the docsite and the roadmap, the semver gate on pushes, a newcomer pass, the version bump, the pull request from `next` into `main`, and the 0.3.0 release, which publishes only on the owner's approval.
@@ -596,28 +599,362 @@ Each is one pull request into `next`, with its documentation, skill text and CHA
 
 ## Rationale and alternatives
 
-- **One proposal, not several.** An API is designed as a whole: the names, the input side and the schema constrain each other.
-- **Keep algorithm-named functions.** Rejected by both sides of decision 1.
-- **Keep `Ingest` as the one stream type**, a single document being a stream of one. Rejected: every driving adapter that wants one document avoids the stream, so the unification served the implementation, not the caller [api-design-practice:c21].
-- **A public `Normalizer` or `Block` shared by readers and callers.** Rejected: two readers are below the three a provider interface should wait for [api-design-practice:c4], and `Input::blocks` serves outside formats with no provider interface. "Normalize" also already means Unicode and case normalization in an NLP library [api-design-practice:c8].
-- **A builder for the engine.** Rejected: no use case, and it needs the private traits public.
-- **A second version number with a weaker rule.** Rejected: it weakens the promise already printed to agents.
-- **Change a provider contract now and implement it later.** Rejected: an abstraction should not ship before implementations have tested it [api-design-practice:c36], and "it would be rash to standardize before we have the models" [neighbours-systems-evolution:c27].
-- **Spread the renames across releases.** Each release would break again.
-- **Do nothing.** The drift is structural; a fourth surface would copy it.
+The design rests on one diagnosis: the three surfaces drifted because no module owned what a caller can ask for. So one surface of outcomes owns it, and each adapter only translates. The input side is cut so that each likely change (a format, a parser, a source) lands in one private module. The record carries its provenance, its spans and its `skipped` list, so a caller can check a result without trusting the prose around it.
+
+Each section below is a design that could reasonably have been chosen instead. It says what a caller would see, what the design would gain and cost, and which canon principles argue for it and against it. Parnas's group made "a policy of recording all of the design alternatives that we considered and rejected", with the reason for each [parnas-process:c16]; this section is that record for 0.3.0.
+
+The canon was checked against these decisions after they were made. That makes it easy to find support after the fact, so each citation below names the alternative it rules out, and where the canon pulls the other way, the section says so. The canon's own review warns that it holds no sources gathered from its authors' critics, so its disagreements are only those among the authors it chose. Where the canon says nothing, the section says that too.
+
+### Do nothing
+
+0.2 stays as it is. A Python caller summarizes a string, not a document, and the headings of a README are summarized as prose (defect 3):
+
+```python
+m = matra.Matra.english()
+m.tfidf_summarize(open("README.md").read(), 3)
+```
+
+**For.** No caller migrates. Tulach ranks functional compatibility, the same results from the same calls, highest: "in the end it is the most important one" [api-design-practice:c29].
+
+**Against.** The defects in [Motivation](#motivation) stay, and a TypeScript surface would copy them into a fourth language. A program in use "undergoes continual change or becomes progressively less useful" [neighbours-systems-evolution:c36]. When versions of one system have drifted apart, Parnas's remedy is to hide their differences behind documented interfaces and "collapse the versions into a single system" [parnas-process:c41]; here the drifted versions are the three surfaces. Callers cannot fix it themselves. A caller can wrap the old names, but a wrapper "ignores the cost of doing so" [api-design-practice:c16], and spans, provenance and `skipped` need facts that exist only inside matra.
+
+**Outcome.** Rejected. The drift comes from the structure, so it outlives any fix that keeps the structure.
+
+### Several proposals instead of one
+
+The names, the input side, the schema and the errors would each get a proposal, accepted and shipped on its own schedule.
+
+**For.** Each review is shorter. Lehman reports that what a release can carry is limited by how fast people absorb its changes [card:lehman-1996-laws-revisited] (unverified reading), and this proposal already moved streaming out on that ground (Drawbacks).
+
+**Against.** The parts constrain each other. The outcome functions take a `Document`, so their signatures depend on the schema. Spans depend on the reader. The error kinds depend on what the input side can refuse. Split apart, each part is decided with the others guessed at. Brooks: it is better for a system to "reflect one set of design ideas, than to have one that contains many good but independent and uncoordinated ideas" [neighbours-hoare-brooks-lampson:c19]. Separate proposals would also mean separate breaks (the next section).
+
+**Outcome.** Rejected. The design is reviewed as one, and the [milestones](#milestones) still land as seven pull requests.
+
+### Spread the renames across releases
+
+Each rename would land when its area is ready: the outcome names in 0.3.0, the metric records in 0.4.0, the Python `Document` in 0.5.0.
+
+**For.** Each upgrade is small, and a caller can stop at any step.
+
+**Against.** Every release breaks again. Tulach shows that incompatible versions make choosing versions an NP-complete problem, while with compatible ones the answer is "just take the newest version of each" [api-design-practice:c30]. Three breaks give a caller three places to get stuck between. The case against this alternative also rests on an assumption the owner is asked to confirm: that [callers would rather migrate once](#claim-migrate-once). If callers prefer small steps, this alternative gains.
+
+**Outcome.** Rejected, on an assumed preference.
+
+### Keep algorithm-named functions
+
+```rust
+let top = matra::extraction::tfidf_summarize(&sentences, 3)?;
+let phrases = matra::extraction::yake_keyphrases(&sentences, 10)?;
+```
+
+**For.** The name says exactly what runs, so a caller reproducing a published result sees the method at the call site. Lampson: "The purpose of abstractions is to conceal undesirable properties; desirable ones should not be hidden" [neighbours-hoare-brooks-lampson:c37].
+
+**Against.** The method is the decision most likely to change behind each outcome, and "it should be possible to make likely changes without changing any module interfaces" [parnas-process:c22]. With the method in the name, a new method is a new function in three languages. The word for "a summary" also differs by algorithm, where the same word should mean the same thing [api-design-practice:c8].
+
+**Outcome.** Rejected by both choices of [decision 1](#decision-algorithm-choice). What it would have kept, a visible method, survives as the optional `_with` and as the `method` recorded on every result.
+
+### Outcomes only, with no choice of method
+
+This is decision 1's choice (a). `summarize(&doc, n)` is the only form; matra picks the method and names it on the result; `--method` and the `algorithm` keys go. The case for it is the decision's own Against.
+
+**For.** It is the smallest surface. "You can always add, but you can never remove" [api-design-practice:c6], and a typed selector can be added later without a break. It hides the method completely, which is Parnas's rule read strictly: an interface "chosen to reveal as little as possible" [parnas-modules:c23].
+
+**Against.** It hides a property callers need. RAKE and YAKE [score on unrelated scales](#claim-score-scales), so a caller who compares scores across runs, or who replicates a paper, must be able to name the method. Ousterhout: "When the details are important, it is better to make them explicit", and hiding them "just creates obscurity" [api-design-systems:c9]. Henning gives the general form: "General-purpose APIs should be 'policy-free'" [api-design-practice:c20], and which ranking to use is a policy. It would also remove a flag that [the command line ships today](#claim-cli-method-flag), so (a) is the break and (b) is not.
+
+**Outcome.** Rejected; the owner chose (b) on 2026-11-02. The cost of (b) is weight: each outcome is two functions in Rust (the next section).
+
+### An options struct, or an `Option` argument, in Rust
+
+Inside choice (b), Rust could spell the optional method two other ways:
+
+```rust
+let s = matra::summarize(&doc, 3, None)?;                                // an Option argument
+let s = matra::summarize(&doc, SummaryOptions::new(3).method(SummaryMethod::TextRank))?;   // an options struct
+```
+
+**For.** Either gives one function per outcome instead of two, so Rust has three outcome functions rather than five. An options struct also grows by a field where `_with` would grow by another function.
+
+**Against.** An `Option` argument makes every common call write `None`. Henning asks for an API that is minimal "without imposing undue inconvenience on the caller" [api-design-practice:c17]. An options struct adds a type per outcome, and because matra's public structs with public fields are `#[non_exhaustive]`, a caller outside the crate cannot build one with a struct literal, so it needs a constructor and setters: a new concept per outcome. Bloch weighs an API by its concepts, "Conceptual weight more important than bulk" [api-design-practice:c6], and `_with` adds bulk, a second name, but no concept. It also maps one to one onto Python's `method=` and the command line's `--method`, so the translation rule stays one sentence.
+
+**Outcome.** The proposal takes `_with`. The owner ruled on decision 1 as a whole, not on this spelling.
+
+### Keep the stages public
+
+This is the surface RFC-0007 shipped: `annotate` parses without measuring, and `compose` measures.
+
+```rust
+let mut doc = engine.annotate(&raw)?;   // every metric slot None
+engine.compose(&mut doc);
+```
+
+**For.** A caller who needs only the parse could skip the metric suite. Parnas observes that "the 'more powerful' mechanism could have been built separately from, but using, simpler mechanisms" [parnas-modules:c33], and the point of building it that way is that the simpler one stays available. Read for what it protects, that claim argues for this alternative. This page cites it for outcome functions that need no engine. The design does not dispute the claim; it answers with the cost below. Lampson's "higher levels should not bury this power" [neighbours-hoare-brooks-lampson:c37] points the same way, but only if measuring costs enough to matter, and nobody has measured it.
+
+**Against.** A public parse-only call publishes a second shape of `Document` under the same name, every metric empty, and a reader of the JSON cannot tell an unmeasured document from one with no sentences. "A feature which is included before it is fully understood can never be removed later" [neighbours-hoare-brooks-lampson:c13]. No use case asks for a parse without its measures; the [one caller outside the engine](#claim-python-annotated) is matra's own Python helper. Agent-facing guidance also warns against tools that "merely wrap existing software functionality" [agent-computer-interfaces:c6] (vendor guidance), which is what a stage name is. What RFC-0007 wanted from the stages survives: they stay inside the crate, and a law tests that annotation is the only route from text to the parser.
+
+**Outcome.** Rejected; the owner settled outcomes over stages on 2026-11-02.
+
+### Keep `Ingest` as the one stream type
+
+RFC-0007 made a string a stream of one and a directory a stream of many. In 0.2, one document is the first item of a stream:
+
+```rust
+let entry = engine.analyze(Ingest::text(s, Format::Markdown)).next().expect("a stream of one")?;
+let doc = entry.analysis;
+```
+
+**For.** One concept covers every source, and a single document runs the same code path as a corpus. `Input` and `Inputs` are two types where `Ingest` is one.
+
+**Against.** Every driving adapter that wants one document unwraps the stream, so the unification served the implementation, not the caller. Henning: "What should drive the design of APIs is not the needs of the implementer" [api-design-practice:c21]. `RawDocument` also hands the caller the representation the readers consume, which an opaque `Input` hides [parnas-modules:c23]. The property RFC-0007 wanted is kept by a law instead of a type: `analyze_all` over one `Input` equals `analyze` of it.
+
+**Outcome.** Rejected.
+
+### A public `Normalizer` or `Block` shared by readers and callers
+
+The readers' block vocabulary (headings, paragraphs, list items, table cells, code) would be public, and an outside reader would implement a trait that emits it:
+
+```rust
+impl matra::Normalizer for MyPdfReader {
+    fn blocks(&self, bytes: &[u8]) -> matra::Result<Vec<matra::Block>> { /* ... */ }
+}
+```
+
+**For.** An outside format becomes a first-class reader, and one block type serves both directions. That is extension by others, which the owner has asked for (decision 5, Against).
+
+**Against.** Two readers exist, below the three Bloch asks for before a plug-in interface ships: "If you write three, it will work fine" [api-design-practice:c4]. A type that readers emit and callers implement against serves two roles that evolve under opposite rules [api-design-practice:c31]. More block kinds is the change most likely to come, and each would change a type outside code is built on; shared formats used as interfaces are costly because "design evolution forces frequent changes" on them [parnas-modules:c25]. `Input::blocks` meets the same need with a two-constructor input type that callers only send, so it can grow. "Normalize" also already means Unicode and case normalization in an NLP library [api-design-practice:c8].
+
+**Outcome.** Rejected. A caller keeps a way in for any format; what stays private is the reader contract.
+
+### Open the parser, reader and source traits behind an `unstable` feature
+
+This is [decision 5](#decision-provider-traits)'s choice (b):
+
+```toml
+matra = { version = "0.3", features = ["unstable"] }
+```
+
+```rust
+impl matra::nlp::NlpProvider for MyTransformerParser { /* ... */ }
+```
+
+**For.** A WebAssembly or transformer parser written outside matra becomes possible now, and the owner has asked for matra to be extensible by others. The canon has a direct argument for it. The *Framework Design Guidelines* say "Sealing a class because you cannot think of an extensibility scenario is not a good reason" [api-design-practice:c38], and the recommendation's ground, that no outside implementer is named, is close to that reason.
+
+**Against.** The traits change in this very release (spans, the parser's identity), and a provider interface takes "No new method additions" once someone implements it [api-design-practice:c32]. Two readers and one parser fall short of the "several concrete implementations" an abstraction should be tested by before it ships [api-design-practice:c36]. A feature flag does not stop dependence: with enough users, "all observable behaviors of your system will be depended on by somebody" [api-design-systems:c17]. Lampson warns that extensibility "needs a lot of care to keep from exposing secrets of the code that you might want to change" [neighbours-hoare-brooks-lampson:c49], and the [parser's contract is trusted unchecked](#claim-parser-unvalidated). Bloch's default runs opposite to the guidelines' ("Conservative policy: all concrete classes final" [api-design-practice:c12]), so the canon disagrees with itself here. The design takes the side that can be undone: opening a trait later is an addition, and closing one is a break.
+
+**Outcome.** Rejected for 0.3.0, "for now", in the owner's words. This is one of two decisions the canon cuts against directly (the other is [decision 8](#decision-transition-window)), and it is the one marked reversible.
+
+### Change a provider contract now and implement it later
+
+0.3.0 would publish a contract no code uses yet, such as the feed's settled-offset reader contract or the caller extensions RFC-0006 named, and implement it in a later release.
+
+**For.** Parnas's A-7E team "chose to specify both mechanisms in every case, but plan to implement only the ones that are actually needed" [parnas-process:c50], so that a later need means implementing an interface, not changing it.
+
+**Against.** The A-7E team specified interfaces inside one project that owned every implementation. A contract published to outside implementers freezes before anything has tested it: "DO NOT provide abstractions unless they are tested by developing several concrete implementations and APIs consuming the abstractions" [api-design-practice:c36], and "it would be rash to standardize before we have the models" [neighbours-systems-evolution:c27].
+
+**Outcome.** Rejected for published contracts, and kept in Parnas's form for private ones. The reader already emits ordered blocks with spans, which a later settled offset needs, and a test pins that without publishing it ([decision 2](#decision-streaming-timing)). RFC-0006 reserved names the same way: a name held, no contract frozen.
+
+### Leave the metric suite public
+
+This is [decision 4](#decision-metric-suite)'s choice (b). `metrics`, `hearst` and the algorithm-named functions stay public, documented as a suite a caller may run:
+
+```rust
+let mut suite = matra::metrics::default_suite();
+suite.push(Box::new(|doc: &mut matra::domain::Document| { /* may write any field */ }));
+matra::metrics::run_suite(&mut doc, &suite);
+```
+
+**For.** It is shipped surface, and "Once module has users, can't change API at will" [api-design-practice:c1]. Nobody has shown that no caller uses it.
+
+**Against.** It extends nothing a loop could not: [`compose` takes no suite from the caller](#claim-compose-ignores-suite), and [a `Metric` may write any field](#claim-metric-type), a provider interface with no stated contract about what it owns. "Make classes and members as private as possible" [api-design-practice:c7], and a plain function over `&Document` is the cheaper extension mechanism [api-design-practice:c35].
+
+**Outcome.** Rejected; the owner widened the decision to `hearst` and the method modules.
+
+### A narrow feed in 0.3.0
+
+This is [decision 2](#decision-streaming-timing)'s choice (a), in Rust and the command line, with Python in 0.4.0:
+
+```rust
+let mut feed = engine.feed(Format::Markdown);
+for chunk in chunks {
+    for event in feed.push(chunk)? { /* a block that can no longer change */ }
+}
+let doc = feed.finish()?;
+```
+
+```console
+$ tail -f notes.md | matra analyze - --stream --json
+```
+
+**For.** The owner settled that streaming happens, and callers could stream within a document one release sooner. The original reason was that the reader contract should break once, not twice.
+
+**Against.** That reason holds only for a published provider interface [api-design-practice:c32]. With the reader private, a settled offset added later breaks nobody, and `Engine::feed` is an addition in the client-facing space that can grow [api-design-practice:c31]. No consumer of text arriving within one document is named, and the canon freezes an interface only after implementations and consumers have used it [api-design-practice:c36]. Parnas's procedure is to find "the minimal subset that might conceivably perform a useful service" and then "a set of minimal increments" [parnas-modules:c34]; the feed is an increment. Two syntaxes of three would also break the translation rule.
+
+**Outcome.** Rejected; the feed lands in 0.4.0, in all three syntaxes, as an addition.
+
+### Code points beside bytes
+
+This is [decision 3](#decision-offset-unit)'s choice (b): `start` and `end` in code points, plus `byte_start` and `byte_end`.
+
+```python
+p = doc["sections"][0]["paragraphs"][0]
+text[p["span"]["start"]:p["span"]["end"]]     # right under (b)
+matra.span_text(text, p["span"])              # what (a) asks of a Python caller
+```
+
+**For.** Python slices a `str` by code point, and the W3C text position selector counts code points; under (a) every Python and TypeScript caller converts. Meyer's rule for that case: when every client repeats the same handling, "The contract should be renegotiated and made broader" [neighbours-contracts-simplicity:c8]. Gabriel's story shows the cost of the opposite trade, an implementation kept simple by pushing a step onto every caller [neighbours-contracts-simplicity:c25]. The strongest point is how (a) fails when misused. A Python caller who slices a `str` with a byte span gets the right text while the input is ASCII, and the wrong text, with no error, once a character outside ASCII comes earlier. Agent-facing guidance asks for parameters redesigned so the common mistake cannot be made [agent-computer-interfaces:c18] (vendor guidance), and under (a) it can be.
+
+**Against.** Two encodings of one fact on every token cost every reader, agents included, for each token shown [agent-computer-interfaces:c2], and one unit is the smaller surface [api-design-practice:c6]. Bytes are the one unit identical in every binding, checkable against the input's digest, and what the input cap measures (own judgment; the canon is silent on offset units). JavaScript indexes strings by UTF-16 code unit, so (b) would not spare TypeScript callers a conversion either. The helper is the broader contract Meyer asks for, placed in one function per binding instead of in every field.
+
+**Outcome.** Rejected; the owner accepted bytes only, with a slicing helper per binding. The quiet wrong slice is the price, and the helper and the guides are where it is answered.
+
+### Make the text fields verbatim
+
+The roadmap's promise would become true: `Paragraph.text` would be the exact source slice, markup, `>` markers and `\r\n` included.
+
+**For.** A caller sees what a paragraph said without keeping the input, and the documentation stops overclaiming without a rewrite.
+
+**Against.** The parser must read text without markup, so a verbatim field would not be what was analysed. Either the parser reads markup, or the record carries a second, normalized text, and there "must be one, and only one, place for every fact" [parnas-process:c14]. With the span as the authority, the verbatim text is one slice away for any caller who keeps the input, and the normalized text is what the metrics describe. Block input has no source beyond its blocks.
+
+**Outcome.** Rejected. The text is documented as normalized, and the roadmap's claim is rewritten (defect 1).
+
+### Refuse, or warn about, what a reader cannot analyse
+
+Two alternatives to `skipped`: fail the whole analysis when a table appears, or drop the table and print a warning on stderr.
+
+**For.** Refusing fails fast and never silently [api-design-practice:c10]. RFC 9413 argues that "Tolerating unexpected input instead conceals problems" [card:rfc9413-robust-protocols] (unverified reading).
+
+**Against.** A table in a README is nobody's error; refusing would make most real markdown unanalysable. A warning on stderr is prose, which callers then parse until it "is implicitly part of the API contract" [machine-readable-contracts:c15], and a library caller does not read stderr at all. `skipped` follows the line RFC 9413 draws instead (the same unverified reading): the handling is specified in advance, and each case is reported to the caller rather than tolerated in silence. AIP-193's rule against partial errors [api-design-systems:c30] does not bind it, because nothing failed. L8 makes the accounting a test.
+
+**Outcome.** Rejected; `skipped` lists each construct by kind and span.
+
+### Fail on every unrecognised extension
+
+This is [decision 7](#decision-unknown-extension)'s choice (b):
+
+```console
+$ matra analyze server.log --json      # unsupported_format, unless --format plain_text
+```
+
+**For.** A log, a CSV or a source file would no longer analyse as prose without complaint. For an agent walking a directory, a refusal is a signal, and a plausible analysis of a CSV is not. Bloch's fail-fast rule [api-design-practice:c10] and RFC 9413's case against tolerating unexpected input [card:rfc9413-robust-protocols] (unverified reading) both point this way.
+
+**Against.** Plain text is documented as ["the decomposer that reads anything"](#claim-plain-reads-anything), and "Changing the default value is considered breaking" [api-design-systems:c25]. The reading is also not silent: every result's `provenance.format` says `plain_text`, so a caller who cares can check. That is the line RFC 9413 draws between flexibility with defined handling and guessing at intent (the same unverified reading). Bytes that are not UTF-8 still fail, with a kind and a remedy [api-design-systems:c28].
+
+**Outcome.** Rejected; unknown text reads as plain text when it is valid UTF-8. The tolerance argument (an unverified reading) stands against the choice, and the answer is that the tolerance is specified and recorded, not inferred.
+
+### Return a plain dict from Python
+
+This is [decision 6](#decision-python-document)'s choice (b):
+
+```python
+doc = engine.analyze(file="README.md")      # a dict
+doc["metrics"]["total_words"] = 0            # allowed
+matra.summarize(doc, n=3)                    # rebuilds and re-checks the whole parse
+```
+
+**For.** A dict is what a Python caller expects from a JSON-shaped result, and code that tests `isinstance(doc, dict)` keeps working. "An API is a user interface" [api-design-practice:c21], and this is the interface Python callers know.
+
+**Against.** Every outcome call would rebuild the Rust value and re-check ids, heads, acyclicity and spans, a second home for checks the parse already made; Meyer's rule is that a condition is checked in one place, "but never in both" [neighbours-contracts-simplicity:c5]. A hand-edited dict could also carry provenance into a summary no matra run produced. A wrong argument that is a type error fails at the "first bad method invocation" [api-design-practice:c10], and agent-facing guidance says the same ("Use enums and object structure to prevent invalid states" [agent-computer-interfaces:c19], vendor guidance). The handle keeps the dict reading (`doc["metrics"]["total_words"]`), and `to_dict()` gives a real dict.
+
+**Outcome.** Rejected. spaCy took the same path (Prior art).
+
+### A builder for the engine
+
+```rust
+let engine = Engine::builder().parser(my_parser).reader(Format::Markdown, my_reader).build()?;
+```
+
+**For.** It is the usual Rust shape for an object with optional parts, and it would let a caller inject a parser or a reader.
+
+**Against.** Every part a builder could set is a private trait ([decision 5](#decision-provider-traits)), so a builder would either open the traits or set nothing a caller can name. No use case asks for it, and "When in doubt leave it out" [api-design-practice:c6]. `Engine::new()` and `Engine::from_config` cover the two cases that exist.
+
+**Outcome.** Rejected. A builder can be added later without a break.
+
+### A default embedder inside `clusters`
+
+```python
+matra.clusters(doc)      # would download an embedding model on first use
+```
+
+**For.** It matches `summarize(doc)`, and it is the shortest call.
+
+**Against.** A call that looks like a pure function over a document would reach the network and the disk, and the result would depend on a model the call does not show. Henning's split fits: general-purpose APIs "should be 'policy-free'", and special-purpose ones "policy-rich" [api-design-practice:c20]. The library is the general-purpose part, so it takes the embedder as an argument, and the command line, the special-purpose part, builds the default from configuration.
+
+**Outcome.** Rejected.
+
+### Derive the JSON Schema from the domain types
+
+```rust
+#[derive(Serialize, schemars::JsonSchema)]
+pub struct Document { /* ... */ }
+```
+
+**For.** The types and the schema could not drift, because one would be generated from the other. Parnas: "There must be one, and only one, place for every fact" [parnas-process:c14]. A hand-written schema is a second home for the document's shape, so here the canon pulls against the design as made.
+
+**Against.** It adds a dependency to `domain.rs`, which boundary rule 1 forbids without an enhancement proposal of its own. The design closes the drift by a test instead: every conformance output in every binding is validated against the schema, so a field that changes in the types and not in the schema fails the build. A schema written by a dev-only test is also allowed.
+
+**Outcome.** Rejected for 0.3.0 on boundary rule 1. The test is weaker than construction, because it catches only the shapes the fixtures exercise.
+
+### A second version number with a weaker rule
+
+An earlier text of this proposal added a `schema_version` that moved only on a removal, a rename or a retype, beside the shipped `format_version`:
+
+```json
+{ "format_version": 1, "schema_version": 2, "result": { } }
+```
+
+**For.** It separates the envelope from the document, so a change to one need not move the other.
+
+**Against.** [`format_version` already promises](#claim-format-version-ships) to move on "any change to the envelope or to the meaning of a field inside `result`", and agents were told it is the whole stability promise. A second number with a weaker rule, one that ignores a changed meaning, would let the two disagree about whether a change breaks, and an agent could not tell which to trust. Semantic compatibility is compatibility: "Code written against a previous version must continue to receive what most reasonable developers would expect" [api-design-systems:c21]. The design does keep two fields, but under one rule: `provenance.schema` carries the schema version in one place [parnas-process:c14], and `format_version` moves with its major.
+
+**Outcome.** Rejected.
+
+### Deprecated aliases for renamed functions
+
+This is [decision 8](#decision-transition-window)'s choice (a), which Claude recommended:
+
+```rust
+#[deprecated(note = "use matra::summarize_with(doc, n, SummaryMethod::TfIdf)")]
+pub fn tfidf_summarize(/* ... */) -> Result<Summary> { /* ... */ }
+```
+
+**For.** Of all the rejected alternatives, this is the one the canon favours most. AIP-180: "Renaming a component is semantically equivalent to 'remove and add'", and a service "must not remove the existing one" [api-design-systems:c24]. Lampson asks for interfaces "that are stable for years", with a compatibility package when one must change [neighbours-hoare-brooks-lampson:c39]. Tulach ranks functional compatibility first [api-design-practice:c29]. An alias costs one line, the compiler and the interpreter both announce it, and a deprecation that names its replacement is a correction an agent can act on [agent-computer-interfaces:c16].
+
+**Against.** AIP-180's rule binds within a major version [api-design-systems:c20], and Cargo treats 0.2 to 0.3 as a change of major, so 0.3.0 is the place a break is allowed. AIP-180 itself says an API whose callers are few, or whose updates can be enforced, "should carefully consider its own compatibility requirements" [machine-readable-contracts:c19], and the callers of 0.2.1 are few and named. Henning describes the long-run cost: an API that stays compatible "accumulates crud that, eventually, does more damage than the good it ever did" [api-design-practice:c18]. Every later session would read past the aliases until 0.4.0 removed them.
+
+**Outcome.** Rejected by the owner's redirect to (c): "we don't have to worry about backwards compatibility". Here the canon argues against the decision as made. AIP-180, Lampson and Tulach favour (a); what answers them is the 0.x rule, the small set of callers, and the owner's ruling.
+
+### The full transition window
+
+This is [decision 8](#decision-transition-window)'s choice (b): choice (a), plus every renamed JSON field emitted under both names, hidden aliases for renamed flags, and the 0.2 output on request:
+
+```console
+$ matra analyze README.md --json --format-version 1     # the 0.2 output, through 0.3.x
+```
+
+**For.** An agent pinned to `format_version: 1` keeps working and migrates on its own schedule. AIP-185 asks that "Different versions of the same API must be able to work at the same time within a single client application for a reasonable transition period" [machine-readable-contracts:c20], and Lampson's compatibility package for a changed interface is the same kind of thing [neighbours-hoare-brooks-lampson:c39]. `cargo metadata --format-version` is the precedent (Prior art).
+
+**Against.** A both-name emitter and a 0.2 projection are a second implementation of the output, kept for one minor and then removed, and every later session must read past them until then. The wire already tells a reader which side it is on: `format_version` moves to 2, every result carries `provenance.schema`, and the consumer rule is to "Reject any input which reports an unsupported major version" [machine-readable-contracts:c35]. A pinned agent therefore fails loudly at once rather than misreading a result.
+
+**Outcome.** Rejected by both the recommendation and the ruling.
 
 ## Prior art
 
-- The owner's software-design canon (462 verified claims; cited here as `[cluster:cN]`) and its canon-0010 reading cards (cited as `[card:...]`, unverified readings).
-- J. Bloch, "How to Design a Good API and Why it Matters", 2006; M. Henning, "API Design Matters", 2007; AIP-180 and AIP-193; the Kubernetes API conventions.
-- D. L. Parnas, "On the Criteria To Be Used in Decomposing Systems into Modules", 1972, and the 1985 module guide.
-- D. D. Woods, "The theory of graceful extensibility", 2018, outside the verified canon: brittleness is how fast performance falls near a unit's boundary, and neighbouring units extend it by monitoring its signals. `skipped` is that signal; the canon claims cited for it carry the decision alone.
-- A. Cockburn, "The Hexagonal (Ports and Adapters) Architecture", 2005.
-- Terraform's JSON output format and its `format_version`; `cargo metadata --format-version`.
-- The W3C Web Annotation Data Model, whose text position selector counts Unicode code points.
-- CommonMark, and pulldown-cmark's source-offset iterator.
-- Universal Dependencies and CoNLL-U: the vocabulary matra adopts, and the encoding it converts.
-- spaCy's `Doc` attributes as fields, and its `Language` object as one entry point.
+Each entry says what the source did, what matra takes from it, and where matra departs and why.
+
+- **The owner's software-design canon** (462 claims from primary texts, each checked against a fresh copy of its source; cited here as `[cluster:cN]`), and its canon-0010 reading cards (cited as `[card:...]`, unverified readings). It supplies the grounds for every structural choice on this page. matra departs from it where it is silent: offset units, resilience bounds and the choice of Markdown parser are marked as own judgment. Its own review warns that "Zero refutations is evidence that the quotes are faithful. It is not evidence that the canon is balanced", and that no part of it was gathered from its authors' critics. That is why the rationale above names what each citation rules out and where the canon pulls the other way.
+- **J. Bloch, "How to Design a Good API and Why it Matters", 2006.** Heuristics drawn from the Java libraries: leave it out when in doubt, keep everything as private as possible, fail fast, give programmatic access to data available as strings, and write three plug-ins before shipping a plug-in interface. matra takes the defaults: private traits, aggregates as fields, typed errors. It departs in one place: `Embedder` stays public with one implementation in the tree (`Model2Vec`) and the Python bridge to caller objects, short of the three. It was published by EPR-0005, its contract is two methods, and closing it would remove what callers use.
+- **M. Henning, "API Design Matters", 2007.** An API is a user interface for programmers, and a flaw in it is paid for at every call site. matra takes the caller-first stance behind the outcome surface, and Henning's split between policy-free general APIs and policy-rich special ones is why the command line, not the library, builds a default embedder. It departs on timing: Henning says the worst time to document "is after implementation" [api-design-practice:c23]. This proposal was written before the code, and it was then revised as each milestone settled a detail against the code. That is iteration, which Brooks argues for when he writes that the building metaphor "has outlived its usefulness" [neighbours-hoare-brooks-lampson:c33].
+- **AIP-180 and AIP-193 (Google's API improvement proposals for compatibility and errors).** AIP-180 treats a rename as a removal, a changed default as a break, and semantic compatibility as compatibility. AIP-193 gives each error a machine-readable identity defined by the caller's remedy, puts every dynamic value in metadata, and forbids partial success except in bulk operations. matra takes all of these: the Names table lists every rename as a break, a changed default method is a schema-major change, `details` carries every dynamic value, and `analyze DIR` is the one bulk operation with per-item failure. It departs on keeping old names. AIP-180 keeps them within a major version; 0.3.0 starts a new one under Cargo's rules for 0.x, and it keeps none ([decision 8](#decision-transition-window)).
+- **The Kubernetes API conventions.** Defaults are written explicitly, and phase enums were deprecated because "adding new enum values breaks backward compatibility". matra takes explicit defaults and the rule that every string set a consumer receives is open. It departs by keeping such sets rather than replacing them with conditions. matra's Rust enums are `#[non_exhaustive]`, which forces a wildcard arm, and JSON readers are told to treat every set they receive as open. The send-versus-receive distinction this relies on is the canon synthesis's suggestion, not Kubernetes's.
+- **D. L. Parnas, "On the Criteria To Be Used in Decomposing Systems into Modules", 1972, and the 1985 module guide.** The 1972 paper decomposes one small program two ways and shows that the decomposition by hidden decisions survives change better than the one by processing steps. The 1985 guide describes each module of a large system by its secret. matra takes both: the input-side table names each module's secret. One thing deserves saying plainly, because the figure looks like a pipeline. Parnas's own second decomposition still has an input module, a circular shifter, an alphabetizer and an output module (read in the 1972 text, Modularization 2). What separates it from the flowchart is what each module hides, not the order the modules run in, and the same test applies here: a new format or parser touches one box. matra departs on scale. The A-7E guide is a tree with restricted and hidden interfaces, because hiding without a guide "could backfire" at hundreds of modules [parnas-process:c23]; matra has nine modules and a flat table. It also reveals more than Parnas's "even the presence or absence of a component should be hidden" [parnas-modules:c37]: an `UnsupportedFormat` names the feature that would read the format, because the caller needs the remedy, the kind of restriction the A-7E team revealed when "there is no loss in revealing" it [parnas-process:c49].
+- **D. D. Woods, "The theory of graceful extensibility", 2018**, outside the verified canon. Brittleness is how fast performance falls near a unit's boundary, and neighbouring units extend it by monitoring its signals. matra takes the idea of a signal at the boundary: `skipped` is that signal. It departs in scope: Woods writes about adaptive units in sociotechnical systems, and matra borrows one idea, not the theory. The canon claims cited for `skipped` carry the decision alone.
+- **A. Cockburn, "The Hexagonal (Ports and Adapters) Architecture", 2005.** An application is driven through ports named for the purpose of a conversation, adapters translate each technology to a port, and business logic that leaks into an adapter is caught by driving every function through the API in tests [card:cockburn-hexagonal-current] (unverified reading). matra takes the diagnosis (application rules leaked into the Python binding and the command line) and the remedy: the outcome surface is the driving port, and the parity test drives all three adapters through it. It departs on the driven side. Cockburn keeps driven ports open so a test or a new technology can be swapped in; matra keeps the parser, reader and source ports inside the crate, where tests and in-tree adapters still swap them, and only the embedder is open to outside implementers ([decision 5](#decision-provider-traits)).
+- **Terraform's JSON output format.** Its `format_version` is a major and a minor; a consumer ignores properties it does not recognise and rejects a major it does not know [machine-readable-contracts:c35]. matra takes those consumer rules unchanged and the major-and-minor form for `provenance.schema`. It departs by keeping the shipped integer `format_version` on the command-line envelope as well, moving with the schema major, because agents already pin it.
+- **`cargo metadata --format-version`.** One integer version, chosen by a flag; within a version, Cargo does not count new fields or new values of enum-like fields as incompatible, and it recommends passing the flag to future-proof a caller. matra takes the integer and the rule that new fields and values are compatible. It departs by offering no flag to select an older output, because 0.3.0 keeps no 0.2 projection ([decision 8](#decision-transition-window)).
+- **The W3C Web Annotation Data Model.** Its text position selector has `start` and `end` and counts "in terms of unicode code points", not code units. matra takes the shape and departs on the unit: its `start` and `end` count UTF-8 bytes ([decision 3](#decision-offset-unit)). The same names with a different unit are a trap for a caller who knows the standard, which is why the slicing helper exists.
+- **CommonMark, and pulldown-cmark.** CommonMark is a specification of Markdown with a conformance test suite, and pulldown-cmark is a pull parser for it whose offset iterator pairs every event with its range in the source. matra takes the specification instead of its own line scanner, which is what removes the dropped tables and the `## References` cut-off, and the source ranges, which give every block its span. The parser crate is chosen in milestone 2's pull request; the canon does not address it.
+- **Universal Dependencies and CoNLL-U.** UD supplies the vocabulary matra adopts (`pos`, `dep`, the morphological features), and CoNLL-U is the ten-column text encoding UDPipe emits, with the features packed as `Name=Value|...` strings. matra takes the vocabulary as is and departs from the encoding: `features` becomes a map. UDPipe's own `ranges` option stores each token's range "counted in Unicode characters". matra's spans count bytes, so whichever way the adapter finds token positions (that option, or aligning token forms against the text), it converts them at the one place each paragraph is parsed.
+- **spaCy.** A `Language` object (`nlp`) is the one entry point, and `nlp(text)` returns a `Doc` whose values are attributes, with `Doc.to_json()` for a plain-data view and, added later (in 3.3.1), a `Doc.from_json` that can validate its input. matra takes the shape for Python: one `Engine`, a read-only `Document` handle with `to_dict()`, and a from-JSON entry left for later ([decision 6](#decision-python-document)). It departs twice. spaCy's offsets (`Token.idx`) count characters, and matra's count bytes. spaCy's pipeline is open, so a caller can add a component with `Language.add_pipe`; matra keeps its stages and its parser private in 0.3.0.
+- **Earlier records here.** RFC-0006 reserved `SourceSpan`, sketched in bytes as an offset and a length, and the names `ParagraphMetrics` and `DocumentMetrics`; this proposal takes the bytes and the record names, and departs on the span's shape, `Span { start, end }`, which this page does not argue for separately. RFC-0007 made the surface one pipeline with public stages; this proposal keeps its laws and takes the stages off the surface (above). EPR-0002's rule that a derived field names a construction, "never a category", is why `Reporting` becomes `ClausalComplement` and why `skipped` kinds name constructs.
 
 ## Unresolved questions
 
