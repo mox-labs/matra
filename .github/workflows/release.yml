@@ -343,12 +343,14 @@ jobs:
           #
           # macos-x86_64 cross-compiles from the arm64 runner: GitHub
           # is retiring the Intel macos-13 runners and jobs targeting
-          # them starve in the queue. Cross-built wheels cannot smoke
+          # them starve in the queue, and macos-14 is withdrawn (its jobs fail
+          # at once as "not supported"), so both build on macos-26, the image
+          # ci.yml gets from macos-latest. Cross-built wheels cannot smoke
           # test on the arm host, so those steps are native-only.
           - { name: linux-x86_64, runner: ubuntu-latest, manylinux: true, target: "" }
           - { name: linux-aarch64, runner: ubuntu-24.04-arm, manylinux: true, target: "" }
-          - { name: macos-x86_64, runner: macos-14, manylinux: false, target: x86_64-apple-darwin }
-          - { name: macos-aarch64, runner: macos-14, manylinux: false, target: "" }
+          - { name: macos-x86_64, runner: macos-26, manylinux: false, target: x86_64-apple-darwin }
+          - { name: macos-aarch64, runner: macos-26, manylinux: false, target: "" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -688,7 +690,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14]
+        os: [ubuntu-latest, macos-26]
     steps:
       # 3.13 is one minor above the abi3 floor of 3.12, so a wheel that
       # was version-locked rather than abi3 fails here rather than on a
