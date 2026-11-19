@@ -49,7 +49,7 @@ fn pinned() -> Vec<(&'static str, &'static str, &'static str)> {
         ),
         (
             "site/content/roadmap.md",
-            "32249:bd32705baf0b3747",
+            "33743:f64af526bfe6f40b",
             "the 0.5800 and 0.6121 unrelated scores, in the same two files",
         ),
         (

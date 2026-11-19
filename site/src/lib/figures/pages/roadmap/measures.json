@@ -297,13 +297,13 @@
       "words": 93
     },
     {
-      "compression_ratio": 0.5203,
+      "compression_ratio": 0.5146,
       "kind": "paragraph",
-      "lexical_density": 0.5556,
-      "readability_grade": 9.9671,
-      "sentences": 5,
-      "text": "Planned, in steps, each usable alone. EPR-0006 placed three in 0.4.0: TypeScript types generated from the published JSON Schema in spec/schema/v2/ with a web component that renders a parse from matra's JSON, the pure-Rust core in WASM, and the spike, which has now returned a go. EPR-0007 orders what follows as seven milestones, smallest first: the types, one copy in Rust of the mapping from the parser's output to tokens, the core in WebAssembly with the outcome functions, the parser, the release to npm, the playground, and the component that renders a parse, which it moves after the package. None starts before the proposal is accepted, and nothing reaches npm without the owner's approval of that release.",
-      "words": 124
+      "lexical_density": 0.5379,
+      "readability_grade": 9.2855,
+      "sentences": 6,
+      "text": "Planned, in steps, each usable alone. EPR-0006 placed three in 0.4.0: TypeScript types generated from the published JSON Schema in spec/schema/v2/ with a web component that renders a parse from matra's JSON, the pure-Rust core in WASM, and the spike, which has now returned a go. EPR-0007 orders what follows as seven milestones, smallest first: the types, one copy in Rust of the mapping from the parser's output to tokens, the core in WebAssembly with the outcome functions, the parser, the release to npm, the component that renders a parse, and the playground that shows its result with it. The component needs only the types, so it may be built any time after them. None starts before the proposal is accepted, and nothing reaches npm without the owner's approval of that release.",
+      "words": 140
     },
     {
       "compression_ratio": null,
