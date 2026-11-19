@@ -2,9 +2,9 @@
 //! reports or checks.
 //!
 //! Three callers need it: the composition root, which records the
-//! input's digest in each document's provenance, and the two model
-//! adapters, which verify their pinned artifacts and report a model's
-//! digest. It lives in neither adapter because adapters do not import
+//! analysed text's digest in each document's provenance, and the two
+//! model adapters, which verify their pinned artifacts and report a
+//! model's digest. It lives in neither adapter because adapters do not import
 //! each other, and in no port because it is not a contract.
 
 use sha2::{Digest, Sha256};

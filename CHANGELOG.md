@@ -31,6 +31,10 @@ those by hand.
 
 ## [Unreleased]
 
+### Fixed
+
+- The documentation of `provenance.source` said `bytes` and `sha256` describe the input's bytes. They describe the analysed text, the text every span points into, which differs from the input when a reader names its own analysed text and for block input. The behaviour is unchanged; the Rust docs, the README, the docsite and the skill now say what it is.
+
 ## [0.3.0] - 2026-11-06
 
 ### Highlights
