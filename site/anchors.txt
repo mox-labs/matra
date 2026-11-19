@@ -281,3 +281,12 @@ blueprints/proposals/0006-the-0-3-0-surface.html#rationale-and-alternatives
 blueprints/proposals/0006-the-0-3-0-surface.html#prior-art
 blueprints/proposals/0006-the-0-3-0-surface.html#unresolved-questions
 blueprints/proposals/0006-the-0-3-0-surface.html#future-possibilities
+blueprints/proposals/0007-typescript-and-webassembly.html#summary
+blueprints/proposals/0007-typescript-and-webassembly.html#motivation
+blueprints/proposals/0007-typescript-and-webassembly.html#guide-level-explanation
+blueprints/proposals/0007-typescript-and-webassembly.html#reference-level-explanation
+blueprints/proposals/0007-typescript-and-webassembly.html#drawbacks
+blueprints/proposals/0007-typescript-and-webassembly.html#rationale-and-alternatives
+blueprints/proposals/0007-typescript-and-webassembly.html#prior-art
+blueprints/proposals/0007-typescript-and-webassembly.html#unresolved-questions
+blueprints/proposals/0007-typescript-and-webassembly.html#future-possibilities
