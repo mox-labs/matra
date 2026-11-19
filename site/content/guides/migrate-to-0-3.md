@@ -512,7 +512,7 @@ The same record is the Rust `Document`, the Python `matra.Document` and `analyze
 
 | 0.2 | 0.3 |
 |---|---|
-| no provenance | `provenance`: the matra version, the schema, the parser and its model's SHA-256, the format, and the input's path, size and SHA-256 |
+| no provenance | `provenance`: the matra version, the schema, the parser and its model's SHA-256, the format, and the input's path, and the size and SHA-256 of the analysed text |
 | `vocabulary_ttr`, `nominalization_ratio`, `passive_ratio` | `metrics.vocabulary_ttr`, `metrics.nominalization_ratio`, `metrics.passive_ratio` |
 | absent | `metrics.total_words`, `total_sentences`, `paragraph_count`, `mean_sentence_length`, `sentence_length_std` |
 | absent | `skipped`: each construct the reader saw and did not analyse, with its `kind` and `span` |

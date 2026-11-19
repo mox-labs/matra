@@ -5,7 +5,7 @@ matra reports the structure of text and measurements over it. It parses a docume
 ## Four tiers of output
 
 - **Structure.** Sections, paragraphs, sentences, and full CoNLL-U tokens, plus the structural primitives read off each dependency tree: negations, modals, clausal complements, root adverbials, Hearst pairs, and the root clause's mood.
-- **Measures.** Readability, lexical density, and compression ratio per paragraph; counts, sentence length, vocabulary TTR, nominalization ratio, and passive ratio per document. Every document also records where it came from: the parser and its model, and a digest of the input.
+- **Measures.** Readability, lexical density, and compression ratio per paragraph; counts, sentence length, vocabulary TTR, nominalization ratio, and passive ratio per document. Every document also records where it came from: the parser and its model, and a digest of the analysed text.
 - **Extraction.** Two extractive summarizers (TF-IDF, TextRank) and two keyphrase extractors (RAKE, YAKE).
 - **Semantic clusters.** Sentence embeddings grouped by cosine similarity, behind the `model2vec` feature, carrying the identity of the model that produced them.
 

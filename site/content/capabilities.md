@@ -62,7 +62,7 @@ All eleven cross to Python. The methods below are Rust only.
 | `Section` | `heading`, `level`, `paragraphs` | none |
 | `Document` | `provenance`, `sections`, `metrics` | `paragraphs()`, `sentences()`, `tokens()` |
 
-`provenance` records the matra version, the schema version (`"2.0"`), the parser with its model, digest and licence, the format, and the input's path, length and SHA-256.
+`provenance` records the matra version, the schema version (`"2.0"`), the parser with its model, digest and licence, the format, and the input's path, and the length and SHA-256 of the analysed text.
 
 ## 2. Metrics
 
