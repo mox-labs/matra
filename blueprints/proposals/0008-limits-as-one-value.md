@@ -4,7 +4,7 @@
 - Start Date: 2026-11-19
 - Pinned at: `beb07edc5967be0e0a7ed6cfee1fc9602ffbfb04` (every code citation below opens at this commit)
 - Proposal PR: [#195](https://github.com/mox-labs/matra/pull/195)
-- Tracking issue: none (opened when the proposal is accepted)
+- Tracking issue: [#196](https://github.com/mox-labs/matra/issues/196)
 - Status: proposed
 
 ## Summary
@@ -24,8 +24,8 @@ Rule on the seven decisions under [Unresolved questions](#unresolved-questions),
 <will>
 
 - Record each ruling in its decision, as a named step in a pull request.
-- Open the tracking issue at acceptance and keep it current with the [milestones](#milestones).
-- Build milestone 1 whatever decision 1 says, since it changes nothing a caller sees, and the later milestones only as decision 1 rules.
+- Keep the tracking issue, [#196](https://github.com/mox-labs/matra/issues/196), current with the [milestones](#milestones).
+- After acceptance, build milestone 1 whatever decision 1 says, since it changes nothing a caller sees, and the later milestones only as decision 1 rules.
 - Repeat the measurements under [What was measured](#what-was-measured) in a test or a recorded script when the milestone that relies on them lands.
 
 </will>
@@ -39,7 +39,7 @@ Rule on the seven decisions under [Unresolved questions](#unresolved-questions),
 
 <wont>
 
-- Build anything past milestone 1 while the proposal is `proposed`, change its status, or merge a pull request that does.
+- Build anything while the proposal is `proposed`, change its status, or merge a pull request that does.
 - Change a default value. Every default stays the number it is today; a new default is its own measured change.
 - Edit EPR-0007. Where this proposal changes what EPR-0007 sketches, it says so here, and the change is made in EPR-0007 when the owner has ruled on both.
 
@@ -98,7 +98,7 @@ Use cases first. Each was tested against the question "could the caller do this 
 | A browser build (EPR-0007) | A lower default, because a page's memory is tighter than a workstation's | Impossible for the package's own default; a page could check lengths itself. How much lower is not measured ([What was not measured](#what-was-not-measured)). |
 | Someone running the command line on one large file | A higher input cap for that run or that machine | Impossible today. |
 
-Nothing in the repository's issues asks for any of these: <claim id="no-issue" basis="observed">the repository has five issues, open or closed, and none asks for a different limit [issues](https://github.com/mox-labs/matra/issues?q=is%3Aissue)</claim>. The batch row is the measured gap above. The other two are reasoned: <claim id="server-case" basis="assumed">a caller serving strangers would set a lower cap through matra if it could, rather than checking sizes in its own code</claim>, and <claim id="browser-case" basis="assumed">a browser build will need a lower default than a workstation's</claim>.
+Nothing in the repository's issues asks for any of these: <claim id="no-issue" basis="observed">none of the repository's issues, open or closed, asks for a different limit [issues](https://github.com/mox-labs/matra/issues?q=is%3Aissue)</claim>. The batch row is the measured gap above. The other two are reasoned: <claim id="server-case" basis="assumed">a caller serving strangers would set a lower cap through matra if it could, rather than checking sizes in its own code</claim>, and <claim id="browser-case" basis="assumed">a browser build will need a lower default than a workstation's</claim>.
 
 ### Why now
 
@@ -358,7 +358,7 @@ The resilience floor, discipline by discipline:
 
 ### Milestones
 
-Smallest first. Each is one pull request with its documentation and CHANGELOG entry, and each leaves the tree shipping what it shipped before.
+Smallest first. Each is one pull request with its documentation and CHANGELOG entry, and each leaves the tree shipping what it shipped before. None starts before acceptance.
 
 1. **One value, no behaviour change.** `Limits` in the domain, crate-private, its `Default` reading the six public constants, so the public surface is unchanged. The engine holds one, set to the default; the engine's size check, the file source (built with the engine's cap, the port unchanged), the four method modules and both cluster checks read the value they are handed. The two invariant tests above. Every existing test passes unchanged. Built whatever decision 1 says.
 2. **The value, in Rust and Python.** `Limits` public, `Engine::with_limits` and `Engine::limits`, the `_with` forms and `clusters_with` taking it, `Source::read` taking `limit`, the six constants removed and the five fixed ones crate-private; `matra.Limits`, the `limits` keywords and `engine.limits` in Python, `matra.limits` removed; rule 7's list; the errors, domain-types and design references and the Rust and Python guides. Waits on decisions 1 to 5 and 7.
