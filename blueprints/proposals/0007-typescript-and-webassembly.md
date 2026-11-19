@@ -301,7 +301,7 @@ Corrupted models: truncated and random models failed cleanly on every build, and
 
 | Measure | Result |
 |---|---|
-| Document JSON against the native command line, three texts | identical token for token (219,399, 7,819 and 8,524 tokens) when both read text; against a file read natively, only `provenance.source.path` differs |
+| Document JSON against the native command line, three texts | identical, compared one JSON token at a time (219,399, 7,819 and 8,524 JSON tokens: each string, number, literal and punctuation mark of the output, not words of the text) when both read text; against a file read natively, only `provenance.source.path` differs |
 | Summary and keyphrases over the same documents | identical |
 | The comparer itself | caught a document with the last digit of one number changed |
 | Whole process, the long essay | native 1.80 s; Node with WebAssembly 2.88 s |
