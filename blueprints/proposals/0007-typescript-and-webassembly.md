@@ -378,8 +378,8 @@ Smallest first. Each is one pull request with its documentation and CHANGELOG en
 3. **The core.** The `wasm` feature, `src/wasm/`, rule 7's check, errors as data, the panic hook, and `summarize` and `keyphrases` over a document, with the outcome fixture running in Node and the three engines. Measures the round trip.
 4. **The parser.** The Emscripten build pinned to `Cargo.lock`, the digest before load, the worker, `Engine.load`, `analyze`, `analyzeAll` and `close`, with the parse and parity fixtures in Node and the three engines, then in Chrome and Safari. Measures what [decision 4](#decision-exception-handling) rests on, the Node worker, and the core's digest.
 5. **The release.** The npm job and environment in `release.yml`, the docsite's install page, guide and reference, the `ffi-surface` skill brought up to date, a newcomer pass, and the first npm release, which publishes only on the owner's approval. The owner may instead release after milestone 1 or 3; each leaves a package that is useful alone.
-6. **The playground.** A docs page that loads the package and renders what it returns. It waits on [who serves the model](#who-serves-the-model).
-7. **A component that renders a parse.** It needs only a document's JSON, so it works with or without the engine. Its element name and attributes are new public names and come as their own API change proposal.
+6. **A component that renders a parse.** It needs only a document's JSON and the types of milestone 1, so it works with or without the engine and may be built any time after milestone 1, beside milestones 2 to 5. Its element name and attributes are new public names and come as their own API change proposal.
+7. **The playground.** A docs page that loads the package and shows what it returns with the component of milestone 6. It waits on [who serves the model](#who-serves-the-model).
 
 ## Drawbacks
 
