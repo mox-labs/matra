@@ -3,7 +3,7 @@
 - Feature Name: `typescript_wasm`
 - Start Date: 2026-11-18
 - Pinned at: `4cac9411d2c856ece4dea2f4f7c0a39cd2d9aa97` (every code citation below opens at this commit)
-- Proposal PR: none yet (filled in when the pull request that carries this text is open)
+- Proposal PR: [#190](https://github.com/mox-labs/matra/pull/190)
 - Tracking issue: none (opened when the proposal is accepted)
 - Status: proposed
 
