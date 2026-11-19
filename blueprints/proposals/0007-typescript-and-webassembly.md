@@ -4,7 +4,7 @@
 - Start Date: 2026-11-18
 - Pinned at: `4cac9411d2c856ece4dea2f4f7c0a39cd2d9aa97` (every code citation below opens at this commit)
 - Proposal PR: [#190](https://github.com/mox-labs/matra/pull/190)
-- Tracking issue: none (opened when the proposal is accepted)
+- Tracking issue: [#193](https://github.com/mox-labs/matra/issues/193)
 - Status: proposed
 
 ## Summary
