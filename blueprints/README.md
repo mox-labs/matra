@@ -304,7 +304,7 @@ process that work is tooling, and its rules live in this file and in
 | [EPR-0004](proposals/0004-command-line-and-configuration.md) | The command line, configuration and the agent skill | proposed | none |
 | [EPR-0005](proposals/0005-embeddings-and-semantic-clusters.md) | Embeddings and semantic clusters | proposed | none |
 | [EPR-0006](proposals/0006-the-0-3-0-surface.md) | The 0.3.0 surface | implemented | [#161](https://github.com/mox-labs/matra/issues/161) |
-| [EPR-0007](proposals/0007-typescript-and-webassembly.md) | TypeScript and WebAssembly | proposed | [#193](https://github.com/mox-labs/matra/issues/193) |
+| [EPR-0007](proposals/0007-typescript-and-webassembly.md) | TypeScript and WebAssembly | accepted | [#193](https://github.com/mox-labs/matra/issues/193) |
 
 ## Plans
 
