@@ -288,22 +288,22 @@
       "words": 40
     },
     {
-      "compression_ratio": 0.5565,
+      "compression_ratio": 0.539,
       "kind": "paragraph",
-      "lexical_density": 0.5116,
-      "readability_grade": 10.3578,
+      "lexical_density": 0.5149,
+      "readability_grade": 11.7823,
       "sentences": 4,
-      "text": "What remains open is the design, which EPR-0007 proposes and the owner has not accepted: where the binding lives, what a caller sees when something fails, which browsers the parser build admits, and what the package is called on npm. One question it lays out without a recommendation: who serves the parsing model to a browser. The model is licensed CC BY-NC-SA 4.0, so the package cannot carry it, and its publisher's host refuses requests from other sites, so a page cannot fetch it from there.",
-      "words": 93
+      "text": "What remains open is the design, which EPR-0007 proposes and the owner has not accepted: where the binding lives, what a caller sees when something fails, which browsers the parser build admits, what the package is called on npm, what a second reader for one format does, and whether text is detected as bytes are. One question it lays out without a recommendation: who serves the parsing model to a browser. The model is licensed CC BY-NC-SA 4.0, so the package cannot carry it, and its publisher's host refuses requests from other sites, so a page cannot fetch it from there.",
+      "words": 108
     },
     {
-      "compression_ratio": 0.5146,
+      "compression_ratio": 0.4845,
       "kind": "paragraph",
-      "lexical_density": 0.5379,
-      "readability_grade": 9.2855,
+      "lexical_density": 0.5028,
+      "readability_grade": 11.5884,
       "sentences": 6,
-      "text": "Planned, in steps, each usable alone. EPR-0006 placed three in 0.4.0: TypeScript types generated from the published JSON Schema in spec/schema/v2/ with a web component that renders a parse from matra's JSON, the pure-Rust core in WASM, and the spike, which has now returned a go. EPR-0007 orders what follows as seven milestones, smallest first: the types, one copy in Rust of the mapping from the parser's output to tokens, the core in WebAssembly with the outcome functions, the parser, the release to npm, the component that renders a parse, and the playground that shows its result with it. The component needs only the types, so it may be built any time after them. None starts before the proposal is accepted, and nothing reaches npm without the owner's approval of that release.",
-      "words": 140
+      "text": "Planned, in steps, each usable alone. EPR-0006 placed three in 0.4.0: TypeScript types generated from the published JSON Schema in spec/schema/v2/ with a web component that renders a parse from matra's JSON, the pure-Rust core in WASM, and the spike, which has now returned a go. EPR-0007 orders what follows as eight milestones, in the order they are built: the types, for TypeScript and Python from the same schema; the ports and the names, so that a reader or parser written outside matra can do what matra's own do, every document names the reader that read it, and each method's name is written once; one copy in Rust of the mapping from the parser's output to tokens, the core in WebAssembly with the outcome functions, the parser, the release to npm, the component that renders a parse, and the playground that shows its result with it. The component needs only the types, so it may be built any time after them. None starts before the proposal is accepted, and nothing reaches npm without the owner's approval of that release.",
+      "words": 189
     },
     {
       "compression_ratio": null,
