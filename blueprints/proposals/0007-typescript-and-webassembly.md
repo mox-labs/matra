@@ -11,7 +11,9 @@
 
 matra gains a TypeScript package for the browser and Node.js. It says what Rust and Python say: load an `Engine`, `analyze` an `Input`, then `summarize` or take `keyphrases` of the `Document` that comes back, typed from the published JSON Schema, with every failure carrying the library's `kind` and `details`. matra's core and its parser both run as WebAssembly, in a worker, so parsing never blocks a page. A spike found that this works: UDPipe's C++ compiled to WebAssembly parses matra's twelve example texts byte for byte as the native build does, in Node and in three browser engines, at about half the native speed, and the core compiled unchanged around it.
 
-The spike also found what a package must settle that a spike could skip. The parser's identity was whatever the calling script wrote. Three pieces of the UDPipe adapter had to be copied. A corrupted model can crash the loader, natively too, and one corrupted model loaded without complaint. A panic in the core reaches the caller as an unexplained trap. And the parsing model is licensed for non-commercial use and served by a host that refuses requests from other sites, so the package cannot carry it and a page cannot fetch it from where it lives. This proposal answers each, asks the owner six questions, and lays out a seventh without a recommendation: who serves the model.
+The spike also found what a package must settle that a spike could skip. The parser's identity was whatever the calling script wrote. Three pieces of the UDPipe adapter had to be copied. A corrupted model can crash the loader, natively too, and one corrupted model loaded without complaint. A panic in the core reaches the caller as an unexplained trap. And the parsing model is licensed for non-commercial use and served by a host that refuses requests from other sites, so the package cannot carry it and a page cannot fetch it from where it lives.
+
+A design review of the crate at e07c790 found four more, in the surface a third language would copy. The reader and parser ports withhold what matra's own adapters use, so an outside reader cannot point a paragraph's spans back through markup and an outside parser copies the rule its spans are checked with. A document does not say which reader read it, and a second reader for a format replaces the first without a word. The method names are spelled again by hand on every surface. And text skips the format detection its documentation promises. One milestone before the core settles them. This proposal answers each finding, asks the owner eight questions, and lays out one more without a recommendation: who serves the model.
 
 Nothing here is built. The roadmap entry that said UDPipe could not run in a WebAssembly sandbox is corrected in the same pull request.
 
@@ -19,7 +21,7 @@ Nothing here is built. The roadmap entry that said UDPipe could not run in a Web
 
 <ask>
 
-Rule on the six decisions under [Unresolved questions](#unresolved-questions). Choose who serves the parsing model to a browser, from the three options under [Who serves the model](#who-serves-the-model); Claude lays them out and recommends none, because the choice turns on a licence and on what the project is willing to host. Then accept the proposal by merging a pull request that changes its status to `accepted`.
+Rule on the eight decisions under [Unresolved questions](#unresolved-questions). Choose who serves the parsing model to a browser, from the three options under [Who serves the model](#who-serves-the-model); Claude lays them out and recommends none, because the choice turns on a licence and on what the project is willing to host. Then accept the proposal by merging a pull request that changes its status to `accepted`.
 
 </ask>
 
@@ -56,6 +58,46 @@ The proposal stays `proposed` and nothing is built. The roadmap says the parser 
 
 </pragmatics>
 
+<changed date="2026-11-19" since="the text of 2026-11-18">
+
+<was>
+
+The public surface was nearly enough for a third language: the spike built a binding from outside the crate and needed three private pieces of the UDPipe adapter, which one crate-private function would replace.
+
+</was>
+
+<now>
+
+The ports withhold from any outside reader or parser what matra's own adapters use, so a binding built inside the crate would hide the gap, not close it. A milestone before the core publishes a paragraph built from pieces and the span rule, and records which reader ran. A design review of the crate at e07c790 found it; the code cited under [What a review of the ports found](#what-a-review-of-the-ports-found) is the evidence.
+
+</now>
+
+<was>
+
+The TypeScript types were to be generated from the schema, and Python's would stay as they are.
+
+</was>
+
+<now>
+
+Python's `types.py` is generated from the same schema by the same step, and the method names come from one list in the core, because both are copied by hand today and a new method compiles while no binding can name it [extraction/mod.rs:50](../../src/extraction/mod.rs#L50 "pub(crate) fn name(self)") [types.py:8](../../python/matra/types.py#L8 "Keep in lockstep").
+
+</now>
+
+<was>
+
+Text and bytes followed Python's defaults, with detection for bytes only.
+
+</was>
+
+<now>
+
+Whether text is detected as bytes are is [decision 8](#decision-text-detection): the code skips detection for text while the documentation promises it, and a string in JavaScript is weaker evidence of text than a string in Rust.
+
+</now>
+
+</changed>
+
 ## Motivation
 
 The owner wants TypeScript support, and then a playground on the docs site where a visitor pastes text and sees its structure with nothing installed.
@@ -79,6 +121,16 @@ A spike may copy code and write its own labels. A package may not. Each item bel
 5. **It found a model that crashes the loader, and one that does not.** <claim id="first-byte" basis="observed">A model whose first byte is changed to `0xff` throws a C++ exception that nothing in UDPipe catches [the spike](#what-the-spike-measured)</claim>. <claim id="native-terminates" basis="observed">The native build does the same, and the process ends with exit code 134 [the spike](#what-the-spike-measured)</claim>. <claim id="flip-accepted" basis="observed">Of 41 corrupted models, 39 failed cleanly, one crashed as above, and one, with a single byte changed at offset 40, loaded and parsed [the spike](#what-the-spike-measured)</claim>.
 6. **It saw a panic arrive with no explanation.** <claim id="panic-unreachable" basis="observed">A panic in the core reaches JavaScript as `RuntimeError: unreachable`, with no message, and the instance it left behind later failed in a different way [the spike](#what-the-spike-measured)</claim>.
 7. **It served the model from its own machine.** <claim id="model-nc" basis="observed">The model is CC BY-NC-SA 4.0, a separate work from matra with its own terms [udpipe.rs:44](../../src/nlp/udpipe.rs#L44 "CC BY-NC-SA 4.0 (non-commercial)") [udpipe.rs:41](../../src/nlp/udpipe.rs#L41 "this file is a separate work with its own terms")</claim>, and <claim id="host-refuses" basis="observed">its host answered 403 to a request carrying an `Origin` header and 200 to the same request without one, measured with `curl` on 2026-11-18 [udpipe.rs:36](../../src/nlp/udpipe.rs#L36 "lindat.mff.cuni.cz")</claim>. A browser always sends that header to another site, so a page cannot fetch the model from where it is published.
+
+### What a review of the ports found
+
+A design review of the crate at e07c790 read the ports as an outside implementer meets them. Four of its findings bear on a third language, because a binding copies whatever the surface it binds gets wrong. Each claim below rests on the code it cites, at the commit this record is pinned to, whose `src/` and `python/` are the reviewed commit's.
+
+1. **An outside reader cannot do what matra's markdown reader does.** <claim id="mapped-private" basis="observed">A reader outside the crate can emit only a paragraph whose text is the analysed text byte for byte. The constructor for a paragraph whose text maps back through dropped markup, and the map it takes, are crate-private, "which only matra's own markdown reader builds" [decompose/mod.rs:179](../../src/decompose/mod.rs#L179 "pub fn paragraph(") [decompose/mod.rs:192](../../src/decompose/mod.rs#L192 "pub(crate) fn mapped(") [decompose/mod.rs:280](../../src/decompose/mod.rs#L280 "pub(crate) struct TextMap") [decompose/mod.rs:138](../../src/decompose/mod.rs#L138 "which only matra's own markdown reader builds")</claim>. <claim id="with-text-moves-spans" basis="observed">The contract tells a reader that drops markup to name the text it extracted as the analysed text instead, and the digest in provenance is then the digest of that text, not of what the caller passed [decompose/mod.rs:41-43](../../src/decompose/mod.rs#L41-L43 "the extracted text as the analysed text instead") [lib.rs:567](../../src/lib.rs#L567 "digest::sha256_hex(text.as_bytes())")</claim>. An HTML reader's spans then point into a text nobody else holds.
+2. **An outside parser copies the rule its spans are checked with.** <claim id="span-rule-private" basis="observed">The function that says whether a token's span lines up with its form is crate-private, and it is both what the UDPipe adapter places spans with and what the engine checks every parser's spans with [domain.rs:805](../../src/domain.rs#L805 "pub(crate) fn form_end(") [udpipe.rs:771](../../src/nlp/udpipe.rs#L771 "crate::domain::form_end(text, start, form)") [conform.rs:224](../../src/conform.rs#L224 "form_end(text, span.byte_start, &token.text)")</claim>. The spike was the first outside parser, and it carried a copy.
+3. **A reader leaves no trace.** <claim id="reader-anonymous" basis="observed">The reader trait has one method, and provenance records the parser, the format and the source but not the reader [decompose/mod.rs:73-76](../../src/decompose/mod.rs#L73-L76 "fn decompose(&self, input: &[u8])") [domain.rs:1904](../../src/domain.rs#L1904 "pub parser: Identity")</claim>. <claim id="reader-replaced-silently" basis="observed">`with_reader` replaces whatever reader the format had, the one matra ships or one the caller registered a line earlier, and says nothing [lib.rs:421-422](../../src/lib.rs#L421-L422 "self.readers.with(format, Box::new(reader))") [decompose/mod.rs:251-253](../../src/decompose/mod.rs#L251-L253 "slot.1 = decomposer;")</claim>.
+4. **The method names are spelled again on every surface.** <claim id="names-copied" basis="observed">Each method's name is crate-private, with no public way back from a name to a method, and the names are written out again in the configuration, the Python binding, the command line and Python's types [extraction/mod.rs:50](../../src/extraction/mod.rs#L50 "pub(crate) fn name(self)") [config.rs:52](../../src/config.rs#L52 "const SUMMARY_METHODS") [outcomes.rs:33](../../src/python/outcomes.rs#L33 "crate::summarize_with(doc, n, SummaryMethod::TfIdf)") [cli/mod.rs:1068](../../src/cli/mod.rs#L1068 "Ok(crate::SummaryMethod::TfIdf)") [types.py:523](../../python/matra/types.py#L523 "SummaryMethodName")</claim>. <claim id="new-variant-unreachable" basis="inferred">The selectors are `#[non_exhaustive]`, and each string copy matches with a fallback arm, so a method added in the core compiles everywhere while no binding can name it until someone edits every copy</claim>. <claim id="types-partly-held" basis="observed">Python's types are declared by hand, and its tests hold the top-level keys of a few of them [types.py:8](../../python/matra/types.py#L8 "Keep in lockstep") [test_corpus_conformance.py:40](../../python/tests/test_corpus_conformance.py#L40 "set(DocumentDict.__annotations__)") [test_extension_points.py:406](../../python/tests/test_extension_points.py#L406 "set(DocumentDict.__annotations__)")</claim>; a nested field that drifts passes them.
+5. **Text skips the detection its documentation promises.** <claim id="input-doc-promises" basis="observed">The `Input` documentation says a PDF or DOCX signature is the strongest evidence of a format, before the format the caller names [lib.rs:67-68](../../src/lib.rs#L67-L68 "from strongest to weakest evidence: a PDF")</claim>, but <claim id="text-skips-detection" basis="observed">text goes straight to the reader for the format it was given, while bytes and files are detected first [lib.rs:544-546](../../src/lib.rs#L544-L546 "self.reader(&format)?.decompose(text.as_bytes())") [lib.rs:603](../../src/lib.rs#L603 "detect::format_of(&bytes, declared, name)")</claim>. No law compares text with bytes of the same content.
 
 ### Why now
 
@@ -116,7 +168,7 @@ The names are the same words in TypeScript's case. What differs follows from whe
 - **Every call returns a promise.** The parser runs in a worker so that a page stays responsive, and a message to a worker is answered later.
 - **The caller says where the model is.** `model` is a URL the page may fetch, or the bytes themselves. The package holds no model and no default address ([Who serves the model](#who-serves-the-model)).
 - **A `Document` is data.** It is the JSON the command line prints, as an object, with no methods. So `summarize` and `keyphrases` take a document from anywhere: this engine, a file `matra analyze --json` wrote, a server running Python. A page that only summarizes documents parsed elsewhere never downloads the model.
-- **There is no `Input.file`, no directory input and no configuration.** A browser has no file system and no home directory. They are absent from the types, so a call to one fails when the code is compiled, not when it runs. A Node caller reads the file and passes `Input.bytes`.
+- **There is no `Input.file`, no directory input and no configuration.** A browser has no file system and no home directory. They are absent from the types, so a call to one fails when the code is compiled, not when it runs. A Node caller reads the file and passes `Input.bytes`, and so does a page given a file: its bytes, not `file.text()`, which turns what it cannot decode into replacement characters without an error.
 - **There is no `clusters` yet.** Embeddings have not been measured in WebAssembly.
 
 ### When something fails
@@ -177,10 +229,51 @@ The binding is a module of the crate behind a non-default `wasm` feature, as <cl
 
 - **`src/wasm/`** exports what the wrapper calls and nothing else. It is held to boundary rule 7 as `src/python/` is: the public surface, `config` and `domain`, never a port, an adapter or a crate-private module. The rule gets a semgrep check and a fixture with it.
 - **A second adapter of the parser port**, beside the UDPipe one, behind the same feature. It holds the function the wrapper supplied and the identity the pin gave it, and implements `NlpProvider`. The composition root wires it, in one constructor compiled only under `wasm`.
-- **One copy of the mapping.** The UDPipe adapter does three things after the C++ call returns: it groups words into sentences, builds each token, and walks one cursor through the paragraph to place each span. Those three move, unchanged, into one crate-private function over plain column values. The native adapter turns each `udpipe_rs` word into those values and calls it; the new adapter turns what the worker returned into the same values and calls it. `nlp/udpipe.rs` stays the only file that imports `udpipe_rs`.
+- **One copy of the mapping.** The UDPipe adapter does three things after the C++ call returns: it groups words into sentences, builds each token, and walks one cursor through the paragraph to place each span. Those three move, unchanged, into one crate-private function over plain column values. The native adapter turns each `udpipe_rs` word into those values and calls it; the new adapter turns what the worker returned into the same values and calls it. `nlp/udpipe.rs` stays the only file that imports `udpipe_rs`. The span rule inside the walk is not part of this function: it is public by then, as `Span::of_form` under [The ports and the names](#the-ports-and-the-names), because every parser needs it. What stays crate-private is the grouping and the building, whose shape is UDPipe's words.
 - **The pin out from behind `udpipe`.** <claim id="pin-gated" basis="observed">The model's name, size, digest and licence are constants in the UDPipe adapter, which the `udpipe` feature compiles [udpipe.rs:20](../../src/nlp/udpipe.rs#L20 "const ENGLISH_MODEL_SHA256") [udpipe.rs:25](../../src/nlp/udpipe.rs#L25 "const ENGLISH_MODEL_NAME") [udpipe.rs:28](../../src/nlp/udpipe.rs#L28 "const ENGLISH_MODEL_SIZE")</claim>. They move to where both builds compile them, so the WebAssembly build checks the same digest from the same line of source.
 
 <claim id="send-atomics" basis="observed">The parser trait requires `Send` [nlp/mod.rs:94](../../src/nlp/mod.rs#L94 "pub trait NlpProvider: Send"), and the spike's adapter met it with no `unsafe` of its own only because `wasm-bindgen` marks a JavaScript value `Send` on builds without threads [the spike](#what-the-spike-measured)</claim>. A threads build was not tried and is not proposed.
+
+### The ports and the names
+
+Settled before the core is compiled for a new target, because each binding copies what it binds ([milestone 2](#milestones)). EPR-0006 made the ports public so that a caller could plug in a reader or a parser of their own, checked before it reaches a document; this gives that caller what matra's own adapters already have. Working names, fixed when built:
+
+```rust
+impl ReadBlock {
+    // A paragraph whose text is its pieces' texts, in order.
+    pub fn assembled(kind: ParagraphKind, span: Span, pieces: impl IntoIterator<Item = TextPiece>) -> ReadBlock;
+}
+impl TextPiece {
+    pub fn verbatim(text: impl Into<String>, from: Span) -> TextPiece; // the analysed text at `from`, byte for byte
+    pub fn whole(text: impl Into<String>, from: Span) -> TextPiece;    // stands for all of `from`: an entity, a tag
+}
+impl Span {
+    // Where `form` lies in `text`, from the first byte at or after `from` that is not whitespace.
+    pub fn of_form(text: &str, from: usize, form: &str) -> Option<Span>;
+}
+pub trait Decomposer: Send {
+    fn decompose(&self, input: &[u8]) -> Result<Read>;
+    fn identity(&self) -> Identity;             // new, required, as the parser's is
+}
+impl SummaryMethod {                            // KeyphraseMethod the same
+    pub const ALL: &'static [SummaryMethod];
+    pub fn name(self) -> &'static str;          // "tfidf", as provenance.method records it
+    pub fn named(name: &str) -> Option<SummaryMethod>;
+}
+impl Format {
+    pub fn name(&self) -> &str;                 // the crate-private wire_name, made public
+}
+```
+
+- **A paragraph from pieces.** An HTML reader reads `<p>The <b>river</b> rose &amp; fell.</p>`. The parser must read `The river rose & fell.`, and every span should point into the HTML the caller passed, so that `provenance.source.sha256` is the digest of that HTML and a token found in the parse lands on its bytes. The reader emits a paragraph at 0..40 from five pieces: `The ` verbatim from 3..7, `river` from 10..15, ` rose ` from 19..25, `&` whole from 25..30 and ` fell.` from 30..36. The text is the pieces joined, so the text and its map cannot disagree. What is left to check, that each piece comes from inside the paragraph's span and a verbatim piece is the analysed text it names, <claim id="map-checked" basis="observed">the engine already checks on every paragraph, with the reason `paragraph_text_mismatch` [conform.rs:82](../../src/conform.rs#L82 "map.mismatch(own, text, span)")</claim>. <claim id="markdown-pieces" basis="observed">matra's markdown reader already builds its maps a piece at a time, each a text, where it came from and whether it is verbatim [markdown.rs:285](../../src/decompose/markdown.rs#L285 "fn push_text(&mut self, text: &str, source: &Range<usize>, verbatim: bool)")</claim>, so it moves to the public constructor and `ReadBlock::mapped` leaves the crate: the reader matra ships is the constructor's first user. `TextMap` stays crate-private, so how a map is held can change. Naming an extracted text as the analysed text stays the rule for a binary format, where there is no source text to point into.
+- **The cap on what reaches the parser.** A paragraph built from pieces is not a slice of the analysed text, so the analysed text's length no longer bounds it: a whole piece may stand for five bytes and carry a megabyte. The engine therefore holds the paragraphs' texts together to `MAX_INPUT_BYTES`, failing with `input_too_large` and the `what` of `input`, so the law that no oversized input reaches the parser holds for a reader matra did not write.
+- **The span rule, public.** `Span::of_form` is the UDPipe adapter's `locate` [udpipe.rs:768](../../src/nlp/udpipe.rs#L768 "fn locate(") made public, and the adapter calls it in place of its own. The rule it applies, `form_end`, stays crate-private, with `conform::parse` still checking every parser's spans by it. A span a parser places with `Span::of_form` is therefore a span the engine accepts, and one placed any other way is still checked. The parser contract names it beside `Token::builder`. Of the three pieces the spike copied, this is the one every parser needs; the other two, grouping and building, stay crate-private under [The Rust side](#the-rust-side).
+- **Which reader ran.** `Decomposer` gains `identity`, required, returning the `Identity` the parser and the embedder report. <claim id="one-shape" basis="observed">EPR-0006 gave those two one shape so that "one reader reads both" [EPR-0006:516](0006-the-0-3-0-surface.md#L516 "one reader reads both")</claim>, and a third use keeps it. A reader with no model reports its name alone, and <claim id="identity-rule" basis="observed">the parser's rule applies: two that can read the same input differently "must not report the same identity" [nlp/mod.rs:103-104](../../src/nlp/mod.rs#L103-L104 "must not report the same identity")</claim>, so an outside reader's name carries its version. The engine records it in `provenance.reader` on every document, and a derived result copies it with the rest. matra's own readers report `markdown`, `plain_text` and `blocks`, and `Input::blocks` reports the block reader's, since that reader's code assembles the blocks. Like every field of provenance it is a record of what a component said, not proof.
+- **Schema 2.1.** <claim id="minor-is-optional" basis="observed">A minor version adds optional fields only, and a reader of `2.0` accepts a `2.1` document [spec/README.md:89](../../spec/README.md#L89 "A minor version adds optional fields only")</claim>. So `SCHEMA_VERSION` becomes `2.1`, the schema lists `reader` under provenance without requiring it, and the Rust field is an `Option` that is `None` only on a document written before 2.1, so a saved `2.0` document still reads back. <claim id="fixtures-pin-schema" basis="observed">The conformance fixtures that carry a whole provenance pin its schema version [parity.json:26](../../spec/tests/parity/parity.json#L26 '"schema": "2.0",')</claim>: the parity, outcome and command-line fixtures are regenerated with `2.1` and a reader, and the runners that validate with every object closed fail until the schema lists the field, which keeps the two in step. The generated types of milestone 1 pick the field up by regeneration, which is why that milestone comes first.
+- **Registering a reader twice.** What `with_reader` does for a format that already has a reader is [decision 7](#decision-reader-registration).
+- **One spelling of each name.** Each selector has one public list and a mapping each way, `name` and `named`, with the list written beside a match that has no wildcard arm, so a new variant fails to compile until it has a name and a place in the list. <claim id="no-wildcard-precedent" basis="observed">Routing an error to its Python class is held the same way [errors.rs:102](../../src/python/errors.rs#L102 "fn of(error: &domain::Error) -> Class")</claim>. The configuration's check, the command line's `--method`, Python's `method=`, the method caps' `what` labels and the TypeScript binding call it, and none of them writes a name. `name` is what `provenance.method` records, so the name a caller passes is the name the result carries back. Formats have one direction public already, `Format::named`; `Format::name` makes the other public [domain.rs:2291](../../src/domain.rs#L2291 "pub(crate) fn wire_name(&self) -> &str"), and the command line's `--format` and Python's `format=` parse through `Format::named` and refuse a format this build has no reader for, rather than each listing the names.
+- **Python's types from the schema.** `python/matra/types.py` is generated from `spec/schema/v2/` by the step that generates the TypeScript types, committed, and held by the same check that regenerates both and compares ([milestone 1](#milestones)). Its prose moves into the schema's `description`s, so a TypeScript reader gets the same text and the published schema says what each field means. What the schema does not describe stays hand-written beside it: the `Embedder` protocol, and the unions of method and format names, which the schema leaves out because `provenance.method` is an open set there. Each binding's tests compare its unions with the list the core exports, in full. Generated rather than checked: [Check `types.py` against the schema](#check-typespy-against-the-schema).
+- **Text and bytes.** Whether `Input::text` detects the format as `Input::bytes` does is [decision 8](#decision-text-detection). Either way a law joins the seven equivalence laws: text and bytes of the same content read to the same document, for every text if the decision says (b), and for every text without a signature if it says (a).
 
 ### Parser identity and the digest
 
@@ -224,8 +317,8 @@ class MatraError extends Error {
 const limits: { readonly maxInputBytes: number /* and the rest, as Python's matra.limits */ };
 ```
 
-- **Types.** `Document`, `Summary`, `Keyphrases`, `Block` and the error body are generated from `spec/schema/v2/`. The generated file is committed and a check regenerates and compares it, as the docsite's `llms.txt` is held. Field names stay as the schema spells them (`total_words`, `byte_start`), because a document is the same JSON in every language.
-- **Defaults follow Python.** Text is plain text unless a format is named; bytes are detected unless one is named. <claim id="python-defaults" basis="observed">`summarize` returns three sentences and `keyphrases` ten phrases by default [_core.pyi:437](../../python/matra/_core.pyi#L437 "n: int = 3") [_core.pyi:452](../../python/matra/_core.pyi#L452 "n: int = 10")</claim>. `method` is optional and takes the names Python takes; no function name carries one.
+- **Types.** `Document`, `Summary`, `Keyphrases`, `Block` and the error body are generated from `spec/schema/v2/`, by the step that generates Python's ([The ports and the names](#the-ports-and-the-names)). The generated file is committed and a check regenerates and compares it, as the docsite's `llms.txt` is held. Field names stay as the schema spells them (`total_words`, `byte_start`), because a document is the same JSON in every language.
+- **Defaults follow Python.** With no format named, text is plain text and bytes are detected; whether a signature outranks a format named on text is [decision 8](#decision-text-detection), and the core decides it for every language. <claim id="python-defaults" basis="observed">`summarize` returns three sentences and `keyphrases` ten phrases by default [_core.pyi:437](../../python/matra/_core.pyi#L437 "n: int = 3") [_core.pyi:452](../../python/matra/_core.pyi#L452 "n: int = 10")</claim>. `method` is optional and takes the names in the core's list, the names Python takes; no function name carries one.
 - **A document is data.** <claim id="document-is-data" basis="observed">The domain already says so: a document "can come from `Engine::analyze`, from JSON a caller saved and read back", and every outcome holds on one whose parts contradict each other [domain.rs:2007](../../src/domain.rs#L2007 "A document is data.")</claim>. Methods do not cross into another language, fields do. So TypeScript's `Document` is the parsed JSON, and an outcome function sends it to the core, which reads it back as the Rust type. That round trip is unmeasured ([what was not measured](#what-was-not-measured)).
 - **Outcome functions need no engine.** They start the core alone, with no parser and no model. Because they return promises, whether they run on the calling thread or in a worker can change without changing a signature; the milestone that builds them measures both.
 - **`analyzeAll`** yields one item per input, in input order, as each finishes. A failed document is an item, `{ path, error }`, not an exception, as in Rust and Python ([decision 3](#decision-analyze-all)).
@@ -354,15 +447,15 @@ The ACES boundary test, on the design as recommended:
 
 | Question | More | Less |
 |---|---|---|
-| Adaptable | A new target behind a non-default feature. The model's address is the caller's argument, so who hosts it can change with no release. Promises everywhere, so where work runs can change with no signature. The exception flavour is a build setting. | Only a pinned model loads. That is deliberate: a trust anchor is pinned, not configurable. The new adapter relies on a build without threads. |
-| Composable | A second adapter of an existing port. One shared function replaces a rule that would otherwise exist twice. The binding is held to rule 7, and the composition root stays the only place adapters are wired. | The crate's manifest gains optional dependencies for a target most Rust callers never build. |
-| Extensible | The fourth syntax uses the first three's names, its types come from the schema, and the conformance fixtures tell a contributor when it drifts. | Two toolchains, Emscripten and `wasm-bindgen`, stand between a contributor and a built package. One recipe and one job hide that, and do not remove it. |
+| Adaptable | A new target behind a non-default feature. The model's address is the caller's argument, so who hosts it can change with no release. Promises everywhere, so where work runs can change with no signature. The exception flavour is a build setting. Every document names the reader that read it, so replacing one is visible where its output is. | Only a pinned model loads. That is deliberate: a trust anchor is pinned, not configurable. The new adapter relies on a build without threads. |
+| Composable | A second adapter of an existing port. One shared function replaces a rule that would otherwise exist twice. The binding is held to rule 7, and the composition root stays the only place adapters are wired. An outside reader and parser build with the constructor and the span rule matra's own adapters use, so neither has to route around a port. | The crate's manifest gains optional dependencies for a target most Rust callers never build. If [decision 7](#decision-reader-registration) says (b), `with_reader` returns a `Result` where `with_source` does not. |
+| Extensible | The fourth syntax uses the first three's names, its types come from the schema, and the conformance fixtures tell a contributor when it drifts. A new method reaches every binding with no edit outside the core, and Python's types come from the schema TypeScript's do. | Two toolchains, Emscripten and `wasm-bindgen`, stand between a contributor and a built package. One recipe and one job hide that, and do not remove it. `Decomposer` gains a required method, so every outside reader changes once, and schema 2.1 regenerates every fixture that carries a provenance. |
 
 The resilience floor, discipline by discipline:
 
 | Discipline | Here |
 |---|---|
-| Size cap at the entry point | The wrapper refuses an oversized input before copying it; the core refuses it again. A model is refused by length before it is hashed, and a response is cut off at the pinned size. |
+| Size cap at the entry point | The wrapper refuses an oversized input before copying it; the core refuses it again. A model is refused by length before it is hashed, and a response is cut off at the pinned size. A paragraph built from pieces can be longer than the text it maps to, so the paragraphs' texts together are capped as the analysed text is, before the parser sees one. |
 | Symlink rejection | Not applicable: the surface reads no file. |
 | Atomic writes | Not applicable: the package writes nothing. |
 | Verified bytes are the bytes loaded | The digest is taken over the worker's own copy, and that copy is what the loader reads. |
@@ -371,15 +464,16 @@ The resilience floor, discipline by discipline:
 
 ### Milestones
 
-Smallest first. Each is one pull request with its documentation and CHANGELOG entry, and each leaves the tree shipping what it shipped before. None starts before acceptance.
+In the order they are built, each needing the ones before it unless it says otherwise. Each is one pull request with its documentation and CHANGELOG entry, except milestone 2, whose parts are independent and may land one pull request each. Each leaves the tree shipping what it shipped before. None starts before acceptance.
 
-1. **Types.** `typescript/` with the types generated from `spec/schema/v2/`, the check that keeps them current, and `MatraError`. No WebAssembly. A TypeScript program can already read what `matra analyze --json` writes.
-2. **One copy of the mapping.** The Rust refactor under [The Rust side](#the-rust-side): the shared function, the pin moved, and the builder's default if [decision 2](#decision-token-deps) says so. Native output is held unchanged by the existing conformance suite.
-3. **The core.** The `wasm` feature, `src/wasm/`, rule 7's check, errors as data, the panic hook, and `summarize` and `keyphrases` over a document, with the outcome fixture running in Node and the three engines. Measures the round trip.
-4. **The parser.** The Emscripten build pinned to `Cargo.lock`, the digest before load, the worker, `Engine.load`, `analyze`, `analyzeAll` and `close`, with the parse and parity fixtures in Node and the three engines, then in Chrome and Safari. Measures what [decision 4](#decision-exception-handling) rests on, the Node worker, and the core's digest.
-5. **The release.** The npm job and environment in `release.yml`, the docsite's install page, guide and reference, the `ffi-surface` skill brought up to date, a newcomer pass, and the first npm release, which publishes only on the owner's approval. The owner may instead release after milestone 1 or 3; each leaves a package that is useful alone.
-6. **A component that renders a parse.** It needs only a document's JSON and the types of milestone 1, so it works with or without the engine and may be built any time after milestone 1, beside milestones 2 to 5. Its element name and attributes are new public names and come as their own API change proposal.
-7. **The playground.** A docs page that loads the package and shows what it returns with the component of milestone 6. It waits on [who serves the model](#who-serves-the-model).
+1. **Types.** `typescript/` with the types generated from `spec/schema/v2/`, `python/matra/types.py` generated from the same schema by the same step with its prose moved into the schema's descriptions, the check that regenerates both and compares, and `MatraError`. No WebAssembly. A TypeScript program can already read what `matra analyze --json` writes.
+2. **The ports and the names.** Everything under [The ports and the names](#the-ports-and-the-names), in Rust and Python: the paragraph from pieces with the markdown reader moved onto it and the cap on what reaches the parser; `Span::of_form`, which the UDPipe adapter calls; the reader's identity, `provenance.reader` and schema 2.1 with its fixtures regenerated; `with_reader` as [decision 7](#decision-reader-registration) rules; one list and mapping per selector, which the configuration, the command line and Python call; and `Input::text` as [decision 8](#decision-text-detection) rules, with the new law. Needs milestone 1, so the new field reaches both languages' types by regeneration. Native output changes only in `provenance`, and for text that carries a signature if decision 8 says (b).
+3. **One copy of the mapping.** The Rust refactor under [The Rust side](#the-rust-side): the shared function, which places spans with milestone 2's `Span::of_form` and stays crate-private, the pin moved, and the builder's default if [decision 2](#decision-token-deps) says so. Native output is held unchanged by the existing conformance suite.
+4. **The core.** The `wasm` feature, `src/wasm/`, rule 7's check, errors as data, the panic hook, and `summarize` and `keyphrases` over a document, their `method` names taken from milestone 2's lists, with the outcome fixture running in Node and the three engines. Measures the round trip.
+5. **The parser.** The Emscripten build pinned to `Cargo.lock`, the digest before load, the worker, `Engine.load`, `analyze`, `analyzeAll` and `close`, with the parse and parity fixtures in Node and the three engines, then in Chrome and Safari. Measures what [decision 4](#decision-exception-handling) rests on, the Node worker, and the core's digest.
+6. **The release.** The npm job and environment in `release.yml`, the docsite's install page, guide and reference, the `ffi-surface` skill brought up to date, a newcomer pass, and the first npm release, which publishes only on the owner's approval. The owner may instead release after milestone 1 or 4; each leaves a package that is useful alone.
+7. **A component that renders a parse.** It needs only a document's JSON and the types of milestone 1, so it works with or without the engine and may be built any time after milestone 1, beside milestones 2 to 6. Its element name and attributes are new public names and come as their own API change proposal.
+8. **The playground.** A docs page that loads the package and shows what it returns with the component of milestone 7. It waits on [who serves the model](#who-serves-the-model).
 
 ## Drawbacks
 
@@ -389,6 +483,9 @@ Smallest first. Each is one pull request with its documentation and CHANGELOG en
 - **A second toolchain.** Emscripten joins the build, pinned, for one artefact.
 - **A release has a third approval,** and a third registry where a mistake is permanent.
 - **A third of the core is one metric's compressor.** The proposal keeps it: a document that differs by build is a worse cost than its size.
+- **Every outside reader changes once.** `Decomposer` gains a required `identity`, and under [decision 7](#decision-reader-registration)'s recommendation `with_reader` returns a `Result`. Both land before any TypeScript does, so the change is made once.
+- **A schema minor before the first TypeScript release.** `provenance.reader` moves `provenance.schema` to `2.1` in every document and regenerates every fixture that carries a provenance.
+- **Python's prose moves into JSON.** Field descriptions written in the schema are harder to write than docstrings, and a generated `types.py` reads less like hand-written Python.
 - **The evidence is one spike on one machine.** The list of what was not measured is longer than the list of engines that were.
 
 ## Rationale and alternatives
@@ -417,6 +514,14 @@ The caller passes a model and its digest, and the package checks one against the
 
 It would make the first call one line shorter. The model's licence forbids the package from deciding that for a commercial caller, its host refuses the request, and a default address is a promise to keep a file online for as long as any released version exists.
 
+### Publish the text map as it is
+
+Make `TextMap` and `ReadBlock::mapped` public, with a constructor taking offsets into the paragraph's text. It is less to write, and it is the form the markdown reader uses inside the crate. It also hands a caller the text and its map separately, so the two can disagree, by a gap, an overlap or a piece past the end, in ways the engine checks only in part, and it publishes how a map is held. Built from pieces, the text is the map, and those disagreements cannot be written.
+
+### Check `types.py` against the schema
+
+Keep Python's types written by hand, and add a test that walks every definition in the schema and compares it in full with its `TypedDict`: the keys, which are required, and each value's type. Python's prose stays where Python readers look for it. But that test is a second reader of the schema, as large as the step that writes the types, and it can only say that the two differ, where generation writes what they should be. TypeScript needs the generator anyway, so Python's types are one more output of it.
+
 ## Prior art
 
 - **matra's Python binding.** A module of the crate behind a feature, held to the public surface by a boundary rule, with a typed stub and a conformance runner. This proposal follows it step for step.
@@ -426,29 +531,29 @@ It would make the first call one line shorter. The model's licence forbids the p
 
 ## Unresolved questions
 
-<decision id="binding-home" title="1. Where does the Rust side of the binding live?" reversible="yes" grounds="mapping-private spike-copied python-in-crate">
+<decision id="binding-home" title="1. Where does the Rust side of the binding live?" reversible="yes" grounds="mapping-private spike-copied python-in-crate span-rule-private">
 
 <choice key="a" title="In the crate, behind a `wasm` feature">
 
-`src/wasm/` and a second parser adapter, as [The Rust side](#the-rust-side) describes. The mapping is shared inside the crate and no new Rust name is published.
+`src/wasm/` and a second parser adapter, as [The Rust side](#the-rust-side) describes. The mapping from a word's columns to a token is shared inside the crate, and no Rust name is published beyond the span rule, which every parser gets under either choice.
 
 </choice>
 
 <choice key="b" title="In a second crate that uses only the public surface">
 
-A crate beside matra's in a workspace, depending on matra as any caller does, as the spike was built. The span rule and the mapping become public functions so it has one copy to call.
+A crate beside matra's in a workspace, depending on matra as any caller does, as the spike was built. The span rule is public under either choice ([The ports and the names](#the-ports-and-the-names)); the mapping from a word's columns to a token becomes public too, so the second crate has one copy to call.
 
 </choice>
 
 <recommendation choice="a">
 
-The crate already holds a binding this way, and the reasons carry over: one version, one composition root, one place the boundary rules are checked. The copies disappear with no addition to the Rust surface, where every name is permanent. A second crate would need a workspace, a second manifest kept in step, and two functions published for one caller.
+The crate already holds a binding this way, and the reasons carry over: one version, one composition root, one place the boundary rules are checked. The copies disappear with nothing added to the Rust surface but the span rule, which every outside parser needs and so is published anyway; every name there is permanent. A second crate would need a workspace, a second manifest kept in step, and the column mapping published for one caller.
 
 </recommendation>
 
 <against>
 
-The spike is the proof that the public surface was almost enough: an outside crate built a working binding and needed three private pieces. Choice (b) would keep that proof running on every commit, and would give anyone else writing a parser the span placement the engine checks them against, which today they write themselves. It also keeps `wasm-bindgen` out of matra's manifest.
+The spike is the proof that the public surface was almost enough: an outside crate built a working binding and needed three private pieces. Choice (b) would keep that proof running on every commit, so that a power the ports withhold from an outside implementer shows up as a build failure, not in the next review. It also keeps `wasm-bindgen` out of matra's manifest.
 
 </against>
 
@@ -532,7 +637,7 @@ Any C++ throw becomes an abort. The smallest build, with no dependence on either
 
 <recommendation choice="b">
 
-<claim id="legacy-only-build" basis="observed">The build the spike measured contains only the older instruction [the spike](#what-the-spike-measured)</claim>, and <claim id="firefox-deprecates" basis="observed">Firefox reports that instruction as deprecated and asks for the newer one [the spike](#what-the-spike-measured)</claim>. <claim id="probe-both" basis="observed">All three engines ran a probe of each [the spike](#what-the-spike-measured)</claim>. <claim id="try-table-build" basis="inferred" likelihood="likely">A parser built on the newer instruction will give the same bytes in those three engines: five builds with different settings already did, and the engines accept the instruction</claim>. That is a prediction, and milestone 4 tests it before anything ships; if it fails, (a) is one build setting away.
+<claim id="legacy-only-build" basis="observed">The build the spike measured contains only the older instruction [the spike](#what-the-spike-measured)</claim>, and <claim id="firefox-deprecates" basis="observed">Firefox reports that instruction as deprecated and asks for the newer one [the spike](#what-the-spike-measured)</claim>. <claim id="probe-both" basis="observed">All three engines ran a probe of each [the spike](#what-the-spike-measured)</claim>. <claim id="try-table-build" basis="inferred" likelihood="likely">A parser built on the newer instruction will give the same bytes in those three engines: five builds with different settings already did, and the engines accept the instruction</claim>. That is a prediction, and milestone 5 tests it before anything ships; if it fails, (a) is one build setting away.
 
 The direction matters more than the flavour. Moving from (b) to (a) later widens what the package runs on and breaks nobody. Moving from (a) to (b) later, when an engine drops the older instruction, narrows it under callers who are already relying on it. The digest check means no model can reach the throw the spike found, so what remains is defence in depth, and (c) gives up the one thing exceptions buy: UDPipe behaving as it does natively when it catches its own.
 
@@ -603,6 +708,68 @@ The name on crates.io and PyPI. On 2026-11-18 the registry at `registry.npmjs.or
 <against>
 
 An unscoped name is a claim on a shared namespace that npm may refuse or a similar name may contest, and a scope is the registry's own answer to who a package belongs to. If the name is taken between this text and the first release, (b) is what remains.
+
+</against>
+
+</decision>
+
+<decision id="reader-registration" title="7. What does `with_reader` do for a format that already has a reader?" reversible="costly" grounds="reader-replaced-silently reader-replace-documented reader-anonymous one-step-replace">
+
+<choice key="a" title="Replace, as today, with the reader recorded">
+
+`with_reader` keeps returning `Engine`, and the last registration for a format wins, whether it replaces the reader matra ships or one the caller registered. Each document's `provenance.reader` says which reader ran.
+
+</choice>
+
+<choice key="b" title="Replace a shipped reader; refuse a second of the caller's own">
+
+Replacing the reader matra ships for a format stays what `with_reader` is for, and provenance shows it. Registering a reader for a format the caller has already given one is refused: `with_reader` returns `Result<Engine>`, failing with `invalid_input`, its `reason` naming the check (`reader_registered_twice`, a working name) and its message both readers' identities.
+
+</choice>
+
+<choice key="c" title="Refuse every replacement, and replace with a second call">
+
+`with_reader` refuses a format that has a reader, shipped or not, and a `replace_reader` replaces one. Nothing is replaced without a call that says so.
+
+</choice>
+
+<recommendation choice="b">
+
+The two cases differ in what the caller can know. <claim id="reader-replace-documented" basis="observed">A shipped reader is a default, and replacing it is the documented use: a reader "in place of the reader this build ships for it" [lib.rs:372-373](../../src/lib.rs#L372-L373 "in place of the reader")</claim>. With the reader in provenance, every document it reads says so, so the replacement is no longer silent. A second registration of the caller's own has no reader it could be meant for: from the moment it lands the first is code that never runs, and only the person who wrote both knows which they meant. The engine cannot arbitrate, so it refuses and names both, before any document is read, where (a) would hand back documents from whichever came last and leave the mistake to whoever reads `provenance.reader`. A library that supplies readers hands them to the caller to register, so one place decides which reader reads a format. (c) makes the common case, replacing matra's reader, a second name for one act.
+
+</recommendation>
+
+<against>
+
+(b) puts a `?` on every `with_reader` chain for a failure most callers cannot hit, and makes `with_reader` behave unlike `with_source`, which replaces the one source without complaint. <claim id="one-step-replace" basis="observed">EPR-0006 gave `with_reader` and `with_source` one meaning: each will "replace one part of an engine" [EPR-0006:408](0006-the-0-3-0-surface.md#L408 "replace one part of an engine")</claim>, and (b) departs from it for readers. It also refuses a layered setup a caller may want on purpose: a library that hands back an engine with its readers registered, which an application then overrides for one format. Under (a) the last word wins, the order the shipped defaults already use, and provenance already removes the silence that was the finding.
+
+</against>
+
+</decision>
+
+<decision id="text-detection" title="8. Is text detected as bytes are?" reversible="costly" grounds="input-doc-promises text-skips-detection signature-outranks-utf8 js-decodes-lossily lossy-wider">
+
+<choice key="a" title="Text keeps the format its caller names">
+
+A signature is evidence for bytes and files only. The `Input` documentation is corrected to say so, and the new law holds text and bytes of the same content to the same document when the content carries no signature.
+
+</choice>
+
+<choice key="b" title="Text is detected as bytes are">
+
+`Input::text(t, f)` reads exactly as `Input::bytes(t, Some(f))`: a PDF or DOCX signature outranks the named format, as it does for bytes and files. The documentation holds as written, and the law holds for every text, with no exception.
+
+</choice>
+
+<recommendation choice="b">
+
+A caller who holds a string has said that it decodes, and a signature does not ask that; decoding does. A signature asks whether the content is a PDF, and <claim id="signature-outranks-utf8" basis="observed">matra already answers that against content that decodes and a format the caller named: the law tests refuse `%PDF-1.7` passed as bytes named plain text, and a file holding it read as markdown [lib.rs:1159](../../src/lib.rs#L1159 'Input::bytes(b"%PDF-1.7".to_vec(), Some(Format::PlainText))') [lib.rs:1666-1667](../../src/lib.rs#L1666-L1667 "Input::file_as(&file, Format::Markdown)")</claim>. Under (a) the same content is refused on two routes and read on the third. And <claim id="js-decodes-lossily" basis="observed">in JavaScript a string is weak evidence of text: reading a file as text decodes what is not UTF-8 into replacement characters without an error, and Node 26, run on 2026-11-19, turned a PDF's opening bytes into a string starting `%PDF-1.7` with no complaint [the Encoding Standard](https://encoding.spec.whatwg.org/#utf-8-decode)</claim>. A page that passes `Input.text(await file.text())` for a PDF gets, under (a), a document of noise and no error, and under (b) `unsupported_format` naming `pdf`, which tells it to pass the bytes. One rule of evidence for every constructor also leaves `annotate` one route fewer: text is bytes already known to decode.
+
+</recommendation>
+
+<against>
+
+The type is already evidence, and in Rust the caller has also named a format: two statements a lying file name does not make. Under (b) no constructor but blocks reads, as text, a text that opens with `%PDF`, and a string's bytes go to a PDF reader when a caller has registered one. <claim id="lossy-wider" basis="inferred">And (b) closes two signatures of a wider problem: a Latin-1 file read with `file.text()` decodes into noise with no signature to catch, under either choice</claim>, so the defence that covers JavaScript is the guide telling a page to pass a file's bytes, which this proposal does either way.
 
 </against>
 
