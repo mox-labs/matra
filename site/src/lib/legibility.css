@@ -491,9 +491,22 @@
 .prose .changed .was,
 .prose .changed .now {
 	display: grid;
-	grid-template-columns: 2.6em 1fr;
+	/* minmax(0, ...) lets the body shrink below its longest word, which a
+	   bare 1fr does not, so a long code name wraps and the page stays put. */
+	grid-template-columns: 2.6em minmax(0, 1fr);
 	gap: var(--space-1);
 	align-items: baseline;
+}
+
+.prose .changed-body {
+	overflow-wrap: anywhere;
+}
+
+/* A chip does not wrap, and this column is narrower than the prose a chip
+   is sized for, so a chip that names a long heading wraps here. */
+.prose .changed-body a.chip {
+	max-width: 100%;
+	white-space: normal;
 }
 
 .prose .changed-body > * {

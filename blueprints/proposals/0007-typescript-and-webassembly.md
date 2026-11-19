@@ -13,7 +13,9 @@ matra gains a TypeScript package for the browser and Node.js. It says what Rust 
 
 The spike also found what a package must settle that a spike could skip. The parser's identity was whatever the calling script wrote. Three pieces of the UDPipe adapter had to be copied. A corrupted model can crash the loader, natively too, and one corrupted model loaded without complaint. A panic in the core reaches the caller as an unexplained trap. And the parsing model is licensed for non-commercial use and served by a host that refuses requests from other sites, so the package cannot carry it and a page cannot fetch it from where it lives.
 
-A design review of the crate at e07c790 found four more, in the surface a third language would copy. The reader and parser ports withhold what matra's own adapters use, so an outside reader cannot point a paragraph's spans back through markup and an outside parser copies the rule its spans are checked with. A document does not say which reader read it, and a second reader for a format replaces the first without a word. The method names are spelled again by hand on every surface. And text skips the format detection its documentation promises. One milestone before the core settles them. This proposal answers each finding, asks the owner eight questions, and lays out one more without a recommendation: who serves the model.
+A design review of the crate at e07c790 found five more, in the surface a third language would copy. The reader and parser ports withhold what matra's own adapters use, so an outside reader cannot point a paragraph's spans back through markup and an outside parser copies the rule its spans are checked with. A document does not say which reader read it, and a second reader for a format replaces the first without a word. The method names are spelled again by hand on every surface. And text skips the format detection its documentation promises. One milestone before the core settles them.
+
+This proposal answers each finding, the spike's and the review's, asks the owner eight questions, and lays out one more without a recommendation: who serves the model.
 
 Nothing here is built. The roadmap entry that said UDPipe could not run in a WebAssembly sandbox is corrected in the same pull request.
 
@@ -124,7 +126,7 @@ A spike may copy code and write its own labels. A package may not. Each item bel
 
 ### What a review of the ports found
 
-A design review of the crate at e07c790 read the ports as an outside implementer meets them. Four of its findings bear on a third language, because a binding copies whatever the surface it binds gets wrong. Each claim below rests on the code it cites, at the commit this record is pinned to, whose `src/` and `python/` are the reviewed commit's.
+A design review of the crate at e07c790 read the ports as an outside implementer meets them. Five of its findings bear on a third language, because a binding copies whatever the surface it binds gets wrong. Each claim below rests on the code it cites, at the commit this record is pinned to, whose `src/` and `python/` are the reviewed commit's.
 
 1. **An outside reader cannot do what matra's markdown reader does.** <claim id="mapped-private" basis="observed">A reader outside the crate can emit only a paragraph whose text is the analysed text byte for byte. The constructor for a paragraph whose text maps back through dropped markup, and the map it takes, are crate-private, "which only matra's own markdown reader builds" [decompose/mod.rs:179](../../src/decompose/mod.rs#L179 "pub fn paragraph(") [decompose/mod.rs:192](../../src/decompose/mod.rs#L192 "pub(crate) fn mapped(") [decompose/mod.rs:280](../../src/decompose/mod.rs#L280 "pub(crate) struct TextMap") [decompose/mod.rs:138](../../src/decompose/mod.rs#L138 "which only matra's own markdown reader builds")</claim>. <claim id="with-text-moves-spans" basis="observed">The contract tells a reader that drops markup to name the text it extracted as the analysed text instead, and the digest in provenance is then the digest of that text, not of what the caller passed [decompose/mod.rs:41-43](../../src/decompose/mod.rs#L41-L43 "the extracted text as the analysed text instead") [lib.rs:567](../../src/lib.rs#L567 "digest::sha256_hex(text.as_bytes())")</claim>. An HTML reader's spans then point into a text nobody else holds.
 2. **An outside parser copies the rule its spans are checked with.** <claim id="span-rule-private" basis="observed">The function that says whether a token's span lines up with its form is crate-private, and it is both what the UDPipe adapter places spans with and what the engine checks every parser's spans with [domain.rs:805](../../src/domain.rs#L805 "pub(crate) fn form_end(") [udpipe.rs:771](../../src/nlp/udpipe.rs#L771 "crate::domain::form_end(text, start, form)") [conform.rs:224](../../src/conform.rs#L224 "form_end(text, span.byte_start, &token.text)")</claim>. The spike was the first outside parser, and it carried a copy.
@@ -747,7 +749,7 @@ The finding was silence, and the reader in provenance ends it: every document na
 
 </decision>
 
-<decision id="text-detection" title="8. Is text detected as bytes are?" reversible="costly" grounds="input-doc-promises text-skips-detection signature-outranks-utf8 js-decodes-lossily lossy-wider">
+<decision id="text-detection" title="8. Is text detected as bytes are?" reversible="costly" grounds="input-doc-promises text-skips-detection signature-outranks-utf8 js-decodes-lossily text-doc-names-format lossy-wider">
 
 <choice key="a" title="Text keeps the format its caller names">
 
@@ -769,7 +771,7 @@ A caller who holds a string has said that it decodes, and a signature does not a
 
 <against>
 
-The type is already evidence, and in Rust the caller has also named a format: two statements a lying file name does not make. Under (b) no constructor but blocks reads, as text, a text that opens with `%PDF`, and a string's bytes go to a PDF reader when a caller has registered one. <claim id="lossy-wider" basis="inferred">And (b) closes two signatures of a wider problem: a Latin-1 file read with `file.text()` decodes into noise with no signature to catch, under either choice</claim>, so the defence that covers JavaScript is the guide telling a page to pass a file's bytes, which this proposal does either way.
+The type is already evidence, and in Rust the caller has also named a format: two statements a lying file name does not make. <claim id="text-doc-names-format" basis="observed">The constructor's own documentation reads that way, where the type's does not: "Text in a format the caller names" [lib.rs:96](../../src/lib.rs#L96 "Text in a format the caller names")</claim>. Under (b) no constructor but blocks reads, as text, a text that opens with `%PDF`, and a string's bytes go to a PDF reader when a caller has registered one. <claim id="lossy-wider" basis="inferred">And (b) closes two signatures of a wider problem: a Latin-1 file read with `file.text()` decodes into noise with no signature to catch, under either choice</claim>, so the defence that covers JavaScript is the guide telling a page to pass a file's bytes, which this proposal does either way.
 
 </against>
 
