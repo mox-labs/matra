@@ -483,7 +483,7 @@ In the order they are built, each needing the ones before it unless it says othe
 - **A second toolchain.** Emscripten joins the build, pinned, for one artefact.
 - **A release has a third approval,** and a third registry where a mistake is permanent.
 - **A third of the core is one metric's compressor.** The proposal keeps it: a document that differs by build is a worse cost than its size.
-- **Every outside reader changes once.** `Decomposer` gains a required `identity`, and under [decision 7](#decision-reader-registration)'s recommendation `with_reader` returns a `Result`. Both land before any TypeScript does, so the change is made once.
+- **Every outside reader changes once.** `Decomposer` gains a required `identity`, and if [decision 7](#decision-reader-registration) says (b) `with_reader` returns a `Result`. Either lands before any TypeScript does, so the change is made once.
 - **A schema minor before the first TypeScript release.** `provenance.reader` moves `provenance.schema` to `2.1` in every document and regenerates every fixture that carries a provenance.
 - **Python's prose moves into JSON.** Field descriptions written in the schema are harder to write than docstrings, and a generated `types.py` reads less like hand-written Python.
 - **The evidence is one spike on one machine.** The list of what was not measured is longer than the list of engines that were.
@@ -733,15 +733,15 @@ Replacing the reader matra ships for a format stays what `with_reader` is for, a
 
 </choice>
 
-<recommendation choice="b">
+<recommendation choice="a">
 
-The two cases differ in what the caller can know. <claim id="reader-replace-documented" basis="observed">A shipped reader is a default, and replacing it is the documented use: a reader "in place of the reader this build ships for it" [lib.rs:372-373](../../src/lib.rs#L372-L373 "in place of the reader")</claim>. With the reader in provenance, every document it reads says so, so the replacement is no longer silent. A second registration of the caller's own has no reader it could be meant for: from the moment it lands the first is code that never runs, and only the person who wrote both knows which they meant. The engine cannot arbitrate, so it refuses and names both, before any document is read, where (a) would hand back documents from whichever came last and leave the mistake to whoever reads `provenance.reader`. A library that supplies readers hands them to the caller to register, so one place decides which reader reads a format. (c) makes the common case, replacing matra's reader, a second name for one act.
+The finding was silence, and the reader in provenance ends it: every document names the reader that read it, so a replacement shows wherever its output goes. What is left is the case (b) refuses, a caller who registers two readers for one format, and the engine cannot tell that mistake from a choice. <claim id="one-step-replace" basis="observed">EPR-0006 gave `with_reader` and `with_source` one meaning: each will "replace one part of an engine" [EPR-0006:408](0006-the-0-3-0-surface.md#L408 "replace one part of an engine")</claim>, and `with_source` replaces the one source without complaint. A library that hands back an engine with its readers registered, which an application then overrides for one format, is that meaning used on purpose, and (b) refuses it. (b) also has the engine remember which readers it shipped and which a caller gave it, and puts a `?` on every `with_reader` chain, in each language, for a failure most callers cannot hit. Under (a) the last word wins, the order the shipped defaults already follow, and no signature changes. (c) makes the common case, replacing matra's reader, a second name for one act.
 
 </recommendation>
 
 <against>
 
-(b) puts a `?` on every `with_reader` chain for a failure most callers cannot hit, and makes `with_reader` behave unlike `with_source`, which replaces the one source without complaint. <claim id="one-step-replace" basis="observed">EPR-0006 gave `with_reader` and `with_source` one meaning: each will "replace one part of an engine" [EPR-0006:408](0006-the-0-3-0-surface.md#L408 "replace one part of an engine")</claim>, and (b) departs from it for readers. It also refuses a layered setup a caller may want on purpose: a library that hands back an engine with its readers registered, which an application then overrides for one format. Under (a) the last word wins, the order the shipped defaults already use, and provenance already removes the silence that was the finding.
+<claim id="reader-replace-documented" basis="observed">Replacing the reader matra ships is the documented use: a reader "in place of the reader this build ships for it" [lib.rs:372-373](../../src/lib.rs#L372-L373 "in place of the reader")</claim>. A second registration of the caller's own is a different thing: from the moment it lands the first is code that never runs, and only the person who wrote both knows which they meant. Under (a) the engine hands back documents from whichever came last and leaves the mistake to whoever reads `provenance.reader`; (b) refuses it and names both readers before any document is read.
 
 </against>
 
