@@ -1557,7 +1557,8 @@ mod tests {
     // ------------------------------------------------------------------
 
     /// The provenance is recorded once, at annotation: the parser's own
-    /// identity, the format, and the input's path, length and digest.
+    /// identity, the format, the input's path, and the analysed text's
+    /// length and digest.
     #[test]
     fn annotate_records_the_provenance() {
         let engine = law_engine();
