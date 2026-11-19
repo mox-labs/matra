@@ -1831,8 +1831,8 @@ impl Identity {
     }
 }
 
-/// The input a [`Document`] was analysed from: where it came from, how
-/// many bytes it held, and their digest.
+/// The input a [`Document`] was analysed from: where it came from, and
+/// the length and digest of the analysed text.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct ProvenanceSource {
@@ -1843,9 +1843,9 @@ pub struct ProvenanceSource {
     /// Rust value keeps the path exact.
     #[serde(serialize_with = "serialize_path_lossy")]
     pub path: Option<PathBuf>,
-    /// The input's length in bytes.
+    /// The length in bytes of the analysed text every span points into.
     pub bytes: usize,
-    /// SHA-256 of the input's bytes, lowercase hex, computed once when
+    /// SHA-256 of the analysed text, lowercase hex, computed once when
     /// the document is annotated.
     pub sha256: String,
 }

@@ -126,7 +126,7 @@ Under `--json` every command writes one envelope, `{format_version, command, inp
 
 **Per paragraph:** sentence count, readability grade, lexical density, compression ratio.
 
-**Per document:** word, sentence and paragraph counts, passive ratio, mean and spread of sentence length, vocabulary TTR, nominalization ratio. Each document also records its provenance: the parser and its model, the format, and the SHA-256 of the input, with the schema version (`2.0`) its JSON follows.
+**Per document:** word, sentence and paragraph counts, passive ratio, mean and spread of sentence length, vocabulary TTR, nominalization ratio. Each document also records its provenance: the parser and its model, the format, and the SHA-256 of the analysed text, with the schema version (`2.0`) its JSON follows.
 
 ## Architecture
 
