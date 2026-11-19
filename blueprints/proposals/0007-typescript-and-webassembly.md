@@ -30,7 +30,7 @@ Rule on the eight decisions under [Unresolved questions](#unresolved-questions).
 <will>
 
 - Record each ruling in its decision, as a named step in a pull request.
-- Open the tracking issue at acceptance and keep it current with the [milestones](#milestones).
+- Keep the tracking issue, [#193](https://github.com/mox-labs/matra/issues/193), current with the [milestones](#milestones).
 - Build the milestones in order, one pull request each, and repeat in continuous integration every measurement the spike took by hand, so each number below gets a home a reader can open.
 - Keep the roadmap saying only what this record says.
 
