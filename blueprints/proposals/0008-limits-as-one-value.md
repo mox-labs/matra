@@ -314,7 +314,7 @@ No kind, detail or label changes. `limit` is the cap in force for the call, whic
 
 ### What was measured
 
-One machine: Apple M1 Max, 64 GB, macOS 26.5. matra 0.3.0 at commit `fc15104`, whose source is the pinned commit's, built with `cargo build --release --features cli`, with the pinned English model on disk. Each input is `site/inputs/federalist-10.txt` repeated with a blank line between copies, read from a file, with `--json`; time and peak resident memory from the system's `time -l`. One run each.
+One machine: Apple M1 Max, 64 GB, macOS 26.5. matra 0.3.0 at commit `fc15104`, whose source is the pinned commit's, built with `cargo build --release --features cli`, with the pinned English model on disk. Each input is `site/inputs/federalist-10.txt` (17,880 bytes) repeated, each copy followed by one newline, which leaves a blank line between copies, read from a file, with `--json`; time and peak resident memory from the system's `time -l`. One run each.
 
 | Input | Command | Result | Wall time | Peak resident |
 |---|---|---|---|---|
