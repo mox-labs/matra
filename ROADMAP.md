@@ -27,7 +27,7 @@ matra is the first tier, deliberately. Everything it ships is deterministic and 
 
 - **A feed for text arriving over time**, in Rust, Python and the command line at once. See [Streaming source](#streaming-source).
 - **Caller extensions**: predicates and the findings they produce, over a `Document` and its schema, in their own proposal. See [Rule evaluation over parsed structure](#rule-evaluation-over-parsed-structure).
-- **TypeScript**: types generated from the published schema, a web component that renders a parse from matra's JSON, and the result of a spike, with a go or no-go, on compiling UDPipe to WebAssembly. See [WASM binding for TypeScript/browser](#wasm-binding-for-typescriptbrowser).
+- **TypeScript**: types generated from the published schema, and a web component that renders a parse from matra's JSON. The spike on compiling UDPipe to WebAssembly returned a go, and EPR-0007 proposes a package that parses in the browser and in Node.js; it is proposed, not accepted. See [WASM binding for TypeScript/browser](#wasm-binding-for-typescriptbrowser).
 - **A permissively licensed parsing model**, as a second pinned model chosen by id. See [A permissively licensed parsing model](#a-permissively-licensed-parsing-model).
 
 ## Rule evaluation over parsed structure
@@ -60,13 +60,15 @@ Two mechanism facts carry over. Predicates read materialized fields, not the raw
 
 **What it is.** A `wasm-bindgen` surface that exposes the same `Document` types to TypeScript running in a browser or Node.js environment. The same names cross; the same methods-don't-cross constraint applies. This makes matra usable in frontend applications, browser-based document editors, and Node.js pipelines without requiring a Python or Rust runtime.
 
-**What is blocking it.** The current `NlpProvider` is UDPipe, which uses C FFI compiled to native machine code. C FFI cannot run in a WASM sandbox. A WASM `NlpProvider` requires either a WASM-compiled variant of UDPipe (which has been explored by the upstream project but is not production-ready), a smaller Rust-native model, or a network-backed provider that performs parsing server-side and returns annotated output.
+**What is blocking it.** A decision, not the parser. This entry used to say that C FFI cannot run in a WASM sandbox, and that a parser in the browser would need a different parser or a server. A spike run between 2026-11-14 and 2026-11-18 found otherwise. UDPipe's C++, compiled with Emscripten, gave output byte-identical to the native build over matra's twelve example texts, in Node.js and in the Chromium, Firefox and WebKit builds that Playwright ships, at about half the native speed. EPR-0007 records every measurement and what was not measured, which includes Safari itself, any phone, and a model fetched over a real network.
 
-The `NlpProvider` trait requires no change to support a WASM implementation. Any Rust type that implements `NlpProvider::parse` without C FFI can be the WASM backend through `Engine::with_parser`, which builds without the `udpipe` feature, and the outcome functions over a `Document` already need no parser.
+The `NlpProvider` trait required no change. In the spike matra's core compiled for WebAssembly without the `udpipe` feature, with the compiled parser handed in through `Engine::with_parser`, and the outcome functions over a `Document` need no parser at all.
 
-**Planned for 0.4.0, in three steps, each usable alone.** First, TypeScript types generated from the published JSON Schema in `spec/schema/v2/`, and a web component that renders a parse from matra's JSON. These need no WASM at all. Second, the pure-Rust core in WASM: the outcome functions over a `Document` already build without the parser. Third, a spike on compiling UDPipe's C++ to WASM, which ends in a go or a no-go for an in-browser parser.
+What remains open is the design, which EPR-0007 proposes and the owner has not accepted: where the binding lives, what a caller sees when something fails, which browsers the parser build admits, and what the package is called on npm. One question it lays out without a recommendation: who serves the parsing model to a browser. The model is licensed CC BY-NC-SA 4.0, so the package cannot carry it, and its publisher's host refuses requests from other sites, so a page cannot fetch it from there.
 
-**Trigger condition.** A browser-side or Node.js caller with a documented requirement for matra analysis without a Python or Rust runtime, paired with an `NlpProvider` implementation that compiles to WASM and delivers sufficient parse quality for the target use case. The first two steps above do not wait for it; the parser does.
+**Planned, in steps, each usable alone.** EPR-0006 placed three in 0.4.0: TypeScript types generated from the published JSON Schema in `spec/schema/v2/` with a web component that renders a parse from matra's JSON, the pure-Rust core in WASM, and the spike, which has now returned a go. EPR-0007 orders what follows as seven milestones, smallest first: the types, one copy in Rust of the mapping from the parser's output to tokens, the core in WebAssembly with the outcome functions, the parser, the release to npm, the playground, and the component that renders a parse, which it moves after the package. None starts before the proposal is accepted, and nothing reaches npm without the owner's approval of that release.
+
+**Trigger condition.** The owner accepts EPR-0007. The condition this entry used to carry, an `NlpProvider` implementation that compiles to WASM with sufficient parse quality, is met as far as the spike measured: it is the same parser giving the same output.
 
 ## PDF and DOCX decomposers
 
@@ -126,9 +128,9 @@ The pattern across all of these: capability waits for the caller that justifies 
 
 **What it is.** A page where text can be pasted and its structure rendered live, with no install.
 
-**What is blocking it.** It depends on the WASM binding above.
+**What is blocking it.** It depends on the WASM binding above, and on a decision about who serves the parsing model to a browser. The model's licence is non-commercial and its publisher's host refuses requests from other sites, so a page needs the model at an address it may fetch. EPR-0007 lays out three options and what each costs: the docs site serves the current model with attribution, the playground waits for the permissively licensed model, or each visitor supplies the file. The choice is the owner's.
 
-**Trigger condition.** The WASM binding ships.
+**Trigger condition.** The WASM binding ships and that choice is made.
 
 ## Voice fingerprint metrics
 
