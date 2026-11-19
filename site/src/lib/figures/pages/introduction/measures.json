@@ -29,11 +29,11 @@
     {
       "compression_ratio": null,
       "kind": "list_item",
-      "lexical_density": 0.7,
-      "readability_grade": 13.21,
+      "lexical_density": 0.7073,
+      "readability_grade": 13.6278,
       "sentences": 3,
-      "text": "Measures. Readability, lexical density, and compression ratio per paragraph; counts, sentence length, vocabulary TTR, nominalization ratio, and passive ratio per document. Every document also records where it came from: the parser and its model, and a digest of the input.",
-      "words": 40
+      "text": "Measures. Readability, lexical density, and compression ratio per paragraph; counts, sentence length, vocabulary TTR, nominalization ratio, and passive ratio per document. Every document also records where it came from: the parser and its model, and a digest of the analysed text.",
+      "words": 41
     },
     {
       "compression_ratio": null,

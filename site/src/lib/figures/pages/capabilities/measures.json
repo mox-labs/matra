@@ -56,11 +56,11 @@
     {
       "compression_ratio": null,
       "kind": "paragraph",
-      "lexical_density": 0.5769,
-      "readability_grade": 6.7262,
+      "lexical_density": 0.5313,
+      "readability_grade": 7.9813,
       "sentences": 1,
-      "text": "provenance records the matra version, the schema version (\"2.0\"), the parser with its model, digest and licence, the format, and the input's path, length and SHA-256.",
-      "words": 28
+      "text": "provenance records the matra version, the schema version (\"2.0\"), the parser with its model, digest and licence, the format, and the input's path, and the length and SHA-256 of the analysed text.",
+      "words": 34
     },
     {
       "compression_ratio": null,
