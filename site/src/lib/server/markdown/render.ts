@@ -74,7 +74,7 @@ import { REPO_URL } from '#lib/site.ts';
  * decision someone makes here. `text` and an unlabelled fence need no grammar.
  * `console` is shiki's alias for shellsession.
  */
-const LANGUAGES = ['rust', 'python', 'bash', 'shellsession', 'json', 'jsonc', 'toml'];
+const LANGUAGES = ['rust', 'python', 'bash', 'shellsession', 'json', 'jsonc', 'toml', 'typescript'];
 /**
  * The syntax theme. Each token kind is a CSS variable (`--syntax-token-*`),
  * and app.css gives each a role: literals Emergence, comments and
