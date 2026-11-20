@@ -4,7 +4,7 @@
 - Start Date: 2026-11-18
 - Pinned at: `4cac9411d2c856ece4dea2f4f7c0a39cd2d9aa97` (every code citation below opens at this commit)
 - Proposal PR: [#190](https://github.com/mox-labs/matra/pull/190)
-- Tracking issue: none (opened when the proposal is accepted)
+- Tracking issue: [#193](https://github.com/mox-labs/matra/issues/193)
 - Status: proposed
 
 ## Summary
@@ -30,7 +30,7 @@ Rule on the eight decisions under [Unresolved questions](#unresolved-questions).
 <will>
 
 - Record each ruling in its decision, as a named step in a pull request.
-- Open the tracking issue at acceptance and keep it current with the [milestones](#milestones).
+- Keep the tracking issue, [#193](https://github.com/mox-labs/matra/issues/193), current with the [milestones](#milestones).
 - Build the milestones in order, one pull request each, and repeat in continuous integration every measurement the spike took by hand, so each number below gets a home a reader can open.
 - Keep the roadmap saying only what this record says.
 
