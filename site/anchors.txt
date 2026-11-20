@@ -290,3 +290,12 @@ blueprints/proposals/0007-typescript-and-webassembly.html#rationale-and-alternat
 blueprints/proposals/0007-typescript-and-webassembly.html#prior-art
 blueprints/proposals/0007-typescript-and-webassembly.html#unresolved-questions
 blueprints/proposals/0007-typescript-and-webassembly.html#future-possibilities
+blueprints/proposals/0008-limits-as-one-value.html#summary
+blueprints/proposals/0008-limits-as-one-value.html#motivation
+blueprints/proposals/0008-limits-as-one-value.html#guide-level-explanation
+blueprints/proposals/0008-limits-as-one-value.html#reference-level-explanation
+blueprints/proposals/0008-limits-as-one-value.html#drawbacks
+blueprints/proposals/0008-limits-as-one-value.html#rationale-and-alternatives
+blueprints/proposals/0008-limits-as-one-value.html#prior-art
+blueprints/proposals/0008-limits-as-one-value.html#unresolved-questions
+blueprints/proposals/0008-limits-as-one-value.html#future-possibilities

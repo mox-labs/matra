@@ -64,6 +64,7 @@
 - [EPR-0005: Embeddings and semantic clusters](https://mox-labs.github.io/matra/blueprints/proposals/0005-embeddings-and-semantic-clusters.html): Status: proposed. matra can group a document's sentences that say the same thing in different words.
 - [EPR-0006: The 0.3.0 surface](https://mox-labs.github.io/matra/blueprints/proposals/0006-the-0-3-0-surface.html): Status: implemented. 0.3.0 settles matra's public surface once, as one design, before a TypeScript surface copies it.
 - [EPR-0007: TypeScript and WebAssembly](https://mox-labs.github.io/matra/blueprints/proposals/0007-typescript-and-webassembly.html): Status: accepted. matra gains a TypeScript package for the browser and Node.js.
+- [EPR-0008: The limits as one value with a default](https://mox-labs.github.io/matra/blueprints/proposals/0008-limits-as-one-value.html): Status: proposed. matra holds its work to eleven bounds, each a constant compiled into the crate, and no caller can change one.
 
 ## Lab
 
