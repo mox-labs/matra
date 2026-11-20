@@ -310,7 +310,7 @@ EPR-0007's wrapper refuses an oversized input before copying it to the worker, t
 
 ### Errors
 
-No kind, detail or label changes. `limit` is the cap in force for the call, which is the default unless the caller set one. The message, `{what} input too large: {actual} > limit {limit}`, is unchanged.
+No kind, detail or label changes. `limit` is the cap in force for the call, which is the default unless the caller set one. The message is unchanged: `{what} input too large: {actual} > limit {limit}`, except at the main gate, whose label is `input` already, so it reads `input too large: {actual} > limit {limit}`.
 
 ### What was measured
 
