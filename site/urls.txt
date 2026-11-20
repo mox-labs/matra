@@ -57,6 +57,8 @@ blueprints/proposals/0006-the-0-3-0-surface.html
 blueprints/proposals/0006-the-0-3-0-surface.md
 blueprints/proposals/0007-typescript-and-webassembly.html
 blueprints/proposals/0007-typescript-and-webassembly.md
+blueprints/proposals/0008-limits-as-one-value.html
+blueprints/proposals/0008-limits-as-one-value.md
 blueprints/rfcs/0000-template.html
 blueprints/rfcs/0000-template.md
 blueprints/rfcs/0001-record-architectural-decisions.html
